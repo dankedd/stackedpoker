@@ -1,0 +1,212 @@
+import re
+from app.parsers.base import BaseParser
+from app.models.schemas import (
+    ParsedHand, BoardCards, PlayerInfo, HandAction
+)
+
+
+class GGPokerParser(BaseParser):
+    """Parser for GGPoker hand history format."""
+
+    def can_parse(self, text: str) -> bool:
+        return bool(re.search(r"Poker Hand #(RC|HD|CB|TO)\w+:", text))
+
+    def parse(self, text: str) -> ParsedHand:
+        lines = text.strip().splitlines()
+
+        hand_id = self._parse_hand_id(text)
+        stakes, sb, bb = self._parse_stakes(text)
+        game_type = "NLHE"
+        site = "GGPoker"
+
+        players_raw = self._parse_seats(text, bb)
+        button_seat = self._parse_button_seat(text)
+        players = self._assign_positions(players_raw, button_seat)
+
+        hero_name, hero_cards = self._parse_hero_cards(text)
+        hero_position = next(
+            (p.position for p in players if p.name == hero_name), "BTN"
+        )
+
+        board = self._parse_board(text)
+        actions = self._parse_actions(text, hero_name, bb)
+
+        effective_stack = self._calc_effective_stack(players, hero_name, bb)
+        pot_size_bb = self._calc_pot(actions, sb, bb)
+
+        return ParsedHand(
+            site=site,
+            game_type=game_type,
+            stakes=stakes,
+            hand_id=hand_id,
+            hero_name=hero_name,
+            hero_position=hero_position,
+            effective_stack_bb=effective_stack,
+            hero_cards=hero_cards,
+            board=board,
+            players=players,
+            actions=actions,
+            pot_size_bb=pot_size_bb,
+            big_blind=bb,
+        )
+
+    # ── Private helpers ────────────────────────────────────────────────────
+
+    def _parse_hand_id(self, text: str) -> str:
+        m = re.search(r"Poker Hand #(\w+):", text)
+        return m.group(1) if m else "unknown"
+
+    def _parse_stakes(self, text: str) -> tuple[str, float, float]:
+        m = re.search(r"\(\$([0-9.]+)/\$([0-9.]+)\)", text)
+        if m:
+            sb, bb = float(m.group(1)), float(m.group(2))
+            return f"{m.group(1)}/{m.group(2)}", sb, bb
+        return "0.5/1", 0.5, 1.0
+
+    def _parse_button_seat(self, text: str) -> int:
+        m = re.search(r"Seat #(\d+) is the button", text, re.IGNORECASE)
+        return int(m.group(1)) if m else 1
+
+    def _parse_seats(self, text: str, bb: float) -> list[dict]:
+        seats = []
+        for m in re.finditer(
+            r"Seat (\d+): (\S+) \(\$([0-9.]+) in chips\)", text
+        ):
+            seats.append({
+                "seat": int(m.group(1)),
+                "name": m.group(2),
+                "stack": float(m.group(3)),
+                "stack_bb": round(float(m.group(3)) / bb, 2),
+            })
+        return seats
+
+    def _assign_positions(self, seats: list[dict], button_seat: int) -> list[PlayerInfo]:
+        if not seats:
+            return []
+        n = len(seats)
+        seat_numbers = [s["seat"] for s in seats]
+        try:
+            btn_idx = seat_numbers.index(button_seat)
+        except ValueError:
+            btn_idx = len(seat_numbers) - 1
+
+        positions_by_count = {
+            2: ["BB", "BTN"],
+            3: ["BB", "BTN", "SB"],
+            4: ["BB", "BTN", "SB", "CO"],
+            5: ["BB", "BTN", "SB", "CO", "HJ"],
+            6: ["BB", "BTN", "SB", "CO", "HJ", "UTG"],
+            7: ["BB", "BTN", "SB", "CO", "HJ", "UTG+1", "UTG"],
+            8: ["BB", "BTN", "SB", "CO", "HJ", "UTG+2", "UTG+1", "UTG"],
+            9: ["BB", "BTN", "SB", "CO", "HJ", "UTG+3", "UTG+2", "UTG+1", "UTG"],
+        }
+        pos_list = positions_by_count.get(n, [f"P{i}" for i in range(n)])
+
+        result = []
+        for i, seat in enumerate(seats):
+            offset = (i - btn_idx) % n
+            pos = pos_list[offset] if offset < len(pos_list) else f"P{offset}"
+            result.append(PlayerInfo(
+                name=seat["name"],
+                seat=seat["seat"],
+                stack_bb=seat["stack_bb"],
+                position=pos,
+            ))
+        return result
+
+    def _parse_hero_cards(self, text: str) -> tuple[str, list[str]]:
+        m = re.search(r"Dealt to (\S+) \[([2-9TJQKAtjqka][cdhs]) ([2-9TJQKAtjqka][cdhs])\]", text)
+        if m:
+            return m.group(1), [
+                self._normalise_card(m.group(2)),
+                self._normalise_card(m.group(3)),
+            ]
+        return "Hero", []
+
+    def _parse_board(self, text: str) -> BoardCards:
+        flop = turn = river = []
+
+        m_flop = re.search(
+            r"\*\*\* FLOP \*\*\*[^[]*\[([2-9TJQKAtjqka][cdhs]) ([2-9TJQKAtjqka][cdhs]) ([2-9TJQKAtjqka][cdhs])\]",
+            text,
+        )
+        if m_flop:
+            flop = [
+                self._normalise_card(m_flop.group(1)),
+                self._normalise_card(m_flop.group(2)),
+                self._normalise_card(m_flop.group(3)),
+            ]
+
+        m_turn = re.search(
+            r"\*\*\* TURN \*\*\* \[.*?\] \[([2-9TJQKAtjqka][cdhs])\]", text
+        )
+        if m_turn:
+            turn = [self._normalise_card(m_turn.group(1))]
+
+        m_river = re.search(
+            r"\*\*\* RIVER \*\*\* \[.*?\] \[([2-9TJQKAtjqka][cdhs])\]", text
+        )
+        if m_river:
+            river = [self._normalise_card(m_river.group(1))]
+
+        return BoardCards(flop=flop, turn=turn, river=river)
+
+    def _parse_actions(self, text: str, hero_name: str, bb: float) -> list[HandAction]:
+        sections = {
+            "preflop": self._extract_section(text, "HOLE CARDS", "FLOP"),
+            "flop": self._extract_section(text, "FLOP", "TURN"),
+            "turn": self._extract_section(text, "TURN", "RIVER"),
+            "river": self._extract_section(text, "RIVER", "SHOW DOWN|SUMMARY"),
+        }
+
+        actions = []
+        action_re = re.compile(
+            r"^(\S+): (folds|checks|calls|bets|raises)(?: \$([0-9.]+))?(?: to \$([0-9.]+))?",
+            re.MULTILINE,
+        )
+
+        for street, section in sections.items():
+            if not section:
+                continue
+            for m in action_re.finditer(section):
+                player = m.group(1)
+                raw_action = m.group(2)
+                amount_str = m.group(4) or m.group(3)
+                amount = float(amount_str) / bb if amount_str else None
+
+                action_map = {
+                    "folds": "fold",
+                    "checks": "check",
+                    "calls": "call",
+                    "bets": "bet",
+                    "raises": "raise",
+                }
+                actions.append(HandAction(
+                    street=street,
+                    player=player,
+                    action=action_map[raw_action],
+                    size_bb=round(amount, 2) if amount else None,
+                    is_hero=(player == hero_name),
+                ))
+        return actions
+
+    def _extract_section(self, text: str, start: str, end: str) -> str:
+        pattern = rf"\*\*\* {start} \*\*\*(.*?)(?:\*\*\* {end}|$)"
+        m = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
+        return m.group(1) if m else ""
+
+    def _calc_effective_stack(self, players: list[PlayerInfo], hero_name: str, bb: float) -> float:
+        stacks = [p.stack_bb for p in players]
+        hero_stack = next((p.stack_bb for p in players if p.name == hero_name), 100.0)
+        # effective stack = min of hero and villain (for 2-player) or min of all for multi
+        other_stacks = [p.stack_bb for p in players if p.name != hero_name]
+        if not other_stacks:
+            return hero_stack
+        return round(min(hero_stack, min(other_stacks)), 1)
+
+    def _calc_pot(self, actions: list[HandAction], sb: float, bb: float) -> float:
+        total = sb / bb + 1.0  # blinds
+        for a in actions:
+            if a.action in ("call", "bet", "raise") and a.size_bb:
+                total += a.size_bb
+        return round(total, 2)
