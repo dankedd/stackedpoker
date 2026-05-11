@@ -86,6 +86,15 @@ export interface ReplayAction {
   feedback?: ReplayFeedback;
 }
 
+export interface SeatedPlayer {
+  name: string;
+  position: string;
+  stack_bb?: number;
+  hole_cards?: string[];
+  is_hero: boolean;
+  seat_index: number;   // 0 = hero, 1..N-1 clockwise around table
+}
+
 export interface HandSummaryData {
   stakes: string;
   hero_position: string;
@@ -100,6 +109,8 @@ export interface HandSummaryData {
   };
   big_blind?: number;   // big blind in currency units (1.0 = unknown/bb-native)
   currency?: string;    // "USD", "EUR", "" = unitless
+  players?: SeatedPlayer[];   // full clockwise seat topology (hero at index 0)
+  player_count?: number;      // table_max_seats — total seats including empty ones
 }
 
 export interface OverallVerdict {

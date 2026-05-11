@@ -1,5 +1,5 @@
 import re
-from app.parsers.base import BaseParser
+from app.parsers.base import BaseParser, derive_positions
 from app.models.schemas import (
     ParsedHand, BoardCards, PlayerInfo, HandAction
 )
@@ -17,9 +17,10 @@ class PokerStarsParser(BaseParser):
         game_type = "NLHE"
         site = "PokerStars"
 
+        table_max_seats = self._parse_table_max_seats(text)
         players_raw = self._parse_seats(text, bb)
         button_seat = self._parse_button_seat(text)
-        players = self._assign_positions(players_raw, button_seat)
+        players = self._assign_positions(players_raw, button_seat, table_max_seats)
 
         hero_name, hero_cards = self._parse_hero_cards(text)
         hero_position = next(
@@ -46,6 +47,7 @@ class PokerStarsParser(BaseParser):
             actions=actions,
             pot_size_bb=pot_size_bb,
             big_blind=bb,
+            table_max_seats=table_max_seats,
         )
 
     # ── Private helpers ────────────────────────────────────────────────────
@@ -78,36 +80,29 @@ class PokerStarsParser(BaseParser):
             })
         return seats
 
-    def _assign_positions(self, seats: list[dict], button_seat: int) -> list[PlayerInfo]:
+    def _parse_table_max_seats(self, text: str) -> int:
+        m = re.search(r"(\d+)-[Mm]ax", text)
+        if m:
+            return int(m.group(1))
+        seats = [int(m.group(1)) for m in re.finditer(r"Seat (\d+):", text)]
+        return max(seats) if seats else 6
+
+    def _assign_positions(
+        self, seats: list[dict], button_seat: int, table_max_seats: int
+    ) -> list[PlayerInfo]:
         if not seats:
             return []
-        n = len(seats)
-        seat_numbers = [s["seat"] for s in seats]
-        try:
-            btn_idx = seat_numbers.index(button_seat)
-        except ValueError:
-            btn_idx = len(seat_numbers) - 1
-
-        positions_by_count = {
-            2: ["BB", "BTN"],
-            3: ["BB", "BTN", "SB"],
-            4: ["BB", "BTN", "SB", "CO"],
-            5: ["BB", "BTN", "SB", "CO", "HJ"],
-            6: ["BB", "BTN", "SB", "CO", "HJ", "UTG"],
-        }
-        pos_list = positions_by_count.get(n, [f"P{i}" for i in range(n)])
-
-        result = []
-        for i, seat in enumerate(seats):
-            offset = (i - btn_idx) % n
-            pos = pos_list[offset] if offset < len(pos_list) else f"P{offset}"
-            result.append(PlayerInfo(
-                name=seat["name"],
-                seat=seat["seat"],
-                stack_bb=seat["stack_bb"],
-                position=pos,
-            ))
-        return result
+        occupied = [s["seat"] for s in seats]
+        pos_map = derive_positions(occupied, button_seat, table_max_seats)
+        return [
+            PlayerInfo(
+                name=s["name"],
+                seat=s["seat"],
+                stack_bb=s["stack_bb"],
+                position=pos_map.get(s["seat"], "?"),
+            )
+            for s in seats
+        ]
 
     def _parse_hero_cards(self, text: str) -> tuple[str, list[str]]:
         m = re.search(

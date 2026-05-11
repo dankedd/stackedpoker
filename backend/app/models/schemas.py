@@ -46,6 +46,7 @@ class ParsedHand(BaseModel):
     actions: list[HandAction]
     pot_size_bb: float
     big_blind: float
+    table_max_seats: int = 6
 
 
 # ── Spot classification ────────────────────────────────────────────────────

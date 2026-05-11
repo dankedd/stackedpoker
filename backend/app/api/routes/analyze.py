@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.schemas import (
     HandAnalysisRequest, AnalysisResponse,
     ReplayAnalysis, HandSummaryData, ReplayAction, ReplayFeedback, OverallVerdict,
+    SeatedPlayer, ParsedHand,
 )
 from app.parsers.detector import detect_and_parse
 from app.engines.analysis import analyse_hand
@@ -22,6 +23,32 @@ _SEVERITY_TO_RATING: dict[str, str] = {
     "good": "good",
     "note": "okay",
 }
+
+
+def _build_seated_players(parsed: ParsedHand) -> list[SeatedPlayer]:
+    """Build clockwise SeatedPlayer list with hero at seat_index=0."""
+    hero_seat = next((p.seat for p in parsed.players if p.name == parsed.hero_name), None)
+    if hero_seat is None:
+        return []
+    all_seats = list(range(1, parsed.table_max_seats + 1))
+    try:
+        hero_idx = all_seats.index(hero_seat)
+    except ValueError:
+        hero_idx = 0
+    cw_from_hero = all_seats[hero_idx:] + all_seats[:hero_idx]
+    player_by_seat = {p.seat: p for p in parsed.players}
+    result = []
+    for i, seat_num in enumerate(cw_from_hero):
+        p = player_by_seat.get(seat_num)
+        if p:
+            result.append(SeatedPlayer(
+                name=p.name,
+                position=p.position,
+                stack_bb=p.stack_bb,
+                is_hero=(p.name == parsed.hero_name),
+                seat_index=i,
+            ))
+    return result
 
 
 def _build_replay(result: AnalysisResponse) -> ReplayAnalysis:
@@ -83,7 +110,8 @@ def _build_replay(result: AnalysisResponse) -> ReplayAnalysis:
         board=parsed.board,
         big_blind=parsed.big_blind,
         currency="",
-        player_count=len(parsed.players),
+        players=_build_seated_players(parsed),
+        player_count=parsed.table_max_seats,
     )
 
     # Use the first two sentences of ai_coaching as the verdict summary.
