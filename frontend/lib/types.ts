@@ -75,6 +75,21 @@ export interface ReplayFeedback {
   gto_note?: string;
 }
 
+export interface PreferredAction {
+  action: string;
+  frequency: number;
+}
+
+export interface ActionCoaching {
+  score: number;
+  quality: "Elite" | "Good" | "Standard" | "Mistake" | "Punt";
+  mistake_level: "None" | "Minor" | "Major" | "Critical";
+  preferred_actions: PreferredAction[];
+  reason_codes: string[];
+  explanation: string;
+  adjustment: string;
+}
+
 export interface ReplayAction {
   id: number;
   street: "preflop" | "flop" | "turn" | "river";
@@ -84,6 +99,7 @@ export interface ReplayAction {
   pot_after: number;
   is_hero: boolean;
   feedback?: ReplayFeedback;
+  coaching?: ActionCoaching;
 }
 
 export interface SeatedPlayer {

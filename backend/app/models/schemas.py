@@ -113,6 +113,21 @@ class ReplayFeedback(BaseModel):
     gto_note: str | None = None
 
 
+class PreferredAction(BaseModel):
+    action: str
+    frequency: int = Field(..., ge=0, le=100)
+
+
+class ActionCoaching(BaseModel):
+    score: int = Field(..., ge=0, le=100)
+    quality: Literal["Elite", "Good", "Standard", "Mistake", "Punt"]
+    mistake_level: Literal["None", "Minor", "Major", "Critical"]
+    preferred_actions: list[PreferredAction] = Field(default_factory=list)
+    reason_codes: list[str] = Field(default_factory=list)
+    explanation: str
+    adjustment: str
+
+
 class ReplayAction(BaseModel):
     id: int
     street: Literal["preflop", "flop", "turn", "river"]
@@ -122,6 +137,7 @@ class ReplayAction(BaseModel):
     pot_after: float
     is_hero: bool
     feedback: ReplayFeedback | None = None
+    coaching: ActionCoaching | None = None
 
 
 class SeatedPlayer(BaseModel):

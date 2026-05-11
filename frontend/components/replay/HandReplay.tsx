@@ -10,6 +10,7 @@ import { buildSeatMap } from "@/lib/replay/seatEngine";
 import { PokerTable } from "./PokerTable";
 import { CoachCard } from "./CoachCard";
 import { VerdictCard } from "./VerdictCard";
+import { ReplaySidebar } from "./ReplaySidebar";
 import type { ReplayAnalysis, ReplayAction, ValidationInfo } from "@/lib/types";
 
 interface HandReplayProps {
@@ -59,7 +60,7 @@ function ConfidencePill({ validation }: { validation: ValidationInfo }) {
   );
 }
 
-// ── Action feed ──────────────────────────────────────────────────────────────
+// ── Action feed (mobile / condensed) ─────────────────────────────────────────
 
 function ActionFeed({ actions, step }: { actions: ReplayAction[]; step: number }) {
   const visible = actions.slice(0, step + 1);
@@ -117,17 +118,14 @@ function ActionFeed({ actions, step }: { actions: ReplayAction[]; step: number }
               >
                 {action.player}
               </span>
-
               <span className={cn("text-[11px] font-semibold capitalize", ACTION_COLOR[action.action] ?? "text-slate-400/45")}>
                 {action.action}
               </span>
-
               {action.amount && (
                 <span className="text-[10px] font-medium tabular-nums text-slate-500/50">
                   {action.amount}
                 </span>
               )}
-
               {action.is_hero && action.feedback && (
                 <span
                   className={cn(
@@ -212,7 +210,6 @@ function Transport({
         <ChevronLeft className="h-[18px] w-[18px]" />
       </button>
 
-      {/* Primary play button */}
       <button
         type="button"
         onClick={isPlaying ? onPause : onPlay}
@@ -265,12 +262,11 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
         boxShadow: "0 40px 100px rgba(0,0,0,0.88), 0 0 0 1px rgba(0,0,0,0.5)",
       }}
     >
-      {/* ── Header ──────────────────────────────────────────────────────── */}
+      {/* ── Header — full width ──────────────────────────────────────────── */}
       <div
         className="flex items-center justify-between px-6 py-4"
         style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
       >
-        {/* Left: hand meta */}
         <div className="flex items-center gap-2.5 min-w-0 overflow-hidden">
           <span className="text-sm font-semibold text-white/72 shrink-0">
             {hand_summary.stakes}
@@ -291,7 +287,6 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
           </span>
         </div>
 
-        {/* Right: street + meta */}
         <div className="flex items-center gap-2 shrink-0 ml-3">
           {replay.currentAction && (
             <span
@@ -312,69 +307,92 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
         </div>
       </div>
 
-      {/* ── Table ───────────────────────────────────────────────────────── */}
-      <div
-        className="py-10"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 52% at 50% 48%, rgba(34,197,94,0.022) 0%, transparent 70%)",
-        }}
-      >
-        <PokerTable
-          seats={seats}
-          visibleBoard={replay.visibleBoard}
-          currentAction={replay.currentAction}
-          currentPot={replay.currentPot}
-          currentStep={replay.step}
-        />
-      </div>
+      {/* ── Body: desktop 2-col / mobile single-col ──────────────────────── */}
+      <div className="lg:grid lg:grid-cols-[1fr_400px] lg:items-stretch">
 
-      {/* ── Action feed ─────────────────────────────────────────────────── */}
-      <div className="px-4 pb-3">
-        <ActionFeed actions={actions} step={replay.step} />
-      </div>
+        {/* ── LEFT: table + controls ───────────────────────────────────── */}
+        <div className="flex flex-col">
+          {/* Table */}
+          <div
+            className="py-10"
+            style={{
+              background:
+                "radial-gradient(ellipse 80% 52% at 50% 48%, rgba(34,197,94,0.022) 0%, transparent 70%)",
+            }}
+          >
+            <PokerTable
+              seats={seats}
+              visibleBoard={replay.visibleBoard}
+              currentAction={replay.currentAction}
+              currentPot={replay.currentPot}
+              currentStep={replay.step}
+            />
+          </div>
 
-      {/* ── Coach card ──────────────────────────────────────────────────── */}
-      {showCoachCard && replay.currentFeedback && (
-        <div className="px-4 pb-4">
-          <CoachCard
-            feedback={replay.currentFeedback}
-            triggerKey={lastHeroFeedbackStep}
-          />
+          {/* Action feed — mobile only */}
+          <div className="lg:hidden px-4 pb-3">
+            <ActionFeed actions={actions} step={replay.step} />
+          </div>
+
+          {/* Coach card — mobile only */}
+          {showCoachCard && replay.currentFeedback && (
+            <div className="lg:hidden px-4 pb-4">
+              <CoachCard
+                feedback={replay.currentFeedback}
+                triggerKey={lastHeroFeedbackStep}
+              />
+            </div>
+          )}
+
+          {/* Transport */}
+          <div
+            className="px-6 py-5 space-y-4 mt-auto"
+            style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
+          >
+            <ProgressTrack actions={actions} step={replay.step} onGoTo={replay.goTo} />
+            <Transport
+              isPlaying={replay.isPlaying}
+              isFirst={replay.isFirst}
+              isLast={replay.isLast}
+              onPlay={replay.play}
+              onPause={replay.pause}
+              onNext={replay.next}
+              onPrev={replay.prev}
+              onReset={replay.reset}
+              onSkipEnd={() => replay.goTo(actions.length - 1)}
+            />
+          </div>
+
+          {/* Verdict */}
+          {replay.showVerdict && (
+            <div
+              className="px-5 pt-5 pb-6"
+              style={{
+                borderTop: "1px solid rgba(255,255,255,0.05)",
+                background: "#0B0F14",
+              }}
+            >
+              <VerdictCard verdict={overall_verdict} />
+            </div>
+          )}
         </div>
-      )}
 
-      {/* ── Transport ───────────────────────────────────────────────────── */}
-      <div
-        className="px-6 py-5 space-y-4"
-        style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
-      >
-        <ProgressTrack actions={actions} step={replay.step} onGoTo={replay.goTo} />
-        <Transport
-          isPlaying={replay.isPlaying}
-          isFirst={replay.isFirst}
-          isLast={replay.isLast}
-          onPlay={replay.play}
-          onPause={replay.pause}
-          onNext={replay.next}
-          onPrev={replay.prev}
-          onReset={replay.reset}
-          onSkipEnd={() => replay.goTo(actions.length - 1)}
-        />
-      </div>
-
-      {/* ── Verdict ─────────────────────────────────────────────────────── */}
-      {replay.showVerdict && (
+        {/* ── RIGHT: sidebar — desktop only ────────────────────────────── */}
         <div
-          className="px-5 pt-5 pb-6"
-          style={{
-            borderTop: "1px solid rgba(255,255,255,0.05)",
-            background: "#0B0F14",
-          }}
+          className="hidden lg:flex lg:flex-col"
+          style={{ borderLeft: "1px solid rgba(255,255,255,0.05)" }}
         >
-          <VerdictCard verdict={overall_verdict} />
+          <div className="overflow-y-auto flex-1 min-h-0" style={{ maxHeight: "calc(100vh - 80px)" }}>
+            <ReplaySidebar
+              actions={actions}
+              step={replay.step}
+              onGoTo={replay.goTo}
+              currentStreet={replay.currentStreet}
+            />
+          </div>
         </div>
-      )}
+
+      </div>
     </div>
   );
 }

@@ -8,6 +8,7 @@ from app.models.schemas import (
     ReplayAnalysis, HandSummaryData, ReplayAction, ReplayFeedback, OverallVerdict,
     SeatedPlayer, ParsedHand,
 )
+from app.engines.scoring import score_all_hero_actions
 from app.parsers.detector import detect_and_parse
 from app.engines.analysis import analyse_hand
 from app.services.openai_coach import generate_coaching
@@ -60,8 +61,12 @@ def _build_replay(result: AnalysisResponse) -> ReplayAnalysis:
     """
     parsed = result.parsed_hand
 
-    # Map findings to hero actions by (street, action verb).
-    # finding.action_taken = "bet 3.5bb" / "raise 12bb" / "check" — first word is the verb.
+    # Deterministic per-action coaching (no LLM — same input → same output).
+    coaching_by_idx = score_all_hero_actions(
+        parsed, result.findings, result.spot_classification, result.board_texture
+    )
+
+    # Map findings to hero actions by (street, action verb) for the legacy feedback dot.
     finding_by_key: dict[tuple[str, str], object] = {}
     for f in result.findings:
         verb = f.action_taken.split()[0].lower() if f.action_taken else ""
@@ -73,7 +78,7 @@ def _build_replay(result: AnalysisResponse) -> ReplayAnalysis:
     pot = 1.5
     replay_actions: list[ReplayAction] = []
 
-    for a in parsed.actions:
+    for i, a in enumerate(parsed.actions):
         if a.action in ("call", "bet", "raise"):
             pot += a.size_bb or 0.0
 
@@ -97,6 +102,7 @@ def _build_replay(result: AnalysisResponse) -> ReplayAnalysis:
             pot_after=round(pot, 2),
             is_hero=a.is_hero,
             feedback=feedback,
+            coaching=coaching_by_idx.get(i),
         ))
 
     villain = next((p for p in parsed.players if p.name != parsed.hero_name), None)
