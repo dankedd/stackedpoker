@@ -96,6 +96,7 @@ class AnalysisResponse(BaseModel):
     ai_coaching: str
     mistakes_count: int
     recommendations: list[str]
+    replay: ReplayAnalysis | None = None
 
 
 class ParseResponse(BaseModel):

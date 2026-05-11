@@ -217,7 +217,21 @@ export default function AnalyzePage() {
                       New Hand
                     </Button>
                   </div>
-                  <AnalysisResult result={text.result} />
+                  {text.result.replay ? (
+                    <HandReplay
+                      analysis={text.result.replay}
+                      filename={text.result.parsed_hand.hand_id}
+                      validation={{
+                        confidence: 1.0,
+                        hero_detected_by: "hand_history",
+                        warnings: [],
+                        errors: [],
+                        is_valid: true,
+                      }}
+                    />
+                  ) : (
+                    <AnalysisResult result={text.result} />
+                  )}
                 </>
               )}
 

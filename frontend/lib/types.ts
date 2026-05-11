@@ -202,4 +202,5 @@ export interface AnalysisResponse {
   ai_coaching: string;
   mistakes_count: number;
   recommendations: string[];
+  replay?: ReplayAnalysis;
 }
