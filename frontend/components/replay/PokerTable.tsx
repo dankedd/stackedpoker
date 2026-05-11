@@ -52,27 +52,23 @@ export function PokerTable({
     <div className="relative w-full max-w-2xl mx-auto" style={{ paddingBottom: "62%" }}>
       <div className="absolute inset-0">
 
-        {/* ── Wood rim ──────────────────────────────────────────────────────── */}
+        {/* ── Table surface ─────────────────────────────────────────────────── */}
         <div
           className="absolute"
           style={{
             inset: "10% 5%",
             borderRadius: "50%",
-            background:
-              "linear-gradient(160deg, #9c7248 0%, #6b4c2a 40%, #3d2710 100%)",
-            boxShadow:
-              "0 28px 90px rgba(0,0,0,0.96), 0 0 0 2px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.08)",
-            padding: "10px",
+            border: "1px solid rgba(255,255,255,0.05)",
+            boxShadow: "0 32px 80px rgba(0,0,0,0.88), 0 0 0 1px rgba(0,0,0,0.5)",
           }}
         >
-          {/* ── Felt ──────────────────────────────────────────────────────── */}
+          {/* ── Surface gradient ──────────────────────────────────────────── */}
           <div
             className="relative h-full overflow-hidden"
             style={{
               borderRadius: "50%",
               background:
-                "radial-gradient(ellipse at 50% 35%, #1f6642 0%, #13482d 45%, #0c3320 80%, #081f14 100%)",
-              boxShadow: "inset 0 0 90px rgba(0,0,0,0.6)",
+                "radial-gradient(ellipse at 50% 30%, rgba(0,200,83,0.028) 0%, rgba(255,255,255,0.007) 40%, transparent 68%)",
             }}
           >
             {/* Decorative inner ring */}
@@ -119,13 +115,13 @@ export function PokerTable({
               {/* Pot */}
               {currentPot > 0 && currentStep >= 0 && (
                 <div
-                  className="flex items-center gap-1.5 rounded-full border border-yellow-600/20 px-3 py-1"
+                  className="flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1"
                   style={{ background: "rgba(0,0,0,0.55)", backdropFilter: "blur(4px)" }}
                 >
-                  <span className="text-sm leading-none">🪙</span>
-                  <span className="text-[11px] font-extrabold text-yellow-300 tabular-nums tracking-tight">
+                  <div className="h-1.5 w-1.5 rounded-full bg-white/60" />
+                  <span className="text-[11px] font-extrabold text-white/80 tabular-nums tracking-tight">
                     {currentPot.toFixed(1)}
-                    <span className="text-yellow-500/55 font-normal ml-0.5">bb</span>
+                    <span className="text-white/35 font-normal ml-0.5">bb</span>
                   </span>
                 </div>
               )}

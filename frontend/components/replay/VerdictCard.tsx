@@ -14,7 +14,7 @@ export function VerdictCard({ verdict }: VerdictCardProps) {
   const { label, color } = scoreToLabel(verdict.score);
 
   return (
-    <Card className="border-poker-green/20 bg-gradient-to-br from-card to-poker-felt/30 animate-slide-up">
+    <Card className="border-white/8 animate-slide-up" style={{ background: "rgba(14,16,20,0.95)" }}>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-sm">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-poker-gold/20">

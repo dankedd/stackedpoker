@@ -1,25 +1,8 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { PlayingCard } from "@/components/poker/PlayingCard";
+import { PlayingCard, CardBack } from "@/components/poker/PlayingCard";
 import type { SeatDescriptor } from "@/lib/replay/seatEngine";
-
-// ── Shared card-back ────────────────────────────────────────────────────────
-
-function CardBack({ className }: { className?: string }) {
-  return (
-    <div
-      className={cn(
-        "h-9 w-6 rounded border-2 border-blue-600/40",
-        "bg-gradient-to-br from-blue-900 to-blue-950 shadow-sm",
-        "flex items-center justify-center",
-        className
-      )}
-    >
-      <div className="h-5 w-3.5 rounded border border-blue-500/20 bg-blue-800/25" />
-    </div>
-  );
-}
 
 // ── Action badge colors ─────────────────────────────────────────────────────
 
@@ -102,17 +85,16 @@ export function PlayerSeat({
 
   // ── Card display ─────────────────────────────────────────────────────────
   const renderCards = () => {
+    const size = isHero ? "md" : "sm";
     if (isHero) {
-      // Always face-up for hero
       return cards.length > 0
-        ? cards.map((c, i) => <PlayingCard key={i} card={c} size="sm" />)
-        : [<CardBack key={0} />, <CardBack key={1} />];
+        ? cards.map((c, i) => <PlayingCard key={i} card={c} size={size} />)
+        : [<CardBack key={0} size={size} />, <CardBack key={1} size={size} />];
     }
     if (cardsKnown && cards.length > 0) {
-      return cards.map((c, i) => <PlayingCard key={i} card={c} size="sm" />);
+      return cards.map((c, i) => <PlayingCard key={i} card={c} size={size} />);
     }
-    // Face-down backs for unknown villain / other players
-    return [<CardBack key={0} />, <CardBack key={1} />];
+    return [<CardBack key={0} size={size} />, <CardBack key={1} size={size} />];
   };
 
   return (
