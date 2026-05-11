@@ -125,16 +125,16 @@
 /* Replay animations */
 @keyframes glow-pulse {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(0, 200, 83, 0);
+    box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.22), 0 0 12px rgba(34, 197, 94, 0.06);
   }
   50% {
-    box-shadow: 0 0 0 4px rgba(0, 200, 83, 0.35), 0 0 20px rgba(0, 200, 83, 0.2);
+    box-shadow: 0 0 0 1.5px rgba(34, 197, 94, 0.42), 0 0 24px rgba(34, 197, 94, 0.14);
   }
 }
 
 @keyframes action-pop {
-  0%   { opacity: 0; transform: translateY(-10px) scale(0.8); }
-  65%  { transform: translateY(2px) scale(1.04); }
+  0%   { opacity: 0; transform: translateY(-8px) scale(0.85); }
+  60%  { transform: translateY(1px) scale(1.02); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
@@ -147,23 +147,23 @@
 .animate-mistake-flash { animation: mistake-flash 1.8s ease-in-out infinite; }
 .animate-action-pop { animation: action-pop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 
-/* Card muck — cards slide/rotate toward center and fade when folding */
+/* Card muck — smooth elegant retract */
 @keyframes card-muck {
-  0%   { opacity: 1;   transform: rotate(0deg)  translate(0px, 0px)   scale(1); }
-  15%  { opacity: 1;   transform: rotate(-6deg) translate(-3px, -6px) scale(1.04); }
-  55%  { opacity: 0.5; transform: rotate(8deg)  translate(6px, 28px)  scale(0.82); }
-  100% { opacity: 0;   transform: rotate(14deg) translate(4px, 52px)  scale(0.6); }
+  0%   { opacity: 1;   transform: rotate(0deg)  translate(0px, 0px)  scale(1); }
+  20%  { opacity: 0.9; transform: rotate(-4deg) translate(-2px, -4px) scale(0.98); }
+  60%  { opacity: 0.4; transform: rotate(6deg)  translate(4px, 22px)  scale(0.84); }
+  100% { opacity: 0;   transform: rotate(10deg) translate(3px, 44px)  scale(0.62); }
 }
 .animate-card-muck {
-  animation: card-muck 0.52s cubic-bezier(0.4, 0, 0.8, 0.6) forwards;
+  animation: card-muck 0.6s cubic-bezier(0.32, 0, 0.72, 0) forwards;
 }
 
 @keyframes slide-up-in {
-  from { opacity: 0; transform: translateY(18px) scale(0.97); }
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
   to   { opacity: 1; transform: translateY(0)    scale(1); }
 }
 .animate-slide-up-in {
-  animation: slide-up-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: slide-up-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes fade-in {
