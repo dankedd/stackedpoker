@@ -118,10 +118,10 @@ export default function SignupPage() {
               <Spade className="h-7 w-7 text-poker-green" />
             </div>
             <div>
-              <span className="text-2xl font-bold text-foreground">
-                Poker<span className="text-poker-green">Coach</span> AI
+              <span className="text-2xl font-bold text-foreground tracking-tight">
+                Stacked<span className="text-poker-green"> Poker</span>
               </span>
-              <p className="text-sm text-muted-foreground mt-0.5">GTO-inspired hand analysis</p>
+              <p className="text-sm text-muted-foreground mt-0.5">Premium poker coaching</p>
             </div>
           </Link>
         </div>

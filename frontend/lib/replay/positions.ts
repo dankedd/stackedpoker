@@ -1,4 +1,6 @@
-// ── Clockwise seat positions indexed from BTN (0 = BTN/dealer) ─────────────
+// ── Clockwise position names indexed from BTN (0 = BTN/dealer) ─────────────
+// "Clockwise" here is the poker clockwise: BTN → SB → BB → UTG → …
+// In aerial view this is COUNTERCLOCKWISE, i.e. SB sits to the LEFT of BTN.
 export const POSITIONS_BY_SIZE: Record<number, string[]> = {
   2: ["BTN", "BB"],
   3: ["BTN", "SB", "BB"],
@@ -10,72 +12,96 @@ export const POSITIONS_BY_SIZE: Record<number, string[]> = {
   9: ["BTN", "SB", "BB", "UTG", "UTG+1", "UTG+2", "LJ", "HJ", "CO"],
 };
 
-// ── Oval table seat coordinates for N players ───────────────────────────────
-// Seat 0 = hero (bottom-center), seats increase clockwise.
-// Values are percentages / transforms for absolute positioning.
+// ── Oval table seat coordinates ─────────────────────────────────────────────
+//
+// Seat 0 = hero (bottom-center, always).
+// Seats then go LEFT first (counterclockwise in the aerial view) which is the
+// correct poker direction: BTN(0) → SB(1, bottom-left) → BB(2, left) → …
+//
+// This matches every major poker client (PokerStars, GGPoker, Offsuit, etc.)
+// where the small blind sits immediately to the LEFT of the dealer button.
+//
+// x / y are % distances from the container top-left corner.
+// tx / ty are CSS translate values to anchor the pod to the seat edge.
+//
 export const SEAT_COORDS: Record<
   number,
   ReadonlyArray<{ x: string; y: string; tx: string; ty: string }>
 > = {
+  // ── 2-max (HU) ──────────────────────────────────────────────────────────
   2: [
-    { x: "50%", y: "93%", tx: "-50%", ty: "-100%" }, // 0 bottom  (hero)
-    { x: "50%", y: "7%",  tx: "-50%", ty: "0%"    }, // 1 top
+    { x: "50%", y: "93%", tx: "-50%", ty: "-100%" }, // 0 BTN  bottom
+    { x: "50%", y: "7%",  tx: "-50%", ty: "0%"    }, // 1 BB   top
   ],
+
+  // ── 3-max ────────────────────────────────────────────────────────────────
   3: [
-    { x: "50%", y: "93%", tx: "-50%", ty: "-100%" }, // 0 bottom  (hero)
-    { x: "83%", y: "20%", tx: "-50%", ty: "0%"    }, // 1 top-right
-    { x: "17%", y: "20%", tx: "-50%", ty: "0%"    }, // 2 top-left
+    { x: "50%", y: "93%", tx: "-50%", ty: "-100%" }, // 0 BTN  bottom
+    { x: "17%", y: "22%", tx: "-50%", ty: "0%"    }, // 1 SB   top-LEFT
+    { x: "83%", y: "22%", tx: "-50%", ty: "0%"    }, // 2 BB   top-right
   ],
+
+  // ── 4-max ────────────────────────────────────────────────────────────────
   4: [
-    { x: "50%", y: "93%", tx: "-50%", ty: "-100%" }, // 0 bottom
-    { x: "92%", y: "50%", tx: "-50%", ty: "-50%"  }, // 1 right
-    { x: "50%", y: "7%",  tx: "-50%", ty: "0%"    }, // 2 top
-    { x: "8%",  y: "50%", tx: "-50%", ty: "-50%"  }, // 3 left
+    { x: "50%", y: "93%", tx: "-50%", ty: "-100%" }, // 0 BTN  bottom
+    { x: "8%",  y: "50%", tx: "-50%", ty: "-50%"  }, // 1 SB   LEFT
+    { x: "50%", y: "7%",  tx: "-50%", ty: "0%"    }, // 2 BB   top
+    { x: "92%", y: "50%", tx: "-50%", ty: "-50%"  }, // 3 UTG  right
   ],
+
+  // ── 5-max ────────────────────────────────────────────────────────────────
   5: [
-    { x: "50%", y: "93%", tx: "-50%", ty: "-100%" }, // 0 bottom
-    { x: "88%", y: "70%", tx: "-50%", ty: "-100%" }, // 1 bottom-right
-    { x: "87%", y: "18%", tx: "-50%", ty: "0%"    }, // 2 top-right
-    { x: "13%", y: "18%", tx: "-50%", ty: "0%"    }, // 3 top-left
-    { x: "12%", y: "70%", tx: "-50%", ty: "-100%" }, // 4 bottom-left
+    { x: "50%", y: "93%", tx: "-50%", ty: "-100%" }, // 0 BTN  bottom
+    { x: "12%", y: "70%", tx: "-50%", ty: "-100%" }, // 1 SB   bottom-LEFT
+    { x: "13%", y: "18%", tx: "-50%", ty: "0%"    }, // 2 BB   top-left
+    { x: "87%", y: "18%", tx: "-50%", ty: "0%"    }, // 3 UTG  top-right
+    { x: "88%", y: "70%", tx: "-50%", ty: "-100%" }, // 4 CO   bottom-right
   ],
+
+  // ── 6-max ────────────────────────────────────────────────────────────────
   6: [
-    { x: "50%", y: "93%", tx: "-50%", ty: "-100%" }, // 0 bottom  (hero)
-    { x: "84%", y: "76%", tx: "-50%", ty: "-100%" }, // 1 bottom-right
-    { x: "92%", y: "36%", tx: "-50%", ty: "-50%"  }, // 2 right
-    { x: "50%", y: "7%",  tx: "-50%", ty: "0%"    }, // 3 top
-    { x: "8%",  y: "36%", tx: "-50%", ty: "-50%"  }, // 4 left
-    { x: "16%", y: "76%", tx: "-50%", ty: "-100%" }, // 5 bottom-left
+    { x: "50%", y: "93%", tx: "-50%", ty: "-100%" }, // 0 BTN  bottom
+    { x: "16%", y: "76%", tx: "-50%", ty: "-100%" }, // 1 SB   bottom-LEFT ← key
+    { x: "8%",  y: "36%", tx: "-50%", ty: "-50%"  }, // 2 BB   left
+    { x: "50%", y: "7%",  tx: "-50%", ty: "0%"    }, // 3 UTG  top
+    { x: "92%", y: "36%", tx: "-50%", ty: "-50%"  }, // 4 HJ   right
+    { x: "84%", y: "76%", tx: "-50%", ty: "-100%" }, // 5 CO   bottom-right
   ],
+
+  // ── 7-max ────────────────────────────────────────────────────────────────
   7: [
-    { x: "50%", y: "93%", tx: "-50%", ty: "-100%" }, // 0 bottom
-    { x: "79%", y: "82%", tx: "-50%", ty: "-100%" }, // 1 bottom-right
-    { x: "94%", y: "53%", tx: "-50%", ty: "-100%" }, // 2 right
-    { x: "80%", y: "11%", tx: "-50%", ty: "0%"    }, // 3 top-right
-    { x: "20%", y: "11%", tx: "-50%", ty: "0%"    }, // 4 top-left
-    { x: "6%",  y: "53%", tx: "-50%", ty: "-50%"  }, // 5 left
-    { x: "21%", y: "82%", tx: "-50%", ty: "-100%" }, // 6 bottom-left
+    { x: "50%", y: "93%", tx: "-50%", ty: "-100%" }, // 0 BTN  bottom
+    { x: "21%", y: "82%", tx: "-50%", ty: "-100%" }, // 1 SB   bottom-left
+    { x: "6%",  y: "53%", tx: "-50%", ty: "-50%"  }, // 2 BB   left
+    { x: "20%", y: "11%", tx: "-50%", ty: "0%"    }, // 3 UTG  top-left
+    { x: "80%", y: "11%", tx: "-50%", ty: "0%"    }, // 4 LJ   top-right
+    { x: "94%", y: "53%", tx: "-50%", ty: "-50%"  }, // 5 HJ   right
+    { x: "79%", y: "82%", tx: "-50%", ty: "-100%" }, // 6 CO   bottom-right
   ],
+
+  // ── 8-max ────────────────────────────────────────────────────────────────
   8: [
-    { x: "50%", y: "93%", tx: "-50%", ty: "-100%" }, // 0 bottom
-    { x: "76%", y: "84%", tx: "-50%", ty: "-100%" }, // 1 bottom-right
-    { x: "93%", y: "59%", tx: "-50%", ty: "-100%" }, // 2 right-low
-    { x: "93%", y: "28%", tx: "-50%", ty: "0%"    }, // 3 right-high
-    { x: "50%", y: "7%",  tx: "-50%", ty: "0%"    }, // 4 top
-    { x: "7%",  y: "28%", tx: "-50%", ty: "0%"    }, // 5 left-high
-    { x: "7%",  y: "59%", tx: "-50%", ty: "-50%"  }, // 6 left-low
-    { x: "24%", y: "84%", tx: "-50%", ty: "-100%" }, // 7 bottom-left
+    { x: "50%", y: "93%", tx: "-50%", ty: "-100%" }, // 0 BTN     bottom
+    { x: "24%", y: "84%", tx: "-50%", ty: "-100%" }, // 1 SB      bottom-left
+    { x: "7%",  y: "59%", tx: "-50%", ty: "-50%"  }, // 2 BB      left-low
+    { x: "7%",  y: "28%", tx: "-50%", ty: "0%"    }, // 3 UTG     left-high
+    { x: "50%", y: "7%",  tx: "-50%", ty: "0%"    }, // 4 UTG+1   top
+    { x: "93%", y: "28%", tx: "-50%", ty: "0%"    }, // 5 LJ      right-high
+    { x: "93%", y: "59%", tx: "-50%", ty: "-50%"  }, // 6 HJ      right-low
+    { x: "76%", y: "84%", tx: "-50%", ty: "-100%" }, // 7 CO      bottom-right
   ],
+
+  // ── 9-max ────────────────────────────────────────────────────────────────
   9: [
-    { x: "50%", y: "93%", tx: "-50%", ty: "-100%" }, // 0 bottom
-    { x: "74%", y: "85%", tx: "-50%", ty: "-100%" }, // 1 bottom-right
-    { x: "91%", y: "64%", tx: "-50%", ty: "-100%" }, // 2 right-low
-    { x: "94%", y: "36%", tx: "-50%", ty: "-50%"  }, // 3 right-mid
-    { x: "78%", y: "9%",  tx: "-50%", ty: "0%"    }, // 4 top-right
-    { x: "50%", y: "5%",  tx: "-50%", ty: "0%"    }, // 5 top
-    { x: "22%", y: "9%",  tx: "-50%", ty: "0%"    }, // 6 top-left
-    { x: "6%",  y: "36%", tx: "-50%", ty: "-50%"  }, // 7 left-mid
-    { x: "26%", y: "85%", tx: "-50%", ty: "-100%" }, // 8 bottom-left
+    { x: "50%", y: "93%", tx: "-50%", ty: "-100%" }, // 0 BTN     bottom
+    { x: "22%", y: "79%", tx: "-50%", ty: "-100%" }, // 1 SB      bottom-left
+    { x: "8%",  y: "56%", tx: "-50%", ty: "-50%"  }, // 2 BB      left-low
+    { x: "13%", y: "32%", tx: "-50%", ty: "0%"    }, // 3 UTG     left-high
+    { x: "35%", y: "14%", tx: "-50%", ty: "0%"    }, // 4 UTG+1   upper-left
+    { x: "65%", y: "14%", tx: "-50%", ty: "0%"    }, // 5 UTG+2   upper-right
+    { x: "87%", y: "32%", tx: "-50%", ty: "0%"    }, // 6 LJ      right-high
+    { x: "92%", y: "56%", tx: "-50%", ty: "-50%"  }, // 7 HJ      right-low
+    { x: "78%", y: "79%", tx: "-50%", ty: "-100%" }, // 8 CO      bottom-right
   ],
 };
 
@@ -104,9 +130,8 @@ export function clockwiseIndexOf(pos: string, N: number): number {
 }
 
 // Preflop action order index → clockwise seat index.
-// For N >= 3: UTG (preflop idx 0) sits at clockwise idx 3 for 6max,
-// so clockwise = (preflopIdx + 3) % N works universally for N >= 3.
-// For N = 2 (HU): SB/BTN acts first preflop → same seat order.
+// For N >= 3: (preflopIdx + 3) % N works for all standard table sizes.
+// For N = 2: same order (SB/BTN acts first).
 export function preflopToClockwise(preflopIdx: number, N: number): number {
   if (N <= 2) return preflopIdx;
   return (preflopIdx + 3) % N;

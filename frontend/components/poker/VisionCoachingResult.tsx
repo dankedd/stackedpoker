@@ -5,7 +5,38 @@ import { Brain, Copy, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { VisionAnalysisResponse } from "@/lib/types";
+import type { VisionAnalysisResponse, ReplayAnalysis } from "@/lib/types";
+
+function buildCoachingMarkdown(analysis: ReplayAnalysis): string {
+  const { overall_verdict, actions } = analysis;
+  const lines: string[] = [];
+
+  lines.push(`# ${overall_verdict.title}`);
+  lines.push(overall_verdict.summary);
+
+  if (overall_verdict.key_mistakes.length > 0) {
+    lines.push("", "# Key Mistakes");
+    overall_verdict.key_mistakes.forEach((m) => lines.push(`- ${m}`));
+  }
+
+  if (overall_verdict.key_strengths.length > 0) {
+    lines.push("", "# Key Strengths");
+    overall_verdict.key_strengths.forEach((s) => lines.push(`- ${s}`));
+  }
+
+  const feedbackActions = actions.filter((a) => a.is_hero && a.feedback);
+  if (feedbackActions.length > 0) {
+    lines.push("", "# Action Feedback");
+    feedbackActions.forEach((a) => {
+      if (!a.feedback) return;
+      lines.push(`## ${a.feedback.title}`);
+      lines.push(a.feedback.explanation);
+      if (a.feedback.gto_note) lines.push(`- ${a.feedback.gto_note}`);
+    });
+  }
+
+  return lines.join("\n");
+}
 
 interface VisionCoachingResultProps {
   result: VisionAnalysisResponse;
@@ -76,10 +107,11 @@ export function VisionCoachingResult({ result }: VisionCoachingResultProps) {
   const [copied, setCopied] = useState(false);
   const [collapsed, setCollapsed] = useState<Record<number, boolean>>({});
 
-  const blocks = parseBlocks(result.coaching_markdown);
+  const coachingMarkdown = buildCoachingMarkdown(result.analysis);
+  const blocks = parseBlocks(coachingMarkdown);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(result.coaching_markdown);
+    await navigator.clipboard.writeText(coachingMarkdown);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
