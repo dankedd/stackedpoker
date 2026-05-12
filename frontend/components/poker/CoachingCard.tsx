@@ -28,18 +28,18 @@ export function CoachingCard({ coaching, score }: CoachingCardProps) {
 
   const scoreColor =
     score >= 80
-      ? "text-poker-green"
+      ? "text-violet-400"
       : score >= 60
       ? "text-yellow-400"
       : "text-red-400";
 
   return (
-    <Card className="border-poker-green/20 bg-gradient-to-br from-card to-poker-felt/20">
+    <Card className="border-violet-500/20 bg-gradient-to-br from-card to-poker-card/20">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-poker-green/20">
-              <Brain className="h-4 w-4 text-poker-green" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/20">
+              <Brain className="h-4 w-4 text-violet-400" />
             </div>
             AI Coach Analysis
           </CardTitle>
@@ -53,7 +53,7 @@ export function CoachingCard({ coaching, score }: CoachingCardProps) {
               title="Copy coaching"
             >
               {copied ? (
-                <Check className="h-3.5 w-3.5 text-poker-green" />
+                <Check className="h-3.5 w-3.5 text-violet-400" />
               ) : (
                 <Copy className="h-3.5 w-3.5" />
               )}

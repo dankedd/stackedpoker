@@ -44,13 +44,18 @@ const config: Config = {
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         poker: {
+          purple: "#7C5CFF",
+          "purple-dark": "#6344E8",
+          "purple-dim": "#1E1A3A",
+          blue: "#5EA8FF",
+          gold: "#ffd700",
+          red: "#e53935",
+          card: "#1c1c1e",
+          /* kept for replay table */
           green: "#00c853",
           "green-dark": "#00a040",
           "green-dim": "#1a3d26",
           felt: "#0d1f0d",
-          card: "#1c1c1e",
-          gold: "#ffd700",
-          red: "#e53935",
         },
       },
       borderRadius: {
@@ -92,6 +97,11 @@ const config: Config = {
         mono: ["var(--font-mono)", "monospace"],
       },
       backgroundImage: {
+        "purple-glow":
+          "radial-gradient(ellipse at top, rgba(124,92,255,0.15) 0%, transparent 60%)",
+        "purple-gradient":
+          "linear-gradient(135deg, #7C5CFF 0%, #5EA8FF 100%)",
+        /* kept for replay table */
         "felt-pattern":
           "radial-gradient(ellipse at center, #0d2414 0%, #0a0f0a 100%)",
         "hero-gradient":

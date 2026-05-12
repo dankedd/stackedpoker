@@ -93,12 +93,12 @@ export function ImageUpload({ onAnalyze, isLoading, className }: ImageUploadProp
           className={cn(
             "relative flex min-h-[220px] cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed transition-colors",
             isDragging
-              ? "border-poker-green bg-poker-green/5"
-              : "border-border/70 bg-card/50 hover:border-poker-green/50 hover:bg-poker-green/5"
+              ? "border-violet-500 bg-violet-500/5"
+              : "border-border/70 bg-card/50 hover:border-violet-500/50 hover:bg-violet-500/5"
           )}
         >
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary">
-            <Upload className={cn("h-5 w-5", isDragging ? "text-poker-green" : "text-muted-foreground")} />
+            <Upload className={cn("h-5 w-5", isDragging ? "text-violet-400" : "text-muted-foreground")} />
           </div>
           <div className="text-center space-y-1">
             <p className="text-sm font-medium">

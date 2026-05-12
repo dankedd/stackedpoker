@@ -44,23 +44,21 @@ export function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{
-      background: 'radial-gradient(ellipse at 50% 0%, rgba(0,200,83,0.08) 0%, transparent 55%), hsl(120 15% 4%)'
-    }}>
+    <div className="min-h-screen flex items-center justify-center px-4">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-poker-green/5 blur-3xl" />
-        <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full bg-poker-green/3 blur-3xl" />
+        <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-violet-600/8 blur-3xl" />
+        <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full bg-blue-500/5 blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-md animate-fade-in">
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex flex-col items-center gap-3 group">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-poker-green/15 border border-poker-green/30 group-hover:bg-poker-green/25 transition-colors glow-green-sm">
-              <Spade className="h-7 w-7 text-poker-green" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-blue-500 shadow-lg shadow-violet-500/30">
+              <Spade className="h-7 w-7 text-white" />
             </div>
             <div>
               <span className="text-2xl font-bold text-foreground tracking-tight">
-                Stacked<span className="text-poker-green"> Poker</span>
+                Stacked<span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400"> Poker</span>
               </span>
               <p className="text-sm text-muted-foreground mt-0.5">Premium poker coaching</p>
             </div>
@@ -86,7 +84,7 @@ export function LoginContent() {
                 placeholder="you@example.com"
                 required
                 autoComplete="email"
-                className="w-full h-11 rounded-lg border border-border bg-input/50 px-4 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-poker-green/40 focus:border-poker-green/50 transition-all"
+                className="w-full h-11 rounded-lg border border-border bg-input/50 px-4 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/50 transition-all"
               />
             </div>
 
@@ -103,7 +101,7 @@ export function LoginContent() {
                   placeholder="••••••••"
                   required
                   autoComplete="current-password"
-                  className="w-full h-11 rounded-lg border border-border bg-input/50 px-4 pr-11 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-poker-green/40 focus:border-poker-green/50 transition-all"
+                  className="w-full h-11 rounded-lg border border-border bg-input/50 px-4 pr-11 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/50 transition-all"
                 />
                 <button
                   type="button"
@@ -145,7 +143,7 @@ export function LoginContent() {
             Don&apos;t have an account?{' '}
             <Link
               href="/signup"
-              className="text-poker-green font-medium hover:text-poker-green-dark transition-colors"
+              className="text-violet-400 font-medium hover:text-violet-300 transition-colors"
             >
               Create account
             </Link>

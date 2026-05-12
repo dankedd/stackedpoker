@@ -4,25 +4,25 @@
 
 @layer base {
   :root {
-    --background: 120 15% 4%;
-    --foreground: 120 8% 92%;
-    --card: 120 8% 7%;
-    --card-foreground: 120 8% 92%;
-    --popover: 120 8% 7%;
-    --popover-foreground: 120 8% 92%;
-    --primary: 141 100% 39%;
-    --primary-foreground: 120 8% 5%;
-    --secondary: 120 8% 12%;
-    --secondary-foreground: 120 8% 80%;
-    --muted: 120 6% 15%;
-    --muted-foreground: 120 5% 55%;
-    --accent: 120 8% 18%;
-    --accent-foreground: 120 8% 92%;
+    --background: 224 43% 8%;
+    --foreground: 215 25% 92%;
+    --card: 224 35% 11%;
+    --card-foreground: 215 25% 92%;
+    --popover: 224 35% 11%;
+    --popover-foreground: 215 25% 92%;
+    --primary: 250 100% 68%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 30% 14%;
+    --secondary-foreground: 215 20% 75%;
+    --muted: 222 25% 16%;
+    --muted-foreground: 215 15% 52%;
+    --accent: 222 28% 18%;
+    --accent-foreground: 215 25% 92%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --border: 120 6% 18%;
-    --input: 120 6% 14%;
-    --ring: 141 100% 39%;
+    --border: 222 22% 18%;
+    --input: 222 25% 13%;
+    --ring: 250 100% 68%;
     --radius: 0.6rem;
   }
 }
@@ -34,7 +34,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    background-image: radial-gradient(ellipse at 50% 0%, rgba(0, 200, 83, 0.06) 0%, transparent 60%);
+    background-image: radial-gradient(ellipse at 50% 0%, rgba(124, 92, 255, 0.07) 0%, transparent 60%);
     min-height: 100vh;
   }
 
@@ -48,6 +48,15 @@
     text-wrap: balance;
   }
 
+  .glow-purple {
+    box-shadow: 0 0 20px rgba(124, 92, 255, 0.35), 0 0 40px rgba(124, 92, 255, 0.12);
+  }
+
+  .glow-purple-sm {
+    box-shadow: 0 0 10px rgba(124, 92, 255, 0.4);
+  }
+
+  /* kept for replay table components */
   .glow-green {
     box-shadow: 0 0 20px rgba(0, 200, 83, 0.3), 0 0 40px rgba(0, 200, 83, 0.1);
   }
@@ -103,7 +112,7 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 200, 83, 0.4);
+  background: rgba(124, 92, 255, 0.5);
 }
 
 /* Playing card animations */

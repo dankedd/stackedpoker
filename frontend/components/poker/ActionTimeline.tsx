@@ -10,7 +10,7 @@ const ACTION_COLORS: Record<string, string> = {
   fold: "text-red-400",
   check: "text-slate-400",
   call: "text-blue-400",
-  bet: "text-poker-green",
+  bet: "text-violet-400",
   raise: "text-yellow-400",
 };
 
@@ -18,7 +18,7 @@ const ACTION_DOTS: Record<string, string> = {
   fold: "bg-red-400",
   check: "bg-slate-400",
   call: "bg-blue-400",
-  bet: "bg-poker-green",
+  bet: "bg-violet-500",
   raise: "bg-yellow-400",
 };
 
@@ -52,7 +52,7 @@ export function ActionTimeline({ actions, heroName }: ActionTimelineProps) {
                 className={cn(
                   "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
                   action.is_hero
-                    ? "bg-poker-green/5 border border-poker-green/20"
+                    ? "bg-violet-500/5 border border-violet-500/20"
                     : "bg-secondary/30"
                 )}
               >
@@ -80,7 +80,7 @@ export function ActionTimeline({ actions, heroName }: ActionTimelineProps) {
                   {action.size_bb != null && ` ${action.size_bb.toFixed(1)}BB`}
                 </span>
                 {action.is_hero && (
-                  <span className="ml-auto text-xs text-poker-green/60">Hero</span>
+                  <span className="ml-auto text-xs text-violet-400/60">Hero</span>
                 )}
               </div>
             ))}

@@ -98,7 +98,7 @@ function sectionAccent(title: string): string {
   const t = title.toLowerCase();
   if (t.includes("mistake")) return "border-red-500/30 bg-red-500/5";
   if (t.includes("alternative") || t.includes("better")) return "border-yellow-500/30 bg-yellow-500/5";
-  if (t.includes("verdict") || t.includes("gto")) return "border-poker-green/30 bg-poker-green/5";
+  if (t.includes("verdict") || t.includes("gto")) return "border-violet-500/30 bg-violet-500/5";
   if (t.includes("coaching") || t.includes("summary")) return "border-blue-500/30 bg-blue-500/5";
   return "border-border/50";
 }
@@ -137,12 +137,12 @@ export function VisionCoachingResult({ result }: VisionCoachingResultProps) {
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Header card */}
-      <Card className="border-poker-green/20 bg-gradient-to-br from-card to-poker-felt/20">
+      <Card className="border-violet-500/20 bg-gradient-to-br from-card to-poker-card/20">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-poker-green/20">
-                <Brain className="h-4 w-4 text-poker-green" />
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/20">
+                <Brain className="h-4 w-4 text-violet-400" />
               </div>
               AI Vision Analysis
               <span className="text-xs text-muted-foreground font-normal ml-1">
@@ -151,7 +151,7 @@ export function VisionCoachingResult({ result }: VisionCoachingResultProps) {
             </CardTitle>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleCopy} title="Copy full analysis">
               {copied ? (
-                <Check className="h-3.5 w-3.5 text-poker-green" />
+                <Check className="h-3.5 w-3.5 text-violet-400" />
               ) : (
                 <Copy className="h-3.5 w-3.5" />
               )}
@@ -183,7 +183,7 @@ export function VisionCoachingResult({ result }: VisionCoachingResultProps) {
                 {section.blocks.map((block, i) => {
                   if (block.kind === "h2") {
                     return (
-                      <h3 key={i} className="text-xs font-semibold uppercase tracking-wider text-poker-green/80 mt-4 mb-1">
+                      <h3 key={i} className="text-xs font-semibold uppercase tracking-wider text-violet-400/80 mt-4 mb-1">
                         {block.text}
                       </h3>
                     );

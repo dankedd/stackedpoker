@@ -54,7 +54,7 @@ export function AnalysisSetup({ value, onChange, className }: Props) {
               className={cn(
                 "px-2.5 py-1 rounded-md text-xs font-medium border transition-all leading-none",
                 value.gameType === g
-                  ? "border-poker-green/60 bg-poker-green/10 text-poker-green"
+                  ? "border-violet-500/60 bg-violet-500/10 text-violet-400"
                   : "border-border/50 bg-secondary/30 text-muted-foreground hover:text-foreground hover:border-border/80"
               )}
             >
@@ -78,7 +78,7 @@ export function AnalysisSetup({ value, onChange, className }: Props) {
               className={cn(
                 "h-7 w-7 rounded-md text-xs font-medium border transition-all",
                 value.playerCount === n
-                  ? "border-poker-green/60 bg-poker-green/10 text-poker-green"
+                  ? "border-violet-500/60 bg-violet-500/10 text-violet-400"
                   : "border-border/50 bg-secondary/30 text-muted-foreground hover:text-foreground hover:border-border/80"
               )}
             >

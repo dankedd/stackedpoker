@@ -113,7 +113,7 @@ export default function AnalyzePage() {
 
           {/* Input card — hidden once image confirmation screen is showing */}
           {!imgConfirming && !imgSuccess && (
-            <Card className={cn("mb-8 border-border/50 max-w-2xl mx-auto xl:max-w-none", hasResult && "border-poker-green/20")}>
+            <Card className={cn("mb-8 border-border/50 max-w-2xl mx-auto xl:max-w-none", hasResult && "border-violet-500/20")}>
               <CardHeader className="pb-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -166,7 +166,7 @@ export default function AnalyzePage() {
                 {/* ── Auth loading skeleton ── */}
                 {isAuthLoading && (
                   <div className="py-10 flex items-center justify-center">
-                    <div className="h-5 w-5 rounded-full border-2 border-t-poker-green animate-spin" />
+                    <div className="h-5 w-5 rounded-full border-2 border-t-violet-500 animate-spin" />
                   </div>
                 )}
 
@@ -202,8 +202,8 @@ export default function AnalyzePage() {
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-16 gap-4">
               <div className="relative h-16 w-16">
-                <div className="absolute inset-0 rounded-full border-2 border-poker-green/20" />
-                <div className="absolute inset-0 rounded-full border-2 border-t-poker-green animate-spin" />
+                <div className="absolute inset-0 rounded-full border-2 border-violet-500/20" />
+                <div className="absolute inset-0 rounded-full border-2 border-t-violet-500 animate-spin" />
               </div>
               <div className="text-center space-y-1">
                 <p className="font-medium">

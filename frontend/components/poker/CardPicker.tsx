@@ -110,7 +110,7 @@ export function CardPicker({ value, onChange, disabledCards = [], className }: C
                       className={cn(
                         "h-6 w-5 rounded text-[9px] font-bold transition-all",
                         isCurrent
-                          ? "bg-poker-green text-black scale-110"
+                          ? "bg-violet-500 text-white scale-110"
                           : isDisabled
                           ? "bg-white/5 text-white/15 cursor-not-allowed"
                           : "bg-white/8 text-white/70 hover:bg-white/20 hover:text-white cursor-pointer"

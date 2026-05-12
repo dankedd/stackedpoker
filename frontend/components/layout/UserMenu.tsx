@@ -55,7 +55,7 @@ export function UserMenu() {
         aria-expanded={open}
       >
         {/* Avatar */}
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-poker-green/20 border border-poker-green/40 text-poker-green text-xs font-bold">
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-violet-500/20 border border-violet-500/40 text-violet-400 text-xs font-bold">
           {initials}
         </div>
         <span className="hidden sm:block text-sm font-medium text-foreground max-w-[100px] truncate">

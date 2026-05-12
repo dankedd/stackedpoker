@@ -24,7 +24,7 @@ function getPasswordStrength(pw: string): PasswordStrength | null {
 const strengthConfig: Record<PasswordStrength, { label: string; color: string; bars: number }> = {
   weak:   { label: 'Weak',   color: 'bg-red-500',          bars: 1 },
   fair:   { label: 'Fair',   color: 'bg-yellow-500',        bars: 2 },
-  strong: { label: 'Strong', color: 'bg-poker-green',       bars: 3 },
+  strong: { label: 'Strong', color: 'bg-violet-500',        bars: 3 },
 }
 
 export default function SignupPage() {
@@ -79,13 +79,11 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{
-        background: 'radial-gradient(ellipse at 50% 0%, rgba(0,200,83,0.08) 0%, transparent 55%), hsl(120 15% 4%)'
-      }}>
+      <div className="min-h-screen flex items-center justify-center px-4">
         <div className="w-full max-w-md text-center animate-fade-in">
           <div className="flex justify-center mb-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-poker-green/15 border border-poker-green/40 glow-green">
-              <CheckCircle2 className="h-8 w-8 text-poker-green" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-violet-500/15 border border-violet-500/40 glow-purple">
+              <CheckCircle2 className="h-8 w-8 text-violet-400" />
             </div>
           </div>
           <h1 className="text-2xl font-bold text-foreground">Check your email</h1>
@@ -93,7 +91,7 @@ export default function SignupPage() {
             We sent a confirmation link to <span className="text-foreground font-medium">{email}</span>.
             Click it to activate your account.
           </p>
-          <Link href="/login" className="mt-6 inline-block text-sm text-poker-green hover:text-poker-green-dark transition-colors">
+          <Link href="/login" className="mt-6 inline-block text-sm text-violet-400 hover:text-violet-300 transition-colors">
             Back to sign in →
           </Link>
         </div>
@@ -102,24 +100,22 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{
-      background: 'radial-gradient(ellipse at 50% 0%, rgba(0,200,83,0.08) 0%, transparent 55%), hsl(120 15% 4%)'
-    }}>
+    <div className="min-h-screen flex items-center justify-center px-4">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-poker-green/5 blur-3xl" />
-        <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full bg-poker-green/3 blur-3xl" />
+        <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-violet-600/8 blur-3xl" />
+        <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full bg-blue-500/5 blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-md animate-fade-in">
         {/* Brand */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex flex-col items-center gap-3 group">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-poker-green/15 border border-poker-green/30 group-hover:bg-poker-green/25 transition-colors glow-green-sm">
-              <Spade className="h-7 w-7 text-poker-green" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-blue-500 shadow-lg shadow-violet-500/30">
+              <Spade className="h-7 w-7 text-white" />
             </div>
             <div>
               <span className="text-2xl font-bold text-foreground tracking-tight">
-                Stacked<span className="text-poker-green"> Poker</span>
+                Stacked<span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400"> Poker</span>
               </span>
               <p className="text-sm text-muted-foreground mt-0.5">Premium poker coaching</p>
             </div>
@@ -146,7 +142,7 @@ export default function SignupPage() {
                 placeholder="you@example.com"
                 required
                 autoComplete="email"
-                className="w-full h-11 rounded-lg border border-border bg-input/50 px-4 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-poker-green/40 focus:border-poker-green/50 transition-all"
+                className="w-full h-11 rounded-lg border border-border bg-input/50 px-4 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/50 transition-all"
               />
             </div>
 
@@ -165,7 +161,7 @@ export default function SignupPage() {
                 minLength={3}
                 maxLength={30}
                 autoComplete="username"
-                className="w-full h-11 rounded-lg border border-border bg-input/50 px-4 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-poker-green/40 focus:border-poker-green/50 transition-all"
+                className="w-full h-11 rounded-lg border border-border bg-input/50 px-4 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/50 transition-all"
               />
               <p className="text-xs text-muted-foreground/60">Letters, numbers and underscores only</p>
             </div>
@@ -184,7 +180,7 @@ export default function SignupPage() {
                   placeholder="••••••••"
                   required
                   autoComplete="new-password"
-                  className="w-full h-11 rounded-lg border border-border bg-input/50 px-4 pr-11 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-poker-green/40 focus:border-poker-green/50 transition-all"
+                  className="w-full h-11 rounded-lg border border-border bg-input/50 px-4 pr-11 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-violet-500/40 focus:border-violet-500/50 transition-all"
                 />
                 <button
                   type="button"
@@ -212,7 +208,7 @@ export default function SignupPage() {
                     ))}
                   </div>
                   <p className={`text-xs font-medium ${
-                    strength === 'strong' ? 'text-poker-green' :
+                    strength === 'strong' ? 'text-violet-400' :
                     strength === 'fair'   ? 'text-yellow-500' : 'text-red-500'
                   }`}>
                     {strengthConfig[strength].label} password
@@ -251,7 +247,7 @@ export default function SignupPage() {
             Already have an account?{' '}
             <Link
               href="/login"
-              className="text-poker-green font-medium hover:text-poker-green-dark transition-colors"
+              className="text-violet-400 font-medium hover:text-violet-300 transition-colors"
             >
               Sign in
             </Link>

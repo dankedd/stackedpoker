@@ -37,11 +37,12 @@ export default async function DashboardPage() {
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-md">
         <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-poker-green/20 border border-poker-green/30 group-hover:bg-poker-green/30 transition-colors">
-              <Spade className="h-4 w-4 text-poker-green" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-blue-500 shadow-sm shadow-violet-500/30">
+              <Spade className="h-4 w-4 text-white" />
             </div>
             <span className="font-bold text-foreground">
-              Poker<span className="text-poker-green">Coach</span> AI
+              Stacked
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400"> Poker</span>
             </span>
           </Link>
 
@@ -65,7 +66,7 @@ export default async function DashboardPage() {
       <main className="container mx-auto max-w-6xl px-4 sm:px-6 py-12">
         {/* Welcome */}
         <div className="mb-10 animate-fade-in">
-          <p className="text-sm font-medium text-poker-green mb-1">Dashboard</p>
+          <p className="text-sm font-medium text-violet-400 mb-1">Dashboard</p>
           <h1 className="text-3xl font-bold text-foreground">
             Welcome back, {displayName}
           </h1>
@@ -82,7 +83,7 @@ export default async function DashboardPage() {
               label: 'Hands Analyzed',
               value: handsAnalyzed.toString(),
               sub: 'total sessions',
-              color: 'text-poker-green',
+              color: 'text-violet-400',
             },
             {
               icon: TrendingUp,
@@ -121,12 +122,12 @@ export default async function DashboardPage() {
           <h2 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Link href="/analyze" className="group">
-              <div className="rounded-xl border border-poker-green/20 bg-poker-green/5 hover:bg-poker-green/10 hover:border-poker-green/40 p-6 transition-all duration-200 h-full">
+              <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500/40 p-6 transition-all duration-200 h-full">
                 <div className="flex items-start justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-poker-green/20 border border-poker-green/30">
-                    <Spade className="h-5 w-5 text-poker-green" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-blue-500">
+                    <Spade className="h-5 w-5 text-white" />
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-poker-green transition-colors" />
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-violet-400 transition-colors" />
                 </div>
                 <h3 className="text-foreground font-semibold mt-4">Analyze a Hand</h3>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -158,7 +159,7 @@ export default async function DashboardPage() {
             <h2 className="text-lg font-semibold text-foreground">Recent Analyses</h2>
             <Link
               href="/history"
-              className="text-sm text-poker-green hover:text-poker-green-dark transition-colors"
+              className="text-sm text-violet-400 hover:text-violet-300 transition-colors"
             >
               View all →
             </Link>

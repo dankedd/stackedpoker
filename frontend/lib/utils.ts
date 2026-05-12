@@ -11,7 +11,7 @@ export function formatBB(bb: number | null | undefined): string {
 }
 
 export function scoreToLabel(score: number): { label: string; color: string } {
-  if (score >= 85) return { label: "Excellent", color: "text-poker-green" };
+  if (score >= 85) return { label: "Excellent", color: "text-violet-400" };
   if (score >= 70) return { label: "Good", color: "text-green-400" };
   if (score >= 55) return { label: "Okay", color: "text-yellow-400" };
   if (score >= 40) return { label: "Weak", color: "text-orange-400" };
@@ -25,7 +25,7 @@ export function severityColor(severity: string): string {
     case "suboptimal":
       return "text-orange-400 bg-orange-400/10 border-orange-400/30";
     case "good":
-      return "text-poker-green bg-poker-green/10 border-poker-green/30";
+      return "text-violet-400 bg-violet-500/10 border-violet-500/30";
     case "note":
       return "text-blue-400 bg-blue-400/10 border-blue-400/30";
     default:

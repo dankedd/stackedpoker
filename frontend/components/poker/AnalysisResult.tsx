@@ -32,12 +32,12 @@ export function AnalysisResult({ result }: AnalysisResultProps) {
     <div className="space-y-6 animate-fade-in">
       {/* Score Overview */}
       <Card className="border-border/50 overflow-hidden">
-        <div className="h-1 bg-gradient-to-r from-poker-green/50 via-poker-green to-poker-green/50" />
+        <div className="h-1 bg-gradient-to-r from-violet-600 via-blue-500 to-violet-400" />
         <CardContent className="pt-5 pb-5">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             {/* Score */}
             <div className="flex items-center gap-4 min-w-0">
-              <div className="flex-shrink-0 flex h-16 w-16 items-center justify-center rounded-xl border-2 border-poker-green/30 bg-poker-green/10">
+              <div className="flex-shrink-0 flex h-16 w-16 items-center justify-center rounded-xl border-2 border-violet-500/30 bg-violet-500/10">
                 <span className={cn("text-2xl font-bold", scoreColor)}>{overall_score}</span>
               </div>
               <div>
@@ -69,7 +69,7 @@ export function AnalysisResult({ result }: AnalysisResultProps) {
         <Card className="border-border/50">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-sm">
-              <Users className="h-4 w-4 text-poker-green" />
+              <Users className="h-4 w-4 text-violet-400" />
               Hand Details
             </CardTitle>
           </CardHeader>
@@ -123,7 +123,7 @@ export function AnalysisResult({ result }: AnalysisResultProps) {
         <Card className="border-border/50">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-sm">
-              <Layers className="h-4 w-4 text-poker-green" />
+              <Layers className="h-4 w-4 text-violet-400" />
               Board Texture
             </CardTitle>
           </CardHeader>
@@ -138,7 +138,7 @@ export function AnalysisResult({ result }: AnalysisResultProps) {
         <Card className="border-border/50">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-sm">
-              <Target className="h-4 w-4 text-poker-green" />
+              <Target className="h-4 w-4 text-violet-400" />
               Analysis Findings
             </CardTitle>
           </CardHeader>
@@ -183,7 +183,7 @@ export function AnalysisResult({ result }: AnalysisResultProps) {
         <Card className="border-border/50">
           <CardHeader className="pb-4">
             <CardTitle className="flex items-center gap-2 text-sm">
-              <TrendingUp className="h-4 w-4 text-poker-green" />
+              <TrendingUp className="h-4 w-4 text-violet-400" />
               Key Recommendations
             </CardTitle>
           </CardHeader>

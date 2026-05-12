@@ -50,7 +50,7 @@ export function HandInput({ onAnalyze, isLoading, className }: HandInputProps) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={PLACEHOLDER}
-          className="min-h-[220px] border-border/70 bg-card/50 text-xs sm:text-sm focus:border-poker-green/50 focus:ring-poker-green/30 resize-y"
+          className="min-h-[220px] border-border/70 bg-card/50 text-xs sm:text-sm focus:border-violet-500/50 focus:ring-violet-500/30 resize-y"
           disabled={isLoading}
         />
 
@@ -98,11 +98,11 @@ export function HandInput({ onAnalyze, isLoading, className }: HandInputProps) {
       </div>
 
       <div className="flex gap-4 text-xs text-muted-foreground">
-        <span className={cn("flex items-center gap-1", !isEmpty && "text-poker-green/70")}>
+        <span className={cn("flex items-center gap-1", !isEmpty && "text-violet-400/70")}>
           <span className={cn("h-1.5 w-1.5 rounded-full bg-current")} />
           GGPoker
         </span>
-        <span className={cn("flex items-center gap-1", !isEmpty && "text-poker-green/70")}>
+        <span className={cn("flex items-center gap-1", !isEmpty && "text-violet-400/70")}>
           <span className="h-1.5 w-1.5 rounded-full bg-current" />
           PokerStars
         </span>

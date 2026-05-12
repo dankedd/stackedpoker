@@ -17,7 +17,7 @@ const PLAN_LABEL: Record<string, string> = {
 const PLAN_COLOR: Record<string, string> = {
   free: "text-muted-foreground border-border/50",
   pro: "text-blue-400 border-blue-500/40",
-  admin: "text-poker-green border-poker-green/40",
+  admin: "text-violet-400 border-violet-500/40",
 };
 
 export function UsageWidget({ usage, className }: Props) {
@@ -44,7 +44,7 @@ export function UsageWidget({ usage, className }: Props) {
             <div
               className={cn(
                 "h-full rounded-full transition-all",
-                isNearLimit ? "bg-amber-500" : "bg-poker-green/70"
+                isNearLimit ? "bg-amber-500" : "bg-violet-500/80"
               )}
               style={{ width: `${pct}%` }}
             />

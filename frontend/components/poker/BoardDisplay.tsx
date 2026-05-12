@@ -15,7 +15,7 @@ const WETNESS_BADGE: Record<string, { label: string; color: string }> = {
 };
 
 const RANGE_ADV_BADGE: Record<string, { label: string; color: string }> = {
-  pfr: { label: "PFR Advantage", color: "text-poker-green bg-poker-green/10 border-poker-green/30" },
+  pfr: { label: "PFR Advantage", color: "text-violet-400 bg-violet-500/10 border-violet-500/30" },
   caller: { label: "Caller Advantage", color: "text-red-400 bg-red-400/10 border-red-400/30" },
   neutral: { label: "Neutral", color: "text-slate-400 bg-slate-400/10 border-slate-400/30" },
 };
@@ -60,7 +60,7 @@ export function BoardDisplay({ board, texture, className }: BoardDisplayProps) {
       {texture && (
         <div className="flex flex-wrap gap-2">
           {texture.bucket && (
-            <span className="rounded-full border border-poker-green/30 bg-poker-green/10 px-3 py-1 text-xs font-medium text-poker-green">
+            <span className="rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-medium text-violet-400">
               {texture.bucket.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
             </span>
           )}
