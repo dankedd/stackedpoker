@@ -8,7 +8,6 @@ import { cn } from "@/lib/utils";
 import { useReplay } from "@/hooks/useReplay";
 import { buildSeatMap } from "@/lib/replay/seatEngine";
 import { PokerTable } from "./PokerTable";
-import { CoachCard } from "./CoachCard";
 import { VerdictCard } from "./VerdictCard";
 import { ReplaySidebar } from "./ReplaySidebar";
 import type { ReplayAnalysis, ReplayAction, ValidationInfo } from "@/lib/types";
@@ -26,15 +25,6 @@ const STREET_PILL: Record<string, string> = {
   flop:    "text-emerald-400/65 border-emerald-500/18 bg-emerald-500/8",
   turn:    "text-amber-400/65 border-amber-500/18 bg-amber-500/8",
   river:   "text-rose-400/65 border-rose-500/18 bg-rose-500/8",
-};
-
-const ACTION_COLOR: Record<string, string> = {
-  fold:     "text-slate-400/55",
-  check:    "text-slate-400/45",
-  call:     "text-sky-300/75",
-  bet:      "text-emerald-400/85",
-  raise:    "text-emerald-400/85",
-  "all-in": "text-amber-300/85",
 };
 
 // ── Confidence pill ──────────────────────────────────────────────────────────
@@ -57,90 +47,6 @@ function ConfidencePill({ validation }: { validation: ValidationInfo }) {
     >
       {pct}%
     </span>
-  );
-}
-
-// ── Action feed (mobile / condensed) ─────────────────────────────────────────
-
-function ActionFeed({ actions, step }: { actions: ReplayAction[]; step: number }) {
-  const visible = actions.slice(0, step + 1);
-  const display = visible.slice(-5);
-  const hasMore = visible.length > display.length;
-  let lastStreet = "";
-
-  if (display.length === 0) {
-    return (
-      <p className="text-center text-[11px] py-3 text-slate-500/50">
-        Hand in progress…
-      </p>
-    );
-  }
-
-  return (
-    <div className="space-y-px">
-      {hasMore && (
-        <p className="text-center text-[9px] pb-1 text-slate-500/35">
-          {visible.length - display.length} earlier actions
-        </p>
-      )}
-      {display.map((action, localIdx) => {
-        const globalIdx = visible.length - display.length + localIdx;
-        const isCurrent = globalIdx === step;
-        const showSep = action.street !== lastStreet;
-        lastStreet = action.street;
-
-        return (
-          <div key={globalIdx}>
-            {showSep && localIdx > 0 && (
-              <div className="flex items-center gap-2.5 py-2">
-                <div className="h-px flex-1 bg-white/[0.04]" />
-                <span className="text-[8px] uppercase tracking-[0.22em] font-medium text-slate-500/40">
-                  {action.street}
-                </span>
-                <div className="h-px flex-1 bg-white/[0.04]" />
-              </div>
-            )}
-            <div
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-300",
-                isCurrent ? "opacity-100" : "opacity-35"
-              )}
-              style={isCurrent ? {
-                background: "rgba(255,255,255,0.038)",
-                border: "1px solid rgba(255,255,255,0.055)",
-              } : {}}
-            >
-              <span
-                className={cn(
-                  "text-[10px] font-semibold min-w-[52px] truncate",
-                  action.is_hero ? "text-emerald-400/75" : "text-slate-400/55"
-                )}
-              >
-                {action.player}
-              </span>
-              <span className={cn("text-[11px] font-semibold capitalize", ACTION_COLOR[action.action] ?? "text-slate-400/45")}>
-                {action.action}
-              </span>
-              {action.amount && (
-                <span className="text-[10px] font-medium tabular-nums text-slate-500/50">
-                  {action.amount}
-                </span>
-              )}
-              {action.is_hero && action.feedback && (
-                <span
-                  className={cn(
-                    "ml-auto h-1.5 w-1.5 rounded-full shrink-0",
-                    action.feedback.rating === "good"    ? "bg-emerald-400" :
-                    action.feedback.rating === "mistake" ? "bg-rose-400" :
-                    "bg-amber-400"
-                  )}
-                />
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
   );
 }
 
@@ -242,14 +148,6 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
   const { hand_summary, actions, overall_verdict } = analysis;
   const seats = useMemo(() => buildSeatMap(analysis), [analysis]);
 
-  const lastHeroFeedbackStep = useMemo(() => {
-    for (let i = replay.step; i >= 0; i--) {
-      if (actions[i].is_hero && actions[i].feedback) return i;
-    }
-    return -1;
-  }, [replay.step, actions]);
-
-  const showCoachCard = lastHeroFeedbackStep >= 0 && !!replay.currentFeedback;
   const mistakeCount = actions.filter((a) => a.is_hero && a.feedback?.rating === "mistake").length;
   const tableSize = seats.length;
 
@@ -307,19 +205,12 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
         </div>
       </div>
 
-      {/* ── Body: desktop 2-col / mobile single-col ──────────────────────── */}
+      {/* ── Body: desktop 2-col / mobile stacked ────────────────────────── */}
       <div className="lg:grid lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_440px] lg:items-stretch">
 
-        {/* ── LEFT: table + controls ───────────────────────────────────── */}
+        {/* ── LEFT: game area ─────────────────────────────────────────── */}
         <div className="flex flex-col">
-          {/* Table */}
-          <div
-            className="py-10"
-            style={{
-              background:
-                "radial-gradient(ellipse 80% 52% at 50% 48%, rgba(34,197,94,0.022) 0%, transparent 70%)",
-            }}
-          >
+          <div className="flex-1">
             <PokerTable
               seats={seats}
               visibleBoard={replay.visibleBoard}
@@ -329,41 +220,6 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
             />
           </div>
 
-          {/* Action feed — mobile only */}
-          <div className="lg:hidden px-4 pb-3">
-            <ActionFeed actions={actions} step={replay.step} />
-          </div>
-
-          {/* Coach card — mobile only */}
-          {showCoachCard && replay.currentFeedback && (
-            <div className="lg:hidden px-4 pb-4">
-              <CoachCard
-                feedback={replay.currentFeedback}
-                triggerKey={lastHeroFeedbackStep}
-              />
-            </div>
-          )}
-
-          {/* Transport */}
-          <div
-            className="px-6 py-5 space-y-4 mt-auto"
-            style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}
-          >
-            <ProgressTrack actions={actions} step={replay.step} onGoTo={replay.goTo} />
-            <Transport
-              isPlaying={replay.isPlaying}
-              isFirst={replay.isFirst}
-              isLast={replay.isLast}
-              onPlay={replay.play}
-              onPause={replay.pause}
-              onNext={replay.next}
-              onPrev={replay.prev}
-              onReset={replay.reset}
-              onSkipEnd={() => replay.goTo(actions.length - 1)}
-            />
-          </div>
-
-          {/* Verdict */}
           {replay.showVerdict && (
             <div
               className="px-5 pt-5 pb-6"
@@ -377,17 +233,40 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
           )}
         </div>
 
-        {/* ── RIGHT: sidebar — desktop only ────────────────────────────── */}
+        {/* ── RIGHT: analysis sidebar (desktop side / mobile below) ────── */}
         <div
-          className="hidden lg:flex lg:flex-col"
-          style={{ borderLeft: "1px solid rgba(255,255,255,0.05)" }}
+          className="flex flex-col border-t lg:border-t-0 lg:border-l"
+          style={{ borderColor: "rgba(255,255,255,0.05)" }}
         >
-          <div className="overflow-y-auto flex-1 min-h-0" style={{ maxHeight: "calc(100vh - 80px)" }}>
+          {/* Scrollable: street nav + action timeline + coaching */}
+          <div className="overflow-y-auto flex-1 min-h-0 lg:max-h-[calc(100vh-200px)]">
             <ReplaySidebar
               actions={actions}
               step={replay.step}
               onGoTo={replay.goTo}
               currentStreet={replay.currentStreet}
+            />
+          </div>
+
+          {/* Transport controls — pinned at bottom of sidebar */}
+          <div
+            className="flex-shrink-0 px-4 py-4 space-y-3"
+            style={{
+              borderTop: "1px solid rgba(255,255,255,0.05)",
+              background: "#0B0F14",
+            }}
+          >
+            <ProgressTrack actions={actions} step={replay.step} onGoTo={replay.goTo} />
+            <Transport
+              isPlaying={replay.isPlaying}
+              isFirst={replay.isFirst}
+              isLast={replay.isLast}
+              onPlay={replay.play}
+              onPause={replay.pause}
+              onNext={replay.next}
+              onPrev={replay.prev}
+              onReset={replay.reset}
+              onSkipEnd={() => replay.goTo(actions.length - 1)}
             />
           </div>
         </div>
