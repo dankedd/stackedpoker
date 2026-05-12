@@ -13,22 +13,22 @@ export default function HomePage() {
       <Navbar variant="sticky" />
 
       <main>
-        {/* 1 · Light hero */}
+        {/* 1 · Hero — dark cinematic, violet glow */}
         <Hero />
 
-        {/* 2 · Dark features grid */}
+        {/* 2 · Features — dark glass cards */}
         <Features />
 
-        {/* 3 · Light — how it works */}
+        {/* 3 · How it works — dark steps */}
         <HowItWorks />
 
-        {/* 4 · Dark — social proof numbers */}
+        {/* 4 · Stats — gradient numbers */}
         <Stats />
 
-        {/* 5 · Light — testimonials */}
+        {/* 5 · Testimonials — dark glass cards */}
         <Testimonials />
 
-        {/* 6 · Dark — final CTA */}
+        {/* 6 · Final CTA */}
         <CtaSection />
       </main>
 
