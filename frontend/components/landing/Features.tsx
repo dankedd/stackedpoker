@@ -1,76 +1,83 @@
 import { Brain, BarChart3, Map, Layers, Zap, BookOpen } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 
 const features = [
   {
     icon: BarChart3,
     title: "Hand Parser",
-    description:
-      "Automatic detection and parsing of GGPoker and PokerStars hand histories into a normalized data structure.",
+    description: "Automatic detection and parsing of GGPoker and PokerStars hand histories into a normalized data structure.",
+    iconCls: "text-violet-400",
+    iconBg: "bg-violet-500/10 border-violet-500/20",
   },
   {
     icon: Map,
     title: "Board Texture Analysis",
-    description:
-      "Classifies boards into buckets: A-high dry, wet broadway, low connected, monotone, and paired boards.",
+    description: "Classifies boards: A-high dry, wet broadway, low connected, monotone, paired. Know your equity edge instantly.",
+    iconCls: "text-blue-400",
+    iconBg: "bg-blue-500/10 border-blue-500/20",
   },
   {
     icon: Layers,
     title: "Spot Classification",
-    description:
-      "Identifies SRP vs 3-bet pots, position matchups (BTN vs BB, etc.), and effective stack depth.",
+    description: "Identifies SRP vs 3-bet pots, position matchups, and effective stack depth for precise recommendations.",
+    iconCls: "text-sky-400",
+    iconBg: "bg-sky-500/10 border-sky-500/20",
   },
   {
     icon: Zap,
-    title: "Heuristic Rules Engine",
-    description:
-      "GTO-inspired rules evaluate your c-bet sizing, frequency, and line choices against solver benchmarks.",
+    title: "Heuristic Engine",
+    description: "GTO-inspired rules evaluate your c-bet sizing, frequency, and line choices against solver benchmarks.",
+    iconCls: "text-amber-400",
+    iconBg: "bg-amber-500/10 border-amber-500/20",
   },
   {
     icon: Brain,
     title: "AI Coaching",
-    description:
-      "GPT-4o powered coaching explains the WHY behind every recommendation in plain, educational language.",
+    description: "GPT-4o explains the WHY behind every recommendation in plain, educational language you can apply immediately.",
+    iconCls: "text-emerald-400",
+    iconBg: "bg-emerald-500/10 border-emerald-500/20",
   },
   {
     icon: BookOpen,
     title: "Range Education",
-    description:
-      "Learn about range advantage, position theory, and sizing principles through concrete examples from your hands.",
+    description: "Learn range advantage, position theory, and sizing principles through concrete examples from your own hands.",
+    iconCls: "text-rose-400",
+    iconBg: "bg-rose-500/10 border-rose-500/20",
   },
 ];
 
 export function Features() {
   return (
-    <section id="features" className="py-20 sm:py-28">
-      <div className="container mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="mx-auto mb-14 max-w-2xl text-center">
-          <h2 className="mb-4 text-3xl font-bold sm:text-4xl">
-            Everything You Need to{" "}
-            <span className="text-poker-green">Level Up</span>
+    <section id="features" className="relative bg-[#070B14] py-24 sm:py-32 overflow-hidden">
+      <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] rounded-full bg-violet-600/7 blur-[130px]" />
+
+      <div className="container relative mx-auto max-w-7xl px-4 sm:px-6">
+        <div className="mx-auto mb-16 max-w-2xl text-center">
+          <div className="mb-6 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-slate-400">
+            Features
+          </div>
+          <h2 className="mb-5 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
+            Everything you need to{" "}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400">
+              level up
+            </span>
           </h2>
-          <p className="text-muted-foreground">
-            From raw hand history to actionable coaching in seconds. No solver
-            required.
+          <p className="text-slate-400 text-lg leading-relaxed">
+            From raw hand history to actionable coaching in seconds. No solver required.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
-            <Card
-              key={feature.title}
-              className="group border-border/50 bg-card/60 hover:border-poker-green/30 transition-all duration-300 hover:bg-card"
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {features.map((f) => (
+            <div
+              key={f.title}
+              className="rounded-2xl border border-white/[0.07] bg-white/[0.03] p-6 hover:border-white/[0.12] hover:bg-white/[0.055] transition-all duration-300"
             >
-              <CardContent className="p-6">
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-poker-green/10 border border-poker-green/20 group-hover:bg-poker-green/20 transition-colors">
-                  <feature.icon className="h-5 w-5 text-poker-green" />
-                </div>
-                <h3 className="mb-2 font-semibold">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {feature.description}
-                </p>
-              </CardContent>
-            </Card>
+              <div className={`mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl border ${f.iconBg}`}>
+                <f.icon className={`h-5 w-5 ${f.iconCls}`} />
+              </div>
+              <h3 className="mb-2.5 text-[15px] font-semibold text-white">{f.title}</h3>
+              <p className="text-sm text-slate-400 leading-relaxed">{f.description}</p>
+            </div>
           ))}
         </div>
       </div>
