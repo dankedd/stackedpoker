@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
-  ArrowLeft, RotateCcw, BarChart2, ChevronRight, ChevronDown,
-  TrendingUp, Target, Zap, AlertTriangle, X, Loader2,
+  ArrowLeft, RotateCcw, BarChart2, ChevronRight, ChevronDown, ChevronLeft,
+  TrendingUp, Target, Zap, AlertTriangle, X,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -31,6 +31,8 @@ const SEVERITY_STYLES = {
 const STREET_LABEL: Record<string, string> = {
   river: "River", turn: "Turn", flop: "Flop", preflop: "Pre-flop",
 };
+
+// ── Sub-components ────────────────────────────────────────────────────────────
 
 function StatTile({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
@@ -124,7 +126,7 @@ function CompactHandRow({ hand, onAnalyze }: {
 
 function CoachingFallback({ result }: { result: AnalysisResponse }) {
   return (
-    <div className="p-5 space-y-5">
+    <div className="space-y-5">
       <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-card/60 px-5 py-4">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-500/20 border border-violet-500/25 shrink-0">
           <span className="text-lg font-bold text-violet-400">{result.overall_score}</span>
@@ -173,68 +175,184 @@ function CoachingFallback({ result }: { result: AnalysisResponse }) {
   );
 }
 
-function HandSheet({
+// ── Fullscreen hand analysis overlay ─────────────────────────────────────────
+
+function HandOverlay({
   open,
   onClose,
+  onPrev,
+  onNext,
+  hasPrev,
+  hasNext,
   activeHand,
   handAnalysis,
 }: {
   open: boolean;
   onClose: () => void;
+  onPrev: () => void;
+  onNext: () => void;
+  hasPrev: boolean;
+  hasNext: boolean;
   activeHand: SessionHandCandidate | null;
   handAnalysis: ReturnType<typeof useAnalysis>;
 }) {
-  const isLoading = handAnalysis.status === "loading";
-  const hasResult = handAnalysis.status === "success" && !!handAnalysis.result;
-  const hasError  = handAnalysis.status === "error";
+  // Lock body scroll while overlay is open — position is preserved automatically
+  useEffect(() => {
+    if (open) document.body.style.overflow = "hidden";
+    else      document.body.style.overflow = "";
+    return () => { document.body.style.overflow = ""; };
+  }, [open]);
+
+  // Escape key closes overlay
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [open, onClose]);
+
+  const sev        = activeHand ? SEVERITY_STYLES[activeHand.severity] : null;
+  const isLoading  = handAnalysis.status === "loading";
+  const hasResult  = handAnalysis.status === "success" && !!handAnalysis.result;
+  const hasError   = handAnalysis.status === "error";
 
   return (
     <>
+      {/* Heavy backdrop — dims and blurs the session page */}
       <div
+        aria-hidden
         className={cn(
-          "fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300",
-          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          "fixed inset-0 z-40 bg-black/85 backdrop-blur-md",
+          "transition-opacity duration-200",
+          open ? "opacity-100" : "opacity-0 pointer-events-none",
         )}
-        onClick={onClose}
       />
 
-      <div className={cn(
-        "fixed inset-y-0 right-0 z-50 flex flex-col",
-        "w-full sm:w-[600px] max-w-full",
-        "bg-background border-l border-border/60",
-        "transform transition-transform duration-300 ease-in-out",
-        open ? "translate-x-0" : "translate-x-full"
-      )}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border/50 shrink-0">
-          <div className="min-w-0">
-            {activeHand && (
-              <>
-                <p className="text-xs text-muted-foreground">
-                  Hand #{activeHand.hand_index} · {activeHand.positions}
-                </p>
-                <h2 className="font-semibold text-foreground mt-0.5 truncate">{activeHand.reason}</h2>
-              </>
-            )}
-          </div>
+      {/* Fullscreen workspace */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        className={cn(
+          "fixed inset-0 z-50 flex flex-col bg-background",
+          "transition-[opacity,transform] duration-200 ease-out",
+          open
+            ? "opacity-100 translate-y-0 pointer-events-auto"
+            : "opacity-0 translate-y-3 pointer-events-none",
+        )}
+      >
+        {/* ── Top bar ──────────────────────────────────────────────────── */}
+        <div className="flex items-center gap-3 px-4 sm:px-6 h-14 border-b border-border/50 shrink-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 sticky top-0 z-10">
+
+          {/* Left: back + hand info */}
           <button
             onClick={onClose}
-            className="ml-4 shrink-0 text-muted-foreground/60 hover:text-foreground transition-colors"
-            aria-label="Close"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0"
           >
-            <X className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4" />
+            <span className="hidden sm:inline font-medium">Back to session</span>
           </button>
+
+          {activeHand && (
+            <>
+              <div className="h-4 w-px bg-border/50 shrink-0 hidden sm:block" />
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span className="text-sm font-semibold text-foreground shrink-0">
+                  Hand #{activeHand.hand_index}
+                </span>
+                {sev && (
+                  <span className={cn(
+                    "text-[10px] font-medium px-2 py-0.5 rounded-full border shrink-0 hidden sm:inline-flex",
+                    sev.cls,
+                  )}>
+                    {sev.label}
+                  </span>
+                )}
+                <div className="hidden lg:flex items-center gap-1.5 ml-0.5">
+                  <span className="text-xs bg-secondary/60 px-2 py-0.5 rounded-full text-muted-foreground border border-border/40">
+                    {activeHand.positions}
+                  </span>
+                  <span className="text-xs bg-secondary/60 px-2 py-0.5 rounded-full text-muted-foreground border border-border/40">
+                    {activeHand.pot_bb}bb pot
+                  </span>
+                  {activeHand.effective_stack_bb > 0 && (
+                    <span className="text-xs bg-secondary/60 px-2 py-0.5 rounded-full text-muted-foreground border border-border/40">
+                      {activeHand.effective_stack_bb}bb eff
+                    </span>
+                  )}
+                  {activeHand.stakes && (
+                    <span className="text-xs bg-secondary/60 px-2 py-0.5 rounded-full text-muted-foreground border border-border/40">
+                      {activeHand.stakes}
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs text-muted-foreground/50 truncate hidden md:block ml-1">
+                  {activeHand.reason}
+                </span>
+              </div>
+            </>
+          )}
+
+          {/* Right: prev / next / close */}
+          <div className="flex items-center gap-1 ml-auto shrink-0">
+            <button
+              onClick={onPrev}
+              disabled={!hasPrev}
+              title="Previous hand (←)"
+              className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
+                hasPrev
+                  ? "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                  : "text-muted-foreground/20 cursor-not-allowed",
+              )}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={onNext}
+              disabled={!hasNext}
+              title="Next hand (→)"
+              className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
+                hasNext
+                  ? "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                  : "text-muted-foreground/20 cursor-not-allowed",
+              )}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+            <div className="h-4 w-px bg-border/50 mx-1" />
+            <button
+              onClick={onClose}
+              aria-label="Close"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
+        {/* ── Content area ─────────────────────────────────────────────── */}
         <div className="flex-1 overflow-y-auto">
+
+          {/* Loading */}
           {isLoading && (
-            <div className="flex flex-col items-center justify-center gap-4 py-24">
-              <Loader2 className="h-8 w-8 animate-spin text-violet-400" />
-              <p className="text-sm text-muted-foreground">Analyzing hand…</p>
+            <div className="flex flex-col items-center justify-center gap-6 min-h-[400px] h-full">
+              <div className="relative h-16 w-16">
+                <div className="absolute inset-0 rounded-full border-2 border-violet-500/20" />
+                <div className="absolute inset-0 rounded-full border-2 border-t-violet-400 animate-spin" />
+              </div>
+              <div className="text-center space-y-1.5">
+                <p className="font-medium text-foreground">Analyzing hand…</p>
+                <p className="text-sm text-muted-foreground">
+                  Parsing → Classifying → Running heuristics → AI coaching
+                </p>
+              </div>
             </div>
           )}
 
+          {/* Error */}
           {hasError && (
-            <div className="p-6">
+            <div className="max-w-2xl mx-auto px-4 py-10">
               <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3">
                 <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
                 <p className="text-sm text-destructive">{handAnalysis.error}</p>
@@ -242,23 +360,36 @@ function HandSheet({
             </div>
           )}
 
+          {/* Result — mirrors hand analysis page layout */}
           {hasResult && handAnalysis.result && (
-            handAnalysis.result.replay ? (
-              <div className="p-3">
+            <div className={cn(
+              "mx-auto px-4 sm:px-6 py-8",
+              handAnalysis.result.replay ? "max-w-[1680px] xl:px-10" : "max-w-2xl",
+            )}>
+              {handAnalysis.result.replay ? (
                 <HandReplay
                   analysis={handAnalysis.result.replay}
                   filename={`Hand #${activeHand?.hand_index ?? ""}`}
+                  validation={{
+                    confidence: 1.0,
+                    hero_detected_by: "hand_history",
+                    warnings: [],
+                    errors: [],
+                    is_valid: true,
+                  }}
                 />
-              </div>
-            ) : (
-              <CoachingFallback result={handAnalysis.result} />
-            )
+              ) : (
+                <CoachingFallback result={handAnalysis.result} />
+              )}
+            </div>
           )}
         </div>
       </div>
     </>
   );
 }
+
+// ── Loading messages ──────────────────────────────────────────────────────────
 
 const LOADING_MESSAGES = [
   "Splitting session into individual hands…",
@@ -268,12 +399,14 @@ const LOADING_MESSAGES = [
   "Generating session summary…",
 ];
 
+// ── Page ──────────────────────────────────────────────────────────────────────
+
 export default function SessionAnalyzePage() {
   const { user, loading: authLoading } = useAuth();
-  const session = useSessionAnalysis();
+  const session      = useSessionAnalysis();
   const handAnalysis = useAnalysis();
 
-  const [text, setText] = useState("");
+  const [text, setText]   = useState("");
   const [setup, setSetup] = useState<AnalysisSetupValue>(() => {
     if (typeof window === "undefined") return ANALYSIS_SETUP_DEFAULT;
     try {
@@ -284,8 +417,8 @@ export default function SessionAnalyzePage() {
   const [msgIdx, setMsgIdx] = useState(0);
   const msgTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const [sheetOpen, setSheetOpen]     = useState(false);
-  const [activeHand, setActiveHand]   = useState<SessionHandCandidate | null>(null);
+  const [overlayOpen, setOverlayOpen]   = useState(false);
+  const [activeHand, setActiveHand]     = useState<SessionHandCandidate | null>(null);
   const [allHandsOpen, setAllHandsOpen] = useState(false);
 
   const handleSetupChange = (v: AnalysisSetupValue) => {
@@ -307,17 +440,27 @@ export default function SessionAnalyzePage() {
   const handleReset = () => {
     session.reset();
     setText("");
-    setSheetOpen(false);
+    setOverlayOpen(false);
     setActiveHand(null);
     setAllHandsOpen(false);
   };
 
-  const openHandInSheet = (hand: SessionHandCandidate) => {
+  // Ordered list for prev/next navigation (chronological by hand_index)
+  const navHands = useMemo(
+    () => [...(session.result?.all_hands ?? [])].sort((a, b) => a.hand_index - b.hand_index),
+    [session.result?.all_hands],
+  );
+
+  const openHandInOverlay = (hand: SessionHandCandidate) => {
     setActiveHand(hand);
-    setSheetOpen(true);
+    setOverlayOpen(true);
     handAnalysis.reset();
     handAnalysis.analyze(hand.hand_text, setup);
   };
+
+  const navIdx  = activeHand ? navHands.findIndex(h => h.hand_index === activeHand.hand_index) : -1;
+  const hasPrev = navIdx > 0;
+  const hasNext = navIdx >= 0 && navIdx < navHands.length - 1;
 
   const isLoading = session.status === "loading";
   const hasResult = session.status === "success" && !!session.result;
@@ -430,6 +573,7 @@ export default function SessionAnalyzePage() {
           {/* ── Results ───────────────────────────────────────────────── */}
           {hasResult && stats && session.result && (
             <div className="space-y-8 animate-fade-in">
+
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-2xl font-bold text-foreground">Session Summary</h1>
@@ -475,7 +619,7 @@ export default function SessionAnalyzePage() {
                 </h2>
                 <div className="space-y-4">
                   {session.result.selected_hands.map((hand, i) => (
-                    <HandCard key={i} hand={hand} onOpen={openHandInSheet} />
+                    <HandCard key={i} hand={hand} onOpen={openHandInOverlay} />
                   ))}
                 </div>
               </div>
@@ -495,13 +639,13 @@ export default function SessionAnalyzePage() {
                     </div>
                     <ChevronDown className={cn(
                       "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                      allHandsOpen && "rotate-180"
+                      allHandsOpen && "rotate-180",
                     )} />
                   </button>
 
                   <div className={cn(
                     "grid transition-[grid-template-rows] duration-300 ease-in-out",
-                    allHandsOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                    allHandsOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
                   )}>
                     <div className="overflow-hidden">
                       <div className="px-2 pb-3 pt-1 space-y-0.5 border-t border-border/30">
@@ -509,7 +653,7 @@ export default function SessionAnalyzePage() {
                           <CompactHandRow
                             key={hand.hand_index}
                             hand={hand}
-                            onAnalyze={openHandInSheet}
+                            onAnalyze={openHandInOverlay}
                           />
                         ))}
                       </div>
@@ -524,9 +668,14 @@ export default function SessionAnalyzePage() {
         </div>
       </main>
 
-      <HandSheet
-        open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
+      {/* Fullscreen hand analysis overlay */}
+      <HandOverlay
+        open={overlayOpen}
+        onClose={() => setOverlayOpen(false)}
+        onPrev={() => hasPrev && openHandInOverlay(navHands[navIdx - 1])}
+        onNext={() => hasNext && openHandInOverlay(navHands[navIdx + 1])}
+        hasPrev={hasPrev}
+        hasNext={hasNext}
         activeHand={activeHand}
         handAnalysis={handAnalysis}
       />
