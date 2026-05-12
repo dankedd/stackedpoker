@@ -21,10 +21,18 @@ export function useAnalysis() {
     setLimitReached(false);
 
     try {
+      // Singleton client — same instance as AuthContext, shared refresh queue.
       const supabase = createClient();
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[useAnalysis] session:", session ? "present" : "null",
+          "| expires_at:", session?.expires_at,
+          "| error:", sessionError?.message ?? "none");
+      }
+
       if (sessionError || !session) {
+        console.error("[useAnalysis] No session found — user must sign in.", sessionError);
         setError("Please sign in to analyze hands.");
         setStatus("error");
         return;

@@ -55,7 +55,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // Exclude /api/* — those requests are proxied to FastAPI which handles
+  // its own JWT auth. Running getUser() here would call Supabase on every
+  // API request AND could write a refreshed token to the response cookie
+  // while FastAPI still receives the original (potentially stale) Bearer
+  // token — causing spurious 401s on long-lived sessions.
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
