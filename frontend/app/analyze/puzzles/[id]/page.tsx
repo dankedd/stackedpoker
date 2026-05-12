@@ -450,7 +450,8 @@ export default function PuzzlePlayerPage() {
                   <span className={cn("text-[10px] px-2 py-0.5 rounded-full border font-semibold uppercase tracking-wider",
                     puzzle.difficulty === "beginner"     ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/25" :
                     puzzle.difficulty === "intermediate" ? "bg-amber-500/10  text-amber-400  border-amber-500/25" :
-                                                          "bg-red-500/10    text-red-400    border-red-500/25"
+                    puzzle.difficulty === "advanced"     ? "bg-red-500/10    text-red-400    border-red-500/25" :
+                                                          "bg-purple-500/10 text-purple-400 border-purple-500/25"
                   )}>{puzzle.difficulty}</span>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary/50 text-muted-foreground/60 border border-border/30">
                     {puzzle.format}

@@ -25,11 +25,12 @@ function loadStats(): PuzzleStats {
 }
 
 // ── Difficulty badge ──────────────────────────────────────────────────────
-const DIFF_STYLES = {
+const DIFF_STYLES: Record<string, string> = {
   beginner:     "bg-emerald-500/10 text-emerald-400 border-emerald-500/25",
   intermediate: "bg-amber-500/10  text-amber-400  border-amber-500/25",
   advanced:     "bg-red-500/10    text-red-400    border-red-500/25",
-} as const;
+  expert:       "bg-purple-500/10 text-purple-400 border-purple-500/25",
+};
 
 const CATEGORY_COLORS: Record<string, string> = {
   "SRP":           "bg-violet-500/10 text-violet-400",
@@ -39,6 +40,38 @@ const CATEGORY_COLORS: Record<string, string> = {
   "Turn Barrel":   "bg-cyan-500/10   text-cyan-400",
   "Preflop":       "bg-amber-500/10  text-amber-400",
   "ICM":           "bg-yellow-500/10 text-yellow-400",
+  "BvB":           "bg-teal-500/10   text-teal-400",
+  "Squeeze":       "bg-orange-500/10 text-orange-400",
+  "Check-Raise":   "bg-pink-500/10   text-pink-400",
+  "Semi-Bluff":    "bg-indigo-500/10 text-indigo-400",
+  "4-bet Pot":     "bg-sky-500/10    text-sky-400",
+  "Delayed C-bet": "bg-cyan-500/10   text-cyan-400",
+  "River Bluff":   "bg-rose-500/10   text-rose-400",
+  "Multiway":      "bg-purple-500/10 text-purple-400",
+  "Overbet":       "bg-red-500/10    text-red-400",
+  "PKO":           "bg-yellow-500/10 text-yellow-400",
+  "Push/Fold":     "bg-amber-500/10  text-amber-400",
+  "Resteal":       "bg-orange-500/10 text-orange-400",
+  "Steal":         "bg-emerald-500/10 text-emerald-400",
+  "C-bet":         "bg-violet-500/10 text-violet-400",
+  "Value Bet":     "bg-emerald-500/10 text-emerald-400",
+  "Donk Bet":      "bg-cyan-500/10   text-cyan-400",
+  "Double Barrel": "bg-blue-500/10   text-blue-400",
+  "Turn Probe":    "bg-indigo-500/10 text-indigo-400",
+  "Float":         "bg-teal-500/10   text-teal-400",
+  "Triple Barrel": "bg-red-500/10    text-red-400",
+  "Hero Call":     "bg-rose-500/10   text-rose-400",
+  "Thin Value":    "bg-emerald-500/10 text-emerald-400",
+  "Pot Control":   "bg-slate-500/10  text-slate-400",
+  "Deep Stack":    "bg-purple-500/10 text-purple-400",
+  "Short Deck":    "bg-orange-500/10 text-orange-400",
+  "Bluff":         "bg-rose-500/10   text-rose-400",
+  "Bluff Catch":   "bg-rose-500/10   text-rose-400",
+  "Sizing":        "bg-slate-500/10  text-slate-400",
+  "Overpair":      "bg-amber-500/10  text-amber-400",
+  "Set":           "bg-emerald-500/10 text-emerald-400",
+  "Two Pair":      "bg-blue-500/10   text-blue-400",
+  "Check-Call":    "bg-teal-500/10   text-teal-400",
 };
 
 function CardFaceMini({ card }: { card: string }) {
@@ -113,9 +146,19 @@ function PuzzleCard({ puzzle, score, solved }: { puzzle: Puzzle; score?: number;
   );
 }
 
-const DIFFICULTIES = ["All", "beginner", "intermediate", "advanced"] as const;
+const DIFFICULTIES = ["All", "beginner", "intermediate", "advanced", "expert"] as const;
 const GAME_TYPES = ["All", "cash", "tournament"] as const;
-const CATEGORIES = ["All", ...Array.from(new Set(PUZZLES.map(p => p.category)))] as const;
+const FORMATS = ["All", ...Array.from(new Set(PUZZLES.map(p => p.format))).sort()] as const;
+const STREETS = ["All", "preflop", "flop", "turn", "river"] as const;
+const STACK_DEPTHS = ["All", "short (≤20BB)", "medium (21-60BB)", "deep (61-100BB)", "very deep (100+BB)"] as const;
+const CATEGORIES = ["All", ...Array.from(new Set(PUZZLES.map(p => p.category))).sort()] as const;
+
+function getStackDepth(bb: number): string {
+  if (bb <= 20) return "short (≤20BB)";
+  if (bb <= 60) return "medium (21-60BB)";
+  if (bb <= 100) return "deep (61-100BB)";
+  return "very deep (100+BB)";
+}
 
 function FilterChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
@@ -138,6 +181,9 @@ export default function PuzzlesPage() {
   const [stats, setStats] = useState<PuzzleStats>({ solved: [], scores: {}, streak: 0, bestStreak: 0 });
   const [difficulty, setDifficulty] = useState<string>("All");
   const [gameType, setGameType] = useState<string>("All");
+  const [format, setFormat] = useState<string>("All");
+  const [street, setStreet] = useState<string>("All");
+  const [stackDepth, setStackDepth] = useState<string>("All");
   const [category, setCategory] = useState<string>("All");
 
   useEffect(() => { setStats(loadStats()); }, []);
@@ -145,6 +191,9 @@ export default function PuzzlesPage() {
   const filtered = PUZZLES.filter(p => {
     if (difficulty !== "All" && p.difficulty !== difficulty) return false;
     if (gameType !== "All" && p.gameType !== gameType) return false;
+    if (format !== "All" && p.format !== format) return false;
+    if (street !== "All" && p.steps[0]?.street !== street) return false;
+    if (stackDepth !== "All" && getStackDepth(p.effectiveStack) !== stackDepth) return false;
     if (category !== "All" && p.category !== category) return false;
     return true;
   });
@@ -221,6 +270,36 @@ export default function PuzzlesPage() {
                   {GAME_TYPES.map(g => (
                     <FilterChip key={g} active={gameType === g} onClick={() => setGameType(g)}>
                       {g === "All" ? "All" : g.charAt(0).toUpperCase() + g.slice(1)}
+                    </FilterChip>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60 mb-3">Format</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {FORMATS.map(f => (
+                    <FilterChip key={f} active={format === f} onClick={() => setFormat(f)}>
+                      {f}
+                    </FilterChip>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60 mb-3">Starting Street</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {STREETS.map(s => (
+                    <FilterChip key={s} active={street === s} onClick={() => setStreet(s)}>
+                      {s === "All" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
+                    </FilterChip>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/60 mb-3">Stack Depth</p>
+                <div className="flex flex-col gap-1.5">
+                  {STACK_DEPTHS.map(s => (
+                    <FilterChip key={s} active={stackDepth === s} onClick={() => setStackDepth(s)}>
+                      {s}
                     </FilterChip>
                   ))}
                 </div>
