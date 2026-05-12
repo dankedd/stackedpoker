@@ -1,8 +1,7 @@
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.config import get_settings
 from app.database import init_db
@@ -12,24 +11,6 @@ from app.api.routes import health, parse, analyze, image_analyze, image_extract
 settings = get_settings()
 setup_logging(settings.debug)
 logger = logging.getLogger(__name__)
-
-
-class AuthDiagnosticMiddleware(BaseHTTPMiddleware):
-    """Log whether Authorization header is present on /api/analyze requests."""
-
-    async def dispatch(self, request: Request, call_next):
-        if request.url.path == "/api/analyze":
-            has_auth = "authorization" in request.headers
-            auth_prefix = ""
-            if has_auth:
-                raw = request.headers.get("authorization", "")
-                # Log only the first 20 chars of the token (safe — no secrets)
-                auth_prefix = raw[:27] + "..." if len(raw) > 27 else raw
-            logger.info(
-                "analyze request: method=%s has_auth_header=%s prefix=%s",
-                request.method, has_auth, auth_prefix,
-            )
-        return await call_next(request)
 
 
 @asynccontextmanager
@@ -58,7 +39,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.add_middleware(AuthDiagnosticMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
