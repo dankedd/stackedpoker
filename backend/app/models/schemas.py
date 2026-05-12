@@ -328,6 +328,7 @@ class SessionHandCandidate(BaseModel):
     street_depth: str
     reason: str
     severity: Literal["high", "medium", "low"]
+    effective_stack_bb: float = 0.0
 
 
 class SessionStats(BaseModel):
@@ -344,4 +345,5 @@ class SessionAnalysisResponse(BaseModel):
     total_hands_found: int
     hands_parsed: int
     selected_hands: list[SessionHandCandidate]
+    all_hands: list[SessionHandCandidate] = []
     session_stats: SessionStats

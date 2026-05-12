@@ -239,10 +239,8 @@ async def analyze_session(request: SessionAnalysisRequest) -> SessionAnalysisRes
     scored.sort(key=lambda x: x[0], reverse=True)
     top3 = scored[:3]
 
-    selected: list[SessionHandCandidate] = []
-    for score, reasons, parsed, raw, idx in top3:
-        villain = next((p for p in parsed.players if p.name != parsed.hero_name), None)
-        selected.append(SessionHandCandidate(
+    def _to_candidate(score: float, reasons: list[str], parsed, raw: str, idx: int) -> SessionHandCandidate:
+        return SessionHandCandidate(
             hand_text=raw,
             hand_index=idx + 1,
             stakes=parsed.stakes,
@@ -252,7 +250,18 @@ async def analyze_session(request: SessionAnalysisRequest) -> SessionAnalysisRes
             street_depth=_street_depth(parsed),
             reason=_build_reason(reasons),
             severity=_severity(parsed, score),
-        ))
+            effective_stack_bb=round(parsed.effective_stack_bb, 1),
+        )
+
+    selected: list[SessionHandCandidate] = [
+        _to_candidate(score, reasons, parsed, raw, idx)
+        for score, reasons, parsed, raw, idx in top3
+    ]
+
+    all_hands: list[SessionHandCandidate] = [
+        _to_candidate(score, reasons, parsed, raw, idx)
+        for score, reasons, parsed, raw, idx in scored
+    ]
 
     # Session stats from all parsed hands
     all_parsed = [s[2] for s in scored]
@@ -263,6 +272,7 @@ async def analyze_session(request: SessionAnalysisRequest) -> SessionAnalysisRes
         total_hands_found=total_found,
         hands_parsed=hands_parsed,
         selected_hands=selected,
+        all_hands=all_hands,
         session_stats=SessionStats(
             total_hands_found=total_found,
             hands_parsed=hands_parsed,

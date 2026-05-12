@@ -232,6 +232,7 @@ export interface SessionHandCandidate {
   street_depth: string;
   reason: string;
   severity: "high" | "medium" | "low";
+  effective_stack_bb: number;
 }
 
 export interface SessionStats {
@@ -248,6 +249,7 @@ export interface SessionAnalysisResponse {
   total_hands_found: number;
   hands_parsed: number;
   selected_hands: SessionHandCandidate[];
+  all_hands: SessionHandCandidate[];
   session_stats: SessionStats;
 }
 

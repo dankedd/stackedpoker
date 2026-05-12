@@ -2,10 +2,9 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
-  ArrowLeft, RotateCcw, BarChart2, ChevronRight,
-  TrendingUp, Target, Zap, AlertTriangle,
+  ArrowLeft, RotateCcw, BarChart2, ChevronRight, ChevronDown,
+  TrendingUp, Target, Zap, AlertTriangle, X, Loader2,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -14,17 +13,19 @@ import type { AnalysisSetupValue } from "@/components/poker/AnalysisSetup";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useSessionAnalysis } from "@/hooks/useSessionAnalysis";
+import { useAnalysis } from "@/hooks/useAnalysis";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoginCTA } from "@/components/poker/UpgradePrompt";
+import { HandReplay } from "@/components/replay/HandReplay";
 import { cn } from "@/lib/utils";
-import type { SessionHandCandidate } from "@/lib/types";
+import type { SessionHandCandidate, AnalysisResponse } from "@/lib/types";
 
 const SETUP_KEY = "poker_analysis_setup";
 
 const SEVERITY_STYLES = {
-  high:   { label: "High priority",   cls: "text-red-400 border-red-500/30 bg-red-500/10" },
-  medium: { label: "Worth reviewing", cls: "text-amber-400 border-amber-500/30 bg-amber-500/10" },
-  low:    { label: "Interesting spot", cls: "text-blue-400 border-blue-500/30 bg-blue-500/10" },
+  high:   { label: "High priority",    dot: "bg-red-400",   cls: "text-red-400 border-red-500/30 bg-red-500/10" },
+  medium: { label: "Worth reviewing",  dot: "bg-amber-400", cls: "text-amber-400 border-amber-500/30 bg-amber-500/10" },
+  low:    { label: "Interesting spot", dot: "bg-blue-400",  cls: "text-blue-400 border-blue-500/30 bg-blue-500/10" },
 };
 
 const STREET_LABEL: Record<string, string> = {
@@ -41,15 +42,14 @@ function StatTile({ label, value, sub }: { label: string; value: string; sub?: s
   );
 }
 
-function HandCard({ hand, index, onOpen }: {
+function HandCard({ hand, onOpen }: {
   hand: SessionHandCandidate;
-  index: number;
   onOpen: (hand: SessionHandCandidate) => void;
 }) {
   const sev = SEVERITY_STYLES[hand.severity];
   return (
     <div className="rounded-2xl border border-border/50 bg-card/60 p-6 space-y-4">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start gap-3">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-xs text-muted-foreground">Hand #{hand.hand_index}</span>
@@ -62,17 +62,22 @@ function HandCard({ hand, index, onOpen }: {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <span className="inline-flex items-center gap-1 text-xs bg-secondary/60 px-2.5 py-1 rounded-full text-muted-foreground border border-border/40">
+        <span className="inline-flex items-center text-xs bg-secondary/60 px-2.5 py-1 rounded-full text-muted-foreground border border-border/40">
           {hand.positions}
         </span>
-        <span className="inline-flex items-center gap-1 text-xs bg-secondary/60 px-2.5 py-1 rounded-full text-muted-foreground border border-border/40">
+        <span className="inline-flex items-center text-xs bg-secondary/60 px-2.5 py-1 rounded-full text-muted-foreground border border-border/40">
           {hand.pot_bb}bb pot
         </span>
-        <span className="inline-flex items-center gap-1 text-xs bg-secondary/60 px-2.5 py-1 rounded-full text-muted-foreground border border-border/40">
+        <span className="inline-flex items-center text-xs bg-secondary/60 px-2.5 py-1 rounded-full text-muted-foreground border border-border/40">
           to {STREET_LABEL[hand.street_depth] ?? hand.street_depth}
         </span>
+        {hand.effective_stack_bb > 0 && (
+          <span className="inline-flex items-center text-xs bg-secondary/60 px-2.5 py-1 rounded-full text-muted-foreground border border-border/40">
+            {hand.effective_stack_bb}bb eff
+          </span>
+        )}
         {hand.stakes && (
-          <span className="inline-flex items-center gap-1 text-xs bg-secondary/60 px-2.5 py-1 rounded-full text-muted-foreground border border-border/40">
+          <span className="inline-flex items-center text-xs bg-secondary/60 px-2.5 py-1 rounded-full text-muted-foreground border border-border/40">
             {hand.stakes}
           </span>
         )}
@@ -84,10 +89,174 @@ function HandCard({ hand, index, onOpen }: {
         className="w-full gap-2"
         onClick={() => onOpen(hand)}
       >
-        Open Analysis
+        Analyze Hand
         <ChevronRight className="h-4 w-4" />
       </Button>
     </div>
+  );
+}
+
+function CompactHandRow({ hand, onAnalyze }: {
+  hand: SessionHandCandidate;
+  onAnalyze: (hand: SessionHandCandidate) => void;
+}) {
+  const dot = SEVERITY_STYLES[hand.severity].dot;
+  return (
+    <div className="flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/20 rounded-lg transition-colors">
+      <div className={cn("h-1.5 w-1.5 rounded-full shrink-0", dot)} />
+      <span className="text-xs text-muted-foreground/50 w-12 shrink-0">#{hand.hand_index}</span>
+      <span className="text-xs text-muted-foreground/80 flex-1 min-w-0 truncate">{hand.positions}</span>
+      <span className="text-xs text-muted-foreground/60 shrink-0">{hand.pot_bb}bb</span>
+      <span className="text-xs text-muted-foreground/50 w-14 text-right shrink-0 capitalize">
+        {STREET_LABEL[hand.street_depth] ?? hand.street_depth}
+      </span>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-6 px-2 text-[11px] text-violet-400 hover:text-violet-300 hover:bg-violet-500/10 shrink-0"
+        onClick={() => onAnalyze(hand)}
+      >
+        Analyze
+      </Button>
+    </div>
+  );
+}
+
+function CoachingFallback({ result }: { result: AnalysisResponse }) {
+  return (
+    <div className="p-5 space-y-5">
+      <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-card/60 px-5 py-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-violet-500/20 border border-violet-500/25 shrink-0">
+          <span className="text-lg font-bold text-violet-400">{result.overall_score}</span>
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground">Overall Score</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {result.mistakes_count} mistake{result.mistakes_count !== 1 ? "s" : ""} found
+          </p>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border/50 bg-card/60 px-5 py-4 space-y-2">
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <Zap className="h-4 w-4 text-violet-400" />
+          Coaching
+        </div>
+        <p className="text-sm text-muted-foreground leading-relaxed">{result.ai_coaching}</p>
+      </div>
+
+      {result.findings.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-foreground px-1">Key Findings</p>
+          {result.findings.map((f, i) => (
+            <div key={i} className={cn(
+              "rounded-xl border px-4 py-3 space-y-1",
+              f.severity === "mistake"    ? "border-red-500/20 bg-red-500/5" :
+              f.severity === "suboptimal" ? "border-amber-500/20 bg-amber-500/5" :
+              "border-border/50 bg-card/40"
+            )}>
+              <div className="flex items-center gap-2">
+                <span className="text-xs capitalize text-muted-foreground">{f.street}</span>
+                <span className={cn("text-xs font-medium",
+                  f.severity === "mistake"    ? "text-red-400" :
+                  f.severity === "suboptimal" ? "text-amber-400" :
+                  "text-emerald-400"
+                )}>· {f.severity}</span>
+              </div>
+              <p className="text-sm text-foreground">{f.recommendation}</p>
+              <p className="text-xs text-muted-foreground">{f.explanation}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HandSheet({
+  open,
+  onClose,
+  activeHand,
+  handAnalysis,
+}: {
+  open: boolean;
+  onClose: () => void;
+  activeHand: SessionHandCandidate | null;
+  handAnalysis: ReturnType<typeof useAnalysis>;
+}) {
+  const isLoading = handAnalysis.status === "loading";
+  const hasResult = handAnalysis.status === "success" && !!handAnalysis.result;
+  const hasError  = handAnalysis.status === "error";
+
+  return (
+    <>
+      <div
+        className={cn(
+          "fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300",
+          open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        )}
+        onClick={onClose}
+      />
+
+      <div className={cn(
+        "fixed inset-y-0 right-0 z-50 flex flex-col",
+        "w-full sm:w-[600px] max-w-full",
+        "bg-background border-l border-border/60",
+        "transform transition-transform duration-300 ease-in-out",
+        open ? "translate-x-0" : "translate-x-full"
+      )}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border/50 shrink-0">
+          <div className="min-w-0">
+            {activeHand && (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  Hand #{activeHand.hand_index} · {activeHand.positions}
+                </p>
+                <h2 className="font-semibold text-foreground mt-0.5 truncate">{activeHand.reason}</h2>
+              </>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className="ml-4 shrink-0 text-muted-foreground/60 hover:text-foreground transition-colors"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {isLoading && (
+            <div className="flex flex-col items-center justify-center gap-4 py-24">
+              <Loader2 className="h-8 w-8 animate-spin text-violet-400" />
+              <p className="text-sm text-muted-foreground">Analyzing hand…</p>
+            </div>
+          )}
+
+          {hasError && (
+            <div className="p-6">
+              <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3">
+                <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                <p className="text-sm text-destructive">{handAnalysis.error}</p>
+              </div>
+            </div>
+          )}
+
+          {hasResult && handAnalysis.result && (
+            handAnalysis.result.replay ? (
+              <div className="p-3">
+                <HandReplay
+                  analysis={handAnalysis.result.replay}
+                  filename={`Hand #${activeHand?.hand_index ?? ""}`}
+                />
+              </div>
+            ) : (
+              <CoachingFallback result={handAnalysis.result} />
+            )
+          )}
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -100,9 +269,9 @@ const LOADING_MESSAGES = [
 ];
 
 export default function SessionAnalyzePage() {
-  const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const session = useSessionAnalysis();
+  const handAnalysis = useAnalysis();
 
   const [text, setText] = useState("");
   const [setup, setSetup] = useState<AnalysisSetupValue>(() => {
@@ -114,6 +283,10 @@ export default function SessionAnalyzePage() {
   });
   const [msgIdx, setMsgIdx] = useState(0);
   const msgTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const [sheetOpen, setSheetOpen]     = useState(false);
+  const [activeHand, setActiveHand]   = useState<SessionHandCandidate | null>(null);
+  const [allHandsOpen, setAllHandsOpen] = useState(false);
 
   const handleSetupChange = (v: AnalysisSetupValue) => {
     setSetup(v);
@@ -134,20 +307,24 @@ export default function SessionAnalyzePage() {
   const handleReset = () => {
     session.reset();
     setText("");
+    setSheetOpen(false);
+    setActiveHand(null);
+    setAllHandsOpen(false);
   };
 
-  const handleOpenHand = (hand: SessionHandCandidate) => {
-    sessionStorage.setItem("poker_session_hand_prefill", hand.hand_text);
-    sessionStorage.setItem("poker_session_hand_setup", JSON.stringify({
-      gameType: setup.gameType,
-      playerCount: setup.playerCount,
-    }));
-    router.push("/analyze/hand?from=session");
+  const openHandInSheet = (hand: SessionHandCandidate) => {
+    setActiveHand(hand);
+    setSheetOpen(true);
+    handAnalysis.reset();
+    handAnalysis.analyze(hand.hand_text, setup);
   };
 
   const isLoading = session.status === "loading";
   const hasResult = session.status === "success" && !!session.result;
-  const stats = session.result?.session_stats;
+  const stats     = session.result?.session_stats;
+
+  const selectedIndices = new Set(session.result?.selected_hands.map(h => h.hand_index) ?? []);
+  const otherHands = (session.result?.all_hands ?? []).filter(h => !selectedIndices.has(h.hand_index));
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -156,7 +333,6 @@ export default function SessionAnalyzePage() {
       <main className="flex-1 py-10 sm:py-14">
         <div className="mx-auto max-w-2xl px-4 sm:px-6">
 
-          {/* Back */}
           <Link
             href="/analyze"
             className="mb-8 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -165,7 +341,7 @@ export default function SessionAnalyzePage() {
             Back to Analyze
           </Link>
 
-          {/* ── Input state ───────────────────────────────────────────── */}
+          {/* ── Input ─────────────────────────────────────────────────── */}
           {!hasResult && !isLoading && (
             <Card className="border-border/50">
               <CardHeader className="pb-4">
@@ -191,14 +367,12 @@ export default function SessionAnalyzePage() {
 
                 {!authLoading && user && (
                   <form onSubmit={handleSubmit} className="space-y-5">
-                    {/* Game setup */}
                     <AnalysisSetup
                       value={setup}
                       onChange={handleSetupChange}
                       className="pb-4 border-b border-border/30"
                     />
 
-                    {/* Session paste area */}
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground/80">
                         Session hands
@@ -237,7 +411,7 @@ export default function SessionAnalyzePage() {
             </Card>
           )}
 
-          {/* ── Loading state ─────────────────────────────────────────── */}
+          {/* ── Loading ───────────────────────────────────────────────── */}
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-20 gap-6">
               <div className="relative h-16 w-16">
@@ -256,7 +430,6 @@ export default function SessionAnalyzePage() {
           {/* ── Results ───────────────────────────────────────────────── */}
           {hasResult && stats && session.result && (
             <div className="space-y-8 animate-fade-in">
-              {/* Header */}
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-2xl font-bold text-foreground">Session Summary</h1>
@@ -270,23 +443,19 @@ export default function SessionAnalyzePage() {
                 </Button>
               </div>
 
-              {/* Stats grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <StatTile label="Hands" value={stats.hands_parsed.toString()} sub="parsed" />
-                <StatTile label="Avg pot" value={`${stats.avg_pot_bb}bb`} />
+                <StatTile label="Hands"       value={stats.hands_parsed.toString()} sub="parsed" />
+                <StatTile label="Avg pot"     value={`${stats.avg_pot_bb}bb`} />
                 <StatTile label="Biggest pot" value={`${stats.biggest_pot_bb}bb`} />
-                <StatTile label="VPIP" value={`${stats.hero_vpip_pct}%`} sub="pre-flop" />
+                <StatTile label="VPIP"        value={`${stats.hero_vpip_pct}%`} sub="pre-flop" />
               </div>
 
-              {/* AI summary */}
               <div className="rounded-2xl border border-border/50 bg-card/50 p-5 space-y-2">
                 <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                   <Zap className="h-4 w-4 text-violet-400" />
                   Coaching insight
                 </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  {stats.ai_summary}
-                </p>
+                <p className="text-sm text-muted-foreground leading-relaxed">{stats.ai_summary}</p>
                 <div className="flex gap-4 pt-1 text-xs text-muted-foreground/60">
                   <span className="flex items-center gap-1">
                     <TrendingUp className="h-3 w-3" />
@@ -299,27 +468,68 @@ export default function SessionAnalyzePage() {
                 </div>
               </div>
 
-              {/* Top 3 hands */}
+              {/* Top 3 featured hands */}
               <div>
                 <h2 className="text-base font-semibold text-foreground mb-4">
                   Top {session.result.selected_hands.length} spots to review
                 </h2>
                 <div className="space-y-4">
                   {session.result.selected_hands.map((hand, i) => (
-                    <HandCard
-                      key={i}
-                      hand={hand}
-                      index={i + 1}
-                      onOpen={handleOpenHand}
-                    />
+                    <HandCard key={i} hand={hand} onOpen={openHandInSheet} />
                   ))}
                 </div>
               </div>
+
+              {/* All other hands — collapsible */}
+              {otherHands.length > 0 && (
+                <div className="rounded-2xl border border-border/50 bg-card/40 overflow-hidden">
+                  <button
+                    onClick={() => setAllHandsOpen(v => !v)}
+                    className="w-full flex items-center justify-between px-5 py-4 hover:bg-secondary/20 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-sm font-medium text-foreground">All session hands</span>
+                      <span className="text-xs text-muted-foreground/60 bg-secondary/60 border border-border/40 px-2 py-0.5 rounded-full">
+                        {otherHands.length} more
+                      </span>
+                    </div>
+                    <ChevronDown className={cn(
+                      "h-4 w-4 text-muted-foreground transition-transform duration-200",
+                      allHandsOpen && "rotate-180"
+                    )} />
+                  </button>
+
+                  <div className={cn(
+                    "grid transition-[grid-template-rows] duration-300 ease-in-out",
+                    allHandsOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+                  )}>
+                    <div className="overflow-hidden">
+                      <div className="px-2 pb-3 pt-1 space-y-0.5 border-t border-border/30">
+                        {otherHands.map((hand) => (
+                          <CompactHandRow
+                            key={hand.hand_index}
+                            hand={hand}
+                            onAnalyze={openHandInSheet}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div>
           )}
 
         </div>
       </main>
+
+      <HandSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        activeHand={activeHand}
+        handAnalysis={handAnalysis}
+      />
 
       <Footer />
     </div>
