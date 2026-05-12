@@ -308,3 +308,40 @@ class ConfirmedPokerState(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     version: str = "1.0.0"
+
+
+# ── Session analysis ───────────────────────────────────────────────────────
+
+class SessionAnalysisRequest(BaseModel):
+    session_text: str = Field(..., min_length=100, description="Full session text containing multiple hands")
+    game_type: str | None = Field(None)
+    player_count: int | None = Field(None, ge=1, le=9)
+
+
+class SessionHandCandidate(BaseModel):
+    hand_text: str
+    hand_index: int
+    stakes: str
+    hero_position: str
+    positions: str
+    pot_bb: float
+    street_depth: str
+    reason: str
+    severity: Literal["high", "medium", "low"]
+
+
+class SessionStats(BaseModel):
+    total_hands_found: int
+    hands_parsed: int
+    avg_pot_bb: float
+    biggest_pot_bb: float
+    hero_vpip_pct: float
+    hero_aggression_pct: float
+    ai_summary: str
+
+
+class SessionAnalysisResponse(BaseModel):
+    total_hands_found: int
+    hands_parsed: int
+    selected_hands: list[SessionHandCandidate]
+    session_stats: SessionStats

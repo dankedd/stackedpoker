@@ -220,6 +220,37 @@ export interface VisionAnalysisResponse {
   validation: ValidationInfo;
 }
 
+// ── Session analysis ──────────────────────────────────────────────────────
+
+export interface SessionHandCandidate {
+  hand_text: string;
+  hand_index: number;
+  stakes: string;
+  hero_position: string;
+  positions: string;
+  pot_bb: number;
+  street_depth: string;
+  reason: string;
+  severity: "high" | "medium" | "low";
+}
+
+export interface SessionStats {
+  total_hands_found: number;
+  hands_parsed: number;
+  avg_pot_bb: number;
+  biggest_pot_bb: number;
+  hero_vpip_pct: number;
+  hero_aggression_pct: number;
+  ai_summary: string;
+}
+
+export interface SessionAnalysisResponse {
+  total_hands_found: number;
+  hands_parsed: number;
+  selected_hands: SessionHandCandidate[];
+  session_stats: SessionStats;
+}
+
 export interface AnalysisResponse {
   parsed_hand: ParsedHand;
   spot_classification: SpotClassification;

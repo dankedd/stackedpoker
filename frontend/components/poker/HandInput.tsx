@@ -10,6 +10,7 @@ interface HandInputProps {
   onAnalyze: (text: string) => void;
   isLoading: boolean;
   className?: string;
+  initialValue?: string;
 }
 
 const PLACEHOLDER = `Paste your hand history here...
@@ -22,8 +23,8 @@ Seat 2: Player2 ($100.00 in chips)
 Seat 3: Hero ($87.50 in chips)
 ...`;
 
-export function HandInput({ onAnalyze, isLoading, className }: HandInputProps) {
-  const [text, setText] = useState("");
+export function HandInput({ onAnalyze, isLoading, className, initialValue }: HandInputProps) {
+  const [text, setText] = useState(initialValue ?? "");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

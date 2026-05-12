@@ -3,6 +3,7 @@ import type {
   ConfirmedPokerState,
   ExtractionResult,
   VisionAnalysisResponse,
+  SessionAnalysisResponse,
 } from "./types";
 import type { AnalysisSetupValue } from "@/components/poker/AnalysisSetup";
 
@@ -52,6 +53,21 @@ export async function analyzeHand(
     method: "POST",
     body: JSON.stringify({
       hand_text: handText,
+      game_type: setup?.gameType,
+      player_count: setup?.playerCount,
+    }),
+  });
+}
+
+export async function analyzeSession(
+  sessionText: string,
+  token: string,
+  setup?: { gameType?: string; playerCount?: number },
+): Promise<SessionAnalysisResponse> {
+  return apiFetch<SessionAnalysisResponse>("/api/analyze-session", token, {
+    method: "POST",
+    body: JSON.stringify({
+      session_text: sessionText,
       game_type: setup?.gameType,
       player_count: setup?.playerCount,
     }),
