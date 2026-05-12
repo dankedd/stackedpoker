@@ -37,14 +37,13 @@ async def lifespan(_app: FastAPI):
     logger.info("=== Stacked Poker starting ===")
     logger.info("OpenAI key configured: %s", bool(settings.openai_api_key))
     logger.info("Allowed origins: %s", settings.allowed_origins)
-    # ── Auth / Supabase sanity check ─────────────────────────────────────
-    logger.info("SUPABASE_JWT_SECRET configured: %s", bool(settings.supabase_jwt_secret))
+    # ── Supabase / auth sanity check ─────────────────────────────────────
     logger.info("SUPABASE_URL configured: %s", bool(settings.supabase_url))
     logger.info("SUPABASE_SERVICE_ROLE_KEY configured: %s", bool(settings.supabase_service_role_key))
-    if not settings.supabase_jwt_secret:
+    if not settings.supabase_url:
         logger.error(
-            "CRITICAL: SUPABASE_JWT_SECRET is not set — every /api/analyze "
-            "request will fail with 401 'Invalid token'. Add it and restart."
+            "CRITICAL: SUPABASE_URL is not set — JWT validation via JWKS will "
+            "fail and every /api/analyze request will return 401. Add it and restart."
         )
     # ─────────────────────────────────────────────────────────────────────
     await init_db()

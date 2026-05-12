@@ -15,73 +15,51 @@ _bearer = HTTPBearer(auto_error=False)
 
 
 @lru_cache(maxsize=1)
-def _jwks_client() -> PyJWKClient | None:
-    """Return a cached JWKS client pointed at Supabase's public-key endpoint.
+def _jwks_client() -> PyJWKClient:
+    """Cached JWKS client pointed at Supabase's public-key endpoint.
 
-    Supabase new projects (2024+) sign JWTs with ES256 (asymmetric ECDSA).
-    The public key is at /auth/v1/.well-known/jwks.json — no secret needed.
+    Supabase signs JWTs with ES256 (asymmetric ECDSA). The public key is at
+    /auth/v1/.well-known/jwks.json — no secret required for verification.
     PyJWKClient fetches and caches the key set internally.
     """
     settings = get_settings()
     if not settings.supabase_url:
-        return None
+        raise RuntimeError(
+            "SUPABASE_URL is not set — cannot build JWKS client for JWT validation"
+        )
     return PyJWKClient(f"{settings.supabase_url}/auth/v1/.well-known/jwks.json")
 
 
 def _decode_token(token: str) -> dict:
-    settings = get_settings()
-
-    # ── Primary: JWKS (ES256 / RS256 / HS256 — whatever Supabase uses) ──
-    client = _jwks_client()
-    if client is not None:
-        try:
-            signing_key = client.get_signing_key_from_jwt(token)
-            payload = jwt.decode(
-                token,
-                signing_key.key,
-                algorithms=["ES256", "RS256", "HS256"],
-                options={"verify_aud": False},
-            )
-            return payload
-        except jwt.ExpiredSignatureError:
-            logger.warning("JWT validation failed: token expired")
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired"
-            )
-        except jwt.InvalidTokenError as exc:
-            logger.warning("JWT JWKS validation failed: %s (%s)", type(exc).__name__, exc)
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-            )
-        except Exception as exc:
-            # JWKS fetch failed (network) — fall through to HS256 below
-            logger.warning("JWKS client error, trying HS256 fallback: %s", exc)
-
-    # ── Fallback: HS256 with symmetric secret (older Supabase projects) ──
-    if not settings.supabase_jwt_secret:
-        logger.error(
-            "JWT validation failed — SUPABASE_URL (for JWKS) and "
-            "SUPABASE_JWT_SECRET (HS256 fallback) are both unset"
-        )
+    try:
+        client = _jwks_client()
+    except RuntimeError as exc:
+        logger.error("JWKS client unavailable: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
         )
 
     try:
+        signing_key = client.get_signing_key_from_jwt(token)
         payload = jwt.decode(
             token,
-            settings.supabase_jwt_secret,
-            algorithms=["HS256"],
+            signing_key.key,
+            algorithms=["ES256", "RS256"],
             options={"verify_aud": False},
         )
         return payload
     except jwt.ExpiredSignatureError:
-        logger.warning("JWT HS256 validation failed: token expired")
+        logger.warning("JWT validation failed: token expired")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired"
         )
     except jwt.InvalidTokenError as exc:
-        logger.warning("JWT HS256 validation failed: %s (%s)", type(exc).__name__, exc)
+        logger.warning("JWT validation failed: %s (%s)", type(exc).__name__, exc)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        )
+    except Exception as exc:
+        logger.error("Unexpected error during JWT validation: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
         )
