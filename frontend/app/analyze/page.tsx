@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, RotateCcw, FileText, ImageIcon } from "lucide-react";
 import Link from "next/link";
-import { Header } from "@/components/layout/Header";
+import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { HandInput } from "@/components/poker/HandInput";
 import { ImageUpload } from "@/components/poker/ImageUpload";
@@ -95,7 +95,7 @@ export default function AnalyzePage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header />
+      <Navbar variant="static" />
 
       <main className="flex-1 py-10 sm:py-14">
         <div className="mx-auto max-w-[1680px] px-4 sm:px-6 xl:px-10">

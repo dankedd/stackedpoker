@@ -1,16 +1,17 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import {
-  Spade,
   TrendingUp,
   BookOpen,
   BarChart3,
   ChevronRight,
   Layers,
   Clock,
+  Spade,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
+import { Navbar } from '@/components/layout/Navbar'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -33,37 +34,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-md">
-        <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-blue-500 shadow-sm shadow-violet-500/30">
-              <Spade className="h-4 w-4 text-white" />
-            </div>
-            <span className="font-bold text-foreground">
-              Stacked
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400"> Poker</span>
-            </span>
-          </Link>
+      <Navbar variant="static" />
 
-          <nav className="flex items-center gap-4">
-            <Link
-              href="/analyze"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Analyze Hand
-            </Link>
-            <Link
-              href="/history"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              History
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      <main className="container mx-auto max-w-6xl px-4 sm:px-6 py-12">
+      <main className="container mx-auto max-w-6xl px-4 sm:px-6 py-10">
         {/* Welcome */}
         <div className="mb-10 animate-fade-in">
           <p className="text-sm font-medium text-violet-400 mb-1">Dashboard</p>

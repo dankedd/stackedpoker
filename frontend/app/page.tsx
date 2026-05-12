@@ -1,4 +1,4 @@
-import { LandingHeader } from "@/components/landing/LandingHeader";
+import { Navbar } from "@/components/layout/Navbar";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import { Hero } from "@/components/landing/Hero";
 import { Features } from "@/components/landing/Features";
@@ -10,7 +10,7 @@ import { CtaSection } from "@/components/landing/CtaSection";
 export default function HomePage() {
   return (
     <>
-      <LandingHeader />
+      <Navbar variant="sticky" />
 
       <main>
         {/* 1 · Light hero */}

@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Spade, Eye, EyeOff, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { Navbar } from '@/components/layout/Navbar'
 
 type PasswordStrength = 'weak' | 'fair' | 'strong'
 
@@ -79,50 +80,41 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="w-full max-w-md text-center animate-fade-in">
-          <div className="flex justify-center mb-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-violet-500/15 border border-violet-500/40 glow-purple">
-              <CheckCircle2 className="h-8 w-8 text-violet-400" />
+      <div className="min-h-screen flex flex-col">
+        <Navbar variant="static" />
+        <div className="flex-1 flex items-center justify-center px-4 py-10">
+          <div className="w-full max-w-md text-center animate-fade-in">
+            <div className="flex justify-center mb-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-violet-500/15 border border-violet-500/40 glow-purple">
+                <CheckCircle2 className="h-8 w-8 text-violet-400" />
+              </div>
             </div>
+            <h1 className="text-2xl font-bold text-foreground">Check your email</h1>
+            <p className="text-muted-foreground mt-3 leading-relaxed">
+              We sent a confirmation link to <span className="text-foreground font-medium">{email}</span>.
+              Click it to activate your account.
+            </p>
+            <Link href="/login" className="mt-6 inline-block text-sm text-violet-400 hover:text-violet-300 transition-colors">
+              Back to sign in →
+            </Link>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Check your email</h1>
-          <p className="text-muted-foreground mt-3 leading-relaxed">
-            We sent a confirmation link to <span className="text-foreground font-medium">{email}</span>.
-            Click it to activate your account.
-          </p>
-          <Link href="/login" className="mt-6 inline-block text-sm text-violet-400 hover:text-violet-300 transition-colors">
-            Back to sign in →
-          </Link>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+    <div className="min-h-screen flex flex-col">
+      <Navbar variant="static" />
+
+      <div className="pointer-events-none fixed inset-0 overflow-hidden -z-10">
         <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-violet-600/8 blur-3xl" />
         <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full bg-blue-500/5 blur-3xl" />
       </div>
 
-      <div className="relative w-full max-w-md animate-fade-in">
-        {/* Brand */}
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex flex-col items-center gap-3 group">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-blue-500 shadow-lg shadow-violet-500/30">
-              <Spade className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <span className="text-2xl font-bold text-foreground tracking-tight">
-                Stacked<span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400"> Poker</span>
-              </span>
-              <p className="text-sm text-muted-foreground mt-0.5">Premium poker coaching</p>
-            </div>
-          </Link>
-        </div>
-
-        <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-8 shadow-2xl">
+      <div className="flex-1 flex items-center justify-center px-4 py-10">
+        <div className="relative w-full max-w-md animate-fade-in">
+          <div className="rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-8 shadow-2xl">
           <div className="mb-6">
             <h1 className="text-xl font-semibold text-foreground">Create your account</h1>
             <p className="text-sm text-muted-foreground mt-1">Start improving your poker game today</p>
@@ -254,9 +246,10 @@ export default function SignupPage() {
           </div>
         </div>
 
-        <p className="mt-6 text-center text-xs text-muted-foreground/50">
-          By signing up you agree to our Terms of Service and Privacy Policy.
-        </p>
+          <p className="mt-6 text-center text-xs text-muted-foreground/50">
+            By signing up you agree to our Terms of Service and Privacy Policy.
+          </p>
+        </div>
       </div>
     </div>
   )
