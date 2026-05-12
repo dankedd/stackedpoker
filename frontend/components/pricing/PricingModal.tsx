@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import {
-  X, Check, Zap, Shield, CreditCard, AlertCircle, Loader2,
+  X, Check, Zap, Shield, CreditCard,
 } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { startCheckout } from "@/components/poker/UpgradePrompt";
 
 const FREE_FEATURES = [
   { label: "3 hand analyses", included: true },
@@ -34,21 +33,7 @@ interface PricingModalProps {
 }
 
 export function PricingModal({ open, onClose }: PricingModalProps) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   if (!open) return null;
-
-  async function handleUpgrade() {
-    setError(null);
-    setLoading(true);
-    try {
-      await startCheckout();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-      setLoading(false);
-    }
-  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -127,27 +112,11 @@ export function PricingModal({ open, onClose }: PricingModalProps) {
                 ))}
               </ul>
 
-              {error && (
-                <div className="flex items-center gap-2 text-xs text-destructive">
-                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                  {error}
-                </div>
-              )}
-
-              <Button
-                variant="poker"
-                className="w-full gap-2"
-                onClick={handleUpgrade}
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Redirecting…
-                  </>
-                ) : (
-                  "Upgrade to Pro"
-                )}
+              <Button variant="poker" className="w-full gap-2" asChild>
+                <Link href="/pricing" onClick={onClose}>
+                  <Zap className="h-4 w-4" />
+                  See Pro plans
+                </Link>
               </Button>
             </div>
           </div>

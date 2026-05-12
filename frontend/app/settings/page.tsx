@@ -116,7 +116,7 @@ export default async function SettingsPage() {
           <div className="px-6 py-4 flex flex-wrap gap-3">
             {tier === "free" && (
               <Button variant="poker" size="sm" asChild>
-                <Link href="/dashboard">Upgrade to Pro →</Link>
+                <Link href="/pricing">Upgrade to Pro →</Link>
               </Button>
             )}
             {hasStripeCustomer && (

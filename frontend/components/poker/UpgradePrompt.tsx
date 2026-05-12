@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { Lock, Check, Zap, AlertCircle, Loader2 } from "lucide-react";
+import { Lock, Check, Zap } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -50,21 +49,6 @@ interface UpgradePromptProps {
 }
 
 export function UpgradePrompt({ used, limit, className }: UpgradePromptProps) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleUpgrade() {
-    setError(null);
-    setLoading(true);
-    try {
-      await startCheckout();
-      // Page redirects — loading stays true intentionally
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-      setLoading(false);
-    }
-  }
-
   return (
     <div className={cn("space-y-5", className)}>
       {/* Usage exhausted notice */}
@@ -104,28 +88,8 @@ export function UpgradePrompt({ used, limit, className }: UpgradePromptProps) {
           ))}
         </ul>
 
-        {error && (
-          <div className="flex items-center gap-2 text-xs text-destructive mb-3">
-            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-            {error}
-          </div>
-        )}
-
-        <Button
-          variant="poker"
-          size="sm"
-          className="w-full gap-2"
-          onClick={handleUpgrade}
-          disabled={loading}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              Redirecting to checkout…
-            </>
-          ) : (
-            "Upgrade to Pro"
-          )}
+        <Button variant="poker" size="sm" className="w-full" asChild>
+          <Link href="/pricing">Upgrade to Pro</Link>
         </Button>
       </div>
 
