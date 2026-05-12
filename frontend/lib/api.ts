@@ -101,3 +101,21 @@ export async function confirmHand(state: ConfirmedPokerState): Promise<VisionAna
     body: JSON.stringify(state),
   });
 }
+
+// ── Stripe Billing ─────────────────────────────────────────────────────────
+
+/** Create a Stripe Checkout Session and return the redirect URL. */
+export async function createCheckoutSession(token: string): Promise<{ url: string }> {
+  return apiFetch<{ url: string }>("/api/stripe/create-checkout", token, {
+    method: "POST",
+    body: JSON.stringify({ origin: window.location.origin }),
+  });
+}
+
+/** Create a Stripe Billing Portal session and return the redirect URL. */
+export async function createPortalSession(token: string): Promise<{ url: string }> {
+  return apiFetch<{ url: string }>("/api/stripe/customer-portal", token, {
+    method: "POST",
+    body: JSON.stringify({ origin: window.location.origin }),
+  });
+}

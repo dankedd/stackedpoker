@@ -1,9 +1,47 @@
 "use client";
 
-import { Lock } from "lucide-react";
+import { useState } from "react";
+import { Lock, Check, Zap, AlertCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+
+// ── Shared checkout helper ─────────────────────────────────────────────────
+
+export async function startCheckout(): Promise<void> {
+  const supabase = createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (!token) throw new Error("Not authenticated — please sign in again.");
+
+  const res = await fetch("/api/stripe/create-checkout", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ origin: window.location.origin }),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail ?? "Failed to start checkout. Please try again.");
+  }
+
+  const { url } = await res.json();
+  window.location.href = url;
+}
+
+// ── UpgradePrompt ─────────────────────────────────────────────────────────
+
+const PRO_BENEFITS = [
+  "Unlimited hand analyses",
+  "Session analysis (multi-hand)",
+  "Advanced GTO coaching",
+  "Unlimited puzzles",
+  "Priority AI processing",
+];
 
 interface UpgradePromptProps {
   used: number;
@@ -12,47 +50,93 @@ interface UpgradePromptProps {
 }
 
 export function UpgradePrompt({ used, limit, className }: UpgradePromptProps) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleUpgrade() {
+    setError(null);
+    setLoading(true);
+    try {
+      await startCheckout();
+      // Page redirects — loading stays true intentionally
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className={cn("flex flex-col items-center justify-center py-10 gap-5 text-center", className)}>
-      <div className="h-12 w-12 rounded-full bg-secondary/50 border border-border/50 flex items-center justify-center">
-        <Lock className="h-5 w-5 text-muted-foreground" />
+    <div className={cn("space-y-5", className)}>
+      {/* Usage exhausted notice */}
+      <div className="flex items-start gap-3 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+        <Lock className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
+        <div>
+          <p className="text-sm font-medium text-foreground">
+            You've used all {limit} free {limit === 1 ? "analysis" : "analyses"}
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Upgrade to Pro for unlimited access — no limits, ever.
+          </p>
+        </div>
       </div>
 
-      <div className="space-y-1.5">
-        <p className="font-semibold text-base">
-          You've used all {limit} free{" "}
-          {limit === 1 ? "analysis" : "analyses"}
-        </p>
-        <p className="text-sm text-muted-foreground max-w-xs">
-          Upgrade to Pro for unlimited hand analysis and advanced coaching.
-        </p>
-      </div>
+      {/* Pricing card */}
+      <div className="rounded-xl border border-violet-500/25 bg-gradient-to-b from-violet-500/10 to-card/40 p-5">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <p className="text-xs font-semibold text-violet-400 uppercase tracking-widest mb-1">Pro</p>
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-bold text-foreground">€9</span>
+              <span className="text-sm text-muted-foreground">/ month</span>
+            </div>
+          </div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-500/20 border border-violet-500/30">
+            <Zap className="h-4 w-4 text-violet-400" />
+          </div>
+        </div>
 
-      <div className="flex flex-col sm:flex-row gap-2.5 items-center">
-        {/* Placeholder — Stripe integration comes later */}
+        <ul className="space-y-2 mb-5">
+          {PRO_BENEFITS.map((benefit) => (
+            <li key={benefit} className="flex items-center gap-2.5 text-sm text-foreground/80">
+              <Check className="h-3.5 w-3.5 text-violet-400 shrink-0" />
+              {benefit}
+            </li>
+          ))}
+        </ul>
+
+        {error && (
+          <div className="flex items-center gap-2 text-xs text-destructive mb-3">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            {error}
+          </div>
+        )}
+
         <Button
           variant="poker"
           size="sm"
-          disabled
-          className="min-w-[160px] opacity-80 cursor-not-allowed"
-          title="Coming soon"
+          className="w-full gap-2"
+          onClick={handleUpgrade}
+          disabled={loading}
         >
-          Upgrade to Pro
+          {loading ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Redirecting to checkout…
+            </>
+          ) : (
+            "Upgrade to Pro"
+          )}
         </Button>
-        <Link
-          href="/"
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          Back to home
-        </Link>
       </div>
 
-      <p className="text-[11px] text-muted-foreground/60">
-        Paid plans launching soon · {used}/{limit} analyses used
+      <p className="text-center text-xs text-muted-foreground/50">
+        {used}/{limit} free analyses used · iDEAL & card · Cancel anytime
       </p>
     </div>
   );
 }
+
+// ── LoginCTA (unchanged) ───────────────────────────────────────────────────
 
 interface LoginCTAProps {
   className?: string;
