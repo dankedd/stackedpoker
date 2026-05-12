@@ -308,7 +308,7 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
       </div>
 
       {/* ── Body: desktop 2-col / mobile single-col ──────────────────────── */}
-      <div className="lg:grid lg:grid-cols-[1fr_400px] lg:items-stretch">
+      <div className="lg:grid lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_440px] lg:items-stretch">
 
         {/* ── LEFT: table + controls ───────────────────────────────────── */}
         <div className="flex flex-col">

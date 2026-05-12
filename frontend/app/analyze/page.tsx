@@ -63,20 +63,22 @@ export default function AnalyzePage() {
       <Header />
 
       <main className="flex-1 py-10 sm:py-14">
-        <div className="container mx-auto max-w-4xl px-4 sm:px-6">
+        <div className="mx-auto max-w-[1680px] px-4 sm:px-6 xl:px-10">
 
           {/* Back link */}
-          <Link
-            href="/"
-            className="mb-8 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to home
-          </Link>
+          <div className="max-w-2xl mx-auto xl:max-w-none">
+            <Link
+              href="/"
+              className="mb-8 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to home
+            </Link>
+          </div>
 
           {/* Input card — hidden once image confirmation screen is showing */}
           {!imgConfirming && !imgSuccess && (
-            <Card className={cn("mb-8 border-border/50", hasResult && "border-poker-green/20")}>
+            <Card className={cn("mb-8 border-border/50 max-w-2xl mx-auto xl:max-w-none", hasResult && "border-poker-green/20")}>
               <CardHeader className="pb-4">
                 <CardTitle>Hand Analysis</CardTitle>
                 <CardDescription>
@@ -253,7 +255,7 @@ export default function AnalyzePage() {
               )}
             </div>
           )}
-        </div>
+        </div> {/* max-w-[1680px] */}
       </main>
 
       <Footer />

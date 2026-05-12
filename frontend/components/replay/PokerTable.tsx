@@ -43,7 +43,7 @@ export function PokerTable({
   const actingPlayer = currentAction?.player ?? null;
 
   return (
-    <div className="relative w-full max-w-2xl mx-auto" style={{ paddingBottom: "62%" }}>
+    <div className="relative w-full max-w-3xl mx-auto" style={{ paddingBottom: "62%" }}>
       <div className="absolute inset-0">
 
         {/* ── Abstract table surface ────────────────────────────────────── */}
