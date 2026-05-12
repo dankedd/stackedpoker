@@ -138,6 +138,10 @@ export default function SessionAnalyzePage() {
 
   const handleOpenHand = (hand: SessionHandCandidate) => {
     sessionStorage.setItem("poker_session_hand_prefill", hand.hand_text);
+    sessionStorage.setItem("poker_session_hand_setup", JSON.stringify({
+      gameType: setup.gameType,
+      playerCount: setup.playerCount,
+    }));
     router.push("/analyze/hand?from=session");
   };
 

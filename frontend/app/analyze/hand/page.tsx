@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, RotateCcw, FileText, ImageIcon } from "lucide-react";
+import {
+  ArrowLeft, RotateCcw, FileText, ImageIcon,
+  Zap, AlertTriangle,
+} from "lucide-react";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -24,50 +27,78 @@ import { cn } from "@/lib/utils";
 
 type Tab = "text" | "image";
 
-const SETUP_STORAGE_KEY = "poker_analysis_setup";
+const SETUP_KEY    = "poker_analysis_setup";
+const HAND_KEY     = "poker_session_hand_prefill";
+const SES_SETUP_KEY = "poker_session_hand_setup";
 
 export default function AnalyzePage() {
-  const [activeTab, setActiveTab] = useState<Tab>("text");
-  const [setup, setSetup] = useState<AnalysisSetupValue>(ANALYSIS_SETUP_DEFAULT);
+  // Read once on mount — no useSearchParams needed
+  const [fromSession] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return new URLSearchParams(window.location.search).get("from") === "session";
+  });
 
-  // Prefill from session analysis "Open Analysis" button
+  const [activeTab, setActiveTab] = useState<Tab>("text");
+
+  // Initialise setup: sessionStorage (from session flow) → localStorage → default
+  const [setup, setSetup] = useState<AnalysisSetupValue>(() => {
+    if (typeof window === "undefined") return ANALYSIS_SETUP_DEFAULT;
+    try {
+      const ses = sessionStorage.getItem(SES_SETUP_KEY);
+      if (ses) { sessionStorage.removeItem(SES_SETUP_KEY); return JSON.parse(ses); }
+      const loc = localStorage.getItem(SETUP_KEY);
+      return loc ? JSON.parse(loc) : ANALYSIS_SETUP_DEFAULT;
+    } catch { return ANALYSIS_SETUP_DEFAULT; }
+  });
+
+  // Prefill text from session flow
   const [prefillHand] = useState<string>(() => {
     if (typeof window === "undefined") return "";
-    const t = sessionStorage.getItem("poker_session_hand_prefill") ?? "";
-    if (t) sessionStorage.removeItem("poker_session_hand_prefill");
+    const t = sessionStorage.getItem(HAND_KEY) ?? "";
+    if (t) sessionStorage.removeItem(HAND_KEY);
     return t;
   });
 
   const { user, loading: authLoading } = useAuth();
   const { usage, loading: usageLoading, refetch: refetchUsage } = useUsage();
 
-  // Restore last setup from localStorage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(SETUP_STORAGE_KEY);
-      if (stored) setSetup(JSON.parse(stored));
-    } catch {
-      // ignore — keep default
-    }
-  }, []);
-
   const handleSetupChange = (v: AnalysisSetupValue) => {
     setSetup(v);
-    try { localStorage.setItem(SETUP_STORAGE_KEY, JSON.stringify(v)); } catch {}
+    try { localStorage.setItem(SETUP_KEY, JSON.stringify(v)); } catch {}
   };
 
   const text  = useAnalysis();
   const image = useImageAnalysis();
 
-  const resultRef = useRef<HTMLDivElement>(null);
+  const resultRef    = useRef<HTMLDivElement>(null);
+  const autoAnalyzed = useRef(false);
 
   const scrollToResult = () =>
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
 
+  // Auto-analyze when arriving from session and auth is ready
+  useEffect(() => {
+    if (
+      prefillHand &&
+      fromSession &&
+      !autoAnalyzed.current &&
+      !authLoading &&
+      !usageLoading &&
+      user &&
+      !usage?.isOverLimit
+    ) {
+      autoAnalyzed.current = true;
+      text.analyze(prefillHand, setup).then(() => {
+        scrollToResult();
+        refetchUsage();
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, usageLoading, user, usage?.isOverLimit]);
+
   const handleTextAnalyze = async (t: string) => {
     await text.analyze(t, setup);
     scrollToResult();
-    // Refresh usage count after a successful analysis
     if (text.status !== "error") refetchUsage();
   };
 
@@ -82,7 +113,7 @@ export default function AnalyzePage() {
     image.reset();
   };
 
-  // ── Image tab state derivation ─────────────────────────────────────────
+  // ── Derived state ──────────────────────────────────────────────────────
   const imgBusy       = image.isExtracting || image.isAnalyzing;
   const imgLoading    = activeTab === "image" && imgBusy;
   const imgError      = activeTab === "image" && image.isError;
@@ -95,49 +126,58 @@ export default function AnalyzePage() {
 
   const handleReset = activeTab === "text" ? text.reset : image.reset;
 
-  // ── Access control derivation ──────────────────────────────────────────
   const isAuthLoading = authLoading || (!!user && usageLoading);
   const isGated       = !authLoading && !user;
   const isOverLimit   = !isGated && !!usage?.isOverLimit;
   const canAnalyze    = !isGated && !isOverLimit;
+
+  // Hide input card when auto-analyzing from session (hand is already submitted)
+  const hideInput = fromSession && !!prefillHand && autoAnalyzed.current;
+
+  const backHref  = fromSession ? "/analyze/session" : "/analyze";
+  const backLabel = fromSession ? "Back to Session"  : "Back to Analyze";
 
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar variant="static" />
 
       <main className="flex-1 py-10 sm:py-14">
-        <div className="mx-auto max-w-[1680px] px-4 sm:px-6 xl:px-10">
+        <div className={cn(
+          "mx-auto px-4 sm:px-6",
+          hasResult ? "max-w-[1680px] xl:px-10" : "max-w-2xl",
+        )}>
 
-          {/* Back link */}
-          <div className="max-w-2xl mx-auto xl:max-w-none">
-            <Link
-              href="/analyze"
-              className="mb-8 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Analyze
-            </Link>
-          </div>
+          {/* Back */}
+          <Link
+            href={backHref}
+            className="mb-8 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {backLabel}
+          </Link>
 
-          {/* Input card — hidden once image confirmation screen is showing */}
-          {!imgConfirming && !imgSuccess && (
-            <Card className={cn("mb-8 border-border/50 max-w-2xl mx-auto xl:max-w-none", hasResult && "border-violet-500/20")}>
+          {/* ── Input card ─────────────────────────────────────────────── */}
+          {!hideInput && !imgConfirming && !imgSuccess && (
+            <Card className={cn("border-border/50", hasResult && "border-violet-500/20 mb-8")}>
               <CardHeader className="pb-4">
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <CardTitle>Hand Analysis</CardTitle>
-                    <CardDescription className="mt-1">
-                      Paste a hand history or upload a GGPoker screenshot for instant GTO-inspired coaching.
-                    </CardDescription>
+                  <div className="flex items-center gap-2.5 mb-1">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/15">
+                      <Zap className="h-4 w-4 text-violet-400" />
+                    </div>
+                    <div>
+                      <CardTitle>Hand Analysis</CardTitle>
+                      <CardDescription className="mt-0.5">
+                        Paste a hand history or upload a GGPoker screenshot for instant GTO-inspired coaching.
+                      </CardDescription>
+                    </div>
                   </div>
 
-                  {/* Usage widget — top-right of card header */}
                   {user && usage && !isAuthLoading && (
                     <UsageWidget usage={usage} className="mt-0.5 shrink-0" />
                   )}
                 </div>
 
-                {/* Tab switcher — only shown when user can analyze */}
                 {canAnalyze && (
                   <div className="mt-3 inline-flex rounded-lg border border-border/60 bg-secondary/40 p-1 gap-1">
                     <button
@@ -147,7 +187,7 @@ export default function AnalyzePage() {
                         "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
                         activeTab === "text"
                           ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
+                          : "text-muted-foreground hover:text-foreground",
                       )}
                     >
                       <FileText className="h-3.5 w-3.5" />
@@ -160,7 +200,7 @@ export default function AnalyzePage() {
                         "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
                         activeTab === "image"
                           ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
+                          : "text-muted-foreground hover:text-foreground",
                       )}
                     >
                       <ImageIcon className="h-3.5 w-3.5" />
@@ -171,22 +211,18 @@ export default function AnalyzePage() {
               </CardHeader>
 
               <CardContent>
-                {/* ── Auth loading skeleton ── */}
                 {isAuthLoading && (
-                  <div className="py-10 flex items-center justify-center">
+                  <div className="py-10 flex justify-center">
                     <div className="h-5 w-5 rounded-full border-2 border-t-violet-500 animate-spin" />
                   </div>
                 )}
 
-                {/* ── Not logged in ── */}
                 {!isAuthLoading && isGated && <LoginCTA />}
 
-                {/* ── Over limit ── */}
                 {!isAuthLoading && isOverLimit && usage && (
                   <UpgradePrompt used={usage.used} limit={usage.limit} />
                 )}
 
-                {/* ── Normal access: setup + input ── */}
                 {!isAuthLoading && canAnalyze && (
                   <div className="space-y-4">
                     <AnalysisSetup
@@ -196,7 +232,11 @@ export default function AnalyzePage() {
                     />
 
                     {activeTab === "text" ? (
-                      <HandInput onAnalyze={handleTextAnalyze} isLoading={isLoading} initialValue={prefillHand || undefined} />
+                      <HandInput
+                        onAnalyze={handleTextAnalyze}
+                        isLoading={isLoading}
+                        initialValue={prefillHand || undefined}
+                      />
                     ) : (
                       <ImageUpload onAnalyze={handleImageUpload} isLoading={imgLoading} />
                     )}
@@ -206,15 +246,15 @@ export default function AnalyzePage() {
             </Card>
           )}
 
-          {/* ── Loading state ─────────────────────────────────────────── */}
+          {/* ── Loading ────────────────────────────────────────────────── */}
           {isLoading && (
-            <div className="flex flex-col items-center justify-center py-16 gap-4">
+            <div className="flex flex-col items-center justify-center py-20 gap-6">
               <div className="relative h-16 w-16">
                 <div className="absolute inset-0 rounded-full border-2 border-violet-500/20" />
-                <div className="absolute inset-0 rounded-full border-2 border-t-violet-500 animate-spin" />
+                <div className="absolute inset-0 rounded-full border-2 border-t-violet-400 animate-spin" />
               </div>
-              <div className="text-center space-y-1">
-                <p className="font-medium">
+              <div className="text-center space-y-1.5">
+                <p className="font-medium text-foreground">
                   {image.isExtracting ? "Extracting poker state…" :
                    image.isAnalyzing  ? "Generating AI coaching…" :
                    "Analyzing your hand…"}
@@ -230,33 +270,31 @@ export default function AnalyzePage() {
             </div>
           )}
 
-          {/* ── Error state ───────────────────────────────────────────── */}
+          {/* ── Error ──────────────────────────────────────────────────── */}
           {(hasError || (imgError && !image.extraction)) && (
-            <div className="mx-auto max-w-lg rounded-2xl border border-white/[0.07] bg-[#0D1526]/80 backdrop-blur-sm p-6 text-center space-y-3 shadow-xl shadow-black/30">
-              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10 border border-amber-500/20">
-                <span className="text-amber-400 text-lg font-bold">!</span>
-              </div>
-              <div>
-                <p className="font-semibold text-slate-200 text-sm">Analysis failed</p>
-                <p className="mt-1 text-[13px] text-slate-400 leading-relaxed">
+            <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-4">
+              <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+              <div className="flex-1 space-y-3">
+                <p className="text-sm font-medium text-destructive">Analysis failed</p>
+                <p className="text-sm text-destructive/80">
                   {activeTab === "text" ? text.error : image.error}
                 </p>
-              </div>
-              <div className="flex items-center justify-center gap-3 pt-1">
-                {image.extraction && (
-                  <Button variant="outline" size="sm" onClick={image.backToConfirm} className="gap-2 text-xs">
-                    ← Back to review
+                <div className="flex items-center gap-3">
+                  {image.extraction && (
+                    <Button variant="outline" size="sm" onClick={image.backToConfirm} className="gap-2 text-xs">
+                      ← Back to review
+                    </Button>
+                  )}
+                  <Button variant="outline" size="sm" onClick={handleReset} className="gap-2 text-xs">
+                    <RotateCcw className="h-3 w-3" />
+                    Try again
                   </Button>
-                )}
-                <Button variant="outline" size="sm" onClick={handleReset} className="gap-2 text-xs">
-                  <RotateCcw className="h-3 w-3" />
-                  Try again
-                </Button>
+                </div>
               </div>
             </div>
           )}
 
-          {/* ── Image: confirmation screen ─────────────────────────────── */}
+          {/* ── Image: confirmation ────────────────────────────────────── */}
           {imgConfirming && image.extraction && (
             <div ref={resultRef}>
               <div className="mb-4 flex items-center justify-between">
@@ -275,7 +313,7 @@ export default function AnalyzePage() {
             </div>
           )}
 
-          {/* ── Image: coaching generating (show confirmation screen blurred) */}
+          {/* ── Image: coaching generating (blurred confirmation) ──────── */}
           {image.isAnalyzing && image.extraction && (
             <div ref={resultRef} className="opacity-50 pointer-events-none">
               <HandConfirmation
@@ -287,7 +325,7 @@ export default function AnalyzePage() {
             </div>
           )}
 
-          {/* ── Results ───────────────────────────────────────────────── */}
+          {/* ── Results ────────────────────────────────────────────────── */}
           {hasResult && (
             <div ref={resultRef}>
               {activeTab === "text" && text.result && (
@@ -340,7 +378,8 @@ export default function AnalyzePage() {
               )}
             </div>
           )}
-        </div> {/* max-w-[1680px] */}
+
+        </div>
       </main>
 
       <Footer />
