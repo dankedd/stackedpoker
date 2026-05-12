@@ -521,7 +521,6 @@ export const PUZZLES: Puzzle[] = [
       {
         street: 'river',
         board: ['4h', '7c', 'Kd', '2s', '3d'],
-        context: 'Pot $42. River: 3d. You missed the OESD but now have a gutshot straight (A-2-3-4-5 or 3-4-5-6-7 — you have a 5 and 6, so 3-4-5-6-7 completes with either a 3 or... wait: 5, 6 + board 4, 7 = 4-5-6-7 needs 3 or 8. 3d gives you 3-4-5-6-7 = straight! BB bets $30.',
         context: 'Pot $42. River: 3d. You made a straight with 3-4-5-6-7! BB bets $30 into $42.',
         prompt: 'You hit a straight on the river (3-4-5-6-7 using your 5h6h)! BB bets $30. Raise or call?',
         options: [
