@@ -11,8 +11,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   id                   uuid        PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   username             text        UNIQUE,
   avatar_url           text,
-  subscription_tier    text        NOT NULL DEFAULT 'free' CHECK (subscription_tier IN ('free','pro','elite')),
+  subscription_tier    text        NOT NULL DEFAULT 'free' CHECK (subscription_tier IN ('free','pro','admin')),
   hands_analyzed_count integer     NOT NULL DEFAULT 0,
+  analyses_limit       integer     NOT NULL DEFAULT 3,  -- 3 for free, 2147483647 for pro/admin
   created_at           timestamptz NOT NULL DEFAULT now(),
   updated_at           timestamptz NOT NULL DEFAULT now()
 );
@@ -97,15 +98,13 @@ LANGUAGE plpgsql
 SECURITY DEFINER SET search_path = public
 AS $$
 BEGIN
-  INSERT INTO public.profiles (id, username, avatar_url)
+  INSERT INTO public.profiles (id, username, avatar_url, subscription_tier, analyses_limit)
   VALUES (
     NEW.id,
-    -- use username from signup metadata if provided, else derive from email
-    COALESCE(
-      NEW.raw_user_meta_data->>'username',
-      split_part(NEW.email, '@', 1)
-    ),
-    NEW.raw_user_meta_data->>'avatar_url'
+    COALESCE(NEW.raw_user_meta_data->>'username', split_part(NEW.email, '@', 1)),
+    NEW.raw_user_meta_data->>'avatar_url',
+    'free',
+    3
   )
   ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
@@ -136,25 +135,20 @@ CREATE TRIGGER set_profiles_updated_at
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 
 -- ──────────────────────────────────────────────────────────
--- 6. INCREMENT hands_analyzed_count AUTOMATICALLY
+-- 6. ATOMIC INCREMENT VIA RPC (called by backend after analysis)
+--    SECURITY DEFINER: bypasses RLS — safe because only the
+--    backend (service role key) can reach this endpoint.
 -- ──────────────────────────────────────────────────────────
-CREATE OR REPLACE FUNCTION public.increment_hands_count()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER SET search_path = public
+CREATE OR REPLACE FUNCTION public.increment_analyses_used(p_user_id uuid)
+RETURNS void
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
 AS $$
-BEGIN
-  UPDATE public.profiles
+  UPDATE profiles
   SET hands_analyzed_count = hands_analyzed_count + 1
-  WHERE id = NEW.user_id;
-  RETURN NEW;
-END;
+  WHERE id = p_user_id;
 $$;
-
-DROP TRIGGER IF EXISTS on_hand_analysis_created ON public.hand_analyses;
-CREATE TRIGGER on_hand_analysis_created
-  AFTER INSERT ON public.hand_analyses
-  FOR EACH ROW EXECUTE FUNCTION public.increment_hands_count();
 
 -- ──────────────────────────────────────────────────────────
 -- 7. STORAGE BUCKET FOR POKER SCREENSHOTS

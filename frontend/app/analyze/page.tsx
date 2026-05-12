@@ -10,12 +10,16 @@ import { ImageUpload } from "@/components/poker/ImageUpload";
 import { AnalysisResult } from "@/components/poker/AnalysisResult";
 import { AnalysisSetup, ANALYSIS_SETUP_DEFAULT } from "@/components/poker/AnalysisSetup";
 import type { AnalysisSetupValue } from "@/components/poker/AnalysisSetup";
+import { UsageWidget } from "@/components/poker/UsageWidget";
+import { UpgradePrompt, LoginCTA } from "@/components/poker/UpgradePrompt";
 import { HandReplay } from "@/components/replay/HandReplay";
 import { HandConfirmation } from "@/components/replay/HandConfirmation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useAnalysis } from "@/hooks/useAnalysis";
 import { useImageAnalysis } from "@/hooks/useImageAnalysis";
+import { useUsage } from "@/hooks/useUsage";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 type Tab = "text" | "image";
@@ -25,6 +29,9 @@ const SETUP_STORAGE_KEY = "poker_analysis_setup";
 export default function AnalyzePage() {
   const [activeTab, setActiveTab] = useState<Tab>("text");
   const [setup, setSetup] = useState<AnalysisSetupValue>(ANALYSIS_SETUP_DEFAULT);
+
+  const { user, loading: authLoading } = useAuth();
+  const { usage, loading: usageLoading, refetch: refetchUsage } = useUsage();
 
   // Restore last setup from localStorage on mount
   useEffect(() => {
@@ -52,6 +59,8 @@ export default function AnalyzePage() {
   const handleTextAnalyze = async (t: string) => {
     await text.analyze(t, setup);
     scrollToResult();
+    // Refresh usage count after a successful analysis
+    if (text.status !== "error") refetchUsage();
   };
 
   const handleImageUpload = async (file: File) => {
@@ -78,6 +87,12 @@ export default function AnalyzePage() {
 
   const handleReset = activeTab === "text" ? text.reset : image.reset;
 
+  // ── Access control derivation ──────────────────────────────────────────
+  const isAuthLoading = authLoading || (!!user && usageLoading);
+  const isGated       = !authLoading && !user;
+  const isOverLimit   = !isGated && !!usage?.isOverLimit;
+  const canAnalyze    = !isGated && !isOverLimit;
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
@@ -100,54 +115,84 @@ export default function AnalyzePage() {
           {!imgConfirming && !imgSuccess && (
             <Card className={cn("mb-8 border-border/50 max-w-2xl mx-auto xl:max-w-none", hasResult && "border-poker-green/20")}>
               <CardHeader className="pb-4">
-                <CardTitle>Hand Analysis</CardTitle>
-                <CardDescription>
-                  Paste a hand history or upload a GGPoker screenshot for instant GTO-inspired coaching.
-                </CardDescription>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <CardTitle>Hand Analysis</CardTitle>
+                    <CardDescription className="mt-1">
+                      Paste a hand history or upload a GGPoker screenshot for instant GTO-inspired coaching.
+                    </CardDescription>
+                  </div>
 
-                {/* Tab switcher */}
-                <div className="mt-3 inline-flex rounded-lg border border-border/60 bg-secondary/40 p-1 gap-1">
-                  <button
-                    type="button"
-                    onClick={() => handleTabSwitch("text")}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                      activeTab === "text"
-                        ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <FileText className="h-3.5 w-3.5" />
-                    Hand History
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleTabSwitch("image")}
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                      activeTab === "image"
-                        ? "bg-background text-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    <ImageIcon className="h-3.5 w-3.5" />
-                    Screenshot
-                  </button>
+                  {/* Usage widget — top-right of card header */}
+                  {user && usage && !isAuthLoading && (
+                    <UsageWidget usage={usage} className="mt-0.5 shrink-0" />
+                  )}
                 </div>
+
+                {/* Tab switcher — only shown when user can analyze */}
+                {canAnalyze && (
+                  <div className="mt-3 inline-flex rounded-lg border border-border/60 bg-secondary/40 p-1 gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleTabSwitch("text")}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                        activeTab === "text"
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      Hand History
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleTabSwitch("image")}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                        activeTab === "image"
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      <ImageIcon className="h-3.5 w-3.5" />
+                      Screenshot
+                    </button>
+                  </div>
+                )}
               </CardHeader>
 
-              <CardContent className="space-y-4">
-                {/* Analysis Setup — compact context selector, persisted in localStorage */}
-                <AnalysisSetup
-                  value={setup}
-                  onChange={handleSetupChange}
-                  className="pb-4 border-b border-border/30"
-                />
+              <CardContent>
+                {/* ── Auth loading skeleton ── */}
+                {isAuthLoading && (
+                  <div className="py-10 flex items-center justify-center">
+                    <div className="h-5 w-5 rounded-full border-2 border-t-poker-green animate-spin" />
+                  </div>
+                )}
 
-                {activeTab === "text" ? (
-                  <HandInput onAnalyze={handleTextAnalyze} isLoading={isLoading} />
-                ) : (
-                  <ImageUpload onAnalyze={handleImageUpload} isLoading={imgLoading} />
+                {/* ── Not logged in ── */}
+                {!isAuthLoading && isGated && <LoginCTA />}
+
+                {/* ── Over limit ── */}
+                {!isAuthLoading && isOverLimit && usage && (
+                  <UpgradePrompt used={usage.used} limit={usage.limit} />
+                )}
+
+                {/* ── Normal access: setup + input ── */}
+                {!isAuthLoading && canAnalyze && (
+                  <div className="space-y-4">
+                    <AnalysisSetup
+                      value={setup}
+                      onChange={handleSetupChange}
+                      className="pb-4 border-b border-border/30"
+                    />
+
+                    {activeTab === "text" ? (
+                      <HandInput onAnalyze={handleTextAnalyze} isLoading={isLoading} />
+                    ) : (
+                      <ImageUpload onAnalyze={handleImageUpload} isLoading={imgLoading} />
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>

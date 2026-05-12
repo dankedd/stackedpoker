@@ -9,14 +9,22 @@ import type { AnalysisSetupValue } from "@/components/poker/AnalysisSetup";
 // Empty base = Next.js rewrites (/api/* → FastAPI). No CORS needed.
 const API_BASE = "";
 
-async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+async function apiFetch<T>(path: string, token?: string | null, init?: RequestInit): Promise<T> {
+  const authHeaders: Record<string, string> = token
+    ? { Authorization: `Bearer ${token}` }
+    : {};
+
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders },
     ...init,
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({ detail: "Unknown error" }));
-    throw new Error(body.detail ?? `HTTP ${res.status}`);
+    // Structured error detail (e.g. limit_reached) or plain string
+    const detail = body.detail ?? `HTTP ${res.status}`;
+    const err = new Error(typeof detail === "string" ? detail : detail.message ?? JSON.stringify(detail));
+    (err as Error & { detail?: unknown }).detail = detail;
+    throw err;
   }
   return res.json() as Promise<T>;
 }
@@ -35,8 +43,12 @@ async function apiUpload<T>(path: string, file: File): Promise<T> {
 
 // ── Text hand analysis (existing) ─────────────────────────────────────────
 
-export async function analyzeHand(handText: string, setup?: AnalysisSetupValue): Promise<AnalysisResponse> {
-  return apiFetch<AnalysisResponse>("/api/analyze", {
+export async function analyzeHand(
+  handText: string,
+  token: string,
+  setup?: AnalysisSetupValue,
+): Promise<AnalysisResponse> {
+  return apiFetch<AnalysisResponse>("/api/analyze", token, {
     method: "POST",
     body: JSON.stringify({
       hand_text: handText,
@@ -47,7 +59,7 @@ export async function analyzeHand(handText: string, setup?: AnalysisSetupValue):
 }
 
 export async function parseHand(handText: string): Promise<{ parsed_hand: AnalysisResponse["parsed_hand"] }> {
-  return apiFetch("/api/parse", {
+  return apiFetch("/api/parse", null, {
     method: "POST",
     body: JSON.stringify({ hand_text: handText }),
   });
@@ -68,7 +80,7 @@ export async function extractHand(file: File): Promise<ExtractionResult> {
 
 /** Step 2: Run coaching on user-confirmed state, get full replay. */
 export async function confirmHand(state: ConfirmedPokerState): Promise<VisionAnalysisResponse> {
-  return apiFetch<VisionAnalysisResponse>("/api/confirm-hand", {
+  return apiFetch<VisionAnalysisResponse>("/api/confirm-hand", null, {
     method: "POST",
     body: JSON.stringify(state),
   });

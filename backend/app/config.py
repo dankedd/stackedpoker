@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     supabase_url: str = ""
     supabase_anon_key: str = ""
     supabase_jwt_secret: str = ""
+    supabase_service_role_key: str = ""  # server-side only — never expose to frontend
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

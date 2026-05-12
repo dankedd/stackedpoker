@@ -13,6 +13,8 @@ from app.parsers.detector import detect_and_parse
 from app.engines.analysis import analyse_hand
 from app.services.openai_coach import generate_coaching
 from app.services.hand_service import save_analysis
+from app.services.usage_service import get_user_profile, assert_usage_allowed, increment_usage
+from app.middleware.auth import get_current_user
 from app.database import get_db
 
 logger = logging.getLogger(__name__)
@@ -150,17 +152,24 @@ def _build_replay(result: AnalysisResponse) -> ReplayAnalysis:
 @router.post("/analyze", response_model=AnalysisResponse, tags=["analysis"])
 async def analyze_hand(
     request: HandAnalysisRequest,
+    current_user: dict = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> AnalysisResponse:
-    """Full pipeline: parse → classify → heuristics → AI coaching → replay → persist."""
+    """Full pipeline: auth → usage check → parse → classify → heuristics → AI coaching → replay → persist → increment."""
+    user_id: str = current_user.get("sub", "")
+
+    # 1. Server-side usage check (raises 401/403 on failure)
+    profile = await get_user_profile(user_id)
+    assert_usage_allowed(profile)
+
     try:
-        # 1. Parse
+        # 2. Parse
         parsed = detect_and_parse(request.hand_text)
 
-        # 2. Structural analysis (no AI yet)
+        # 3. Structural analysis (no AI yet)
         result = analyse_hand(parsed)
 
-        # 3. AI coaching
+        # 4. AI coaching
         coaching = await generate_coaching(
             hand=parsed,
             spot=result.spot_classification,
@@ -172,15 +181,18 @@ async def analyze_hand(
         )
         result.ai_coaching = coaching
 
-        # 4. Build replay from already-computed data (no extra AI call)
+        # 5. Build replay from already-computed data (no extra AI call)
         result.replay = _build_replay(result)
 
-        # 5. Persist (best-effort — skipped if DB unavailable)
+        # 6. Persist (best-effort — skipped if DB unavailable)
         if db is not None:
             try:
                 await save_analysis(db, request.hand_text, result)
             except Exception:
                 logger.warning("DB persist failed — returning result anyway")
+
+        # 7. Increment usage only on success (not on parse/analysis errors)
+        await increment_usage(user_id)
 
         return result
 
