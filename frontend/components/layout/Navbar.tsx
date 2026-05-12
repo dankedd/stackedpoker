@@ -1,11 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Spade, ChevronDown, BarChart2, Trophy, Menu, X,
-} from "lucide-react";
+import { Spade, Menu, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { cn } from "@/lib/utils";
@@ -14,36 +12,15 @@ import { cn } from "@/lib/utils";
 // Navigation config
 // ─────────────────────────────────────────────────────────────────────────────
 
-const ANALYZE_SUBITEMS = [
-  {
-    label: "Hand Analysis",
-    href: "/analyze/hand",
-    icon: Spade,
-    desc: "Single hand deep dive",
-  },
-  {
-    label: "Session Analysis",
-    href: "/analyze/session",
-    icon: BarChart2,
-    desc: "Full session review",
-  },
-  {
-    label: "Tournament",
-    href: "/analyze/tournament",
-    icon: Trophy,
-    desc: "MTT & SNG decisions",
-  },
-] as const;
-
 interface NavItem {
   label: string;
   href: string;
-  dropdown?: boolean;
+  primary?: boolean; // signals this is the core feature
 }
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/dashboard" },
-  { label: "Analyze",   href: "/analyze",         dropdown: true },
+  { label: "Analyze",   href: "/analyze", primary: true },
   { label: "Puzzles",   href: "/analyze/puzzles" },
   { label: "History",   href: "/history" },
 ];
@@ -66,87 +43,27 @@ function useActiveItem(pathname: string) {
     if (item.href === "/analyze/puzzles") {
       return pathname.startsWith("/analyze/puzzles");
     }
-    if (item.href === "/dashboard") {
-      return pathname.startsWith("/dashboard");
-    }
-    if (item.href === "/history") {
-      return pathname.startsWith("/history");
-    }
-    return pathname === item.href;
+    return pathname === item.href || pathname.startsWith(item.href + "/");
   };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Analyze dropdown (desktop)
+// Link style helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function AnalyzeDropdown({
-  open,
-  pathname,
-}: {
-  open: boolean;
-  pathname: string;
-}) {
-  if (!open) return null;
-  return (
-    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2.5 w-[240px] rounded-2xl border border-white/[0.09] bg-[#060B18]/98 backdrop-blur-xl shadow-2xl shadow-black/70 p-1.5 z-50">
-      {ANALYZE_SUBITEMS.map(({ label, href, icon: Icon, desc }) => {
-        const isActive =
-          pathname === href || pathname.startsWith(href + "/");
-        return (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-xl group transition-colors",
-              isActive
-                ? "bg-violet-500/10"
-                : "hover:bg-white/[0.05]"
-            )}
-          >
-            <div
-              className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-lg shrink-0 transition-colors",
-                isActive
-                  ? "bg-violet-500/20"
-                  : "bg-white/[0.04] group-hover:bg-violet-500/15"
-              )}
-            >
-              <Icon className="h-4 w-4 text-violet-400" />
-            </div>
-            <div className="min-w-0">
-              <p
-                className={cn(
-                  "text-[13px] font-medium leading-none mb-0.5",
-                  isActive ? "text-violet-300" : "text-slate-200"
-                )}
-              >
-                {label}
-              </p>
-              <p className="text-[11px] text-slate-500">{desc}</p>
-            </div>
-          </Link>
-        );
-      })}
-    </div>
-  );
+function navLinkCls(active: boolean, primary?: boolean): string {
+  if (active) {
+    return primary
+      ? "px-3 py-1.5 rounded-xl text-[13px] font-semibold text-violet-300 bg-violet-500/12 transition-all duration-150"
+      : "px-3 py-1.5 rounded-xl text-[13px] font-medium text-white bg-white/[0.09] transition-all duration-150";
+  }
+  return primary
+    ? "px-3 py-1.5 rounded-xl text-[13px] font-semibold text-slate-300 hover:text-violet-300 hover:bg-violet-500/10 transition-all duration-150"
+    : "px-3 py-1.5 rounded-xl text-[13px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.05] transition-all duration-150";
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Shared nav link styles
-// ─────────────────────────────────────────────────────────────────────────────
-
-function navLinkCls(active: boolean) {
-  return cn(
-    "px-3 py-1.5 rounded-xl text-[13px] font-medium transition-all duration-150",
-    active
-      ? "text-white bg-white/[0.09]"
-      : "text-slate-400 hover:text-white hover:bg-white/[0.05]"
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Main component
+// Component
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface NavbarProps {
@@ -158,11 +75,7 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
   const { user, loading } = useAuth();
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
-  const [analyzeOpen, setAnalyzeOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [mobileAnalyzeOpen, setMobileAnalyzeOpen] = useState(false);
-  const analyzeRef = useRef<HTMLDivElement>(null);
-
   const isSticky = variant === "sticky";
   const isActive = useActiveItem(pathname);
 
@@ -174,30 +87,9 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
     return () => window.removeEventListener("scroll", onScroll);
   }, [isSticky]);
 
-  // Close analyze dropdown on outside click/escape
+  // Close mobile menu on route change
   useEffect(() => {
-    if (!analyzeOpen) return;
-    function handleDown(e: MouseEvent) {
-      if (analyzeRef.current && !analyzeRef.current.contains(e.target as Node)) {
-        setAnalyzeOpen(false);
-      }
-    }
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setAnalyzeOpen(false);
-    }
-    document.addEventListener("mousedown", handleDown);
-    document.addEventListener("keydown", handleKey);
-    return () => {
-      document.removeEventListener("mousedown", handleDown);
-      document.removeEventListener("keydown", handleKey);
-    };
-  }, [analyzeOpen]);
-
-  // Close everything on route change
-  useEffect(() => {
-    setAnalyzeOpen(false);
     setMobileOpen(false);
-    setMobileAnalyzeOpen(false);
   }, [pathname]);
 
   // ── Nav pill ──────────────────────────────────────────────────────────────
@@ -226,41 +118,17 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
         </span>
       </Link>
 
-      {/* ── Center nav (desktop) ── */}
+      {/* ── Center links (desktop) ── */}
       <div className="hidden md:flex items-center gap-0.5">
-        {NAV_ITEMS.map((item) =>
-          item.dropdown ? (
-            <div
-              key={item.label}
-              ref={analyzeRef}
-              className="relative"
-              onMouseEnter={() => setAnalyzeOpen(true)}
-              onMouseLeave={() => setAnalyzeOpen(false)}
-            >
-              <button
-                type="button"
-                onClick={() => setAnalyzeOpen((v) => !v)}
-                className={cn(
-                  navLinkCls(isActive(item)),
-                  "flex items-center gap-1"
-                )}
-              >
-                {item.label}
-                <ChevronDown
-                  className={cn(
-                    "h-3 w-3 transition-transform duration-200",
-                    analyzeOpen && "rotate-180"
-                  )}
-                />
-              </button>
-              <AnalyzeDropdown open={analyzeOpen} pathname={pathname} />
-            </div>
-          ) : (
-            <Link key={item.label} href={item.href} className={navLinkCls(isActive(item))}>
-              {item.label}
-            </Link>
-          )
-        )}
+        {NAV_ITEMS.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={navLinkCls(isActive(item), item.primary)}
+          >
+            {item.label}
+          </Link>
+        ))}
       </div>
 
       {/* ── Right side ── */}
@@ -303,70 +171,27 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
     <div className="md:hidden fixed inset-x-0 top-[68px] z-50 px-4">
       <div className="rounded-2xl border border-white/[0.09] bg-[#060B18]/98 backdrop-blur-xl shadow-2xl shadow-black/70 overflow-hidden">
         <nav className="p-2">
-          {NAV_ITEMS.map((item) =>
-            item.dropdown ? (
-              <div key={item.label}>
-                <button
-                  type="button"
-                  onClick={() => setMobileAnalyzeOpen((v) => !v)}
-                  className={cn(
-                    "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all",
-                    isActive(item)
-                      ? "text-white bg-white/[0.09]"
-                      : "text-slate-400 hover:text-white hover:bg-white/[0.05]"
-                  )}
-                >
-                  <span>{item.label}</span>
-                  <ChevronDown
-                    className={cn(
-                      "h-3.5 w-3.5 transition-transform duration-200",
-                      mobileAnalyzeOpen && "rotate-180"
-                    )}
-                  />
-                </button>
-
-                {mobileAnalyzeOpen && (
-                  <div className="ml-3 mt-0.5 pl-3 border-l border-white/[0.07] space-y-0.5 pb-1">
-                    {ANALYZE_SUBITEMS.map(({ label, href, icon: Icon }) => {
-                      const active =
-                        pathname === href || pathname.startsWith(href + "/");
-                      return (
-                        <Link
-                          key={href}
-                          href={href}
-                          className={cn(
-                            "flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] transition-all",
-                            active
-                              ? "text-violet-300 bg-violet-500/10"
-                              : "text-slate-400 hover:text-white hover:bg-white/[0.05]"
-                          )}
-                        >
-                          <Icon className="h-3.5 w-3.5 text-violet-400 shrink-0" />
-                          {label}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link
-                key={item.label}
-                href={item.href}
-                className={cn(
-                  "flex items-center px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all",
-                  isActive(item)
-                    ? "text-white bg-white/[0.09]"
-                    : "text-slate-400 hover:text-white hover:bg-white/[0.05]"
-                )}
-              >
-                {item.label}
-              </Link>
-            )
-          )}
+          {NAV_ITEMS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex items-center px-3 py-2.5 rounded-xl text-[13px] transition-all",
+                item.primary ? "font-semibold" : "font-medium",
+                isActive(item)
+                  ? item.primary
+                    ? "text-violet-300 bg-violet-500/12"
+                    : "text-white bg-white/[0.09]"
+                  : item.primary
+                  ? "text-slate-300 hover:text-violet-300 hover:bg-violet-500/10"
+                  : "text-slate-400 hover:text-white hover:bg-white/[0.05]"
+              )}
+            >
+              {item.label}
+            </Link>
+          ))}
         </nav>
 
-        {/* Auth footer inside mobile menu */}
         {!loading && !user && (
           <div className="px-4 pb-4 pt-2 border-t border-white/[0.06] flex flex-col gap-2">
             <Link
