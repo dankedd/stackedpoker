@@ -4,6 +4,7 @@ import type {
   ExtractionResult,
   VisionAnalysisResponse,
 } from "./types";
+import type { AnalysisSetupValue } from "@/components/poker/AnalysisSetup";
 
 // Empty base = Next.js rewrites (/api/* → FastAPI). No CORS needed.
 const API_BASE = "";
@@ -34,10 +35,14 @@ async function apiUpload<T>(path: string, file: File): Promise<T> {
 
 // ── Text hand analysis (existing) ─────────────────────────────────────────
 
-export async function analyzeHand(handText: string): Promise<AnalysisResponse> {
+export async function analyzeHand(handText: string, setup?: AnalysisSetupValue): Promise<AnalysisResponse> {
   return apiFetch<AnalysisResponse>("/api/analyze", {
     method: "POST",
-    body: JSON.stringify({ hand_text: handText }),
+    body: JSON.stringify({
+      hand_text: handText,
+      game_type: setup?.gameType,
+      player_count: setup?.playerCount,
+    }),
   });
 }
 

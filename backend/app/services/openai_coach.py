@@ -16,13 +16,15 @@ async def generate_coaching(
     texture: BoardTexture,
     findings: list[HeuristicFinding],
     overall_score: int,
+    game_type: str | None = None,
+    player_count: int | None = None,
 ) -> str:
     settings = get_settings()
     if not settings.openai_api_key:
         return _fallback_coaching(spot, texture, findings)
 
     client = AsyncOpenAI(api_key=settings.openai_api_key)
-    prompt = _build_prompt(hand, spot, texture, findings, overall_score)
+    prompt = _build_prompt(hand, spot, texture, findings, overall_score, game_type, player_count)
 
     try:
         response = await client.chat.completions.create(
@@ -55,6 +57,8 @@ def _build_prompt(
     texture: BoardTexture,
     findings: list[HeuristicFinding],
     score: int,
+    game_type: str | None = None,
+    player_count: int | None = None,
 ) -> str:
     board_str = " ".join(hand.board.flop)
     if hand.board.turn:
@@ -74,8 +78,35 @@ def _build_prompt(
     for f in findings:
         findings_summary.append(f"  [{f.severity.upper()}] {f.street}: {f.action_taken} — {f.recommendation}")
 
-    return f"""Analyze this poker hand and provide coaching:
+    # Build game context block from user-selected setup
+    game_context_lines = []
+    if game_type:
+        game_context_lines.append(f"- Game Format: {game_type}")
+        format_notes = {
+            "Spin & Gold": "Focus on push/fold ICM dynamics and short-stack shove ranges.",
+            "All-In or Fold": "Every decision is a push/fold spot — apply tight shove/call ranges.",
+            "Rush & Cash": "Fast-fold format; assume tight population tendencies.",
+            "Mystery Battle Royale": "Lottery-style format with ICM pressure; prioritize chip preservation.",
+            "PLO": "Equity runs closer; draw-heavy hands are common. Adjust for 4-card hand values and nut advantage.",
+            "Short Deck": "Flush beats full house; straights more common. Recalibrate equity estimates accordingly.",
+        }
+        if game_type in format_notes:
+            game_context_lines.append(f"- Format note: {format_notes[game_type]}")
+    if player_count:
+        handedness = f"{player_count}-handed" if player_count > 2 else "heads-up"
+        game_context_lines.append(f"- Table size: {handedness} ({player_count} players)")
+        if player_count <= 3:
+            game_context_lines.append("- Range note: Widen ranges significantly for short-handed play.")
+        elif player_count >= 8:
+            game_context_lines.append("- Range note: Tighten ranges; expect stronger holdings at full ring.")
 
+    game_context_block = (
+        "\nGAME CONTEXT (user-specified):\n" + "\n".join(game_context_lines) + "\n"
+        if game_context_lines else ""
+    )
+
+    return f"""Analyze this poker hand and provide coaching:
+{game_context_block}
 HAND DETAILS:
 - Site: {hand.site} | Stakes: ${hand.stakes}
 - Hero Position: {hand.hero_position} | Pot Type: {spot.pot_type}

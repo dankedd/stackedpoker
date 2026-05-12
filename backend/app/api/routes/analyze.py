@@ -167,6 +167,8 @@ async def analyze_hand(
             texture=result.board_texture,
             findings=result.findings,
             overall_score=result.overall_score,
+            game_type=request.game_type,
+            player_count=request.player_count,
         )
         result.ai_coaching = coaching
 

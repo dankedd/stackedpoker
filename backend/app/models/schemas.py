@@ -7,6 +7,8 @@ from typing import Literal
 
 class HandAnalysisRequest(BaseModel):
     hand_text: str = Field(..., min_length=50, description="Raw hand history text")
+    game_type: str | None = Field(None, description="Game format selected by user (e.g. Hold'em, PLO)")
+    player_count: int | None = Field(None, ge=1, le=9, description="Table size selected by user")
 
 
 # ── Parsed hand ────────────────────────────────────────────────────────────

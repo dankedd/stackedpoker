@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { analyzeHand } from "@/lib/api";
 import type { AnalysisResponse } from "@/lib/types";
+import type { AnalysisSetupValue } from "@/components/poker/AnalysisSetup";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -11,13 +12,13 @@ export function useAnalysis() {
   const [result, setResult] = useState<AnalysisResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const analyze = useCallback(async (handText: string) => {
+  const analyze = useCallback(async (handText: string, setup?: AnalysisSetupValue) => {
     setStatus("loading");
     setError(null);
     setResult(null);
 
     try {
-      const data = await analyzeHand(handText);
+      const data = await analyzeHand(handText, setup);
       setResult(data);
       setStatus("success");
     } catch (err) {

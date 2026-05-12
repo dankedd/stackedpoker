@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, RotateCcw, FileText, ImageIcon } from "lucide-react";
 import Link from "next/link";
 import { Header } from "@/components/layout/Header";
@@ -8,6 +8,8 @@ import { Footer } from "@/components/layout/Footer";
 import { HandInput } from "@/components/poker/HandInput";
 import { ImageUpload } from "@/components/poker/ImageUpload";
 import { AnalysisResult } from "@/components/poker/AnalysisResult";
+import { AnalysisSetup, ANALYSIS_SETUP_DEFAULT } from "@/components/poker/AnalysisSetup";
+import type { AnalysisSetupValue } from "@/components/poker/AnalysisSetup";
 import { HandReplay } from "@/components/replay/HandReplay";
 import { HandConfirmation } from "@/components/replay/HandConfirmation";
 import { Button } from "@/components/ui/button";
@@ -18,8 +20,26 @@ import { cn } from "@/lib/utils";
 
 type Tab = "text" | "image";
 
+const SETUP_STORAGE_KEY = "poker_analysis_setup";
+
 export default function AnalyzePage() {
   const [activeTab, setActiveTab] = useState<Tab>("text");
+  const [setup, setSetup] = useState<AnalysisSetupValue>(ANALYSIS_SETUP_DEFAULT);
+
+  // Restore last setup from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(SETUP_STORAGE_KEY);
+      if (stored) setSetup(JSON.parse(stored));
+    } catch {
+      // ignore — keep default
+    }
+  }, []);
+
+  const handleSetupChange = (v: AnalysisSetupValue) => {
+    setSetup(v);
+    try { localStorage.setItem(SETUP_STORAGE_KEY, JSON.stringify(v)); } catch {}
+  };
 
   const text  = useAnalysis();
   const image = useImageAnalysis();
@@ -30,7 +50,7 @@ export default function AnalyzePage() {
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
 
   const handleTextAnalyze = async (t: string) => {
-    await text.analyze(t);
+    await text.analyze(t, setup);
     scrollToResult();
   };
 
@@ -116,7 +136,14 @@ export default function AnalyzePage() {
                 </div>
               </CardHeader>
 
-              <CardContent>
+              <CardContent className="space-y-4">
+                {/* Analysis Setup — compact context selector, persisted in localStorage */}
+                <AnalysisSetup
+                  value={setup}
+                  onChange={handleSetupChange}
+                  className="pb-4 border-b border-border/30"
+                />
+
                 {activeTab === "text" ? (
                   <HandInput onAnalyze={handleTextAnalyze} isLoading={isLoading} />
                 ) : (
