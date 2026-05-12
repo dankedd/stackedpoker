@@ -14,9 +14,6 @@ _bearer = HTTPBearer(auto_error=False)
 
 def _decode_token(token: str) -> dict:
     settings = get_settings()
-    if not settings.supabase_jwt_secret:
-        logger.error("SUPABASE_JWT_SECRET is not set — cannot validate tokens")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Server misconfiguration")
     try:
         payload = jwt.decode(
             token,
@@ -29,7 +26,10 @@ def _decode_token(token: str) -> dict:
         logger.warning("JWT validation failed: token expired")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
     except jwt.InvalidTokenError as exc:
-        logger.warning("JWT validation failed: %s (%s)", type(exc).__name__, exc)
+        if not settings.supabase_jwt_secret:
+            logger.error("JWT validation failed — SUPABASE_JWT_SECRET is not configured on this server")
+        else:
+            logger.warning("JWT validation failed: %s (%s)", type(exc).__name__, exc)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 
