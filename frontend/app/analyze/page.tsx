@@ -224,20 +224,25 @@ export default function AnalyzePage() {
 
           {/* ── Error state ───────────────────────────────────────────── */}
           {(hasError || (imgError && !image.extraction)) && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-6 text-center space-y-3">
-              <p className="font-semibold text-red-400">Analysis Failed</p>
-              <p className="text-sm text-muted-foreground">
-                {activeTab === "text" ? text.error : image.error}
-              </p>
-              <div className="flex items-center justify-center gap-3">
+            <div className="mx-auto max-w-lg rounded-2xl border border-white/[0.07] bg-[#0D1526]/80 backdrop-blur-sm p-6 text-center space-y-3 shadow-xl shadow-black/30">
+              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10 border border-amber-500/20">
+                <span className="text-amber-400 text-lg font-bold">!</span>
+              </div>
+              <div>
+                <p className="font-semibold text-slate-200 text-sm">Analysis failed</p>
+                <p className="mt-1 text-[13px] text-slate-400 leading-relaxed">
+                  {activeTab === "text" ? text.error : image.error}
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-3 pt-1">
                 {image.extraction && (
-                  <Button variant="outline" size="sm" onClick={image.backToConfirm} className="gap-2">
+                  <Button variant="outline" size="sm" onClick={image.backToConfirm} className="gap-2 text-xs">
                     ← Back to review
                   </Button>
                 )}
-                <Button variant="outline" size="sm" onClick={handleReset} className="gap-2">
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  Try Again
+                <Button variant="outline" size="sm" onClick={handleReset} className="gap-2 text-xs">
+                  <RotateCcw className="h-3 w-3" />
+                  Try again
                 </Button>
               </div>
             </div>
