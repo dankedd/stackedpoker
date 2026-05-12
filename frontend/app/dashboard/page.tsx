@@ -8,6 +8,7 @@ import {
   Layers,
   Clock,
   Spade,
+  Brain,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
@@ -120,6 +121,21 @@ export default async function DashboardPage() {
                 <h3 className="text-foreground font-semibold mt-4">Hand History</h3>
                 <p className="text-sm text-muted-foreground mt-1">
                   Review past analyses, replay hands, and track your improvement.
+                </p>
+              </div>
+            </Link>
+
+            <Link href="/analyze/puzzles" className="group">
+              <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500/40 p-6 transition-all duration-200 h-full">
+                <div className="flex items-start justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/20 border border-violet-500/25">
+                    <Brain className="h-5 w-5 text-violet-400" />
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-violet-400 transition-colors" />
+                </div>
+                <h3 className="text-foreground font-semibold mt-4">Puzzles</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Train with multi-street interactive scenarios and live AI coaching.
                 </p>
               </div>
             </Link>

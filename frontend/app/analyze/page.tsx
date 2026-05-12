@@ -38,11 +38,11 @@ const TOOLS = [
     href: "/analyze/puzzles",
     icon: Puzzle,
     title: "Puzzles",
-    description: "Train with interactive poker scenarios, GTO drills, and decision challenges.",
-    cta: "Coming soon",
-    accent: "slate",
+    description: "Train with interactive poker scenarios, multi-street decisions, and live AI coaching.",
+    cta: "Train now",
+    accent: "violet",
     featured: false,
-    locked: true,
+    locked: false,
   },
 ] as const;
 

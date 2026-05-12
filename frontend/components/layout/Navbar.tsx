@@ -16,6 +16,7 @@ const LANDING_LINKS = [
 
 const APP_LINKS = [
   { label: "Analyze",   href: "/analyze" },
+  { label: "Puzzles",   href: "/analyze/puzzles" },
   { label: "Dashboard", href: "/dashboard" },
   { label: "History",   href: "/history" },
 ];
