@@ -36,7 +36,11 @@ export async function startCheckout(): Promise<void> {
     throw new Error("Checkout failed — invalid redirect URL.");
   }
 
-  window.location.href = url;
+  const tab = window.open(url, "_blank", "noopener,noreferrer");
+  if (!tab) {
+    // Fallback if browser blocked the popup
+    window.location.href = url;
+  }
 }
 
 // ── UpgradePrompt ─────────────────────────────────────────────────────────

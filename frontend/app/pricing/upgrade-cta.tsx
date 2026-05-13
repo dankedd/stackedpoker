@@ -1,8 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2, Zap, ArrowRight } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Loader2, Zap, ArrowRight, CheckCircle2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { startCheckout } from "@/components/poker/UpgradePrompt";
+import { createClient } from "@/lib/supabase/client";
+
+// Poll the user's subscription tier until it becomes pro/admin or times out.
+const POLL_INTERVAL_MS = 3_000;
+const POLL_TIMEOUT_MS  = 10 * 60 * 1_000; // 10 minutes
 
 export function UpgradePricingCTA({
   loggedIn,
@@ -11,29 +18,80 @@ export function UpgradePricingCTA({
   loggedIn: boolean;
   fullWidth?: boolean;
 }) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const router    = useRouter();
+  const [loading, setLoading]  = useState(false);
+  const [waiting, setWaiting]  = useState(false);
+  const [error,   setError]    = useState<string | null>(null);
+  const startedAt = useRef<number>(0);
+
+  // Subscription polling — activates after checkout tab is opened
+  useEffect(() => {
+    if (!waiting) return;
+
+    const supabase = createClient();
+    startedAt.current = Date.now();
+
+    const interval = setInterval(async () => {
+      if (Date.now() - startedAt.current > POLL_TIMEOUT_MS) {
+        setWaiting(false);
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("subscription_tier")
+        .eq("id", user.id)
+        .single();
+
+      if (profile?.subscription_tier === "pro" || profile?.subscription_tier === "admin") {
+        setWaiting(false);
+        toast.success("Welcome to Pro!", {
+          description: "Unlimited analyses and all Pro features are now active.",
+          duration: 6000,
+        });
+        router.refresh();
+      }
+    }, POLL_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [waiting, router]);
 
   async function handleUpgrade() {
     if (!loggedIn) {
-      window.location.href = "/signup?next=pricing";
+      router.push("/signup?next=pricing");
       return;
     }
     setLoading(true);
     setError(null);
     try {
       await startCheckout();
+      // startCheckout opened a new tab; switch to waiting state
+      setLoading(false);
+      setWaiting(true);
     } catch {
       setError("Something went wrong. Please try again.");
       setLoading(false);
     }
   }
 
+  const disabled = loading || waiting;
+
+  const buttonLabel = loading
+    ? "Opening checkout…"
+    : waiting
+    ? "Waiting for payment…"
+    : loggedIn
+    ? "Upgrade to Pro"
+    : "Get Pro — €9/month";
+
   return (
     <div className="space-y-2">
       <button
         onClick={handleUpgrade}
-        disabled={loading}
+        disabled={disabled}
         className={
           "inline-flex items-center justify-center gap-2.5 rounded-xl " +
           "bg-gradient-to-r from-violet-600 to-blue-500 " +
@@ -46,16 +104,26 @@ export function UpgradePricingCTA({
       >
         {loading ? (
           <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+        ) : waiting ? (
+          <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin shrink-0" />
         ) : (
           <Zap className="h-4 w-4 shrink-0" />
         )}
-        {loading
-          ? "Redirecting to checkout…"
-          : loggedIn
-          ? "Upgrade to Pro"
-          : "Get Pro — €9/month"}
-        {!loading && <ArrowRight className="h-4 w-4 shrink-0" />}
+        {buttonLabel}
+        {!loading && !waiting && <ArrowRight className="h-4 w-4 shrink-0" />}
       </button>
+
+      {waiting && (
+        <p className="text-center text-xs text-muted-foreground">
+          Complete payment in the checkout tab.{" "}
+          <button
+            onClick={() => setWaiting(false)}
+            className="underline underline-offset-2 hover:text-foreground transition-colors"
+          >
+            Cancel
+          </button>
+        </p>
+      )}
 
       {error && (
         <p className="text-xs text-destructive text-center">{error}</p>

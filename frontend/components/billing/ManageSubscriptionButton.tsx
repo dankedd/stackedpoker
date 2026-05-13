@@ -31,7 +31,14 @@ export function ManageSubscriptionButton({
       if (!token) throw new Error("Not authenticated.");
 
       const { url } = await createPortalSession(token);
-      window.location.href = url;
+      const tab = window.open(url, "_blank", "noopener,noreferrer");
+      if (!tab) {
+        // Popup blocked — fall back to same-tab navigation
+        window.location.href = url;
+      } else {
+        // Tab opened successfully; reset loading so button is usable again
+        setLoading(false);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to open billing portal.");
       setLoading(false);
