@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function saveResult(puzzleId: string, score: number) {
+function saveResult(puzzleId: string, score: number, difficulty: string, category: string) {
   try {
     const raw = localStorage.getItem("puzzle_stats");
     const stats = raw ? JSON.parse(raw) : { solved: [], scores: {}, streak: 0, bestStreak: 0 };
@@ -25,15 +25,14 @@ function saveResult(puzzleId: string, score: number) {
       stats.solved.push(puzzleId);
       stats.streak = (stats.streak ?? 0) + 1;
       stats.bestStreak = Math.max(stats.bestStreak ?? 0, stats.streak);
-    } else {
-      // Update score only if improved
-      if (score > (stats.scores[puzzleId] ?? 0)) {
-        stats.scores[puzzleId] = score;
-      }
     }
     if (!stats.scores[puzzleId] || score > stats.scores[puzzleId]) {
       stats.scores[puzzleId] = score;
     }
+    if (!stats.attempts) stats.attempts = [];
+    stats.attempts.push({ id: puzzleId, score, timestamp: Date.now(), difficulty, category });
+    if (stats.attempts.length > 50) stats.attempts = stats.attempts.slice(-50);
+    stats.lastPlayed = Date.now();
     localStorage.setItem("puzzle_stats", JSON.stringify(stats));
   } catch { /* silent */ }
 }
@@ -354,7 +353,7 @@ export default function PuzzlePlayerPage() {
       const finalScore = Math.round(
         [...stepResults].reduce((s, r) => s + r.score, 0) / (puzzle?.steps.length ?? 1)
       );
-      saveResult(puzzle?.id ?? "", finalScore);
+      saveResult(puzzle?.id ?? "", finalScore, puzzle?.difficulty ?? "", puzzle?.category ?? "");
       setDone(true);
     } else {
       setStepIdx(s => s + 1);

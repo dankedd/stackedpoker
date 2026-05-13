@@ -4,6 +4,7 @@ import {
   TrendingUp, BookOpen, BarChart3, ChevronRight,
   Layers, Clock, Spade, Brain, Zap, Settings,
 } from "lucide-react";
+import { PuzzleTrainingPanel } from "@/components/dashboard/PuzzleTrainingPanel";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/layout/Navbar";
@@ -189,6 +190,11 @@ export default async function DashboardPage() {
               </div>
             </Link>
           </div>
+        </div>
+
+        {/* Puzzle training stats */}
+        <div className="mb-10">
+          <PuzzleTrainingPanel />
         </div>
 
         {/* Recent analyses placeholder */}
