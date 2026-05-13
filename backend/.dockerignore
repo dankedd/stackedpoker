@@ -1,0 +1,28 @@
+# Never bake secrets or local overrides into the image.
+# Railway (and other PaaS platforms) inject env vars at runtime.
+.env
+.env.local
+.env.*.local
+
+# Dev tooling / caches
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Test artefacts
+tests/
+htmlcov/
+.coverage
+
+# IDE
+.vscode/
+.idea/

@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -6,6 +7,10 @@ class Settings(BaseSettings):
     app_name: str = "Stacked Poker"
     debug: bool = False
 
+    # DATABASE_URL is injected by Railway automatically in production.
+    # Local dev uses .env or this default.
+    # Railway provides postgresql:// or postgres:// — normalised to
+    # postgresql+asyncpg:// by the validator below before engine creation.
     database_url: str = "postgresql+asyncpg://postgres:password@localhost:5432/stacked_poker"
 
     openai_api_key: str = ""
@@ -25,7 +30,24 @@ class Settings(BaseSettings):
     stripe_webhook_secret: str = ""
     stripe_pro_price_id: str = ""
 
+    # Pydantic reads .env for local dev; real env vars always win over .env file.
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def _normalise_db_url(cls, v: object) -> object:
+        """Rewrite postgresql:// / postgres:// → postgresql+asyncpg://
+
+        Railway (and most PaaS providers) supply DATABASE_URL without the
+        asyncpg driver specifier. SQLAlchemy's async engine requires it.
+        """
+        if not isinstance(v, str):
+            return v
+        if v.startswith("postgres://"):
+            return "postgresql+asyncpg://" + v[len("postgres://"):]
+        if v.startswith("postgresql://"):
+            return "postgresql+asyncpg://" + v[len("postgresql://"):]
+        return v
 
 
 @lru_cache()
