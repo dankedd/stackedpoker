@@ -32,7 +32,8 @@ async def analyze_session_endpoint(
 
     # Persist to Supabase (best-effort — never blocks the response)
     try:
-        await save_session_analysis(user_id, request.session_text, result)
+        saved_id = await save_session_analysis(user_id, request.session_text, result)
+        result.saved_id = saved_id or None
     except Exception:
         logger.warning("Session Supabase persist failed for user %s", user_id)
 

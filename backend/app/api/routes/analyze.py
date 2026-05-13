@@ -187,7 +187,8 @@ async def analyze_hand(
 
         # 6. Persist to Supabase hand_analyses (primary user-facing store)
         try:
-            await save_to_supabase(user_id, request.hand_text, result)
+            saved_id = await save_to_supabase(user_id, request.hand_text, result)
+            result.saved_id = saved_id or None
         except Exception:
             logger.warning("Supabase persist failed — returning result anyway")
 

@@ -517,6 +517,9 @@ export default function HistoryPage() {
         .order("analyzed_at", { ascending: false })
         .limit(500);
 
+      if (error) {
+        console.error("[history] Supabase fetch error:", error.message, error.code, (error as { details?: string }).details);
+      }
       if (!error && data) {
         const rows = data as unknown as HandAnalysis[];
         setAll(rows);

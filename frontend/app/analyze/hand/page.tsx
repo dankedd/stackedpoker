@@ -342,13 +342,19 @@ export default function AnalyzePage() {
                       New Hand
                     </Button>
                   </div>
-                  {user && (
+                  {user && text.result.saved_id && (
                     <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/8 px-3 py-2">
                       <BookmarkCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
                       <span className="text-xs text-emerald-400">Saved to your account</span>
                       <Link href="/history" className="ml-auto text-xs text-emerald-400/70 hover:text-emerald-400 underline underline-offset-2 transition-colors">
                         View History →
                       </Link>
+                    </div>
+                  )}
+                  {user && !text.result.saved_id && (
+                    <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/8 px-3 py-2">
+                      <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                      <span className="text-xs text-amber-400">Analysis complete — history save failed</span>
                     </div>
                   )}
                   {text.result.replay ? (
