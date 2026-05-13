@@ -14,9 +14,12 @@ POST /api/confirm-hand
 from __future__ import annotations
 
 import logging
+from typing import Annotated
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
+from app.middleware.auth import get_optional_user
+from app.services.supabase_persistence import save_image_analysis
 from app.models.schemas import (
     BoardCards,
     ConfirmedPokerState,
@@ -231,7 +234,10 @@ async def extract_hand(file: UploadFile = File(...)) -> ExtractionResult:
 # ── POST /api/confirm-hand ─────────────────────────────────────────────────
 
 @router.post("/confirm-hand", response_model=VisionAnalysisResponse, tags=["extraction"])
-async def confirm_hand(state: ConfirmedPokerState) -> VisionAnalysisResponse:
+async def confirm_hand(
+    state: ConfirmedPokerState,
+    current_user: Annotated[dict | None, Depends(get_optional_user)] = None,
+) -> VisionAnalysisResponse:
     """
     Phase 3+4: coaching + replay from user-confirmed poker state.
     Data is treated as ground truth — confidence = 1.0.
@@ -255,10 +261,20 @@ async def confirm_hand(state: ConfirmedPokerState) -> VisionAnalysisResponse:
         logger.exception("confirm-hand unexpected failure")
         raise HTTPException(500, "Coaching failed. Please try again.")
 
-    return VisionAnalysisResponse(
+    response = VisionAnalysisResponse(
         filename="confirmed",
         mime_type="application/json",
         file_size_bytes=0,
         analysis=analysis,
         validation=validation,
     )
+
+    # Persist if the user is authenticated (best-effort)
+    if current_user:
+        user_id: str = current_user.get("sub", "")
+        try:
+            await save_image_analysis(user_id, response)
+        except Exception:
+            logger.warning("Image analysis Supabase persist failed for user %s", user_id)
+
+    return response

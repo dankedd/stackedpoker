@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft, RotateCcw, FileText, ImageIcon,
-  Zap, AlertTriangle,
+  Zap, AlertTriangle, BookmarkCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
@@ -330,7 +330,7 @@ export default function AnalyzePage() {
             <div ref={resultRef}>
               {activeTab === "text" && text.result && (
                 <>
-                  <div className="mb-6 flex items-center justify-between">
+                  <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-xl font-bold">
                       Analysis Results
                       <span className="ml-2 text-sm text-muted-foreground font-normal">
@@ -342,6 +342,15 @@ export default function AnalyzePage() {
                       New Hand
                     </Button>
                   </div>
+                  {user && (
+                    <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/8 px-3 py-2">
+                      <BookmarkCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                      <span className="text-xs text-emerald-400">Saved to your account</span>
+                      <Link href="/history" className="ml-auto text-xs text-emerald-400/70 hover:text-emerald-400 underline underline-offset-2 transition-colors">
+                        View History →
+                      </Link>
+                    </div>
+                  )}
                   {text.result.replay ? (
                     <HandReplay
                       analysis={text.result.replay}
@@ -369,6 +378,15 @@ export default function AnalyzePage() {
                       New Screenshot
                     </Button>
                   </div>
+                  {user && (
+                    <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/8 px-3 py-2">
+                      <BookmarkCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                      <span className="text-xs text-emerald-400">Saved to your account</span>
+                      <Link href="/history" className="ml-auto text-xs text-emerald-400/70 hover:text-emerald-400 underline underline-offset-2 transition-colors">
+                        View History →
+                      </Link>
+                    </div>
+                  )}
                   <HandReplay
                     analysis={image.result.analysis}
                     filename={image.filename}

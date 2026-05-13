@@ -95,8 +95,11 @@ export async function extractHand(file: File): Promise<ExtractionResult> {
 }
 
 /** Step 2: Run coaching on user-confirmed state, get full replay. */
-export async function confirmHand(state: ConfirmedPokerState): Promise<VisionAnalysisResponse> {
-  return apiFetch<VisionAnalysisResponse>("/api/confirm-hand", null, {
+export async function confirmHand(
+  state: ConfirmedPokerState,
+  token?: string | null,
+): Promise<VisionAnalysisResponse> {
+  return apiFetch<VisionAnalysisResponse>("/api/confirm-hand", token ?? null, {
     method: "POST",
     body: JSON.stringify(state),
   });

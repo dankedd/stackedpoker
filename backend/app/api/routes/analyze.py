@@ -13,6 +13,7 @@ from app.parsers.detector import detect_and_parse
 from app.engines.analysis import analyse_hand
 from app.services.openai_coach import generate_coaching
 from app.services.hand_service import save_analysis
+from app.services.supabase_persistence import save_hand_analysis as save_to_supabase
 from app.services.usage_service import get_user_profile, assert_usage_allowed, increment_usage
 from app.middleware.auth import get_current_user
 from app.database import get_db
@@ -184,14 +185,20 @@ async def analyze_hand(
         # 5. Build replay from already-computed data (no extra AI call)
         result.replay = _build_replay(result)
 
-        # 6. Persist (best-effort — skipped if DB unavailable)
+        # 6. Persist to Supabase hand_analyses (primary user-facing store)
+        try:
+            await save_to_supabase(user_id, request.hand_text, result)
+        except Exception:
+            logger.warning("Supabase persist failed — returning result anyway")
+
+        # 7. Persist to local DB (best-effort — skipped if DB unavailable)
         if db is not None:
             try:
                 await save_analysis(db, request.hand_text, result)
             except Exception:
                 logger.warning("DB persist failed — returning result anyway")
 
-        # 7. Increment usage only on success (not on parse/analysis errors)
+        # 8. Increment usage only on success (not on parse/analysis errors)
         await increment_usage(user_id)
 
         return result

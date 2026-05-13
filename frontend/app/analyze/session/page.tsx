@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, RotateCcw, BarChart2, ChevronRight, ChevronDown, ChevronLeft,
-  TrendingUp, Target, Zap, AlertTriangle, X,
+  TrendingUp, Target, Zap, AlertTriangle, X, BookmarkCheck,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -586,6 +586,16 @@ export default function SessionAnalyzePage() {
                   New Session
                 </Button>
               </div>
+
+              {user && (
+                <div className="flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/8 px-3 py-2">
+                  <BookmarkCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                  <span className="text-xs text-emerald-400">Session saved to your account</span>
+                  <Link href="/history" className="ml-auto text-xs text-emerald-400/70 hover:text-emerald-400 underline underline-offset-2 transition-colors">
+                    View History →
+                  </Link>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <StatTile label="Hands"       value={stats.hands_parsed.toString()} sub="parsed" />

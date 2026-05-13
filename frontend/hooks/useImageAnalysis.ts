@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { extractHand, confirmHand } from "@/lib/api";
+import { createClient } from "@/lib/supabase/client";
 import type { ConfirmedPokerState, ExtractionResult, VisionAnalysisResponse } from "@/lib/types";
 
 export type ImageAnalysisStatus =
@@ -43,7 +44,11 @@ export function useImageAnalysis() {
     setError(null);
 
     try {
-      const data = await confirmHand(state);
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token ?? null;
+
+      const data = await confirmHand(state, token);
       setResult(data);
       setStatus("success");
     } catch (err) {
