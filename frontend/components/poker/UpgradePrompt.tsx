@@ -23,12 +23,19 @@ export async function startCheckout(): Promise<void> {
     body: JSON.stringify({ origin: window.location.origin }),
   });
 
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.detail ?? "Failed to start checkout. Please try again.");
+  const data = await res.json().catch(() => ({}));
+  console.log("[checkout] response:", data);
+
+  if (!res.ok || data.error) {
+    throw new Error(data.message ?? data.detail ?? "Failed to start checkout. Please try again.");
   }
 
-  const { url } = await res.json();
+  const url: string | undefined = data.url;
+  if (!url || typeof url !== "string" || !url.startsWith("http")) {
+    console.error("[checkout] invalid or missing URL in response:", data);
+    throw new Error("Checkout failed — invalid redirect URL.");
+  }
+
   window.location.href = url;
 }
 
