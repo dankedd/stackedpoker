@@ -153,7 +153,7 @@ async def create_checkout(
     try:
         kwargs: dict = dict(
             mode="subscription",
-            automatic_payment_methods={"enabled": True},
+            payment_method_types=["card"],
             line_items=[{"price": s.stripe_pro_price_id, "quantity": 1}],
             success_url=f"{origin}/dashboard?upgraded=1",
             cancel_url=f"{origin}/dashboard",
@@ -168,11 +168,12 @@ async def create_checkout(
 
         session = stripe.checkout.Session.create(**kwargs)
         logger.info(
-            "Checkout session created | user=%s customer=%s price=%s session=%s",
+            "Checkout session created | user=%s customer=%s price=%s session=%s url=%s",
             user_id,
             customer_id or "(new)",
             s.stripe_pro_price_id,
             session.id,
+            session.url,
         )
     except stripe.StripeError as exc:
         logger.error("Stripe checkout failed | user=%s error=%s", user_id, exc)
