@@ -351,12 +351,22 @@ export default function AnalyzePage() {
                       </Link>
                     </div>
                   )}
-                  {user && !text.result.saved_id && (
-                    <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/8 px-3 py-2">
-                      <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-                      <span className="text-xs text-amber-400">Analysis complete — history save failed</span>
-                    </div>
-                  )}
+                  {user && !text.result.saved_id && (() => {
+                    if (text.result.save_error) {
+                      console.error("[history-save] failed:", text.result.save_error);
+                    }
+                    return (
+                      <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/8 px-3 py-2">
+                        <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                        <span className="text-xs text-amber-400">
+                          Analysis complete — history save failed
+                          {text.result.save_error && (
+                            <span className="ml-1 opacity-70">({text.result.save_error})</span>
+                          )}
+                        </span>
+                      </div>
+                    );
+                  })()}
                   {text.result.replay ? (
                     <HandReplay
                       analysis={text.result.replay}

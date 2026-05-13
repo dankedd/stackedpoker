@@ -1,5 +1,6 @@
 import logging
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.models.schemas import SessionAnalysisRequest, SessionAnalysisResponse
 from app.services.session_service import analyze_session
@@ -10,14 +11,18 @@ from app.middleware.auth import get_current_user
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+_bearer = HTTPBearer(auto_error=False)
+
 
 @router.post("/analyze-session", response_model=SessionAnalysisResponse, tags=["analysis"])
 async def analyze_session_endpoint(
     request: SessionAnalysisRequest,
     current_user: dict = Depends(get_current_user),
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
 ) -> SessionAnalysisResponse:
     """Parse a full session, score every hand, return the top 3 spots to review."""
     user_id: str = current_user.get("sub", "")
+    user_jwt: str | None = credentials.credentials if credentials else None
 
     profile = await get_user_profile(user_id)
     assert_usage_allowed(profile)
@@ -30,11 +35,12 @@ async def analyze_session_endpoint(
         logger.exception("Session analyze error")
         raise HTTPException(status_code=500, detail="Session analysis failed. Check your session format.")
 
-    # Persist to Supabase (best-effort — never blocks the response)
-    try:
-        saved_id = await save_session_analysis(user_id, request.session_text, result)
-        result.saved_id = saved_id or None
-    except Exception:
-        logger.warning("Session Supabase persist failed for user %s", user_id)
+    saved_id, save_error = await save_session_analysis(
+        user_id, request.session_text, result, user_jwt=user_jwt
+    )
+    result.saved_id = saved_id or None
+    result.save_error = save_error or None
+    if save_error:
+        logger.warning("Session Supabase persist failed for user=%s: %s", user_id, save_error)
 
     return result

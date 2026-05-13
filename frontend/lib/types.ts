@@ -252,6 +252,7 @@ export interface SessionAnalysisResponse {
   all_hands: SessionHandCandidate[];
   session_stats: SessionStats;
   saved_id?: string | null;
+  save_error?: string | null;
 }
 
 export interface AnalysisResponse {
@@ -265,4 +266,5 @@ export interface AnalysisResponse {
   recommendations: string[];
   replay?: ReplayAnalysis;
   saved_id?: string | null;
+  save_error?: string | null;
 }

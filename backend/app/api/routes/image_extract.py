@@ -18,8 +18,12 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
 from app.middleware.auth import get_optional_user
 from app.services.supabase_persistence import save_image_analysis
+
+_bearer = HTTPBearer(auto_error=False)
 from app.models.schemas import (
     BoardCards,
     ConfirmedPokerState,
@@ -237,6 +241,7 @@ async def extract_hand(file: UploadFile = File(...)) -> ExtractionResult:
 async def confirm_hand(
     state: ConfirmedPokerState,
     current_user: Annotated[dict | None, Depends(get_optional_user)] = None,
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
 ) -> VisionAnalysisResponse:
     """
     Phase 3+4: coaching + replay from user-confirmed poker state.
@@ -272,9 +277,11 @@ async def confirm_hand(
     # Persist if the user is authenticated (best-effort)
     if current_user:
         user_id: str = current_user.get("sub", "")
-        try:
-            await save_image_analysis(user_id, response)
-        except Exception:
-            logger.warning("Image analysis Supabase persist failed for user %s", user_id)
+        user_jwt: str | None = credentials.credentials if credentials else None
+        saved_id, save_error = await save_image_analysis(user_id, response, user_jwt=user_jwt)
+        if save_error:
+            logger.warning("Image Supabase persist failed user=%s: %s", user_id, save_error)
+        else:
+            logger.info("Image analysis saved id=%s user=%s", saved_id, user_id)
 
     return response

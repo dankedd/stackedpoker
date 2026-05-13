@@ -596,12 +596,22 @@ export default function SessionAnalyzePage() {
                   </Link>
                 </div>
               )}
-              {user && session.result && !session.result.saved_id && (
-                <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/8 px-3 py-2">
-                  <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-                  <span className="text-xs text-amber-400">Session complete — history save failed</span>
-                </div>
-              )}
+              {user && session.result && !session.result.saved_id && (() => {
+                if (session.result.save_error) {
+                  console.error("[history-save] session failed:", session.result.save_error);
+                }
+                return (
+                  <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/8 px-3 py-2">
+                    <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                    <span className="text-xs text-amber-400">
+                      Session complete — history save failed
+                      {session.result.save_error && (
+                        <span className="ml-1 opacity-70">({session.result.save_error})</span>
+                      )}
+                    </span>
+                  </div>
+                );
+              })()}
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <StatTile label="Hands"       value={stats.hands_parsed.toString()} sub="parsed" />

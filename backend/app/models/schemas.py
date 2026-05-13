@@ -100,7 +100,8 @@ class AnalysisResponse(BaseModel):
     mistakes_count: int
     recommendations: list[str]
     replay: ReplayAnalysis | None = None
-    saved_id: str | None = None  # set after Supabase persist; None = save failed
+    saved_id: str | None = None      # set after Supabase persist; None = save failed
+    save_error: str | None = None    # exact Supabase/network error if save failed
 
 
 class ParseResponse(BaseModel):
@@ -348,4 +349,5 @@ class SessionAnalysisResponse(BaseModel):
     selected_hands: list[SessionHandCandidate]
     all_hands: list[SessionHandCandidate] = []
     session_stats: SessionStats
-    saved_id: str | None = None  # set after Supabase persist; None = save failed
+    saved_id: str | None = None      # set after Supabase persist; None = save failed
+    save_error: str | None = None    # exact error detail if save failed

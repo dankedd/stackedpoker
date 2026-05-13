@@ -1,6 +1,7 @@
 import re
 import logging
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.schemas import (
@@ -17,6 +18,8 @@ from app.services.supabase_persistence import save_hand_analysis as save_to_supa
 from app.services.usage_service import get_user_profile, assert_usage_allowed, increment_usage
 from app.middleware.auth import get_current_user
 from app.database import get_db
+
+_bearer = HTTPBearer(auto_error=False)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -154,10 +157,12 @@ def _build_replay(result: AnalysisResponse) -> ReplayAnalysis:
 async def analyze_hand(
     request: HandAnalysisRequest,
     current_user: dict = Depends(get_current_user),
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
     db: AsyncSession = Depends(get_db),
 ) -> AnalysisResponse:
     """Full pipeline: auth → usage check → parse → classify → heuristics → AI coaching → replay → persist → increment."""
     user_id: str = current_user.get("sub", "")
+    user_jwt: str | None = credentials.credentials if credentials else None
 
     # 1. Server-side usage check (raises 401/403 on failure)
     profile = await get_user_profile(user_id)
@@ -186,11 +191,13 @@ async def analyze_hand(
         result.replay = _build_replay(result)
 
         # 6. Persist to Supabase hand_analyses (primary user-facing store)
-        try:
-            saved_id = await save_to_supabase(user_id, request.hand_text, result)
-            result.saved_id = saved_id or None
-        except Exception:
-            logger.warning("Supabase persist failed — returning result anyway")
+        saved_id, save_error = await save_to_supabase(
+            user_id, request.hand_text, result, user_jwt=user_jwt
+        )
+        result.saved_id = saved_id or None
+        result.save_error = save_error or None
+        if save_error:
+            logger.warning("Supabase persist failed for user=%s: %s", user_id, save_error)
 
         # 7. Persist to local DB (best-effort — skipped if DB unavailable)
         if db is not None:
