@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Loader2, Zap, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Loader2, Zap, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { startCheckout } from "@/components/poker/UpgradePrompt";
@@ -18,11 +18,13 @@ export function UpgradePricingCTA({
   loggedIn: boolean;
   fullWidth?: boolean;
 }) {
-  const router    = useRouter();
+  const router     = useRouter();
   const [loading, setLoading]  = useState(false);
   const [waiting, setWaiting]  = useState(false);
   const [error,   setError]    = useState<string | null>(null);
-  const startedAt = useRef<number>(0);
+  const startedAt  = useRef<number>(0);
+  // Prevent duplicate checkout sessions from double-clicks or StrictMode
+  const inFlight   = useRef(false);
 
   // Subscription polling — activates after checkout tab is opened
   useEffect(() => {
@@ -64,16 +66,22 @@ export function UpgradePricingCTA({
       router.push("/signup?next=pricing");
       return;
     }
+    // Guard against double-click / StrictMode double-invoke
+    if (inFlight.current) return;
+    inFlight.current = true;
     setLoading(true);
     setError(null);
     try {
+      // startCheckout() opens the blank tab synchronously (popup-safe),
+      // then navigates it to Stripe after the async API call.
+      // The original tab never redirects.
       await startCheckout();
-      // startCheckout opened a new tab; switch to waiting state
-      setLoading(false);
       setWaiting(true);
     } catch {
       setError("Something went wrong. Please try again.");
+    } finally {
       setLoading(false);
+      inFlight.current = false;
     }
   }
 

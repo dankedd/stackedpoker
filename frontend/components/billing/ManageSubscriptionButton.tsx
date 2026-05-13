@@ -24,6 +24,12 @@ export function ManageSubscriptionButton({
   async function handleManage() {
     setError(null);
     setLoading(true);
+
+    // Open blank tab synchronously (within user-interaction event stack) to
+    // avoid popup blockers, then navigate it once we have the portal URL.
+    const tab = window.open("about:blank", "_blank");
+    console.log("[billing-portal] blank tab opened:", !!tab);
+
     try {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
@@ -31,15 +37,18 @@ export function ManageSubscriptionButton({
       if (!token) throw new Error("Not authenticated.");
 
       const { url } = await createPortalSession(token);
-      const tab = window.open(url, "_blank", "noopener,noreferrer");
-      if (!tab) {
-        // Popup blocked — fall back to same-tab navigation
-        window.location.href = url;
-      } else {
-        // Tab opened successfully; reset loading so button is usable again
+      console.log("[billing-portal] URL ready, navigating tab");
+
+      if (tab && !tab.closed) {
+        tab.location.href = url;
+        console.log("[billing-portal] external tab navigated to billing portal");
         setLoading(false);
+      } else {
+        console.warn("[billing-portal] popup blocked — same-tab fallback");
+        window.location.href = url;
       }
     } catch (err) {
+      if (tab && !tab.closed) tab.close();
       setError(err instanceof Error ? err.message : "Failed to open billing portal.");
       setLoading(false);
     }
