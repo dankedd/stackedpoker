@@ -122,12 +122,19 @@ async def create_checkout(
     webhook which upgrades the user's profile to 'pro'.
     """
     s = get_settings()
+    if not s.stripe_secret_key:
+        logger.error("Stripe checkout called but STRIPE_SECRET_KEY is not set")
+        return {
+            "error": "stripe_checkout_failed",
+            "message": "Unable to create checkout session",
+        }
     _init_stripe()
     if not s.stripe_pro_price_id:
-        raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Pro plan price not configured.",
-        )
+        logger.error("Stripe checkout called but STRIPE_PRO_PRICE_ID is not set")
+        return {
+            "error": "stripe_checkout_failed",
+            "message": "Unable to create checkout session",
+        }
 
     user_id: str = user.get("sub", "")
     email: str | None = user.get("email")
@@ -146,8 +153,7 @@ async def create_checkout(
     try:
         kwargs: dict = dict(
             mode="subscription",
-            # iDEAL + card + Apple Pay / Google Pay (wallet methods auto-included)
-            payment_method_types=["card", "ideal"],
+            automatic_payment_methods={"enabled": True},
             line_items=[{"price": s.stripe_pro_price_id, "quantity": 1}],
             success_url=f"{origin}/dashboard?upgraded=1",
             cancel_url=f"{origin}/dashboard",
@@ -161,9 +167,25 @@ async def create_checkout(
             kwargs["customer_email"] = email
 
         session = stripe.checkout.Session.create(**kwargs)
+        logger.info(
+            "Checkout session created | user=%s customer=%s price=%s session=%s",
+            user_id,
+            customer_id or "(new)",
+            s.stripe_pro_price_id,
+            session.id,
+        )
     except stripe.StripeError as exc:
-        logger.error("Stripe checkout error for user %s: %s", user_id, exc)
-        raise HTTPException(status.HTTP_502_BAD_GATEWAY, detail="Failed to create checkout session.")
+        logger.error("Stripe checkout failed | user=%s error=%s", user_id, exc)
+        return {
+            "error": "stripe_checkout_failed",
+            "message": "Unable to create checkout session",
+        }
+    except Exception as exc:
+        logger.error("Unexpected checkout error | user=%s error=%s", user_id, exc)
+        return {
+            "error": "stripe_checkout_failed",
+            "message": "Unable to create checkout session",
+        }
 
     return {"url": session.url}
 
