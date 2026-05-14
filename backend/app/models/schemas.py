@@ -381,6 +381,10 @@ class TournamentStats(BaseModel):
     ending_stack_bb: float = 0.0
     avg_pot_bb: float = 0.0
     biggest_pot_bb: float = 0.0
+    # Chip-level equivalents (avg_stack_chips = avg_stack_bb * actual_bb per hand)
+    avg_stack_chips: float = 0.0
+    biggest_pot_chips: float = 0.0
+    avg_big_blind: float = 0.0      # average BB across all hands; ≈1 means parser fallback fired
     # Stage distribution (% of hands at each depth)
     deep_handed_pct: int = 0     # > 50bb
     middle_pct: int = 0          # 25–50bb

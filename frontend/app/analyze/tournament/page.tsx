@@ -889,7 +889,11 @@ export default function TournamentAnalyzePage() {
                 <StatTile
                   label="Avg stack"
                   value={`${stats.avg_stack_bb}bb`}
-                  sub={`peak ${stats.peak_stack_bb}bb`}
+                  sub={
+                    stats.avg_big_blind && stats.avg_big_blind > 1 && stats.avg_stack_chips
+                      ? `${stats.avg_stack_chips.toLocaleString()} chips · peak ${stats.peak_stack_bb}bb`
+                      : `peak ${stats.peak_stack_bb}bb`
+                  }
                   accent="violet"
                 />
                 <StatTile
@@ -928,7 +932,11 @@ export default function TournamentAnalyzePage() {
                 <StatTile
                   label="Biggest pot"
                   value={`${stats.biggest_pot_bb}bb`}
-                  sub="largest hand"
+                  sub={
+                    stats.avg_big_blind && stats.avg_big_blind > 1 && stats.biggest_pot_chips
+                      ? `${stats.biggest_pot_chips.toLocaleString()} chips`
+                      : "largest hand"
+                  }
                   accent="blue"
                 />
               </div>

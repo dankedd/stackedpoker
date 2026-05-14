@@ -57,26 +57,45 @@ class PokerStarsParser(BaseParser):
         return m.group(1) if m else "unknown"
 
     def _parse_stakes(self, text: str) -> tuple[str, float, float]:
-        # Cash game: ($0.01/$0.02 USD) — dollar signs required
+        import logging
+        _log = logging.getLogger(__name__)
+
+        # 1. Cash game: ($0.01/$0.02 USD) — dollar signs required
         m = re.search(r"\(\$([0-9.]+)/\$([0-9.]+)(?:\s+\w+)?\)", text)
         if m:
             sb, bb = float(m.group(1)), float(m.group(2))
             return f"{m.group(1)}/{m.group(2)}", sb, bb
-        # Tournament: Level I (10/20) or (1,000/2,000) — no dollar signs
-        m = re.search(r"\(([\d,]+)/([\d,]+)[^)]*\)", text)
+
+        # 2. Tournament Level header (most reliable)
+        #    e.g. Level I (10/20), Level X (1,000/2,000), Level III (75/150)
+        m = re.search(r"Level\s+\w+\s*\(([\d,]+)/([\d,]+)", text, re.IGNORECASE)
         if m:
             sb = float(m.group(1).replace(",", ""))
             bb = float(m.group(2).replace(",", ""))
             if bb > 0:
+                _log.info("_parse_stakes[PS]: Level header → sb=%s bb=%s", sb, bb)
                 return f"T{int(sb)}/{int(bb)}", sb, bb
-        # Fallback: extract from posted blind actions
+
+        # 3. Posted blind lines
         m_bb = re.search(r": posts big blind \$?([\d,]+(?:\.\d+)?)", text, re.IGNORECASE)
         m_sb = re.search(r": posts small blind \$?([\d,]+(?:\.\d+)?)", text, re.IGNORECASE)
         if m_bb:
             bb = float(m_bb.group(1).replace(",", ""))
             sb = float(m_sb.group(1).replace(",", "")) if m_sb else bb / 2
             if bb > 0:
+                _log.info("_parse_stakes[PS]: posted blinds → sb=%s bb=%s", sb, bb)
                 return f"T{int(sb)}/{int(bb)}", sb, bb
+
+        # 4. Generic parens pattern — last resort
+        m = re.search(r"\(([\d,]+)/([\d,]+)[^)]*\)", text)
+        if m:
+            sb = float(m.group(1).replace(",", ""))
+            bb = float(m.group(2).replace(",", ""))
+            if bb > 0:
+                _log.info("_parse_stakes[PS]: generic parens → sb=%s bb=%s", sb, bb)
+                return f"T{int(sb)}/{int(bb)}", sb, bb
+
+        _log.warning("_parse_stakes[PS]: all patterns failed, using default bb=1.0 | preview: %r", text[:120])
         return "0.5/1", 0.5, 1.0
 
     def _parse_button_seat(self, text: str) -> int:

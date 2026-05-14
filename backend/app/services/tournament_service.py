@@ -201,13 +201,15 @@ async def analyze_tournament_from_upload(
 
 # ── Blind-level extraction ─────────────────────────────────────────────────
 
-_BLIND_LEVEL_RE = re.compile(r"Level\s+(\w+)\s*\((\d+)/(\d+)", re.IGNORECASE)
+_BLIND_LEVEL_RE = re.compile(r"Level\s+(\w+)\s*\(([\d,]+)/([\d,]+)", re.IGNORECASE)
 
 
 def _extract_blind_level(hand_text: str) -> str:
     m = _BLIND_LEVEL_RE.search(hand_text)
     if m:
-        return f"Level {m.group(1)} ({m.group(2)}/{m.group(3)})"
+        sb = int(m.group(2).replace(",", ""))
+        bb = int(m.group(3).replace(",", ""))
+        return f"Level {m.group(1)} ({sb}/{bb})"
     return ""
 
 
@@ -376,6 +378,16 @@ def _compute_stats(parsed_hands: list) -> dict:
     short_count  = sum(1 for s in stacks if 15 < s <= 25)
     pf_count     = sum(1 for s in stacks if s <= 15)
 
+    # Chip-level stats (only meaningful when big_blind > 1)
+    bbs = [h.big_blind for h in parsed_hands]
+    avg_bb = sum(bbs) / n
+    avg_stack_chips = round(
+        sum(h.effective_stack_bb * h.big_blind for h in parsed_hands) / n
+    )
+    biggest_pot_chips = round(
+        max(h.pot_size_bb * h.big_blind for h in parsed_hands)
+    )
+
     return {
         "avg_stack_bb":       round(sum(stacks) / n, 1),
         "peak_stack_bb":      round(max(stacks), 1),
@@ -383,6 +395,10 @@ def _compute_stats(parsed_hands: list) -> dict:
         "ending_stack_bb":    round(stacks[-1], 1),
         "avg_pot_bb":         round(sum(pots) / n, 1),
         "biggest_pot_bb":     round(max(pots), 1),
+        # Chip-level equivalents (for display alongside BB values)
+        "avg_stack_chips":    avg_stack_chips,
+        "biggest_pot_chips":  biggest_pot_chips,
+        "avg_big_blind":      round(avg_bb, 1),
         "hero_vpip_pct":      round(vpip_count / n * 100, 1),
         "hero_aggression_pct": round(
             total_hero_agg / total_hero_actions * 100, 1

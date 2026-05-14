@@ -274,6 +274,10 @@ export interface TournamentStats {
   ending_stack_bb: number;
   avg_pot_bb: number;
   biggest_pot_bb: number;
+  // Chip-level equivalents; only meaningful when avg_big_blind > 1
+  avg_stack_chips?: number;
+  biggest_pot_chips?: number;
+  avg_big_blind?: number;
   deep_handed_pct: number;
   middle_pct: number;
   short_stack_pct: number;
