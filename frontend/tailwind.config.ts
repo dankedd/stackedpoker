@@ -69,6 +69,10 @@ const config: Config = {
         "fade-in": "fade-in 0.4s ease-out",
         "slide-up": "slide-up 0.4s ease-out",
         "pulse-green": "pulse-green 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "float": "subtle-float 5s ease-in-out infinite",
+        "border-pulse": "border-pulse 3s ease-in-out infinite",
+        "drift-glow": "drift-glow 22s ease-in-out infinite",
+        "cursor-blink": "blink-cursor 1s step-end infinite",
       },
       keyframes: {
         "accordion-down": {
@@ -90,6 +94,23 @@ const config: Config = {
         "pulse-green": {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.5" },
+        },
+        "subtle-float": {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-5px)" },
+        },
+        "border-pulse": {
+          "0%, 100%": { opacity: "0.3" },
+          "50%": { opacity: "0.9" },
+        },
+        "drift-glow": {
+          "0%, 100%": { transform: "translate(0px, 0px) scale(1)" },
+          "33%": { transform: "translate(50px, -30px) scale(1.08)" },
+          "66%": { transform: "translate(-35px, 25px) scale(0.94)" },
+        },
+        "blink-cursor": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0" },
         },
       },
       fontFamily: {

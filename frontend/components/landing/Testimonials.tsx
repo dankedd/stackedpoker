@@ -1,22 +1,30 @@
+import { Star } from "lucide-react";
+
 const TESTIMONIALS = [
   {
-    quote: "Spotted a major leak in my flop c-bet sizing within the first session. Paid for itself in the first week of grinding.",
+    quote:
+      "Spotted a major leak in my flop c-bet sizing within the first session. The AI explained exactly why my line was exploitable — paid for itself the first week of grinding.",
     name: "Mark V.",
     role: "Cash game regular",
+    stakes: "NL100 · 6-max",
     avatar: "M",
     gradient: "from-violet-500 to-purple-600",
   },
   {
-    quote: "The AI coaching actually explains things clearly. Not just 'this is wrong' but exactly why and how to fix it going forward.",
+    quote:
+      "The coaching doesn't just flag mistakes — it explains range dynamics, why the board texture matters, and what adjustment to make next time. Actually useful.",
     name: "Sophie L.",
-    role: "MTT tournament player",
+    role: "MTT player",
+    stakes: "MTT · $50–200 buyins",
     avatar: "S",
     gradient: "from-blue-500 to-indigo-600",
   },
   {
-    quote: "Dashboard feels super clean and professional. Finally a poker tool that looks as good as it works.",
+    quote:
+      "The replay feature is what sold me. Stepping through streets and seeing exactly where I went wrong visually — that's how I actually learn. Nothing else has this.",
     name: "Tom B.",
     role: "Micro-stakes grinder",
+    stakes: "NL25 · Full ring",
     avatar: "T",
     gradient: "from-emerald-500 to-teal-600",
   },
@@ -31,43 +39,53 @@ export function Testimonials() {
       />
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="mx-auto mb-16 max-w-2xl text-center">
-          <div className="mb-5 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-muted-foreground">
-            What players say
+        {/* Header */}
+        <div className="mx-auto mb-14 max-w-2xl text-center">
+          <div className="mb-5 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-[13px] text-muted-foreground">
+            Player reviews
           </div>
-          <h2 className="mb-4 text-4xl sm:text-5xl font-extrabold text-foreground tracking-tight leading-tight">
-            Loved by players{" "}
+          <h2 className="mb-4 text-4xl sm:text-[3.25rem] font-black text-foreground tracking-tight leading-[1.05]">
+            Trusted by players{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400">
-              at every level
+              who care about EV
             </span>
           </h2>
-          <p className="text-muted-foreground text-lg leading-relaxed">
-            From recreational players to serious grinders.
+          <p className="text-muted-foreground/65 text-lg leading-relaxed">
+            From micro-stakes newcomers to serious cash game grinders.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3 lg:items-start">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
           {TESTIMONIALS.map((t) => (
             <div
               key={t.name}
-              className="rounded-2xl border border-border/50 bg-card/60 p-7 hover:border-border/80 hover:bg-card/80 hover:-translate-y-1 transition-all duration-300"
+              className="group rounded-2xl border border-border/50 bg-card/60 p-7 hover:border-border/80 hover:bg-card/80 hover:-translate-y-1 transition-all duration-300"
             >
-              {/* Quote mark */}
-              <div className="mb-5 text-4xl font-black select-none leading-none text-transparent bg-clip-text bg-gradient-to-br from-violet-400/50 to-blue-400/30">
-                &ldquo;
+              {/* Stars */}
+              <div className="mb-4 flex gap-0.5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                ))}
               </div>
 
-              <p className="mb-7 text-[15px] text-muted-foreground leading-relaxed">
-                {t.quote}
+              <p className="mb-6 text-[14px] text-muted-foreground/80 leading-relaxed">
+                &ldquo;{t.quote}&rdquo;
               </p>
 
               <div className="flex items-center gap-3">
-                <div className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white shrink-0 bg-gradient-to-br ${t.gradient}`}>
+                <div
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white bg-gradient-to-br ${t.gradient}`}
+                >
                   {t.avatar}
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">{t.name}</p>
-                  <p className="text-[12px] text-muted-foreground/55">{t.role}</p>
+                <div className="min-w-0">
+                  <p className="text-[13px] font-semibold text-foreground">{t.name}</p>
+                  <p className="text-[11px] text-muted-foreground/50">{t.role}</p>
+                </div>
+                <div className="ml-auto shrink-0">
+                  <span className="text-[10px] font-mono text-muted-foreground/35 bg-secondary/60 rounded-md px-2 py-0.5 border border-border/30 whitespace-nowrap">
+                    {t.stakes}
+                  </span>
                 </div>
               </div>
             </div>
