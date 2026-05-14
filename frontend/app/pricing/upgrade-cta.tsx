@@ -1,20 +1,21 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Loader2, Zap, ArrowRight } from "lucide-react";
+import { Loader2, Zap, ArrowRight, Crown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { startCheckout } from "@/components/poker/UpgradePrompt";
 import { createClient } from "@/lib/supabase/client";
 
-// Poll the user's subscription tier until it becomes pro/admin or times out.
 const POLL_INTERVAL_MS = 3_000;
-const POLL_TIMEOUT_MS  = 10 * 60 * 1_000; // 10 minutes
+const POLL_TIMEOUT_MS  = 10 * 60 * 1_000;
 
 export function UpgradePricingCTA({
+  plan = "pro",
   loggedIn,
   fullWidth = true,
 }: {
+  plan?: "pro" | "premium";
   loggedIn: boolean;
   fullWidth?: boolean;
 }) {
@@ -23,15 +24,15 @@ export function UpgradePricingCTA({
   const [waiting, setWaiting]  = useState(false);
   const [error,   setError]    = useState<string | null>(null);
   const startedAt  = useRef<number>(0);
-  // Prevent duplicate checkout sessions from double-clicks or StrictMode
   const inFlight   = useRef(false);
 
-  // Subscription polling — activates after checkout tab is opened
   useEffect(() => {
     if (!waiting) return;
 
     const supabase = createClient();
     startedAt.current = Date.now();
+
+    const targetTier = plan === "premium" ? "premium" : "pro";
 
     const interval = setInterval(async () => {
       if (Date.now() - startedAt.current > POLL_TIMEOUT_MS) {
@@ -48,10 +49,18 @@ export function UpgradePricingCTA({
         .eq("id", user.id)
         .single();
 
-      if (profile?.subscription_tier === "pro" || profile?.subscription_tier === "admin") {
+      const t = profile?.subscription_tier;
+      const activated =
+        t === "admin" ||
+        t === targetTier ||
+        (targetTier === "pro" && t === "premium");
+
+      if (activated) {
         setWaiting(false);
-        toast.success("Welcome to Pro!", {
-          description: "Unlimited analyses and all Pro features are now active.",
+        toast.success(`Welcome to ${plan === "premium" ? "Premium" : "Pro"}!`, {
+          description: plan === "premium"
+            ? "Unlimited access to everything is now active."
+            : "30 analyses per day and all Pro features are now active.",
           duration: 6000,
         });
         router.refresh();
@@ -59,23 +68,19 @@ export function UpgradePricingCTA({
     }, POLL_INTERVAL_MS);
 
     return () => clearInterval(interval);
-  }, [waiting, router]);
+  }, [waiting, router, plan]);
 
   async function handleUpgrade() {
     if (!loggedIn) {
-      router.push("/signup?next=pricing");
+      router.push(`/signup?next=pricing`);
       return;
     }
-    // Guard against double-click / StrictMode double-invoke
     if (inFlight.current) return;
     inFlight.current = true;
     setLoading(true);
     setError(null);
     try {
-      // startCheckout() opens the blank tab synchronously (popup-safe),
-      // then navigates it to Stripe after the async API call.
-      // The original tab never redirects.
-      await startCheckout();
+      await startCheckout(plan);
       setWaiting(true);
     } catch {
       setError("Something went wrong. Please try again.");
@@ -87,13 +92,15 @@ export function UpgradePricingCTA({
 
   const disabled = loading || waiting;
 
+  const isPremium = plan === "premium";
+
   const buttonLabel = loading
     ? "Opening checkout…"
     : waiting
     ? "Waiting for payment…"
     : loggedIn
-    ? "Upgrade to Pro"
-    : "Get Pro — €9/month";
+    ? isPremium ? "Go Premium" : "Upgrade to Pro"
+    : isPremium ? `Go Premium — €29/month` : `Get Pro — €9/month`;
 
   return (
     <div className="space-y-2">
@@ -102,9 +109,10 @@ export function UpgradePricingCTA({
         disabled={disabled}
         className={
           "inline-flex items-center justify-center gap-2.5 rounded-xl " +
-          "bg-gradient-to-r from-violet-600 to-blue-500 " +
+          (isPremium
+            ? "bg-gradient-to-r from-amber-600 to-amber-500 shadow-lg shadow-amber-900/30 hover:shadow-amber-900/50 hover:from-amber-500 hover:to-amber-400 "
+            : "bg-gradient-to-r from-violet-600 to-blue-500 shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 ") +
           "px-6 py-3.5 text-sm font-semibold text-white " +
-          "shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 " +
           "hover:-translate-y-0.5 transition-all duration-200 " +
           "disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none " +
           (fullWidth ? "w-full" : "")
@@ -114,6 +122,8 @@ export function UpgradePricingCTA({
           <Loader2 className="h-4 w-4 animate-spin shrink-0" />
         ) : waiting ? (
           <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin shrink-0" />
+        ) : isPremium ? (
+          <Crown className="h-4 w-4 shrink-0" />
         ) : (
           <Zap className="h-4 w-4 shrink-0" />
         )}

@@ -6,8 +6,12 @@ import { cn } from "@/lib/utils";
 
 const FAQS = [
   {
+    q: "What's the difference between the plans?",
+    a: "Every plan uses exactly the same AI coaching engine — there's no difference in AI quality or analysis depth. The only difference is how many analyses you can run per day and how much hand history is stored. Free gives you 3 hand analyses, 1 session, and 1 tournament per day. Pro gives you 30 hand, 10 session, and 10 tournament analyses per day with 20 saved histories. Premium removes all limits entirely.",
+  },
+  {
     q: "Can I cancel anytime?",
-    a: "Yes, absolutely. Cancel from your account settings whenever you like. You keep full Pro access until the end of the current billing period — no partial refunds, no hassle.",
+    a: "Yes, absolutely. Cancel from your account settings whenever you like. You keep full access to your current plan until the end of the billing period — no partial refunds, no hassle.",
   },
   {
     q: "What payment methods are accepted?",
@@ -19,11 +23,11 @@ const FAQS = [
   },
   {
     q: "What happens to my saved hands if I downgrade?",
-    a: "Your hand history and past analyses are always yours. If you cancel Pro you revert to the free plan, but every previously analyzed hand stays in your history and remains viewable.",
+    a: "Your previously analyzed hands are always yours. If you downgrade, you revert to the lower plan's daily limits, but every hand history you already saved stays in your account and remains viewable.",
   },
   {
-    q: "Is there a free trial for Pro?",
-    a: "There's no timed trial, but the free plan includes 3 complete analyses — enough to experience the full quality of the coaching before deciding to upgrade.",
+    q: "Is there a free trial for Pro or Premium?",
+    a: "There's no timed trial, but the Free plan lets you run analyses to experience the full coaching quality before upgrading. No credit card required to start.",
   },
   {
     q: "Does it work on mobile?",
@@ -31,7 +35,7 @@ const FAQS = [
   },
   {
     q: "Which poker sites are supported?",
-    a: "GGPoker and PokerStars hand history formats are fully supported. Additional sites may be added in future updates.",
+    a: "GGPoker and PokerStars hand history formats are fully supported, including ZIP exports from PokerCraft. Additional sites may be added in future updates.",
   },
 ];
 

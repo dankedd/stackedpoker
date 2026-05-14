@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 
 // ── Shared checkout helper ─────────────────────────────────────────────────
 
-export async function startCheckout(): Promise<void> {
+export async function startCheckout(plan: "pro" | "premium" = "pro"): Promise<void> {
   // Open a blank tab NOW, synchronously, while still inside the user-interaction
   // event stack. Popup blockers only fire when window.open() is called after an
   // await (i.e. outside the original user gesture). By opening "about:blank" here
@@ -29,7 +29,7 @@ export async function startCheckout(): Promise<void> {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ origin: window.location.origin }),
+      body: JSON.stringify({ origin: window.location.origin, plan }),
     });
 
     const data = await res.json().catch(() => ({}));
