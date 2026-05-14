@@ -5,15 +5,17 @@ const LINKS = {
   Product: [
     { label: "Analyze Hand",  href: "/analyze" },
     { label: "Dashboard",     href: "/dashboard" },
-    { label: "Features",      href: "#features" },
-    { label: "How It Works",  href: "#how-it-works" },
+    { label: "Features",      href: "/#features" },
+    { label: "How It Works",  href: "/#how-it-works" },
   ],
   Account: [
     { label: "Sign in",     href: "/login" },
     { label: "Get started", href: "/signup" },
   ],
   Legal: [
-    { label: "Educational use only", href: "#" },
+    { label: "Privacy Policy",    href: "/privacy" },
+    { label: "Terms of Service",  href: "/terms" },
+    { label: "Educational use",   href: "/terms#disclaimer" },
   ],
 };
 
@@ -61,8 +63,15 @@ export function LandingFooter() {
 
         {/* Bottom bar */}
         <div className="mt-12 pt-6 border-t border-white/[0.04] flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-slate-600">
-          <p>© {new Date().getFullYear()} Stacked Poker — Educational tool only</p>
-          <p>Not a replacement for a professional GTO solver</p>
+          <p>© {new Date().getFullYear()} Stacked Poker — Educational tool only. Not a gambling service.</p>
+          <div className="flex items-center gap-4">
+            <Link href="/privacy" className="hover:text-slate-400 transition-colors">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="hover:text-slate-400 transition-colors">
+              Terms of Service
+            </Link>
+          </div>
         </div>
       </div>
     </footer>
