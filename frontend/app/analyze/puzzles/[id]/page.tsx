@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, RotateCcw, ChevronRight, Zap, Target,
-  CheckCircle2, XCircle, AlertTriangle, Trophy, Flame,
+  CheckCircle2, XCircle, AlertTriangle, Trophy, Flame, Shuffle,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -17,10 +17,28 @@ import { cn } from "@/lib/utils";
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function saveResult(puzzleId: string, score: number, difficulty: string, category: string) {
+interface PuzzleStats {
+  solved: string[];
+  scores: Record<string, number>;
+  streak: number;
+  bestStreak: number;
+  randomStreak?: number;
+  bestRandomStreak?: number;
+  lastRandomId?: string;
+  attempts?: Array<{ id: string; score: number; timestamp: number; difficulty: string; category: string }>;
+  lastPlayed?: number;
+}
+
+function loadStats(): PuzzleStats {
   try {
     const raw = localStorage.getItem("puzzle_stats");
-    const stats = raw ? JSON.parse(raw) : { solved: [], scores: {}, streak: 0, bestStreak: 0 };
+    return raw ? JSON.parse(raw) : { solved: [], scores: {}, streak: 0, bestStreak: 0 };
+  } catch { return { solved: [], scores: {}, streak: 0, bestStreak: 0 }; }
+}
+
+function saveResult(puzzleId: string, score: number, difficulty: string, category: string, isRandom = false) {
+  try {
+    const stats = loadStats();
     if (!stats.solved.includes(puzzleId)) {
       stats.solved.push(puzzleId);
       stats.streak = (stats.streak ?? 0) + 1;
@@ -29,12 +47,38 @@ function saveResult(puzzleId: string, score: number, difficulty: string, categor
     if (!stats.scores[puzzleId] || score > stats.scores[puzzleId]) {
       stats.scores[puzzleId] = score;
     }
+    if (isRandom) {
+      stats.lastRandomId = puzzleId;
+      if (score >= 60) {
+        stats.randomStreak = (stats.randomStreak ?? 0) + 1;
+        stats.bestRandomStreak = Math.max(stats.bestRandomStreak ?? 0, stats.randomStreak);
+      } else {
+        stats.randomStreak = 0;
+      }
+    }
     if (!stats.attempts) stats.attempts = [];
     stats.attempts.push({ id: puzzleId, score, timestamp: Date.now(), difficulty, category });
     if (stats.attempts.length > 50) stats.attempts = stats.attempts.slice(-50);
     stats.lastPlayed = Date.now();
     localStorage.setItem("puzzle_stats", JSON.stringify(stats));
   } catch { /* silent */ }
+}
+
+function pickRandomPuzzle(excludeId?: string) {
+  const stats = loadStats();
+  const candidates = PUZZLES.filter(p => p.id !== excludeId);
+  if (candidates.length === 0) return PUZZLES[0] ?? null;
+  const weights = candidates.map(p => {
+    if (!stats.solved.includes(p.id)) return 3;
+    return (stats.scores[p.id] ?? 0) < 60 ? 2 : 1;
+  });
+  const total = weights.reduce((a, b) => a + b, 0);
+  let rand = Math.random() * total;
+  for (let i = 0; i < candidates.length; i++) {
+    rand -= weights[i];
+    if (rand <= 0) return candidates[i];
+  }
+  return candidates[candidates.length - 1];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -185,11 +229,17 @@ function ResultScreen({
   stepResults,
   onRetry,
   onNext,
+  isRandom = false,
+  onNextRandom,
+  randomStreak = 0,
 }: {
   puzzle: ReturnType<typeof PUZZLES.find>;
   stepResults: Array<{ quality: ActionOption["quality"]; score: number; option: ActionOption }>;
   onRetry: () => void;
   onNext: () => void;
+  isRandom?: boolean;
+  onNextRandom?: () => void;
+  randomStreak?: number;
 }) {
   if (!puzzle) return null;
   const finalScore = Math.round(stepResults.reduce((s, r) => s + r.score, 0) / stepResults.length);
@@ -281,16 +331,45 @@ function ResultScreen({
       </div>
 
       {/* Actions */}
-      <div className="flex gap-3">
-        <Button variant="outline" size="lg" className="flex-1 gap-2" onClick={onRetry}>
-          <RotateCcw className="h-4 w-4" />
-          Retry Puzzle
-        </Button>
-        <Button variant="poker" size="lg" className="flex-1 gap-2" onClick={onNext}>
-          Next Puzzle
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
+      {isRandom ? (
+        <div className="space-y-3">
+          {/* Random streak banner */}
+          {randomStreak > 0 && (
+            <div className="flex items-center justify-center gap-2 rounded-xl border border-orange-500/20 bg-orange-500/8 px-4 py-2.5">
+              <Flame className="h-4 w-4 text-orange-400" />
+              <span className="text-sm font-semibold text-orange-300">{randomStreak} random streak</span>
+            </div>
+          )}
+          <button
+            onClick={onNextRandom}
+            className="group relative w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
+          >
+            <div aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+            <Shuffle className="h-4 w-4 shrink-0" />
+            Next Random Spot
+            <ChevronRight className="h-4 w-4 shrink-0" />
+          </button>
+          <div className="flex gap-3">
+            <Button variant="outline" size="sm" className="flex-1 gap-1.5" onClick={onRetry}>
+              <RotateCcw className="h-3.5 w-3.5" /> Retry
+            </Button>
+            <Button variant="outline" size="sm" className="flex-1 gap-1.5" onClick={onNext}>
+              Sequential <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex gap-3">
+          <Button variant="outline" size="lg" className="flex-1 gap-2" onClick={onRetry}>
+            <RotateCcw className="h-4 w-4" />
+            Retry Puzzle
+          </Button>
+          <Button variant="poker" size="lg" className="flex-1 gap-2" onClick={onNext}>
+            Next Puzzle
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -302,6 +381,9 @@ function ResultScreen({
 export default function PuzzlePlayerPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isRandomMode = searchParams.get("mode") === "random";
+
   const puzzleId = typeof params.id === "string" ? params.id : Array.isArray(params.id) ? params.id[0] : "";
   const puzzle = PUZZLES.find(p => p.id === puzzleId);
   const currentIdx = PUZZLES.findIndex(p => p.id === puzzleId);
@@ -310,6 +392,7 @@ export default function PuzzlePlayerPage() {
   const [chosen, setChosen] = useState<ActionOption | null>(null);
   const [stepResults, setStepResults] = useState<Array<{ quality: ActionOption["quality"]; score: number; option: ActionOption }>>([]);
   const [done, setDone] = useState(false);
+  const [savedRandomStreak, setSavedRandomStreak] = useState(0);
   const coachingRef = useRef<HTMLDivElement>(null);
 
   // Scroll coaching panel into view on mobile after choosing
@@ -353,7 +436,9 @@ export default function PuzzlePlayerPage() {
       const finalScore = Math.round(
         [...stepResults].reduce((s, r) => s + r.score, 0) / (puzzle?.steps.length ?? 1)
       );
-      saveResult(puzzle?.id ?? "", finalScore, puzzle?.difficulty ?? "", puzzle?.category ?? "");
+      saveResult(puzzle?.id ?? "", finalScore, puzzle?.difficulty ?? "", puzzle?.category ?? "", isRandomMode);
+      const updated = loadStats();
+      setSavedRandomStreak(updated.randomStreak ?? 0);
       setDone(true);
     } else {
       setStepIdx(s => s + 1);
@@ -371,6 +456,11 @@ export default function PuzzlePlayerPage() {
   function handleNext() {
     const nextPuzzle = PUZZLES[(currentIdx + 1) % PUZZLES.length];
     router.push(`/analyze/puzzles/${nextPuzzle.id}`);
+  }
+
+  function handleNextRandom() {
+    const next = pickRandomPuzzle(puzzleId);
+    if (next) router.push(`/analyze/puzzles/${next.id}?mode=random`);
   }
 
   const runningScore = stepResults.length > 0
@@ -395,6 +485,9 @@ export default function PuzzlePlayerPage() {
               stepResults={stepResults}
               onRetry={handleRetry}
               onNext={handleNext}
+              isRandom={isRandomMode}
+              onNextRandom={handleNextRandom}
+              randomStreak={savedRandomStreak}
             />
           </div>
         </main>
@@ -416,7 +509,20 @@ export default function PuzzlePlayerPage() {
             <Link href="/analyze/puzzles" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0">
               <ArrowLeft className="h-4 w-4" /> Puzzles
             </Link>
-            <h1 className="text-sm font-semibold text-foreground hidden sm:block truncate">{puzzle.title}</h1>
+            {isRandomMode ? (
+              <div className="hidden sm:flex items-center gap-2 min-w-0">
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-500/15 border border-violet-500/25">
+                  <Shuffle className="h-3 w-3 text-violet-400" />
+                  <span className="text-xs font-semibold text-violet-400">Random Spot</span>
+                </div>
+                <span className="text-muted-foreground/40 text-xs">·</span>
+                <span className="text-xs text-muted-foreground/60 truncate">
+                  {puzzle.effectiveStack}bb · {puzzle.format} · {puzzle.steps[stepIdx]?.street}
+                </span>
+              </div>
+            ) : (
+              <h1 className="text-sm font-semibold text-foreground hidden sm:block truncate">{puzzle.title}</h1>
+            )}
             <div className="flex items-center gap-3 shrink-0">
               <span className="text-xs text-muted-foreground">
                 {stepIdx + 1}/{puzzle.steps.length} decisions
