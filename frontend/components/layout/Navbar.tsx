@@ -103,17 +103,17 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
         "rounded-2xl backdrop-blur-xl px-5 transition-all duration-300 ease-out",
         isSticky
           ? scrolled
-            ? "py-2.5 bg-[#080D1A]/95 border border-white/[0.09] shadow-2xl shadow-black/50"
-            : "py-3.5 bg-[#0D1526]/80 border border-white/[0.07] shadow-xl shadow-black/25"
+            ? "py-2.5 bg-[#060C18]/97 border border-white/[0.10] shadow-2xl shadow-black/60 backdrop-saturate-150"
+            : "py-3.5 bg-[#0D1526]/85 border border-white/[0.07] shadow-xl shadow-black/25"
           : "py-2.5 bg-[#080D1A]/95 border border-white/[0.09] shadow-xl shadow-black/40"
       )}
     >
       {/* ── Logo ── */}
-      <Link href="/" className="flex items-center gap-2.5 shrink-0">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-blue-500 shadow-sm shadow-violet-500/30">
+      <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-blue-500 shadow-sm shadow-violet-500/30 transition-all duration-200 group-hover:shadow-violet-500/50 group-hover:scale-105 will-change-transform">
           <Spade className="h-3.5 w-3.5 text-white" />
         </div>
-        <span className="font-bold text-white tracking-tight text-sm">
+        <span className="font-bold text-white tracking-tight text-sm transition-opacity duration-150 group-hover:opacity-90">
           Stacked
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400">
             {" "}Poker
@@ -171,8 +171,8 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
 
   // ── Mobile menu ───────────────────────────────────────────────────────────
   const mobileMenu = mobileOpen ? (
-    <div className="md:hidden fixed inset-x-0 top-[68px] z-50 px-4">
-      <div className="rounded-2xl border border-white/[0.09] bg-[#060B18]/98 backdrop-blur-xl shadow-2xl shadow-black/70 overflow-hidden">
+    <div className="md:hidden fixed inset-x-0 top-[68px] z-50 px-4 animate-dropdown-in">
+      <div className="rounded-2xl border border-white/[0.09] bg-[#060B18]/98 backdrop-blur-xl backdrop-saturate-150 shadow-2xl shadow-black/70 overflow-hidden">
         <nav className="p-2">
           {NAV_ITEMS.map((item) => (
             <Link

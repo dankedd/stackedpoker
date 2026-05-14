@@ -80,7 +80,7 @@ export default function AnalyzeHubPage() {
 
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-16 sm:py-20">
         {/* Header */}
-        <div className="text-center mb-14 max-w-xl">
+        <div className="text-center mb-14 max-w-xl animate-fade-in">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground mb-3">
             What do you want to study?
           </h1>
@@ -91,15 +91,15 @@ export default function AnalyzeHubPage() {
 
         {/* Tool grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
-          {TOOLS.map((tool) => {
+          {TOOLS.map((tool, i) => {
             const ac = ACCENT_CLASSES[tool.accent];
             const card = (
               <div
                 className={`
                   group relative flex flex-col h-full rounded-2xl border bg-card/60
-                  p-6 transition-all duration-200
+                  p-6 card-lift
                   ${ac.border}
-                  ${tool.locked ? "opacity-60 cursor-not-allowed" : "hover:-translate-y-0.5 hover:bg-card/80 hover:shadow-xl " + ac.glow}
+                  ${tool.locked ? "opacity-60 cursor-not-allowed" : "hover:bg-card/80 hover:shadow-2xl " + ac.glow}
                   ${tool.featured ? "ring-1 ring-blue-500/20" : ""}
                 `}
               >
@@ -111,7 +111,7 @@ export default function AnalyzeHubPage() {
                 )}
 
                 {/* Icon */}
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl mb-4 ${ac.icon}`}>
+                <div className={`flex h-10 w-10 items-center justify-center rounded-xl mb-4 transition-transform duration-200 group-hover:scale-110 ${ac.icon}`}>
                   <tool.icon className="h-5 w-5" />
                 </div>
 
@@ -129,7 +129,7 @@ export default function AnalyzeHubPage() {
                   ) : (
                     <>
                       {tool.cta}
-                      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                      <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
                     </>
                   )}
                 </div>
@@ -137,9 +137,9 @@ export default function AnalyzeHubPage() {
             );
 
             return tool.locked ? (
-              <div key={tool.title}>{card}</div>
+              <div key={tool.title} className="stagger-item" style={{ animationDelay: `${i * 70}ms` }}>{card}</div>
             ) : (
-              <Link key={tool.title} href={tool.href} className="block h-full">
+              <Link key={tool.title} href={tool.href} className="block h-full stagger-item" style={{ animationDelay: `${i * 70}ms` }}>
                 {card}
               </Link>
             );

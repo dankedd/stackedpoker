@@ -44,7 +44,7 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-background">
       <Navbar variant="static" />
 
-      <main className="container mx-auto max-w-6xl px-4 sm:px-6 py-10">
+      <main className="container mx-auto max-w-6xl px-4 sm:px-6 py-10 page-enter">
 
         {/* Success banner (client — reads ?upgraded=1) */}
         <UpgradeBanner />
@@ -62,7 +62,7 @@ export default async function DashboardPage() {
 
         {/* Stats grid */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <div className="rounded-xl border border-border/60 bg-card/60 p-6 space-y-3 animate-fade-in">
+          <div className="rounded-xl border border-border/60 bg-card/60 p-6 space-y-3 card-lift stagger-item" style={{ animationDelay: "60ms" }}>
             <div className="flex items-center gap-2 text-muted-foreground">
               <BarChart3 className="h-4 w-4" />
               <span className="text-sm">Hands Analyzed</span>
@@ -73,11 +73,11 @@ export default async function DashboardPage() {
 
           {/* Plan tile — responsive based on tier */}
           <div className={cn(
-            "rounded-xl border p-6 space-y-3 animate-fade-in",
+            "rounded-xl border p-6 space-y-3 card-lift stagger-item",
             tier === "pro"   ? "border-blue-500/20 bg-blue-500/5" :
             tier === "admin" ? "border-violet-500/20 bg-violet-500/5" :
             "border-border/60 bg-card/60"
-          )}>
+          )} style={{ animationDelay: "120ms" }}>
             <div className="flex items-center gap-2 text-muted-foreground">
               <TrendingUp className="h-4 w-4" />
               <span className="text-sm">Plan</span>
@@ -86,7 +86,7 @@ export default async function DashboardPage() {
             <p className="text-xs text-muted-foreground/60">{planSub}</p>
           </div>
 
-          <div className="rounded-xl border border-border/60 bg-card/60 p-6 space-y-3 animate-fade-in">
+          <div className="rounded-xl border border-border/60 bg-card/60 p-6 space-y-3 card-lift stagger-item" style={{ animationDelay: "180ms" }}>
             <div className="flex items-center gap-2 text-muted-foreground">
               <Clock className="h-4 w-4" />
               <span className="text-sm">Member since</span>
@@ -130,13 +130,13 @@ export default async function DashboardPage() {
         <div className="mb-10">
           <h2 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Link href="/analyze" className="group">
-              <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500/40 p-6 transition-all duration-200 h-full">
+            <Link href="/analyze" className="group block">
+              <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/8 hover:border-violet-500/40 p-6 card-lift h-full">
                 <div className="flex items-start justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-blue-500">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-blue-500 transition-transform duration-200 group-hover:scale-105 will-change-transform">
                     <Spade className="h-5 w-5 text-white" />
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-violet-400 transition-colors" />
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-violet-400 group-hover:translate-x-0.5 transition-all duration-200" />
                 </div>
                 <h3 className="text-foreground font-semibold mt-4">Analyze a Hand</h3>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -145,13 +145,13 @@ export default async function DashboardPage() {
               </div>
             </Link>
 
-            <Link href="/history" className="group">
-              <div className="rounded-xl border border-border/60 bg-card/40 hover:bg-card/80 hover:border-border p-6 transition-all duration-200 h-full">
+            <Link href="/history" className="group block">
+              <div className="rounded-xl border border-border/60 bg-card/40 hover:bg-card/70 hover:border-border/80 p-6 card-lift h-full">
                 <div className="flex items-start justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary border border-border/60">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary border border-border/60 transition-transform duration-200 group-hover:scale-105 will-change-transform">
                     <BookOpen className="h-5 w-5 text-muted-foreground" />
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all duration-200" />
                 </div>
                 <h3 className="text-foreground font-semibold mt-4">Hand History</h3>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -160,13 +160,13 @@ export default async function DashboardPage() {
               </div>
             </Link>
 
-            <Link href="/analyze/puzzles" className="group">
-              <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 hover:border-violet-500/40 p-6 transition-all duration-200 h-full">
+            <Link href="/analyze/puzzles" className="group block">
+              <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/8 hover:border-violet-500/40 p-6 card-lift h-full">
                 <div className="flex items-start justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/20 border border-violet-500/25">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/20 border border-violet-500/25 transition-transform duration-200 group-hover:scale-105 will-change-transform">
                     <Brain className="h-5 w-5 text-violet-400" />
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-violet-400 transition-colors" />
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-violet-400 group-hover:translate-x-0.5 transition-all duration-200" />
                 </div>
                 <h3 className="text-foreground font-semibold mt-4">Puzzles</h3>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -175,13 +175,13 @@ export default async function DashboardPage() {
               </div>
             </Link>
 
-            <Link href="/settings" className="group">
-              <div className="rounded-xl border border-border/60 bg-card/40 hover:bg-card/80 hover:border-border p-6 transition-all duration-200 h-full">
+            <Link href="/settings" className="group block">
+              <div className="rounded-xl border border-border/60 bg-card/40 hover:bg-card/70 hover:border-border/80 p-6 card-lift h-full">
                 <div className="flex items-start justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary border border-border/60">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary border border-border/60 transition-transform duration-200 group-hover:scale-105 will-change-transform">
                     <Settings className="h-5 w-5 text-muted-foreground" />
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all duration-200" />
                 </div>
                 <h3 className="text-foreground font-semibold mt-4">Settings</h3>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -206,14 +206,17 @@ export default async function DashboardPage() {
             </Link>
           </div>
           <div className="rounded-xl border border-border/60 bg-card/40 p-12 text-center">
-            <div className="flex justify-center mb-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-secondary border border-border/60">
-                <Layers className="h-6 w-6 text-muted-foreground" />
+            <div className="flex justify-center mb-5">
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500/12 to-blue-500/8 border border-violet-500/15">
+                <Layers className="h-7 w-7 text-violet-400/50" />
+                <div className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-[#0B0F1A] border border-border/60 flex items-center justify-center">
+                  <span className="text-[9px] font-bold text-muted-foreground/60">0</span>
+                </div>
               </div>
             </div>
-            <p className="text-foreground font-medium">No analyses yet</p>
-            <p className="text-sm text-muted-foreground mt-1 mb-6">
-              Analyze your first hand to start tracking your progress.
+            <p className="text-foreground font-semibold">Start your study library</p>
+            <p className="text-sm text-muted-foreground mt-1.5 mb-6 max-w-xs mx-auto leading-relaxed">
+              Analyze your first hand to start building patterns, tracking leaks, and improving your game.
             </p>
             <Button variant="poker" size="sm" asChild>
               <Link href="/analyze">Analyze your first hand</Link>

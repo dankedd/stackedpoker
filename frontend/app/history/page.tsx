@@ -209,8 +209,8 @@ function AnalysisCard({ analysis, isFavorite, note, confirmingDelete, onToggleFa
 
   return (
     <div className={cn(
-      "relative rounded-2xl border bg-card/60 p-5 transition-all duration-200 flex flex-col",
-      "hover:bg-card/80 hover:shadow-xl hover:shadow-black/20",
+      "relative rounded-2xl border bg-card/60 p-5 card-lift flex flex-col",
+      "hover:bg-card/80",
       confirmingDelete
         ? "border-red-500/40 bg-red-500/5"
         : isFavorite

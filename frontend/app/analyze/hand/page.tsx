@@ -1,6 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+
+const ANALYSIS_STAGES = [
+  "Parsing hand history…",
+  "Detecting positions…",
+  "Calculating stack depths…",
+  "Rebuilding action sequence…",
+  "Evaluating decisions…",
+  "Generating AI coaching…",
+];
 import {
   ArrowLeft, RotateCcw, FileText, ImageIcon,
   Zap, AlertTriangle, BookmarkCheck,
@@ -70,6 +79,7 @@ export default function AnalyzePage() {
 
   const text  = useAnalysis();
   const image = useImageAnalysis();
+  const [stageIdx, setStageIdx] = useState(0);
 
   const resultRef    = useRef<HTMLDivElement>(null);
   const autoAnalyzed = useRef(false);
@@ -122,6 +132,12 @@ export default function AnalyzePage() {
   const imgSuccess    = activeTab === "image" && image.isSuccess;
 
   const isLoading = activeTab === "text" ? text.status === "loading" : imgLoading;
+
+  useEffect(() => {
+    if (!isLoading) { setStageIdx(0); return; }
+    const t = setInterval(() => setStageIdx(i => (i + 1) % ANALYSIS_STAGES.length), 2200);
+    return () => clearInterval(t);
+  }, [isLoading]);
   const hasError  = activeTab === "text" ? text.status === "error"   : imgError && !image.extraction;
   const hasResult = activeTab === "text" ? text.status === "success" : imgSuccess;
 
@@ -254,23 +270,51 @@ export default function AnalyzePage() {
 
           {/* ── Loading ────────────────────────────────────────────────── */}
           {isLoading && (
-            <div className="flex flex-col items-center justify-center py-20 gap-6">
+            <div className="flex flex-col items-center justify-center py-20 gap-7 animate-fade-in">
+              {/* Dual-ring spinner */}
               <div className="relative h-16 w-16">
-                <div className="absolute inset-0 rounded-full border-2 border-violet-500/20" />
-                <div className="absolute inset-0 rounded-full border-2 border-t-violet-400 animate-spin" />
+                <div className="absolute inset-0 rounded-full border border-violet-500/15" />
+                <div className="absolute inset-0 rounded-full border border-t-violet-400 border-r-violet-300/40 animate-spin" style={{ animationDuration: "1.1s" }} />
+                <div className="absolute inset-[6px] rounded-full border border-t-blue-400/50 border-l-transparent animate-spin" style={{ animationDuration: "1.7s", animationDirection: "reverse" }} />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="h-2 w-2 rounded-full bg-violet-500/60 animate-pulse" />
+                </div>
               </div>
-              <div className="text-center space-y-1.5">
-                <p className="font-medium text-foreground">
+
+              <div className="text-center space-y-3">
+                <p className="font-medium text-foreground animate-fade-in" key={stageIdx}>
                   {image.isExtracting ? "Extracting poker state…" :
                    image.isAnalyzing  ? "Generating AI coaching…" :
-                   "Analyzing your hand…"}
+                   ANALYSIS_STAGES[stageIdx]}
                 </p>
-                <p className="text-sm text-muted-foreground">
+
+                {/* Stage progress dots */}
+                {!image.isExtracting && !image.isAnalyzing && (
+                  <div className="flex items-center justify-center gap-1.5">
+                    {ANALYSIS_STAGES.map((_, i) => (
+                      <div
+                        key={i}
+                        className="rounded-full transition-all duration-300"
+                        style={{
+                          background: i < stageIdx
+                            ? "rgba(124, 92, 255, 0.5)"
+                            : i === stageIdx
+                            ? "rgba(124, 92, 255, 0.9)"
+                            : "rgba(255,255,255,0.1)",
+                          width: i === stageIdx ? "16px" : "4px",
+                          height: "4px",
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                <p className="text-xs text-muted-foreground/60">
                   {image.isExtracting
                     ? "Preprocessing → OCR → AI extraction → validation"
                     : image.isAnalyzing
                     ? "Running GTO coaching on confirmed hand"
-                    : "Parsing → Classifying → Running heuristics → AI coaching"}
+                    : "Street-by-street GTO analysis in progress"}
                 </p>
               </div>
             </div>

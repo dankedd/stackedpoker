@@ -117,7 +117,7 @@ function CardFaceMini({ card }: { card: string }) {
 function PuzzleCard({ puzzle, score, solved }: { puzzle: Puzzle; score?: number; solved?: boolean }) {
   return (
     <Link href={`/analyze/puzzles/${puzzle.id}`} className="block group">
-      <div className="relative rounded-2xl border border-border/50 bg-card/60 p-5 h-full transition-all duration-200 hover:-translate-y-0.5 hover:bg-card/80 hover:border-violet-500/25 hover:shadow-xl hover:shadow-violet-500/5">
+      <div className="relative rounded-2xl border border-border/50 bg-card/60 p-5 h-full card-lift hover:bg-card/80 hover:border-violet-500/30 hover:shadow-2xl hover:shadow-violet-500/8">
         {solved && (
           <div className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-500/30">
             <span className="text-[10px] text-emerald-400">✓</span>

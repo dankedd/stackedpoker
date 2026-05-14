@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useMemo } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { ReplayAction, ActionCoaching } from "@/lib/types";
 
@@ -321,9 +321,15 @@ function CoachingPanel({
   isCurrentAction: boolean;
 }) {
   const qs = QUALITY_STYLE[coaching.quality] ?? QUALITY_STYLE.Standard;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const t = requestAnimationFrame(() => setMounted(true));
+    return () => { cancelAnimationFrame(t); setMounted(false); };
+  }, [actionIdx]);
 
   return (
-    <div className="p-4 space-y-4 animate-fade-in">
+    <div className="p-4 space-y-4 animate-slide-up-in">
       <p
         className="text-[9px] uppercase font-semibold tracking-[0.2em]"
         style={{ color: "rgba(100,116,139,0.6)" }}
@@ -331,9 +337,9 @@ function CoachingPanel({
         Coaching
       </p>
 
-      {/* Score row */}
+      {/* Score row — SVG ring + badge */}
       <div className="flex items-center gap-3">
-        <ScoreBadge score={coaching.score} quality={coaching.quality} />
+        <ScoreRing score={coaching.score} quality={coaching.quality} mounted={mounted} />
         <div>
           <p className="text-xs font-bold" style={{ color: qs.text }}>
             {coaching.quality}
@@ -368,12 +374,13 @@ function CoachingPanel({
                   {pa.frequency}%
                 </span>
               </div>
-              <div className="h-[3px] rounded-full" style={{ background: "rgba(255,255,255,0.06)" }}>
+              <div className="h-[3px] rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.06)" }}>
                 <div
-                  className="h-full rounded-full transition-all duration-500"
+                  className="h-full rounded-full"
                   style={{
-                    width: `${pa.frequency}%`,
+                    width: mounted ? `${pa.frequency}%` : "0%",
                     background: i === 0 ? qs.bar : "rgba(148,163,184,0.22)",
+                    transition: `width 0.65s cubic-bezier(0.22, 1, 0.36, 1) ${i * 100}ms`,
                   }}
                 />
               </div>
@@ -441,7 +448,56 @@ function CoachingPanel({
   );
 }
 
-// ── Score Badge ──────────────────────────────────────────────────────────────
+// ── Score Ring (SVG animated) ────────────────────────────────────────────────
+
+function ScoreRing({
+  score,
+  quality,
+  mounted,
+}: {
+  score: number;
+  quality: string;
+  mounted: boolean;
+}) {
+  const qs = QUALITY_STYLE[quality] ?? QUALITY_STYLE.Standard;
+  const r = 18;
+  const circ = 2 * Math.PI * r;
+  const fillPct = score / 100;
+  const dashOffset = mounted ? circ * (1 - fillPct) : circ;
+
+  return (
+    <div className="relative flex-shrink-0 h-12 w-12 flex items-center justify-center">
+      <svg width="48" height="48" viewBox="0 0 48 48" className="-rotate-90">
+        {/* Track */}
+        <circle
+          cx="24" cy="24" r={r}
+          fill="none"
+          stroke="rgba(255,255,255,0.06)"
+          strokeWidth="3"
+        />
+        {/* Fill */}
+        <circle
+          cx="24" cy="24" r={r}
+          fill="none"
+          stroke={qs.bar}
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeDasharray={circ}
+          strokeDashoffset={dashOffset}
+          style={{ transition: "stroke-dashoffset 0.85s cubic-bezier(0.22, 1, 0.36, 1)" }}
+        />
+      </svg>
+      <span
+        className="absolute text-[13px] font-bold tabular-nums"
+        style={{ color: qs.text }}
+      >
+        {score}
+      </span>
+    </div>
+  );
+}
+
+// ── Score Badge (small, for timeline) ───────────────────────────────────────
 
 function ScoreBadge({
   score,
