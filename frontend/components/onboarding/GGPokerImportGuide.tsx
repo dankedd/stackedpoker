@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// ─── Step data ────────────────────────────────────────────────────────────────
+// ─── Content data ─────────────────────────────────────────────────────────────
 
 const STEPS = [
   {
@@ -85,94 +85,17 @@ Total pot $71.00 | Rake $3.00
 Board [Ah 7c 2d Ks]
 Seat 3: Hero showed [As Kd] and won ($68.00)`;
 
-// ─── Props ────────────────────────────────────────────────────────────────────
+const SEEN_KEY = "ggpoker_guide_seen";
 
-interface GGPokerGuideProps {
-  /** "full" = complete onboarding section. "compact" = single-line helper card. */
-  variant?: "full" | "compact";
-  className?: string;
-  noHeader?: boolean;
-}
+// ─── Expanded content ─────────────────────────────────────────────────────────
 
-// ─── Compact variant ──────────────────────────────────────────────────────────
-
-function CompactGuide({ className }: { className?: string }) {
+function GuideContent() {
   const [exampleOpen, setExampleOpen] = useState(false);
 
   return (
-    <div className={cn("rounded-xl border border-border/50 bg-card/40 overflow-hidden", className)}>
-      <div className="px-4 py-3.5 flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-500/15">
-            <Zap className="h-3.5 w-3.5 text-violet-400" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-foreground leading-tight">
-              GG Poker → PokerCraft → Sessions → Download ZIP → paste here
-            </p>
-            <p className="text-[11px] text-muted-foreground/60 mt-0.5">
-              ZIP exports, raw hand histories, and multi-hand sessions all supported
-            </p>
-          </div>
-        </div>
+    <div className="space-y-5">
 
-        <div className="flex flex-wrap gap-1.5 sm:ml-auto shrink-0">
-          <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border border-violet-500/30 bg-violet-500/10 text-violet-400">
-            <Archive className="h-2.5 w-2.5" />
-            ZIP supported
-          </span>
-          <button
-            type="button"
-            onClick={() => setExampleOpen(v => !v)}
-            className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/50 hover:text-muted-foreground px-2 py-0.5 rounded-full border border-border/30 hover:border-border/50 transition-colors"
-          >
-            Example
-            <ChevronDown className={cn("h-2.5 w-2.5 transition-transform", exampleOpen && "rotate-180")} />
-          </button>
-        </div>
-      </div>
-
-      {exampleOpen && (
-        <div className="border-t border-border/30 px-4 py-3 bg-secondary/10">
-          <p className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-widest mb-2">
-            Example GG Poker hand history
-          </p>
-          <pre className="text-[10px] leading-relaxed text-muted-foreground/50 overflow-x-auto whitespace-pre font-mono">
-            {EXAMPLE_HAND}
-          </pre>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Full variant ─────────────────────────────────────────────────────────────
-
-function FullGuide({ className, noHeader }: { className?: string; noHeader?: boolean }) {
-  const [exampleOpen, setExampleOpen] = useState(false);
-
-  return (
-    <div className={cn("space-y-5 animate-fade-in", className)}>
-
-      {/* Header */}
-      {!noHeader && (
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-px w-5 bg-gradient-to-r from-violet-500 to-blue-500" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-violet-400/70">
-              Getting started
-            </span>
-          </div>
-          <h2 className="text-xl font-bold text-foreground tracking-tight">
-            How to import from GG Poker
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-            Download your session from PokerCraft and let the AI rebuild every hand automatically.
-          </p>
-        </div>
-      )}
-
-      {/* 4-step grid — 2×2 on mobile, 4×1 on lg */}
+      {/* 4-step grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
         {STEPS.map((step, i) => {
           const { Icon } = step;
@@ -198,7 +121,6 @@ function FullGuide({ className, noHeader }: { className?: string; noHeader?: boo
               <h3 className="text-xs font-semibold text-foreground mb-1 leading-tight">{step.title}</h3>
               <p className="text-[11px] text-muted-foreground/65 leading-relaxed">{step.desc}</p>
 
-              {/* Connector — desktop only */}
               {i < STEPS.length - 1 && (
                 <div className="hidden lg:block absolute -right-[7px] top-1/2 -translate-y-1/2 z-10 text-border">
                   <ArrowRight className="h-3.5 w-3.5" />
@@ -209,10 +131,9 @@ function FullGuide({ className, noHeader }: { className?: string; noHeader?: boo
         })}
       </div>
 
-      {/* Bottom row: formats + sites + mini flow */}
+      {/* Supported formats + sites */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
 
-        {/* Supported formats */}
         <div className="rounded-xl border border-border/40 bg-card/30 px-4 py-3.5">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-2.5">
             Supported uploads
@@ -243,7 +164,6 @@ function FullGuide({ className, noHeader }: { className?: string; noHeader?: boo
           </div>
         </div>
 
-        {/* Sites + mini pipeline */}
         <div className="rounded-xl border border-border/40 bg-card/30 px-4 py-3.5 flex flex-col">
           <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-2.5">
             Optimized for
@@ -266,12 +186,10 @@ function FullGuide({ className, noHeader }: { className?: string; noHeader?: boo
             </div>
           </div>
 
-          {/* Mini pipeline */}
           <div className="mt-auto pt-3 border-t border-border/20">
             <div className="flex items-center gap-1 flex-wrap">
               {["ZIP", "→", "AI", "→", "Replay", "→", "Coaching"].map((t, i) => {
-                const isArrow = t === "→";
-                if (isArrow) return (
+                if (t === "→") return (
                   <span key={i} className="text-[10px] text-muted-foreground/30">→</span>
                 );
                 const cls = i === 0
@@ -280,10 +198,7 @@ function FullGuide({ className, noHeader }: { className?: string; noHeader?: boo
                   ? "border-emerald-500/25 bg-emerald-500/8 text-emerald-400/70"
                   : "border-border/30 bg-secondary/20 text-muted-foreground/45";
                 return (
-                  <span key={i} className={cn(
-                    "text-[10px] font-mono px-1.5 py-px rounded border",
-                    cls,
-                  )}>
+                  <span key={i} className={cn("text-[10px] font-mono px-1.5 py-px rounded border", cls)}>
                     {t}
                   </span>
                 );
@@ -293,7 +208,7 @@ function FullGuide({ className, noHeader }: { className?: string; noHeader?: boo
         </div>
       </div>
 
-      {/* Collapsible example */}
+      {/* Collapsible example hand */}
       <div className="rounded-xl border border-border/40 bg-card/20 overflow-hidden">
         <button
           type="button"
@@ -312,42 +227,48 @@ function FullGuide({ className, noHeader }: { className?: string; noHeader?: boo
           )} />
         </button>
 
-        {exampleOpen && (
-          <div className="border-t border-border/30 px-4 pb-4 pt-3 bg-secondary/5">
-            <p className="text-[10px] text-muted-foreground/40 mb-2 font-medium">
-              This is what a GG Poker export looks like. Paste it directly — or upload the ZIP.
-            </p>
-            <pre className="text-[10px] sm:text-[11px] leading-relaxed text-muted-foreground/50 overflow-x-auto whitespace-pre font-mono bg-black/20 rounded-lg p-3 border border-border/20">
-              {EXAMPLE_HAND}
-            </pre>
+        <div className={cn(
+          "grid transition-[grid-template-rows] duration-200 ease-in-out",
+          exampleOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}>
+          <div className="overflow-hidden">
+            <div className="border-t border-border/30 px-4 pb-4 pt-3 bg-secondary/5">
+              <p className="text-[10px] text-muted-foreground/40 mb-2 font-medium">
+                This is what a GG Poker export looks like. Paste it directly — or upload the ZIP.
+              </p>
+              <pre className="text-[10px] sm:text-[11px] leading-relaxed text-muted-foreground/50 overflow-x-auto whitespace-pre font-mono bg-black/20 rounded-lg p-3 border border-border/20">
+                {EXAMPLE_HAND}
+              </pre>
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── Export ───────────────────────────────────────────────────────────────────
+// ─── Accordion shell ──────────────────────────────────────────────────────────
 
-export function GGPokerGuide({ variant = "full", className, noHeader }: GGPokerGuideProps) {
-  if (variant === "compact") return <CompactGuide className={className} />;
-  return <FullGuide className={className} noHeader={noHeader} />;
+interface GGPokerImportGuideProps {
+  className?: string;
+  /** Force open on first render regardless of localStorage state */
+  defaultExpanded?: boolean;
 }
 
-// ─── Accordion wrapper ────────────────────────────────────────────────────────
-
-const SEEN_KEY = "ggpoker_guide_seen";
-
-export function GGPokerAccordion({ className }: { className?: string }) {
+export function GGPokerImportGuide({ className, defaultExpanded = false }: GGPokerImportGuideProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
+    if (defaultExpanded) {
+      setIsOpen(true);
+      return;
+    }
     const seen = localStorage.getItem(SEEN_KEY);
     if (!seen) {
       setIsOpen(true);
       localStorage.setItem(SEEN_KEY, "1");
     }
-  }, []);
+  }, [defaultExpanded]);
 
   return (
     <div className={cn("rounded-2xl border border-violet-500/20 bg-card/30 overflow-hidden", className)}>
@@ -380,7 +301,7 @@ export function GGPokerAccordion({ className }: { className?: string }) {
       )}>
         <div className="overflow-hidden">
           <div className="px-4 pb-5 pt-2 border-t border-violet-500/10">
-            <FullGuide noHeader />
+            <GuideContent />
           </div>
         </div>
       </div>

@@ -16,7 +16,7 @@ import { useSessionAnalysis } from "@/hooks/useSessionAnalysis";
 import { useAnalysis } from "@/hooks/useAnalysis";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoginCTA } from "@/components/poker/UpgradePrompt";
-import { GGPokerGuide } from "@/components/poker/GGPokerGuide";
+import { GGPokerImportGuide } from "@/components/onboarding/GGPokerImportGuide";
 import { HandReplay } from "@/components/replay/HandReplay";
 import { cn } from "@/lib/utils";
 import type { SessionHandCandidate, AnalysisResponse } from "@/lib/types";
@@ -487,7 +487,7 @@ export default function SessionAnalyzePage() {
 
           {/* ── Onboarding guide ──────────────────────────────────────── */}
           {!hasResult && !isLoading && (
-            <GGPokerGuide variant="full" className="mb-8" />
+            <GGPokerImportGuide className="mb-8" />
           )}
 
           {/* ── Input ─────────────────────────────────────────────────── */}

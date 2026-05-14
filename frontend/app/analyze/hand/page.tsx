@@ -15,7 +15,7 @@ import { AnalysisSetup, ANALYSIS_SETUP_DEFAULT } from "@/components/poker/Analys
 import type { AnalysisSetupValue } from "@/components/poker/AnalysisSetup";
 import { UsageWidget } from "@/components/poker/UsageWidget";
 import { UpgradePrompt, LoginCTA } from "@/components/poker/UpgradePrompt";
-import { GGPokerAccordion } from "@/components/poker/GGPokerGuide";
+import { GGPokerImportGuide } from "@/components/onboarding/GGPokerImportGuide";
 import { HandReplay } from "@/components/replay/HandReplay";
 import { HandConfirmation } from "@/components/replay/HandConfirmation";
 import { Button } from "@/components/ui/button";
@@ -159,7 +159,7 @@ export default function AnalyzePage() {
 
           {/* ── Import guide (shown only when idle with no result) ──────── */}
           {!hideInput && !imgConfirming && !imgSuccess && !hasResult && !isLoading && (
-            <GGPokerAccordion className="mb-5" />
+            <GGPokerImportGuide className="mb-5" />
           )}
 
           {/* ── Input card ─────────────────────────────────────────────── */}

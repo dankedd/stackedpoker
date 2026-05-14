@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Spade, BarChart2, Trophy, Puzzle, ArrowRight, Lock, Archive, Check } from "lucide-react";
+import { Spade, BarChart2, Trophy, Puzzle, ArrowRight, Lock } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 
@@ -87,30 +87,6 @@ export default function AnalyzeHubPage() {
           <p className="text-muted-foreground text-base leading-relaxed">
             Improve faster with AI-powered poker analysis tools.
           </p>
-        </div>
-
-        {/* GG Poker quick-start hint */}
-        <div className="mb-8 w-full max-w-2xl rounded-xl border border-violet-500/15 bg-violet-500/5 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-violet-500/15">
-              <Archive className="h-3 w-3 text-violet-400" />
-            </div>
-            <p className="text-xs font-medium text-foreground/80">
-              <span className="text-violet-400 font-semibold">GG Poker users:</span>{" "}
-              PokerCraft → Sessions → Download ZIP → paste in Session Analysis
-            </p>
-          </div>
-          <div className="flex items-center gap-3 shrink-0 sm:ml-auto">
-            <span className="flex items-center gap-1 text-[10px] text-muted-foreground/50">
-              <Check className="h-2.5 w-2.5 text-emerald-400/60" /> GG Poker
-            </span>
-            <span className="flex items-center gap-1 text-[10px] text-muted-foreground/50">
-              <Check className="h-2.5 w-2.5 text-blue-400/60" /> PokerStars
-            </span>
-            <span className="text-[10px] font-medium text-violet-400/70 border border-violet-500/20 bg-violet-500/8 px-1.5 py-px rounded-full">
-              ZIP files supported
-            </span>
-          </div>
         </div>
 
         {/* Tool grid */}

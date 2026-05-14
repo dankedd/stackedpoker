@@ -15,7 +15,7 @@ import { useTournamentAnalysis } from "@/hooks/useTournamentAnalysis";
 import { useAnalysis } from "@/hooks/useAnalysis";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoginCTA } from "@/components/poker/UpgradePrompt";
-import { GGPokerAccordion } from "@/components/poker/GGPokerGuide";
+import { GGPokerImportGuide } from "@/components/onboarding/GGPokerImportGuide";
 import { HandReplay } from "@/components/replay/HandReplay";
 import { cn } from "@/lib/utils";
 import type { SessionHandCandidate, AnalysisResponse, TournamentStats } from "@/lib/types";
@@ -688,7 +688,7 @@ export default function TournamentAnalyzePage() {
 
           {/* ── Import guide ─────────────────────────────────────────── */}
           {!hasResult && !isLoading && (
-            <GGPokerAccordion className="mb-6" />
+            <GGPokerImportGuide className="mb-6" />
           )}
 
           {/* ── Input ────────────────────────────────────────────────── */}
