@@ -3,8 +3,10 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
-  const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/dashboard'
+  const code             = searchParams.get('code')
+  const next             = searchParams.get('next') ?? '/dashboard'
+  const oauthError       = searchParams.get('error')
+  const oauthErrorDesc   = searchParams.get('error_description')
 
   // On Vercel and other proxied hosts, `origin` reflects the internal URL
   // rather than the public-facing domain. x-forwarded-host gives us the real one.
@@ -16,11 +18,19 @@ export async function GET(request: NextRequest) {
     ? `https://${forwardedHost}`
     : origin
 
+  // ── OAuth error redirect (e.g. access_denied, server_error from Supabase) ──
+  if (oauthError) {
+    console.warn('[auth/callback] OAuth error:', oauthError, oauthErrorDesc)
+    const params = new URLSearchParams({ error: oauthError })
+    if (oauthErrorDesc) params.set('error_description', oauthErrorDesc)
+    return NextResponse.redirect(`${baseUrl}/login?${params.toString()}`)
+  }
+
+  // ── Authorization code exchange ──────────────────────────────────────────
   if (code) {
     // Pre-create the success redirect so session cookies can be attached to it
-    // directly. Using NextResponse.redirect here (instead of cookies() from
-    // next/headers) avoids the ambiguity of whether mutations to the
-    // cookieStore are merged into a separately-returned NextResponse.
+    // directly. This avoids the ambiguity of whether cookieStore mutations are
+    // merged into a separately-returned NextResponse.
     const successResponse = NextResponse.redirect(`${baseUrl}${next}`)
 
     const supabase = createServerClient(
@@ -30,8 +40,8 @@ export async function GET(request: NextRequest) {
         cookies: {
           getAll: () => request.cookies.getAll(),
           setAll: (cookiesToSet) => {
-            // Write to the request for any subsequent calls in this handler,
-            // AND write to the redirect response so the browser receives them.
+            // Write to the request (for subsequent calls in this handler)
+            // AND to the redirect response so the browser receives them.
             cookiesToSet.forEach(({ name, value }) =>
               request.cookies.set(name, value)
             )
@@ -48,7 +58,7 @@ export async function GET(request: NextRequest) {
 
     if (!error) {
       const { data: { user } } = await supabase.auth.getUser()
-      console.log('[auth/callback] user:', user?.id ?? 'none')
+      console.log('[auth/callback] authenticated user:', user?.id ?? 'none')
 
       if (user) {
         // Upsert profile for new OAuth users. ignoreDuplicates prevents
@@ -67,11 +77,14 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      console.log('[auth/callback] redirecting to:', `${baseUrl}${next}`)
+      console.log('[auth/callback] success — redirecting to:', `${baseUrl}${next}`)
       return successResponse
     }
+
+    console.warn('[auth/callback] exchangeCodeForSession failed:', error.message)
   }
 
-  console.warn('[auth/callback] failed — no code or exchange error')
+  // No code and no explicit error — generic failure
+  console.warn('[auth/callback] no code in request')
   return NextResponse.redirect(`${baseUrl}/login?error=auth_callback_failed`)
 }

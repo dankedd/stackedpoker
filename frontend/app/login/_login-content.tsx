@@ -32,14 +32,28 @@ export function LoginContent() {
 
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirect') ?? '/dashboard'
-  const callbackError = searchParams.get('error')
+  const redirectTo        = searchParams.get('redirect') ?? '/dashboard'
+  const callbackError     = searchParams.get('error')
+  const callbackErrorDesc = searchParams.get('error_description')
 
   useEffect(() => {
-    if (callbackError === 'auth_callback_failed') {
-      setError('Sign-in failed. Please try again or use a different method.')
+    if (!callbackError) return
+    // server_error / validation_failed = provider misconfigured in Supabase
+    if (
+      callbackError === 'server_error' ||
+      callbackError === 'validation_failed' ||
+      (callbackErrorDesc && callbackErrorDesc.toLowerCase().includes('provider'))
+    ) {
+      setError('Google login is currently unavailable. Please use email/password or try again later.')
+      return
     }
-  }, [callbackError])
+    if (callbackError === 'access_denied') {
+      setError('Sign-in was cancelled.')
+      return
+    }
+    // auth_callback_failed or any other error
+    setError('Sign-in failed. Please try again or use a different method.')
+  }, [callbackError, callbackErrorDesc])
 
   async function handleOAuth(provider: 'google') {
     setError(null)
