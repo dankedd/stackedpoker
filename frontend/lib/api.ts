@@ -91,6 +91,31 @@ export async function analyzeTournament(
   });
 }
 
+export async function analyzeTournamentFile(
+  file: File,
+  token: string,
+  setup?: { tournamentType?: string; buyIn?: string },
+): Promise<TournamentAnalysisResponse> {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (setup?.tournamentType) formData.append("tournament_type", setup.tournamentType);
+  if (setup?.buyIn) formData.append("buy_in", setup.buyIn);
+
+  const res = await fetch("/api/analyze-tournament-upload", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ detail: "Unknown error" }));
+    const detail = body.detail ?? `HTTP ${res.status}`;
+    const err = new Error(typeof detail === "string" ? detail : detail.message ?? JSON.stringify(detail));
+    (err as Error & { detail?: unknown }).detail = detail;
+    throw err;
+  }
+  return res.json() as Promise<TournamentAnalysisResponse>;
+}
+
 export async function parseHand(handText: string): Promise<{ parsed_hand: AnalysisResponse["parsed_hand"] }> {
   return apiFetch("/api/parse", null, {
     method: "POST",

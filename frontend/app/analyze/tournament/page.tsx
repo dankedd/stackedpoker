@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   ArrowLeft, RotateCcw, Trophy, ChevronRight, ChevronDown, ChevronLeft,
   Zap, AlertTriangle, X, BookmarkCheck, TrendingUp, Target,
-  Flame, Shield, Activity,
+  Flame, Shield, Activity, Upload, Archive,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -23,7 +23,6 @@ import type { SessionHandCandidate, AnalysisResponse, TournamentStats } from "@/
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const TOURNAMENT_TYPES = ["MTT", "SNG", "Bounty", "Hyper Turbo", "Satellite", "WSOP-style"];
-const FIELD_SIZES = ["< 50", "50–200", "200–1000", "1000+"];
 
 const SEVERITY_STYLES = {
   high:   { label: "High priority",    dot: "bg-red-400",   cls: "text-red-400 border-red-500/30 bg-red-500/10" },
@@ -43,15 +42,144 @@ const STREET_LABEL: Record<string, string> = {
 };
 
 const LOADING_MESSAGES = [
-  "Splitting tournament into individual hands…",
-  "Parsing hand histories…",
+  "Uploading tournament export…",
+  "Extracting hand files from ZIP…",
+  "Parsing tournament hand histories…",
   "Extracting blind levels and stack depths…",
-  "Scoring by ICM importance…",
-  "Selecting top tournament spots…",
-  "Generating ICM-aware coaching…",
+  "Scoring hands by ICM importance…",
+  "Generating tournament coaching…",
 ];
 
 // ── Sub-components ────────────────────────────────────────────────────────────
+
+function UploadZone({
+  file,
+  onFileSelect,
+  onRemove,
+  disabled,
+}: {
+  file: File | null;
+  onFileSelect: (f: File) => void;
+  onRemove: () => void;
+  disabled?: boolean;
+}) {
+  const [dragOver, setDragOver] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const accept = (f: File) => {
+    if (f.name.toLowerCase().endsWith(".zip") || f.name.toLowerCase().endsWith(".txt")) {
+      onFileSelect(f);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const f = e.dataTransfer.files[0];
+    if (f) accept(f);
+  };
+
+  if (file) {
+    const kb = (file.size / 1024).toFixed(0);
+    const isZip = file.name.toLowerCase().endsWith(".zip");
+    return (
+      <div className="flex items-center gap-3 rounded-xl border border-amber-500/35 bg-amber-500/8 px-4 py-3.5">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/15 border border-amber-500/25 shrink-0">
+          <Archive className="h-4 w-4 text-amber-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
+          <p className="text-[11px] text-muted-foreground/60 mt-0.5">
+            {kb} KB · {isZip ? "ZIP archive" : "Text file"} · Ready to analyze
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground/50 hover:text-muted-foreground hover:bg-secondary/60 transition-colors shrink-0"
+          aria-label="Remove file"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={handleDrop}
+      onClick={() => !disabled && inputRef.current?.click()}
+      className={cn(
+        "relative cursor-pointer select-none rounded-2xl border-2 border-dashed px-8 py-12 text-center transition-all duration-200",
+        disabled
+          ? "opacity-50 cursor-not-allowed border-border/30"
+          : dragOver
+          ? "border-amber-400/70 bg-amber-500/8 shadow-xl shadow-amber-500/10"
+          : "border-border/50 bg-card/40 hover:border-amber-500/45 hover:bg-card/60 hover:shadow-lg hover:shadow-amber-500/5",
+      )}
+    >
+      {dragOver && (
+        <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-b from-amber-500/6 to-transparent" />
+      )}
+
+      <div className="flex justify-center mb-5">
+        <div className={cn(
+          "flex h-14 w-14 items-center justify-center rounded-2xl border-2 transition-all duration-200",
+          dragOver
+            ? "border-amber-400/60 bg-amber-500/15 shadow-lg shadow-amber-500/25"
+            : "border-border/50 bg-secondary/40",
+        )}>
+          <Upload className={cn(
+            "h-6 w-6 transition-colors duration-200",
+            dragOver ? "text-amber-400" : "text-muted-foreground/50",
+          )} />
+        </div>
+      </div>
+
+      <p className={cn(
+        "font-semibold text-base mb-1.5 transition-colors duration-200",
+        dragOver ? "text-amber-300" : "text-foreground",
+      )}>
+        Drop your PokerCraft tournament ZIP export here
+      </p>
+      <p className="text-sm text-muted-foreground/60 mb-5">
+        or{" "}
+        <span className="text-amber-400 underline underline-offset-2 decoration-amber-400/40">
+          click to browse
+        </span>
+      </p>
+
+      <div className="flex justify-center flex-wrap gap-2">
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full border border-border/50 bg-secondary/40 text-muted-foreground/65">
+          <Archive className="h-3 w-3" />
+          ZIP supported
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full border border-emerald-500/35 bg-emerald-500/8 text-emerald-400/80">
+          <Zap className="h-3 w-3" />
+          GGPoker optimized
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full border border-border/50 bg-secondary/40 text-muted-foreground/65">
+          TXT files accepted
+        </span>
+      </div>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".zip,.txt"
+        className="hidden"
+        disabled={disabled}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) accept(f);
+          e.target.value = "";
+        }}
+      />
+    </div>
+  );
+}
 
 function StatTile({
   label, value, sub, accent,
@@ -491,9 +619,8 @@ export default function TournamentAnalyzePage() {
   const tournament  = useTournamentAnalysis();
   const handAnalysis = useAnalysis();
 
-  const [text, setText]               = useState("");
+  const [file, setFile]               = useState<File | null>(null);
   const [tournamentType, setType]     = useState("MTT");
-  const [fieldSize, setFieldSize]     = useState("50–200");
   const [buyIn, setBuyIn]             = useState("");
   const [msgIdx, setMsgIdx]           = useState(0);
   const msgTimer                      = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -503,22 +630,19 @@ export default function TournamentAnalyzePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (text.trim().length < 100) return;
+    if (!file) return;
     setMsgIdx(0);
     msgTimer.current = setInterval(() => {
       setMsgIdx((i) => Math.min(i + 1, LOADING_MESSAGES.length - 1));
-    }, 2000);
-    await tournament.analyze(text.trim(), {
-      tournamentType,
-      fieldSize,
-      buyIn,
-    });
+    }, 3000);
+    await tournament.analyzeFile(file, { tournamentType, buyIn });
     if (msgTimer.current) clearInterval(msgTimer.current);
   };
 
   const handleReset = () => {
     tournament.reset();
-    setText("");
+    setFile(null);
+    setBuyIn("");
     setOverlayOpen(false);
     setActiveHand(null);
     setAllOpen(false);
@@ -578,8 +702,8 @@ export default function TournamentAnalyzePage() {
                   <CardTitle>Tournament Analysis</CardTitle>
                 </div>
                 <CardDescription>
-                  Paste your tournament hand history. The engine ranks every hand by ICM importance
-                  and surfaces your highest-leverage spots.
+                  Upload your PokerCraft ZIP export. The engine ranks every hand by ICM importance
+                  and surfaces your highest-leverage spots automatically.
                 </CardDescription>
               </CardHeader>
 
@@ -597,7 +721,9 @@ export default function TournamentAnalyzePage() {
 
                     {/* Tournament type */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground/80">Tournament type</label>
+                      <label className="text-xs font-medium text-muted-foreground/70 uppercase tracking-wide">
+                        Tournament type
+                      </label>
                       <div className="flex flex-wrap gap-1.5">
                         {TOURNAMENT_TYPES.map((t) => (
                           <button
@@ -617,55 +743,27 @@ export default function TournamentAnalyzePage() {
                       </div>
                     </div>
 
-                    {/* Field size + buy-in */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground/80">Field size</label>
-                        <div className="flex flex-col gap-1.5">
-                          {FIELD_SIZES.map((s) => (
-                            <button
-                              key={s}
-                              type="button"
-                              onClick={() => setFieldSize(s)}
-                              className={cn(
-                                "px-2.5 py-1 rounded-md text-xs font-medium border transition-all text-left",
-                                fieldSize === s
-                                  ? "border-amber-500/60 bg-amber-500/10 text-amber-400"
-                                  : "border-border/50 bg-secondary/30 text-muted-foreground hover:text-foreground hover:border-border/80",
-                              )}
-                            >
-                              {s} players
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                    {/* Upload zone */}
+                    <UploadZone
+                      file={file}
+                      onFileSelect={setFile}
+                      onRemove={() => setFile(null)}
+                    />
 
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground/80">Buy-in (optional)</label>
-                        <input
-                          type="text"
-                          value={buyIn}
-                          onChange={(e) => setBuyIn(e.target.value)}
-                          placeholder="e.g. $109"
-                          className="w-full h-9 rounded-lg border border-border bg-input/50 px-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/50 transition-all"
-                        />
-                        <p className="text-xs text-muted-foreground/50 mt-1 leading-relaxed">
-                          GGPoker and PokerStars tournament exports supported.
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Paste area */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground/80">
-                        Tournament hand history
+                    {/* Buy-in (optional, subtle) */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-muted-foreground/60">
+                        Buy-in{" "}
+                        <span className="text-muted-foreground/40 font-normal">
+                          — optional, auto-detected from export
+                        </span>
                       </label>
-                      <textarea
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        placeholder={`Paste your full tournament hand history here…\n\nExport all hands from your tournament session in GGPoker or PokerStars, then paste here. The engine parses every hand, extracts blind levels and stack depths, and ranks spots by ICM importance.`}
-                        rows={12}
-                        className="w-full rounded-lg border border-border/70 bg-card/50 px-4 py-3 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/50 transition-all resize-y"
+                      <input
+                        type="text"
+                        value={buyIn}
+                        onChange={(e) => setBuyIn(e.target.value)}
+                        placeholder="e.g. $109"
+                        className="w-full h-9 rounded-lg border border-border/60 bg-input/40 px-3 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500/50 transition-all"
                       />
                     </div>
 
@@ -681,7 +779,7 @@ export default function TournamentAnalyzePage() {
                       variant="poker"
                       size="lg"
                       className="w-full bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 shadow-lg shadow-amber-900/30"
-                      disabled={text.trim().length < 100}
+                      disabled={!file}
                     >
                       Analyze Tournament
                       <Trophy className="h-4 w-4 ml-2" />
