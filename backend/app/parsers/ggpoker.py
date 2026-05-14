@@ -6,10 +6,14 @@ from app.models.schemas import (
 
 
 class GGPokerParser(BaseParser):
-    """Parser for GGPoker hand history format."""
+    """Parser for GGPoker hand history format (cash and tournament)."""
+
+    # GGPoker hand IDs can contain dashes:  #TO1234567-1-9876543210:
+    # Cash prefixes: RC, HD, CB   Tournament prefix: TO
+    _CAN_PARSE_RE = re.compile(r"Poker Hand #[A-Z]{2}[\w-]+:", re.IGNORECASE)
 
     def can_parse(self, text: str) -> bool:
-        return bool(re.search(r"Poker Hand #(RC|HD|CB|TO)\w+:", text))
+        return bool(self._CAN_PARSE_RE.search(text))
 
     def parse(self, text: str) -> ParsedHand:
         hand_id = self._parse_hand_id(text)
@@ -30,8 +34,9 @@ class GGPokerParser(BaseParser):
         board = self._parse_board(text)
         actions = self._parse_actions(text, hero_name, bb)
 
-        effective_stack = self._calc_effective_stack(players, hero_name, bb)
-        pot_size_bb = self._calc_pot(actions, sb, bb)
+        effective_stack = self._calc_effective_stack(players, hero_name)
+        antes_bb = self._sum_antes(text, bb)
+        pot_size_bb = self._calc_pot(actions, sb, bb, antes_bb)
 
         return ParsedHand(
             site=site,
@@ -53,14 +58,21 @@ class GGPokerParser(BaseParser):
     # ── Private helpers ────────────────────────────────────────────────────
 
     def _parse_hand_id(self, text: str) -> str:
-        m = re.search(r"Poker Hand #(\w+):", text)
+        # Capture full ID including dashes e.g. TO1234567-1-9876543210
+        m = re.search(r"Poker Hand #([\w-]+):", text)
         return m.group(1) if m else "unknown"
 
     def _parse_stakes(self, text: str) -> tuple[str, float, float]:
+        # Cash game: ($0.50/$1.00)
         m = re.search(r"\(\$([0-9.]+)/\$([0-9.]+)\)", text)
         if m:
             sb, bb = float(m.group(1)), float(m.group(2))
-            return f"{m.group(1)}/{m.group(2)}", sb, bb
+            return f"${m.group(1)}/${m.group(2)}", sb, bb
+        # Tournament: (1000/2000) or (1000/2000/200) or (1000/2000/200 ante)
+        m = re.search(r"\((\d+)/(\d+)(?:/\d+)?(?:\s*ante)?\)", text)
+        if m:
+            sb, bb = float(m.group(1)), float(m.group(2))
+            return f"T{int(sb)}/{int(bb)}", sb, bb
         return "0.5/1", 0.5, 1.0
 
     def _parse_button_seat(self, text: str) -> int:
@@ -69,14 +81,16 @@ class GGPokerParser(BaseParser):
 
     def _parse_seats(self, text: str, bb: float) -> list[dict]:
         seats = []
+        # Match both cash ($123.45 in chips) and tournament (45000 in chips)
         for m in re.finditer(
-            r"Seat (\d+): (\S+) \(\$([0-9.]+) in chips\)", text
+            r"Seat (\d+): (\S+) \(\$?([0-9,]+(?:\.[0-9]+)?) in chips\)", text
         ):
+            stack = float(m.group(3).replace(",", ""))
             seats.append({
                 "seat": int(m.group(1)),
                 "name": m.group(2),
-                "stack": float(m.group(3)),
-                "stack_bb": round(float(m.group(3)) / bb, 2),
+                "stack": stack,
+                "stack_bb": round(stack / bb, 2),
             })
         return seats
 
@@ -144,16 +158,23 @@ class GGPokerParser(BaseParser):
     def _parse_actions(self, text: str, hero_name: str, bb: float) -> list[HandAction]:
         sections = {
             "preflop": self._extract_section(text, "HOLE CARDS", "FLOP"),
-            "flop": self._extract_section(text, "FLOP", "TURN"),
-            "turn": self._extract_section(text, "TURN", "RIVER"),
-            "river": self._extract_section(text, "RIVER", "SHOW DOWN|SUMMARY"),
+            "flop":    self._extract_section(text, "FLOP", "TURN"),
+            "turn":    self._extract_section(text, "TURN", "RIVER"),
+            "river":   self._extract_section(text, "RIVER", "SHOW DOWN|SUMMARY"),
         }
 
         actions = []
+        # Handle both cash ($X or to $Y) and tournament (bare numbers)
         action_re = re.compile(
-            r"^(\S+): (folds|checks|calls|bets|raises)(?: \$([0-9.]+))?(?: to \$([0-9.]+))?",
+            r"^(\S+): (folds|checks|calls|bets|raises)"
+            r"(?: \$?([0-9,]+(?:\.[0-9]+)?))?"
+            r"(?: to \$?([0-9,]+(?:\.[0-9]+)?))?",
             re.MULTILINE,
         )
+        action_map = {
+            "folds": "fold", "checks": "check", "calls": "call",
+            "bets": "bet",   "raises": "raise",
+        }
 
         for street, section in sections.items():
             if not section:
@@ -162,20 +183,14 @@ class GGPokerParser(BaseParser):
                 player = m.group(1)
                 raw_action = m.group(2)
                 amount_str = m.group(4) or m.group(3)
-                amount = float(amount_str) / bb if amount_str else None
-
-                action_map = {
-                    "folds": "fold",
-                    "checks": "check",
-                    "calls": "call",
-                    "bets": "bet",
-                    "raises": "raise",
-                }
+                amount: float | None = None
+                if amount_str:
+                    amount = round(float(amount_str.replace(",", "")) / bb, 2)
                 actions.append(HandAction(
                     street=street,
                     player=player,
                     action=action_map[raw_action],
-                    size_bb=round(amount, 2) if amount else None,
+                    size_bb=amount,
                     is_hero=(player == hero_name),
                 ))
         return actions
@@ -185,17 +200,31 @@ class GGPokerParser(BaseParser):
         m = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
         return m.group(1) if m else ""
 
-    def _calc_effective_stack(self, players: list[PlayerInfo], hero_name: str, bb: float) -> float:
-        stacks = [p.stack_bb for p in players]
+    def _sum_antes(self, text: str, bb: float) -> float:
+        """Sum all antes posted, in big blinds."""
+        total = 0.0
+        for m in re.finditer(
+            r"\w+: posts (?:the )?ante \$?([0-9,]+(?:\.[0-9]+)?)",
+            text, re.IGNORECASE,
+        ):
+            total += float(m.group(1).replace(",", "")) / bb
+        return total
+
+    def _calc_effective_stack(self, players: list[PlayerInfo], hero_name: str) -> float:
         hero_stack = next((p.stack_bb for p in players if p.name == hero_name), 100.0)
-        # effective stack = min of hero and villain (for 2-player) or min of all for multi
         other_stacks = [p.stack_bb for p in players if p.name != hero_name]
         if not other_stacks:
             return hero_stack
         return round(min(hero_stack, min(other_stacks)), 1)
 
-    def _calc_pot(self, actions: list[HandAction], sb: float, bb: float) -> float:
-        total = sb / bb + 1.0  # blinds
+    def _calc_pot(
+        self,
+        actions: list[HandAction],
+        sb: float,
+        bb: float,
+        antes_bb: float = 0.0,
+    ) -> float:
+        total = sb / bb + 1.0 + antes_bb  # SB + BB + antes
         for a in actions:
             if a.action in ("call", "bet", "raise") and a.size_bb:
                 total += a.size_bb

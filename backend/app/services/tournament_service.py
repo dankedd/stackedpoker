@@ -54,20 +54,28 @@ def extract_tournament_text(file_bytes: bytes, filename: str) -> str:
         texts: list[str] = []
         try:
             with _zipfile.ZipFile(io.BytesIO(file_bytes)) as zf:
-                for name in sorted(zf.namelist()):
+                all_names = zf.namelist()
+                logger.info("ZIP '%s': %d total entries", filename, len(all_names))
+                for name in sorted(all_names):
                     base = os.path.basename(name)
                     if name.lower().endswith(".txt") and base and not base.startswith((".", "_")):
                         try:
                             with zf.open(name) as f:
-                                texts.append(f.read().decode("utf-8", errors="replace"))
-                        except Exception:
-                            pass
+                                content = f.read().decode("utf-8", errors="replace")
+                                texts.append(content)
+                                logger.info("  extracted: %s (%d chars)", name, len(content))
+                        except Exception as exc:
+                            logger.warning("  skipped %s: %s", name, exc)
         except _zipfile.BadZipFile:
             raise ValueError("Invalid ZIP archive — could not open file")
         if not texts:
             raise ValueError("No valid hand history files (.txt) found in ZIP")
-        return "\n\n".join(texts)
-    return file_bytes.decode("utf-8", errors="replace")
+        combined = "\n\n".join(texts)
+        logger.info("ZIP extraction complete: %d files, %d total chars", len(texts), len(combined))
+        return combined
+    content = file_bytes.decode("utf-8", errors="replace")
+    logger.info("TXT upload: %d chars", len(content))
+    return content
 
 
 def _detect_buy_in(text: str) -> str:
@@ -240,7 +248,7 @@ def _positions_str(parsed) -> str:
 
 # ── Tournament stats ───────────────────────────────────────────────────────
 
-def _compute_stats(parsed_hands: list, setup: dict) -> dict:
+def _compute_stats(parsed_hands: list) -> dict:
     if not parsed_hands:
         return {}
 
@@ -302,7 +310,7 @@ def _compute_stats(parsed_hands: list, setup: dict) -> dict:
 async def _tournament_ai_summary(stats: dict, n_hands: int, setup: dict) -> str:
     settings = get_settings()
     if not settings.openai_api_key:
-        return _fallback_summary(stats, n_hands, setup)
+        return _fallback_summary(stats, n_hands)
 
     try:
         client = AsyncOpenAI(api_key=settings.openai_api_key)
@@ -344,10 +352,10 @@ async def _tournament_ai_summary(stats: dict, n_hands: int, setup: dict) -> str:
         )
         return resp.choices[0].message.content.strip()
     except Exception:
-        return _fallback_summary(stats, n_hands, setup)
+        return _fallback_summary(stats, n_hands)
 
 
-def _fallback_summary(stats: dict, n_hands: int, setup: dict) -> str:
+def _fallback_summary(stats: dict, n_hands: int) -> str:
     push_fold = stats.get("push_fold_pct", 0)
     short     = stats.get("short_stack_pct", 0)
     vpip      = stats.get("hero_vpip_pct", 0)
@@ -390,9 +398,12 @@ async def analyze_tournament(request: TournamentAnalysisRequest) -> TournamentAn
         "buy_in":          request.buy_in,
     }
 
+    logger.info("Tournament split: %d hands found in %d chars", total_found, len(request.tournament_text))
+
     # (score, reasons, parsed_hand, raw_text, original_index, blind_level)
     scored: list[tuple[float, list[str], object, str, int, str]] = []
     failed = 0
+    last_exc: Exception | None = None
 
     for idx, raw in enumerate(raw_hands):
         try:
@@ -400,10 +411,26 @@ async def analyze_tournament(request: TournamentAnalysisRequest) -> TournamentAn
             score, reasons = _score_tournament_hand(parsed)
             blind_level = _extract_blind_level(raw)
             scored.append((score, reasons, parsed, raw, idx, blind_level))
-        except Exception:
+        except Exception as exc:
             failed += 1
+            last_exc = exc
 
     hands_parsed = total_found - failed
+    logger.info(
+        "Tournament parse: %d/%d succeeded, %d failed",
+        hands_parsed, total_found, failed,
+    )
+
+    if hands_parsed == 0 and total_found > 0:
+        sample = raw_hands[0][:300] if raw_hands else "(none)"
+        logger.warning(
+            "All %d hands failed to parse. Last error: %s. First hand preview:\n%s",
+            total_found, last_exc, sample,
+        )
+        raise ValueError(
+            f"Could not parse any of the {total_found} hands found in your export. "
+            "Make sure you are uploading a GGPoker PokerCraft tournament hand history."
+        )
     scored.sort(key=lambda x: x[0], reverse=True)
     top5 = scored[:5]
 
@@ -436,7 +463,7 @@ async def analyze_tournament(request: TournamentAnalysisRequest) -> TournamentAn
     all_hands = [_to_candidate(*args) for args in scored]
 
     all_parsed = [s[2] for s in scored]
-    stats = _compute_stats(all_parsed, setup)
+    stats = _compute_stats(all_parsed)
     ai_summary = await _tournament_ai_summary(stats, hands_parsed, setup)
 
     return TournamentAnalysisResponse(
