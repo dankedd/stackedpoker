@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   MonitorPlay, MousePointerClick, Download, UploadCloud,
   ChevronDown, Archive, Check, ArrowRight, Zap,
@@ -91,6 +91,7 @@ interface GGPokerGuideProps {
   /** "full" = complete onboarding section. "compact" = single-line helper card. */
   variant?: "full" | "compact";
   className?: string;
+  noHeader?: boolean;
 }
 
 // ─── Compact variant ──────────────────────────────────────────────────────────
@@ -147,27 +148,29 @@ function CompactGuide({ className }: { className?: string }) {
 
 // ─── Full variant ─────────────────────────────────────────────────────────────
 
-function FullGuide({ className }: { className?: string }) {
+function FullGuide({ className, noHeader }: { className?: string; noHeader?: boolean }) {
   const [exampleOpen, setExampleOpen] = useState(false);
 
   return (
     <div className={cn("space-y-5 animate-fade-in", className)}>
 
       {/* Header */}
-      <div>
-        <div className="flex items-center gap-2 mb-2">
-          <div className="h-px w-5 bg-gradient-to-r from-violet-500 to-blue-500" />
-          <span className="text-[10px] font-bold uppercase tracking-widest text-violet-400/70">
-            Getting started
-          </span>
+      {!noHeader && (
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <div className="h-px w-5 bg-gradient-to-r from-violet-500 to-blue-500" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-violet-400/70">
+              Getting started
+            </span>
+          </div>
+          <h2 className="text-xl font-bold text-foreground tracking-tight">
+            How to import from GG Poker
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+            Download your session from PokerCraft and let the AI rebuild every hand automatically.
+          </p>
         </div>
-        <h2 className="text-xl font-bold text-foreground tracking-tight">
-          How to import from GG Poker
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-          Download your session from PokerCraft and let the AI rebuild every hand automatically.
-        </p>
-      </div>
+      )}
 
       {/* 4-step grid — 2×2 on mobile, 4×1 on lg */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
@@ -326,7 +329,61 @@ function FullGuide({ className }: { className?: string }) {
 
 // ─── Export ───────────────────────────────────────────────────────────────────
 
-export function GGPokerGuide({ variant = "full", className }: GGPokerGuideProps) {
+export function GGPokerGuide({ variant = "full", className, noHeader }: GGPokerGuideProps) {
   if (variant === "compact") return <CompactGuide className={className} />;
-  return <FullGuide className={className} />;
+  return <FullGuide className={className} noHeader={noHeader} />;
+}
+
+// ─── Accordion wrapper ────────────────────────────────────────────────────────
+
+const SEEN_KEY = "ggpoker_guide_seen";
+
+export function GGPokerAccordion({ className }: { className?: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    const seen = localStorage.getItem(SEEN_KEY);
+    if (!seen) {
+      setIsOpen(true);
+      localStorage.setItem(SEEN_KEY, "1");
+    }
+  }, []);
+
+  return (
+    <div className={cn("rounded-2xl border border-violet-500/20 bg-card/30 overflow-hidden", className)}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(v => !v)}
+        className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-violet-500/5 transition-colors text-left"
+      >
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 border border-violet-500/20">
+          <Zap className="h-3.5 w-3.5 text-violet-400" />
+        </div>
+        <span className="flex-1 text-sm font-semibold text-foreground">
+          How to import from GG Poker
+        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border border-violet-500/30 bg-violet-500/10 text-violet-400">
+            <Archive className="h-2.5 w-2.5" />
+            ZIP supported
+          </span>
+          <ChevronDown className={cn(
+            "h-4 w-4 text-muted-foreground/50 transition-transform duration-300",
+            isOpen && "rotate-180",
+          )} />
+        </div>
+      </button>
+
+      <div className={cn(
+        "grid transition-[grid-template-rows] duration-300 ease-in-out",
+        isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+      )}>
+        <div className="overflow-hidden">
+          <div className="px-4 pb-5 pt-2 border-t border-violet-500/10">
+            <FullGuide noHeader />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }

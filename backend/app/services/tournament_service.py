@@ -10,7 +10,10 @@ Reuses:
   - detect_and_parse()    from parsers/detector (GGPoker + PokerStars)
 """
 from __future__ import annotations
+import io
+import os
 import re
+import zipfile as _zipfile
 import logging
 from openai import AsyncOpenAI
 from app.config import get_settings
@@ -24,6 +27,78 @@ from app.models.schemas import (
 )
 
 logger = logging.getLogger(__name__)
+
+# ── ZIP / file extraction ──────────────────────────────────────────────────
+
+_BUY_IN_RE = re.compile(r"Buy-?In[:\s]*\$?([\d,]+(?:\.\d{2})?)", re.IGNORECASE)
+_TOURNAMENT_TYPE_RE = re.compile(
+    r"\b(Hyper\s*Turbo|Satellite|Bounty|SNG|Sit\s*&?\s*Go|MTT|Multi[-\s]Table)\b",
+    re.IGNORECASE,
+)
+_TYPE_MAP = {
+    "hyperturbo": "Hyper Turbo",
+    "satellite": "Satellite",
+    "bounty": "Bounty",
+    "sng": "SNG",
+    "sit&go": "SNG",
+    "sitgo": "SNG",
+    "mtt": "MTT",
+    "multi-table": "MTT",
+    "multitable": "MTT",
+}
+
+
+def extract_tournament_text(file_bytes: bytes, filename: str) -> str:
+    """Return concatenated hand-history text from a ZIP or plain TXT upload."""
+    if filename.lower().endswith(".zip"):
+        texts: list[str] = []
+        try:
+            with _zipfile.ZipFile(io.BytesIO(file_bytes)) as zf:
+                for name in sorted(zf.namelist()):
+                    base = os.path.basename(name)
+                    if name.lower().endswith(".txt") and base and not base.startswith((".", "_")):
+                        try:
+                            with zf.open(name) as f:
+                                texts.append(f.read().decode("utf-8", errors="replace"))
+                        except Exception:
+                            pass
+        except _zipfile.BadZipFile:
+            raise ValueError("Invalid ZIP archive — could not open file")
+        if not texts:
+            raise ValueError("No valid hand history files (.txt) found in ZIP")
+        return "\n\n".join(texts)
+    return file_bytes.decode("utf-8", errors="replace")
+
+
+def _detect_buy_in(text: str) -> str:
+    m = _BUY_IN_RE.search(text)
+    return f"${m.group(1)}" if m else ""
+
+
+def _detect_tournament_type(text: str) -> str:
+    m = _TOURNAMENT_TYPE_RE.search(text)
+    if m:
+        key = m.group(1).replace(" ", "").replace("-", "").lower()
+        return _TYPE_MAP.get(key, "MTT")
+    return "MTT"
+
+
+async def analyze_tournament_from_upload(
+    file_bytes: bytes,
+    filename: str,
+    tournament_type: str = "",
+    buy_in: str = "",
+) -> TournamentAnalysisResponse:
+    """Wrapper: extract text from file then run the standard tournament pipeline."""
+    text = extract_tournament_text(file_bytes, filename)
+    request = TournamentAnalysisRequest(
+        tournament_text=text,
+        tournament_type=(tournament_type.strip() or _detect_tournament_type(text)),
+        field_size="",
+        buy_in=(buy_in.strip() or _detect_buy_in(text)),
+    )
+    return await analyze_tournament(request)
+
 
 # ── Blind-level extraction ─────────────────────────────────────────────────
 
