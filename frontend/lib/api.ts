@@ -4,6 +4,7 @@ import type {
   ExtractionResult,
   VisionAnalysisResponse,
   SessionAnalysisResponse,
+  TournamentAnalysisResponse,
 } from "./types";
 import type { AnalysisSetupValue } from "@/components/poker/AnalysisSetup";
 
@@ -70,6 +71,22 @@ export async function analyzeSession(
       session_text: sessionText,
       game_type: setup?.gameType,
       player_count: setup?.playerCount,
+    }),
+  });
+}
+
+export async function analyzeTournament(
+  tournamentText: string,
+  token: string,
+  setup?: { tournamentType?: string; fieldSize?: string; buyIn?: string },
+): Promise<TournamentAnalysisResponse> {
+  return apiFetch<TournamentAnalysisResponse>("/api/analyze-tournament", token, {
+    method: "POST",
+    body: JSON.stringify({
+      tournament_text: tournamentText,
+      tournament_type: setup?.tournamentType ?? "MTT",
+      field_size: setup?.fieldSize ?? "",
+      buy_in: setup?.buyIn ?? "",
     }),
   });
 }

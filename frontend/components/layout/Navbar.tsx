@@ -19,10 +19,11 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "Analyze",   href: "/analyze", primary: true },
-  { label: "Puzzles",   href: "/analyze/puzzles" },
-  { label: "History",   href: "/history" },
+  { label: "Dashboard",   href: "/dashboard" },
+  { label: "Analyze",     href: "/analyze", primary: true },
+  { label: "Tournaments", href: "/analyze/tournament" },
+  { label: "Puzzles",     href: "/analyze/puzzles" },
+  { label: "History",     href: "/history" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -32,13 +33,15 @@ const NAV_ITEMS: NavItem[] = [
 function useActiveItem(pathname: string) {
   return (item: NavItem): boolean => {
     if (item.href === "/analyze") {
-      // Active for /analyze and sub-tools but NOT /analyze/puzzles
+      // Active for /analyze and sub-tools but NOT /analyze/puzzles or /analyze/tournament
       return (
         pathname === "/analyze" ||
         pathname.startsWith("/analyze/hand") ||
-        pathname.startsWith("/analyze/session") ||
-        pathname.startsWith("/analyze/tournament")
+        pathname.startsWith("/analyze/session")
       );
+    }
+    if (item.href === "/analyze/tournament") {
+      return pathname.startsWith("/analyze/tournament");
     }
     if (item.href === "/analyze/puzzles") {
       return pathname.startsWith("/analyze/puzzles");

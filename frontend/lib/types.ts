@@ -233,6 +233,10 @@ export interface SessionHandCandidate {
   reason: string;
   severity: "high" | "medium" | "low";
   effective_stack_bb: number;
+  // Optional tournament fields
+  blind_level?: string;
+  tournament_stage?: string;   // "deep" | "middle" | "short" | "push_fold"
+  is_all_in?: boolean;
 }
 
 export interface SessionStats {
@@ -251,6 +255,41 @@ export interface SessionAnalysisResponse {
   selected_hands: SessionHandCandidate[];
   all_hands: SessionHandCandidate[];
   session_stats: SessionStats;
+  saved_id?: string | null;
+  save_error?: string | null;
+}
+
+// ── Tournament analysis ───────────────────────────────────────────────────
+
+export interface TournamentStats {
+  total_hands_found: number;
+  hands_parsed: number;
+  tournament_type: string;
+  field_size: string;
+  buy_in: string;
+  avg_stack_bb: number;
+  peak_stack_bb: number;
+  starting_stack_bb: number;
+  ending_stack_bb: number;
+  avg_pot_bb: number;
+  biggest_pot_bb: number;
+  deep_handed_pct: number;
+  middle_pct: number;
+  short_stack_pct: number;
+  push_fold_pct: number;
+  all_in_spots: number;
+  three_bet_count: number;
+  hero_vpip_pct: number;
+  hero_aggression_pct: number;
+  ai_summary: string;
+}
+
+export interface TournamentAnalysisResponse {
+  total_hands_found: number;
+  hands_parsed: number;
+  selected_hands: SessionHandCandidate[];
+  all_hands: SessionHandCandidate[];
+  tournament_stats: TournamentStats;
   saved_id?: string | null;
   save_error?: string | null;
 }

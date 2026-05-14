@@ -331,6 +331,10 @@ class SessionHandCandidate(BaseModel):
     reason: str
     severity: Literal["high", "medium", "low"]
     effective_stack_bb: float = 0.0
+    # Optional tournament-specific fields (defaults keep session analysis unchanged)
+    blind_level: str = ""
+    tournament_stage: str = ""   # early / middle / short / push_fold
+    is_all_in: bool = False
 
 
 class SessionStats(BaseModel):
@@ -351,3 +355,51 @@ class SessionAnalysisResponse(BaseModel):
     session_stats: SessionStats
     saved_id: str | None = None      # set after Supabase persist; None = save failed
     save_error: str | None = None    # exact error detail if save failed
+
+
+# ── Tournament analysis ────────────────────────────────────────────────────
+
+class TournamentAnalysisRequest(BaseModel):
+    tournament_text: str = Field(..., min_length=100, description="Full tournament hand history text")
+    tournament_type: str = "MTT"       # MTT, SNG, Bounty, Hyper Turbo, Satellite
+    field_size: str = ""               # "< 50", "50–200", "200–1000", "1000+"
+    buy_in: str = ""                   # e.g. "$5+$0.50"
+    game_type: str | None = None
+
+
+class TournamentStats(BaseModel):
+    total_hands_found: int = 0
+    hands_parsed: int = 0
+    tournament_type: str = ""
+    field_size: str = ""
+    buy_in: str = ""
+    # Stack analysis
+    avg_stack_bb: float = 0.0
+    peak_stack_bb: float = 0.0
+    starting_stack_bb: float = 0.0
+    ending_stack_bb: float = 0.0
+    avg_pot_bb: float = 0.0
+    biggest_pot_bb: float = 0.0
+    # Stage distribution (% of hands at each depth)
+    deep_handed_pct: int = 0     # > 50bb
+    middle_pct: int = 0          # 25–50bb
+    short_stack_pct: int = 0     # 15–25bb
+    push_fold_pct: int = 0       # < 15bb
+    # Key spots
+    all_in_spots: int = 0
+    three_bet_count: int = 0
+    # Poker stats
+    hero_vpip_pct: float = 0.0
+    hero_aggression_pct: float = 0.0
+    # AI coaching
+    ai_summary: str = ""
+
+
+class TournamentAnalysisResponse(BaseModel):
+    total_hands_found: int = 0
+    hands_parsed: int = 0
+    selected_hands: list[SessionHandCandidate] = Field(default_factory=list)
+    all_hands: list[SessionHandCandidate] = Field(default_factory=list)
+    tournament_stats: TournamentStats = Field(default_factory=TournamentStats)
+    saved_id: str | None = None
+    save_error: str | None = None

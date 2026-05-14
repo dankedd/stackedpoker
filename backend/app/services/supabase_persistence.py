@@ -17,7 +17,12 @@ from datetime import datetime, timezone
 import httpx
 
 from app.config import get_settings
-from app.models.schemas import AnalysisResponse, SessionAnalysisResponse, VisionAnalysisResponse
+from app.models.schemas import (
+    AnalysisResponse,
+    SessionAnalysisResponse,
+    TournamentAnalysisResponse,
+    VisionAnalysisResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -261,6 +266,49 @@ async def save_session_analysis(
     }
 
     return await _post_row(payload, user_id, "save_session_analysis", user_jwt)
+
+
+async def save_tournament_analysis(
+    user_id: str,
+    raw_text: str,
+    result: TournamentAnalysisResponse,
+    user_jwt: str | None = None,
+) -> tuple[str, str]:
+    """Persist a tournament review. Returns (saved_uuid, error_detail)."""
+    stats = result.tournament_stats
+    tournament_data = {
+        "total_hands_found": result.total_hands_found,
+        "hands_parsed": result.hands_parsed,
+        "tournament_stats": stats.model_dump() if stats else {},
+        "selected_hands": [h.model_dump() for h in (result.selected_hands or [])],
+        "all_hands_count": len(result.all_hands) if result.all_hands else 0,
+    }
+
+    payload: dict = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "input_type": "text",
+        "raw_hand_text": raw_text,
+        "site": "",
+        "game_type": stats.tournament_type if stats else "MTT",
+        "stakes": stats.buy_in if stats else "",
+        "hero_position": "",
+        "hero_cards": [],
+        "board": [],
+        "actions": [],
+        "effective_stack_bb": float(stats.avg_stack_bb if stats else 0),
+        "spot_classification": {},
+        "board_texture": {},
+        "findings": [],
+        "overall_score": 0,
+        "ai_coaching": stats.ai_summary if stats else "",
+        "mistakes_count": 0,
+        "replay_state": tournament_data,
+        "analysis_type": "tournament",
+        "analyzed_at": _now(),
+    }
+
+    return await _post_row(payload, user_id, "save_tournament_analysis", user_jwt)
 
 
 async def save_image_analysis(
