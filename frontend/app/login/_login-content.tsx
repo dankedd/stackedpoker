@@ -37,7 +37,7 @@ export function LoginContent() {
 
   useEffect(() => {
     if (callbackError === 'auth_callback_failed') {
-      setError('Email confirmation failed. Please try again.')
+      setError('Sign-in failed. Please try again or use a different method.')
     }
   }, [callbackError])
 
@@ -45,9 +45,11 @@ export function LoginContent() {
     setError(null)
     setOauthLoading(provider)
     const supabase = createClient()
+    // Pass `next` so the callback route redirects to the intended page.
+    const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: callbackUrl },
     })
     if (error) {
       setError(error.message)

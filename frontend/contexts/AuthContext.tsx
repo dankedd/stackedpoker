@@ -44,10 +44,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
+      // After a fresh sign-in (email/password or OAuth) refresh the router
+      // so server components (middleware, protected pages) pick up the new
+      // session cookies without needing a manual page reload.
+      if (event === 'SIGNED_IN') {
+        router.refresh()
+      }
     })
 
     return () => subscription.unsubscribe()
