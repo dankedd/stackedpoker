@@ -47,35 +47,126 @@ _TYPE_MAP = {
     "multitable": "MTT",
 }
 
+# Signals that identify a file as a hand-history export
+_HH_SIGNALS = (
+    "Poker Hand #",
+    "PokerStars Hand #",
+    "*** HOLE CARDS ***",
+    "*** SUMMARY ***",
+    "is the button",
+    "posts small blind",
+    "posts big blind",
+)
+
+# Encodings to attempt in priority order
+_ENCODINGS = ("utf-8-sig", "utf-16", "utf-16-le", "utf-16-be", "utf-8", "cp1252", "latin-1")
+
+
+def _try_decode(data: bytes) -> str:
+    """Attempt multiple encodings; always return a string."""
+    for enc in _ENCODINGS:
+        try:
+            return data.decode(enc)
+        except (UnicodeDecodeError, LookupError):
+            continue
+    return data.decode("utf-8", errors="replace")
+
+
+def _looks_like_hh(text: str) -> bool:
+    """Return True if the text contains at least one hand-history signal."""
+    return any(sig in text for sig in _HH_SIGNALS)
+
+
+def _is_skip_entry(name: str) -> bool:
+    """True for ZIP entries that are definitely not hand-history files."""
+    if name.endswith("/"):            # directory entry
+        return True
+    if "__MACOSX" in name:            # macOS metadata
+        return True
+    base = os.path.basename(name)
+    if not base or base.startswith("."):  # hidden files
+        return True
+    # Skip known binary / image / config extensions
+    skip_exts = (".png", ".jpg", ".jpeg", ".gif", ".pdf", ".xml",
+                 ".json", ".db", ".sqlite", ".exe", ".dll")
+    return any(base.lower().endswith(ext) for ext in skip_exts)
+
 
 def extract_tournament_text(file_bytes: bytes, filename: str) -> str:
-    """Return concatenated hand-history text from a ZIP or plain TXT upload."""
-    if filename.lower().endswith(".zip"):
+    """Return concatenated hand-history text from a ZIP or plain TXT upload.
+
+    ZIP handling:
+    - Scans ALL entries (not just .txt) — GGPoker exports vary in extension
+    - Tries multiple encodings (UTF-8, UTF-16, cp1252, latin-1)
+    - Uses content-based detection to identify hand-history files
+    """
+    fname_lower = filename.lower()
+
+    if fname_lower.endswith(".zip"):
         texts: list[str] = []
         try:
             with _zipfile.ZipFile(io.BytesIO(file_bytes)) as zf:
                 all_names = zf.namelist()
-                logger.info("ZIP '%s': %d total entries", filename, len(all_names))
+                logger.info(
+                    "ZIP '%s' (%d bytes): %d entries total",
+                    filename, len(file_bytes), len(all_names),
+                )
+                # Log every entry so we can debug unusual structures
+                for n in all_names:
+                    logger.info("  zip entry: %s", n)
+
                 for name in sorted(all_names):
-                    base = os.path.basename(name)
-                    if name.lower().endswith(".txt") and base and not base.startswith((".", "_")):
-                        try:
-                            with zf.open(name) as f:
-                                content = f.read().decode("utf-8", errors="replace")
-                                texts.append(content)
-                                logger.info("  extracted: %s (%d chars)", name, len(content))
-                        except Exception as exc:
-                            logger.warning("  skipped %s: %s", name, exc)
+                    if _is_skip_entry(name):
+                        continue
+
+                    try:
+                        with zf.open(name) as f:
+                            raw = f.read()
+                    except Exception as exc:
+                        logger.warning("  cannot read %s: %s", name, exc)
+                        continue
+
+                    if len(raw) < 50:
+                        logger.info("  skip tiny (%d bytes): %s", len(raw), name)
+                        continue
+
+                    text = _try_decode(raw)
+
+                    if _looks_like_hh(text):
+                        texts.append(text)
+                        logger.info(
+                            "  accepted: %s (%d bytes → %d chars) | preview: %r",
+                            name, len(raw), len(text), text[:120],
+                        )
+                    else:
+                        logger.info(
+                            "  rejected (no HH signals): %s | preview: %r",
+                            name, text[:80],
+                        )
+
         except _zipfile.BadZipFile:
-            raise ValueError("Invalid ZIP archive — could not open file")
+            raise ValueError("Invalid ZIP archive — could not open the file")
+
         if not texts:
-            raise ValueError("No valid hand history files (.txt) found in ZIP")
+            raise ValueError(
+                "No hand history files were found in the ZIP. "
+                "Please upload a GGPoker PokerCraft tournament export."
+            )
+
         combined = "\n\n".join(texts)
-        logger.info("ZIP extraction complete: %d files, %d total chars", len(texts), len(combined))
+        logger.info(
+            "ZIP extraction done: %d file(s) accepted, %d total chars",
+            len(texts), len(combined),
+        )
         return combined
-    content = file_bytes.decode("utf-8", errors="replace")
-    logger.info("TXT upload: %d chars", len(content))
-    return content
+
+    # Plain text / single-file upload
+    text = _try_decode(file_bytes)
+    logger.info(
+        "File upload '%s' (%d bytes → %d chars) | preview: %r",
+        filename, len(file_bytes), len(text), text[:120],
+    )
+    return text
 
 
 def _detect_buy_in(text: str) -> str:
@@ -398,7 +489,17 @@ async def analyze_tournament(request: TournamentAnalysisRequest) -> TournamentAn
         "buy_in":          request.buy_in,
     }
 
-    logger.info("Tournament split: %d hands found in %d chars", total_found, len(request.tournament_text))
+    logger.info(
+        "Tournament split: %d hands found in %d chars | text preview: %r",
+        total_found, len(request.tournament_text), request.tournament_text[:200],
+    )
+
+    if total_found == 0:
+        raise ValueError(
+            "No hands were detected in the uploaded file. "
+            "The file does not appear to be a GGPoker hand history export. "
+            f"(Text preview: {request.tournament_text[:200]!r})"
+        )
 
     # (score, reasons, parsed_hand, raw_text, original_index, blind_level)
     scored: list[tuple[float, list[str], object, str, int, str]] = []
@@ -414,6 +515,11 @@ async def analyze_tournament(request: TournamentAnalysisRequest) -> TournamentAn
         except Exception as exc:
             failed += 1
             last_exc = exc
+            if failed <= 3:  # log the first few failures in detail
+                logger.warning(
+                    "Hand %d failed to parse: %s | preview: %r",
+                    idx + 1, exc, raw[:150],
+                )
 
     hands_parsed = total_found - failed
     logger.info(
@@ -421,15 +527,16 @@ async def analyze_tournament(request: TournamentAnalysisRequest) -> TournamentAn
         hands_parsed, total_found, failed,
     )
 
-    if hands_parsed == 0 and total_found > 0:
+    if hands_parsed == 0:
         sample = raw_hands[0][:300] if raw_hands else "(none)"
         logger.warning(
-            "All %d hands failed to parse. Last error: %s. First hand preview:\n%s",
+            "All %d hands failed. Last error: %s | First hand: %r",
             total_found, last_exc, sample,
         )
         raise ValueError(
-            f"Could not parse any of the {total_found} hands found in your export. "
-            "Make sure you are uploading a GGPoker PokerCraft tournament hand history."
+            f"Could not parse any of the {total_found} hands detected. "
+            f"Last error: {last_exc}. "
+            "Ensure the file is a GGPoker PokerCraft tournament hand history."
         )
     scored.sort(key=lambda x: x[0], reverse=True)
     top5 = scored[:5]
