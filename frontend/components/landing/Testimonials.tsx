@@ -1,4 +1,7 @@
+"use client";
+
 import { Star } from "lucide-react";
+import { useInView } from "@/hooks/useInView";
 
 const TESTIMONIALS = [
   {
@@ -31,6 +34,9 @@ const TESTIMONIALS = [
 ];
 
 export function Testimonials() {
+  const { ref: headerRef, visible: headerVisible } = useInView();
+  const { ref: gridRef, visible: gridVisible } = useInView();
+
   return (
     <section id="testimonials" className="relative bg-background py-24 sm:py-32 overflow-hidden">
       <div
@@ -40,13 +46,16 @@ export function Testimonials() {
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         {/* Header */}
-        <div className="mx-auto mb-14 max-w-2xl text-center">
+        <div
+          ref={headerRef}
+          className={`mx-auto mb-14 max-w-2xl text-center scroll-reveal ${headerVisible ? "visible" : ""}`}
+        >
           <div className="mb-5 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-[13px] text-muted-foreground">
             Player reviews
           </div>
           <h2 className="mb-4 text-4xl sm:text-[3.25rem] font-black text-foreground tracking-tight leading-[1.05]">
             Trusted by players{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400 animate-gradient">
               who care about EV
             </span>
           </h2>
@@ -55,16 +64,16 @@ export function Testimonials() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-          {TESTIMONIALS.map((t) => (
+        <div ref={gridRef} className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          {TESTIMONIALS.map((t, i) => (
             <div
               key={t.name}
-              className="group rounded-2xl border border-border/50 bg-card/60 p-7 hover:border-border/80 hover:bg-card/80 hover:-translate-y-1 transition-all duration-300"
+              className={`group rounded-2xl border border-border/50 bg-card/60 p-7 card-lift hover:border-border/80 hover:bg-card/80 scroll-reveal scroll-delay-${i + 1} ${gridVisible ? "visible" : ""}`}
             >
               {/* Stars */}
               <div className="mb-4 flex gap-0.5">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                {Array.from({ length: 5 }).map((_, j) => (
+                  <Star key={j} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                 ))}
               </div>
 
@@ -73,9 +82,7 @@ export function Testimonials() {
               </p>
 
               <div className="flex items-center gap-3">
-                <div
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white bg-gradient-to-br ${t.gradient}`}
-                >
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white bg-gradient-to-br ${t.gradient}`}>
                   {t.avatar}
                 </div>
                 <div className="min-w-0">

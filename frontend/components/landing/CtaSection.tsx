@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Zap } from "lucide-react";
+import { useInView } from "@/hooks/useInView";
 
 const TRUST = [
   "3 free analyses included",
@@ -9,6 +12,8 @@ const TRUST = [
 ];
 
 export function CtaSection() {
+  const { ref, visible } = useInView(0.2);
+
   return (
     <section className="relative py-24 sm:py-32 overflow-hidden bg-secondary/10">
       {/* Background radial */}
@@ -22,8 +27,10 @@ export function CtaSection() {
       />
 
       <div className="relative mx-auto max-w-4xl px-4 sm:px-6">
-        {/* Animated border card */}
-        <div className="relative">
+        <div
+          ref={ref}
+          className={`relative scroll-reveal ${visible ? "visible" : ""}`}
+        >
           {/* Pulsing glow ring */}
           <div
             aria-hidden
@@ -39,7 +46,7 @@ export function CtaSection() {
             <h2 className="mb-5 text-3xl sm:text-4xl lg:text-[3.25rem] font-black text-foreground leading-[1.05] tracking-tight">
               Stop leaving EV{" "}
               <br className="hidden sm:block" />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-blue-300 to-violet-400">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-blue-300 to-violet-500 animate-gradient">
                 on the table.
               </span>
             </h2>
@@ -52,14 +59,14 @@ export function CtaSection() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
               <Link
                 href="/analyze"
-                className="group inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-[15px] font-semibold shadow-xl shadow-violet-500/40 hover:shadow-violet-500/60 hover:-translate-y-0.5 transition-all duration-200"
+                className="group inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-[15px] font-semibold shadow-xl shadow-violet-500/40 hover:shadow-violet-500/60 hover:-translate-y-0.5 active:translate-y-px active:scale-[0.97] transition-all duration-200 btn-poker-hover will-change-transform"
               >
                 Analyze a hand — free
-                <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
               </Link>
               <Link
                 href="/signup"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl border border-border/60 bg-card/40 text-[15px] font-medium text-muted-foreground hover:text-foreground hover:bg-card/80 hover:border-border hover:-translate-y-0.5 transition-all duration-200"
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl border border-border/60 bg-card/40 text-[15px] font-medium text-muted-foreground hover:text-foreground hover:bg-card/80 hover:border-border hover:-translate-y-0.5 active:translate-y-px active:scale-[0.97] transition-all duration-200 will-change-transform"
               >
                 Create free account
               </Link>

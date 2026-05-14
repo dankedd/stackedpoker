@@ -1,4 +1,7 @@
+"use client";
+
 import { Brain, BarChart3, Map, Layers, Zap, Play } from "lucide-react";
+import { useInView } from "@/hooks/useInView";
 
 function CoachingPreview() {
   return (
@@ -37,7 +40,7 @@ function CoachingPreview() {
         On A♦ 7♣ 2♠ you hold{" "}
         <span className="text-violet-300">strong range advantage</span> as PFR.
         Small sizing (25–33%) protects cheaply while building the pot.
-        <span className="inline-block w-px h-3 bg-violet-400/70 ml-0.5 align-middle animate-cursor-blink" />
+        <span className="inline-block w-px h-3 bg-violet-400/70 ml-0.5 align-middle animate-cursor" />
       </div>
     </div>
   );
@@ -63,41 +66,20 @@ function ReplayPreview() {
         </div>
       </div>
 
-      {/* Mini table */}
       <div className="relative h-20 bg-black/30 rounded-lg border border-border/20 flex items-center justify-center overflow-hidden">
         <div className="absolute inset-3 rounded-full border border-border/15 bg-[#0d1a0d]/80" />
         <div className="relative flex gap-0.5">
           {board.map(([r, s, c]) => (
-            <div
-              key={r + s}
-              className="h-7 w-5 bg-white rounded shadow-lg flex flex-col items-center justify-between py-0.5"
-            >
-              <span
-                className={`text-[7px] font-black leading-none ${
-                  c === "red" ? "text-red-600" : "text-slate-900"
-                }`}
-              >
-                {r}
-              </span>
-              <span
-                className={`text-[9px] leading-none ${
-                  c === "red" ? "text-red-600" : "text-slate-900"
-                }`}
-              >
-                {s}
-              </span>
+            <div key={r + s} className="h-7 w-5 bg-white rounded shadow-lg flex flex-col items-center justify-between py-0.5">
+              <span className={`text-[7px] font-black leading-none ${c === "red" ? "text-red-600" : "text-slate-900"}`}>{r}</span>
+              <span className={`text-[9px] leading-none ${c === "red" ? "text-red-600" : "text-slate-900"}`}>{s}</span>
             </div>
           ))}
         </div>
-        <span className="absolute bottom-1 right-2 text-[8px] text-blue-400/50 font-mono">
-          BTN
-        </span>
-        <span className="absolute top-1 left-2 text-[8px] text-muted-foreground/30 font-mono">
-          BB
-        </span>
+        <span className="absolute bottom-1 right-2 text-[8px] text-blue-400/50 font-mono">BTN</span>
+        <span className="absolute top-1 left-2 text-[8px] text-muted-foreground/30 font-mono">BB</span>
       </div>
 
-      {/* Progress bar */}
       <div className="mt-2.5 flex items-center gap-1.5">
         <div className="h-1 w-1 rounded-full bg-muted-foreground/25" />
         <div className="flex-1 relative h-0.5 bg-border/30 rounded-full overflow-hidden">
@@ -146,6 +128,9 @@ const SMALL_FEATURES = [
 ];
 
 export function Features() {
+  const { ref: headerRef, visible: headerVisible } = useInView();
+  const { ref: gridRef, visible: gridVisible } = useInView();
+
   return (
     <section id="features" className="relative py-24 sm:py-32 overflow-hidden bg-secondary/15">
       <div
@@ -155,14 +140,17 @@ export function Features() {
 
       <div className="container relative mx-auto max-w-7xl px-4 sm:px-6">
         {/* Header */}
-        <div className="mx-auto mb-14 max-w-2xl text-center">
+        <div
+          ref={headerRef}
+          className={`mx-auto mb-14 max-w-2xl text-center scroll-reveal ${headerVisible ? "visible" : ""}`}
+        >
           <div className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-violet-500/25 bg-violet-500/8 px-4 py-1.5 text-[13px] text-violet-300">
             <Zap className="h-3.5 w-3.5" />
             Features
           </div>
           <h2 className="mb-5 text-4xl font-black tracking-tight text-foreground sm:text-[3.25rem] leading-[1.05]">
             Fix your leaks,{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-blue-300 to-violet-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-blue-300 to-violet-500 animate-gradient">
               not just your stats
             </span>
           </h2>
@@ -172,9 +160,9 @@ export function Features() {
         </div>
 
         {/* Bento grid */}
-        <div className="grid gap-4 lg:grid-cols-12">
+        <div ref={gridRef} className="grid gap-4 lg:grid-cols-12">
           {/* AI Coaching — hero card */}
-          <div className="lg:col-span-7 rounded-2xl border border-violet-500/25 bg-card/70 p-6 hover:border-violet-500/40 hover:-translate-y-0.5 transition-all duration-300">
+          <div className={`lg:col-span-7 rounded-2xl border border-violet-500/25 bg-card/70 p-6 card-lift hover:border-violet-500/40 scroll-reveal ${gridVisible ? "visible" : ""}`}>
             <div className="flex items-center gap-3 mb-1">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 border border-violet-500/20">
                 <Brain className="h-5 w-5 text-violet-400" />
@@ -196,7 +184,7 @@ export function Features() {
           </div>
 
           {/* Replay Engine — hero card */}
-          <div className="lg:col-span-5 rounded-2xl border border-blue-500/20 bg-card/70 p-6 hover:border-blue-500/35 hover:-translate-y-0.5 transition-all duration-300">
+          <div className={`lg:col-span-5 rounded-2xl border border-blue-500/20 bg-card/70 p-6 card-lift hover:border-blue-500/35 scroll-reveal scroll-delay-1 ${gridVisible ? "visible" : ""}`}>
             <div className="flex items-center gap-3 mb-1">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/20">
                 <Play className="h-5 w-5 text-blue-400 fill-current" />
@@ -216,14 +204,12 @@ export function Features() {
           </div>
 
           {/* 4 smaller features */}
-          {SMALL_FEATURES.map((f) => (
+          {SMALL_FEATURES.map((f, i) => (
             <div
               key={f.title}
-              className="lg:col-span-3 rounded-2xl border border-border/50 bg-card/60 p-5 hover:border-border/80 hover:bg-card/80 hover:-translate-y-0.5 transition-all duration-300"
+              className={`lg:col-span-3 rounded-2xl border border-border/50 bg-card/60 p-5 card-lift hover:border-border/80 hover:bg-card/80 scroll-reveal scroll-delay-${i + 2} ${gridVisible ? "visible" : ""}`}
             >
-              <div
-                className={`mb-4 inline-flex h-9 w-9 items-center justify-center rounded-xl border ${f.iconBg}`}
-              >
+              <div className={`mb-4 inline-flex h-9 w-9 items-center justify-center rounded-xl border ${f.iconBg}`}>
                 <f.icon className={`h-4 w-4 ${f.iconCls}`} />
               </div>
               <h3 className="mb-2 text-[14px] font-semibold text-foreground">{f.title}</h3>

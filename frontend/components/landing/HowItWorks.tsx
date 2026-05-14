@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, ClipboardPaste, Cpu, MessageSquare } from "lucide-react";
+import { useInView } from "@/hooks/useInView";
 
 const steps = [
   {
@@ -38,6 +41,9 @@ const steps = [
 ];
 
 export function HowItWorks() {
+  const { ref: headerRef, visible: headerVisible } = useInView();
+  const { ref: stepsRef, visible: stepsVisible } = useInView();
+
   return (
     <section id="how-it-works" className="relative bg-background py-24 sm:py-32 overflow-hidden">
       <div
@@ -47,13 +53,16 @@ export function HowItWorks() {
 
       <div className="container mx-auto max-w-7xl px-4 sm:px-6">
         {/* Header */}
-        <div className="mx-auto mb-16 max-w-2xl text-center">
+        <div
+          ref={headerRef}
+          className={`mx-auto mb-16 max-w-2xl text-center scroll-reveal ${headerVisible ? "visible" : ""}`}
+        >
           <div className="mb-6 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-[13px] text-muted-foreground">
             How it works
           </div>
           <h2 className="mb-5 text-4xl font-black tracking-tight text-foreground sm:text-[3.25rem] leading-[1.05]">
             Three steps to{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400 animate-gradient">
               better decisions
             </span>
           </h2>
@@ -63,23 +72,19 @@ export function HowItWorks() {
         </div>
 
         {/* Steps grid */}
-        <div className="relative grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div ref={stepsRef} className="relative grid grid-cols-1 gap-6 lg:grid-cols-3">
           {steps.map((step, i) => (
             <div
               key={step.title}
-              className="relative rounded-2xl border border-border/50 bg-card/60 p-8 hover:border-border/80 hover:bg-card/80 hover:-translate-y-1 transition-all duration-300"
+              className={`relative rounded-2xl border border-border/50 bg-card/60 p-8 card-lift hover:border-border/80 hover:bg-card/80 scroll-reveal scroll-delay-${i + 1} ${stepsVisible ? "visible" : ""}`}
             >
               {/* Step number — watermark */}
-              <span
-                className={`absolute top-5 right-5 text-4xl font-black select-none tabular-nums leading-none ${step.numCls}`}
-              >
+              <span className={`absolute top-5 right-5 text-4xl font-black select-none tabular-nums leading-none ${step.numCls}`}>
                 {step.num}
               </span>
 
               {/* Icon */}
-              <div
-                className={`mb-7 flex h-14 w-14 items-center justify-center rounded-2xl ${step.iconBg} ${step.iconRing}`}
-              >
+              <div className={`mb-7 flex h-14 w-14 items-center justify-center rounded-2xl ${step.iconBg} ${step.iconRing}`}>
                 <step.icon className={`h-6 w-6 ${step.iconCls}`} />
               </div>
 
@@ -98,13 +103,13 @@ export function HowItWorks() {
           ))}
         </div>
 
-        <div className="mt-14 text-center">
+        <div className={`mt-14 text-center scroll-reveal ${stepsVisible ? "visible" : ""} scroll-delay-4`}>
           <Link
             href="/analyze"
-            className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-[15px] font-semibold shadow-lg shadow-violet-500/25 hover:shadow-violet-500/45 hover:-translate-y-0.5 transition-all duration-200"
+            className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-[15px] font-semibold shadow-lg shadow-violet-500/25 hover:shadow-violet-500/45 hover:-translate-y-0.5 active:translate-y-px active:scale-[0.97] transition-all duration-200 btn-poker-hover will-change-transform"
           >
             Try it now — free
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
           </Link>
         </div>
       </div>

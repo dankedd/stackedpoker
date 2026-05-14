@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useInView } from "@/hooks/useInView";
 
 interface StatDef {
   end: number;
@@ -86,6 +87,7 @@ function AnimatedNumber({
 export function Stats() {
   const ref = useRef<HTMLDivElement>(null);
   const [triggered, setTriggered] = useState(false);
+  const { ref: sectionRef, visible: sectionVisible } = useInView(0.2);
 
   useEffect(() => {
     const el = ref.current;
@@ -119,12 +121,24 @@ export function Stats() {
       <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-border/40 to-transparent" />
 
       <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
+        {/* Section label */}
+        <div
+          ref={sectionRef}
+          className={`text-center mb-10 scroll-reveal ${sectionVisible ? "visible" : ""}`}
+        >
+          <p className="text-[12px] uppercase tracking-widest text-muted-foreground/35 font-mono">
+            By the numbers
+          </p>
+        </div>
+
         <div ref={ref} className="grid grid-cols-2 gap-10 lg:grid-cols-4">
           {STATS.map((s, i) => (
-            <div key={s.label} className="text-center">
+            <div
+              key={s.label}
+              className={`text-center scroll-reveal scroll-delay-${i + 1} ${sectionVisible ? "visible" : ""}`}
+            >
               <p
                 className={`mb-1.5 text-5xl sm:text-6xl font-black tracking-tight tabular-nums text-transparent bg-clip-text bg-gradient-to-r ${s.gradient}`}
-                style={{ animationDelay: `${i * 80}ms` }}
               >
                 <AnimatedNumber
                   end={s.end}
