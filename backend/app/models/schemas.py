@@ -333,8 +333,9 @@ class SessionHandCandidate(BaseModel):
     effective_stack_bb: float = 0.0
     # Optional tournament-specific fields (defaults keep session analysis unchanged)
     blind_level: str = ""
-    tournament_stage: str = ""   # early / middle / short / push_fold
+    tournament_stage: str = ""   # deep / middle / short / push_fold
     is_all_in: bool = False
+    big_blind: float = 0.0       # raw BB value; non-zero for tournament hands only
 
 
 class SessionStats(BaseModel):

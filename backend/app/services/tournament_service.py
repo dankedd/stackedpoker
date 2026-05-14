@@ -564,6 +564,7 @@ async def analyze_tournament(request: TournamentAnalysisRequest) -> TournamentAn
             blind_level=blind_level,
             tournament_stage=stage,
             is_all_in=_is_all_in(parsed),
+            big_blind=parsed.big_blind,
         )
 
     selected = [_to_candidate(*args) for args in top5]

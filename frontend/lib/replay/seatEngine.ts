@@ -17,6 +17,7 @@ export interface SeatDescriptor {
   cards: string[];           // known face-up cards; empty → show card backs
   cardsKnown: boolean;       // true → render face-up PlayingCard
   foldedAtStep: number | null; // the step index at which this player folded
+  stack_bb?: number;         // starting stack in BB; undefined if not available
 }
 
 export function buildSeatMap(analysis: ReplayAnalysis): SeatDescriptor[] {
@@ -85,6 +86,7 @@ function buildFromTopology(analysis: ReplayAnalysis): SeatDescriptor[] {
         : [],
       cardsKnown: p.is_hero || (isVillain && !!(hand_summary.villain_cards?.length)),
       foldedAtStep: foldedAtStep.get(p.name) ?? null,
+      stack_bb: p.stack_bb ?? undefined,
     };
   });
 }
@@ -161,6 +163,7 @@ function buildFromActionOrder(analysis: ReplayAnalysis): SeatDescriptor[] {
     cards: hand_summary.hero_cards ?? [],
     cardsKnown: true,
     foldedAtStep: foldedAtStep.get(heroName) ?? null,
+    stack_bb: hand_summary.effective_stack_bb > 0 ? hand_summary.effective_stack_bb : undefined,
   });
 
   for (const { name, isHero } of orderedPlayers) {

@@ -286,6 +286,11 @@ function TournamentHandCard({
         </span>
         <span className="inline-flex items-center text-xs bg-secondary/60 px-2.5 py-1 rounded-full text-muted-foreground border border-border/40">
           {hand.pot_bb}bb pot
+          {hand.big_blind && hand.big_blind > 0 && (
+            <span className="ml-1 text-muted-foreground/45 text-[10px]">
+              ({Math.round(hand.pot_bb * hand.big_blind).toLocaleString()} chips)
+            </span>
+          )}
         </span>
         <span className="inline-flex items-center text-xs bg-secondary/60 px-2.5 py-1 rounded-full text-muted-foreground border border-border/40">
           to {STREET_LABEL[hand.street_depth] ?? hand.street_depth}
@@ -293,6 +298,11 @@ function TournamentHandCard({
         {hand.effective_stack_bb > 0 && (
           <span className="inline-flex items-center text-xs bg-secondary/60 px-2.5 py-1 rounded-full text-muted-foreground border border-border/40">
             {hand.effective_stack_bb}bb eff
+            {hand.big_blind && hand.big_blind > 0 && (
+              <span className="ml-1 text-muted-foreground/45 text-[10px]">
+                ({Math.round(hand.effective_stack_bb * hand.big_blind).toLocaleString()} chips)
+              </span>
+            )}
           </span>
         )}
         {hand.blind_level && (

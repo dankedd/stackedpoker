@@ -63,16 +63,27 @@ class GGPokerParser(BaseParser):
         return m.group(1) if m else "unknown"
 
     def _parse_stakes(self, text: str) -> tuple[str, float, float]:
-        # Cash game: ($0.50/$1.00)
+        # Cash game: ($0.50/$1.00) — requires dollar signs
         m = re.search(r"\(\$([0-9.]+)/\$([0-9.]+)\)", text)
         if m:
             sb, bb = float(m.group(1)), float(m.group(2))
             return f"${m.group(1)}/${m.group(2)}", sb, bb
-        # Tournament: (1000/2000) or (1000/2000/200) or (1000/2000/200 ante)
-        m = re.search(r"\((\d+)/(\d+)(?:/\d+)?(?:\s*ante)?\)", text)
+        # Tournament header: handles commas in large numbers and all ante formats
+        # e.g. (1000/2000), (1,500/3,000), (1000/2000/200), (1000/2000 ante 200)
+        m = re.search(r"\(([\d,]+)/([\d,]+)[^)]*\)", text)
         if m:
-            sb, bb = float(m.group(1)), float(m.group(2))
-            return f"T{int(sb)}/{int(bb)}", sb, bb
+            sb = float(m.group(1).replace(",", ""))
+            bb = float(m.group(2).replace(",", ""))
+            if bb > 0:
+                return f"T{int(sb)}/{int(bb)}", sb, bb
+        # Fallback: extract from the posted blind actions
+        m_bb = re.search(r": posts big blind \$?([\d,]+(?:\.\d+)?)", text, re.IGNORECASE)
+        m_sb = re.search(r": posts small blind \$?([\d,]+(?:\.\d+)?)", text, re.IGNORECASE)
+        if m_bb:
+            bb = float(m_bb.group(1).replace(",", ""))
+            sb = float(m_sb.group(1).replace(",", "")) if m_sb else bb / 2
+            if bb > 0:
+                return f"T{int(sb)}/{int(bb)}", sb, bb
         return "0.5/1", 0.5, 1.0
 
     def _parse_button_seat(self, text: str) -> int:

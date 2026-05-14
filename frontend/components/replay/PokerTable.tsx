@@ -12,6 +12,7 @@ interface PokerTableProps {
   currentAction: ReplayAction | null;
   currentPot: number;
   currentStep: number;
+  bigBlind?: number;  // non-zero for tournament hands; enables chip display
 }
 
 const ACTION_BADGE_CLS: Record<string, string> = {
@@ -34,6 +35,7 @@ export function PokerTable({
   currentAction,
   currentPot,
   currentStep,
+  bigBlind,
 }: PokerTableProps) {
   const heroSeat = seats.find((s) => s.isHero);
   const opponentSeats = seats.filter((s) => !s.isHero);
@@ -102,6 +104,16 @@ export function PokerTable({
                 >
                   {seat.position}
                 </span>
+                {seat.stack_bb !== undefined && (
+                  <span className="text-[8px] tabular-nums" style={{ color: "rgba(255,255,255,0.13)" }}>
+                    {seat.stack_bb.toFixed(0)}bb
+                    {bigBlind && bigBlind > 1 && (
+                      <span style={{ color: "rgba(255,255,255,0.07)" }}>
+                        {" "}· {Math.round(seat.stack_bb * bigBlind).toLocaleString()}
+                      </span>
+                    )}
+                  </span>
+                )}
               </div>
             );
           })}
@@ -165,6 +177,7 @@ export function PokerTable({
           actingPlayer={actingPlayer}
           currentAction={currentAction}
           currentStep={currentStep}
+          bigBlind={bigBlind}
         />
       )}
     </div>
@@ -178,11 +191,13 @@ function HeroZone({
   actingPlayer,
   currentAction,
   currentStep,
+  bigBlind,
 }: {
   seat: SeatDescriptor;
   actingPlayer: string | null;
   currentAction: ReplayAction | null;
   currentStep: number;
+  bigBlind?: number;
 }) {
   const isActing = !!seat.playerName && seat.playerName === actingPlayer;
   const isFoldedPast = seat.foldedAtStep !== null && seat.foldedAtStep < currentStep;
@@ -255,6 +270,19 @@ function HeroZone({
         <span className="text-[9px] font-medium" style={{ color: "rgba(148,163,184,0.4)" }}>
           {seat.position}
         </span>
+        {seat.stack_bb !== undefined && (
+          <>
+            <div className="w-px h-2.5" style={{ background: "rgba(255,255,255,0.08)" }} />
+            <span className="text-[9px] font-medium tabular-nums" style={{ color: "rgba(148,163,184,0.3)" }}>
+              {seat.stack_bb.toFixed(1)}bb
+            </span>
+            {bigBlind && bigBlind > 1 && (
+              <span className="text-[8px]" style={{ color: "rgba(148,163,184,0.18)" }}>
+                {Math.round(seat.stack_bb * bigBlind).toLocaleString()}c
+              </span>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

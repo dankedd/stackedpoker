@@ -181,7 +181,13 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
           </span>
           <span className="w-px h-3.5 bg-white/[0.08] shrink-0" />
           <span className="text-xs text-slate-500/40 shrink-0">
-            {hand_summary.effective_stack_bb.toFixed(0)}bb · {tableSize}p
+            {hand_summary.effective_stack_bb.toFixed(0)}bb
+            {hand_summary.big_blind && hand_summary.big_blind > 1 && (
+              <span className="text-slate-600/35 ml-1">
+                · {Math.round(hand_summary.effective_stack_bb * hand_summary.big_blind).toLocaleString()} chips
+              </span>
+            )}
+            <span className="ml-1">· {tableSize}p</span>
           </span>
         </div>
 
@@ -217,6 +223,7 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
               currentAction={replay.currentAction}
               currentPot={replay.currentPot}
               currentStep={replay.step}
+              bigBlind={hand_summary.big_blind && hand_summary.big_blind > 1 ? hand_summary.big_blind : undefined}
             />
           </div>
 

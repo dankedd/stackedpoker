@@ -237,6 +237,7 @@ export interface SessionHandCandidate {
   blind_level?: string;
   tournament_stage?: string;   // "deep" | "middle" | "short" | "push_fold"
   is_all_in?: boolean;
+  big_blind?: number;          // raw BB value; non-zero for tournament hands
 }
 
 export interface SessionStats {
