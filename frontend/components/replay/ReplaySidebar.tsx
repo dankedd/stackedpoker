@@ -69,6 +69,8 @@ export interface ReplaySidebarProps {
   step: number;
   onGoTo: (n: number) => void;
   currentStreet: string;
+  effectiveStackBb?: number;
+  bigBlind?: number;
 }
 
 // ── Main component ───────────────────────────────────────────────────────────
@@ -78,6 +80,8 @@ export function ReplaySidebar({
   step,
   onGoTo,
   currentStreet,
+  effectiveStackBb,
+  bigBlind,
 }: ReplaySidebarProps) {
   // Which streets have at least one action
   const availableStreets = useMemo(
@@ -115,12 +119,44 @@ export function ReplaySidebar({
         className="sticky top-0 z-10 flex-shrink-0 px-4 pt-4 pb-3"
         style={{ background: "#0B0F14", borderBottom: "1px solid rgba(255,255,255,0.05)" }}
       >
-        <p
-          className="text-[9px] uppercase font-semibold tracking-[0.2em] mb-2.5"
-          style={{ color: "rgba(100,116,139,0.6)" }}
-        >
-          Street
-        </p>
+        {/* Effective stack HUD — shown at top of sidebar */}
+        {effectiveStackBb !== undefined && (
+          <div className="flex items-center justify-between mb-3">
+            <p
+              className="text-[9px] uppercase font-semibold tracking-[0.2em]"
+              style={{ color: "rgba(100,116,139,0.6)" }}
+            >
+              Street
+            </p>
+            <div
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+              style={{
+                background: "rgba(56,189,248,0.07)",
+                border: "1px solid rgba(56,189,248,0.15)",
+                boxShadow: "0 0 8px rgba(56,189,248,0.05)",
+              }}
+            >
+              <div className="h-1 w-1 rounded-full bg-sky-400/55 shrink-0" />
+              <span className="text-[11px] font-bold tabular-nums" style={{ color: "rgba(186,230,253,0.85)" }}>
+                {effectiveStackBb.toFixed(0)}bb
+              </span>
+              {bigBlind && bigBlind > 1 && (
+                <span className="text-[9px]" style={{ color: "rgba(100,116,139,0.5)" }}>
+                  · {Math.round(effectiveStackBb * bigBlind).toLocaleString()}ch
+                </span>
+              )}
+              <span className="text-[9px]" style={{ color: "rgba(100,116,139,0.4)" }}>eff</span>
+            </div>
+          </div>
+        )}
+        {effectiveStackBb === undefined && (
+          <p
+            className="text-[9px] uppercase font-semibold tracking-[0.2em] mb-2.5"
+            style={{ color: "rgba(100,116,139,0.6)" }}
+          >
+            Street
+          </p>
+        )}
         <div className="flex gap-1.5">
           {availableStreets.map((s) => {
             const isActive = currentStreet === s;

@@ -180,15 +180,26 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
             )}
           </span>
           <span className="w-px h-3.5 bg-white/[0.08] shrink-0" />
-          <span className="text-xs text-slate-500/40 shrink-0">
-            {hand_summary.effective_stack_bb.toFixed(0)}bb
+          {/* Effective stack — prominent HUD pill */}
+          <div
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full shrink-0"
+            style={{
+              background: "rgba(56,189,248,0.08)",
+              border: "1px solid rgba(56,189,248,0.18)",
+              boxShadow: "0 0 8px rgba(56,189,248,0.06)",
+            }}
+          >
+            <div className="h-1 w-1 rounded-full bg-sky-400/60 shrink-0" />
+            <span className="text-[12px] font-bold text-sky-200/85 tabular-nums leading-none">
+              {hand_summary.effective_stack_bb.toFixed(0)}bb
+            </span>
             {hand_summary.big_blind && hand_summary.big_blind > 1 && (
-              <span className="text-slate-600/35 ml-1">
-                · {Math.round(hand_summary.effective_stack_bb * hand_summary.big_blind).toLocaleString()} chips
+              <span className="text-[10px] text-slate-500/50 leading-none">
+                · {Math.round(hand_summary.effective_stack_bb * hand_summary.big_blind).toLocaleString()}ch
               </span>
             )}
-            <span className="ml-1">· {tableSize}p</span>
-          </span>
+          </div>
+          <span className="text-slate-600/40 text-[10px] shrink-0">{tableSize}p</span>
         </div>
 
         <div className="flex items-center gap-2 shrink-0 ml-3">
@@ -252,6 +263,8 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
               step={replay.step}
               onGoTo={replay.goTo}
               currentStreet={replay.currentStreet}
+              effectiveStackBb={hand_summary.effective_stack_bb}
+              bigBlind={hand_summary.big_blind}
             />
           </div>
 

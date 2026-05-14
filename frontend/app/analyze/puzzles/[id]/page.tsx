@@ -135,6 +135,61 @@ const QUALITY = {
   punt:       { label: "Major punt",  cls: "text-red-400     bg-red-500/10     border-red-500/30" },
 } as const;
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Stack depth HUD helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+function stackZone(bb: number): { label: string; textCls: string; bgCls: string } {
+  if (bb <= 12)  return { label: "jam/fold",  textCls: "text-red-400",     bgCls: "bg-red-500/10 border-red-500/22" };
+  if (bb <= 20)  return { label: "short",     textCls: "text-orange-400",  bgCls: "bg-orange-500/10 border-orange-500/22" };
+  if (bb <= 40)  return { label: "medium",    textCls: "text-amber-400",   bgCls: "bg-amber-500/10 border-amber-500/22" };
+  if (bb <= 100) return { label: "deep",      textCls: "text-sky-400",     bgCls: "bg-sky-500/10 border-sky-500/22" };
+  return               { label: "very deep",  textCls: "text-emerald-400", bgCls: "bg-emerald-500/10 border-emerald-500/22" };
+}
+
+function StackHUD({ bb, className }: { bb: number; className?: string }) {
+  const zone = stackZone(bb);
+  const display = Number.isInteger(bb) ? `${bb}` : `${bb}`;
+  return (
+    <div className={cn("flex items-center justify-center", className)}>
+      <div
+        className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 border"
+        style={{
+          background: "rgba(56,189,248,0.06)",
+          borderColor: "rgba(56,189,248,0.16)",
+          boxShadow: "0 0 12px rgba(56,189,248,0.06), inset 0 1px 0 rgba(255,255,255,0.03)",
+        }}
+      >
+        <div className="h-1.5 w-1.5 rounded-full bg-sky-400/55 shrink-0" />
+        <span className="text-[15px] font-black text-sky-200/90 tabular-nums leading-none">
+          {display}
+          <span className="text-[11px] font-semibold text-sky-400/55 ml-[2px]">bb</span>
+        </span>
+        <span className="text-[11px] text-muted-foreground/35 leading-none">effective</span>
+        <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded border", zone.textCls, zone.bgCls)}>
+          {zone.label}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function StackPill({ bb }: { bb: number }) {
+  return (
+    <div
+      className="h-6 px-2 flex items-center rounded-full"
+      style={{
+        background: "rgba(56,189,248,0.07)",
+        border: "1px solid rgba(56,189,248,0.16)",
+      }}
+    >
+      <span className="text-[11px] font-bold text-sky-300/80 tabular-nums leading-none">
+        {bb}bb
+      </span>
+    </div>
+  );
+}
+
 function QualityBadge({ quality }: { quality: ActionOption["quality"] }) {
   const { label, cls } = QUALITY[quality];
   return (
@@ -606,9 +661,24 @@ export default function PuzzlePlayerPage() {
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 mb-3">
                   Situation
                 </p>
+                {/* Stack — full-width highlighted row */}
+                <div className="mb-3 rounded-xl border px-3 py-2.5"
+                  style={{ background: "rgba(56,189,248,0.05)", borderColor: "rgba(56,189,248,0.14)" }}>
+                  <p className="text-[10px] text-sky-400/50 mb-0.5">Effective stack</p>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-xl font-black text-sky-200/90 tabular-nums leading-none">
+                      {puzzle.effectiveStack}
+                    </span>
+                    <span className="text-sm font-semibold text-sky-400/55">BB</span>
+                    <span className={cn("ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded border",
+                      stackZone(puzzle.effectiveStack).textCls, stackZone(puzzle.effectiveStack).bgCls
+                    )}>
+                      {stackZone(puzzle.effectiveStack).label}
+                    </span>
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                   {[
-                    ["Stack", `${puzzle.effectiveStack}BB`],
                     ["Stakes", puzzle.stakes],
                     ["Hero", puzzle.heroPosition],
                     ["Villain", puzzle.villainPosition],
@@ -651,6 +721,7 @@ export default function PuzzlePlayerPage() {
                     <div className="h-7 px-3 flex items-center rounded-full bg-violet-500/15 border border-violet-500/25">
                       <span className="text-xs font-semibold text-violet-400">{puzzle.heroPosition}</span>
                     </div>
+                    <StackPill bb={puzzle.effectiveStack} />
                   </div>
                 </div>
 
@@ -678,7 +749,7 @@ export default function PuzzlePlayerPage() {
                 <div className="border-t border-border/25 mb-6" />
 
                 {/* Hero cards */}
-                <div className="flex flex-col items-center mb-6">
+                <div className="flex flex-col items-center mb-4">
                   <p className="text-[10px] text-muted-foreground/50 uppercase tracking-wider mb-3">Your hand</p>
                   <div className="flex gap-3">
                     {puzzle.heroCards.map((card, i) => (
@@ -686,6 +757,9 @@ export default function PuzzlePlayerPage() {
                     ))}
                   </div>
                 </div>
+
+                {/* Effective stack HUD — always visible, between cards and context */}
+                <StackHUD bb={puzzle.effectiveStack} className="mb-5" />
 
                 {/* Situation context */}
                 <div className="rounded-xl bg-secondary/20 border border-border/25 px-4 py-3.5 mb-5">
