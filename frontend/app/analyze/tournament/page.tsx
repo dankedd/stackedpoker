@@ -625,7 +625,7 @@ function HandOverlay({
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function TournamentAnalyzePage() {
-  const { user, loading: authLoading, session } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const tournament  = useTournamentAnalysis();
   const handAnalysis = useAnalysis();
 
@@ -637,9 +637,6 @@ export default function TournamentAnalyzePage() {
   const [overlayOpen, setOverlayOpen] = useState(false);
   const [activeHand, setActiveHand]   = useState<SessionHandCandidate | null>(null);
   const [allHandsOpen, setAllOpen]    = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [debugResult, setDebugResult] = useState<Record<string, any> | null>(null);
-  const [debugLoading, setDebugLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -656,31 +653,9 @@ export default function TournamentAnalyzePage() {
     tournament.reset();
     setFile(null);
     setBuyIn("");
-    setDebugResult(null);
     setOverlayOpen(false);
     setActiveHand(null);
     setAllOpen(false);
-  };
-
-  const runDebug = async () => {
-    if (!file || !session?.access_token) return;
-    setDebugLoading(true);
-    setDebugResult(null);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/tournament-debug", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${session.access_token}` },
-        body: fd,
-      });
-      const data = await res.json();
-      setDebugResult(data);
-    } catch (e) {
-      setDebugResult({ error: String(e) });
-    } finally {
-      setDebugLoading(false);
-    }
   };
 
   const navHands = useMemo(
@@ -806,50 +781,6 @@ export default function TournamentAnalyzePage() {
                       <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3">
                         <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
                         <p className="text-sm text-destructive">{tournament.error}</p>
-                      </div>
-                    )}
-
-                    {/* ── Debug panel (temporary) ── */}
-                    {file && (
-                      <div className="space-y-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="w-full text-xs text-muted-foreground/60 border-dashed"
-                          onClick={runDebug}
-                          disabled={debugLoading}
-                        >
-                          {debugLoading ? "Inspecting ZIP…" : "🔍 Inspect ZIP (debug)"}
-                        </Button>
-                        {debugResult && (
-                          <div className="rounded-lg border border-border/40 bg-secondary/20 p-3 space-y-1.5 text-[11px] font-mono text-muted-foreground/70 max-h-64 overflow-y-auto">
-                            <p><span className="text-foreground/80">file:</span> {debugResult.filename} ({debugResult.file_size_bytes} bytes)</p>
-                            <p><span className="text-foreground/80">zip entries:</span> {debugResult.entries?.length ?? "n/a"}</p>
-                            <p><span className="text-foreground/80">accepted files:</span> {JSON.stringify(debugResult.accepted_files)}</p>
-                            <p><span className="text-foreground/80">total chars:</span> {debugResult.total_chars}</p>
-                            <p><span className="text-foreground/80">hands split:</span> {debugResult.hands_split}</p>
-                            {debugResult.error && <p className="text-red-400"><span className="text-red-400">error:</span> {debugResult.error}</p>}
-                            {debugResult.entries_detail && (
-                              <details>
-                                <summary className="cursor-pointer text-foreground/60">Entry details ({debugResult.entries_detail.length})</summary>
-                                {debugResult.entries_detail.map((e: Record<string, unknown>, i: number) => (
-                                  <div key={i} className={e.hh ? "text-emerald-400/80" : "text-muted-foreground/40"}>
-                                    {e.hh ? "✓" : "✗"} {String(e.name)} [{String(e.encoding)}] {String(e.bytes)}b
-                                    {Boolean(e.skipped) && <span className="text-red-400/60"> SKIP:{String(e.reason)}</span>}
-                                    {Boolean(e.hh) && <div className="pl-4 text-emerald-300/50 break-all">{String(e.preview).slice(0, 150)}</div>}
-                                  </div>
-                                ))}
-                              </details>
-                            )}
-                            {debugResult.text_preview && (
-                              <details>
-                                <summary className="cursor-pointer text-foreground/60">Combined text preview</summary>
-                                <p className="break-all text-muted-foreground/50">{String(debugResult.text_preview).slice(0, 400)}</p>
-                              </details>
-                            )}
-                          </div>
-                        )}
                       </div>
                     )}
 

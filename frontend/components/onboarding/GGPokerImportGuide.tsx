@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import {
   MonitorPlay, MousePointerClick, Download, UploadCloud,
-  ChevronDown, Archive, Check, ArrowRight, Zap,
+  ChevronDown, Archive, ArrowRight, Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -129,83 +129,6 @@ function GuideContent() {
             </div>
           );
         })}
-      </div>
-
-      {/* Supported formats + sites */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-
-        <div className="rounded-xl border border-border/40 bg-card/30 px-4 py-3.5">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-2.5">
-            Supported uploads
-          </p>
-          <div className="space-y-1.5">
-            {[
-              { label: "PokerCraft ZIP export", primary: true },
-              { label: "Raw hand history text" },
-              { label: "Tournament exports" },
-              { label: "Multi-hand session files" },
-            ].map(({ label, primary }) => (
-              <div key={label} className="flex items-center gap-2">
-                <Check className={cn(
-                  "h-3 w-3 shrink-0",
-                  primary ? "text-violet-400" : "text-muted-foreground/35",
-                )} />
-                <span className={cn(
-                  "text-xs leading-tight",
-                  primary ? "font-semibold text-foreground" : "text-muted-foreground/55",
-                )}>
-                  {primary && (
-                    <Archive className="inline h-2.5 w-2.5 text-violet-400 mr-1 -mt-px" />
-                  )}
-                  {label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-border/40 bg-card/30 px-4 py-3.5 flex flex-col">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-2.5">
-            Optimized for
-          </p>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-5 w-5 items-center justify-center rounded bg-emerald-500/15 border border-emerald-500/25">
-                <Check className="h-2.5 w-2.5 text-emerald-400" />
-              </div>
-              <span className="text-xs font-semibold text-foreground">GG Poker</span>
-              <span className="text-[10px] font-medium text-violet-400 bg-violet-500/10 border border-violet-500/20 px-1.5 py-px rounded-full">
-                Primary
-              </span>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-5 w-5 items-center justify-center rounded bg-blue-500/10 border border-blue-500/20">
-                <Check className="h-2.5 w-2.5 text-blue-400" />
-              </div>
-              <span className="text-xs text-muted-foreground/70">PokerStars</span>
-            </div>
-          </div>
-
-          <div className="mt-auto pt-3 border-t border-border/20">
-            <div className="flex items-center gap-1 flex-wrap">
-              {["ZIP", "→", "AI", "→", "Replay", "→", "Coaching"].map((t, i) => {
-                if (t === "→") return (
-                  <span key={i} className="text-[10px] text-muted-foreground/30">→</span>
-                );
-                const cls = i === 0
-                  ? "border-violet-500/25 bg-violet-500/8 text-violet-400/70"
-                  : i === 6
-                  ? "border-emerald-500/25 bg-emerald-500/8 text-emerald-400/70"
-                  : "border-border/30 bg-secondary/20 text-muted-foreground/45";
-                return (
-                  <span key={i} className={cn("text-[10px] font-mono px-1.5 py-px rounded border", cls)}>
-                    {t}
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Collapsible example hand */}
