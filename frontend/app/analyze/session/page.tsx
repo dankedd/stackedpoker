@@ -16,6 +16,7 @@ import { useSessionAnalysis } from "@/hooks/useSessionAnalysis";
 import { useAnalysis } from "@/hooks/useAnalysis";
 import { useAuth } from "@/contexts/AuthContext";
 import { LoginCTA } from "@/components/poker/UpgradePrompt";
+import { GGPokerGuide } from "@/components/poker/GGPokerGuide";
 import { HandReplay } from "@/components/replay/HandReplay";
 import { cn } from "@/lib/utils";
 import type { SessionHandCandidate, AnalysisResponse } from "@/lib/types";
@@ -484,6 +485,11 @@ export default function SessionAnalyzePage() {
             Back to Analyze
           </Link>
 
+          {/* ── Onboarding guide ──────────────────────────────────────── */}
+          {!hasResult && !isLoading && (
+            <GGPokerGuide variant="full" className="mb-8" />
+          )}
+
           {/* ── Input ─────────────────────────────────────────────────── */}
           {!hasResult && !isLoading && (
             <Card className="border-border/50">
@@ -495,7 +501,7 @@ export default function SessionAnalyzePage() {
                   <CardTitle>Session Analysis</CardTitle>
                 </div>
                 <CardDescription>
-                  Paste all hands from a session. AI identifies your most important spots — you don&apos;t have to.
+                  Paste your PokerCraft export below. AI identifies your most important spots — you don&apos;t have to.
                 </CardDescription>
               </CardHeader>
 
@@ -517,19 +523,34 @@ export default function SessionAnalyzePage() {
                     />
 
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground/80">
-                        Session hands
-                      </label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium text-foreground/80">
+                          Paste session hands
+                        </label>
+                        <span className="text-[10px] font-medium text-violet-400 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded-full">
+                          ZIP exports supported
+                        </span>
+                      </div>
                       <textarea
                         value={text}
                         onChange={(e) => setText(e.target.value)}
-                        placeholder={`Paste your full session history here…\n\nExample: copy all hands from your GGPoker or PokerStars session replayer and paste them here. The AI will parse every hand and surface the 3 most important spots to review.`}
+                        placeholder={
+                          "Drop your PokerCraft ZIP export here, or paste hand history text…\n\n" +
+                          "GG Poker: PokerCraft → Sessions → select session → Download\n" +
+                          "PokerStars: copy all hands from the session replayer\n\n" +
+                          "The AI will parse every hand and surface your 3 most important spots to review."
+                        }
                         rows={12}
                         className="w-full rounded-lg border border-border/70 bg-card/50 px-4 py-3 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/50 transition-all resize-y"
                       />
-                      <p className="text-xs text-muted-foreground/60">
-                        GGPoker and PokerStars formats supported · Minimum 1 hand
-                      </p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-muted-foreground/60">
+                          GG Poker · PokerStars · ZIP files · raw text
+                        </p>
+                        <p className="text-xs text-muted-foreground/40">
+                          Minimum 1 hand
+                        </p>
+                      </div>
                     </div>
 
                     {session.error && (
@@ -539,15 +560,20 @@ export default function SessionAnalyzePage() {
                       </div>
                     )}
 
-                    <Button
-                      type="submit"
-                      variant="poker"
-                      size="lg"
-                      className="w-full"
-                      disabled={text.trim().length < 100}
-                    >
-                      Find My Key Spots
-                    </Button>
+                    <div className="space-y-2">
+                      <Button
+                        type="submit"
+                        variant="poker"
+                        size="lg"
+                        className="w-full"
+                        disabled={text.trim().length < 100}
+                      >
+                        Find My Key Spots
+                      </Button>
+                      <p className="text-center text-[11px] text-muted-foreground/40">
+                        GG Poker exports work best · ZIP files supported
+                      </p>
+                    </div>
                   </form>
                 )}
               </CardContent>

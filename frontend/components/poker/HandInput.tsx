@@ -13,9 +13,12 @@ interface HandInputProps {
   initialValue?: string;
 }
 
-const PLACEHOLDER = `Paste your hand history here...
+const PLACEHOLDER = `Paste a hand history here…
 
-Example (GGPoker):
+GG Poker: PokerCraft → Sessions → select a hand → Copy
+PokerStars: copy from the Hand History viewer
+
+Example:
 Poker Hand #RC0123456789: Hold'em No Limit ($0.50/$1.00) - 2024/01/15 14:22:33
 Table 'FastForward' 6-Max Seat #3 is the button
 Seat 1: Player1 ($112.30 in chips)
@@ -98,14 +101,17 @@ export function HandInput({ onAnalyze, isLoading, className, initialValue }: Han
         </Button>
       </div>
 
-      <div className="flex gap-4 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground/60">
         <span className={cn("flex items-center gap-1", !isEmpty && "text-violet-400/70")}>
-          <span className={cn("h-1.5 w-1.5 rounded-full bg-current")} />
-          GGPoker
+          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+          GG Poker exports work best
         </span>
         <span className={cn("flex items-center gap-1", !isEmpty && "text-violet-400/70")}>
           <span className="h-1.5 w-1.5 rounded-full bg-current" />
           PokerStars
+        </span>
+        <span className="flex items-center gap-1 ml-auto text-[11px] font-medium text-violet-400/60 border border-violet-500/20 bg-violet-500/8 px-2 py-0.5 rounded-full">
+          ZIP files supported
         </span>
       </div>
     </form>
