@@ -1,14 +1,54 @@
 """
-OpenAI coaching service — generates human-readable poker coaching.
+OpenAI coaching service — structured, template-based poker coaching.
+
+ARCHITECTURE RULE:
+  The AI is ONLY a coaching voice on top of deterministic engine output.
+  It NEVER infers positions, stacks, board state, pot sizes, or action sequences.
+  All game facts are computed by the parser/engine pipeline and injected verbatim.
+
+Prompt design:
+  - System message: explicit prohibition on inference; output format enforced.
+  - User message: fully-structured context block — no raw hand history text.
+  - Temperature 0.4: consistent coaching tone, not creative.
+  - max_tokens 700: forces concise, actionable output.
 """
 from __future__ import annotations
+
 import logging
 from openai import AsyncOpenAI
+
 from app.config import get_settings
-from app.models.schemas import ParsedHand, SpotClassification, BoardTexture, HeuristicFinding
+from app.models.schemas import (
+    BoardTexture,
+    HeuristicFinding,
+    ParsedHand,
+    SpotClassification,
+)
 
 logger = logging.getLogger(__name__)
 
+# ── System prompt (never changes) ──────────────────────────────────────────
+
+_SYSTEM_PROMPT = """\
+You are an expert GTO poker coach generating structured coaching feedback.
+
+HARD RULES — never break these:
+1. Do NOT infer, guess, or assume any game fact.
+   Positions, stacks, pot size, board cards, and action history are all provided below.
+2. Do NOT mention or reference any information not given in the structured context.
+3. Do NOT restate the hand facts — coach on the decisions.
+4. Use precise poker terminology: range advantage, pot odds, SPR, blocker, equity, polarity.
+5. Be direct and actionable. No padding. No "Great job on…" filler.
+
+OUTPUT FORMAT — use these exact section headers, each followed by 1-3 sentences:
+**Overall Assessment**
+**Key Concept**
+**Adjustment**
+**Takeaway**
+"""
+
+
+# ── Public API ─────────────────────────────────────────────────────────────
 
 async def generate_coaching(
     hand: ParsedHand,
@@ -30,26 +70,20 @@ async def generate_coaching(
         response = await client.chat.completions.create(
             model=settings.openai_model,
             messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are an expert poker coach with deep knowledge of GTO (Game Theory Optimal) strategy. "
-                        "Provide clear, educational, and actionable poker coaching. "
-                        "Use poker terminology but explain key concepts. "
-                        "Focus on range theory, board texture, position, and sizing principles. "
-                        "Keep your response concise (3-5 paragraphs) and structured."
-                    ),
-                },
+                {"role": "system", "content": _SYSTEM_PROMPT},
                 {"role": "user", "content": prompt},
             ],
-            temperature=0.7,
-            max_tokens=800,
+            temperature=0.4,
+            max_tokens=700,
         )
-        return response.choices[0].message.content or _fallback_coaching(spot, texture, findings)
+        text = response.choices[0].message.content or ""
+        return text.strip() or _fallback_coaching(spot, texture, findings)
     except Exception as e:
         logger.warning("OpenAI coaching failed: %s", e)
         return _fallback_coaching(spot, texture, findings)
 
+
+# ── Prompt builder ─────────────────────────────────────────────────────────
 
 def _build_prompt(
     hand: ParsedHand,
@@ -60,79 +94,161 @@ def _build_prompt(
     game_type: str | None = None,
     player_count: int | None = None,
 ) -> str:
-    board_str = " ".join(hand.board.flop)
+    # ── Board string ───────────────────────────────────────────────────────
+    board_parts = list(hand.board.flop)
     if hand.board.turn:
-        board_str += " | " + hand.board.turn[0]
+        board_parts += ["|"] + list(hand.board.turn)
     if hand.board.river:
-        board_str += " | " + hand.board.river[0]
+        board_parts += ["|"] + list(hand.board.river)
+    board_str = " ".join(board_parts) if board_parts else "none (preflop)"
 
     hero_cards = " ".join(hand.hero_cards) if hand.hero_cards else "unknown"
 
-    actions_summary = []
+    # ── Hero action summary (deterministic — engine computed) ──────────────
+    hero_lines: list[str] = []
     for a in hand.actions:
-        if a.is_hero:
-            size = f" {a.size_bb:.1f}BB" if a.size_bb else ""
-            actions_summary.append(f"  Hero [{a.street}]: {a.action}{size}")
+        if not a.is_hero:
+            continue
+        size = f" {a.size_bb:.1f}BB" if a.size_bb else ""
+        hero_lines.append(f"  [{a.street}] {a.action}{size}")
 
-    findings_summary = []
+    # ── Findings (engine output — AI must not re-derive these) ────────────
+    finding_lines: list[str] = []
     for f in findings:
-        findings_summary.append(f"  [{f.severity.upper()}] {f.street}: {f.action_taken} — {f.recommendation}")
+        tag = f.severity.upper()
+        finding_lines.append(f"  [{tag}] {f.street} / {f.action_taken}: {f.recommendation}")
 
-    # Build game context block from user-selected setup
-    game_context_lines = []
+    # ── Spot template selector ─────────────────────────────────────────────
+    spot_context = _spot_template(spot, texture)
+
+    # ── Game format notes ──────────────────────────────────────────────────
+    format_lines: list[str] = []
     if game_type:
-        game_context_lines.append(f"- Game Format: {game_type}")
-        format_notes = {
-            "Spin & Gold": "Focus on push/fold ICM dynamics and short-stack shove ranges.",
-            "All-In or Fold": "Every decision is a push/fold spot — apply tight shove/call ranges.",
-            "Rush & Cash": "Fast-fold format; assume tight population tendencies.",
-            "Mystery Battle Royale": "Lottery-style format with ICM pressure; prioritize chip preservation.",
-            "PLO": "Equity runs closer; draw-heavy hands are common. Adjust for 4-card hand values and nut advantage.",
-            "Short Deck": "Flush beats full house; straights more common. Recalibrate equity estimates accordingly.",
+        format_lines.append(f"Format: {game_type}")
+        _FORMAT_NOTES: dict[str, str] = {
+            "Spin & Gold":          "Push/fold ICM dynamics; short-stack shove ranges apply.",
+            "All-In or Fold":       "Every decision is push/fold; apply tight shove/call ranges.",
+            "Rush & Cash":          "Fast-fold pool; assume tight population tendencies.",
+            "Mystery Battle Royale": "Lottery-style ICM; chip preservation priority.",
+            "PLO":                  "4-card hand values; equity runs close; nut advantage critical.",
+            "Short Deck":           "Flush beats full house; straights more common.",
         }
-        if game_type in format_notes:
-            game_context_lines.append(f"- Format note: {format_notes[game_type]}")
+        if game_type in _FORMAT_NOTES:
+            format_lines.append(f"Format note: {_FORMAT_NOTES[game_type]}")
+
     if player_count:
-        handedness = f"{player_count}-handed" if player_count > 2 else "heads-up"
-        game_context_lines.append(f"- Table size: {handedness} ({player_count} players)")
+        desc = f"{player_count}-handed" if player_count > 2 else "heads-up"
+        format_lines.append(f"Table size: {desc}")
         if player_count <= 3:
-            game_context_lines.append("- Range note: Widen ranges significantly for short-handed play.")
+            format_lines.append("Range adjustment: Widen significantly for short-handed play.")
         elif player_count >= 8:
-            game_context_lines.append("- Range note: Tighten ranges; expect stronger holdings at full ring.")
+            format_lines.append("Range adjustment: Tighten for full ring.")
 
-    game_context_block = (
-        "\nGAME CONTEXT (user-specified):\n" + "\n".join(game_context_lines) + "\n"
-        if game_context_lines else ""
-    )
+    format_block = "\n".join(format_lines) if format_lines else "Standard cash game."
 
-    return f"""Analyze this poker hand and provide coaching:
-{game_context_block}
-HAND DETAILS:
-- Site: {hand.site} | Stakes: ${hand.stakes}
-- Hero Position: {hand.hero_position} | Pot Type: {spot.pot_type}
-- Effective Stack: {hand.effective_stack_bb:.0f}BB
-- Hero Cards: {hero_cards}
-- Board: {board_str}
-- Board Texture: {texture.description}
-- Board Bucket: {texture.bucket}
-- Range Advantage: {texture.range_advantage}
+    return f"""
+=== STRUCTURED HAND CONTEXT (engine-computed — do not re-derive) ===
 
-HERO'S ACTIONS:
-{chr(10).join(actions_summary) if actions_summary else '  No hero actions recorded'}
+SITE & GAME
+  Site:              {hand.site}
+  Stakes:            {hand.stakes}
+  {format_block}
 
-HEURISTIC FINDINGS:
-{chr(10).join(findings_summary) if findings_summary else '  No specific issues found'}
+POSITIONS (from seat topology — clockwise derivation)
+  Hero position:     {hand.hero_position}
+  Hero is IP:        {spot.hero_is_ip}
+  Hero is PFR:       {spot.hero_is_pfr}
+  Position matchup:  {spot.position_matchup}
+
+STACKS (parser-computed — do not adjust)
+  Effective stack:   {hand.effective_stack_bb:.1f}BB
+  Stack depth class: {spot.stack_depth}
+
+CARDS (parser-extracted — do not infer)
+  Hero hole cards:   {hero_cards}
+  Board:             {board_str}
+
+BOARD ANALYSIS (engine-computed)
+  Texture:           {texture.description}
+  Bucket:            {texture.bucket}
+  Wetness:           {texture.wetness}
+  Suitedness:        {texture.suitedness}
+  Paired:            {texture.is_paired}
+  Range advantage:   {texture.range_advantage}
+
+POT TYPE
+  Classification:    {spot.pot_type}
+  Spot ID:           {spot.spot_id}
+
+HERO ACTIONS (chronological)
+{chr(10).join(hero_lines) if hero_lines else "  None recorded"}
+
+ENGINE FINDINGS (deterministic heuristics)
+{chr(10).join(finding_lines) if finding_lines else "  No significant deviations detected"}
 
 OVERALL SCORE: {score}/100
 
-Please provide:
-1. A brief overall assessment of how Hero played this hand
-2. The key strategic concept(s) relevant to this spot (range advantage, board texture, etc.)
-3. Specific adjustments Hero should make in similar spots
-4. An educational takeaway about the poker fundamentals demonstrated here
+COACHING CONTEXT
+{spot_context}
 
-Be specific, educational, and encouraging. Reference the actual board texture and position."""
+=== COACHING INSTRUCTIONS ===
+Using ONLY the above structured context, write coaching under the four required headers.
+Do not restate game facts. Focus on: why the decision was correct/incorrect, the key
+strategic concept, a concrete adjustment for next time, and one transferable takeaway.
+""".strip()
 
+
+def _spot_template(spot: SpotClassification, texture: BoardTexture) -> str:
+    """Select the right coaching frame based on pot type + texture range advantage."""
+    pot = spot.pot_type
+    adv = texture.range_advantage
+    is_pfr = spot.hero_is_pfr
+    is_ip = spot.hero_is_ip
+    depth = spot.stack_depth
+
+    lines: list[str] = []
+
+    # Pot type context
+    if pot == "SRP":
+        lines.append("Single-raised pot: typical opening range vs BB defend / late-position call.")
+    elif pot == "3bet":
+        lines.append("3-bet pot: polarised ranges, higher SPR constraints, squeeze dynamics apply.")
+    else:
+        lines.append("4-bet pot: near-commit depth in most stack configurations; range very polar.")
+
+    # Range advantage coaching frame
+    if adv == "pfr":
+        if is_pfr:
+            lines.append("Hero (PFR) holds the range advantage: high-frequency small bets are correct.")
+        else:
+            lines.append("Opponent (PFR) holds the range advantage: be selective, prefer check/call over donk.")
+    elif adv == "caller":
+        if not is_pfr:
+            lines.append("Hero (caller) holds range advantage on this board: consider leading or check-raising.")
+        else:
+            lines.append("Opponent (caller) connected well: reduce bet frequency, check marginal hands.")
+    else:
+        lines.append("Neutral board: both ranges have reasonable equity; position and SPR dominate.")
+
+    # Stack depth note
+    if depth == "short":
+        lines.append(
+            f"Stack is short ({spot.stack_depth}): keep lines simple, avoid multi-street bluffs, "
+            "get all-in efficiently with strong hands."
+        )
+    elif depth == "deep":
+        lines.append(
+            "Deep stack: implied odds matter, complex multi-street planning is correct to consider."
+        )
+
+    # Position note
+    if not is_ip:
+        lines.append("Hero is OOP: check-raise and leading lines gain importance to deny free turns/rivers.")
+
+    return "\n".join(f"  {l}" for l in lines)
+
+
+# ── Fallback (no API key / error) ─────────────────────────────────────────
 
 def _fallback_coaching(
     spot: SpotClassification,
@@ -140,40 +256,45 @@ def _fallback_coaching(
     findings: list[HeuristicFinding],
 ) -> str:
     lines = [
-        f"**Spot Analysis: {spot.position_matchup} — {spot.pot_type}**\n",
-        f"This is a **{spot.pot_type}** pot with you playing {spot.position_matchup}. "
+        f"**Overall Assessment**\n"
+        f"This is a **{spot.pot_type}** pot with hero playing **{spot.position_matchup}**. "
         f"The board is a **{texture.description}**.\n",
     ]
 
-    if texture.range_advantage == "pfr":
+    if texture.range_advantage == "pfr" and spot.hero_is_pfr:
         lines.append(
-            "On this board type, the preflop raiser typically has a significant range advantage. "
-            "This means you can apply pressure at a high frequency with smaller sizings."
+            "**Key Concept**\nYou hold the range advantage as the PFR. "
+            "This justifies high-frequency small bets to extract value and deny equity cheaply.\n"
         )
-    elif texture.range_advantage == "caller":
+    elif texture.range_advantage == "caller" and not spot.hero_is_pfr:
         lines.append(
-            "The caller's range tends to connect well with this board texture. "
-            "Be more selective about continuation betting and prefer checking your marginal hands."
+            "**Key Concept**\nYour calling range connects strongly here. "
+            "Donk-leading or check-raising becomes attractive when villain's c-bet range is wide.\n"
         )
     else:
         lines.append(
-            "This is a relatively neutral board where both ranges have reasonable equity. "
-            "Position and pot odds become the key decision drivers."
+            "**Key Concept**\nNeutral equity distribution: position and SPR are the key variables. "
+            "Prefer checking your marginal hands and building the pot with value hands.\n"
         )
 
-    if findings:
-        mistakes = [f for f in findings if f.severity in ("mistake", "suboptimal")]
-        if mistakes:
-            lines.append(
-                f"\n**Key Adjustment:** {mistakes[0].explanation}"
-            )
-        good_plays = [f for f in findings if f.severity == "good"]
-        if good_plays:
-            lines.append(
-                f"\n**Well Played:** {good_plays[0].explanation}"
-            )
+    mistakes = [f for f in findings if f.severity in ("mistake", "suboptimal")]
+    good_plays = [f for f in findings if f.severity == "good"]
 
-    lines.append(
-        "\n*Add your OpenAI API key to receive personalised AI coaching for this hand.*"
-    )
+    if mistakes:
+        lines.append(f"**Adjustment**\n{mistakes[0].recommendation}\n")
+    else:
+        lines.append(
+            "**Adjustment**\nNo significant errors detected. "
+            "Continue maintaining balanced ranges across bet and check.\n"
+        )
+
+    if good_plays:
+        lines.append(f"**Takeaway**\n{good_plays[0].explanation}")
+    else:
+        lines.append(
+            "**Takeaway**\nConsistency in range construction across streets "
+            "prevents exploitation even without a specific mistake this hand."
+        )
+
+    lines.append("\n*Add your OpenAI API key to receive personalised AI coaching.*")
     return "\n".join(lines)

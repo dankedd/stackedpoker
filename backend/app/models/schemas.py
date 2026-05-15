@@ -99,6 +99,7 @@ class AnalysisResponse(BaseModel):
     ai_coaching: str
     mistakes_count: int
     recommendations: list[str]
+    validation: ValidationInfo | None = None
     replay: ReplayAnalysis | None = None
     saved_id: str | None = None      # set after Supabase persist; None = save failed
     save_error: str | None = None    # exact Supabase/network error if save failed

@@ -10,6 +10,7 @@ from app.models.schemas import (
     SeatedPlayer, ParsedHand,
 )
 from app.engines.scoring import score_all_hero_actions
+from app.engines.validator import validate_hand
 from app.parsers.detector import detect_and_parse
 from app.engines.analysis import analyse_hand
 from app.services.openai_coach import generate_coaching
@@ -172,10 +173,18 @@ async def analyze_hand(
         # 2. Parse
         parsed = detect_and_parse(request.hand_text)
 
-        # 3. Structural analysis (no AI yet)
-        result = analyse_hand(parsed)
+        # 3. Deterministic validation (card legality, action ordering, hero presence)
+        validation = validate_hand(parsed)
+        if validation.errors:
+            logger.warning(
+                "Hand validation errors for user=%s: %s", user_id, validation.errors
+            )
 
-        # 4. AI coaching
+        # 4. Structural analysis (no AI yet)
+        result = analyse_hand(parsed)
+        result.validation = validation
+
+        # 5. AI coaching — only if validation passed or confidence is reasonable
         coaching = await generate_coaching(
             hand=parsed,
             spot=result.spot_classification,
@@ -187,10 +196,10 @@ async def analyze_hand(
         )
         result.ai_coaching = coaching
 
-        # 5. Build replay from already-computed data (no extra AI call)
+        # 6. Build replay from already-computed data (no extra AI call)
         result.replay = _build_replay(result)
 
-        # 6. Persist to Supabase hand_analyses (primary user-facing store)
+        # 7. Persist to Supabase hand_analyses (primary user-facing store)
         saved_id, save_error = await save_to_supabase(
             user_id, request.hand_text, result, user_jwt=user_jwt
         )
@@ -199,14 +208,14 @@ async def analyze_hand(
         if save_error:
             logger.warning("Supabase persist failed for user=%s: %s", user_id, save_error)
 
-        # 7. Persist to local DB (best-effort — skipped if DB unavailable)
+        # 8. Persist to local DB (best-effort — skipped if DB unavailable)
         if db is not None:
             try:
                 await save_analysis(db, request.hand_text, result)
             except Exception:
                 logger.warning("DB persist failed — returning result anyway")
 
-        # 8. Increment usage only on success (not on parse/analysis errors)
+        # 9. Increment usage only on success (not on parse/analysis errors)
         await increment_usage(user_id)
 
         return result
