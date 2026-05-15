@@ -1,15 +1,32 @@
+"""
+PokerStars hand history parser — deterministic, regex-based.
+
+Chip convention (same as GGPoker parser):
+  raises:  size_bb = "to" total
+  calls:   size_bb = additional
+  bets:    size_bb = bet amount
+
+Key fix vs original: seat parsing now handles BOTH cash ($123.45) AND
+tournament (123456, no dollar sign) chip formats.
+"""
 import re
+import logging
 from app.parsers.base import BaseParser, derive_positions
 from app.models.schemas import (
-    ParsedHand, BoardCards, PlayerInfo, HandAction
+    ParsedHand, BoardCards, PlayerInfo, HandAction,
 )
+from app.engines.pot_engine import compute_final_pot
+
+_log = logging.getLogger(__name__)
+
+_CARD = r"[2-9TJQKAtjqka][cdhs]"
 
 
 class PokerStarsParser(BaseParser):
-    """Parser for PokerStars hand history format."""
+    """Parser for PokerStars hand history format (cash and tournament)."""
 
     def can_parse(self, text: str) -> bool:
-        return bool(re.search(r"PokerStars (Hand|Game) #\d+", text))
+        return bool(re.search(r"PokerStars (?:Hand|Game) #\d+", text))
 
     def parse(self, text: str) -> ParsedHand:
         hand_id = self._parse_hand_id(text)
@@ -31,7 +48,13 @@ class PokerStarsParser(BaseParser):
         actions = self._parse_actions(text, hero_name, bb)
 
         effective_stack = self._calc_effective_stack(players, hero_name)
-        pot_size_bb = self._calc_pot(actions, sb, bb)
+        sb_bb = sb / bb
+        sb_name = next((p.name for p in players if p.position == "SB"), "")
+        bb_name = next((p.name for p in players if p.position == "BB"), "")
+        pot_size_bb = compute_final_pot(
+            actions, sb_bb, 1.0, 0.0,
+            sb_player=sb_name, bb_player=bb_name,
+        )
 
         return ParsedHand(
             site=site,
@@ -57,45 +80,41 @@ class PokerStarsParser(BaseParser):
         return m.group(1) if m else "unknown"
 
     def _parse_stakes(self, text: str) -> tuple[str, float, float]:
-        import logging
-        _log = logging.getLogger(__name__)
-
-        # 1. Cash game: ($0.01/$0.02 USD) — dollar signs required
+        # 1. Cash: ($0.01/$0.02 USD) — dollar signs required
         m = re.search(r"\(\$([0-9.]+)/\$([0-9.]+)(?:\s+\w+)?\)", text)
         if m:
             sb, bb = float(m.group(1)), float(m.group(2))
             return f"{m.group(1)}/{m.group(2)}", sb, bb
 
-        # 2. Tournament Level header (most reliable)
-        #    e.g. Level I (10/20), Level X (1,000/2,000), Level III (75/150)
+        # 2. Tournament Level header: Level I (10/20), Level X (1,000/2,000)
         m = re.search(r"Level\s+\w+\s*\(([\d,]+)/([\d,]+)", text, re.IGNORECASE)
         if m:
             sb = float(m.group(1).replace(",", ""))
             bb = float(m.group(2).replace(",", ""))
             if bb > 0:
-                _log.info("_parse_stakes[PS]: Level header → sb=%s bb=%s", sb, bb)
+                _log.debug("PS stakes (level header): sb=%s bb=%s", sb, bb)
                 return f"T{int(sb)}/{int(bb)}", sb, bb
 
         # 3. Posted blind lines
-        m_bb = re.search(r": posts big blind \$?([\d,]+(?:\.\d+)?)", text, re.IGNORECASE)
-        m_sb = re.search(r": posts small blind \$?([\d,]+(?:\.\d+)?)", text, re.IGNORECASE)
+        m_bb = re.search(r":\s*posts big blind\s+\$?([\d,]+(?:\.\d+)?)", text, re.IGNORECASE)
+        m_sb = re.search(r":\s*posts small blind\s+\$?([\d,]+(?:\.\d+)?)", text, re.IGNORECASE)
         if m_bb:
             bb = float(m_bb.group(1).replace(",", ""))
             sb = float(m_sb.group(1).replace(",", "")) if m_sb else bb / 2
             if bb > 0:
-                _log.info("_parse_stakes[PS]: posted blinds → sb=%s bb=%s", sb, bb)
+                _log.debug("PS stakes (posted blinds): sb=%s bb=%s", sb, bb)
                 return f"T{int(sb)}/{int(bb)}", sb, bb
 
-        # 4. Generic parens pattern — last resort
+        # 4. Generic parentheses — last resort
         m = re.search(r"\(([\d,]+)/([\d,]+)[^)]*\)", text)
         if m:
             sb = float(m.group(1).replace(",", ""))
             bb = float(m.group(2).replace(",", ""))
             if bb > 0:
-                _log.info("_parse_stakes[PS]: generic parens → sb=%s bb=%s", sb, bb)
+                _log.debug("PS stakes (parens): sb=%s bb=%s", sb, bb)
                 return f"T{int(sb)}/{int(bb)}", sb, bb
 
-        _log.warning("_parse_stakes[PS]: all patterns failed, using default bb=1.0 | preview: %r", text[:120])
+        _log.warning("PS stakes: all patterns failed for: %r", text[:120])
         return "0.5/1", 0.5, 1.0
 
     def _parse_button_seat(self, text: str) -> int:
@@ -104,14 +123,18 @@ class PokerStarsParser(BaseParser):
 
     def _parse_seats(self, text: str, bb: float) -> list[dict]:
         seats = []
+        # KEY FIX: dollar sign is optional — handles cash ($123.45) AND
+        # tournament chips (12000, no $ sign).
         for m in re.finditer(
-            r"Seat (\d+): (\S+) \(\$([0-9.]+) in chips\)", text
+            r"Seat (\d+):\s+(\S+)\s+\(\$?([0-9,]+(?:\.[0-9]+)?)\s+in chips\)",
+            text,
         ):
+            stack = float(m.group(3).replace(",", ""))
             seats.append({
                 "seat": int(m.group(1)),
                 "name": m.group(2),
-                "stack": float(m.group(3)),
-                "stack_bb": round(float(m.group(3)) / bb, 2),
+                "stack": stack,
+                "stack_bb": round(stack / bb, 2) if bb else 0.0,
             })
         return seats
 
@@ -128,6 +151,15 @@ class PokerStarsParser(BaseParser):
         if not seats:
             return []
         occupied = [s["seat"] for s in seats]
+        # Snap button_seat to nearest occupied seat if not present
+        if button_seat not in occupied and occupied:
+            all_seats = list(range(1, table_max_seats + 1))
+            btn_idx = all_seats.index(button_seat) if button_seat in all_seats else 0
+            for offset in range(len(all_seats)):
+                candidate = all_seats[(btn_idx + offset) % len(all_seats)]
+                if candidate in occupied:
+                    button_seat = candidate
+                    break
         pos_map = derive_positions(occupied, button_seat, table_max_seats)
         return [
             PlayerInfo(
@@ -141,96 +173,105 @@ class PokerStarsParser(BaseParser):
 
     def _parse_hero_cards(self, text: str) -> tuple[str, list[str]]:
         m = re.search(
-            r"Dealt to (\S+) \[([2-9TJQKAtjqka][cdhs]) ([2-9TJQKAtjqka][cdhs])\]",
+            rf"Dealt to (\S+) \[({_CARD})((?:\s+{_CARD})*)\]",
             text,
         )
         if m:
-            return m.group(1), [
-                self._normalise_card(m.group(2)),
-                self._normalise_card(m.group(3)),
-            ]
+            hero = m.group(1)
+            raw = m.group(2) + m.group(3)
+            cards = [self._normalise_card(c) for c in raw.split()]
+            return hero, cards
         return "Hero", []
 
     def _parse_board(self, text: str) -> BoardCards:
-        flop = turn = river = []
+        flop: list[str] = []
+        turn: list[str] = []
+        river: list[str] = []
 
         m_flop = re.search(
-            r"\*\*\* FLOP \*\*\*[^[]*\[([2-9TJQKAtjqka][cdhs]) ([2-9TJQKAtjqka][cdhs]) ([2-9TJQKAtjqka][cdhs])\]",
+            rf"\*\*\* FLOP \*\*\*[^[]*\[({_CARD})\s+({_CARD})\s+({_CARD})\]",
             text,
         )
         if m_flop:
             flop = [
-                self._normalise_card(m_flop.group(i)) for i in range(1, 4)
+                self._normalise_card(m_flop.group(1)),
+                self._normalise_card(m_flop.group(2)),
+                self._normalise_card(m_flop.group(3)),
             ]
 
         m_turn = re.search(
-            r"\*\*\* TURN \*\*\* \[.*?\] \[([2-9TJQKAtjqka][cdhs])\]", text
+            rf"\*\*\* TURN \*\*\* \[[^\]]+\] \[({_CARD})\]",
+            text,
         )
         if m_turn:
             turn = [self._normalise_card(m_turn.group(1))]
 
         m_river = re.search(
-            r"\*\*\* RIVER \*\*\* \[.*?\] \[([2-9TJQKAtjqka][cdhs])\]", text
+            rf"\*\*\* RIVER \*\*\* \[[^\]]+\] \[({_CARD})\]",
+            text,
         )
         if m_river:
             river = [self._normalise_card(m_river.group(1))]
 
         return BoardCards(flop=flop, turn=turn, river=river)
 
-    def _parse_actions(self, text: str, hero_name: str, bb: float) -> list[HandAction]:
+    def _parse_actions(
+        self, text: str, hero_name: str, bb: float
+    ) -> list[HandAction]:
         sections = {
             "preflop": self._extract_section(text, "HOLE CARDS", "FLOP"),
-            "flop": self._extract_section(text, "FLOP", "TURN"),
-            "turn": self._extract_section(text, "TURN", "RIVER"),
-            "river": self._extract_section(text, "RIVER", "SHOW DOWN|SUMMARY"),
+            "flop":    self._extract_section(text, "FLOP", "TURN"),
+            "turn":    self._extract_section(text, "TURN", "RIVER"),
+            "river":   self._extract_section(text, "RIVER", r"SHOW DOWN|SUMMARY"),
         }
 
-        actions = []
+        _AMT = r"\$?([0-9,]+(?:\.[0-9]+)?)"
         action_re = re.compile(
-            r"^(\S+): (folds|checks|calls|bets|raises)(?: \$([0-9.]+))?(?: to \$([0-9.]+))?",
-            re.MULTILINE,
+            rf"^(\S+): (folds|checks|calls|bets|raises)"
+            rf"(?:\s+{_AMT})?"
+            rf"(?:\s+to\s+{_AMT})?"
+            rf"(\s+and is all.in)?",
+            re.MULTILINE | re.IGNORECASE,
         )
+        action_map = {
+            "folds": "fold", "checks": "check", "calls": "call",
+            "bets": "bet",   "raises": "raise",
+        }
 
+        actions: list[HandAction] = []
         for street, section in sections.items():
             if not section:
                 continue
             for m in action_re.finditer(section):
                 player = m.group(1)
-                raw_action = m.group(2)
+                raw_action = m.group(2).lower()
                 amount_str = m.group(4) or m.group(3)
-                amount = float(amount_str) / bb if amount_str else None
-
-                action_map = {
-                    "folds": "fold",
-                    "checks": "check",
-                    "calls": "call",
-                    "bets": "bet",
-                    "raises": "raise",
-                }
+                is_all_in = bool(m.group(5))
+                amount: float | None = None
+                if amount_str and bb:
+                    amount = round(float(amount_str.replace(",", "")) / bb, 2)
                 actions.append(HandAction(
                     street=street,
                     player=player,
                     action=action_map[raw_action],
-                    size_bb=round(amount, 2) if amount else None,
+                    size_bb=amount,
                     is_hero=(player == hero_name),
+                    is_all_in=is_all_in,
                 ))
         return actions
 
     def _extract_section(self, text: str, start: str, end: str) -> str:
-        pattern = rf"\*\*\* {start} \*\*\*(.*?)(?:\*\*\* {end}|$)"
+        pattern = rf"\*\*\* {start} \*\*\*(.*?)(?:\*\*\* (?:{end})|$)"
         m = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
         return m.group(1) if m else ""
 
-    def _calc_effective_stack(self, players: list[PlayerInfo], hero_name: str) -> float:
-        hero_stack = next((p.stack_bb for p in players if p.name == hero_name), 100.0)
+    def _calc_effective_stack(
+        self, players: list[PlayerInfo], hero_name: str
+    ) -> float:
+        hero_stack = next(
+            (p.stack_bb for p in players if p.name == hero_name), 100.0
+        )
         other_stacks = [p.stack_bb for p in players if p.name != hero_name]
         if not other_stacks:
             return hero_stack
         return round(min(hero_stack, min(other_stacks)), 1)
-
-    def _calc_pot(self, actions: list[HandAction], sb: float, bb: float) -> float:
-        total = sb / bb + 1.0
-        for a in actions:
-            if a.action in ("call", "bet", "raise") and a.size_bb:
-                total += a.size_bb
-        return round(total, 2)

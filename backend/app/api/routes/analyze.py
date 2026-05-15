@@ -13,6 +13,7 @@ from app.engines.scoring import score_all_hero_actions
 from app.engines.validator import validate_hand
 from app.parsers.detector import detect_and_parse
 from app.engines.analysis import analyse_hand
+from app.engines.pot_engine import compute_pot_states, find_blind_players
 from app.services.openai_coach import generate_coaching
 from app.services.hand_service import save_analysis
 from app.services.supabase_persistence import save_hand_analysis as save_to_supabase
@@ -62,9 +63,8 @@ def _build_seated_players(parsed: ParsedHand) -> list[SeatedPlayer]:
 def _build_replay(result: AnalysisResponse) -> ReplayAnalysis:
     """Convert AnalysisResponse → ReplayAnalysis for the animated replay UI.
 
-    Derives the full replay structure from already-computed data — no extra AI call.
-    Findings are matched to hero actions by (street, action verb); unmatched actions
-    get no feedback dot, which is correct (heuristics only fire on notable plays).
+    Uses the deterministic pot engine for accurate per-action pot sizes.
+    No hardcoded starting pot — computed from blind structure.
     """
     parsed = result.parsed_hand
 
@@ -73,21 +73,28 @@ def _build_replay(result: AnalysisResponse) -> ReplayAnalysis:
         parsed, result.findings, result.spot_classification, result.board_texture
     )
 
-    # Map findings to hero actions by (street, action verb) for the legacy feedback dot.
+    # Map findings to hero actions by (street, action verb) for feedback dots.
     finding_by_key: dict[tuple[str, str], object] = {}
     for f in result.findings:
         verb = f.action_taken.split()[0].lower() if f.action_taken else ""
         finding_by_key.setdefault((f.street.lower(), verb), f)
 
-    # Build replay actions with a running pot.
-    # ParsedHand.actions never includes blind posts (types: fold/check/call/bet/raise),
-    # so we seed the pot with the 1.5bb already posted by SB + BB.
-    pot = 1.5
+    # ── Pot engine: deterministic per-action pot states ───────────────────
+    sb_player, bb_player = find_blind_players(parsed.players, parsed.actions)
+    sb_bb = 0.5  # standard half-BB small blind
+    pot_states = compute_pot_states(
+        actions=parsed.actions,
+        players=parsed.players,
+        sb_bb=sb_bb,
+        antes_bb=0.0,
+        sb_player=sb_player,
+        bb_player=bb_player,
+    )
+
     replay_actions: list[ReplayAction] = []
 
     for i, a in enumerate(parsed.actions):
-        if a.action in ("call", "bet", "raise"):
-            pot += a.size_bb or 0.0
+        pot_after = pot_states[i].pot_after if i < len(pot_states) else 0.0
 
         feedback = None
         if a.is_hero:
@@ -106,7 +113,7 @@ def _build_replay(result: AnalysisResponse) -> ReplayAnalysis:
             player=a.player,
             action=a.action,
             amount=f"{a.size_bb:.1f}bb" if a.size_bb else None,
-            pot_after=round(pot, 2),
+            pot_after=round(pot_after, 2),
             is_hero=a.is_hero,
             feedback=feedback,
             coaching=coaching_by_idx.get(i),

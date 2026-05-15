@@ -30,21 +30,36 @@ logger = logging.getLogger(__name__)
 # ── System prompt (never changes) ──────────────────────────────────────────
 
 _SYSTEM_PROMPT = """\
-You are an expert GTO poker coach generating structured coaching feedback.
+You are a solver-grade GTO poker coach.  Your ONLY job is to explain decisions
+using the structured data you are given.
 
-HARD RULES — never break these:
-1. Do NOT infer, guess, or assume any game fact.
-   Positions, stacks, pot size, board cards, and action history are all provided below.
-2. Do NOT mention or reference any information not given in the structured context.
-3. Do NOT restate the hand facts — coach on the decisions.
-4. Use precise poker terminology: range advantage, pot odds, SPR, blocker, equity, polarity.
-5. Be direct and actionable. No padding. No "Great job on…" filler.
+ABSOLUTE RULES:
+1. NEVER infer, guess, or reconstruct ANY game fact.
+   Every position, stack size, pot size, board card, and action is already
+   computed by the engine and injected below.  Trust those values exactly.
+2. NEVER reference information not present in the structured context block.
+3. NEVER restate the hand facts — coach the decision-making only.
+4. Use precise poker terminology: SPR, range advantage, equity, blocker,
+   polarity, pot odds, EV, ICM (when relevant).
+5. Be terse and actionable.  No filler.  No praise sentences.
 
-OUTPUT FORMAT — use these exact section headers, each followed by 1-3 sentences:
-**Overall Assessment**
-**Key Concept**
-**Adjustment**
+VALIDATION GATE:
+If the structured context shows validation errors, write ONLY:
+"Hand could not be fully validated — coaching unavailable."
+
+OUTPUT FORMAT — use exactly these four headers, each with 1-3 sentences:
+
+**Spot**
+<one sentence describing pot type, position matchup, stack depth>
+
+**Evaluation**
+<verdict: good / suboptimal / mistake, and why>
+
+**Preferred Line**
+<what the solver-optimal line is and why>
+
 **Takeaway**
+<one transferable concept for this spot type>
 """
 
 
@@ -255,46 +270,49 @@ def _fallback_coaching(
     texture: BoardTexture,
     findings: list[HeuristicFinding],
 ) -> str:
-    lines = [
-        f"**Overall Assessment**\n"
-        f"This is a **{spot.pot_type}** pot with hero playing **{spot.position_matchup}**. "
-        f"The board is a **{texture.description}**.\n",
-    ]
-
-    if texture.range_advantage == "pfr" and spot.hero_is_pfr:
-        lines.append(
-            "**Key Concept**\nYou hold the range advantage as the PFR. "
-            "This justifies high-frequency small bets to extract value and deny equity cheaply.\n"
-        )
-    elif texture.range_advantage == "caller" and not spot.hero_is_pfr:
-        lines.append(
-            "**Key Concept**\nYour calling range connects strongly here. "
-            "Donk-leading or check-raising becomes attractive when villain's c-bet range is wide.\n"
-        )
-    else:
-        lines.append(
-            "**Key Concept**\nNeutral equity distribution: position and SPR are the key variables. "
-            "Prefer checking your marginal hands and building the pot with value hands.\n"
-        )
-
     mistakes = [f for f in findings if f.severity in ("mistake", "suboptimal")]
     good_plays = [f for f in findings if f.severity == "good"]
 
+    spot_line = (
+        f"{spot.pot_type} pot — {spot.position_matchup} — "
+        f"{spot.stack_depth} stack ({spot.stack_depth}BB depth class)."
+    )
+
+    if texture.range_advantage == "pfr" and spot.hero_is_pfr:
+        eval_line = (
+            "Range advantage favours the PFR (hero) on this board. "
+            "High-frequency small bets are correct to exploit the capped caller range."
+        )
+    elif texture.range_advantage == "caller" and not spot.hero_is_pfr:
+        eval_line = (
+            "Caller's range connects well here. "
+            "Check-raises and leading bets gain EV when the PFR's range is wide."
+        )
+    else:
+        eval_line = (
+            "Equity is roughly neutral. "
+            "Position and SPR are the dominant factors — lead with your strongest hands."
+        )
+
     if mistakes:
-        lines.append(f"**Adjustment**\n{mistakes[0].recommendation}\n")
+        preferred_line = mistakes[0].recommendation
+    elif good_plays:
+        preferred_line = good_plays[0].explanation
     else:
-        lines.append(
-            "**Adjustment**\nNo significant errors detected. "
-            "Continue maintaining balanced ranges across bet and check.\n"
+        preferred_line = (
+            "No major deviations detected. "
+            "Maintain balanced ranges across bet and check on this texture."
         )
 
-    if good_plays:
-        lines.append(f"**Takeaway**\n{good_plays[0].explanation}")
-    else:
-        lines.append(
-            "**Takeaway**\nConsistency in range construction across streets "
-            "prevents exploitation even without a specific mistake this hand."
-        )
+    takeaway = (
+        "Consistency in sizing and bet frequency across similar textures "
+        "prevents range exploitation over large samples."
+    )
 
-    lines.append("\n*Add your OpenAI API key to receive personalised AI coaching.*")
-    return "\n".join(lines)
+    return (
+        f"**Spot**\n{spot_line}\n\n"
+        f"**Evaluation**\n{eval_line}\n\n"
+        f"**Preferred Line**\n{preferred_line}\n\n"
+        f"**Takeaway**\n{takeaway}\n\n"
+        "*Add your OpenAI API key to receive personalised AI coaching.*"
+    )

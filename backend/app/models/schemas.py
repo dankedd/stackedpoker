@@ -30,8 +30,10 @@ class HandAction(BaseModel):
     street: Literal["preflop", "flop", "turn", "river"]
     player: str
     action: Literal["fold", "check", "call", "bet", "raise"]
-    size_bb: float | None = None
+    size_bb: float | None = None   # for raises: "to" total; for calls/bets: additional
+    additional_bb: float | None = None  # net new chips committed (set by pot engine)
     is_hero: bool = False
+    is_all_in: bool = False        # player commits remaining chips
 
 
 class ParsedHand(BaseModel):
