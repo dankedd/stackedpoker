@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const FAQS = [
   {
     q: "What's the difference between the plans?",
-    a: "Every plan uses exactly the same AI coaching engine — there's no difference in AI quality or analysis depth. The only difference is how many analyses you can run per day and how much hand history is stored. Free gives you 3 hand analyses, 1 session, and 1 tournament per day. Pro gives you 30 hand, 10 session, and 10 tournament analyses per day with 20 saved histories. Premium removes all limits entirely.",
+    a: "Free gives you core analysis to try the platform. Pro (€14.99/month) unlocks advanced analysis, AI coaching, extended replay tools, expanded puzzle access, leak detection, and training history. Premium (€34.99/month) includes everything in Pro plus advanced solver-backed analysis, premium coaching, advanced leak intelligence, priority features, and premium study systems.",
   },
   {
     q: "Can I cancel anytime?",

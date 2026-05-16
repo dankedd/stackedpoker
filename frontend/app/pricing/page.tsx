@@ -10,8 +10,8 @@ import { cn } from "@/lib/utils";
 
 // ── Configurable prices ───────────────────────────────────────────────────────
 
-const PRO_PRICE     = "€9";
-const PREMIUM_PRICE = "€29";
+const PRO_PRICE     = "€14.99";
+const PREMIUM_PRICE = "€34.99";
 
 // ── Plan feature rows ─────────────────────────────────────────────────────────
 
@@ -26,23 +26,23 @@ const FREE_FEATURES = [
 ];
 
 const PRO_FEATURES = [
-  { text: "30 hand analyses per day",       limit: "Daily limit" },
-  { text: "10 session analyses per day",    limit: "Daily limit" },
-  { text: "10 tournament analyses per day", limit: "Daily limit" },
-  { text: "30 puzzles per day",             limit: "Daily limit" },
-  { text: "Last 20 hand histories saved",   limit: "Saved history" },
-  { text: "Community updates",             limit: null },
-  { text: "Cancel anytime",               limit: null },
+  { text: "Advanced hand & session analysis", limit: null },
+  { text: "AI coaching & recommendations",    limit: null },
+  { text: "Extended replay tools",            limit: null },
+  { text: "Expanded puzzle access",           limit: null },
+  { text: "Leak detection",                   limit: null },
+  { text: "Training history",                 limit: null },
+  { text: "Cancel anytime",                   limit: null },
 ];
 
 const PREMIUM_FEATURES = [
-  { text: "Unlimited hand analyses",        unlimited: true },
-  { text: "Unlimited session analyses",     unlimited: true },
-  { text: "Unlimited tournament analyses",  unlimited: true },
-  { text: "Unlimited puzzles",              unlimited: true },
-  { text: "Unlimited hand history storage", unlimited: true },
-  { text: "Community updates",             unlimited: false },
-  { text: "Cancel anytime",               unlimited: false },
+  { text: "Everything in Pro",                unlimited: false },
+  { text: "Advanced solver-backed analysis",  unlimited: true },
+  { text: "Premium AI coaching",              unlimited: true },
+  { text: "Advanced leak intelligence",       unlimited: true },
+  { text: "Adaptive training (coming soon)",  unlimited: true },
+  { text: "Priority features & access",       unlimited: true },
+  { text: "Premium study systems",            unlimited: true },
 ];
 
 // ── Comparison table ──────────────────────────────────────────────────────────
@@ -55,13 +55,18 @@ type CompRow = {
 };
 
 const COMPARISON: CompRow[] = [
-  { feature: "Hand analyses",          free: "3/day",    pro: "30/day",   premium: true },
-  { feature: "Session analyses",       free: "1/day",    pro: "10/day",   premium: true },
-  { feature: "Tournament analyses",    free: "1/day",    pro: "10/day",   premium: true },
-  { feature: "Puzzles",                free: "3/day",    pro: "30/day",   premium: true },
-  { feature: "Hand history storage",   free: "Last 5",   pro: "Last 20",  premium: true },
-  { feature: "Community updates",      free: true,       pro: true,       premium: true },
-  { feature: "Cancel anytime",         free: true,       pro: true,       premium: true },
+  { feature: "Advanced analysis",              free: false,  pro: true,    premium: true },
+  { feature: "AI coaching",                    free: false,  pro: true,    premium: true },
+  { feature: "Replay tools",                   free: false,  pro: true,    premium: true },
+  { feature: "Puzzle access",                  free: "Basic", pro: "Full", premium: "Full" },
+  { feature: "Leak detection",                 free: false,  pro: true,    premium: true },
+  { feature: "Training history",               free: false,  pro: true,    premium: true },
+  { feature: "Solver-backed analysis",         free: false,  pro: false,   premium: true },
+  { feature: "Advanced leak intelligence",     free: false,  pro: false,   premium: true },
+  { feature: "Premium coaching",               free: false,  pro: false,   premium: true },
+  { feature: "Priority features",              free: false,  pro: false,   premium: true },
+  { feature: "Community updates",              free: true,   pro: true,    premium: true },
+  { feature: "Cancel anytime",                 free: true,   pro: true,    premium: true },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────

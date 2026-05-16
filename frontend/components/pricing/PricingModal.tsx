@@ -18,13 +18,12 @@ const FREE_FEATURES = [
 ];
 
 const PRO_FEATURES = [
-  { label: "Unlimited hand analyses", included: true },
-  { label: "Advanced GTO coaching", included: true },
-  { label: "GGPoker & PokerStars", included: true },
-  { label: "Session analysis", included: true },
-  { label: "Multi-hand sessions", included: true },
-  { label: "Interactive puzzles", included: true },
-  { label: "Priority AI processing", included: true },
+  { label: "Advanced hand & session analysis", included: true },
+  { label: "AI coaching & recommendations", included: true },
+  { label: "Extended replay tools", included: true },
+  { label: "Expanded puzzle access", included: true },
+  { label: "Leak detection", included: true },
+  { label: "Training history", included: true },
 ];
 
 interface PricingModalProps {
@@ -99,7 +98,7 @@ export function PricingModal({ open, onClose }: PricingModalProps) {
               <div>
                 <p className="text-xs font-semibold text-violet-400 uppercase tracking-widest mb-1">Pro</p>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-bold text-foreground">€9</span>
+                  <span className="text-2xl font-bold text-foreground">€14.99</span>
                   <span className="text-sm text-muted-foreground">/ month</span>
                 </div>
               </div>

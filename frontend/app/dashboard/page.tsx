@@ -108,7 +108,7 @@ export default async function DashboardPage() {
               <div>
                 <p className="font-semibold text-foreground text-sm">Upgrade to Pro</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Unlimited analyses, session review, puzzles — €9/month · iDEAL & card
+                  Advanced analysis, AI coaching, puzzles & more — €14.99/month · iDEAL & card
                 </p>
               </div>
             </div>

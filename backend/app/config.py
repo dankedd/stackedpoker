@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""
     stripe_pro_price_id: str = ""
+    stripe_premium_price_id: str = ""
 
     # Pydantic reads .env for local dev; real env vars always win over .env file.
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}

@@ -20,7 +20,7 @@ from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
-_UNLIMITED_PLANS = {"admin", "pro"}
+_UNLIMITED_PLANS = {"admin", "pro", "premium"}
 
 
 def _supabase_headers() -> dict[str, str]:

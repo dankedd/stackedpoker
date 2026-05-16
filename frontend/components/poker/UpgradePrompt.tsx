@@ -64,11 +64,11 @@ export async function startCheckout(plan: "pro" | "premium" = "pro"): Promise<vo
 // ── UpgradePrompt ─────────────────────────────────────────────────────────
 
 const PRO_BENEFITS = [
-  "Unlimited hand analyses",
-  "Session analysis (multi-hand)",
-  "Advanced GTO coaching",
-  "Unlimited puzzles",
-  "Priority AI processing",
+  "Advanced hand & session analysis",
+  "AI coaching & recommendations",
+  "Extended replay tools",
+  "Expanded puzzle access",
+  "Leak detection & training history",
 ];
 
 interface UpgradePromptProps {
@@ -99,7 +99,7 @@ export function UpgradePrompt({ used, limit, className }: UpgradePromptProps) {
           <div>
             <p className="text-xs font-semibold text-violet-400 uppercase tracking-widest mb-1">Pro</p>
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold text-foreground">€9</span>
+              <span className="text-2xl font-bold text-foreground">€14.99</span>
               <span className="text-sm text-muted-foreground">/ month</span>
             </div>
           </div>

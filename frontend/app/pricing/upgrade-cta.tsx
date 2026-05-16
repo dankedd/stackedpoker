@@ -100,7 +100,7 @@ export function UpgradePricingCTA({
     ? "Waiting for payment…"
     : loggedIn
     ? isPremium ? "Go Premium" : "Upgrade to Pro"
-    : isPremium ? `Go Premium — €29/month` : `Get Pro — €9/month`;
+    : isPremium ? `Go Premium — €34.99/month` : `Get Pro — €14.99/month`;
 
   return (
     <div className="space-y-2">

@@ -18,6 +18,7 @@ from typing import Annotated
 import httpx
 import stripe
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
+from pydantic import BaseModel
 
 from app.config import get_settings
 from app.middleware.auth import get_current_user
@@ -111,15 +112,21 @@ def _init_stripe() -> None:
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
 
+class _CheckoutRequest(BaseModel):
+    plan: str = "pro"
+
+
 @router.post("/create-checkout")
 async def create_checkout(
     user: Annotated[dict, Depends(get_current_user)],
+    body: _CheckoutRequest = _CheckoutRequest(),
 ):
-    """Create a Stripe Checkout Session for the Pro subscription.
+    """Create a Stripe Checkout Session for a Pro or Premium subscription.
 
     The client redirects to the returned URL. On success Stripe sends a
-    webhook which upgrades the user's profile to 'pro'.
+    webhook which upgrades the user's profile to the correct tier.
     """
+    plan = body.plan if body.plan in ("pro", "premium") else "pro"
     s = get_settings()
     if not s.stripe_secret_key:
         logger.error("Stripe checkout called but STRIPE_SECRET_KEY is not set")
@@ -128,8 +135,11 @@ async def create_checkout(
             "message": "Unable to create checkout session",
         }
     _init_stripe()
-    if not s.stripe_pro_price_id:
-        logger.error("Stripe checkout called but STRIPE_PRO_PRICE_ID is not set")
+
+    price_id = s.stripe_premium_price_id if plan == "premium" else s.stripe_pro_price_id
+    price_id_env = "STRIPE_PREMIUM_PRICE_ID" if plan == "premium" else "STRIPE_PRO_PRICE_ID"
+    if not price_id:
+        logger.error("Stripe checkout called but %s is not set", price_id_env)
         return {
             "error": "stripe_checkout_failed",
             "message": "Unable to create checkout session",
@@ -149,11 +159,11 @@ async def create_checkout(
         kwargs: dict = dict(
             mode="subscription",
             payment_method_types=["card"],
-            line_items=[{"price": s.stripe_pro_price_id, "quantity": 1}],
+            line_items=[{"price": price_id, "quantity": 1}],
             success_url=f"{origin}/dashboard?upgraded=1",
             cancel_url=f"{origin}/dashboard",
-            metadata={"user_id": user_id},
-            subscription_data={"metadata": {"user_id": user_id}},
+            metadata={"user_id": user_id, "plan": plan},
+            subscription_data={"metadata": {"user_id": user_id, "plan": plan}},
             allow_promotion_codes=True,
         )
         if customer_id:
@@ -163,10 +173,11 @@ async def create_checkout(
 
         session = stripe.checkout.Session.create(**kwargs)
         logger.info(
-            "Checkout session created | user=%s customer=%s price=%s session=%s url=%s",
+            "Checkout session created | user=%s plan=%s customer=%s price=%s session=%s url=%s",
             user_id,
+            plan,
             customer_id or "(new)",
-            s.stripe_pro_price_id,
+            price_id,
             session.id,
             session.url,
         )
@@ -275,20 +286,23 @@ async def stripe_webhook(
 # ── Webhook event handlers ─────────────────────────────────────────────────────
 
 async def _on_checkout_completed(session: dict) -> None:
-    user_id: str | None = session.get("metadata", {}).get("user_id")
+    metadata = session.get("metadata", {})
+    user_id: str | None = metadata.get("user_id")
     if not user_id:
         logger.warning("checkout.session.completed: missing user_id in metadata — skipping")
         return
 
+    plan = metadata.get("plan", "pro")
+    tier = "premium" if plan == "premium" else "pro"
+
     await _update_profile(user_id, {
         "stripe_customer_id": session.get("customer"),
         "stripe_subscription_id": session.get("subscription"),
-        "subscription_tier": "pro",
+        "subscription_tier": tier,
         "subscription_status": "active",
-        # Reset usage limit to unlimited sentinel (backend checks plan, not limit)
         "analyses_limit": 999999,
     })
-    logger.info("User %s upgraded to pro via checkout", user_id)
+    logger.info("User %s upgraded to %s via checkout", user_id, tier)
 
 
 async def _on_subscription_updated(sub: dict) -> None:
@@ -306,7 +320,9 @@ async def _on_subscription_updated(sub: dict) -> None:
         logger.warning("subscription.updated: cannot resolve user_id for customer %s", customer_id)
         return
 
-    tier = "pro" if sub_status in ("active", "trialing") else "free"
+    plan = sub.get("metadata", {}).get("plan", "pro")
+    active_tier = "premium" if plan == "premium" else "pro"
+    tier = active_tier if sub_status in ("active", "trialing") else "free"
     update: dict = {
         "subscription_status": sub_status,
         "subscription_tier": tier,

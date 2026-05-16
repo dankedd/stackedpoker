@@ -249,17 +249,26 @@ export default function TermsPage() {
                     ]} />
                   </div>
                   <div className="rounded-xl border border-violet-500/25 bg-violet-500/5 p-4">
-                    <p className="text-[13px] font-semibold text-violet-300 mb-2">Pro Plan — €9/month</p>
+                    <p className="text-[13px] font-semibold text-violet-300 mb-2">Pro Plan — €14.99/month</p>
                     <BulletList items={[
-                      "Unlimited hand analyses",
-                      "Session and tournament review",
-                      "Puzzle training and AI coaching",
-                      "Priority support",
+                      "Advanced analysis & AI coaching",
+                      "Extended replay tools",
+                      "Expanded puzzle access",
+                      "Leak detection & training history",
+                    ]} />
+                  </div>
+                  <div className="rounded-xl border border-amber-500/25 bg-amber-500/5 p-4">
+                    <p className="text-[13px] font-semibold text-amber-300 mb-2">Premium Plan — €34.99/month</p>
+                    <BulletList items={[
+                      "Everything in Pro",
+                      "Advanced solver-backed analysis",
+                      "Premium coaching & leak intelligence",
+                      "Priority features & premium study systems",
                     ]} />
                   </div>
                 </div>
                 <p>
-                  Pro subscriptions are billed monthly in advance. By subscribing, you authorize us to
+                  Paid subscriptions are billed monthly in advance. By subscribing, you authorize us to
                   charge your payment method on a recurring basis until you cancel.
                 </p>
                 <p>
