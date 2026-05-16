@@ -237,11 +237,11 @@ export const PUZZLES_POSTFLOP: Puzzle[] = [
         street: 'flop',
         board: ['7h', 'Jh', '5c'],
         context: 'BTN opens $5, BB defends. Pot $11. Flop: 7hJh5c. BB checks. BTN bets $7.',
-        prompt: '9h8h on 7hJh5c — you have OESD plus flush draw, 15+ outs. BTN bets $7. Your move?',
+        prompt: '9h8h on 7hJh5c — combo draw: flush draw (4 hearts: Jh,9h,8h,7h = 9 outs) + double gutshot (needs 6 for 56789, or T for 789TJ = 8 outs) = 15+ total. BTN bets $7. Your move?',
         options: [
-          { id: 'fold',    label: 'Fold',           quality: 'punt',     evLoss: 12,  coaching: 'Never fold 15+ outs. You have massive equity and are a slight favourite in many situations.' },
-          { id: 'call',    label: 'Call $7',         quality: 'good',     evLoss: 1,   coaching: 'Calling is valid — see the turn and realize equity. However, you have a combo-draw strong enough to check-raise for semi-bluff value and protection.' },
-          { id: 'raise',   label: 'Raise to $22',    quality: 'perfect',  evLoss: 0,   coaching: 'Check-raise is the optimal play. 15+ outs (flush + straight), fold equity, and you need to build the pot and protect your equity. Raising now is clearly best.' },
+          { id: 'fold',    label: 'Fold',           quality: 'punt',     evLoss: 12,  coaching: 'Never fold 15+ outs. You have a combo draw (flush draw + double gutshot) — massive equity and strong semi-bluff potential.' },
+          { id: 'call',    label: 'Call $7',         quality: 'good',     evLoss: 1,   coaching: 'Calling is valid — see the turn and realize equity. However, you have a combo-draw (flush + double gutshot = 15+ outs) strong enough to check-raise for semi-bluff value and protection.' },
+          { id: 'raise',   label: 'Raise to $22',    quality: 'perfect',  evLoss: 0,   coaching: 'Check-raise is the optimal play. 15+ outs (9 flush + 8 straight via double gutshot, minus overlap), fold equity, and pot-building. Raising now with this combo draw is clearly best.' },
         ],
       },
       {
@@ -267,8 +267,8 @@ export const PUZZLES_POSTFLOP: Puzzle[] = [
         ],
       },
     ],
-    summary: 'With 15+ out combo draws (flush + straight), check-raising for semi-bluff value is optimal. After check-raising and villain calling, taking a free card often maximises equity. When the flush hits on the river after a check-raise, go for maximum value — villain is committed.',
-    tags: ['check-raise', 'combo draw', 'semi-bluff', 'flush', 'OOP', 'BB defense'],
+    summary: 'With 15+ out combo draws (flush draw + double gutshot), check-raising for semi-bluff value is optimal. The double gutshot on 7hJh5c means you need a 6 (56789) or a T (789TJ) for the straight — two separate 4-out gutshots equal 8 straight outs. After check-raising and villain calling, taking a free card often maximises equity. When the flush hits, go for maximum value.',
+    tags: ['check-raise', 'combo draw', 'double gutshot', 'semi-bluff', 'flush', 'OOP', 'BB defense'],
   },
 
   // ── 6 ────────────────────────────────────────────────────────────────────

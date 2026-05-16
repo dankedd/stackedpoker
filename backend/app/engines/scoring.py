@@ -16,6 +16,7 @@ from app.models.schemas import (
     PreferredAction,
     SpotClassification,
 )
+from app.engines.preflop_ranges import detect_preflop_node, get_preflop_recommendation
 
 
 # ── Public API ─────────────────────────────────────────────────────────────
@@ -50,11 +51,17 @@ def _score_action(
     quality = _score_to_quality(score)
     mistake_level = _severity_to_mistake_level(severity)
 
+    # Resolve action index for preflop node detection
+    try:
+        action_idx = hand.actions.index(action)
+    except ValueError:
+        action_idx = 0
+
     return ActionCoaching(
         score=score,
         quality=quality,
         mistake_level=mistake_level,
-        preferred_actions=_preferred_actions(action, relevant, spot, texture),
+        preferred_actions=_preferred_actions(action, relevant, spot, texture, hand, action_idx),
         reason_codes=_reason_codes(action, relevant, spot, texture),
         explanation=relevant[0].explanation if relevant else _default_explanation(action, spot, texture),
         adjustment=relevant[0].recommendation if relevant else _default_adjustment(action, spot, texture),
@@ -126,6 +133,8 @@ def _preferred_actions(
     findings: list[HeuristicFinding],
     spot: SpotClassification,
     texture: BoardTexture,
+    hand: ParsedHand,
+    action_idx: int,
 ) -> list[PreferredAction]:
     street = action.street
     act = action.action
@@ -138,16 +147,10 @@ def _preferred_actions(
         return PreferredAction(action=a, frequency=f)
 
     if street == "preflop":
-        if act in ("raise", "bet"):
-            if spot.pot_type == "SRP":
-                return [pa("Raise 2.5bb", 55), pa("Raise 3bb", 35), pa("Raise 2bb", 10)]
-            if spot.pot_type == "3bet":
-                return [pa("Raise 9-11bb", 65), pa("Raise 12-14bb", 35)]
-            return [pa("Raise 2.5bb", 60), pa("Raise 3bb", 40)]
-        if act == "call":
-            return [pa("Call", 60), pa("Raise", 40)]
-        if act == "fold":
-            return [pa("Fold", 70), pa("Call", 30)]
+        # Use node detection to return only legal-action alternatives.
+        node = detect_preflop_node(action_idx, hand.actions, hand.hero_position)
+        rec = get_preflop_recommendation(node, act, hand.hero_cards)
+        return rec.alternatives
 
     elif street == "flop":
         if act == "bet":

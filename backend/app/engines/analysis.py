@@ -9,12 +9,23 @@ from app.models.schemas import (
 from app.engines.board_texture import classify_board
 from app.engines.spot_classifier import classify_spot
 from app.engines.heuristics import run_heuristics
+from app.engines.draw_evaluator import analyze_draws
 
 
 def analyse_hand(hand: ParsedHand, ai_coaching: str = "") -> AnalysisResponse:
     texture = classify_board(hand.board.flop, hand.board.turn, hand.board.river)
     spot = classify_spot(hand)
-    findings = run_heuristics(hand, spot, texture)
+
+    # Draw analysis: only when hero has cards and a flop exists.
+    # Evaluated on the flop board; heuristics may re-evaluate on turn separately.
+    draw_analysis = None
+    if hand.hero_cards and hand.board.flop:
+        try:
+            draw_analysis = analyze_draws(hand.hero_cards, hand.board.flop)
+        except Exception:
+            pass  # never let draw errors break the pipeline
+
+    findings = run_heuristics(hand, spot, texture, draw_analysis)
     score = _calculate_score(findings)
     mistakes = sum(1 for f in findings if f.severity == "mistake")
     recommendations = _build_recommendations(findings, spot, texture)

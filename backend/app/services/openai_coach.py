@@ -24,6 +24,9 @@ from app.models.schemas import (
     ParsedHand,
     SpotClassification,
 )
+from app.engines.preflop_ranges import (
+    detect_preflop_node, classify_hand, get_preflop_recommendation,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +136,9 @@ def _build_prompt(
         tag = f.severity.upper()
         finding_lines.append(f"  [{tag}] {f.street} / {f.action_taken}: {f.recommendation}")
 
+    # ── Preflop node analysis ──────────────────────────────────────────────
+    preflop_node_block = _build_preflop_node_block(hand)
+
     # ── Spot template selector ─────────────────────────────────────────────
     spot_context = _spot_template(spot, texture)
 
@@ -195,7 +201,7 @@ POT TYPE
   Classification:    {spot.pot_type}
   Spot ID:           {spot.spot_id}
 
-HERO ACTIONS (chronological)
+{preflop_node_block}HERO ACTIONS (chronological)
 {chr(10).join(hero_lines) if hero_lines else "  None recorded"}
 
 ENGINE FINDINGS (deterministic heuristics)
@@ -211,6 +217,36 @@ Using ONLY the above structured context, write coaching under the four required 
 Do not restate game facts. Focus on: why the decision was correct/incorrect, the key
 strategic concept, a concrete adjustment for next time, and one transferable takeaway.
 """.strip()
+
+
+def _build_preflop_node_block(hand: ParsedHand) -> str:
+    """
+    Compute preflop node context for the first hero preflop action.
+    Returns an empty string if no preflop action found.
+    """
+    first_hero_preflop = next(
+        ((i, a) for i, a in enumerate(hand.actions)
+         if a.is_hero and a.street == "preflop"),
+        None,
+    )
+    if first_hero_preflop is None:
+        return ""
+
+    idx, action = first_hero_preflop
+    node = detect_preflop_node(idx, hand.actions, hand.hero_position)
+    hand_bucket = classify_hand(hand.hero_cards)
+    rec = get_preflop_recommendation(node, action.action, hand.hero_cards)
+
+    legal_str = ", ".join(sorted(node.legal_actions))
+    return (
+        f"PREFLOP NODE ANALYSIS (engine-computed)\n"
+        f"  Node type:       {node.node_type}\n"
+        f"  Legal actions:   {legal_str}\n"
+        f"  Hand strength:   {hand_bucket}\n"
+        f"  In range:        {rec.in_range}\n"
+        f"  Confidence:      {rec.confidence}\n"
+        f"  Reasoning:       {rec.reasoning}\n\n"
+    )
 
 
 def _spot_template(spot: SpotClassification, texture: BoardTexture) -> str:

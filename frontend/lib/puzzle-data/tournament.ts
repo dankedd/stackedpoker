@@ -255,17 +255,17 @@ export const PUZZLES_TOURNAMENT: Puzzle[] = [
         street: 'flop',
         board: ['Ah', '7d', '2s'],
         context: 'Pot 4.6BB. Flop Ah 7d 2s rainbow. You act first OOP.',
-        prompt: '98h on A72 — OESD (needs 5 or T for straight), one heart. You act first.',
+        prompt: '98hh on A72r — no pair, backdoor straight (7-8-9 needs runner-runner) and backdoor flush (3 hearts). No direct draw. You act first OOP.',
         options: [
-          { id: 'check',    label: 'Check (standard OOP with draw)', quality: 'perfect',    evLoss: 0,   coaching: 'With only an OESD and no pair on A72, checking OOP is correct. Let BTN c-bet — you can then fold to a large bet or call if the price is right. Don\'t invest chips when you\'re a clear underdog on this texture.' },
-          { id: 'donk33',   label: 'Donk-lead 33% (1.5BB)',         quality: 'mistake',    evLoss: 1.5, coaching: 'Donk-betting with a pure draw on an ace-high board is a mistake. BTN opened pre-flop and can represent an ace — your donk accomplishes little and bleeds chips.' },
-          { id: 'donkbig',  label: 'Donk-lead 75% (3.45BB)',        quality: 'punt',       evLoss: 3.5, coaching: 'Large donk-bet with a draw on A72 is a punt — you have no pair and BTN\'s range smashes this board. Check and preserve your chips.' },
+          { id: 'check',    label: 'Check (standard OOP, no direct draw)', quality: 'perfect',    evLoss: 0,   coaching: 'Checking is correct. 9h8h on Ah7d2s has no direct draw — only backdoor straight (7-8-9 needs two more specific cards) and backdoor flush (3 hearts: Ah,9h,8h). You have no pair and near-zero immediate equity. Check and let BTN c-bet; fold to pressure or continue cheaply.' },
+          { id: 'donk33',   label: 'Donk-lead 33% (1.5BB)',               quality: 'mistake',    evLoss: 1.5, coaching: 'Donk-betting with no pair and only backdoor draws on an ace-high board is a mistake. BTN\'s range smashes A72 — you have minimal equity and no direct draw to justify investing chips.' },
+          { id: 'donkbig',  label: 'Donk-lead 75% (3.45BB)',              quality: 'punt',       evLoss: 3.5, coaching: 'Large donk-bet with backdoor draws only on A72 is a punt. You have no pair, no flush draw, no straight draw — only runner-runner potential. Check and preserve your chips.' },
         ],
       },
       {
         street: 'turn',
         board: ['Ah', '7d', '2s', '8c'],
-        context: 'You checked the flop. BTN bet 40%, you called (getting the right price with OESD). Turn 8c — you turned middle pair! You act first OOP.',
+        context: 'You checked the flop. BTN c-bet, you called with implied odds (backdoor draws + two overcards). Turn 8c — you turned middle pair! You act first OOP.',
         prompt: 'You turned middle pair on A728. BTN showed aggression but you now have equity. Lead or check?',
         options: [
           { id: 'check',   label: 'Check (let BTN bet again)',    quality: 'acceptable', evLoss: 0.7, coaching: 'Checking is fine — BTN was aggressive on the flop and may bet again. But leading the turn after calling a flop bet represents a strong hand and puts BTN in a tough spot vs your range of 8x, 7x, and draws that improved.' },
@@ -285,8 +285,8 @@ export const PUZZLES_TOURNAMENT: Puzzle[] = [
         ],
       },
     ],
-    summary: 'With suited connectors in BB: check missed flops OOP, call when the price is right, and lead large on turns when you improve. Thin-call small river leads — they\'re often blocking bets from medium-strength hands.',
-    tags: ['MTT', 'BB', '98s', 'draw', 'bubble', 'turn pair', 'bluff catch'],
+    summary: 'With suited connectors in BB: on A72r, 98hh has NO direct draw — only backdoor straight (7-8-9 runner-runner) and backdoor flush (3 hearts). Check the flop with near-zero equity. Call when BTN c-bets and you have implied odds for the turn. Lead large when you turn a pair — you\'ve improved to a real hand. Thin-call small river leads that look like blocking bets.',
+    tags: ['MTT', 'BB', '98s', 'backdoor draw', 'bubble', 'turn pair', 'bluff catch'],
   },
 
   // ── tr6: MTT Final Table — 3-bet with Underpair, Fold River ─────────────

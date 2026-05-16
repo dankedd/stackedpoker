@@ -2,7 +2,11 @@ from __future__ import annotations
 from app.models.schemas import ParsedHand, SpotClassification, HandAction
 
 
-_POSITION_ORDER = ["UTG", "UTG+1", "UTG+2", "UTG+3", "HJ", "CO", "BTN", "SB", "BB"]
+# Post-flop position order: SB acts first (most OOP), BTN acts last (most IP).
+# Used for IP/OOP classification — NOT preflop action order.
+_POSTFLOP_POSITION_ORDER = [
+    "SB", "BB", "UTG", "UTG+1", "UTG+2", "UTG+3", "LJ", "HJ", "CO", "BTN"
+]
 
 
 def classify_spot(hand: ParsedHand) -> SpotClassification:
@@ -53,10 +57,6 @@ def _determine_position_order(hand: ParsedHand) -> tuple[str, str]:
     """
     positions = {p.name: p.position for p in hand.players}
 
-    late_positions = {"BTN", "CO", "HJ"}
-    early_positions = {"UTG", "UTG+1", "UTG+2", "UTG+3"}
-    blind_positions = {"SB", "BB"}
-
     if not hand.players:
         return hand.hero_name, "Villain"
 
@@ -70,10 +70,10 @@ def _determine_position_order(hand: ParsedHand) -> tuple[str, str]:
     if len(active) < 2:
         active = hand.players[:2]
 
-    # Sort by position: late positions are IP vs blinds
+    # Sort by post-flop position: SB=0 (most OOP), BTN=last (most IP)
     def pos_rank(p):
         pos = positions.get(p.name, "BB")
-        return _POSITION_ORDER.index(pos) if pos in _POSITION_ORDER else 99
+        return _POSTFLOP_POSITION_ORDER.index(pos) if pos in _POSTFLOP_POSITION_ORDER else 99
 
     sorted_active = sorted(active, key=pos_rank)
     oop = sorted_active[0] if sorted_active else active[0]
@@ -94,7 +94,6 @@ def _detect_pfr(actions: list[HandAction], hero_name: str) -> bool:
 
 
 def _build_position_matchup(hand: ParsedHand) -> str:
-    positions = {p.name: p.position for p in hand.players}
     hero_pos = hand.hero_position
 
     folded_preflop = {
