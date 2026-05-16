@@ -15,6 +15,8 @@ export interface ReplayState {
   currentFeedback: ReplayFeedback | null;
   visibleBoard: VisibleBoard;
   currentPot: number;
+  currentHeroStack: number | null;     // hero's stack after current action (BB); null = no data yet
+  currentVillainStack: number | null;  // primary villain's stack after current action (BB)
   currentStreet: ReplayAction["street"];
   isPlaying: boolean;
   totalSteps: number;
@@ -74,6 +76,25 @@ export function useReplay(
   );
 
   const currentPot = currentAction?.pot_after ?? 1.5;
+
+  // Dynamic stacks: use the per-action values from the pot engine when available.
+  // Walk backwards to find the most recent action with stack data.
+  const currentHeroStack = useMemo<number | null>(() => {
+    if (step < 0) return null;
+    for (let i = step; i >= 0; i--) {
+      if (actions[i].hero_stack_after != null) return actions[i].hero_stack_after!;
+    }
+    return null;
+  }, [step, actions]);
+
+  const currentVillainStack = useMemo<number | null>(() => {
+    if (step < 0) return null;
+    for (let i = step; i >= 0; i--) {
+      if (actions[i].villain_stack_after != null) return actions[i].villain_stack_after!;
+    }
+    return null;
+  }, [step, actions]);
+
   const currentStreet: ReplayAction["street"] = currentAction?.street ?? "preflop";
   // step < 0 means we're in the pre-action state (before any action has been shown).
   // step=0 is the FIRST action and prev should be enabled there so the user
@@ -105,12 +126,16 @@ export function useReplay(
   useEffect(() => {
     if (process.env.NODE_ENV !== "development") return;
     const streets = [...new Set(actions.map((a) => a.street))];
+    const hasStackData = actions.some(
+      (a) => a.hero_stack_after != null || a.villain_stack_after != null
+    );
     console.debug(
       "[Replay] analysis received —",
       "actions:", actions.length,
       "| streets:", streets.join(", ") || "none",
       "| heroCards:", analysis?.hand_summary?.hero_cards?.join(" ") ?? "?",
       "| position:", analysis?.hand_summary?.hero_position ?? "?",
+      "| stackDataPresent:", hasStackData,
     );
     if (actions.length === 0) {
       console.warn(
@@ -122,6 +147,20 @@ export function useReplay(
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [analysis]);
+
+  // Dev-only: log stack/pot updates on every step change
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development" || step < 0) return;
+    const a = actions[step];
+    if (!a) return;
+    console.debug(
+      `[Replay] step ${step} processed — action: ${a.player} ${a.action}${a.amount ? " " + a.amount : ""}`,
+      `| pot_after: ${currentPot.toFixed(2)}bb`,
+      `| hero_stack: ${currentHeroStack != null ? currentHeroStack.toFixed(2) + "bb" : "n/a"}`,
+      `| villain_stack: ${currentVillainStack != null ? currentVillainStack.toFixed(2) + "bb" : "n/a"}`,
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   const goTo = useCallback(
     (n: number) => setStep(Math.max(-1, Math.min(n, totalSteps - 1))),
@@ -147,6 +186,8 @@ export function useReplay(
     currentFeedback,
     visibleBoard,
     currentPot,
+    currentHeroStack,
+    currentVillainStack,
     currentStreet,
     isPlaying,
     totalSteps,

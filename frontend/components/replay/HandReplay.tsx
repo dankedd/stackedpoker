@@ -912,6 +912,8 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
               ? hand_summary.big_blind
               : undefined
           }
+          currentHeroStack={replay.currentHeroStack}
+          currentVillainStack={replay.currentVillainStack}
         />
       </div>
 

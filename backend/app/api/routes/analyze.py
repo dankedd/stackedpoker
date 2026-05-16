@@ -92,9 +92,25 @@ def _build_replay(result: AnalysisResponse) -> ReplayAnalysis:
     )
 
     replay_actions: list[ReplayAction] = []
+    villain = next((p for p in parsed.players if p.name != parsed.hero_name), None)
 
     for i, a in enumerate(parsed.actions):
-        pot_after = pot_states[i].pot_after if i < len(pot_states) else 0.0
+        ps = pot_states[i] if i < len(pot_states) else None
+        pot_after = ps.pot_after if ps else 0.0
+
+        # Per-action stack tracking from the deterministic pot engine
+        hero_stack_after: float | None = None
+        villain_stack_after: float | None = None
+        if ps:
+            hero_stack_after = ps.player_stacks.get(parsed.hero_name)
+            if villain:
+                villain_stack_after = ps.player_stacks.get(villain.name)
+            logger.debug(
+                "[Replay] action %d %s %s — pot_after=%.2f hero=%.2f villain=%s",
+                i, a.player, a.action, pot_after,
+                hero_stack_after or -1,
+                f"{villain_stack_after:.2f}" if villain_stack_after is not None else "n/a",
+            )
 
         feedback = None
         if a.is_hero:
@@ -114,12 +130,12 @@ def _build_replay(result: AnalysisResponse) -> ReplayAnalysis:
             action=a.action,
             amount=f"{a.size_bb:.1f}bb" if a.size_bb else None,
             pot_after=round(pot_after, 2),
+            hero_stack_after=round(hero_stack_after, 2) if hero_stack_after is not None else None,
+            villain_stack_after=round(villain_stack_after, 2) if villain_stack_after is not None else None,
             is_hero=a.is_hero,
             feedback=feedback,
             coaching=coaching_by_idx.get(i),
         ))
-
-    villain = next((p for p in parsed.players if p.name != parsed.hero_name), None)
     hand_summary = HandSummaryData(
         stakes=parsed.stakes,
         hero_position=parsed.hero_position,

@@ -97,6 +97,8 @@ export interface ReplayAction {
   action: string;
   amount?: string;
   pot_after: number;
+  hero_stack_after?: number;    // hero's stack after this action (BB); from pot engine
+  villain_stack_after?: number; // primary villain's stack after this action (BB)
   is_hero: boolean;
   feedback?: ReplayFeedback;
   coaching?: ActionCoaching;

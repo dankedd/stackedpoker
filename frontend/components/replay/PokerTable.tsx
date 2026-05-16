@@ -13,6 +13,10 @@ interface PokerTableProps {
   currentPot: number;
   currentStep: number;
   bigBlind?: number;
+  /** Dynamic hero stack after the current action (from pot engine). Overrides seat.stack_bb. */
+  currentHeroStack?: number | null;
+  /** Dynamic primary villain stack after the current action (from pot engine). Overrides first opponent seat.stack_bb. */
+  currentVillainStack?: number | null;
 }
 
 const ACTION_BADGE_CLS: Record<string, string> = {
@@ -29,6 +33,11 @@ const STREET_COLOR: Record<string, string> = {
   river:   "#F87171",
 };
 
+// Format a stack value in BB notation (e.g. 97.5bb, 80bb)
+function fmtStack(bb: number): string {
+  return bb % 1 === 0 ? `${bb}bb` : `${bb.toFixed(1)}bb`;
+}
+
 export function PokerTable({
   seats,
   visibleBoard,
@@ -36,6 +45,8 @@ export function PokerTable({
   currentPot,
   currentStep,
   bigBlind,
+  currentHeroStack,
+  currentVillainStack,
 }: PokerTableProps) {
   const heroSeat = seats.find((s) => s.isHero);
   const opponentSeats = seats.filter((s) => !s.isHero);
@@ -86,6 +97,12 @@ export function PokerTable({
             const badgeRating = showBadge
               ? (currentAction!.feedback?.rating as "good" | "okay" | "mistake" | undefined)
               : undefined;
+
+            // Use live stack from pot engine for the primary villain (first opponent seat).
+            // Fall back to the static starting stack if pot engine data is unavailable.
+            const liveStack = i === 0 && currentVillainStack != null
+              ? currentVillainStack
+              : seat.stack_bb;
 
             return (
               <div
@@ -152,15 +169,15 @@ export function PokerTable({
                       {seat.position}
                     </span>
                   </div>
-                  {seat.stack_bb !== undefined && (
+                  {liveStack !== undefined && (
                     <span
-                      className="text-[10px] tabular-nums font-medium"
+                      className="text-[10px] tabular-nums font-medium transition-all duration-300"
                       style={{ color: isActing ? "rgba(251,191,36,0.55)" : "rgba(255,255,255,0.14)" }}
                     >
-                      {seat.stack_bb.toFixed(0)}bb
+                      {fmtStack(liveStack)}
                       {bigBlind && bigBlind > 1 && (
                         <span style={{ color: "rgba(255,255,255,0.07)" }}>
-                          {" "}·{Math.round(seat.stack_bb * bigBlind).toLocaleString()}
+                          {" "}·{Math.round(liveStack * bigBlind).toLocaleString()}
                         </span>
                       )}
                     </span>
@@ -222,7 +239,7 @@ export function PokerTable({
             >
               Pot:{" "}
               <span style={{ color: "rgba(253,230,138,0.92)" }}>
-                {currentPot.toFixed(1)}bb
+                {fmtStack(currentPot)}
               </span>
             </span>
           </div>
@@ -237,6 +254,7 @@ export function PokerTable({
           currentAction={currentAction}
           currentStep={currentStep}
           bigBlind={bigBlind}
+          liveStack={currentHeroStack ?? heroSeat.stack_bb}
         />
       )}
     </div>
@@ -251,12 +269,14 @@ function HeroZone({
   currentAction,
   currentStep,
   bigBlind,
+  liveStack,
 }: {
   seat: SeatDescriptor;
   actingPlayer: string | null;
   currentAction: ReplayAction | null;
   currentStep: number;
   bigBlind?: number;
+  liveStack?: number;
 }) {
   const isActing = !!seat.playerName && seat.playerName === actingPlayer;
   const isFoldedPast = seat.foldedAtStep !== null && seat.foldedAtStep < currentStep;
@@ -347,23 +367,23 @@ function HeroZone({
           {seat.position}
         </span>
 
-        {seat.stack_bb !== undefined && (
+        {liveStack !== undefined && (
           <>
             <div className="w-px h-3.5" style={{ background: "rgba(255,255,255,0.10)" }} />
             <span
-              className="text-[12px] font-bold tabular-nums"
+              className="text-[12px] font-bold tabular-nums transition-all duration-300"
               style={{
                 color: isActing ? "rgba(186,230,253,0.85)" : "rgba(148,163,184,0.42)",
               }}
             >
-              {seat.stack_bb.toFixed(1)}bb
+              {fmtStack(liveStack)}
             </span>
             {bigBlind && bigBlind > 1 && (
               <span
                 className="text-[10px] tabular-nums"
                 style={{ color: "rgba(148,163,184,0.22)" }}
               >
-                ·{Math.round(seat.stack_bb * bigBlind).toLocaleString()}
+                ·{Math.round(liveStack * bigBlind).toLocaleString()}
               </span>
             )}
           </>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -12,6 +12,195 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { PUZZLES, QUALITY_SCORE, type ActionOption, type PuzzleStep } from "@/lib/puzzles";
 import { cn } from "@/lib/utils";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Puzzle pot & stack engine
+// Derives pot size and player stacks from puzzle metadata + hero's action history.
+// No AI, no hardcoded values — pure chip accounting from context strings + choices.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Parse the big blind dollar value from a stakes string like "$1/$2" or "€0.50/€1". */
+function parseBigBlind(stakes: string): number {
+  const m = stakes.match(/[\$€£]?(\d+(?:\.\d+)?)\s*\/\s*[\$€£]?(\d+(?:\.\d+)?)/);
+  return m ? parseFloat(m[2]) : 1;
+}
+
+/** Format a BB amount for display: integers show as "80bb", decimals as "24.5bb". */
+function fmtBb(bb: number): string {
+  const rounded = Math.round(bb * 10) / 10;
+  return rounded % 1 === 0 ? `${rounded}bb` : `${rounded.toFixed(1)}bb`;
+}
+
+/** Extract explicit "Pot $X" value from a step context string, converting to BB. */
+function extractContextPotBb(context: string, bbDollars: number): number | null {
+  const m = context.match(/[Pp]ot[:\s]+[\$€£]?(\d+(?:\.\d+)?)/);
+  if (!m || bbDollars <= 0) return null;
+  return parseFloat(m[1]) / bbDollars;
+}
+
+/** Extract villain's bet/raise size in BB from a context string. Returns 0 if villain checked. */
+function extractVillainBetBb(context: string, bbDollars: number): number {
+  if (bbDollars <= 0) return 0;
+  const m = context.match(
+    /(?:bets?|raises?\s*to|raises?|barrels?|fires?|overbets?|jams?|shoves?|leads?)\s+[\$€£]?(\d+(?:\.\d+)?)/i
+  );
+  return m ? parseFloat(m[1]) / bbDollars : 0;
+}
+
+/** Extract villain's preflop raise size in BB from a context string. */
+function extractPreflopVillainRaiseBb(context: string, bbDollars: number): number {
+  if (bbDollars <= 0) return 2.5;
+  const m =
+    context.match(/raises?\s+to\s+[\$€£]?(\d+(?:\.\d+)?)/i) ??
+    context.match(/opens?\s+to\s+[\$€£]?(\d+(?:\.\d+)?)/i) ??
+    context.match(/raises?\s+[\$€£]?(\d+(?:\.\d+)?)/i);
+  return m ? parseFloat(m[1]) / bbDollars : 2.5;
+}
+
+/**
+ * Compute how many BB hero commits for a chosen option.
+ * heroAlreadyInBb = chips hero already has in THIS street (1 for BB preflop, 0.5 for SB preflop, 0 post-flop).
+ */
+function heroInvestBb(optionLabel: string, bbDollars: number, heroAlreadyInBb: number): number {
+  const lo = optionLabel.toLowerCase().trim();
+  if (/^(fold|check)/.test(lo)) return 0;
+
+  // "Raise to $X" or "3-bet to $X" — total chips committed this street
+  const raiseToM = optionLabel.match(/(?:raise\s+to|3.?bet\s+to)\s+[\$€£]?(\d+(?:\.\d+)?)/i);
+  if (raiseToM && bbDollars > 0) {
+    const totalBb = parseFloat(raiseToM[1]) / bbDollars;
+    return Math.max(0, totalBb - heroAlreadyInBb);
+  }
+
+  // Dollar amount in label: "Call $3", "Bet $18 (33%)", "Raise $20" — additional chips
+  const amtM = optionLabel.match(/[\$€£](\d+(?:\.\d+)?)/);
+  if (amtM && bbDollars > 0) return parseFloat(amtM[1]) / bbDollars;
+
+  // All-in / shove with no explicit amount
+  if (/(?:jam|all.?in|shove)/i.test(lo)) return Infinity;
+
+  return 0;
+}
+
+interface PuzzleStackState {
+  potBb: number;         // pot size before hero acts at this step
+  heroStack: number;     // hero's stack before hero acts at this step
+  villainStack: number;  // villain's stack before hero acts at this step
+  heroAlreadyIn: number; // chips hero already has in the pot THIS street
+}
+
+/**
+ * Deterministic pot + stack calculation for puzzle state.
+ *
+ * Algorithm:
+ *   1. Seed blinds from hero position.
+ *   2. Walk through past hero choices, deducting investments.
+ *   3. For each past step, extract villain's action from the NEXT step's context pot delta.
+ *   4. For the current step, read explicit context pot + villain bet.
+ *
+ * Villain stack is derived from the canonical pot (from context strings) minus hero's total
+ * investment minus third-party blinds (SB from folded players).
+ */
+function computePuzzleState(
+  puzzle: { heroPosition: string; villainPosition: string; effectiveStack: number; stakes: string; steps: Array<{ street: string; context: string; board: string[] }> },
+  stepIdx: number,
+  stepResults: Array<{ option: { label: string } }>
+): PuzzleStackState {
+  const bbDollars = parseBigBlind(puzzle.stakes);
+  const startStack = puzzle.effectiveStack;
+  const heroPos = puzzle.heroPosition.toUpperCase();
+  const steps = puzzle.steps;
+
+  // ── Blind seeding ──────────────────────────────────────────────────────────
+  // How much each party has posted before any action.
+  // sbInPot: chips from a third-party SB who has already folded (not hero, not villain).
+  const sbInPot = heroPos === "SB" ? 0 : 0.5; // hero IS the SB → counted in heroTotalIn; else a third party posted
+  let heroTotalIn = heroPos === "BB" ? 1 : heroPos === "SB" ? 0.5 : 0;
+
+  // ── Walk through past decisions ────────────────────────────────────────────
+  let heroStreetIn = heroTotalIn; // tracks hero's investment in the current-loop street
+  let prevStreet = "preflop";
+
+  for (let i = 0; i < Math.min(stepIdx, stepResults.length); i++) {
+    const step = steps[i];
+    const choice = stepResults[i]?.option;
+    if (!choice) break;
+
+    // Street transition → reset per-street tracker
+    if (step.street !== prevStreet) {
+      prevStreet = step.street;
+      heroStreetIn = 0;
+    }
+
+    const invest = heroInvestBb(choice.label, bbDollars, heroStreetIn);
+    const actualInvest = Math.min(invest, Math.max(0, startStack - heroTotalIn));
+    heroStreetIn += actualInvest;
+    heroTotalIn += actualInvest;
+  }
+
+  // ── Current step pot & stacks ──────────────────────────────────────────────
+  const currentStep = steps[stepIdx];
+  const currentStreet = currentStep.street;
+
+  // heroAlreadyIn for the CURRENT step (what hero has committed this street before acting now)
+  const heroAlreadyIn =
+    currentStreet === "preflop"
+      ? heroPos === "BB" ? 1 : heroPos === "SB" ? 0.5 : 0
+      : // post-flop: if the previous step was the same street, hero invested heroStreetIn
+      stepIdx > 0 && steps[stepIdx - 1]?.street === currentStreet
+      ? heroStreetIn
+      : 0;
+
+  let potBb: number;
+
+  const contextPot = extractContextPotBb(currentStep.context, bbDollars);
+  const villainBet = extractVillainBetBb(currentStep.context, bbDollars);
+
+  if (currentStreet === "preflop" && contextPot === null) {
+    // Preflop: pot = blinds posted + villain's raise (before hero acts)
+    if (heroPos === "BB") {
+      // Villain raised to X; hero (BB) already posted 1bb
+      const villainRaise = extractPreflopVillainRaiseBb(currentStep.context, bbDollars);
+      potBb = 0.5 + 1 + villainRaise; // SB + BB + villain raise
+    } else if (heroPos === "SB") {
+      // Hero is SB acting first or facing BB, or 3bet situation
+      const villainRaise = extractPreflopVillainRaiseBb(currentStep.context, bbDollars);
+      potBb = villainRaise > 0 ? 0.5 + 1 + villainRaise : 0.5 + 1;
+    } else {
+      // Hero is IP (BTN, CO, etc.): pot = just the blinds before hero opens
+      potBb = 1.5;
+    }
+  } else if (contextPot !== null) {
+    // Context explicitly states the pot at the start of this street.
+    // Add villain's bet on top (villain bet before hero acts this street).
+    potBb = contextPot + villainBet;
+  } else {
+    // Fallback: derive from what we've tracked
+    potBb = sbInPot + heroTotalIn + villainBet;
+  }
+
+  const heroStack = Math.max(0, startStack - heroTotalIn);
+
+  // Villain stack: derived from canonical pot minus all other contributions.
+  // pot = sbInPot + heroTotalIn + villainTotalIn → villainTotalIn = pot - sbInPot - heroTotalIn
+  const villainTotalIn = Math.max(0, potBb - sbInPot - heroTotalIn);
+  const villainStack = Math.max(0, startStack - villainTotalIn);
+
+  if (process.env.NODE_ENV === "development") {
+    console.debug(
+      `[Puzzle] step ${stepIdx} (${currentStreet}) — ` +
+      `pot: ${potBb.toFixed(2)}bb | hero: ${heroStack.toFixed(2)}bb | villain: ${villainStack.toFixed(2)}bb | ` +
+      `heroTotalIn: ${heroTotalIn.toFixed(2)} | villainTotalIn: ${villainTotalIn.toFixed(2)} | sbInPot: ${sbInPot}`
+    );
+  }
+
+  return {
+    potBb: Math.max(0, potBb),
+    heroStack: Math.max(0, heroStack),
+    villainStack: Math.max(0, villainStack),
+    heroAlreadyIn,
+  };
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -186,6 +375,72 @@ function StackPill({ bb }: { bb: number }) {
       <span className="text-[11px] font-bold text-sky-300/80 tabular-nums leading-none">
         {bb}bb
       </span>
+    </div>
+  );
+}
+
+/** Live pot + stack display row shown on the poker table between board and hero cards. */
+function PotStackRow({
+  potBb,
+  heroStack,
+  villainStack,
+}: {
+  potBb: number;
+  heroStack: number;
+  villainStack: number;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 w-full px-1 mb-3">
+      {/* Villain stack */}
+      <div className="flex items-center gap-1.5 min-w-0">
+        <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/35 shrink-0">
+          Villain
+        </span>
+        <div
+          className="flex items-center h-5 px-2 rounded-full shrink-0"
+          style={{
+            background: "rgba(100,116,139,0.08)",
+            border: "1px solid rgba(100,116,139,0.16)",
+          }}
+        >
+          <span className="text-[11px] font-bold text-slate-400/70 tabular-nums leading-none">
+            {fmtBb(villainStack)}
+          </span>
+        </div>
+      </div>
+
+      {/* Pot — centered, prominent */}
+      <div
+        className="flex items-center gap-1.5 h-6 px-3 rounded-full shrink-0"
+        style={{
+          background: "rgba(251,191,36,0.07)",
+          border: "1px solid rgba(251,191,36,0.18)",
+          boxShadow: "0 0 10px rgba(251,191,36,0.06)",
+        }}
+      >
+        <div className="h-1.5 w-1.5 rounded-full bg-amber-400/50 shrink-0" />
+        <span className="text-[11px] font-black text-amber-300/80 tabular-nums leading-none">
+          Pot: {fmtBb(potBb)}
+        </span>
+      </div>
+
+      {/* Hero stack */}
+      <div className="flex items-center gap-1.5 min-w-0 justify-end">
+        <div
+          className="flex items-center h-5 px-2 rounded-full shrink-0"
+          style={{
+            background: "rgba(124,92,255,0.08)",
+            border: "1px solid rgba(124,92,255,0.18)",
+          }}
+        >
+          <span className="text-[11px] font-bold text-violet-300/70 tabular-nums leading-none">
+            {fmtBb(heroStack)}
+          </span>
+        </div>
+        <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/35 shrink-0">
+          Hero
+        </span>
+      </div>
     </div>
   );
 }
@@ -522,6 +777,13 @@ export default function PuzzlePlayerPage() {
     ? Math.round(stepResults.reduce((s, r) => s + r.score, 0) / stepResults.length)
     : null;
 
+  // ── Live pot & stack state ─────────────────────────────────────────────
+  // Derived deterministically from the puzzle metadata and hero's past choices.
+  const stackState = useMemo(
+    () => computePuzzleState(puzzle, stepIdx, stepResults),
+    [puzzle, stepIdx, stepResults]
+  );
+
   // ── Result screen ──────────────────────────────────────────────────────
   if (done) {
     return (
@@ -708,7 +970,15 @@ export default function PuzzlePlayerPage() {
                       <CardBack size="sm" />
                       <CardBack size="sm" />
                     </div>
-                    <span className="text-xs text-muted-foreground/50">Villain</span>
+                    {/* Villain stack — dynamic */}
+                    <div
+                      className="h-6 px-2 flex items-center rounded-full"
+                      style={{ background: "rgba(100,116,139,0.07)", border: "1px solid rgba(100,116,139,0.15)" }}
+                    >
+                      <span className="text-[11px] font-bold text-slate-400/65 tabular-nums leading-none">
+                        {fmtBb(stackState.villainStack)}
+                      </span>
+                    </div>
                   </div>
 
                   <div className="text-center">
@@ -717,16 +987,23 @@ export default function PuzzlePlayerPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground/50">You</span>
+                    {/* Hero stack — dynamic */}
+                    <div
+                      className="h-6 px-2 flex items-center rounded-full"
+                      style={{ background: "rgba(124,92,255,0.08)", border: "1px solid rgba(124,92,255,0.18)" }}
+                    >
+                      <span className="text-[11px] font-bold text-violet-300/70 tabular-nums leading-none">
+                        {fmtBb(stackState.heroStack)}
+                      </span>
+                    </div>
                     <div className="h-7 px-3 flex items-center rounded-full bg-violet-500/15 border border-violet-500/25">
                       <span className="text-xs font-semibold text-violet-400">{puzzle.heroPosition}</span>
                     </div>
-                    <StackPill bb={puzzle.effectiveStack} />
                   </div>
                 </div>
 
                 {/* Board */}
-                <div className="flex justify-center gap-2 mb-6 min-h-[64px] items-center">
+                <div className="flex justify-center gap-2 mb-4 min-h-[64px] items-center">
                   {currentStep.street === "preflop" ? (
                     // Preflop: show 5 empty card slots
                     [0,1,2,3,4].map(i => (
@@ -745,6 +1022,13 @@ export default function PuzzlePlayerPage() {
                   )}
                 </div>
 
+                {/* Pot + stack row — live chip accounting */}
+                <PotStackRow
+                  potBb={stackState.potBb}
+                  heroStack={stackState.heroStack}
+                  villainStack={stackState.villainStack}
+                />
+
                 {/* Divider */}
                 <div className="border-t border-border/25 mb-6" />
 
@@ -758,8 +1042,8 @@ export default function PuzzlePlayerPage() {
                   </div>
                 </div>
 
-                {/* Effective stack HUD — always visible, between cards and context */}
-                <StackHUD bb={puzzle.effectiveStack} className="mb-5" />
+                {/* Stack HUD — shows current hero stack (updates as choices are made) */}
+                <StackHUD bb={stackState.heroStack} className="mb-5" />
 
                 {/* Situation context */}
                 <div className="rounded-xl bg-secondary/20 border border-border/25 px-4 py-3.5 mb-5">
