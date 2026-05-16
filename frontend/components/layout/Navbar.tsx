@@ -24,7 +24,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Tournaments", href: "/analyze/tournament" },
   { label: "Puzzles",     href: "/analyze/puzzles" },
   { label: "History",     href: "/history" },
-  { label: "Profile",     href: "/profile" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────

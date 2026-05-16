@@ -23,7 +23,7 @@ Node types:
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Literal
 
 from app.models.schemas import HandAction, PreferredAction
@@ -220,15 +220,13 @@ def classify_hand(hero_cards: list[str]) -> HandStrengthBucket:
     high, low = max(v1, v2), min(v1, v2)
     is_pair   = (v1 == v2)
     is_suited = (s1 == s2)
-    gap = high - low
 
     # ── Pocket pairs ──────────────────────────────────────────────────────
     if is_pair:
         if high >= 9:  return "premium"   # JJ, QQ, KK, AA
         if high >= 7:  return "strong"    # 99, TT
         if high >= 4:  return "playable"  # 66, 77, 88
-        if high >= 2:  return "marginal"  # 22, 33, 44, 55
-        return "trash"
+        return "marginal"                 # 22, 33, 44, 55
 
     # ── Ace-high ──────────────────────────────────────────────────────────
     if high == 12:  # A
