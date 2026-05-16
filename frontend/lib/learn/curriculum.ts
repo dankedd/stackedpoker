@@ -2084,3 +2084,27 @@ export const LESSONS: Lesson[] = [
     ],
   },
 ]
+
+// ── Derived lookup maps ───────────────────────────────────────────────────────
+
+export const LESSONS_BY_SLUG: Record<string, Lesson> =
+  Object.fromEntries(LESSONS.map((l) => [l.slug, l]))
+
+export const MODULES_BY_SLUG: Record<string, LearningModule> =
+  Object.fromEntries(LEARNING_MODULES.map((m) => [m.slug, m]))
+
+/** module_id → lessons in that module */
+export const LESSONS_BY_MODULE: Record<string, Lesson[]> =
+  LESSONS.reduce<Record<string, Lesson[]>>((acc, l) => {
+    if (!acc[l.module_id]) acc[l.module_id] = []
+    acc[l.module_id].push(l)
+    return acc
+  }, {})
+
+/** path_id → modules in that path */
+export const MODULES_BY_PATH: Record<string, LearningModule[]> =
+  LEARNING_MODULES.reduce<Record<string, LearningModule[]>>((acc, m) => {
+    if (!acc[m.path_id]) acc[m.path_id] = []
+    acc[m.path_id].push(m)
+    return acc
+  }, {})

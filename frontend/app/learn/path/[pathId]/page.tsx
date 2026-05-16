@@ -176,7 +176,7 @@ export default function PathPage() {
                       className={cn(
                         "rounded-2xl border p-5 transition-all duration-200",
                         styles.card,
-                        isClickable && status !== "locked" ? "cursor-pointer" : "cursor-default"
+                        isClickable ? "cursor-pointer" : "cursor-default"
                       )}
                     >
                       <div className="flex items-start gap-4">

@@ -350,7 +350,7 @@ function SummaryScreen({
 interface LessonPlayerProps {
   lesson: Lesson
   token: string
-  onComplete: (score: number) => void
+  onComplete: (score: number, xpEarned: number) => void
 }
 
 export function LessonPlayer({ lesson, token, onComplete }: LessonPlayerProps) {
@@ -403,8 +403,8 @@ export function LessonPlayer({ lesson, token, onComplete }: LessonPlayerProps) {
       results.length > 0
         ? Math.round(results.reduce((s, r) => s + r.score, 0) / results.length)
         : 0
-    onComplete(avgScore)
-  }, [results, onComplete])
+    onComplete(avgScore, totalXP)
+  }, [results, totalXP, onComplete])
 
   // ── Intro ──────────────────────────────────────────────────────────────────
   if (phase === 'intro') {
