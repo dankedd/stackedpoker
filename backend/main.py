@@ -7,7 +7,7 @@ from app.config import get_settings
 from app.database import init_db
 from app.middleware.rate_limiter import RateLimitMiddleware
 from app.utils.logging import setup_logging
-from app.api.routes import health, parse, analyze, image_analyze, image_extract, session, stripe_routes, history, tournament
+from app.api.routes import health, parse, analyze, image_analyze, image_extract, session, stripe_routes, history, tournament, learn, coach, train
 
 settings = get_settings()
 setup_logging(settings.debug)
@@ -121,6 +121,9 @@ app.include_router(session.router, prefix="/api")
 app.include_router(stripe_routes.router, prefix="/api")
 app.include_router(history.router, prefix="/api")
 app.include_router(tournament.router, prefix="/api")
+app.include_router(learn.router, prefix="/api")
+app.include_router(coach.router, prefix="/api")
+app.include_router(train.router, prefix="/api")
 
 
 @app.get("/")

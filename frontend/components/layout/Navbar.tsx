@@ -21,6 +21,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard",   href: "/dashboard" },
   { label: "Analyze",     href: "/analyze", primary: true },
+  { label: "Learn",       href: "/learn", primary: true },
   { label: "Tournaments", href: "/analyze/tournament" },
   { label: "Puzzles",     href: "/analyze/puzzles" },
   { label: "History",     href: "/history" },
@@ -45,6 +46,11 @@ function useActiveItem(pathname: string) {
     }
     if (item.href === "/analyze/puzzles") {
       return pathname.startsWith("/analyze/puzzles");
+    }
+    if (item.href === "/learn") {
+      return pathname === "/learn" || pathname.startsWith("/learn/") ||
+             pathname.startsWith("/coach") || pathname.startsWith("/progress") ||
+             pathname.startsWith("/train");
     }
     return pathname === item.href || pathname.startsWith(item.href + "/");
   };

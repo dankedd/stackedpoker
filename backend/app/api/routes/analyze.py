@@ -18,6 +18,7 @@ from app.services.openai_coach import generate_coaching
 from app.services.hand_service import save_analysis
 from app.services.supabase_persistence import save_hand_analysis as save_to_supabase
 from app.services.usage_service import get_user_profile, assert_usage_allowed, increment_usage
+from app.services.learning_integration import process_analysis_for_learning
 from app.middleware.auth import get_current_user
 from app.database import get_db
 
@@ -250,7 +251,14 @@ async def analyze_hand(
             except Exception:
                 logger.warning("DB persist failed — returning result anyway")
 
-        # 9. Increment usage only on success (not on parse/analysis errors)
+        # 9. Learning integration — detect leaks, recommend lesson (best-effort)
+        await process_analysis_for_learning(
+            user_id=user_id,
+            findings=result.findings or [],
+            analysis_id=saved_id,
+        )
+
+        # 10. Increment usage only on success (not on parse/analysis errors)
         await increment_usage(user_id)
 
         return result
