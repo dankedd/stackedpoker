@@ -34,9 +34,9 @@ export interface ReplayControls {
 
 function getVisibleBoard(analysis: ReplayAnalysis, step: number): VisibleBoard {
   const seen = new Set(
-    analysis.actions.slice(0, step + 1).map((a) => a.street)
+    (analysis?.actions ?? []).slice(0, step + 1).map((a) => a.street)
   );
-  const b = analysis.hand_summary.board;
+  const b = analysis?.hand_summary?.board ?? { flop: [], turn: [], river: [] };
   return {
     flop: seen.has("flop") || seen.has("turn") || seen.has("river") ? b.flop : [],
     turn: seen.has("turn") || seen.has("river") ? b.turn : [],
@@ -51,7 +51,8 @@ export function useReplay(
   const [step, setStep] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const actions = analysis.actions;
+  // Defensive: actions may be undefined if backend returned a partial response
+  const actions = analysis?.actions ?? [];
   const totalSteps = actions.length;
 
   const currentAction = step >= 0 && step < totalSteps ? actions[step] : null;
@@ -74,8 +75,13 @@ export function useReplay(
 
   const currentPot = currentAction?.pot_after ?? 1.5;
   const currentStreet: ReplayAction["street"] = currentAction?.street ?? "preflop";
-  const isFirst = step <= 0;
-  const isLast = step >= totalSteps - 1;
+  // step < 0 means we're in the pre-action state (before any action has been shown).
+  // step=0 is the FIRST action and prev should be enabled there so the user
+  // can navigate back to the preflop deal state (step=-1).
+  const isFirst = step < 0;
+  // Guard: when totalSteps=0 treat as isLast only when there truly are no actions.
+  // Avoid (-1 >= -1) = TRUE which would permanently show "Replay Hand" on empty data.
+  const isLast = totalSteps > 0 ? step >= totalSteps - 1 : false;
   const showVerdict = step >= totalSteps - 1 && totalSteps > 0;
 
   // Auto-advance when playing
@@ -93,6 +99,28 @@ export function useReplay(
   useEffect(() => {
     setStep(-1);
     setIsPlaying(false);
+  }, [analysis]);
+
+  // Dev-only diagnostics: log replay data on every new analysis
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    const streets = [...new Set(actions.map((a) => a.street))];
+    console.debug(
+      "[Replay] analysis received —",
+      "actions:", actions.length,
+      "| streets:", streets.join(", ") || "none",
+      "| heroCards:", analysis?.hand_summary?.hero_cards?.join(" ") ?? "?",
+      "| position:", analysis?.hand_summary?.hero_position ?? "?",
+    );
+    if (actions.length === 0) {
+      console.warn(
+        "[Replay] actions array is empty — all replay controls will be inactive. " +
+        "Check that the backend returned a populated actions[] in the replay response.",
+      );
+    } else {
+      console.debug("[Replay] Replay initialization SUCCESS — ready to play", actions.length, "actions.");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [analysis]);
 
   const goTo = useCallback(
