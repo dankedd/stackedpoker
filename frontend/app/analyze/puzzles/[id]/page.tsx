@@ -14,8 +14,6 @@ import { PUZZLES, QUALITY_SCORE, type ActionOption, type PuzzleStep } from "@/li
 import { cn } from "@/lib/utils";
 import { buildPokerState } from "@/lib/puzzles/pokerState";
 import { runGoldenTests, validateAllPuzzles } from "@/lib/puzzles/puzzleValidator";
-import { PokerTable } from "@/components/replay/PokerTable";
-import type { SeatDescriptor } from "@/lib/replay/seatEngine";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Puzzle pot & stack engine
@@ -394,7 +392,42 @@ function pickRandomPuzzle(excludeId?: string) {
   return candidates[candidates.length - 1];
 }
 
-// CardFace and CardBack removed — puzzle now uses PlayingCard via PokerTable/PokerSeat.
+// ─────────────────────────────────────────────────────────────────────────────
+// Card components — white premium cards (canonical puzzle card style)
+// ─────────────────────────────────────────────────────────────────────────────
+
+type CardSize = "sm" | "md" | "lg";
+
+const CARD_SIZES: Record<CardSize, string> = {
+  sm: "w-9 h-[52px] rounded-lg p-1 text-[10px]",
+  md: "w-11 h-16 rounded-xl p-1.5 text-xs",
+  lg: "w-[52px] h-[76px] rounded-xl p-2 text-sm",
+};
+const CARD_SYM_SIZES: Record<CardSize, string> = {
+  sm: "text-sm", md: "text-base", lg: "text-2xl",
+};
+
+function CardFace({ card, size = "md" }: { card: string; size?: CardSize }) {
+  const rank  = card.slice(0, -1).replace("T", "10");
+  const suit  = card.slice(-1);
+  const isRed = suit === "h" || suit === "d";
+  const sym   = ({ h: "♥", d: "♦", c: "♣", s: "♠" } as const)[suit as "h"|"d"|"c"|"s"] ?? "";
+  return (
+    <div className={cn("bg-white flex flex-col justify-between shadow-lg shadow-black/40 select-none shrink-0", CARD_SIZES[size])}>
+      <span className={cn("font-black leading-none", isRed ? "text-red-600" : "text-slate-900")}>{rank}</span>
+      <span className={cn("text-center leading-none", isRed ? "text-red-600" : "text-slate-900", CARD_SYM_SIZES[size])}>{sym}</span>
+    </div>
+  );
+}
+
+function CardBack({ size = "md" }: { size?: CardSize }) {
+  return (
+    <div className={cn(
+      "bg-gradient-to-br from-violet-900/60 to-blue-900/50 border border-white/[0.07] shrink-0",
+      CARD_SIZES[size]
+    )} />
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Quality badge
@@ -463,7 +496,27 @@ function StackPill({ bb }: { bb: number }) {
   );
 }
 
-// PotStackRow removed — pot and stacks now rendered inside the shared PokerTable component.
+/** Pot + stack row — tokens match PokerTable's pot badge exactly for visual parity. */
+function PotDisplay({ potBb }: { potBb: number }) {
+  return (
+    <div className="flex justify-center my-3">
+      <div
+        className="flex items-center gap-2 px-4 py-1.5 rounded-full"
+        style={{
+          background: "rgba(255,255,255,0.055)",
+          border: "1px solid rgba(255,255,255,0.09)",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.35)",
+        }}
+      >
+        <div className="h-1.5 w-1.5 rounded-full" style={{ background: "rgba(251,191,36,0.55)" }} />
+        <span className="text-[12px] font-black tabular-nums" style={{ color: "rgba(253,230,138,0.75)" }}>
+          Pot:{" "}
+          <span style={{ color: "rgba(253,230,138,0.92)" }}>{fmtBb(potBb)}</span>
+        </span>
+      </div>
+    </div>
+  );
+}
 
 function QualityBadge({ quality }: { quality: ActionOption["quality"] }) {
   const { label, cls } = QUALITY[quality];
@@ -838,59 +891,6 @@ export default function PuzzlePlayerPage() {
     [puzzle, stepIdx, stepResults]
   );
 
-  // ── Seat descriptors for the unified PokerTable ────────────────────────
-  const puzzleSeats = useMemo<SeatDescriptor[]>(
-    () => {
-      const heroPos    = puzzle.heroPosition.toUpperCase();
-      const villainPos = puzzle.villainPosition.toUpperCase();
-      return [
-        {
-          seatIndex:    0,
-          isHero:       true,
-          isSitting:    true,
-          position:     heroPos,
-          playerName:   "Hero",
-          cards:        puzzle.heroCards,
-          cardsKnown:   true,
-          foldedAtStep: null,
-          stack_bb:     stackState.heroStack,
-          isButton:     heroPos === "BTN",
-          isSb:         heroPos === "SB",
-          isBb:         heroPos === "BB",
-          preflopOrder:  0,
-          postflopOrder: 0,
-        },
-        {
-          seatIndex:    1,
-          isHero:       false,
-          isSitting:    true,
-          position:     villainPos,
-          playerName:   "Villain",
-          cards:        [],
-          cardsKnown:   false,
-          foldedAtStep: null,
-          stack_bb:     stackState.villainStack,
-          isButton:     villainPos === "BTN",
-          isSb:         villainPos === "SB",
-          isBb:         villainPos === "BB",
-          preflopOrder:  1,
-          postflopOrder: 1,
-        },
-      ];
-    },
-    [puzzle.heroCards, puzzle.heroPosition, puzzle.villainPosition, stackState.heroStack, stackState.villainStack]
-  );
-
-  // ── Visible board from current step ───────────────────────────────────
-  const puzzleBoard = useMemo(
-    () => ({
-      flop:  currentStep.board.slice(0, 3),
-      turn:  currentStep.board.slice(3, 4),
-      river: currentStep.board.slice(4, 5),
-    }),
-    [currentStep.board]
-  );
-
   // ── BB formatting ──────────────────────────────────────────────────────
   const bbDollars = parseBigBlind(puzzle.stakes);
 
@@ -1097,25 +1097,21 @@ export default function PuzzlePlayerPage() {
             <div className="order-1 lg:order-2">
               <div className="rounded-2xl border border-border/50 bg-card/60 p-6">
 
-                {/* Street navigation tabs + position matchup — matches HandReplay header */}
-                <div className="flex items-center justify-between mb-4">
+                {/* ── Street tabs + position matchup ────────────────────── */}
+                <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-1">
                     {puzzle.steps.map((step, i) => {
-                      const meta = STREET_META_PUZZLE[step.street as keyof typeof STREET_META_PUZZLE];
+                      const meta    = STREET_META_PUZZLE[step.street as keyof typeof STREET_META_PUZZLE];
                       const isActive = i === stepIdx;
-                      const isPast = i < stepIdx;
+                      const isPast   = i < stepIdx;
                       return (
                         <div
                           key={i}
                           className="px-3 py-1.5 rounded-lg text-[10px] font-black tracking-[0.18em] transition-all duration-200 select-none"
                           style={
                             isActive
-                              ? { color: meta.text, background: meta.bg, border: `1px solid ${meta.border}` }
-                              : {
-                                  color: isPast ? "rgba(255,255,255,0.32)" : "rgba(255,255,255,0.10)",
-                                  background: "transparent",
-                                  border: "1px solid transparent",
-                                }
+                              ? { color: meta.text, background: meta.bg, border: `1px solid ${meta.border}`, boxShadow: `0 0 10px ${meta.text}28` }
+                              : { color: isPast ? "rgba(255,255,255,0.32)" : "rgba(255,255,255,0.10)", background: "transparent", border: "1px solid transparent" }
                           }
                         >
                           {meta.label}
@@ -1130,25 +1126,105 @@ export default function PuzzlePlayerPage() {
                   />
                 </div>
 
-                {/* Unified oval table — hero bottom-center, villain top */}
-                <PokerTable
-                  seats={puzzleSeats}
-                  visibleBoard={puzzleBoard}
-                  currentAction={null}
-                  currentPot={stackState.potBb}
-                  currentStep={0}
-                  playerStacksAfter={{ Hero: stackState.heroStack, Villain: stackState.villainStack }}
-                />
+                {/* ── TABLE: villain top → board → pot → hero bottom ──────── */}
 
-                {/* Table position strip — shown for multiway contexts */}
+                {/* Villain row */}
+                <div className="flex items-center gap-2.5 mb-5">
+                  <div className="flex gap-1.5">
+                    <CardBack size="sm" />
+                    <CardBack size="sm" />
+                  </div>
+                  <div
+                    className="flex items-center gap-1.5 h-7 px-3 rounded-full"
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                  >
+                    <span className="text-[11px] font-bold tracking-wide" style={{ color: "rgba(255,255,255,0.28)" }}>
+                      {puzzle.villainPosition}
+                    </span>
+                  </div>
+                  <div
+                    className="flex items-center h-6 px-2.5 rounded-full"
+                    style={{ background: "rgba(100,116,139,0.07)", border: "1px solid rgba(100,116,139,0.14)" }}
+                  >
+                    <span className="text-[11px] font-bold tabular-nums" style={{ color: "rgba(148,163,184,0.55)" }}>
+                      {fmtBb(stackState.villainStack)}
+                    </span>
+                  </div>
+                  {/* Spacer + street label top-right */}
+                  <div className="ml-auto">
+                    <span
+                      className="text-[9px] uppercase tracking-[0.28em] font-black"
+                      style={{ color: STREET_META_PUZZLE[currentStep.street as keyof typeof STREET_META_PUZZLE]?.text ?? "#94A3B8", opacity: 0.65 }}
+                    >
+                      {currentStep.street}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Multiway position strip */}
                 <TablePositionStrip
                   actors={tableActors}
                   heroPos={puzzle.heroPosition}
                   villainPos={puzzle.villainPosition}
                 />
 
+                {/* Board */}
+                <div className="flex justify-center gap-2 mb-1 min-h-[68px] items-center">
+                  {currentStep.street === "preflop"
+                    ? [0,1,2,3,4].map(i => (
+                        <div key={i} className="w-11 h-16 rounded-xl" style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)" }} />
+                      ))
+                    : (
+                      <>
+                        {currentStep.board.map((card, i) => <CardFace key={i} card={card} size="md" />)}
+                        {Array.from({ length: 5 - currentStep.board.length }).map((_, i) => (
+                          <div key={`empty-${i}`} className="w-11 h-16 rounded-xl" style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)" }} />
+                        ))}
+                      </>
+                    )}
+                </div>
+
+                {/* Pot badge — token-for-token identical to PokerTable's pot badge */}
+                <PotDisplay potBb={stackState.potBb} />
+
+                {/* Divider */}
+                <div className="border-t mb-5" style={{ borderColor: "rgba(255,255,255,0.06)" }} />
+
+                {/* Hero zone — violet HUD matching PokerSeat's HeroSeat exactly */}
+                <div className="flex flex-col items-center mb-5">
+                  <p className="text-[9px] uppercase tracking-[0.28em] font-black mb-3" style={{ color: "rgba(124,92,255,0.45)" }}>
+                    Your Hand
+                  </p>
+                  <div className="flex gap-3 mb-3">
+                    {puzzle.heroCards.map((card, i) => <CardFace key={i} card={card} size="lg" />)}
+                  </div>
+                  {/* Hero HUD pill — identical tokens to PokerSeat HeroSeat idle state */}
+                  <div
+                    className="flex items-center gap-2.5 px-4 py-2 rounded-full"
+                    style={{
+                      background: "rgba(12,6,30,0.78)",
+                      border: "1px solid rgba(124,92,255,0.22)",
+                      backdropFilter: "blur(12px)",
+                    }}
+                  >
+                    <div
+                      className="flex items-center justify-center h-5 w-5 rounded-full text-[9px] font-black flex-shrink-0"
+                      style={{ background: "rgba(124,92,255,0.14)", color: "rgba(124,92,255,0.7)" }}
+                    >
+                      Y
+                    </div>
+                    <span className="text-[12px] font-black tracking-wide" style={{ color: "rgba(124,92,255,0.7)" }}>YOU</span>
+                    <div className="w-px h-3.5" style={{ background: "rgba(255,255,255,0.10)" }} />
+                    <span className="text-[11px] font-bold" style={{ color: "rgba(148,163,184,0.5)" }}>{puzzle.heroPosition}</span>
+                    <div className="w-px h-3.5" style={{ background: "rgba(255,255,255,0.10)" }} />
+                    <span className="text-[12px] font-bold tabular-nums" style={{ color: "rgba(148,163,184,0.55)" }}>
+                      {fmtBb(stackState.heroStack)}
+                    </span>
+                  </div>
+                </div>
+
                 {/* Stack depth indicator */}
-                <StackHUD bb={stackState.heroStack} className="mb-5 mt-2" />
+                <StackHUD bb={stackState.heroStack} className="mb-5" />
 
                 {/* Dev-mode validation error banner */}
                 {process.env.NODE_ENV === "development" && pokerState.validationErrors.length > 0 && (

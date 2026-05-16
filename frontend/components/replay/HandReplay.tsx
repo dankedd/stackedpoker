@@ -99,8 +99,8 @@ function PremiumHeader({
 
   return (
     <div
-      className="relative flex flex-wrap sm:flex-nowrap items-center justify-between gap-x-4 gap-y-2 px-5 py-3"
-      style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.35)" }}
+      className="relative flex flex-wrap sm:flex-nowrap items-center justify-between gap-x-4 gap-y-2 px-5 py-2.5"
+      style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(6,9,14,0.80)" }}
     >
       {/* LEFT — hand context */}
       <div className="flex items-center gap-2.5 min-w-0 order-1">
@@ -882,8 +882,8 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
     <div
       className="rounded-2xl overflow-hidden animate-fade-in border border-border/50"
       style={{
-        background: "rgba(8,12,17,0.98)",
-        boxShadow: "0 40px 120px rgba(0,0,0,0.9), 0 0 0 1px rgba(0,0,0,0.6)",
+        background: "rgba(10,14,20,0.96)",
+        boxShadow: "0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04)",
       }}
     >
       {/* HEADER */}
@@ -899,7 +899,7 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
       />
 
       {/* TABLE — visual focus */}
-      <div style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+      <div style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(4,10,6,0.55)" }}>
         <PokerTable
           seats={seats}
           visibleBoard={replay.visibleBoard}
@@ -922,7 +922,7 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
       {/* TIMELINE + CONTROLS */}
       <div
         style={{
-          background: "rgba(0,0,0,0.22)",
+          background: "rgba(6,9,14,0.75)",
           borderBottom: "1px solid rgba(255,255,255,0.05)",
         }}
       >
