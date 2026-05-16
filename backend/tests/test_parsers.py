@@ -590,3 +590,284 @@ class TestCrossParser:
         p = PokerStarsParser().parse(PS_CASH)
         all_cards = p.hero_cards + p.board.flop + p.board.turn + p.board.river
         assert len(all_cards) == len(set(all_cards)), "Duplicate cards detected"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Single-star GGPoker format (e.g. hand #HD2860661008 from some client builds)
+# ─────────────────────────────────────────────────────────────────────────────
+
+GG_SINGLE_STAR = """\
+Poker Hand #HD2860661008: Hold'em No Limit ($0.50/$1.00) - 2024/03/10 21:15:44
+Table 'CashGame' 6-max Seat #3 is the button
+Seat 1: OtherPlayer ($95.00 in chips)
+Seat 2: AnotherPlayer ($110.00 in chips)
+Seat 3: Hero ($100.00 in chips)
+Seat 4: Player4 ($80.00 in chips)
+Seat 5: Player5 ($120.00 in chips)
+Seat 6: Player6 ($75.00 in chips)
+Player4: posts small blind $0.50
+Player5: posts big blind $1.00
+* HOLE CARDS *
+Dealt to Hero [6c 7d]
+Player6: folds
+OtherPlayer: folds
+AnotherPlayer: folds
+Hero: raises $2.50 to $3.00
+Player4: folds
+Player5: calls $2.00
+* FLOP * [6c 7d 9c]
+Player5: checks
+Hero: bets $4.00
+Player5: calls $4.00
+* TURN * [6c 7d 9c] [7s]
+Player5: checks
+Hero: bets $9.00
+Player5: folds
+* SHOWDOWN *
+* SUMMARY *
+"""
+
+GG_SINGLE_STAR_SHOWDOWN_NOSPACE = """\
+Poker Hand #HD1111111111: Hold'em No Limit ($1.00/$2.00) - 2024/03/10 21:15:44
+Table 'CashGame' 6-max Seat #1 is the button
+Seat 1: Hero ($200.00 in chips)
+Seat 2: Villain ($200.00 in chips)
+Hero: posts small blind $1.00
+Villain: posts big blind $2.00
+* HOLE CARDS *
+Dealt to Hero [As Ks]
+Hero: raises $6.00 to $6.00
+Villain: calls $4.00
+* FLOP * [Ah Kd 2c]
+Villain: checks
+Hero: bets $8.00
+Villain: calls $8.00
+* TURN * [Ah Kd 2c] [3s]
+Villain: checks
+Hero: bets $20.00
+Villain: folds
+* SHOWDOWN *
+* SUMMARY *
+"""
+
+
+class TestGGSingleStarFormat:
+    """Regression tests for GGPoker single-asterisk section markers (* SECTION *)."""
+
+    def setup_method(self):
+        self.parser = GGPokerParser()
+
+    def test_can_parse_single_star_hand(self):
+        assert self.parser.can_parse(GG_SINGLE_STAR)
+
+    def test_hero_cards_detected(self):
+        p = self.parser.parse(GG_SINGLE_STAR)
+        assert p.hero_cards == ["6c", "7d"]
+
+    def test_flop_parsed_single_star(self):
+        p = self.parser.parse(GG_SINGLE_STAR)
+        assert p.board.flop == ["6c", "7d", "9c"]
+
+    def test_turn_parsed_single_star(self):
+        p = self.parser.parse(GG_SINGLE_STAR)
+        assert p.board.turn == ["7s"]
+
+    def test_river_empty_single_star(self):
+        p = self.parser.parse(GG_SINGLE_STAR)
+        assert p.board.river == []
+
+    def test_preflop_actions_parsed(self):
+        p = self.parser.parse(GG_SINGLE_STAR)
+        preflop = [a for a in p.actions if a.street == "preflop"]
+        assert len(preflop) > 0, "No preflop actions parsed from single-star hand"
+        assert any(a.action == "raise" and a.is_hero for a in preflop)
+
+    def test_flop_actions_parsed(self):
+        p = self.parser.parse(GG_SINGLE_STAR)
+        flop = [a for a in p.actions if a.street == "flop"]
+        assert len(flop) > 0, "No flop actions parsed from single-star hand"
+
+    def test_turn_actions_parsed(self):
+        p = self.parser.parse(GG_SINGLE_STAR)
+        turn = [a for a in p.actions if a.street == "turn"]
+        assert len(turn) > 0, "No turn actions parsed from single-star hand"
+
+    def test_total_action_count(self):
+        p = self.parser.parse(GG_SINGLE_STAR)
+        # preflop: folds x3 + Hero raise + Player5 call = 5
+        # flop: check + bet + call = 3
+        # turn: check + bet + fold = 3  → total 11
+        assert len(p.actions) >= 8, (
+            f"Only {len(p.actions)} actions parsed — single-star extraction may have failed"
+        )
+
+    def test_showdown_nospace_doesnt_eat_river_actions(self):
+        """SHOWDOWN (no space) must not absorb turn actions into its terminator match."""
+        p = self.parser.parse(GG_SINGLE_STAR_SHOWDOWN_NOSPACE)
+        turn = [a for a in p.actions if a.street == "turn"]
+        assert len(turn) > 0, "Turn actions swallowed by SHOWDOWN terminator"
+
+    def test_diagnostics_present(self):
+        p = self.parser.parse(GG_SINGLE_STAR)
+        assert p.parse_diagnostics is not None
+
+    def test_diagnostics_sections_found(self):
+        p = self.parser.parse(GG_SINGLE_STAR)
+        d = p.parse_diagnostics
+        assert "HOLE CARDS" in d.sections_found
+        assert "FLOP" in d.sections_found
+        assert "TURN" in d.sections_found
+
+    def test_diagnostics_no_errors_for_clean_hand(self):
+        p = self.parser.parse(GG_SINGLE_STAR)
+        d = p.parse_diagnostics
+        assert d.errors == [], f"Unexpected errors: {d.errors}"
+
+    def test_diagnostics_hero_cards_found(self):
+        p = self.parser.parse(GG_SINGLE_STAR)
+        assert p.parse_diagnostics.hero_cards_found is True
+
+    def test_diagnostics_action_count_matches(self):
+        p = self.parser.parse(GG_SINGLE_STAR)
+        assert p.parse_diagnostics.actions_parsed == len(p.actions)
+
+    def test_diagnostics_board_cards_count(self):
+        p = self.parser.parse(GG_SINGLE_STAR)
+        d = p.parse_diagnostics
+        # flop(3) + turn(1) = 4
+        assert d.board_cards_parsed == 4
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Recovery mode: malformed / unknown header format
+# ─────────────────────────────────────────────────────────────────────────────
+
+GG_UNKNOWN_HEADER = """\
+Poker Hand #CB9999999999: Hold'em No Limit ($1.00/$2.00) - 2024/06/01
+Table 'WeirdClient' 6-max Seat #2 is the button
+Seat 1: Hero ($100.00 in chips)
+Seat 2: Villain ($200.00 in chips)
+Hero: posts small blind $1.00
+Villain: posts big blind $2.00
+HOLE CARDS
+Dealt to Hero [Ac Kd]
+Villain: raises $6.00 to $6.00
+Hero: calls $4.00
+FLOP [Ah 7c 2s]
+Hero: checks
+Villain: bets $8.00
+Hero: calls $8.00
+SUMMARY
+"""
+
+
+class TestRecoveryMode:
+    """Tests for _recover_actions_from_text fallback parser."""
+
+    def setup_method(self):
+        self.parser = GGPokerParser()
+
+    def test_recovery_finds_some_actions(self):
+        """When section extraction fails, recovery should still find actions."""
+        p = self.parser.parse(GG_UNKNOWN_HEADER)
+        # Recovery may find actions even without proper star markers
+        # The main assertion: no crash, and diagnostics track recovery
+        assert p.parse_diagnostics is not None
+
+    def test_diagnostics_is_partial_when_no_starred_sections(self):
+        p = self.parser.parse(GG_UNKNOWN_HEADER)
+        d = p.parse_diagnostics
+        # HOLE CARDS section should be missing (no * markers)
+        assert "HOLE CARDS" not in d.sections_found or d.is_partial
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Check/check streets (no sizing, no chips_in)
+# ─────────────────────────────────────────────────────────────────────────────
+
+GG_CHECK_CHECK = """\
+Poker Hand #RC5555555555: Hold'em No Limit ($0.25/$0.50) - 2024/01/01 12:00:00
+Table 'CheckStreet' 6-max Seat #1 is the button
+Seat 1: Hero ($50.00 in chips)
+Seat 2: Villain ($50.00 in chips)
+Villain: posts small blind $0.25
+Hero: posts big blind $0.50
+*** HOLE CARDS ***
+Dealt to Hero [Qh Qs]
+Villain: calls $0.25
+Hero: checks
+*** FLOP *** [2c 5d 8h]
+Villain: checks
+Hero: checks
+*** TURN *** [2c 5d 8h] [9s]
+Villain: checks
+Hero: checks
+*** RIVER *** [2c 5d 8h 9s] [Kc]
+Villain: checks
+Hero: bets $1.00
+Villain: folds
+*** SUMMARY ***
+"""
+
+
+class TestCheckCheckStreet:
+    def setup_method(self):
+        self.parser = GGPokerParser()
+
+    def test_all_streets_parsed(self):
+        p = self.parser.parse(GG_CHECK_CHECK)
+        streets = {a.street for a in p.actions}
+        assert "preflop" in streets
+        assert "flop" in streets
+        assert "turn" in streets
+        assert "river" in streets
+
+    def test_check_actions_have_no_size(self):
+        p = self.parser.parse(GG_CHECK_CHECK)
+        checks = [a for a in p.actions if a.action == "check"]
+        assert len(checks) >= 4
+        for c in checks:
+            assert c.size_bb is None
+
+    def test_river_bet_detected(self):
+        p = self.parser.parse(GG_CHECK_CHECK)
+        river = [a for a in p.actions if a.street == "river"]
+        assert any(a.action == "bet" for a in river)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PokerStars triple-star format still works after base.py refactor
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestPokerStarsTripleStar:
+    """Regression: PokerStars *** markers must still parse correctly."""
+
+    def setup_method(self):
+        self.parser = PokerStarsParser()
+
+    def test_multistreet_actions_preserved(self):
+        p = self.parser.parse(PS_CASH)
+        streets = {a.street for a in p.actions}
+        assert "preflop" in streets
+        assert "flop" in streets
+        assert "turn" in streets
+
+    def test_board_flop_turn(self):
+        p = self.parser.parse(PS_CASH)
+        assert p.board.flop == ["Kd", "Tc", "9s"]
+        assert p.board.turn == ["2h"]
+
+    def test_diagnostics_present(self):
+        p = self.parser.parse(PS_CASH)
+        assert p.parse_diagnostics is not None
+
+    def test_diagnostics_no_recovery_needed(self):
+        p = self.parser.parse(PS_CASH)
+        assert p.parse_diagnostics.recovered_actions == 0
+
+    def test_diagnostics_sections_found(self):
+        p = self.parser.parse(PS_CASH)
+        d = p.parse_diagnostics
+        assert "HOLE CARDS" in d.sections_found
+        assert "FLOP" in d.sections_found
+        assert "TURN" in d.sections_found

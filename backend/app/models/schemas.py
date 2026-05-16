@@ -36,6 +36,18 @@ class HandAction(BaseModel):
     is_all_in: bool = False        # player commits remaining chips
 
 
+class ParseDiagnostics(BaseModel):
+    sections_found: list[str] = Field(default_factory=list)
+    sections_missing: list[str] = Field(default_factory=list)
+    actions_parsed: int = 0
+    board_cards_parsed: int = 0
+    hero_cards_found: bool = False
+    recovered_actions: int = 0
+    warnings: list[str] = Field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)
+    is_partial: bool = False
+
+
 class ParsedHand(BaseModel):
     site: Literal["GGPoker", "PokerStars", "Unknown"]
     game_type: str
@@ -51,6 +63,7 @@ class ParsedHand(BaseModel):
     pot_size_bb: float
     big_blind: float
     table_max_seats: int = 6
+    parse_diagnostics: ParseDiagnostics | None = None
 
 
 # ── Spot classification ────────────────────────────────────────────────────
