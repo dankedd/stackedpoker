@@ -85,21 +85,30 @@ app.add_middleware(
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next) -> Response:
     response = await call_next(request)
-    # Prevent MIME-type sniffing
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    # Prevent clickjacking
-    response.headers["X-Frame-Options"] = "DENY"
-    # Strict XSS protection (legacy browsers)
-    response.headers["X-XSS-Protection"] = "1; mode=block"
-    # Only send Referer to same origin
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    # Disable powerful features not needed by the API
-    response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
-    # HSTS — only meaningful in production behind HTTPS
-    if not settings.debug:
-        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
-    # Remove server fingerprint
-    response.headers.pop("server", None)
+    try:
+        # Prevent MIME-type sniffing
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        # Prevent clickjacking
+        response.headers["X-Frame-Options"] = "DENY"
+        # Strict XSS protection (legacy browsers)
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        # Only send Referer to same origin
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        # Disable powerful features not needed by the API
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        # HSTS — only meaningful in production behind HTTPS
+        if not settings.debug:
+            response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
+        # Remove server fingerprint — MutableHeaders has no .pop(); use del with guard
+        if "server" in response.headers:
+            del response.headers["server"]
+    except Exception:
+        # Middleware MUST NOT crash the pipeline — a successful analysis response
+        # must always reach the client even if header mutation fails.
+        logger.warning(
+            "Security header middleware failed on %s %s — response sent without security headers",
+            request.method, request.url.path, exc_info=True,
+        )
     return response
 
 
