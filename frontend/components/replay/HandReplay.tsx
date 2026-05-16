@@ -880,10 +880,9 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
 
   return (
     <div
-      className="rounded-2xl overflow-hidden animate-fade-in"
+      className="rounded-2xl overflow-hidden animate-fade-in border border-border/50"
       style={{
-        background: "#080C11",
-        border: "1px solid rgba(255,255,255,0.07)",
+        background: "rgba(8,12,17,0.98)",
         boxShadow: "0 40px 120px rgba(0,0,0,0.9), 0 0 0 1px rgba(0,0,0,0.6)",
       }}
     >
