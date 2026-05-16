@@ -9,6 +9,7 @@ from app.models.schemas import HandAction, PlayerInfo
 from app.engines.pot_engine import (
     compute_pot_states,
     compute_final_pot,
+    compute_side_pots,
     find_blind_players,
 )
 
@@ -238,3 +239,117 @@ class TestFindBlindPlayers:
         sb, bb = find_blind_players(players, [])
         assert sb == ""
         assert bb == ""
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# compute_side_pots
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestSidePots:
+
+    def test_heads_up_no_all_in(self):
+        """Both players contribute equally — one main pot, no side pots."""
+        contribs = {"BTN": 10.0, "BB": 10.0}
+        main, sides, uncalled = compute_side_pots(contribs, set())
+        assert main == pytest.approx(20.0, rel=0.01)
+        assert sides == []
+        assert uncalled == pytest.approx(0.0, abs=0.01)
+
+    def test_heads_up_all_in_called(self):
+        """Short stack shoves 20bb, big stack calls 20bb."""
+        contribs = {"Short": 20.0, "Big": 20.0}
+        main, sides, uncalled = compute_side_pots(contribs, set())
+        assert main == pytest.approx(40.0, rel=0.01)
+        assert sides == []
+        assert uncalled == pytest.approx(0.0, abs=0.01)
+
+    def test_three_way_side_pot(self):
+        """
+        Short (20bb) shoves, Mid (50bb) calls, Big (100bb) calls.
+        Expect: main pot 60bb (all 3 eligible), side pot 60bb (Mid+Big eligible).
+        """
+        contribs = {"Short": 20.0, "Mid": 50.0, "Big": 50.0}
+        main, sides, uncalled = compute_side_pots(contribs, set())
+        assert main == pytest.approx(60.0, rel=0.01)   # 20 * 3
+        assert len(sides) == 1
+        assert sides[0].amount == pytest.approx(60.0, rel=0.01)  # (50-20) * 2
+        assert set(sides[0].eligible_players) == {"Mid", "Big"}
+        assert uncalled == pytest.approx(0.0, abs=0.01)
+
+    def test_folded_player_chips_in_main_pot(self):
+        """Folded player's chips go into pot but they can't win any segment."""
+        # A folds after posting 10bb, B and C each put in 10bb
+        contribs = {"A": 10.0, "B": 10.0, "C": 10.0}
+        folded = {"A"}
+        main, sides, uncalled = compute_side_pots(contribs, folded)
+        assert main == pytest.approx(30.0, rel=0.01)
+        assert sides == []
+        assert uncalled == pytest.approx(0.0, abs=0.01)
+
+    def test_uncalled_bet_returned(self):
+        """Heads-up: A raises to 50bb, B folds — 49.5bb uncalled (B posted 0.5)."""
+        contribs = {"A": 50.0, "B": 0.5}
+        folded = {"B"}
+        main, sides, uncalled = compute_side_pots(contribs, folded)
+        assert uncalled == pytest.approx(49.5, rel=0.01)
+        assert main == pytest.approx(1.0, rel=0.01)  # only B's 0.5 + A's matched 0.5
+
+    def test_uncalled_bet_solo_contributor(self):
+        """Only one player contributed at all — everything is uncalled."""
+        contribs = {"A": 10.0}
+        main, sides, uncalled = compute_side_pots(contribs, set())
+        assert uncalled == pytest.approx(10.0, rel=0.01)
+        assert main == pytest.approx(0.0, abs=0.01)
+
+    def test_3bet_pot_no_side_pots(self):
+        """3bet pot with both players deep — no all-ins, no side pots."""
+        contribs = {"BTN": 10.0, "BB": 10.0}
+        main, sides, uncalled = compute_side_pots(contribs, set())
+        assert sides == []
+        assert uncalled == pytest.approx(0.0, abs=0.01)
+
+    def test_all_in_players_flagged_in_pot_state(self):
+        """compute_pot_states should mark is_all_in and populate all_in_players."""
+        players = [
+            make_player("Short", 20, "SB"),
+            make_player("Big", 100, "BB"),
+        ]
+        actions = [
+            make_action("preflop", "Short", "raise", size_bb=20.0, is_all_in=True),
+            make_action("preflop", "Big", "call", size_bb=19.0),
+        ]
+        states = compute_pot_states(
+            actions, players, sb_bb=0.5, sb_player="Short", bb_player="Big"
+        )
+        shove_state = states[0]
+        assert shove_state.is_all_in is True
+        assert "Short" in shove_state.all_in_players
+        call_state = states[1]
+        assert call_state.is_all_in is False
+        assert "Short" in call_state.all_in_players  # still tracked cumulative
+
+    def test_chip_conservation(self):
+        """Sum of all stacks + pot must equal starting total at every step."""
+        players = [
+            make_player("SB", 100, "SB"),
+            make_player("BB", 100, "BB"),
+            make_player("BTN", 100, "BTN"),
+        ]
+        starting_total = sum(p.stack_bb for p in players)
+        actions = [
+            make_action("preflop", "BTN", "raise", size_bb=3.0),
+            make_action("preflop", "SB", "fold"),
+            make_action("preflop", "BB", "call", size_bb=2.0),
+            make_action("flop", "BB", "check"),
+            make_action("flop", "BTN", "bet", size_bb=4.0),
+            make_action("flop", "BB", "call", size_bb=4.0),
+        ]
+        states = compute_pot_states(
+            actions, players, sb_bb=0.5, sb_player="SB", bb_player="BB"
+        )
+        for s in states:
+            total_chips = s.pot_after + sum(s.player_stacks.values())
+            assert total_chips == pytest.approx(starting_total, rel=0.01), (
+                f"Chip conservation violated at action {s.action_index}: "
+                f"pot={s.pot_after} stacks={s.player_stacks} total={total_chips}"
+            )

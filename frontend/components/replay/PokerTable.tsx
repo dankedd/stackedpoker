@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { PlayingCard, CardBack } from "@/components/poker/PlayingCard";
 import type { SeatDescriptor } from "@/lib/replay/seatEngine";
-import type { ReplayAction } from "@/lib/types";
+import type { ReplayAction, SidePot } from "@/lib/types";
 import type { VisibleBoard } from "@/hooks/useReplay";
 
 interface PokerTableProps {
@@ -17,6 +17,12 @@ interface PokerTableProps {
   currentHeroStack?: number | null;
   /** Dynamic primary villain stack after the current action (from pot engine). Overrides first opponent seat.stack_bb. */
   currentVillainStack?: number | null;
+  /** Full player stack map keyed by player name (generalized, overrides the above when present). */
+  playerStacksAfter?: Record<string, number>;
+  /** Cumulative list of all-in players at the current step. */
+  allInPlayers?: string[];
+  /** Active side pots (non-empty only in multiway all-in hands). */
+  sidePots?: SidePot[];
 }
 
 const ACTION_BADGE_CLS: Record<string, string> = {
@@ -47,6 +53,9 @@ export function PokerTable({
   bigBlind,
   currentHeroStack,
   currentVillainStack,
+  playerStacksAfter,
+  allInPlayers = [],
+  sidePots = [],
 }: PokerTableProps) {
   const heroSeat = seats.find((s) => s.isHero);
   const opponentSeats = seats.filter((s) => !s.isHero);
@@ -98,11 +107,15 @@ export function PokerTable({
               ? (currentAction!.feedback?.rating as "good" | "okay" | "mistake" | undefined)
               : undefined;
 
-            // Use live stack from pot engine for the primary villain (first opponent seat).
-            // Fall back to the static starting stack if pot engine data is unavailable.
-            const liveStack = i === 0 && currentVillainStack != null
-              ? currentVillainStack
-              : seat.stack_bb;
+            // Prefer generalized playerStacksAfter (keyed by name), then legacy
+            // villain slot (index 0 only), then static starting stack.
+            const isAllIn = !!seat.playerName && allInPlayers.includes(seat.playerName);
+            const liveStack =
+              (playerStacksAfter && seat.playerName && playerStacksAfter[seat.playerName] != null)
+                ? playerStacksAfter[seat.playerName]
+                : i === 0 && currentVillainStack != null
+                  ? currentVillainStack
+                  : seat.stack_bb;
 
             return (
               <div
@@ -168,6 +181,14 @@ export function PokerTable({
                     >
                       {seat.position}
                     </span>
+                    {isAllIn && (
+                      <span
+                        className="text-[9px] font-black px-1 py-0 rounded"
+                        style={{ background: "rgba(251,191,36,0.18)", color: "rgba(251,191,36,0.85)" }}
+                      >
+                        ALL-IN
+                      </span>
+                    )}
                   </div>
                   {liveStack !== undefined && (
                     <span
@@ -254,7 +275,12 @@ export function PokerTable({
           currentAction={currentAction}
           currentStep={currentStep}
           bigBlind={bigBlind}
-          liveStack={currentHeroStack ?? heroSeat.stack_bb}
+          liveStack={
+            (playerStacksAfter && heroSeat.playerName && playerStacksAfter[heroSeat.playerName] != null)
+              ? playerStacksAfter[heroSeat.playerName]
+              : currentHeroStack ?? heroSeat.stack_bb
+          }
+          isAllIn={!!heroSeat.playerName && allInPlayers.includes(heroSeat.playerName)}
         />
       )}
     </div>
@@ -270,6 +296,7 @@ function HeroZone({
   currentStep,
   bigBlind,
   liveStack,
+  isAllIn = false,
 }: {
   seat: SeatDescriptor;
   actingPlayer: string | null;
@@ -277,6 +304,7 @@ function HeroZone({
   currentStep: number;
   bigBlind?: number;
   liveStack?: number;
+  isAllIn?: boolean;
 }) {
   const isActing = !!seat.playerName && seat.playerName === actingPlayer;
   const isFoldedPast = seat.foldedAtStep !== null && seat.foldedAtStep < currentStep;
@@ -366,6 +394,14 @@ function HeroZone({
         >
           {seat.position}
         </span>
+        {isAllIn && (
+          <span
+            className="text-[9px] font-black px-1.5 py-0 rounded"
+            style={{ background: "rgba(251,191,36,0.18)", color: "rgba(251,191,36,0.85)" }}
+          >
+            ALL-IN
+          </span>
+        )}
 
         {liveStack !== undefined && (
           <>

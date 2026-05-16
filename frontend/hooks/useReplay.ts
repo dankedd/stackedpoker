@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
-import type { ReplayAnalysis, ReplayAction, ReplayFeedback } from "@/lib/types";
+import type { ReplayAnalysis, ReplayAction, ReplayFeedback, SidePot } from "@/lib/types";
 
 export interface VisibleBoard {
   flop: string[];
@@ -17,6 +17,9 @@ export interface ReplayState {
   currentPot: number;
   currentHeroStack: number | null;     // hero's stack after current action (BB); null = no data yet
   currentVillainStack: number | null;  // primary villain's stack after current action (BB)
+  currentPlayerStacks: Record<string, number> | null;  // full stack map (generalized)
+  currentAllInPlayers: string[];       // cumulative all-in roster at this step
+  currentSidePots: SidePot[];          // active side pots (empty in heads-up / no all-in)
   currentStreet: ReplayAction["street"];
   isPlaying: boolean;
   totalSteps: number;
@@ -93,6 +96,33 @@ export function useReplay(
       if (actions[i].villain_stack_after != null) return actions[i].villain_stack_after!;
     }
     return null;
+  }, [step, actions]);
+
+  // Generalized full player stack map — walk back to most recent non-null entry
+  const currentPlayerStacks = useMemo<Record<string, number> | null>(() => {
+    if (step < 0) return null;
+    for (let i = step; i >= 0; i--) {
+      if (actions[i].player_stacks_after != null) return actions[i].player_stacks_after!;
+    }
+    return null;
+  }, [step, actions]);
+
+  // All-in roster at the current step
+  const currentAllInPlayers = useMemo<string[]>(() => {
+    if (step < 0) return [];
+    for (let i = step; i >= 0; i--) {
+      if (actions[i].all_in_players && actions[i].all_in_players!.length > 0) {
+        return actions[i].all_in_players!;
+      }
+    }
+    return [];
+  }, [step, actions]);
+
+  // Side pots at the current step (non-empty only during multiway all-in hands)
+  const currentSidePots = useMemo<SidePot[]>(() => {
+    if (step < 0) return [];
+    const cur = actions[step];
+    return cur?.side_pots ?? [];
   }, [step, actions]);
 
   const currentStreet: ReplayAction["street"] = currentAction?.street ?? "preflop";
@@ -188,6 +218,9 @@ export function useReplay(
     currentPot,
     currentHeroStack,
     currentVillainStack,
+    currentPlayerStacks,
+    currentAllInPlayers,
+    currentSidePots,
     currentStreet,
     isPlaying,
     totalSteps,

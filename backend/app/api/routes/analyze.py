@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.schemas import (
     HandAnalysisRequest, AnalysisResponse,
     ReplayAnalysis, HandSummaryData, ReplayAction, ReplayFeedback, OverallVerdict,
-    SeatedPlayer, ParsedHand,
+    SeatedPlayer, ParsedHand, SidePotSchema,
 )
 from app.engines.scoring import score_all_hero_actions
 from app.engines.validator import validate_hand
@@ -123,6 +123,12 @@ def _build_replay(result: AnalysisResponse) -> ReplayAnalysis:
                     gto_note=f.freq_recommendation,
                 )
 
+        side_pots_schema = (
+            [SidePotSchema(amount=sp.amount, eligible_players=sp.eligible_players)
+             for sp in ps.side_pots]
+            if ps else []
+        )
+
         replay_actions.append(ReplayAction(
             id=len(replay_actions) + 1,
             street=a.street,
@@ -132,6 +138,12 @@ def _build_replay(result: AnalysisResponse) -> ReplayAnalysis:
             pot_after=round(pot_after, 2),
             hero_stack_after=round(hero_stack_after, 2) if hero_stack_after is not None else None,
             villain_stack_after=round(villain_stack_after, 2) if villain_stack_after is not None else None,
+            player_stacks_after={k: round(v, 2) for k, v in ps.player_stacks.items()} if ps else None,
+            is_all_in=ps.is_all_in if ps else False,
+            all_in_players=list(ps.all_in_players) if ps else [],
+            main_pot=round(ps.main_pot, 2) if ps else None,
+            side_pots=side_pots_schema,
+            uncalled_bet=round(ps.uncalled_bet, 2) if ps else 0.0,
             is_hero=a.is_hero,
             feedback=feedback,
             coaching=coaching_by_idx.get(i),

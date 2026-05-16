@@ -90,6 +90,11 @@ export interface ActionCoaching {
   adjustment: string;
 }
 
+export interface SidePot {
+  amount: number;
+  eligible_players: string[];
+}
+
 export interface ReplayAction {
   id: number;
   street: "preflop" | "flop" | "turn" | "river";
@@ -99,6 +104,13 @@ export interface ReplayAction {
   pot_after: number;
   hero_stack_after?: number;    // hero's stack after this action (BB); from pot engine
   villain_stack_after?: number; // primary villain's stack after this action (BB)
+  // Extended pot-engine fields
+  player_stacks_after?: Record<string, number>;  // full stack map after this action
+  is_all_in?: boolean;                           // this action went all-in
+  all_in_players?: string[];                     // cumulative all-in roster
+  main_pot?: number;                             // main pot amount
+  side_pots?: SidePot[];                         // side pots (multiway all-in)
+  uncalled_bet?: number;                         // chips returned to last aggressor
   is_hero: boolean;
   feedback?: ReplayFeedback;
   coaching?: ActionCoaching;
