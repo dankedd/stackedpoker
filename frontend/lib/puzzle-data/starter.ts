@@ -57,8 +57,8 @@ export const PUZZLES_STARTER: Puzzle[] = [
       {
         street: 'river',
         board: ['Ac', '6s', '3d', '9h', '2c'],
-        context: 'Pot $55. River: 2c (blank). BTN checks to you.',
-        prompt: 'BTN checked the brick river. Extract thin value or play it safe?',
+        context: 'Pot $55. River: 2c (blank).',
+        prompt: 'Brick river. BTN double-barreled flop and turn. You act first OOP — lead thin value or check?',
         options: [
           { id: 'check',    label: 'Check',         quality: 'good',     evLoss: 2,   coaching: 'Checking is safe but leaves EV. BTN\'s range is capped — they check their missed draws and medium pairs. A small bet extracts from Ax weaker than yours.' },
           { id: 'bet_33',   label: 'Bet $18 (33%)', quality: 'perfect',  evLoss: 0,   coaching: 'Lead for thin value. BTN\'s range is capped after two barrels and a check. Small sizing extracts from A7, A5, 99, 66 type hands that check-call but fold to a big bet.' },

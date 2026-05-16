@@ -20,8 +20,9 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.middleware.auth import get_optional_user
+from app.middleware.auth import get_current_user, get_optional_user
 from app.services.supabase_persistence import save_image_analysis
+from app.services.usage_service import assert_usage_allowed, get_user_profile
 
 _bearer = HTTPBearer(auto_error=False)
 from app.models.schemas import (
@@ -60,11 +61,18 @@ _MAX_BYTES = 10 * 1024 * 1024
 # ── POST /api/extract-hand ─────────────────────────────────────────────────
 
 @router.post("/extract-hand", response_model=ExtractionResult, tags=["extraction"])
-async def extract_hand(file: UploadFile = File(...)) -> ExtractionResult:
+async def extract_hand(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+) -> ExtractionResult:
     """
     Phase 1+2: extract raw poker state from screenshot.
-    Returns ExtractionResult for frontend review — NO coaching yet.
+    Requires authentication — usage quota enforced server-side.
     """
+    user_id: str = current_user.get("sub", "")
+    profile = await get_user_profile(user_id)
+    assert_usage_allowed(profile)
+
     if file.content_type not in _ALLOWED_TYPES:
         raise HTTPException(415, f"Unsupported file type '{file.content_type}'")
 

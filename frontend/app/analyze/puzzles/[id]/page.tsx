@@ -12,6 +12,8 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { PUZZLES, QUALITY_SCORE, type ActionOption, type PuzzleStep } from "@/lib/puzzles";
 import { cn } from "@/lib/utils";
+import { buildPokerState } from "@/lib/puzzles/pokerState";
+import { runGoldenTests, validateAllPuzzles } from "@/lib/puzzles/puzzleValidator";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Puzzle pot & stack engine
@@ -603,6 +605,38 @@ function ActionBtn({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Position matchup badge
+// ─────────────────────────────────────────────────────────────────────────────
+
+function PositionMatchupBadge({
+  heroPos,
+  villainPos,
+  heroIsOop,
+}: {
+  heroPos: string;
+  villainPos: string;
+  heroIsOop: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className={cn(
+        "h-5 px-2 flex items-center rounded-full text-[10px] font-semibold border",
+        "bg-violet-500/10 border-violet-500/20 text-violet-400"
+      )}>
+        {heroPos} {heroIsOop ? "(OOP)" : "(IP)"}
+      </div>
+      <span className="text-muted-foreground/30 text-[10px]">vs</span>
+      <div className={cn(
+        "h-5 px-2 flex items-center rounded-full text-[10px] font-semibold border",
+        "bg-secondary/50 border-border/30 text-muted-foreground/60"
+      )}>
+        {villainPos} {heroIsOop ? "(IP)" : "(OOP)"}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Street progress pip
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -913,6 +947,21 @@ export default function PuzzlePlayerPage() {
     [puzzle, stepIdx]
   );
 
+  // ── Canonical PokerState ───────────────────────────────────────────────
+  const pokerState = useMemo(
+    () => buildPokerState(puzzle, stepIdx, stackState.potBb, stackState.heroStack, stackState.villainStack),
+    [puzzle, stepIdx, stackState.potBb, stackState.heroStack, stackState.villainStack]
+  );
+
+  // ── Dev-mode validation ────────────────────────────────────────────────
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      runGoldenTests();
+      validateAllPuzzles(PUZZLES);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Result screen ──────────────────────────────────────────────────────
   if (done) {
     return (
@@ -1119,10 +1168,14 @@ export default function PuzzlePlayerPage() {
                     </div>
                   </div>
 
-                  {/* Street — top-right */}
-                  <div className="text-right">
-                    <p className="text-[10px] text-muted-foreground/50 uppercase tracking-wider">Street</p>
+                  {/* Street + position matchup — top-right */}
+                  <div className="text-right flex flex-col items-end gap-1">
                     <p className="text-sm font-semibold text-violet-400 capitalize">{currentStep.street}</p>
+                    <PositionMatchupBadge
+                      heroPos={puzzle.heroPosition}
+                      villainPos={puzzle.villainPosition}
+                      heroIsOop={pokerState.heroIsOop}
+                    />
                   </div>
                 </div>
 
@@ -1203,6 +1256,14 @@ export default function PuzzlePlayerPage() {
 
                 {/* Stack depth indicator */}
                 <StackHUD bb={stackState.heroStack} className="mb-5" />
+
+                {/* Dev-mode validation error banner */}
+                {process.env.NODE_ENV === "development" && pokerState.validationErrors.length > 0 && (
+                  <div className="rounded-xl bg-red-500/10 border border-red-500/30 px-3 py-2 mb-3 text-xs text-red-400 leading-relaxed">
+                    <span className="font-semibold">Actor-order error:</span>{" "}
+                    {pokerState.validationErrors[0]}
+                  </div>
+                )}
 
                 {/* Situation context */}
                 <div className="rounded-xl bg-secondary/20 border border-border/25 px-4 py-3.5 mb-5">

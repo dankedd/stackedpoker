@@ -6,8 +6,11 @@ from typing import Literal
 # ── Input ──────────────────────────────────────────────────────────────────
 
 class HandAnalysisRequest(BaseModel):
-    hand_text: str = Field(..., min_length=50, description="Raw hand history text")
-    game_type: str | None = Field(None, description="Game format selected by user (e.g. Hold'em, PLO)")
+    # 50 chars minimum (a valid HH is never shorter) and 100 KB maximum.
+    # 100 KB covers the largest realistic multi-street hand history (~5 KB)
+    # with a generous 20x buffer while preventing parser-abuse payloads.
+    hand_text: str = Field(..., min_length=50, max_length=102_400, description="Raw hand history text")
+    game_type: str | None = Field(None, max_length=64, description="Game format selected by user (e.g. Hold'em, PLO)")
     player_count: int | None = Field(None, ge=1, le=9, description="Table size selected by user")
 
 

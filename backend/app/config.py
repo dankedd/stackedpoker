@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str = ""
     supabase_service_role_key: str = ""  # server-side only — never expose to frontend
 
+    # Frontend origin — used for Stripe redirect URLs. Never read from request body.
+    frontend_url: str = "http://localhost:3000"
+
     # Stripe  (server-side only — never expose secret key to frontend)
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""

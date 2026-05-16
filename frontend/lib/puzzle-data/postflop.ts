@@ -35,8 +35,8 @@ export const PUZZLES_POSTFLOP: Puzzle[] = [
       {
         street: 'turn',
         board: ['Ad', '8h', '5s', 'Jd'],
-        context: 'Pot $19. Turn: Jd (diamond draw arrived). BTN calls flop and checks.',
-        prompt: 'Turn Jd brings a flush draw. BTN called flop and checks. Continue or take a free card?',
+        context: 'Pot $19. Turn: Jd (diamond draw arrived). BTN calls flop.',
+        prompt: 'Turn Jd brings a flush draw. BTN called the flop. You act first OOP — continue betting or take a free card?',
         options: [
           { id: 'check',   label: 'Check',          quality: 'mistake',  evLoss: 3,   coaching: 'Checking with TPTK and a flush draw present is a mistake. You give BTN a free card to hit their diamond draw. Betting is clearly correct to charge the draw.' },
           { id: 'bet_40',  label: 'Bet $11 (58%)',  quality: 'perfect',  evLoss: 0,   coaching: 'Bet for value and protection. Flush draw now present — charge it. TPTK is still strong and betting here extracts from Jx, 8x while denying free cards to diamonds.' },
@@ -46,8 +46,8 @@ export const PUZZLES_POSTFLOP: Puzzle[] = [
       {
         street: 'river',
         board: ['Ad', '8h', '5s', 'Jd', '2c'],
-        context: 'Pot $41. River: 2c (flush draw bricked). BTN calls turn and checks.',
-        prompt: 'Flush bricked. BTN called two streets and checks the river. What is your river sizing?',
+        context: 'Pot $41. River: 2c (flush draw bricked). BTN calls turn.',
+        prompt: 'Flush bricked. BTN called two streets. You act first OOP — what is your river sizing?',
         options: [
           { id: 'check',   label: 'Check',           quality: 'mistake',  evLoss: 5,   coaching: 'Checking back TPTK on a brick river when villain called two bets is a large EV mistake. Their range is strong enough to call a value bet.' },
           { id: 'bet_50',  label: 'Bet $22 (54%)',   quality: 'good',     evLoss: 1.5, coaching: 'Medium bet extracts value. However, BTN called two streets — their range is Jx, Ax second kicker, or slow-played two-pair. Larger sizing extracts more.' },
@@ -258,8 +258,8 @@ export const PUZZLES_POSTFLOP: Puzzle[] = [
       {
         street: 'river',
         board: ['7h', 'Jh', '5c', 'Ts', '6h'],
-        context: 'Pot $55. River: 6h — flush hits! Also made a straight. BTN checks.',
-        prompt: 'River 6h: you made the flush (9h8h on 7hJh5cTs6h). Also have a straight. BTN checks.',
+        context: 'Pot $55. River: 6h — flush hits! Also made a straight.',
+        prompt: 'River 6h: you made the flush (9h8h on 7hJh5cTs6h). Also have a straight. You act first OOP — how much?',
         options: [
           { id: 'check',   label: 'Check',           quality: 'mistake',  evLoss: 12,  coaching: 'Never check back a flush on the river. You have a very strong hand — extract maximum value.' },
           { id: 'bet_60',  label: 'Bet $38 (69%)',   quality: 'good',     evLoss: 2,   coaching: 'Medium bet extracts value. However, you check-raised the flop and BTN has been showing strength. A larger bet gets more from their committed holdings.' },
@@ -353,8 +353,8 @@ export const PUZZLES_POSTFLOP: Puzzle[] = [
       {
         street: 'turn',
         board: ['Ks', 'Th', '7d', '2c'],
-        context: 'Pot $25. Turn: 2c (blank). CO checks.',
-        prompt: 'CO checked through on a blank turn after you called flop. Now what?',
+        context: 'Pot $25. Turn: 2c (blank).',
+        prompt: 'Blank turn after you called the flop. You act first OOP — start building the pot or check?',
         options: [
           { id: 'check',   label: 'Check',            quality: 'mistake',  evLoss: 3,  coaching: 'Checking back two pair on a blank turn is too passive. You gave CO a free river card. Start building the pot — bet and make them pay.' },
           { id: 'bet_50',  label: 'Bet $14 (56%)',    quality: 'perfect',  evLoss: 0,  coaching: 'Bet for value. CO checked the turn after you called flop — their range is capped at medium-strength hands. Two pair wants to build the pot here.' },
@@ -364,8 +364,8 @@ export const PUZZLES_POSTFLOP: Puzzle[] = [
       {
         street: 'river',
         board: ['Ks', 'Th', '7d', '2c', 'Jd'],
-        context: 'Pot $53. River: Jd. CO calls turn and checks.',
-        prompt: 'Jd on the river — possible Q8 straight. CO calls turn and checks. Two pair still strong?',
+        context: 'Pot $53. River: Jd. CO calls turn.',
+        prompt: 'Jd on the river — possible Q8 straight. CO called the turn. You act first OOP — two pair still strong?',
         options: [
           { id: 'check',   label: 'Check',            quality: 'perfect',  evLoss: 0,   coaching: 'Check back on the river. The Jd completes Q8 and J7 type straights — some hands in CO\'s range just got there. With two pair on a straight-completing river OOP, checking is safer than betting.' },
           { id: 'bet_33',  label: 'Bet $18 (34%)',    quality: 'good',     evLoss: 1,   coaching: 'Small bet for thin value is possible, but the Jd is a meaningful card that improves some of CO\'s range. Checking is slightly cleaner and avoids paying off straights.' },
@@ -417,8 +417,8 @@ export const PUZZLES_POSTFLOP: Puzzle[] = [
       {
         street: 'river',
         board: ['9c', '6d', '3h', 'Ah', '5d'],
-        context: 'Pot $73. River: 5d (blank). BTN calls turn and checks.',
-        prompt: 'River 5d blank. BTN called the turn and checks. TPTK. Bet for value or play it safe?',
+        context: 'Pot $73. River: 5d (blank). BTN calls turn.',
+        prompt: 'River 5d blank. BTN called the turn. You act first OOP. TPTK — lead for value or check?',
         options: [
           { id: 'check',   label: 'Check',            quality: 'good',     evLoss: 2,   coaching: 'Checking is safe but misses value. BTN called a delayed cbet showing some hand — a medium value bet extracts from Ax second kicker and 99/66 type hands.' },
           { id: 'bet_40',  label: 'Bet $32 (44%)',    quality: 'perfect',  evLoss: 0,   coaching: 'Lead for value. BTN called a delayed cbet in a 3-bet pot — they have something. Medium sizing extracts from weaker Ax, 9x, and one-pair hands that call but fold to a large bet.' },

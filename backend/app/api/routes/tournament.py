@@ -1,15 +1,9 @@
-import io
 import logging
-import zipfile as _zipfile
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.models.schemas import TournamentAnalysisRequest, TournamentAnalysisResponse
-from app.services.tournament_service import (
-    analyze_tournament, analyze_tournament_from_upload,
-    _try_decode, _looks_like_hh, _is_skip_entry,
-)
-from app.services.session_service import split_hands
+from app.services.tournament_service import analyze_tournament, analyze_tournament_from_upload
 from app.services.supabase_persistence import save_tournament_analysis
 from app.services.usage_service import get_user_profile, assert_usage_allowed
 from app.middleware.auth import get_current_user
@@ -39,7 +33,7 @@ async def analyze_tournament_endpoint(
     try:
         result = await analyze_tournament(request)
     except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
+        raise HTTPException(status_code=422, detail="Invalid tournament hand history format")
     except Exception:
         logger.exception("Tournament analyze error")
         raise HTTPException(
@@ -95,7 +89,7 @@ async def analyze_tournament_upload_endpoint(
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except Exception:
-        logger.exception("Tournament upload analyze error")
+        logger.exception("Tournament upload analyze error for user=%s", user_id)
         raise HTTPException(
             status_code=500,
             detail="Tournament analysis failed. Check your export format.",
@@ -108,98 +102,5 @@ async def analyze_tournament_upload_endpoint(
     result.save_error = save_error or None
     if save_error:
         logger.warning("Tournament upload persist failed for user=%s: %s", user_id, save_error)
-
-    return result
-
-
-@router.post("/tournament-debug", tags=["debug"])
-async def tournament_debug_endpoint(
-    file: UploadFile = File(...),
-    _current_user: dict = Depends(get_current_user),
-) -> dict:
-    """Diagnostic: inspect ZIP contents without running analysis.
-    Returns entry list, encoding detection, HH signal matches, and hand count.
-    Remove this endpoint before going to production."""
-    file_bytes = await file.read()
-    fname = file.filename or "upload"
-    result: dict = {
-        "filename": fname,
-        "file_size_bytes": len(file_bytes),
-        "entries": [],
-        "accepted_files": [],
-        "total_chars": 0,
-        "hands_split": 0,
-        "text_preview": "",
-        "error": None,
-    }
-
-    if not fname.lower().endswith(".zip"):
-        text = _try_decode(file_bytes)
-        result["total_chars"] = len(text)
-        result["has_hh_signals"] = _looks_like_hh(text)
-        result["hands_split"] = len(split_hands(text))
-        result["text_preview"] = text[:500]
-        return result
-
-    try:
-        with _zipfile.ZipFile(io.BytesIO(file_bytes)) as zf:
-            all_names = zf.namelist()
-            result["entries"] = all_names
-
-            accepted_texts: list[str] = []
-            for name in sorted(all_names):
-                entry_info: dict = {"name": name, "skipped": False, "reason": "", "hh": False, "bytes": 0, "encoding": "", "preview": ""}
-
-                if _is_skip_entry(name):
-                    entry_info["skipped"] = True
-                    entry_info["reason"] = "skip rule"
-                    result["entries_detail"] = result.get("entries_detail", []) + [entry_info]
-                    continue
-
-                try:
-                    with zf.open(name) as f:
-                        raw = f.read()
-                except Exception as exc:
-                    entry_info["skipped"] = True
-                    entry_info["reason"] = f"read error: {exc}"
-                    result.setdefault("entries_detail", []).append(entry_info)
-                    continue
-
-                entry_info["bytes"] = len(raw)
-                if len(raw) < 50:
-                    entry_info["skipped"] = True
-                    entry_info["reason"] = "too small"
-                    result.setdefault("entries_detail", []).append(entry_info)
-                    continue
-
-                # Detect encoding
-                from app.services.tournament_service import _ENCODINGS
-                decoded_with = "utf-8(replace)"
-                text = raw.decode("utf-8", errors="replace")
-                for enc in _ENCODINGS:
-                    try:
-                        text = raw.decode(enc)
-                        decoded_with = enc
-                        break
-                    except (UnicodeDecodeError, LookupError):
-                        continue
-
-                entry_info["encoding"] = decoded_with
-                entry_info["hh"] = _looks_like_hh(text)
-                entry_info["preview"] = text[:300]
-                result.setdefault("entries_detail", []).append(entry_info)
-
-                if entry_info["hh"]:
-                    accepted_texts.append(text)
-                    result["accepted_files"].append(name)
-
-            if accepted_texts:
-                combined = "\n\n".join(accepted_texts)
-                result["total_chars"] = len(combined)
-                result["hands_split"] = len(split_hands(combined))
-                result["text_preview"] = combined[:500]
-
-    except _zipfile.BadZipFile as exc:
-        result["error"] = f"BadZipFile: {exc}"
 
     return result

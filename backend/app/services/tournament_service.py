@@ -102,29 +102,55 @@ def extract_tournament_text(file_bytes: bytes, filename: str) -> str:
     """
     fname_lower = filename.lower()
 
+    # Decompression-bomb limits — a ZIP can expand far beyond its compressed size.
+    _MAX_ENTRY_BYTES = 20 * 1024 * 1024   # 20 MB per file after decompression
+    _MAX_TOTAL_BYTES = 100 * 1024 * 1024  # 100 MB total across all entries
+
     if fname_lower.endswith(".zip"):
         texts: list[str] = []
         try:
             with _zipfile.ZipFile(io.BytesIO(file_bytes)) as zf:
                 all_names = zf.namelist()
+
+                # Guard: reject archives with suspiciously many entries
+                if len(all_names) > 500:
+                    raise ValueError(
+                        f"ZIP contains {len(all_names)} entries — max 500 allowed."
+                    )
+
                 logger.info(
                     "ZIP '%s' (%d bytes): %d entries total",
                     filename, len(file_bytes), len(all_names),
                 )
-                # Log every entry so we can debug unusual structures
-                for n in all_names:
-                    logger.info("  zip entry: %s", n)
 
+                total_decompressed = 0
                 for name in sorted(all_names):
                     if _is_skip_entry(name):
                         continue
 
+                    # Check uncompressed size before reading (from central directory)
+                    info = zf.getinfo(name)
+                    if info.file_size > _MAX_ENTRY_BYTES:
+                        logger.warning(
+                            "  skip oversized entry %s (claimed %d bytes)", name, info.file_size
+                        )
+                        continue
+
                     try:
                         with zf.open(name) as f:
-                            raw = f.read()
+                            raw = f.read(_MAX_ENTRY_BYTES + 1)
                     except Exception as exc:
                         logger.warning("  cannot read %s: %s", name, exc)
                         continue
+
+                    # Double-check actual read size (central-dir size can be forged)
+                    if len(raw) > _MAX_ENTRY_BYTES:
+                        logger.warning("  skip: %s decompressed to %d bytes (limit %d)", name, len(raw), _MAX_ENTRY_BYTES)
+                        continue
+
+                    total_decompressed += len(raw)
+                    if total_decompressed > _MAX_TOTAL_BYTES:
+                        raise ValueError("ZIP total decompressed size exceeds 100 MB limit.")
 
                     if len(raw) < 50:
                         logger.info("  skip tiny (%d bytes): %s", len(raw), name)

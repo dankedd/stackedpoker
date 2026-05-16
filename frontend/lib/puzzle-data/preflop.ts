@@ -35,8 +35,8 @@ export const PUZZLES_PREFLOP: Puzzle[] = [
       {
         street: 'flop',
         board: ['9s', '5d', '2h'],
-        context: 'BTN calls. Pot $35. Flop: 9s5d2h. BTN checks.',
-        prompt: 'QQ as an overpair on a dry 952 board. BTN checks. Bet or slowplay?',
+        context: 'BTN calls. Pot $35. Flop: 9s5d2h. CO is OOP.',
+        prompt: 'QQ as an overpair on a dry 952 board. You act first OOP. Bet or slowplay?',
         options: [
           { id: 'check',   label: 'Check',          quality: 'good',     evLoss: 0.5, coaching: 'Checking to slowplay is valid — the board is dry. However a small bet protects against backdoor draws and builds the pot efficiently.' },
           { id: 'bet_33',  label: 'Bet $11 (31%)',  quality: 'perfect',  evLoss: 0,   coaching: 'Small cbet is optimal. QQ on 952 is strong but not the nuts — charge draws and pairs while keeping BTN\'s range wide.' },
@@ -216,8 +216,8 @@ export const PUZZLES_PREFLOP: Puzzle[] = [
       {
         street: 'turn',
         board: ['As', '8c', '4d', 'Kh'],
-        context: 'Pot $11. Turn: Kh. Both checked flop. BTN checks again.',
-        prompt: 'Both players checked the flop. Kh came. BTN checks again. Time to bet?',
+        context: 'Pot $11. Turn: Kh. Both checked flop.',
+        prompt: 'Both players checked the flop. Kh came. You act first OOP — start betting or check again?',
         options: [
           { id: 'check',   label: 'Check',          quality: 'mistake',  evLoss: 3,   coaching: 'Checking twice with TPTK misses a full street of value. BTN has shown weakness — start betting now.' },
           { id: 'bet_50',  label: 'Bet $7 (64%)',   quality: 'perfect',  evLoss: 0,   coaching: 'Bet for value. BTN double-checked, capping their range. The Kh may have improved their hand (Kx) — extract value now across two streets.' },
@@ -227,8 +227,8 @@ export const PUZZLES_PREFLOP: Puzzle[] = [
       {
         street: 'river',
         board: ['As', '8c', '4d', 'Kh', '3s'],
-        context: 'Pot $25. River: 3s blank. BTN calls turn and checks river.',
-        prompt: 'BTN called turn and checks the river blank. Extract thin value?',
+        context: 'Pot $25. River: 3s blank. BTN calls turn.',
+        prompt: 'BTN called the turn. Blank river — you act first OOP. Extract thin value?',
         options: [
           { id: 'check',   label: 'Check',           quality: 'good',     evLoss: 1.5, coaching: 'Checking is safe but leaves EV. A small bet extracts from Kx and weaker Ax that will call.' },
           { id: 'bet_33',  label: 'Bet $9 (36%)',    quality: 'perfect',  evLoss: 0,   coaching: 'Lead for thin value. BTN showed calling willingness. Small sizing extracts from Kx, 8x and weaker Ax hands that call the river but fold to a big bet.' },

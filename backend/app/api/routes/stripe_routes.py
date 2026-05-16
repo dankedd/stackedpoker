@@ -113,7 +113,6 @@ def _init_stripe() -> None:
 
 @router.post("/create-checkout")
 async def create_checkout(
-    request: Request,
     user: Annotated[dict, Depends(get_current_user)],
 ):
     """Create a Stripe Checkout Session for the Pro subscription.
@@ -139,12 +138,8 @@ async def create_checkout(
     user_id: str = user.get("sub", "")
     email: str | None = user.get("email")
 
-    body: dict = {}
-    try:
-        body = await request.json()
-    except Exception:
-        pass
-    origin = body.get("origin", "https://stackedpoker.com")
+    # Use server-configured origin — never trust client-supplied redirect URLs.
+    origin = s.frontend_url
 
     # Reuse existing Stripe customer if we already created one
     profile_info = await _get_profile_stripe_info(user_id)
@@ -193,10 +188,10 @@ async def create_checkout(
 
 @router.post("/customer-portal")
 async def customer_portal(
-    request: Request,
     user: Annotated[dict, Depends(get_current_user)],
 ):
     """Create a Stripe Billing Portal session so the user can manage their plan."""
+    s = get_settings()
     _init_stripe()
 
     user_id: str = user.get("sub", "")
@@ -209,12 +204,8 @@ async def customer_portal(
             detail="No billing account found. Please subscribe first.",
         )
 
-    body: dict = {}
-    try:
-        body = await request.json()
-    except Exception:
-        pass
-    origin = body.get("origin", "https://stackedpoker.com")
+    # Use server-configured origin — never trust client-supplied redirect URLs.
+    origin = s.frontend_url
 
     try:
         portal = stripe.billing_portal.Session.create(

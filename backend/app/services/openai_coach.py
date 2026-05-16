@@ -67,6 +67,22 @@ OUTPUT FORMAT — use exactly these four headers, each with 1-3 sentences:
 """
 
 
+# ── Prompt sanitization ────────────────────────────────────────────────────
+
+def _safe(value: object, max_len: int = 200) -> str:
+    """Strip control characters and length-cap any value before it enters a prompt.
+
+    This is a defence-in-depth measure against prompt injection that could
+    arrive via a maliciously crafted hand history that tricks the parser into
+    producing unexpected action strings.
+    """
+    text = str(value)
+    # Remove ASCII control characters (except ordinary tab/newline used in formatting)
+    text = "".join(ch for ch in text if ch == "\n" or ch == "\t" or (ord(ch) >= 32 and ord(ch) != 127))
+    # Truncate to a safe length — no legitimate poker value is longer than this
+    return text[:max_len]
+
+
 # ── Public API ─────────────────────────────────────────────────────────────
 
 async def generate_coaching(
@@ -126,18 +142,22 @@ def _build_prompt(
     hero_cards = " ".join(hand.hero_cards) if hand.hero_cards else "unknown"
 
     # ── Hero action summary (deterministic — engine computed) ──────────────
+    # _safe() strips control characters so a malformed parser output cannot
+    # inject instructions into the prompt.
     hero_lines: list[str] = []
     for a in hand.actions:
         if not a.is_hero:
             continue
         size = f" {a.size_bb:.1f}BB" if a.size_bb else ""
-        hero_lines.append(f"  [{a.street}] {a.action}{size}")
+        hero_lines.append(f"  [{_safe(a.street, 20)}] {_safe(a.action, 20)}{_safe(size, 20)}")
 
     # ── Findings (engine output — AI must not re-derive these) ────────────
     finding_lines: list[str] = []
     for f in findings:
-        tag = f.severity.upper()
-        finding_lines.append(f"  [{tag}] {f.street} / {f.action_taken}: {f.recommendation}")
+        tag = _safe(f.severity, 20).upper()
+        finding_lines.append(
+            f"  [{tag}] {_safe(f.street, 20)} / {_safe(f.action_taken, 60)}: {_safe(f.recommendation, 200)}"
+        )
 
     # ── Canonical PokerState block (replaces manually assembled state) ────────
     # When PokerState is available it provides: node, legal actions, hand strength,
@@ -180,23 +200,23 @@ def _build_prompt(
 === STRUCTURED HAND CONTEXT (engine-computed — do not re-derive) ===
 
 SITE & GAME
-  Site:              {hand.site}
-  Stakes:            {hand.stakes}
-  {format_block}
+  Site:              {_safe(hand.site, 40)}
+  Stakes:            {_safe(hand.stakes, 40)}
+  {_safe(format_block, 400)}
 
 POSITIONS (from seat topology — clockwise derivation)
-  Hero position:     {hand.hero_position}
+  Hero position:     {_safe(hand.hero_position, 20)}
   Hero is IP:        {spot.hero_is_ip}
   Hero is PFR:       {spot.hero_is_pfr}
-  Position matchup:  {spot.position_matchup}
+  Position matchup:  {_safe(spot.position_matchup, 40)}
 
 STACKS (parser-computed — do not adjust)
   Effective stack:   {hand.effective_stack_bb:.1f}BB
-  Stack depth class: {spot.stack_depth}
+  Stack depth class: {_safe(spot.stack_depth, 20)}
 
 CARDS (parser-extracted — do not infer)
-  Hero hole cards:   {hero_cards}
-  Board:             {board_str}
+  Hero hole cards:   {_safe(hero_cards, 20)}
+  Board:             {_safe(board_str, 40)}
 
 BOARD ANALYSIS (engine-computed)
   Texture:           {texture.description}

@@ -4,10 +4,13 @@ Image upload endpoint — accepts a poker screenshot and returns structured repl
 from __future__ import annotations
 
 import logging
+from typing import Annotated
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
+from app.middleware.auth import get_current_user
 from app.models.schemas import VisionAnalysisResponse
+from app.services.usage_service import assert_usage_allowed, get_user_profile
 from app.services.vision_coach import analyze_image
 
 logger = logging.getLogger(__name__)
@@ -18,11 +21,18 @@ _MAX_BYTES = 10 * 1024 * 1024  # 10 MB
 
 
 @router.post("/analyze-image", response_model=VisionAnalysisResponse, tags=["analysis"])
-async def analyze_hand_image(file: UploadFile = File(...)) -> VisionAnalysisResponse:
+async def analyze_hand_image(
+    file: UploadFile = File(...),
+    current_user: Annotated[dict, Depends(get_current_user)] = None,
+) -> VisionAnalysisResponse:
     """
     Upload a poker hand screenshot (JPEG / PNG / WebP / GIF, max 10 MB).
-    Returns structured action-by-action replay analysis from OpenAI Vision.
+    Requires authentication — usage quota is enforced server-side.
     """
+    user_id: str = current_user.get("sub", "")
+    profile = await get_user_profile(user_id)
+    assert_usage_allowed(profile)
+
     if file.content_type not in _ALLOWED_TYPES:
         raise HTTPException(
             status_code=415,
@@ -44,8 +54,8 @@ async def analyze_hand_image(file: UploadFile = File(...)) -> VisionAnalysisResp
         )
 
     logger.info(
-        "analyze-image: file=%s type=%s size=%d bytes",
-        file.filename, file.content_type, len(image_bytes),
+        "analyze-image: user=%s file=%s type=%s size=%d bytes",
+        user_id, file.filename, file.content_type, len(image_bytes),
     )
 
     try:
@@ -60,10 +70,10 @@ async def analyze_hand_image(file: UploadFile = File(...)) -> VisionAnalysisResp
         if validation.errors:
             logger.error("Reconstruction errors: %s", "; ".join(validation.errors))
     except ValueError as exc:
-        logger.error("analyze-image error: %s", exc)
-        raise HTTPException(status_code=503, detail=str(exc))
+        logger.error("analyze-image error for user=%s: %s", user_id, exc)
+        raise HTTPException(status_code=503, detail="Vision analysis unavailable. Please try again.")
     except Exception:
-        logger.exception("Vision analysis failed for file '%s'", file.filename)
+        logger.exception("Vision analysis failed for user=%s file='%s'", user_id, file.filename)
         raise HTTPException(
             status_code=500,
             detail="Vision analysis failed. Please try again or paste the hand history manually.",
