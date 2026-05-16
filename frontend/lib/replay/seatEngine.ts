@@ -207,3 +207,15 @@ function buildFromActionOrder(analysis: ReplayAnalysis): SeatDescriptor[] {
 
   return Array.from({ length: N }, (_, i) => seatOf.get(i)!);
 }
+
+// ── Public normalization API ──────────────────────────────────────────────────
+// Converts a ReplayAnalysis into UI-render seat descriptors with hero always
+// at seatIndex 0 (bottom-center) and opponents distributed clockwise.
+//
+// Input:  real table positions from backend
+// Output: UI-render positions ready for SEAT_COORDS lookup
+export function normalizeSeatsRelativeToHero(
+  analysis: ReplayAnalysis
+): SeatDescriptor[] {
+  return buildSeatMap(analysis);
+}

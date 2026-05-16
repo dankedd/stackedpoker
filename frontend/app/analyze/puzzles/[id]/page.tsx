@@ -960,15 +960,24 @@ export default function PuzzlePlayerPage() {
             <div className="order-1 lg:order-2">
               <div className="rounded-2xl border border-border/50 bg-card/60 p-6">
 
-                {/* Position labels */}
-                <div className="flex items-center justify-between mb-6">
+                {/*
+                  ── TABLE PERSPECTIVE: villain at TOP, hero at BOTTOM ──────────
+                  Villain section is always top. Hero section is always bottom.
+                  Hero's position badge and stack live here (not in a top strip),
+                  so there is exactly ONE visual seat for the hero.
+                */}
+
+                {/* Villain — top of table (opponent, facing hero) */}
+                <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-2">
-                    <div className="h-7 px-3 flex items-center rounded-full bg-secondary/60 border border-border/40">
-                      <span className="text-xs font-semibold text-muted-foreground">{puzzle.villainPosition}</span>
-                    </div>
+                    {/* Card backs first — opponent's hole cards face-down */}
                     <div className="flex gap-1">
                       <CardBack size="sm" />
                       <CardBack size="sm" />
+                    </div>
+                    {/* Position badge */}
+                    <div className="h-7 px-3 flex items-center rounded-full bg-secondary/60 border border-border/40">
+                      <span className="text-xs font-semibold text-muted-foreground">{puzzle.villainPosition}</span>
                     </div>
                     {/* Villain stack — dynamic */}
                     <div
@@ -981,24 +990,10 @@ export default function PuzzlePlayerPage() {
                     </div>
                   </div>
 
-                  <div className="text-center">
+                  {/* Street — top-right */}
+                  <div className="text-right">
                     <p className="text-[10px] text-muted-foreground/50 uppercase tracking-wider">Street</p>
                     <p className="text-sm font-semibold text-violet-400 capitalize">{currentStep.street}</p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {/* Hero stack — dynamic */}
-                    <div
-                      className="h-6 px-2 flex items-center rounded-full"
-                      style={{ background: "rgba(124,92,255,0.08)", border: "1px solid rgba(124,92,255,0.18)" }}
-                    >
-                      <span className="text-[11px] font-bold text-violet-300/70 tabular-nums leading-none">
-                        {fmtBb(stackState.heroStack)}
-                      </span>
-                    </div>
-                    <div className="h-7 px-3 flex items-center rounded-full bg-violet-500/15 border border-violet-500/25">
-                      <span className="text-xs font-semibold text-violet-400">{puzzle.heroPosition}</span>
-                    </div>
                   </div>
                 </div>
 
@@ -1022,27 +1017,55 @@ export default function PuzzlePlayerPage() {
                   )}
                 </div>
 
-                {/* Pot + stack row — live chip accounting */}
-                <PotStackRow
-                  potBb={stackState.potBb}
-                  heroStack={stackState.heroStack}
-                  villainStack={stackState.villainStack}
-                />
+                {/* Pot — center of table between board and hero */}
+                <div className="flex justify-center mb-3">
+                  <div
+                    className="flex items-center gap-1.5 h-6 px-3 rounded-full shrink-0"
+                    style={{
+                      background: "rgba(251,191,36,0.07)",
+                      border: "1px solid rgba(251,191,36,0.18)",
+                      boxShadow: "0 0 10px rgba(251,191,36,0.06)",
+                    }}
+                  >
+                    <div className="h-1.5 w-1.5 rounded-full bg-amber-400/50 shrink-0" />
+                    <span className="text-[11px] font-black text-amber-300/80 tabular-nums leading-none">
+                      Pot: {fmtBb(stackState.potBb)}
+                    </span>
+                  </div>
+                </div>
 
                 {/* Divider */}
-                <div className="border-t border-border/25 mb-6" />
+                <div className="border-t border-border/25 mb-5" />
 
-                {/* Hero cards */}
-                <div className="flex flex-col items-center mb-4">
+                {/*
+                  ── HERO ZONE — always bottom-center ───────────────────────────
+                  Hero's cards, position badge, and live stack are ALL anchored
+                  here. The position badge never appears anywhere above this zone.
+                */}
+                <div className="flex flex-col items-center mb-5">
                   <p className="text-[10px] text-muted-foreground/50 uppercase tracking-wider mb-3">Your hand</p>
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 mb-3">
                     {puzzle.heroCards.map((card, i) => (
                       <CardFace key={i} card={card} size="lg" />
                     ))}
                   </div>
+                  {/* Hero seat label — position badge + live stack, anchored to cards */}
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="h-7 px-3 flex items-center rounded-full bg-violet-500/15 border border-violet-500/25">
+                      <span className="text-xs font-semibold text-violet-400">{puzzle.heroPosition}</span>
+                    </div>
+                    <div
+                      className="h-6 px-2 flex items-center rounded-full"
+                      style={{ background: "rgba(124,92,255,0.08)", border: "1px solid rgba(124,92,255,0.18)" }}
+                    >
+                      <span className="text-[11px] font-bold text-violet-300/70 tabular-nums leading-none">
+                        {fmtBb(stackState.heroStack)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Stack HUD — shows current hero stack (updates as choices are made) */}
+                {/* Stack depth indicator */}
                 <StackHUD bb={stackState.heroStack} className="mb-5" />
 
                 {/* Situation context */}
