@@ -14,6 +14,8 @@ import { PUZZLES, QUALITY_SCORE, type ActionOption, type PuzzleStep } from "@/li
 import { cn } from "@/lib/utils";
 import { buildPokerState } from "@/lib/puzzles/pokerState";
 import { runGoldenTests, validateAllPuzzles } from "@/lib/puzzles/puzzleValidator";
+import { PokerTable } from "@/components/replay/PokerTable";
+import type { SeatDescriptor } from "@/lib/replay/seatEngine";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Puzzle pot & stack engine
@@ -221,6 +223,14 @@ function computePuzzleState(
 /** Table position ordering: SB/BB first, then UTG→BTN clockwise. */
 const CANONICAL_POS_ORDER = ['SB', 'BB', 'UTG', 'UTG+1', 'UTG+2', 'LJ', 'HJ', 'CO', 'BTN', 'MP'];
 
+/** Street tab design tokens — matches HandReplay's STREET_META. */
+const STREET_META_PUZZLE = {
+  preflop: { label: "PRE",   text: "#38BDF8", border: "rgba(56,189,248,0.4)",  bg: "rgba(56,189,248,0.12)" },
+  flop:    { label: "FLOP",  text: "#34D399", border: "rgba(52,211,153,0.4)",  bg: "rgba(52,211,153,0.12)" },
+  turn:    { label: "TURN",  text: "#FBBF24", border: "rgba(251,191,36,0.4)",  bg: "rgba(251,191,36,0.12)" },
+  river:   { label: "RIVER", text: "#F87171", border: "rgba(248,113,113,0.4)", bg: "rgba(248,113,113,0.12)" },
+} as const;
+
 type PositionStatus = 'hero' | 'villain' | 'active' | 'folded';
 
 interface TableActor {
@@ -384,47 +394,7 @@ function pickRandomPuzzle(excludeId?: string) {
   return candidates[candidates.length - 1];
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Card component — clean white premium cards
-// ─────────────────────────────────────────────────────────────────────────────
-
-type CardSize = "sm" | "md" | "lg";
-
-function CardFace({ card, size = "md" }: { card: string; size?: CardSize }) {
-  const rank = card.slice(0, -1).replace("T", "10");
-  const suit = card.slice(-1);
-  const isRed = suit === "h" || suit === "d";
-  const sym = ({ h: "♥", d: "♦", c: "♣", s: "♠" } as const)[suit as "h"|"d"|"c"|"s"] ?? "";
-
-  const sizes: Record<CardSize, string> = {
-    sm:  "w-9 h-[52px] rounded-lg p-1 text-[10px]",
-    md:  "w-11 h-16 rounded-xl p-1.5 text-xs",
-    lg:  "w-[52px] h-[76px] rounded-xl p-2 text-sm",
-  };
-  const symSizes: Record<CardSize, string> = {
-    sm: "text-sm",
-    md: "text-base",
-    lg: "text-2xl",
-  };
-
-  return (
-    <div className={cn("bg-white flex flex-col justify-between shadow-xl shadow-black/50 select-none shrink-0", sizes[size])}>
-      <span className={cn("font-black leading-none", isRed ? "text-red-600" : "text-slate-900")}>{rank}</span>
-      <span className={cn("text-center leading-none", isRed ? "text-red-600" : "text-slate-900", symSizes[size])}>{sym}</span>
-    </div>
-  );
-}
-
-function CardBack({ size = "md" }: { size?: CardSize }) {
-  const sizes: Record<CardSize, string> = {
-    sm: "w-9 h-[52px] rounded-lg",
-    md: "w-11 h-16 rounded-xl",
-    lg: "w-[52px] h-[76px] rounded-xl",
-  };
-  return (
-    <div className={cn("bg-gradient-to-br from-violet-900/50 to-blue-900/40 border border-white/[0.08] shrink-0", sizes[size])} />
-  );
-}
+// CardFace and CardBack removed — puzzle now uses PlayingCard via PokerTable/PokerSeat.
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Quality badge
@@ -930,6 +900,45 @@ export default function PuzzlePlayerPage() {
   const stackState = useMemo(
     () => computePuzzleState(puzzle, stepIdx, stepResults),
     [puzzle, stepIdx, stepResults]
+  );
+
+  // ── Seat descriptors for the unified PokerTable ────────────────────────
+  const puzzleSeats = useMemo<SeatDescriptor[]>(
+    () => [
+      {
+        seatIndex: 0,
+        isHero: true,
+        isSitting: true,
+        position: puzzle.heroPosition,
+        playerName: "Hero",
+        cards: puzzle.heroCards,
+        cardsKnown: true,
+        foldedAtStep: null,
+        stack_bb: stackState.heroStack,
+      },
+      {
+        seatIndex: 1,
+        isHero: false,
+        isSitting: true,
+        position: puzzle.villainPosition,
+        playerName: "Villain",
+        cards: [],
+        cardsKnown: false,
+        foldedAtStep: null,
+        stack_bb: stackState.villainStack,
+      },
+    ],
+    [puzzle.heroCards, puzzle.heroPosition, puzzle.villainPosition, stackState.heroStack, stackState.villainStack]
+  );
+
+  // ── Visible board from current step ───────────────────────────────────
+  const puzzleBoard = useMemo(
+    () => ({
+      flop:  currentStep.board.slice(0, 3),
+      turn:  currentStep.board.slice(3, 4),
+      river: currentStep.board.slice(4, 5),
+    }),
+    [currentStep.board]
   );
 
   // ── BB formatting ──────────────────────────────────────────────────────

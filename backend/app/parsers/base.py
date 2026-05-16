@@ -19,24 +19,13 @@ from abc import ABC, abstractmethod
 from app.models.schemas import (
     ParsedHand, BoardCards, PlayerInfo, HandAction, ParseDiagnostics,
 )
+# Single source of truth for position tables — defined in position_engine, re-exported here
+from app.services.position_engine import POSITIONS_BY_COUNT as POSITIONS_BY_SIZE  # noqa: F401
 
 _log = logging.getLogger(__name__)
 
 # Shared card token
 _CARD = r"[2-9TJQKAtjqka][cdhs]"
-
-# ── Position table (clockwise from BTN) ────────────────────────────────────────
-
-POSITIONS_BY_SIZE: dict[int, list[str]] = {
-    2: ["BTN", "BB"],
-    3: ["BTN", "SB", "BB"],
-    4: ["BTN", "SB", "BB", "UTG"],
-    5: ["BTN", "SB", "BB", "UTG", "CO"],
-    6: ["BTN", "SB", "BB", "UTG", "HJ", "CO"],
-    7: ["BTN", "SB", "BB", "UTG", "LJ", "HJ", "CO"],
-    8: ["BTN", "SB", "BB", "UTG", "UTG+1", "LJ", "HJ", "CO"],
-    9: ["BTN", "SB", "BB", "UTG", "UTG+1", "UTG+2", "LJ", "HJ", "CO"],
-}
 
 
 def derive_positions(

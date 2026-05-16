@@ -315,6 +315,8 @@ def reconstruct_and_build(
         board=BoardCards(flop=flop, turn=turn, river=river),
         big_blind=stakes.big_blind if stakes else 1.0,
         currency=stakes.currency if stakes else "",
+        players=seated_players,   # full topology — enables deterministic frontend layout
+        player_count=N,           # table size for SEAT_COORDS selection
     )
 
     analysis = ReplayAnalysis(
