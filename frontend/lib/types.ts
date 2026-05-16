@@ -314,3 +314,112 @@ export interface AnalysisResponse {
   saved_id?: string | null;
   save_error?: string | null;
 }
+
+// ── Player Profile ────────────────────────────────────────────────────────────
+
+export interface PositionStat {
+  position: string;
+  hands: number;
+  avg_score: number;
+  mistakes_per_hand: number;
+  ev_loss_bb: number;
+}
+
+export interface StreetMistakes {
+  preflop: number;
+  flop: number;
+  turn: number;
+  river: number;
+  other: number;
+}
+
+export interface ScoreTrendPoint {
+  date: string;
+  score: number;
+  hand_id: string;
+}
+
+export interface PlayerStats {
+  total_hands: number;
+  avg_score: number;
+  vpip_pct: number;
+  pfr_pct: number;
+  three_bet_pct: number;
+  avg_mistakes_per_hand: number;
+  total_ev_loss_bb: number;
+  position_stats: PositionStat[];
+  srp_score: number;
+  three_bet_pot_score: number;
+  four_bet_pot_score: number;
+  deep_score: number;
+  medium_score: number;
+  short_score: number;
+  street_mistakes: StreetMistakes;
+  ip_score: number;
+  oop_score: number;
+  score_trend: ScoreTrendPoint[];
+  cash_hands: number;
+  tournament_hands: number;
+  cash_avg_score: number;
+  tournament_avg_score: number;
+  pfr_score: number;
+  caller_score: number;
+}
+
+export interface PlayerLeak {
+  id: string;
+  category: string;
+  title: string;
+  description: string;
+  severity: "critical" | "major" | "minor";
+  frequency: number;
+  ev_loss_bb: number;
+  street: string;
+  example_hand_ids: string[];
+  coaching_note: string;
+}
+
+export interface CoachingAdvice {
+  priority: number;
+  headline: string;
+  detail: string;
+  category: string;
+  example?: string | null;
+  hand_reference?: string | null;
+}
+
+export interface StudyArticle {
+  title: string;
+  concept: string;
+  explanation: string;
+  difficulty: string;
+}
+
+export interface StudyRecommendation {
+  leak_category: string;
+  leak_title: string;
+  puzzle_tags: string[];
+  puzzle_count_target: number;
+  drill_description: string;
+  gto_concept: string;
+  articles: StudyArticle[];
+}
+
+export interface PlayerProfile {
+  user_id: string;
+  generated_at: string;
+  style: string;
+  style_description: string;
+  skill_level: string;
+  overall_score: number;
+  sample_size: number;
+  data_quality: string;
+  stats: PlayerStats;
+  leaks: PlayerLeak[];
+  coaching_advice: CoachingAdvice[];
+  study_recommendations: StudyRecommendation[];
+  strengths: string[];
+  weaknesses: string[];
+  tilt_indicators: string[];
+  ai_summary: string;
+}

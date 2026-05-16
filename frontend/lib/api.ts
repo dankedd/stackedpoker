@@ -5,6 +5,7 @@ import type {
   VisionAnalysisResponse,
   SessionAnalysisResponse,
   TournamentAnalysisResponse,
+  PlayerProfile,
 } from "./types";
 import type { AnalysisSetupValue } from "@/components/poker/AnalysisSetup";
 
@@ -144,6 +145,29 @@ export async function confirmHand(
   return apiFetch<VisionAnalysisResponse>("/api/confirm-hand", token ?? null, {
     method: "POST",
     body: JSON.stringify(state),
+  });
+}
+
+// ── Player Profile ─────────────────────────────────────────────────────────
+
+export async function fetchPlayerProfile(token: string): Promise<PlayerProfile> {
+  return apiFetch<PlayerProfile>("/api/player-profile", token, { method: "GET" });
+}
+
+export async function recordPuzzleCompletion(
+  token: string,
+  data: {
+    puzzle_id: string;
+    difficulty: string;
+    category: string;
+    score: number;
+    ev_loss_bb: number;
+    tags: string[];
+  },
+): Promise<{ saved: boolean }> {
+  return apiFetch<{ saved: boolean }>("/api/player-profile/puzzle-complete", token, {
+    method: "POST",
+    body: JSON.stringify(data),
   });
 }
 

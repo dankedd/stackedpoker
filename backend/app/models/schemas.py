@@ -148,6 +148,11 @@ class ActionCoaching(BaseModel):
     adjustment: str
 
 
+class SidePotSchema(BaseModel):
+    amount: float
+    eligible_players: list[str] = Field(default_factory=list)
+
+
 class ReplayAction(BaseModel):
     id: int
     street: Literal["preflop", "flop", "turn", "river"]
@@ -157,6 +162,13 @@ class ReplayAction(BaseModel):
     pot_after: float
     hero_stack_after: float | None = None    # hero's stack after this action (BB)
     villain_stack_after: float | None = None  # primary villain's stack after this action (BB)
+    # Extended pot-engine fields (all optional for backward compatibility)
+    player_stacks_after: dict[str, float] | None = None   # full stack map after this action
+    is_all_in: bool = False                               # this action went all-in
+    all_in_players: list[str] = Field(default_factory=list)  # cumulative all-in roster
+    main_pot: float | None = None                         # main pot amount
+    side_pots: list[SidePotSchema] = Field(default_factory=list)  # side pots (multiway)
+    uncalled_bet: float = 0.0                             # chips returned to aggressor
     is_hero: bool
     feedback: ReplayFeedback | None = None
     coaching: ActionCoaching | None = None
