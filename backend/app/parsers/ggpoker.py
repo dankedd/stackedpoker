@@ -196,10 +196,13 @@ class GGPokerParser(BaseParser):
         turn: list[str] = []
         river: list[str] = []
 
-        # FLOP: *** FLOP *** [Kd 7c 2s]  or  [Kd 7c 2s] [Kd 8c 2s] (run-it-twice)
+        # Both * SECTION * (single-star) and *** SECTION *** (triple-star) are handled.
+        _S = r"\*{1,3}\s*"  # flexible section-marker prefix
+
+        # FLOP: * FLOP * [Kd 7c 2s]  or  *** FLOP *** [Kd 7c 2s] [Kd 8c 2s] (run-it-twice)
         m_flop = re.search(
-            rf"\*\*\* FLOP \*\*\*[^[]*\[({_CARD})\s+({_CARD})\s+({_CARD})\]",
-            text,
+            rf"{_S}FLOP{_S}[^[]*\[({_CARD})\s+({_CARD})\s+({_CARD})\]",
+            text, re.IGNORECASE,
         )
         if m_flop:
             flop = [
@@ -207,34 +210,50 @@ class GGPokerParser(BaseParser):
                 self._normalise_card(m_flop.group(2)),
                 self._normalise_card(m_flop.group(3)),
             ]
+        else:
+            _log.debug("GG _parse_board: no FLOP found")
 
-        # TURN: *** TURN *** [board] [card]
+        # TURN: * TURN * [board] [card]  or  *** TURN *** [board] [card]
         m_turn = re.search(
-            rf"\*\*\* TURN \*\*\* \[[^\]]+\] \[({_CARD})\]",
-            text,
+            rf"{_S}TURN{_S}\s*\[[^\]]+\]\s*\[({_CARD})\]",
+            text, re.IGNORECASE,
         )
         if m_turn:
             turn = [self._normalise_card(m_turn.group(1))]
+        else:
+            _log.debug("GG _parse_board: no TURN found")
 
-        # RIVER: *** RIVER *** [board] [card]
+        # RIVER: * RIVER * [board] [card]  or  *** RIVER *** [board] [card]
         m_river = re.search(
-            rf"\*\*\* RIVER \*\*\* \[[^\]]+\] \[({_CARD})\]",
-            text,
+            rf"{_S}RIVER{_S}\s*\[[^\]]+\]\s*\[({_CARD})\]",
+            text, re.IGNORECASE,
         )
         if m_river:
             river = [self._normalise_card(m_river.group(1))]
+        else:
+            _log.debug("GG _parse_board: no RIVER found")
 
+        _log.debug(
+            "GG _parse_board: flop=%s turn=%s river=%s", flop, turn, river
+        )
         return BoardCards(flop=flop, turn=turn, river=river)
 
     def _parse_actions(
         self, text: str, hero_name: str, bb: float
     ) -> list[HandAction]:
+        # "SHOW\s*DOWN" matches both "SHOW DOWN" (PokerStars) and "SHOWDOWN" (GGPoker).
         sections = {
             "preflop": self._extract_section(text, "HOLE CARDS", "FLOP"),
             "flop":    self._extract_section(text, "FLOP", "TURN"),
             "turn":    self._extract_section(text, "TURN", "RIVER"),
-            "river":   self._extract_section(text, "RIVER", r"SHOW DOWN|SUMMARY"),
+            "river":   self._extract_section(text, "RIVER", r"SHOW\s*DOWN|SUMMARY"),
         }
+
+        _log.debug(
+            "GG _parse_actions: section lengths — preflop=%d flop=%d turn=%d river=%d",
+            len(sections["preflop"]), len(sections["flop"]),
+            len(sections["turn"]),   len(sections["river"]),
+        )
 
         # Amount: optional $ prefix, digits and commas, optional decimals
         _AMT = r"\$?([0-9,]+(?:\.[0-9]+)?)"
@@ -253,7 +272,9 @@ class GGPokerParser(BaseParser):
         actions: list[HandAction] = []
         for street, section in sections.items():
             if not section:
+                _log.debug("GG _parse_actions: skipping empty section — street=%r", street)
                 continue
+            street_count = 0
             for m in action_re.finditer(section):
                 player = m.group(1)
                 raw_action = m.group(2).lower()
@@ -271,12 +292,24 @@ class GGPokerParser(BaseParser):
                     is_hero=(player == hero_name),
                     is_all_in=is_all_in,
                 ))
+                street_count += 1
+            _log.debug(
+                "GG _parse_actions: street=%r → %d action(s)", street, street_count
+            )
+
+        _log.debug("GG _parse_actions: total=%d actions for hero=%r", len(actions), hero_name)
         return actions
 
     def _extract_section(self, text: str, start: str, end: str) -> str:
-        pattern = rf"\*\*\* {start} \*\*\*(.*?)(?:\*\*\* (?:{end})|$)"
+        # GGPoker exports use either * SECTION * (single-star) or *** SECTION ***
+        # (triple-star) depending on the client version.  Both must be handled.
+        # \Z anchors to real end-of-string (not affected by re.MULTILINE).
+        pattern = rf"\*{{1,3}}\s*{start}\s*\*{{1,3}}(.*?)(?:\*{{1,3}}\s*(?:{end})|\Z)"
         m = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
-        return m.group(1) if m else ""
+        if m:
+            return m.group(1)
+        _log.debug("GG _extract_section: no match — start=%r end=%r", start, end)
+        return ""
 
     def _sum_antes(self, text: str, bb: float) -> float:
         total = 0.0
