@@ -84,8 +84,13 @@ export function PokerSeat({
   if (!seat.isSitting) return null;
 
   const isActing     = !!seat.playerName && seat.playerName === actingPlayer;
-  const isFoldedPast = seat.foldedAtStep !== null && seat.foldedAtStep < currentStep;
-  const isFoldingNow = seat.foldedAtStep !== null && seat.foldedAtStep === currentStep;
+  // step=N means N actions applied; foldedAtStep is a 0-based action index.
+  // The current action is actions[step-1].
+  // isFoldingNow: fold IS the current action (foldedAtStep === step - 1)
+  // isFoldedPast: fold happened before the current action (foldedAtStep < step - 1)
+  // At step=0 (clean state): both are false — no fold visible.
+  const isFoldedPast = seat.foldedAtStep !== null && seat.foldedAtStep < currentStep - 1;
+  const isFoldingNow = seat.foldedAtStep !== null && seat.foldedAtStep === currentStep - 1;
   const showBadge    = isActing && !!currentAction;
   const badgeRating  = showBadge
     ? (currentAction!.feedback?.rating as "good" | "okay" | "mistake" | undefined)

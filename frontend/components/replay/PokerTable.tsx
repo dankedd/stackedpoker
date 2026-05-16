@@ -111,7 +111,7 @@ export function PokerTable({
           style={{ left: "50%", top: "43%", transform: "translate(-50%, -50%)" }}
         >
           {/* Street label */}
-          {currentStep >= 0 && allBoardCards.length > 0 && (
+          {currentStep > 0 && allBoardCards.length > 0 && (
             <span
               className="text-[9px] uppercase tracking-[0.32em] font-black transition-all duration-500"
               style={{ color: streetColor, opacity: 0.65 }}
@@ -139,7 +139,7 @@ export function PokerTable({
           </div>
 
           {/* Pot badge — identical tokens to puzzle PotDisplay */}
-          {currentPot > 0 && currentStep >= 0 && (
+          {currentPot > 0 && currentStep > 0 && (
             <div
               className="flex items-center gap-2 px-4 py-1.5 rounded-full transition-all duration-300"
               style={{

@@ -95,7 +95,8 @@ function PremiumHeader({
   mistakeCount: number;
   onGoTo: (n: number) => void;
 }) {
-  const actionNum = Math.max(0, step + 1);
+  // step=N means N actions applied. Display "Action N / total".
+  const actionNum = step;
 
   return (
     <div
@@ -154,14 +155,17 @@ function PremiumHeader({
       <div className="flex items-center gap-1 order-3 sm:order-2 w-full sm:w-auto justify-center sm:absolute sm:left-1/2 sm:-translate-x-1/2">
         {availableStreets.map((s) => {
           const isActive = currentStreet === s;
-          const isVisited = step >= (firstIdxByStreet[s] ?? Infinity);
+          // Action at 0-based index `idx` is applied when step >= idx + 1.
+          const streetIdx = firstIdxByStreet[s] ?? -1;
+          const streetStep = streetIdx >= 0 ? streetIdx + 1 : -1; // count needed to reach this street
+          const isVisited = step >= streetStep && streetStep > 0;
           const meta = STREET_META[s];
           return (
             <button
               key={s}
               type="button"
-              onClick={() => { const idx = firstIdxByStreet[s]; if (idx >= 0) onGoTo(idx); }}
-              disabled={firstIdxByStreet[s] < 0}
+              onClick={() => { if (streetStep > 0) onGoTo(streetStep); }}
+              disabled={streetStep < 0}
               className="px-3 py-1.5 rounded-lg text-[10px] font-black tracking-[0.18em] transition-all duration-200 disabled:cursor-not-allowed"
               style={
                 isActive
@@ -183,7 +187,7 @@ function PremiumHeader({
       <div className="flex items-center gap-2 shrink-0 order-2 sm:order-3">
         {totalActions > 0 && (
           <span className="text-[11px] tabular-nums" style={{ color: "rgba(100,116,139,0.55)" }}>
-            {step >= 0 ? (
+            {step > 0 ? (
               <>
                 Action{" "}
                 <span className="font-bold" style={{ color: "rgba(203,213,225,0.6)" }}>{actionNum}</span>
@@ -250,9 +254,10 @@ function HorizontalTimeline({
               {/* Action nodes */}
               <div className="flex items-center">
                 {group.items.map(({ action, globalIdx }, ai) => {
-                  const isCurrent = globalIdx === step;
-                  const isPast    = globalIdx < step;
-                  const isFuture  = globalIdx > step;
+                  // step=N means N actions applied; the current action is at index step-1.
+                  const isCurrent = globalIdx === step - 1;
+                  const isPast    = globalIdx < step - 1;
+                  const isFuture  = globalIdx >= step;   // not yet applied
                   const isHero    = action.is_hero;
                   const rating    = action.feedback?.rating;
 
@@ -276,7 +281,7 @@ function HorizontalTimeline({
                       <button
                         ref={isCurrent ? currentNodeRef : undefined}
                         type="button"
-                        onClick={() => onGoTo(globalIdx)}
+                        onClick={() => onGoTo(globalIdx + 1)}
                         title={`${action.is_hero ? "YOU" : action.player}: ${action.action}${action.amount ? " " + action.amount : ""}`}
                         className="rounded-full transition-all duration-200 focus:outline-none hover:opacity-90 relative"
                         style={{
@@ -296,7 +301,7 @@ function HorizontalTimeline({
                           style={{
                             width: 8,
                             height: 1.5,
-                            background: globalIdx < step
+                            background: globalIdx < step - 1
                               ? "rgba(255,255,255,0.18)"
                               : "rgba(255,255,255,0.06)",
                           }}
@@ -854,8 +859,8 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
   const mistakeCount = actions.filter((a) => a.is_hero && a.feedback?.rating === "mistake").length;
 
   const activeCoaching = useMemo<{ coaching: ActionCoaching; actionIdx: number } | null>(() => {
-    if (replay.step < 0) return null;
-    for (let i = replay.step; i >= 0; i--) {
+    // Walk backward through applied actions (0-based indices 0..step-1)
+    for (let i = replay.step - 1; i >= 0; i--) {
       if (actions[i]?.is_hero && actions[i]?.coaching) {
         return { coaching: actions[i].coaching!, actionIdx: i };
       }
@@ -897,6 +902,28 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
         mistakeCount={mistakeCount}
         onGoTo={replay.goTo}
       />
+
+      {/* DEV — replay state overlay */}
+      {process.env.NODE_ENV === "development" && (
+        <div
+          style={{
+            background: "rgba(0,0,0,0.75)",
+            borderBottom: "1px solid rgba(251,191,36,0.2)",
+            padding: "4px 16px",
+            fontFamily: "monospace",
+            fontSize: "10px",
+            color: "rgba(251,191,36,0.7)",
+            display: "flex",
+            gap: "16px",
+          }}
+        >
+          <span>step:{replay.step}/{actions.length}</span>
+          <span>action:{replay.step > 0 ? `${replay.step - 1}:${replay.currentAction?.player ?? "—"} ${replay.currentAction?.action ?? "—"}` : "none"}</span>
+          <span>applied:{replay.step}</span>
+          <span>isFirst:{String(replay.isFirst)}</span>
+          <span>isLast:{String(replay.isLast)}</span>
+        </div>
+      )}
 
       {/* TABLE — visual focus */}
       <div style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(4,10,6,0.55)" }}>
@@ -952,7 +979,7 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
               onNext={replay.next}
               onPrev={replay.prev}
               onReset={replay.reset}
-              onSkipEnd={() => replay.goTo(actions.length - 1)}
+              onSkipEnd={() => replay.goTo(actions.length)}
             />
           </>
         )}
@@ -963,7 +990,7 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
         <AICoachPanel
           coaching={activeCoaching.coaching}
           actionIdx={activeCoaching.actionIdx}
-          isCurrentAction={activeCoaching.actionIdx === replay.step}
+          isCurrentAction={activeCoaching.actionIdx === replay.step - 1}
           currentAction={actions[activeCoaching.actionIdx]}
         />
       )}
