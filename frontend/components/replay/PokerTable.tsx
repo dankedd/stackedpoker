@@ -138,20 +138,19 @@ export function PokerTable({
                 ))}
           </div>
 
-          {/* Pot badge — identical tokens to puzzle PotDisplay */}
+          {/* Pot badge — canonical amber tokens matching puzzle's pot badge */}
           {currentPot > 0 && currentStep > 0 && (
             <div
-              className="flex items-center gap-2 px-4 py-1.5 rounded-full transition-all duration-300"
+              className="flex items-center gap-1.5 h-6 px-3 rounded-full shrink-0 transition-all duration-300"
               style={{
-                background: "rgba(255,255,255,0.055)",
-                border: "1px solid rgba(255,255,255,0.09)",
-                boxShadow: "0 2px 12px rgba(0,0,0,0.35)",
+                background: "rgba(251,191,36,0.07)",
+                border: "1px solid rgba(251,191,36,0.18)",
+                boxShadow: "0 0 10px rgba(251,191,36,0.06)",
               }}
             >
-              <div className="h-1.5 w-1.5 rounded-full" style={{ background: "rgba(251,191,36,0.55)" }} />
-              <span className="text-[12px] font-black tabular-nums" style={{ color: "rgba(253,230,138,0.75)" }}>
-                Pot:{" "}
-                <span style={{ color: "rgba(253,230,138,0.92)" }}>{fmtStack(currentPot)}</span>
+              <div className="h-1.5 w-1.5 rounded-full bg-amber-400/50 shrink-0" />
+              <span className="text-[11px] font-black text-amber-300/80 tabular-nums leading-none">
+                Pot: {fmtStack(currentPot)}
               </span>
             </div>
           )}

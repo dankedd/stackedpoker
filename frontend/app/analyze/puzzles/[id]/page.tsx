@@ -221,14 +221,6 @@ function computePuzzleState(
 /** Table position ordering: SB/BB first, then UTG→BTN clockwise. */
 const CANONICAL_POS_ORDER = ['SB', 'BB', 'UTG', 'UTG+1', 'UTG+2', 'LJ', 'HJ', 'CO', 'BTN', 'MP'];
 
-/** Street tab design tokens — matches HandReplay's STREET_META. */
-const STREET_META_PUZZLE = {
-  preflop: { label: "PRE",   text: "#38BDF8", border: "rgba(56,189,248,0.4)",  bg: "rgba(56,189,248,0.12)" },
-  flop:    { label: "FLOP",  text: "#34D399", border: "rgba(52,211,153,0.4)",  bg: "rgba(52,211,153,0.12)" },
-  turn:    { label: "TURN",  text: "#FBBF24", border: "rgba(251,191,36,0.4)",  bg: "rgba(251,191,36,0.12)" },
-  river:   { label: "RIVER", text: "#F87171", border: "rgba(248,113,113,0.4)", bg: "rgba(248,113,113,0.12)" },
-} as const;
-
 type PositionStatus = 'hero' | 'villain' | 'active' | 'folded';
 
 interface TableActor {
@@ -393,39 +385,44 @@ function pickRandomPuzzle(excludeId?: string) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Card components — white premium cards (canonical puzzle card style)
+// Card component — clean white premium cards
 // ─────────────────────────────────────────────────────────────────────────────
 
 type CardSize = "sm" | "md" | "lg";
 
-const CARD_SIZES: Record<CardSize, string> = {
-  sm: "w-9 h-[52px] rounded-lg p-1 text-[10px]",
-  md: "w-11 h-16 rounded-xl p-1.5 text-xs",
-  lg: "w-[52px] h-[76px] rounded-xl p-2 text-sm",
-};
-const CARD_SYM_SIZES: Record<CardSize, string> = {
-  sm: "text-sm", md: "text-base", lg: "text-2xl",
-};
-
 function CardFace({ card, size = "md" }: { card: string; size?: CardSize }) {
-  const rank  = card.slice(0, -1).replace("T", "10");
-  const suit  = card.slice(-1);
+  const rank = card.slice(0, -1).replace("T", "10");
+  const suit = card.slice(-1);
   const isRed = suit === "h" || suit === "d";
-  const sym   = ({ h: "♥", d: "♦", c: "♣", s: "♠" } as const)[suit as "h"|"d"|"c"|"s"] ?? "";
+  const sym = ({ h: "♥", d: "♦", c: "♣", s: "♠" } as const)[suit as "h"|"d"|"c"|"s"] ?? "";
+
+  const sizes: Record<CardSize, string> = {
+    sm:  "w-9 h-[52px] rounded-lg p-1 text-[10px]",
+    md:  "w-11 h-16 rounded-xl p-1.5 text-xs",
+    lg:  "w-[52px] h-[76px] rounded-xl p-2 text-sm",
+  };
+  const symSizes: Record<CardSize, string> = {
+    sm: "text-sm",
+    md: "text-base",
+    lg: "text-2xl",
+  };
+
   return (
-    <div className={cn("bg-white flex flex-col justify-between shadow-lg shadow-black/40 select-none shrink-0", CARD_SIZES[size])}>
+    <div className={cn("bg-white flex flex-col justify-between shadow-xl shadow-black/50 select-none shrink-0", sizes[size])}>
       <span className={cn("font-black leading-none", isRed ? "text-red-600" : "text-slate-900")}>{rank}</span>
-      <span className={cn("text-center leading-none", isRed ? "text-red-600" : "text-slate-900", CARD_SYM_SIZES[size])}>{sym}</span>
+      <span className={cn("text-center leading-none", isRed ? "text-red-600" : "text-slate-900", symSizes[size])}>{sym}</span>
     </div>
   );
 }
 
 function CardBack({ size = "md" }: { size?: CardSize }) {
+  const sizes: Record<CardSize, string> = {
+    sm: "w-9 h-[52px] rounded-lg",
+    md: "w-11 h-16 rounded-xl",
+    lg: "w-[52px] h-[76px] rounded-xl",
+  };
   return (
-    <div className={cn(
-      "bg-gradient-to-br from-violet-900/60 to-blue-900/50 border border-white/[0.07] shrink-0",
-      CARD_SIZES[size]
-    )} />
+    <div className={cn("bg-gradient-to-br from-violet-900/50 to-blue-900/40 border border-white/[0.08] shrink-0", sizes[size])} />
   );
 }
 
@@ -496,22 +493,66 @@ function StackPill({ bb }: { bb: number }) {
   );
 }
 
-/** Pot + stack row — tokens match PokerTable's pot badge exactly for visual parity. */
-function PotDisplay({ potBb }: { potBb: number }) {
+/** Live pot + stack display row shown on the poker table between board and hero cards. */
+function PotStackRow({
+  potBb,
+  heroStack,
+  villainStack,
+}: {
+  potBb: number;
+  heroStack: number;
+  villainStack: number;
+}) {
   return (
-    <div className="flex justify-center my-3">
+    <div className="flex items-center justify-between gap-2 w-full px-1 mb-3">
+      {/* Villain stack */}
+      <div className="flex items-center gap-1.5 min-w-0">
+        <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/35 shrink-0">
+          Villain
+        </span>
+        <div
+          className="flex items-center h-5 px-2 rounded-full shrink-0"
+          style={{
+            background: "rgba(100,116,139,0.08)",
+            border: "1px solid rgba(100,116,139,0.16)",
+          }}
+        >
+          <span className="text-[11px] font-bold text-slate-400/70 tabular-nums leading-none">
+            {fmtBb(villainStack)}
+          </span>
+        </div>
+      </div>
+
+      {/* Pot — centered, prominent */}
       <div
-        className="flex items-center gap-2 px-4 py-1.5 rounded-full"
+        className="flex items-center gap-1.5 h-6 px-3 rounded-full shrink-0"
         style={{
-          background: "rgba(255,255,255,0.055)",
-          border: "1px solid rgba(255,255,255,0.09)",
-          boxShadow: "0 2px 12px rgba(0,0,0,0.35)",
+          background: "rgba(251,191,36,0.07)",
+          border: "1px solid rgba(251,191,36,0.18)",
+          boxShadow: "0 0 10px rgba(251,191,36,0.06)",
         }}
       >
-        <div className="h-1.5 w-1.5 rounded-full" style={{ background: "rgba(251,191,36,0.55)" }} />
-        <span className="text-[12px] font-black tabular-nums" style={{ color: "rgba(253,230,138,0.75)" }}>
-          Pot:{" "}
-          <span style={{ color: "rgba(253,230,138,0.92)" }}>{fmtBb(potBb)}</span>
+        <div className="h-1.5 w-1.5 rounded-full bg-amber-400/50 shrink-0" />
+        <span className="text-[11px] font-black text-amber-300/80 tabular-nums leading-none">
+          Pot: {fmtBb(potBb)}
+        </span>
+      </div>
+
+      {/* Hero stack */}
+      <div className="flex items-center gap-1.5 min-w-0 justify-end">
+        <div
+          className="flex items-center h-5 px-2 rounded-full shrink-0"
+          style={{
+            background: "rgba(124,92,255,0.08)",
+            border: "1px solid rgba(124,92,255,0.18)",
+          }}
+        >
+          <span className="text-[11px] font-bold text-violet-300/70 tabular-nums leading-none">
+            {fmtBb(heroStack)}
+          </span>
+        </div>
+        <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/35 shrink-0">
+          Hero
         </span>
       </div>
     </div>
@@ -1097,71 +1138,48 @@ export default function PuzzlePlayerPage() {
             <div className="order-1 lg:order-2">
               <div className="rounded-2xl border border-border/50 bg-card/60 p-6">
 
-                {/* ── Street tabs + position matchup ────────────────────── */}
+                {/*
+                  ── TABLE PERSPECTIVE: villain at TOP, hero at BOTTOM ──────────
+                  Villain section is always top. Hero section is always bottom.
+                  Hero's position badge and stack live here (not in a top strip),
+                  so there is exactly ONE visual seat for the hero.
+                */}
+
+                {/* Villain — top of table (opponent, facing hero) */}
                 <div className="flex items-center justify-between mb-5">
-                  <div className="flex items-center gap-1">
-                    {puzzle.steps.map((step, i) => {
-                      const meta    = STREET_META_PUZZLE[step.street as keyof typeof STREET_META_PUZZLE];
-                      const isActive = i === stepIdx;
-                      const isPast   = i < stepIdx;
-                      return (
-                        <div
-                          key={i}
-                          className="px-3 py-1.5 rounded-lg text-[10px] font-black tracking-[0.18em] transition-all duration-200 select-none"
-                          style={
-                            isActive
-                              ? { color: meta.text, background: meta.bg, border: `1px solid ${meta.border}`, boxShadow: `0 0 10px ${meta.text}28` }
-                              : { color: isPast ? "rgba(255,255,255,0.32)" : "rgba(255,255,255,0.10)", background: "transparent", border: "1px solid transparent" }
-                          }
-                        >
-                          {meta.label}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <PositionMatchupBadge
-                    heroPos={puzzle.heroPosition}
-                    villainPos={puzzle.villainPosition}
-                    heroIsOop={pokerState.heroIsOop}
-                  />
-                </div>
-
-                {/* ── TABLE: villain top → board → pot → hero bottom ──────── */}
-
-                {/* Villain row */}
-                <div className="flex items-center gap-2.5 mb-5">
-                  <div className="flex gap-1.5">
-                    <CardBack size="sm" />
-                    <CardBack size="sm" />
-                  </div>
-                  <div
-                    className="flex items-center gap-1.5 h-7 px-3 rounded-full"
-                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-                  >
-                    <span className="text-[11px] font-bold tracking-wide" style={{ color: "rgba(255,255,255,0.28)" }}>
-                      {puzzle.villainPosition}
-                    </span>
-                  </div>
-                  <div
-                    className="flex items-center h-6 px-2.5 rounded-full"
-                    style={{ background: "rgba(100,116,139,0.07)", border: "1px solid rgba(100,116,139,0.14)" }}
-                  >
-                    <span className="text-[11px] font-bold tabular-nums" style={{ color: "rgba(148,163,184,0.55)" }}>
-                      {fmtBb(stackState.villainStack)}
-                    </span>
-                  </div>
-                  {/* Spacer + street label top-right */}
-                  <div className="ml-auto">
-                    <span
-                      className="text-[9px] uppercase tracking-[0.28em] font-black"
-                      style={{ color: STREET_META_PUZZLE[currentStep.street as keyof typeof STREET_META_PUZZLE]?.text ?? "#94A3B8", opacity: 0.65 }}
+                  <div className="flex items-center gap-2">
+                    {/* Card backs first — opponent's hole cards face-down */}
+                    <div className="flex gap-1">
+                      <CardBack size="sm" />
+                      <CardBack size="sm" />
+                    </div>
+                    {/* Position badge */}
+                    <div className="h-7 px-3 flex items-center rounded-full bg-secondary/60 border border-border/40">
+                      <span className="text-xs font-semibold text-muted-foreground">{puzzle.villainPosition}</span>
+                    </div>
+                    {/* Villain stack — dynamic */}
+                    <div
+                      className="h-6 px-2 flex items-center rounded-full"
+                      style={{ background: "rgba(100,116,139,0.07)", border: "1px solid rgba(100,116,139,0.15)" }}
                     >
-                      {currentStep.street}
-                    </span>
+                      <span className="text-[11px] font-bold text-slate-400/65 tabular-nums leading-none">
+                        {fmtBb(stackState.villainStack)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Street + position matchup — top-right */}
+                  <div className="text-right flex flex-col items-end gap-1">
+                    <p className="text-sm font-semibold text-violet-400 capitalize">{currentStep.street}</p>
+                    <PositionMatchupBadge
+                      heroPos={puzzle.heroPosition}
+                      villainPos={puzzle.villainPosition}
+                      heroIsOop={pokerState.heroIsOop}
+                    />
                   </div>
                 </div>
 
-                {/* Multiway position strip */}
+                {/* Table position strip — all explicitly mentioned players */}
                 <TablePositionStrip
                   actors={tableActors}
                   heroPos={puzzle.heroPosition}
@@ -1169,57 +1187,70 @@ export default function PuzzlePlayerPage() {
                 />
 
                 {/* Board */}
-                <div className="flex justify-center gap-2 mb-1 min-h-[68px] items-center">
-                  {currentStep.street === "preflop"
-                    ? [0,1,2,3,4].map(i => (
-                        <div key={i} className="w-11 h-16 rounded-xl" style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)" }} />
-                      ))
-                    : (
-                      <>
-                        {currentStep.board.map((card, i) => <CardFace key={i} card={card} size="md" />)}
-                        {Array.from({ length: 5 - currentStep.board.length }).map((_, i) => (
-                          <div key={`empty-${i}`} className="w-11 h-16 rounded-xl" style={{ background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)" }} />
-                        ))}
-                      </>
-                    )}
+                <div className="flex justify-center gap-2 mb-4 min-h-[64px] items-center">
+                  {currentStep.street === "preflop" ? (
+                    // Preflop: show 5 empty card slots
+                    [0,1,2,3,4].map(i => (
+                      <div key={i} className="w-11 h-16 rounded-xl bg-secondary/20 border border-border/20" />
+                    ))
+                  ) : (
+                    <>
+                      {currentStep.board.map((card, i) => (
+                        <CardFace key={i} card={card} size="md" />
+                      ))}
+                      {/* Placeholder for unrevealed cards */}
+                      {Array.from({ length: 5 - currentStep.board.length }).map((_, i) => (
+                        <div key={`empty-${i}`} className="w-11 h-16 rounded-xl bg-secondary/20 border border-border/20" />
+                      ))}
+                    </>
+                  )}
                 </div>
 
-                {/* Pot badge — token-for-token identical to PokerTable's pot badge */}
-                <PotDisplay potBb={stackState.potBb} />
-
-                {/* Divider */}
-                <div className="border-t mb-5" style={{ borderColor: "rgba(255,255,255,0.06)" }} />
-
-                {/* Hero zone — violet HUD matching PokerSeat's HeroSeat exactly */}
-                <div className="flex flex-col items-center mb-5">
-                  <p className="text-[9px] uppercase tracking-[0.28em] font-black mb-3" style={{ color: "rgba(124,92,255,0.45)" }}>
-                    Your Hand
-                  </p>
-                  <div className="flex gap-3 mb-3">
-                    {puzzle.heroCards.map((card, i) => <CardFace key={i} card={card} size="lg" />)}
-                  </div>
-                  {/* Hero HUD pill — identical tokens to PokerSeat HeroSeat idle state */}
+                {/* Pot — center of table between board and hero */}
+                <div className="flex justify-center mb-3">
                   <div
-                    className="flex items-center gap-2.5 px-4 py-2 rounded-full"
+                    className="flex items-center gap-1.5 h-6 px-3 rounded-full shrink-0"
                     style={{
-                      background: "rgba(12,6,30,0.78)",
-                      border: "1px solid rgba(124,92,255,0.22)",
-                      backdropFilter: "blur(12px)",
+                      background: "rgba(251,191,36,0.07)",
+                      border: "1px solid rgba(251,191,36,0.18)",
+                      boxShadow: "0 0 10px rgba(251,191,36,0.06)",
                     }}
                   >
-                    <div
-                      className="flex items-center justify-center h-5 w-5 rounded-full text-[9px] font-black flex-shrink-0"
-                      style={{ background: "rgba(124,92,255,0.14)", color: "rgba(124,92,255,0.7)" }}
-                    >
-                      Y
-                    </div>
-                    <span className="text-[12px] font-black tracking-wide" style={{ color: "rgba(124,92,255,0.7)" }}>YOU</span>
-                    <div className="w-px h-3.5" style={{ background: "rgba(255,255,255,0.10)" }} />
-                    <span className="text-[11px] font-bold" style={{ color: "rgba(148,163,184,0.5)" }}>{puzzle.heroPosition}</span>
-                    <div className="w-px h-3.5" style={{ background: "rgba(255,255,255,0.10)" }} />
-                    <span className="text-[12px] font-bold tabular-nums" style={{ color: "rgba(148,163,184,0.55)" }}>
-                      {fmtBb(stackState.heroStack)}
+                    <div className="h-1.5 w-1.5 rounded-full bg-amber-400/50 shrink-0" />
+                    <span className="text-[11px] font-black text-amber-300/80 tabular-nums leading-none">
+                      Pot: {fmtBb(stackState.potBb)}
                     </span>
+                  </div>
+                </div>
+
+                {/* Divider */}
+                <div className="border-t border-border/25 mb-5" />
+
+                {/*
+                  ── HERO ZONE — always bottom-center ───────────────────────────
+                  Hero's cards, position badge, and live stack are ALL anchored
+                  here. The position badge never appears anywhere above this zone.
+                */}
+                <div className="flex flex-col items-center mb-5">
+                  <p className="text-[10px] text-muted-foreground/50 uppercase tracking-wider mb-3">Your hand</p>
+                  <div className="flex gap-3 mb-3">
+                    {puzzle.heroCards.map((card, i) => (
+                      <CardFace key={i} card={card} size="lg" />
+                    ))}
+                  </div>
+                  {/* Hero seat label — position badge + live stack, anchored to cards */}
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="h-7 px-3 flex items-center rounded-full bg-violet-500/15 border border-violet-500/25">
+                      <span className="text-xs font-semibold text-violet-400">{puzzle.heroPosition}</span>
+                    </div>
+                    <div
+                      className="h-6 px-2 flex items-center rounded-full"
+                      style={{ background: "rgba(124,92,255,0.08)", border: "1px solid rgba(124,92,255,0.18)" }}
+                    >
+                      <span className="text-[11px] font-bold text-violet-300/70 tabular-nums leading-none">
+                        {fmtBb(stackState.heroStack)}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
