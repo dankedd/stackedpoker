@@ -31,6 +31,12 @@ function fmtBb(bb: number): string {
   return rounded % 1 === 0 ? `${rounded}bb` : `${rounded.toFixed(1)}bb`;
 }
 
+/** Convert all $X / €X / £X amounts in a display string to Xbb notation. */
+function bbifyText(text: string, bbDollars: number): string {
+  if (bbDollars <= 0) return text;
+  return text.replace(/[$€£](\d+(?:\.\d+)?)/g, (_, amt) => fmtBb(parseFloat(amt) / bbDollars));
+}
+
 /** Extract explicit "Pot $X" value from a step context string, converting to BB. */
 function extractContextPotBb(context: string, bbDollars: number): number | null {
   const m = context.match(/[Pp]ot[:\s]+[\$€£]?(\d+(?:\.\d+)?)/);
@@ -205,6 +211,112 @@ function computePuzzleState(
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Table player visibility — parse context strings for explicit position mentions
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Table position ordering: SB/BB first, then UTG→BTN clockwise. */
+const CANONICAL_POS_ORDER = ['SB', 'BB', 'UTG', 'UTG+1', 'UTG+2', 'LJ', 'HJ', 'CO', 'BTN', 'MP'];
+
+type PositionStatus = 'hero' | 'villain' | 'active' | 'folded';
+
+interface TableActor {
+  pos: string;
+  status: PositionStatus;
+}
+
+/**
+ * Parse all step contexts up to and including the current step.
+ * Returns every EXPLICITLY mentioned position and its last-known state.
+ * Hero/villain are always included.
+ */
+function parseTableActors(
+  contexts: string[],
+  heroPos: string,
+  villainPos: string,
+): TableActor[] {
+  const heroNorm    = heroPos.toUpperCase();
+  const villainNorm = villainPos.toUpperCase();
+  const seen        = new Map<string, PositionStatus>();
+
+  seen.set(heroNorm,    'hero');
+  seen.set(villainNorm, 'villain');
+
+  for (const ctx of contexts) {
+    // "POSITION folds" — explicit, terminal
+    for (const m of ctx.matchAll(/\b(UTG\+1|UTG\+2|UTG|LJ|HJ|CO|BTN|SB|BB|MP)\s+folds?\b/gi)) {
+      const p = m[1].toUpperCase();
+      if (p !== heroNorm) seen.set(p, 'folded');
+    }
+    // "Folds to POSITION" — named position is the aggressor (active)
+    for (const m of ctx.matchAll(/[Ff]olds?\s+to\s+(UTG\+1|UTG\+2|UTG|LJ|HJ|CO|BTN|SB|BB|MP)/gi)) {
+      const p = m[1].toUpperCase();
+      if (seen.get(p) !== 'folded') seen.set(p, p === villainNorm ? 'villain' : 'active');
+    }
+    // "POSITION verb" — position is acting (active unless previously folded)
+    for (const m of ctx.matchAll(/\b(UTG\+1|UTG\+2|UTG|LJ|HJ|CO|BTN|SB|BB|MP)\s+(?:raises?|re.raises?|opens?|bets?|calls?|cold.calls?|3.bets?|4.bets?|squeezes?|checks?|defends?|jams?|shoves?|leads?|barrels?|fires?)/gi)) {
+      const p = m[1].toUpperCase();
+      if (p !== heroNorm && seen.get(p) !== 'folded') {
+        seen.set(p, p === villainNorm ? 'villain' : 'active');
+      }
+    }
+  }
+
+  // Sort by canonical table order
+  return Array.from(seen.entries())
+    .map(([pos, status]) => ({ pos, status }))
+    .sort((a, b) => {
+      const ai = CANONICAL_POS_ORDER.indexOf(a.pos);
+      const bi = CANONICAL_POS_ORDER.indexOf(b.pos);
+      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+    });
+}
+
+/** Compact strip of all explicitly-mentioned table positions with state styling. */
+function TablePositionStrip({
+  actors,
+  heroPos,
+  villainPos,
+}: {
+  actors: TableActor[];
+  heroPos: string;
+  villainPos: string;
+}) {
+  // Only render when there are more participants than hero + villain
+  if (actors.length <= 2) return null;
+
+  return (
+    <div className="flex items-center justify-center gap-1.5 mb-4 flex-wrap">
+      {actors.map(({ pos, status }) => {
+        const isFolded  = status === 'folded';
+        const isHero    = pos === heroPos.toUpperCase();
+        const isVillain = pos === villainPos.toUpperCase() && status !== 'folded';
+
+        return (
+          <div
+            key={pos}
+            title={isFolded ? `${pos} folded` : `${pos} in hand`}
+            className={cn(
+              "h-6 px-2.5 flex items-center rounded-full text-[10px] font-semibold border transition-all select-none",
+              isHero
+                ? "bg-violet-500/15 border-violet-500/25 text-violet-400"
+                : isVillain
+                ? "bg-secondary/60 border-border/40 text-muted-foreground/80"
+                : isFolded
+                ? "opacity-25 border-border/15 bg-transparent text-muted-foreground/40"
+                : /* other active */ "bg-secondary/35 border-border/25 text-muted-foreground/60"
+            )}
+          >
+            {isFolded && <span className="mr-0.5 text-[8px]">✕</span>}
+            {pos}
+            {isHero && <span className="ml-0.5 text-[8px] opacity-50">YOU</span>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 interface PuzzleStats {
   solved: string[];
@@ -459,12 +571,13 @@ function QualityBadge({ quality }: { quality: ActionOption["quality"] }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ActionBtn({
-  option, chosen, disabled, onClick
+  option, chosen, disabled, onClick, displayLabel
 }: {
   option: ActionOption;
   chosen: ActionOption | null;
   disabled: boolean;
   onClick: (o: ActionOption) => void;
+  displayLabel?: string;
 }) {
   const isChosen = chosen?.id === option.id;
   const hasChosen = !!chosen;
@@ -484,7 +597,7 @@ function ActionBtn({
           : "border-border/50 bg-secondary/40 text-foreground hover:bg-secondary/70 hover:border-violet-500/30 hover:shadow-lg hover:shadow-violet-900/10"
       )}
     >
-      {option.label}
+      {displayLabel ?? option.label}
     </button>
   );
 }
@@ -552,6 +665,7 @@ function ResultScreen({
   randomStreak?: number;
 }) {
   if (!puzzle) return null;
+  const bbD = parseBigBlind(puzzle.stakes);
   const finalScore = Math.round(stepResults.reduce((s, r) => s + r.score, 0) / stepResults.length);
   const totalEvLoss = stepResults.reduce((s, r) => s + r.option.evLoss, 0);
 
@@ -616,7 +730,7 @@ function ResultScreen({
                   {i === bestStep && <span className="text-[10px] text-emerald-400">Best play</span>}
                   {i === worstStep && stepResults.length > 1 && <span className="text-[10px] text-red-400">Biggest leak</span>}
                 </div>
-                <p className="text-xs text-muted-foreground/80 truncate">{r.option.label}</p>
+                <p className="text-xs text-muted-foreground/80 truncate">{bbifyText(r.option.label, bbD)}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <QualityBadge quality={r.quality} />
@@ -782,6 +896,21 @@ export default function PuzzlePlayerPage() {
   const stackState = useMemo(
     () => computePuzzleState(puzzle, stepIdx, stepResults),
     [puzzle, stepIdx, stepResults]
+  );
+
+  // ── BB formatting ──────────────────────────────────────────────────────
+  const bbDollars = parseBigBlind(puzzle.stakes);
+
+  // ── Table player visibility ────────────────────────────────────────────
+  // Accumulate contexts from step 0 through current step so folded players
+  // remain visible (dimmed) on later streets.
+  const tableActors = useMemo(
+    () => parseTableActors(
+      puzzle.steps.slice(0, stepIdx + 1).map(s => s.context),
+      puzzle.heroPosition,
+      puzzle.villainPosition,
+    ),
+    [puzzle, stepIdx]
   );
 
   // ── Result screen ──────────────────────────────────────────────────────
@@ -997,6 +1126,13 @@ export default function PuzzlePlayerPage() {
                   </div>
                 </div>
 
+                {/* Table position strip — all explicitly mentioned players */}
+                <TablePositionStrip
+                  actors={tableActors}
+                  heroPos={puzzle.heroPosition}
+                  villainPos={puzzle.villainPosition}
+                />
+
                 {/* Board */}
                 <div className="flex justify-center gap-2 mb-4 min-h-[64px] items-center">
                   {currentStep.street === "preflop" ? (
@@ -1070,8 +1206,8 @@ export default function PuzzlePlayerPage() {
 
                 {/* Situation context */}
                 <div className="rounded-xl bg-secondary/20 border border-border/25 px-4 py-3.5 mb-5">
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-1.5">{currentStep.context}</p>
-                  <p className="text-sm font-semibold text-foreground">{currentStep.prompt}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-1.5">{bbifyText(currentStep.context, bbDollars)}</p>
+                  <p className="text-sm font-semibold text-foreground">{bbifyText(currentStep.prompt, bbDollars)}</p>
                 </div>
 
                 {/* Action buttons */}
@@ -1088,6 +1224,7 @@ export default function PuzzlePlayerPage() {
                         chosen={chosen}
                         disabled={false}
                         onClick={handleAction}
+                        displayLabel={bbifyText(opt.label, bbDollars)}
                       />
                     ))}
                   </div>
@@ -1103,7 +1240,7 @@ export default function PuzzlePlayerPage() {
                                                         "border-red-500/30     bg-red-500/8"
                     )}>
                       <div>
-                        <p className="text-sm font-semibold text-foreground">{chosen.label}</p>
+                        <p className="text-sm font-semibold text-foreground">{bbifyText(chosen.label, bbDollars)}</p>
                         {chosen.evLoss > 0 && (
                           <p className="text-xs text-muted-foreground/60 mt-0.5">−{chosen.evLoss} BB EV lost</p>
                         )}
@@ -1164,7 +1301,7 @@ export default function PuzzlePlayerPage() {
                 ) : (
                   <div className="space-y-4 animate-fade-in">
                     <QualityBadge quality={chosen.quality} />
-                    <p className="text-sm text-muted-foreground leading-relaxed">{chosen.coaching}</p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{bbifyText(chosen.coaching, bbDollars)}</p>
 
                     {/* All options breakdown */}
                     <div className="pt-3 border-t border-border/25">
@@ -1184,13 +1321,13 @@ export default function PuzzlePlayerPage() {
                           >
                             <div className="flex items-center justify-between mb-1.5">
                               <span className={cn("font-semibold", opt.id === chosen.id ? "text-foreground" : "text-muted-foreground/60")}>
-                                {opt.label}
+                                {bbifyText(opt.label, bbDollars)}
                               </span>
                               <QualityBadge quality={opt.quality} />
                             </div>
                             {opt.id !== chosen.id && (
                               <p className="text-muted-foreground/50 text-[11px] leading-relaxed line-clamp-2">
-                                {opt.coaching}
+                                {bbifyText(opt.coaching, bbDollars)}
                               </p>
                             )}
                           </div>

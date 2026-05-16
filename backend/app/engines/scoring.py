@@ -147,56 +147,157 @@ def _preferred_actions(
         return PreferredAction(action=a, frequency=f)
 
     if street == "preflop":
-        # Use node detection to return only legal-action alternatives.
+        # Node-validated: only legal-action alternatives, range-based frequencies.
         node = detect_preflop_node(action_idx, hand.actions, hand.hero_position)
         rec = get_preflop_recommendation(node, act, hand.hero_cards)
         return rec.alternatives
 
-    elif street == "flop":
+    # ── Postflop: node-aware, made-hand-priority alternatives ──────────────
+    # Resolve made-hand strength to drive sizing recommendations.
+    # Strong made hands (2pair+) bias toward value; draws bias toward semibluff.
+    made_category = _resolve_made_category(hand)
+
+    # Whether findings flag the action as wrong
+    is_mistake = severity in ("mistake", "suboptimal")
+    # Strong made hand (category >= 2 = two pair or better)
+    is_strong_made = made_category >= 2
+    # Weak made hand (category == 1, pair)
+    is_pair = made_category == 1
+
+    if street == "flop":
         if act == "bet":
-            if bucket in ("A_high_dry", "K_high_dry"):
-                if severity == "suboptimal":
-                    return [pa("Bet 33%", 65), pa("Check", 35)]
-                return [pa("Bet 33%", 55), pa("Bet 50%", 30), pa("Check", 15)]
-            if bucket in ("wet_broadway", "A_high_wet"):
-                if severity == "suboptimal":
-                    return [pa("Check", 50), pa("Bet 33%", 35), pa("Bet 50%", 15)]
-                return [pa("Bet 33%", 45), pa("Bet 50%", 30), pa("Check", 25)]
-            if bucket in ("low_connected", "monotone"):
-                return [pa("Check", 55), pa("Bet 33%", 30), pa("Bet 50%", 15)]
-            return [pa("Bet 33%", 50), pa("Bet 50%", 30), pa("Check", 20)]
+            return _flop_bet_alts(pa, bucket, is_pfr, is_ip, is_strong_made, is_mistake)
         if act == "check":
-            if is_pfr and is_ip and bucket in ("A_high_dry", "K_high_dry"):
-                return [pa("Bet 33%", 65), pa("Check", 35)]
-            return [pa("Check", 55), pa("Bet 33%", 45)]
+            return _flop_check_alts(pa, bucket, is_pfr, is_ip, is_strong_made)
         if act == "call":
-            return [pa("Call", 65), pa("Raise", 35)]
+            # Call is always legal when facing a bet
+            if is_strong_made:
+                return [pa("Call", 55), pa("Raise", 45)]
+            return [pa("Call", 70), pa("Fold", 30)]
         if act == "fold":
-            return [pa("Fold", 60), pa("Call", 40)]
+            if is_strong_made:
+                # Folding with strong made hand is likely wrong
+                return [pa("Call", 65), pa("Raise", 35)]
+            return [pa("Fold", 65), pa("Call", 35)]
 
     elif street == "turn":
         if act == "bet":
-            return [pa("Bet 50%", 50), pa("Bet 75%", 30), pa("Check", 20)]
+            if is_strong_made:
+                return [pa("Bet 75%", 55), pa("Bet 50%", 30), pa("Check", 15)]
+            if is_pair:
+                return [pa("Bet 50%", 45), pa("Check", 35), pa("Bet 75%", 20)]
+            # Draw or air
+            return [pa("Check", 50), pa("Bet 50%", 30), pa("Bet 75%", 20)]
         if act == "check":
+            if is_strong_made and is_pfr and is_ip:
+                return [pa("Bet 75%", 55), pa("Check", 45)]
             return [pa("Check", 55), pa("Bet 50%", 45)]
         if act == "call":
+            if is_strong_made:
+                return [pa("Call", 60), pa("Raise", 40)]
             return [pa("Call", 60), pa("Fold", 40)]
         if act == "fold":
+            if is_strong_made:
+                return [pa("Call", 60), pa("Raise", 40)]
             return [pa("Fold", 65), pa("Call", 35)]
 
     elif street == "river":
         if act == "bet":
-            if severity == "note":
-                return [pa("Check", 55), pa("Bet 75%", 45)]
-            return [pa("Bet 75%", 55), pa("Bet 50%", 25), pa("Check", 20)]
+            if is_strong_made:
+                return [pa("Bet 75%", 55), pa("Bet 50%", 30), pa("Check", 15)]
+            # Bluff or thin value — check is always an alternative
+            return [pa("Check", 55), pa("Bet 75%", 45)]
         if act == "check":
+            if is_strong_made and is_pfr and is_ip:
+                return [pa("Bet 75%", 55), pa("Check", 45)]
             return [pa("Check", 60), pa("Bet 75%", 40)]
         if act == "call":
-            return [pa("Call", 55), pa("Fold", 45)]
+            if is_strong_made:
+                return [pa("Call", 65), pa("Fold", 35)]
+            return [pa("Fold", 55), pa("Call", 45)]
         if act == "fold":
+            if is_strong_made:
+                return [pa("Call", 70), pa("Fold", 30)]
             return [pa("Fold", 65), pa("Call", 35)]
 
     return [pa(act.capitalize(), 100)]
+
+
+# ── Postflop alternative helpers ───────────────────────────────────────────
+
+def _resolve_made_category(hand: ParsedHand) -> int:
+    """Return made-hand category (0-8) for hero using available board cards."""
+    try:
+        from app.engines.hand_evaluator import evaluate_hole_and_board
+        board = list(hand.board.flop)
+        if hand.board.turn:
+            board += list(hand.board.turn)
+        if hand.board.river:
+            board += list(hand.board.river)
+        if hand.hero_cards and board:
+            return evaluate_hole_and_board(hand.hero_cards, board).category
+    except Exception:
+        pass
+    return 0
+
+
+def _flop_bet_alts(
+    pa,
+    bucket: str,
+    is_pfr: bool,
+    is_ip: bool,
+    is_strong_made: bool,
+    is_mistake: bool,
+) -> list:
+    """Node-aware flop bet alternatives.  Sizing derived from texture + made-hand strength.
+
+    Donk bet (OOP caller betting into PFR) always includes check as primary alternative.
+    IP PFR on a dry board with strong made hand prefers small sizing for value.
+    """
+    is_donk = not is_pfr and not is_ip  # OOP caller leading into PFR = donk
+
+    if is_strong_made:
+        if is_donk:
+            # Donk with strong hand: check-raise is often better
+            return [pa("Check", 55), pa("Bet 50%", 30), pa("Bet 75%", 15)]
+        if bucket in ("A_high_dry", "K_high_dry"):
+            return [pa("Bet 33%", 50), pa("Bet 50%", 35), pa("Check", 15)]
+        if bucket in ("wet_broadway", "A_high_wet", "low_connected"):
+            return [pa("Bet 50%", 50), pa("Bet 75%", 30), pa("Check", 20)]
+        return [pa("Bet 50%", 55), pa("Bet 33%", 25), pa("Check", 20)]
+
+    # Weak made hand or draw: bucket-appropriate sizing
+    if is_donk:
+        return [pa("Check", 65), pa("Bet 33%", 35)]
+    if bucket in ("A_high_dry", "K_high_dry"):
+        if is_mistake:
+            return [pa("Bet 33%", 65), pa("Check", 35)]
+        return [pa("Bet 33%", 55), pa("Bet 50%", 30), pa("Check", 15)]
+    if bucket in ("wet_broadway", "A_high_wet"):
+        if is_mistake:
+            return [pa("Check", 50), pa("Bet 33%", 35), pa("Bet 50%", 15)]
+        return [pa("Bet 33%", 45), pa("Bet 50%", 30), pa("Check", 25)]
+    if bucket in ("low_connected", "monotone"):
+        return [pa("Check", 55), pa("Bet 33%", 30), pa("Bet 50%", 15)]
+    return [pa("Bet 33%", 50), pa("Bet 50%", 30), pa("Check", 20)]
+
+
+def _flop_check_alts(
+    pa,
+    bucket: str,
+    is_pfr: bool,
+    is_ip: bool,
+    is_strong_made: bool,
+) -> list:
+    """Node-aware flop check alternatives."""
+    if is_strong_made and is_pfr and is_ip:
+        # IP PFR with strong made hand checking: bet is the main alternative
+        if bucket in ("A_high_dry", "K_high_dry"):
+            return [pa("Bet 33%", 60), pa("Check", 40)]
+        return [pa("Bet 50%", 55), pa("Check", 45)]
+    if is_pfr and is_ip and bucket in ("A_high_dry", "K_high_dry"):
+        return [pa("Bet 33%", 65), pa("Check", 35)]
+    return [pa("Check", 55), pa("Bet 33%", 45)]
 
 
 # ── Reason codes ───────────────────────────────────────────────────────────

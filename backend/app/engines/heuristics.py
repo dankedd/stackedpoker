@@ -9,7 +9,7 @@ from app.models.schemas import (
     ParsedHand, SpotClassification, BoardTexture, HeuristicFinding, HandAction
 )
 from app.engines.preflop_ranges import (
-    detect_preflop_node, classify_hand, LEGAL_ACTIONS, _is_in_rfi_range,
+    detect_preflop_node, classify_hand, _is_in_rfi_range,
 )
 
 
@@ -17,7 +17,8 @@ def run_heuristics(
     hand: ParsedHand,
     spot: SpotClassification,
     texture: BoardTexture,
-    draw_analysis=None,  # DrawAnalysis | None — from draw_evaluator
+    draw_analysis=None,   # DrawAnalysis | None — from draw_evaluator
+    poker_state=None,     # PokerState | None — canonical state for made-hand priority
 ) -> list[HeuristicFinding]:
     findings: list[HeuristicFinding] = []
 
@@ -25,20 +26,33 @@ def run_heuristics(
     turn_actions = [a for a in hand.actions if a.street == "turn" and a.is_hero]
     river_actions = [a for a in hand.actions if a.street == "river" and a.is_hero]
 
+    # Resolve made-hand category from PokerState when available.
+    # This prevents draw labels from overriding strong made hands.
+    made_hand_category = 0
+    if poker_state is not None and poker_state.hand_strength is not None:
+        made_hand_category = poker_state.hand_strength.made_hand_category
+
     # ── Flop ──────────────────────────────────────────────────────────────
     if hand.board.flop:
         findings += _evaluate_flop(flop_actions, spot, texture, hand)
         if draw_analysis is not None:
-            findings += _evaluate_draw_spot(flop_actions, draw_analysis, spot, "flop")
+            findings += _evaluate_draw_spot(
+                flop_actions, draw_analysis, spot, "flop",
+                made_hand_category=made_hand_category,
+            )
 
     # ── Turn ──────────────────────────────────────────────────────────────
     if hand.board.turn and flop_actions:
         findings += _evaluate_turn(turn_actions, flop_actions, spot, texture)
-        # Re-evaluate draws on the turn board (flop + turn)
         if hand.hero_cards:
             turn_draw = _get_turn_draw(hand)
             if turn_draw is not None:
-                findings += _evaluate_draw_spot(turn_actions, turn_draw, spot, "turn")
+                # Recompute made-hand category on flop+turn board
+                turn_made = _get_made_hand_category(hand.hero_cards, hand.board.flop + hand.board.turn)
+                findings += _evaluate_draw_spot(
+                    turn_actions, turn_draw, spot, "turn",
+                    made_hand_category=turn_made,
+                )
 
     # ── River ─────────────────────────────────────────────────────────────
     if hand.board.river and river_actions:
@@ -59,6 +73,15 @@ def _get_turn_draw(hand: ParsedHand):
         return analyze_draws(hand.hero_cards, board)
     except Exception:
         return None
+
+
+def _get_made_hand_category(hero_cards: list[str], board_cards: list) -> int:
+    """Return made-hand category (0-8) for hero on a given board. 0 on error."""
+    try:
+        from app.engines.hand_evaluator import evaluate_hole_and_board
+        return evaluate_hole_and_board(hero_cards, [str(c) for c in board_cards]).category
+    except Exception:
+        return 0
 
 
 # ── Flop evaluator ─────────────────────────────────────────────────────────
@@ -472,14 +495,20 @@ def _evaluate_preflop_sizing(size_bb: float, spot: SpotClassification) -> list[H
 # ── Utility ────────────────────────────────────────────────────────────────
 
 def _estimate_pot_at_street(hand: ParsedHand, street: str) -> float:
-    """Rough pot estimate at the start of a given street."""
+    """Estimate pot size (in BB) at the start of a given street.
+
+    Starts from 1.5bb (SB + BB) then adds all action sizes from prior streets.
+    Previously broken: `hand.big_blind / hand.big_blind + 0.5` always returned 1.5
+    regardless of action — operator precedence bug.  Now correctly sums action sizes.
+    """
     streets_before = {
         "preflop": [],
         "flop": ["preflop"],
         "turn": ["preflop", "flop"],
         "river": ["preflop", "flop", "turn"],
     }
-    total = hand.big_blind / hand.big_blind + 0.5  # BB + SB in BB
+    # 1.5bb = SB(0.5) + BB(1.0) before any action
+    total = 1.5
     for s in streets_before.get(street, []):
         for a in hand.actions:
             if a.street == s and a.action in ("call", "bet", "raise") and a.size_bb:
@@ -494,16 +523,28 @@ def _evaluate_draw_spot(
     draw_analysis,          # DrawAnalysis from draw_evaluator
     spot: SpotClassification,
     street: str,
+    made_hand_category: int = 0,
 ) -> list[HeuristicFinding]:
-    """Generate findings based on hero's draw strength on the current street."""
+    """Generate findings based on hero's draw strength on the current street.
+
+    CRITICAL: If hero has a made hand (category >= 1), draw findings are
+    suppressed unless the draw adds meaningful equity (e.g., flush draw on top
+    of a pair).  A made hand NEVER gets labeled as a draw-only hand.
+    """
     findings: list[HeuristicFinding] = []
 
     if not hero_actions:
         return findings
 
+    # ── Made-hand priority gate ────────────────────────────────────────────
+    # If hero has two pair or better (category >= 2), draw heuristics don't
+    # apply — the hand's primary coaching driver is the made hand, not the draw.
+    if made_hand_category >= 2:
+        return findings
+
     first = hero_actions[0]
-    outs = draw_analysis.primary_outs
-    label = draw_analysis.primary_label
+    outs = getattr(draw_analysis, "primary_outs", 0)
+    label = getattr(draw_analysis, "primary_label", "draw")
     is_ip = spot.hero_is_ip
 
     # ── Backdoor-only: hero has no direct draw ──────────────────────────

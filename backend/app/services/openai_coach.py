@@ -27,6 +27,7 @@ from app.models.schemas import (
 from app.engines.preflop_ranges import (
     detect_preflop_node, classify_hand, get_preflop_recommendation,
 )
+from app.engines.poker_state import PokerState
 
 logger = logging.getLogger(__name__)
 
@@ -76,13 +77,14 @@ async def generate_coaching(
     overall_score: int,
     game_type: str | None = None,
     player_count: int | None = None,
+    poker_state: PokerState | None = None,
 ) -> str:
     settings = get_settings()
     if not settings.openai_api_key:
         return _fallback_coaching(spot, texture, findings)
 
     client = AsyncOpenAI(api_key=settings.openai_api_key)
-    prompt = _build_prompt(hand, spot, texture, findings, overall_score, game_type, player_count)
+    prompt = _build_prompt(hand, spot, texture, findings, overall_score, game_type, player_count, poker_state)
 
     try:
         response = await client.chat.completions.create(
@@ -111,6 +113,7 @@ def _build_prompt(
     score: int,
     game_type: str | None = None,
     player_count: int | None = None,
+    poker_state: PokerState | None = None,
 ) -> str:
     # ── Board string ───────────────────────────────────────────────────────
     board_parts = list(hand.board.flop)
@@ -136,8 +139,14 @@ def _build_prompt(
         tag = f.severity.upper()
         finding_lines.append(f"  [{tag}] {f.street} / {f.action_taken}: {f.recommendation}")
 
-    # ── Preflop node analysis ──────────────────────────────────────────────
-    preflop_node_block = _build_preflop_node_block(hand)
+    # ── Canonical PokerState block (replaces manually assembled state) ────────
+    # When PokerState is available it provides: node, legal actions, hand strength,
+    # made-hand priority, draw classification, and validation status — all in one
+    # authoritative block.  Falls back to per-field assembly when unavailable.
+    if poker_state is not None:
+        canonical_block = poker_state.to_prompt_block()
+    else:
+        canonical_block = _build_preflop_node_block(hand)
 
     # ── Spot template selector ─────────────────────────────────────────────
     spot_context = _spot_template(spot, texture)
@@ -201,7 +210,8 @@ POT TYPE
   Classification:    {spot.pot_type}
   Spot ID:           {spot.spot_id}
 
-{preflop_node_block}HERO ACTIONS (chronological)
+{canonical_block}
+HERO ACTIONS (chronological)
 {chr(10).join(hero_lines) if hero_lines else "  None recorded"}
 
 ENGINE FINDINGS (deterministic heuristics)
