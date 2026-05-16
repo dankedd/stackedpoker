@@ -28,6 +28,7 @@ from app.engines.preflop_ranges import (
     detect_preflop_node, classify_hand, get_preflop_recommendation,
 )
 from app.engines.poker_state import PokerState
+from app.engines.theory_enricher import enrich_with_theory, build_theory_coaching_block
 
 logger = logging.getLogger(__name__)
 
@@ -168,6 +169,13 @@ def _build_prompt(
     else:
         canonical_block = _build_preflop_node_block(hand)
 
+    # ── Theory layer enrichment ───────────────────────────────────────────
+    try:
+        theory_ctx = enrich_with_theory(spot, texture, poker_state, hand)
+        theory_block = "THEORY CONTEXT (GTO framework)\n" + build_theory_coaching_block(theory_ctx)
+    except Exception:
+        theory_block = ""
+
     # ── Spot template selector ─────────────────────────────────────────────
     spot_context = _spot_template(spot, texture)
 
@@ -236,6 +244,8 @@ HERO ACTIONS (chronological)
 
 ENGINE FINDINGS (deterministic heuristics)
 {chr(10).join(finding_lines) if finding_lines else "  No significant deviations detected"}
+
+{theory_block}
 
 OVERALL SCORE: {score}/100
 
