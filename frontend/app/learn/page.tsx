@@ -149,15 +149,16 @@ export default function LearnPage() {
 
           {loading && <LoadingSkeleton />}
 
-          {error && (
-            <div className="rounded-xl border border-red-500/20 bg-red-500/5 px-5 py-4 text-red-400 text-sm mb-8 flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 shrink-0" />
-              {error}
-            </div>
-          )}
-
-          {!loading && !error && (
+          {!loading && (
             <>
+              {/* Non-blocking error notice — doesn't hide the page */}
+              {error && (
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-amber-400/80 text-xs mb-6 flex items-center gap-2">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  Personalised data unavailable — run the database migration to enable progress tracking.
+                </div>
+              )}
+
               {/* ── Daily Goal / Streak Row ── */}
               {dashboard && (
                 <div className="flex flex-col sm:flex-row gap-4 mb-8">
