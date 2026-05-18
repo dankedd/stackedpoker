@@ -67,18 +67,32 @@ const PATH_ICONS: Record<string, typeof BookOpen> = {
   pro:          Crown,
 };
 
-const PATH_GRADIENT: Record<string, string> = {
-  beginner:     "hover:border-emerald-500/30 hover:bg-emerald-500/[0.02]",
-  intermediate: "hover:border-blue-500/30 hover:bg-blue-500/[0.02]",
-  advanced:     "hover:border-violet-500/30 hover:bg-violet-500/[0.02]",
-  pro:          "hover:border-amber-500/30 hover:bg-amber-500/[0.02]",
+const PATH_CARD_BG: Record<string, string> = {
+  beginner:     "bg-gradient-to-br from-emerald-950/60 via-card/80 to-card/50 border-emerald-900/40",
+  intermediate: "bg-gradient-to-br from-blue-950/60 via-card/80 to-card/50 border-blue-900/40",
+  advanced:     "bg-gradient-to-br from-violet-950/60 via-card/80 to-card/50 border-violet-900/40",
+  pro:          "bg-gradient-to-br from-amber-950/50 via-card/80 to-card/50 border-amber-900/30",
+};
+
+const PATH_HOVER: Record<string, string> = {
+  beginner:     "hover:border-emerald-500/40 hover:shadow-emerald-900/20",
+  intermediate: "hover:border-blue-500/40 hover:shadow-blue-900/20",
+  advanced:     "hover:border-violet-500/40 hover:shadow-violet-900/20",
+  pro:          "hover:border-amber-500/40 hover:shadow-amber-900/20",
+};
+
+const PATH_GLOW_TOP: Record<string, string> = {
+  beginner:     "bg-emerald-500/8",
+  intermediate: "bg-blue-500/8",
+  advanced:     "bg-violet-500/10",
+  pro:          "bg-amber-500/8",
 };
 
 const PATH_ICON_BG: Record<string, string> = {
-  beginner:     "bg-emerald-500/15 border-emerald-500/20 text-emerald-400",
-  intermediate: "bg-blue-500/15 border-blue-500/20 text-blue-400",
-  advanced:     "bg-violet-500/15 border-violet-500/20 text-violet-400",
-  pro:          "bg-amber-500/15 border-amber-500/20 text-amber-400",
+  beginner:     "bg-emerald-500/15 border-emerald-500/25 text-emerald-400",
+  intermediate: "bg-blue-500/15 border-blue-500/25 text-blue-400",
+  advanced:     "bg-violet-500/15 border-violet-500/25 text-violet-400",
+  pro:          "bg-amber-500/15 border-amber-500/25 text-amber-400",
 };
 
 const PATH_ARROW: Record<string, string> = {
@@ -86,6 +100,13 @@ const PATH_ARROW: Record<string, string> = {
   intermediate: "text-blue-400",
   advanced:     "text-violet-400",
   pro:          "text-amber-400",
+};
+
+const PATH_XP_TOTAL: Record<string, number> = {
+  beginner: 700,
+  intermediate: 1150,
+  advanced: 1400,
+  pro: 950,
 };
 
 const MODULE_COUNTS: Record<string, number> = {
@@ -165,45 +186,72 @@ export default function LearnPage() {
       <main className="flex-1 py-10 sm:py-14">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
 
-          {/* ── Header ── */}
-          <div className="mb-10">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-blue-500">
-                <Brain className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-violet-400/70 mb-0.5">
-                  Learning Hub
-                </p>
-                <h1 className="text-3xl font-bold text-foreground">Learn Poker</h1>
+          {/* ── Hero ── */}
+          <div className="relative mb-12 overflow-hidden rounded-3xl border border-violet-500/15 bg-gradient-to-br from-violet-950/50 via-background/70 to-blue-950/25 px-8 py-10 sm:px-12 sm:py-12">
+            {/* Ambient glows */}
+            <div aria-hidden className="pointer-events-none absolute -top-24 -left-16 h-72 w-72 rounded-full bg-violet-600/20 blur-3xl animate-drift-glow" />
+            <div aria-hidden className="pointer-events-none absolute -bottom-16 -right-20 h-56 w-56 rounded-full bg-blue-500/15 blur-3xl" />
+            <div aria-hidden className="pointer-events-none absolute top-1/2 right-1/3 h-40 w-40 rounded-full bg-violet-400/8 blur-2xl" />
+
+            <div className="relative">
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-violet-400/60 mb-3">
+                Learning Hub
+              </p>
+              <h1 className="text-4xl sm:text-5xl font-black text-foreground mb-3 leading-tight tracking-tight">
+                Master the{" "}
+                <span className="bg-gradient-to-r from-violet-400 via-blue-400 to-violet-300 bg-clip-text text-transparent animate-gradient">
+                  Mental Game
+                </span>
+              </h1>
+              <p className="text-base sm:text-lg text-muted-foreground max-w-lg mb-8 leading-relaxed">
+                Adaptive micro-lessons, GTO concept training, and AI coaching — engineered to turn theory into real profit.
+              </p>
+
+              {/* Stats strip */}
+              <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                {[
+                  { icon: BookOpen, value: "18+", label: "lessons" },
+                  { icon: Brain,    value: "22",  label: "concepts" },
+                  { icon: Target,   value: "3",   label: "learning paths" },
+                  { icon: Zap,      value: "4,200+", label: "XP available" },
+                ].map(({ icon: Icon, value, label }) => (
+                  <div key={label} className="flex items-center gap-1.5 text-muted-foreground">
+                    <Icon className="h-3.5 w-3.5 text-violet-400/50" />
+                    <span className="font-semibold text-foreground">{value}</span>
+                    <span className="text-muted-foreground/60">{label}</span>
+                  </div>
+                ))}
               </div>
             </div>
-            <p className="text-muted-foreground mt-2 ml-[52px]">
-              Interactive lessons · Adaptive coaching · Real improvement
-            </p>
           </div>
 
           {/* ── Auth gate ── */}
           {!user && !loading && (
-            <div className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-600/10 to-blue-600/5 p-8 text-center mb-8">
-              <Brain className="h-10 w-10 text-violet-400 mx-auto mb-4" />
-              <h2 className="text-xl font-bold text-foreground mb-2">Sign in to start learning</h2>
-              <p className="text-muted-foreground text-sm mb-5">
-                Create a free account to track your progress, earn XP, and get personalized coaching.
-              </p>
-              <div className="flex gap-3 justify-center">
-                <Link
-                  href="/signup"
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-sm font-semibold hover:opacity-90 transition-opacity"
-                >
-                  Get started free
-                </Link>
-                <Link
-                  href="/login"
-                  className="px-5 py-2.5 rounded-xl border border-border/50 bg-card/40 text-foreground text-sm font-medium hover:bg-card/60 transition-colors"
-                >
-                  Sign in
-                </Link>
+            <div className="relative overflow-hidden rounded-2xl border border-violet-500/25 bg-gradient-to-br from-violet-900/25 via-card/80 to-blue-900/15 p-8 text-center mb-10">
+              <div aria-hidden className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 h-40 w-40 rounded-full bg-violet-500/15 blur-3xl" />
+              <div className="relative">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-600 to-blue-500 shadow-lg shadow-violet-500/30 mx-auto mb-4">
+                  <Brain className="h-7 w-7 text-white" />
+                </div>
+                <h2 className="text-xl font-bold text-foreground mb-2">Start your poker education</h2>
+                <p className="text-muted-foreground text-sm mb-6 max-w-sm mx-auto leading-relaxed">
+                  Free account gives you access to the Foundations path, XP tracking, and personalized AI coaching.
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <Link
+                    href="/signup"
+                    className="group relative overflow-hidden inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-sm font-semibold shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 hover:-translate-y-0.5 transition-all duration-200"
+                  >
+                    <div aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                    Get started free
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="px-5 py-2.5 rounded-xl border border-border/50 bg-card/40 text-foreground text-sm font-medium hover:bg-card/60 transition-colors"
+                  >
+                    Sign in
+                  </Link>
+                </div>
               </div>
             </div>
           )}
@@ -308,29 +356,35 @@ export default function LearnPage() {
               {/* ── Continue / Recommended Lesson ── */}
               {dashboard?.recommended_lesson && (
                 <div className="mb-10">
-                  <h2 className="text-base font-semibold text-foreground mb-3">Continue learning</h2>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-3">
+                    Continue learning
+                  </p>
                   <Link href={`/learn/lesson/${dashboard.recommended_lesson.slug}`} className="group block">
-                    <div className="rounded-2xl border border-violet-500/25 bg-gradient-to-br from-violet-600/10 via-card/60 to-blue-600/5 p-6 hover:border-violet-500/40 transition-colors relative overflow-hidden">
-                      <div
-                        aria-hidden
-                        className="pointer-events-none absolute -top-12 -right-12 h-48 w-48 rounded-full bg-violet-500/10 blur-3xl"
-                      />
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold uppercase tracking-widest text-violet-400/70 mb-1">
-                            Recommended
-                          </p>
-                          <h3 className="text-lg font-bold text-foreground mb-1">
-                            {dashboard.recommended_lesson.title}
-                          </h3>
-                          {dashboard.recommended_lesson.reason && (
-                            <p className="text-sm text-muted-foreground">
-                              {dashboard.recommended_lesson.reason}
+                    <div className="rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-900/30 via-card/80 to-blue-900/20 p-6 hover:border-violet-500/50 hover:shadow-lg hover:shadow-violet-900/20 hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden">
+                      <div aria-hidden className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full bg-violet-500/15 blur-3xl" />
+                      <div aria-hidden className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/30 to-transparent" />
+                      <div className="relative flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4 min-w-0">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-blue-500 shadow-lg shadow-violet-500/30">
+                            <Brain className="h-5.5 w-5.5 text-white" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-violet-400/60 mb-0.5">
+                              Recommended for you
                             </p>
-                          )}
+                            <h3 className="text-base font-bold text-foreground truncate">
+                              {dashboard.recommended_lesson.title}
+                            </h3>
+                            {dashboard.recommended_lesson.reason && (
+                              <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                                {dashboard.recommended_lesson.reason}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <div className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-sm font-semibold group-hover:opacity-90 transition-opacity">
-                          Continue <ChevronRight className="h-4 w-4" />
+                        <div className="shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-sm font-semibold shadow-lg shadow-violet-500/30 group-hover:shadow-violet-500/50 group-hover:opacity-95 transition-all">
+                          Continue
+                          <ChevronRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
                         </div>
                       </div>
                     </div>
@@ -340,7 +394,7 @@ export default function LearnPage() {
 
               {/* ── Learning Paths Grid (4 paths) ── */}
               <div className="mb-10">
-                <h2 className="text-base font-semibold text-foreground mb-4">Learning paths</h2>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-4">Learning paths</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {LEARNING_PATHS.map((path) => {
                     const Icon = PATH_ICONS[path.id] ?? BookOpen;
@@ -354,17 +408,28 @@ export default function LearnPage() {
                       >
                         <div
                           className={cn(
-                            "h-full rounded-2xl border bg-card/60 p-5 transition-all duration-200",
+                            "h-full rounded-2xl border p-5 transition-all duration-200 relative overflow-hidden hover:shadow-lg hover:-translate-y-0.5",
                             isLocked
-                              ? "border-border/30 opacity-70 hover:opacity-90"
-                              : cn("border-border/50", PATH_GRADIENT[path.id]),
+                              ? "border-border/25 bg-card/40 opacity-60 cursor-default hover:translate-y-0 hover:shadow-none"
+                              : cn(PATH_CARD_BG[path.id], PATH_HOVER[path.id]),
                           )}
                         >
-                          <div className="flex items-start justify-between mb-3">
+                          {/* Card ambient glow top-right */}
+                          {!isLocked && (
+                            <div
+                              aria-hidden
+                              className={cn(
+                                "pointer-events-none absolute -top-6 -right-6 h-24 w-24 rounded-full blur-2xl opacity-60",
+                                PATH_GLOW_TOP[path.id],
+                              )}
+                            />
+                          )}
+
+                          <div className="relative flex items-start justify-between mb-4">
                             <div
                               className={cn(
-                                "flex h-9 w-9 items-center justify-center rounded-xl border shrink-0",
-                                PATH_ICON_BG[path.id],
+                                "flex h-10 w-10 items-center justify-center rounded-xl border shrink-0",
+                                isLocked ? "bg-secondary/30 border-border/30 text-muted-foreground/30" : PATH_ICON_BG[path.id],
                               )}
                             >
                               <Icon className="h-4.5 w-4.5" />
@@ -373,40 +438,38 @@ export default function LearnPage() {
                               <span
                                 className={cn(
                                   "text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize",
-                                  TIER_BADGE[path.tier_required],
+                                  isLocked ? "bg-secondary/20 border-border/20 text-muted-foreground/30" : TIER_BADGE[path.tier_required],
                                 )}
                               >
                                 {path.tier_required}
                               </span>
-                              {isLocked && <Lock className="h-3.5 w-3.5 text-muted-foreground/40" />}
+                              {isLocked && <Lock className="h-3.5 w-3.5 text-muted-foreground/30" />}
                             </div>
                           </div>
 
-                          <h3 className="font-semibold text-foreground mb-1">{path.title}</h3>
-                          <p className="text-xs text-muted-foreground leading-relaxed mb-4">
+                          <h3 className="relative font-bold text-foreground mb-1.5 text-[15px]">{path.title}</h3>
+                          <p className="relative text-xs text-muted-foreground leading-relaxed mb-5">
                             {path.description}
                           </p>
 
-                          {/* Module count */}
-                          <p className="text-[10px] text-muted-foreground/40 mb-2">
-                            {moduleCount} modules
-                          </p>
+                          {/* Module + XP row */}
+                          <div className="relative flex items-center justify-between text-[10px] text-muted-foreground/50 mb-3">
+                            <span>{moduleCount} modules</span>
+                            <span className="flex items-center gap-1 text-amber-400/60">
+                              <Zap className="h-2.5 w-2.5" />
+                              {PATH_XP_TOTAL[path.id]?.toLocaleString() ?? "—"} XP
+                            </span>
+                          </div>
 
-                          {/* Progress bar placeholder */}
-                          <div className="space-y-1.5">
-                            <div className="flex justify-between text-xs text-muted-foreground">
-                              <span>Progress</span>
-                              <span className="font-medium text-foreground">0%</span>
-                            </div>
-                            <div className="h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
-                              <div className="h-full rounded-full bg-violet-500/60 w-0" />
-                            </div>
+                          {/* Progress bar */}
+                          <div className="relative h-1.5 rounded-full bg-white/[0.05] overflow-hidden mb-4">
+                            <div className={cn("h-full rounded-full w-0", isLocked ? "" : "bg-gradient-to-r from-current opacity-40")} style={{ color: PATH_ARROW[path.id] }} />
                           </div>
 
                           <div
                             className={cn(
-                              "mt-3 flex items-center gap-1.5 text-xs group-hover:translate-x-0.5 transition-transform",
-                              PATH_ARROW[path.id],
+                              "relative flex items-center gap-1.5 text-xs font-semibold group-hover:translate-x-0.5 transition-transform",
+                              isLocked ? "text-muted-foreground/30" : PATH_ARROW[path.id],
                             )}
                           >
                             {isLocked ? "Unlock path" : "Explore path"}

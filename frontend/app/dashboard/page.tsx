@@ -49,52 +49,68 @@ export default async function DashboardPage() {
         {/* Success banner (client — reads ?upgraded=1) */}
         <UpgradeBanner />
 
-        {/* Welcome */}
-        <div className="mb-10 animate-fade-in">
-          <p className="text-sm font-medium text-violet-400 mb-1">Dashboard</p>
-          <h1 className="text-3xl font-bold text-foreground">
-            Welcome back, {displayName}
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Ready to review your game and find the leaks?
-          </p>
+        {/* ── Welcome hero ── */}
+        <div className="relative mb-10 overflow-hidden rounded-3xl border border-violet-500/12 bg-gradient-to-br from-violet-950/40 via-background/70 to-blue-950/20 px-8 py-8 sm:px-10 animate-fade-in">
+          <div aria-hidden className="pointer-events-none absolute -top-20 -left-10 h-72 w-72 rounded-full bg-violet-600/12 blur-3xl" />
+          <div aria-hidden className="pointer-events-none absolute -bottom-10 right-0 h-48 w-48 rounded-full bg-blue-500/8 blur-3xl" />
+          <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-violet-400/60 mb-2">Dashboard</p>
+              <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
+                Welcome back, <span className="bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">{displayName}</span>
+              </h1>
+              <p className="text-muted-foreground mt-2 leading-relaxed">
+                {handsAnalyzed > 0
+                  ? `${handsAnalyzed} hand${handsAnalyzed !== 1 ? "s" : ""} analyzed — keep building your edge.`
+                  : "Analyze your first hand to start building patterns and closing leaks."}
+              </p>
+            </div>
+            <Link
+              href="/analyze"
+              className="group relative overflow-hidden shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-sm font-semibold shadow-lg shadow-violet-500/25 hover:shadow-violet-500/45 hover:-translate-y-0.5 transition-all duration-200"
+            >
+              <div aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+              <Spade className="h-4 w-4" />
+              Analyze a hand
+            </Link>
+          </div>
         </div>
 
-        {/* Stats grid */}
+        {/* ── Stats grid ── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <div className="rounded-xl border border-border/60 bg-card/60 p-6 space-y-3 card-lift stagger-item" style={{ animationDelay: "60ms" }}>
-            <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="rounded-2xl border border-border/50 bg-gradient-to-br from-violet-950/30 via-card/70 to-card/60 p-6 space-y-3 card-lift stagger-item" style={{ animationDelay: "60ms" }}>
+            <div className="flex items-center gap-2 text-muted-foreground/70">
               <BarChart3 className="h-4 w-4" />
-              <span className="text-sm">Hands Analyzed</span>
+              <span className="text-xs font-semibold uppercase tracking-wider">Hands Analyzed</span>
             </div>
-            <p className="text-3xl font-bold text-violet-400">{handsAnalyzed}</p>
-            <p className="text-xs text-muted-foreground/60">total sessions</p>
+            <p className="text-4xl font-black text-violet-400">{handsAnalyzed}</p>
+            <p className="text-xs text-muted-foreground/50">total sessions</p>
           </div>
 
-          {/* Plan tile — responsive based on tier */}
+          {/* Plan tile — tier-responsive */}
           <div className={cn(
-            "rounded-xl border p-6 space-y-3 card-lift stagger-item",
-            tier === "pro"   ? "border-blue-500/20 bg-blue-500/5" :
-            tier === "admin" ? "border-violet-500/20 bg-violet-500/5" :
-            "border-border/60 bg-card/60"
+            "rounded-2xl border p-6 space-y-3 card-lift stagger-item",
+            tier === "pro"   ? "border-blue-500/25 bg-gradient-to-br from-blue-950/40 via-card/70 to-card/60" :
+            tier === "admin" ? "border-violet-500/25 bg-gradient-to-br from-violet-950/40 via-card/70 to-card/60" :
+            "border-border/50 bg-card/60"
           )} style={{ animationDelay: "120ms" }}>
-            <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="flex items-center gap-2 text-muted-foreground/70">
               <TrendingUp className="h-4 w-4" />
-              <span className="text-sm">Plan</span>
+              <span className="text-xs font-semibold uppercase tracking-wider">Plan</span>
             </div>
-            <p className={cn("text-3xl font-bold", planColor)}>{planLabel}</p>
-            <p className="text-xs text-muted-foreground/60">{planSub}</p>
+            <p className={cn("text-4xl font-black", planColor)}>{planLabel}</p>
+            <p className="text-xs text-muted-foreground/50">{planSub}</p>
           </div>
 
-          <div className="rounded-xl border border-border/60 bg-card/60 p-6 space-y-3 card-lift stagger-item" style={{ animationDelay: "180ms" }}>
-            <div className="flex items-center gap-2 text-muted-foreground">
+          <div className="rounded-2xl border border-border/50 bg-card/60 p-6 space-y-3 card-lift stagger-item" style={{ animationDelay: "180ms" }}>
+            <div className="flex items-center gap-2 text-muted-foreground/70">
               <Clock className="h-4 w-4" />
-              <span className="text-sm">Member since</span>
+              <span className="text-xs font-semibold uppercase tracking-wider">Member since</span>
             </div>
-            <p className="text-3xl font-bold text-muted-foreground">
+            <p className="text-4xl font-black text-muted-foreground/70">
               {new Date(user.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
             </p>
-            <p className="text-xs text-muted-foreground/60">account age</p>
+            <p className="text-xs text-muted-foreground/50">account age</p>
           </div>
         </div>
 
@@ -128,7 +144,7 @@ export default async function DashboardPage() {
 
         {/* Quick actions */}
         <div className="mb-10">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h2>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground/50 mb-4">Quick actions</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Link href="/analyze" className="group block">
               <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/8 hover:border-violet-500/40 p-6 card-lift h-full">
@@ -200,7 +216,7 @@ export default async function DashboardPage() {
         {/* Recent analyses placeholder */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-foreground">Recent Analyses</h2>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground/50">Recent Analyses</p>
             <Link href="/history" className="text-sm text-violet-400 hover:text-violet-300 transition-colors">
               View all →
             </Link>

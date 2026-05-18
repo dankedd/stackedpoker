@@ -52,14 +52,19 @@ function LessonCard({
 }) {
   return (
     <Link href={`/learn/lesson/${lesson.slug}`} className="group block">
-      <div className="flex items-center gap-4 rounded-2xl border border-border/50 bg-card/60 px-5 py-4 hover:border-violet-500/30 hover:bg-violet-500/[0.03] transition-all duration-200">
-        {/* Number / check */}
+      <div className={cn(
+        "flex items-center gap-4 rounded-2xl border px-5 py-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md",
+        complete
+          ? "border-emerald-500/20 bg-gradient-to-r from-emerald-950/25 via-card/70 to-card/60 hover:border-emerald-500/35 hover:shadow-emerald-900/15"
+          : "border-border/40 bg-card/60 hover:border-violet-500/30 hover:bg-violet-500/[0.03] hover:shadow-violet-900/15"
+      )}>
+        {/* Step number / check */}
         <div
           className={cn(
-            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold",
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold tabular-nums",
             complete
               ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400"
-              : "border-violet-500/30 bg-violet-500/5 text-violet-400"
+              : "border-violet-500/25 bg-violet-500/5 text-violet-400/80"
           )}
         >
           {complete ? (
@@ -81,20 +86,20 @@ function LessonCard({
               {TYPE_LABEL[lesson.lesson_type] ?? lesson.lesson_type}
             </span>
           </div>
-          <p className="font-medium text-foreground text-sm truncate">{lesson.title}</p>
+          <p className="font-semibold text-foreground text-sm truncate">{lesson.title}</p>
           <div className="flex items-center gap-3 mt-1">
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1 text-xs text-muted-foreground/60">
               <Clock className="h-3 w-3" />
               {lesson.estimated_min} min
             </span>
-            <span className="flex items-center gap-1 text-xs text-amber-400">
+            <span className="flex items-center gap-1 text-xs text-amber-400/80">
               <Zap className="h-3 w-3" />
               {lesson.xp_reward} XP
             </span>
           </div>
         </div>
 
-        <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-violet-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+        <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-violet-400 group-hover:translate-x-0.5 transition-all shrink-0" />
       </div>
     </Link>
   );
@@ -159,66 +164,62 @@ export default function ModulePage() {
             <span className="text-foreground">{module.title}</span>
           </div>
 
-          {/* Module header */}
-          <div className="mb-8">
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600/20 to-blue-600/10 border border-violet-500/20 shrink-0">
+          {/* Module hero */}
+          <div className="relative mb-8 overflow-hidden rounded-2xl border border-violet-500/15 bg-gradient-to-br from-violet-950/40 via-card/80 to-blue-950/20 px-6 py-7 sm:px-8">
+            <div aria-hidden className="pointer-events-none absolute -top-12 -right-12 h-48 w-48 rounded-full bg-violet-500/12 blur-3xl" />
+            <div className="relative flex items-start gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600/30 to-blue-600/20 border border-violet-500/25 shrink-0">
                 <Layers className="h-6 w-6 text-violet-400" />
               </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-violet-400/70 mb-1">
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-violet-400/60 mb-1.5">
                   Module
                 </p>
-                <h1 className="text-2xl font-bold text-foreground">{module.title}</h1>
-                <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+                <h1 className="text-2xl font-bold text-foreground mb-1.5">{module.title}</h1>
+                <p className="text-muted-foreground text-sm leading-relaxed mb-4">
                   {module.description}
                 </p>
+
+                {/* Concept tags */}
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                  {module.concept_ids.map((c) => (
+                    <span
+                      key={c}
+                      className="text-[10px] px-2.5 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/18 text-violet-400/70 font-semibold"
+                    >
+                      {c.replace(/-/g, " ")}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Stats + CTA row */}
+                <div className="flex items-center gap-6 flex-wrap">
+                  <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <BookOpen className="h-3.5 w-3.5" />
+                    {lessons.length} lesson{lessons.length !== 1 ? "s" : ""}
+                  </span>
+                  <span className="flex items-center gap-1.5 text-xs text-amber-400">
+                    <Zap className="h-3.5 w-3.5" />
+                    {module.xp_reward} XP reward
+                  </span>
+                  {firstIncomplete && (
+                    <Link
+                      href={`/learn/lesson/${firstIncomplete.slug}`}
+                      className="group relative overflow-hidden ml-auto inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-sm font-semibold shadow-md shadow-violet-500/25 hover:shadow-violet-500/45 hover:-translate-y-0.5 transition-all duration-200"
+                    >
+                      <div aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                      {completedLessonIds.size === 0 ? "Start module" : "Continue"}
+                      <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                    </Link>
+                  )}
+                </div>
               </div>
-            </div>
-
-            {/* Concept tags */}
-            <div className="flex flex-wrap gap-1.5 mt-4 ml-16">
-              {module.concept_ids.map((c) => (
-                <span
-                  key={c}
-                  className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400/80 font-medium"
-                >
-                  {c.replace(/-/g, " ")}
-                </span>
-              ))}
-            </div>
-
-            {/* Stats */}
-            <div className="flex gap-5 mt-4 ml-16 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <BookOpen className="h-3.5 w-3.5" />
-                {lessons.length} lesson{lessons.length !== 1 ? "s" : ""}
-              </span>
-              <span className="flex items-center gap-1.5 text-amber-400">
-                <Zap className="h-3.5 w-3.5" />
-                {module.xp_reward} XP reward
-              </span>
             </div>
           </div>
 
-          {/* Start / Continue CTA */}
-          {firstIncomplete && (
-            <div className="mb-6">
-              <Link
-                href={`/learn/lesson/${firstIncomplete.slug}`}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white font-semibold hover:opacity-90 transition-opacity"
-              >
-                {completedLessonIds.size === 0 ? "Start module" : "Continue learning"}
-                <ChevronRight className="h-4 w-4" />
-              </Link>
-            </div>
-          )}
-
           {/* Lesson list */}
           <div className="space-y-2.5">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-              Lessons
-            </h2>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/40 mb-3">Lessons</p>
             {lessons.map((lesson, i) => (
               <LessonCard
                 key={lesson.id}
