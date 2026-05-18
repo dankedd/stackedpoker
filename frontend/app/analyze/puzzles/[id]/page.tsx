@@ -385,40 +385,65 @@ function pickRandomPuzzle(excludeId?: string) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Card components — premium tactile cards
+// Card components — premium tactile cards (mirrors PlayingCard.tsx tokens)
 // ─────────────────────────────────────────────────────────────────────────────
 
 type CardSize = "sm" | "md" | "lg" | "xl";
 
 const CARD_DIMS: Record<CardSize, string> = {
-  sm: "w-9 h-[52px] rounded-lg",
-  md: "w-11 h-16 rounded-xl",
-  lg: "w-[52px] h-[76px] rounded-xl",
-  xl: "w-[60px] h-[86px] rounded-[10px]",
+  sm: "w-[38px] h-[54px] rounded-[5px]",
+  md: "w-[51px] h-[72px] rounded-[6px]",
+  lg: "w-[71px] h-[100px] rounded-[8px]",
+  xl: "w-[93px] h-[130px] rounded-[10px]",
 };
-const CARD_PAD: Record<CardSize, string>  = { sm: "p-1", md: "p-1.5", lg: "p-2", xl: "p-[9px]" };
-const CARD_RANK: Record<CardSize, string> = { sm: "text-[10px]", md: "text-xs", lg: "text-sm", xl: "text-[15px]" };
-const CARD_SYM: Record<CardSize, string>  = { sm: "text-sm",    md: "text-base", lg: "text-2xl", xl: "text-[28px]" };
+const CARD_PAD: Record<CardSize, string>  = { sm: "p-[3.5px]", md: "p-[4.5px]", lg: "p-[6px]", xl: "p-[8px]" };
+const CARD_RANK: Record<CardSize, string> = { sm: "text-[11px]", md: "text-[15px]", lg: "text-[20px]", xl: "text-[26px]" };
+const CARD_SYM: Record<CardSize, string>  = { sm: "text-[9px]",  md: "text-[12px]", lg: "text-[15px]", xl: "text-[19px]" };
+const CARD_CTR: Record<CardSize, string>  = { sm: "text-[22px]", md: "text-[29px]", lg: "text-[40px]", xl: "text-[52px]" };
+
+// Matches PlayingCard.tsx color palette
+const PZ_RED   = "#B41C22";
+const PZ_BLACK = "#1C1917";
 
 function CardFace({ card, size = "md" }: { card: string; size?: CardSize }) {
-  const rank  = card.slice(0, -1).replace("T", "10");
-  const suit  = card.slice(-1);
+  const raw   = card.slice(0, -1).toUpperCase();
+  const rank  = raw === "T" ? "10" : raw;
+  const suit  = card.slice(-1).toLowerCase();
   const isRed = suit === "h" || suit === "d";
   const sym   = ({ h: "♥", d: "♦", c: "♣", s: "♠" } as const)[suit as "h"|"d"|"c"|"s"] ?? "";
-  const col   = isRed ? "#C41E1E" : "#0F172A";
+  const col   = isRed ? PZ_RED : PZ_BLACK;
 
   return (
     <div
-      className={cn("flex flex-col justify-between select-none shrink-0", CARD_DIMS[size], CARD_PAD[size])}
+      className={cn("relative flex flex-col justify-between select-none shrink-0 overflow-hidden", CARD_DIMS[size], CARD_PAD[size])}
       style={{
-        background: "linear-gradient(158deg, #FFFFFF 0%, #F2F5FA 100%)",
-        boxShadow: size === "xl"
-          ? "0 14px 32px rgba(0,0,0,0.58), 0 3px 10px rgba(0,0,0,0.28), inset 0 1.5px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(0,0,0,0.05)"
-          : "0 6px 18px rgba(0,0,0,0.52), 0 2px 5px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.9)",
+        background: "linear-gradient(165deg, #FEFEFC 0%, #F9F6F0 40%, #F0EBE1 100%)",
+        boxShadow: [
+          "0 18px 44px rgba(0,0,0,0.62)",
+          "0 6px 14px rgba(0,0,0,0.40)",
+          "0 2px 4px rgba(0,0,0,0.22)",
+          "inset 0 1.5px 0 rgba(255,255,255,1)",
+          "inset 0 -1px 0 rgba(0,0,0,0.08)",
+        ].join(", "),
+        border: "1px solid rgba(200,193,182,0.80)",
       }}
     >
-      <span className={cn("font-black leading-none tabular-nums", CARD_RANK[size])} style={{ color: col }}>{rank}</span>
-      <span className={cn("text-center leading-none", CARD_SYM[size])} style={{ color: col }}>{sym}</span>
+      {/* Top gloss */}
+      <div
+        className="absolute inset-x-0 top-0 pointer-events-none"
+        style={{ height: "42%", background: "linear-gradient(180deg, rgba(255,255,255,0.36) 0%, transparent 100%)", borderRadius: "inherit" }}
+      />
+      <div className="relative z-10 flex flex-col items-start leading-none font-black" style={{ color: col }}>
+        <span className={cn("leading-none tracking-tight", CARD_RANK[size])}>{rank}</span>
+        <span className={cn("leading-none -mt-[1px]", CARD_SYM[size])}>{sym}</span>
+      </div>
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <span className={cn("leading-none select-none font-black", CARD_CTR[size])} style={{ color: col, opacity: isRed ? 0.11 : 0.08 }}>{sym}</span>
+      </div>
+      <div className="relative z-10 flex flex-col items-end leading-none font-black rotate-180" style={{ color: col }}>
+        <span className={cn("leading-none tracking-tight", CARD_RANK[size])}>{rank}</span>
+        <span className={cn("leading-none -mt-[1px]", CARD_SYM[size])}>{sym}</span>
+      </div>
     </div>
   );
 }
@@ -426,15 +451,37 @@ function CardFace({ card, size = "md" }: { card: string; size?: CardSize }) {
 function CardBack({ size = "md" }: { size?: CardSize }) {
   return (
     <div
-      className={cn("shrink-0", CARD_DIMS[size])}
+      className={cn("shrink-0 overflow-hidden relative", CARD_DIMS[size])}
       style={{
-        background: "linear-gradient(158deg, rgba(88,28,135,0.68) 0%, rgba(30,27,75,0.78) 55%, rgba(23,37,84,0.62) 100%)",
-        border: "1px solid rgba(139,92,246,0.18)",
-        boxShadow: size === "xl"
-          ? "0 12px 26px rgba(0,0,0,0.52), inset 0 1px 0 rgba(255,255,255,0.09)"
-          : "0 4px 12px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.06)",
+        background: "linear-gradient(148deg, #2C1B6E 0%, #18103E 38%, #0D0A28 62%, #1A1055 100%)",
+        boxShadow: [
+          "0 14px 36px rgba(0,0,0,0.58)",
+          "0 4px 10px rgba(0,0,0,0.38)",
+          "inset 0 1px 0 rgba(255,255,255,0.09)",
+          "inset 0 0 0 1.5px rgba(139,92,246,0.14)",
+        ].join(", "),
+        border: "1px solid rgba(139,92,246,0.28)",
       }}
-    />
+    >
+      {/* Diamond grid */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: [
+            "repeating-linear-gradient(45deg, rgba(139,92,246,0.09) 0, rgba(139,92,246,0.09) 0.5px, transparent 0, transparent 50%)",
+            "repeating-linear-gradient(-45deg, rgba(139,92,246,0.09) 0, rgba(139,92,246,0.09) 0.5px, transparent 0, transparent 50%)",
+          ].join(", "),
+          backgroundSize: "8px 8px",
+        }}
+      />
+      {/* Central emblem */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div style={{ width: "42%", height: "58%", border: "1px solid rgba(139,92,246,0.22)", boxShadow: "0 0 0 3px rgba(139,92,246,0.07)", borderRadius: "3px", transform: "rotate(3deg)" }} />
+        <div className="absolute" style={{ width: "26%", height: "38%", border: "1px solid rgba(167,139,250,0.18)", borderRadius: "2px", transform: "rotate(3deg)" }} />
+      </div>
+      {/* Edge ambient */}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.12) 0%, transparent 65%)", borderRadius: "inherit" }} />
+    </div>
   );
 }
 
