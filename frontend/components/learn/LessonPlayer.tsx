@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Lesson, LessonStep, StepResult } from '@/lib/learn/types'
+import { makeFailedResult } from '@/lib/learn/types'
 import { evaluateStep } from '@/lib/learn/api'
 import { PokerContextBar } from '@/components/learn/PokerContextBar'
 import { StepFeedback } from '@/components/learn/StepFeedback'
@@ -77,16 +78,7 @@ function StepRenderer({
       const result = await evaluateStep(lessonId, step.id, userResponse, timeMs, token)
       onResult(result)
     } catch {
-      onResult({
-        score: 50,
-        quality: 'acceptable',
-        ev_loss_bb: 0,
-        feedback: 'Could not reach server — result estimated.',
-        xp_earned: Math.floor((step.xp ?? 10) / 2),
-        level_before: 1,
-        level_after: 1,
-        leveled_up: false,
-      })
+      onResult(makeFailedResult('network_error'))
     }
   }
 
@@ -104,6 +96,10 @@ function StepRenderer({
             level_before: 1,
             level_after: 1,
             leveled_up: false,
+            evaluation_source: 'theory_engine',
+            confidence: 'high',
+            evaluation_valid: true,
+            fallback_used: false,
           })
         }
       />
@@ -255,9 +251,10 @@ function SummaryScreen({
   totalXP: number
   onContinue: () => void
 }) {
+  const validResults = results.filter((r) => r.evaluation_valid !== false)
   const avgScore =
-    results.length > 0
-      ? Math.round(results.reduce((s, r) => s + r.score, 0) / results.length)
+    validResults.length > 0
+      ? Math.round(validResults.reduce((s, r) => s + r.score, 0) / validResults.length)
       : 0
 
   const leveledUp = results.some((r) => r.leveled_up)
@@ -317,31 +314,40 @@ function SummaryScreen({
                 <span className="text-xs text-muted-foreground/50 w-20 shrink-0 capitalize">
                   {lesson.steps[i]?.type?.replace(/_/g, ' ') ?? `Step ${i + 1}`}
                 </span>
-                <div className="flex-1 h-1.5 rounded-full bg-secondary/50 overflow-hidden">
-                  <div
-                    className={cn(
-                      'h-full rounded-full transition-all',
-                      r.score >= 80
-                        ? 'bg-emerald-500'
-                        : r.score >= 60
-                        ? 'bg-amber-500'
-                        : 'bg-red-500'
-                    )}
-                    style={{ width: `${r.score}%` }}
-                  />
-                </div>
-                <span
-                  className={cn(
-                    'text-xs font-bold w-8 text-right',
-                    r.score >= 80
-                      ? 'text-emerald-400'
-                      : r.score >= 60
-                      ? 'text-amber-400'
-                      : 'text-red-400'
-                  )}
-                >
-                  {r.score}
-                </span>
+                {r.evaluation_valid === false ? (
+                  <>
+                    <div className="flex-1 h-1.5 rounded-full bg-secondary/50" />
+                    <span className="text-xs font-bold w-8 text-right text-slate-500">—</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex-1 h-1.5 rounded-full bg-secondary/50 overflow-hidden">
+                      <div
+                        className={cn(
+                          'h-full rounded-full transition-all',
+                          r.score >= 80
+                            ? 'bg-emerald-500'
+                            : r.score >= 60
+                            ? 'bg-amber-500'
+                            : 'bg-red-500'
+                        )}
+                        style={{ width: `${r.score}%` }}
+                      />
+                    </div>
+                    <span
+                      className={cn(
+                        'text-xs font-bold w-8 text-right',
+                        r.score >= 80
+                          ? 'text-emerald-400'
+                          : r.score >= 60
+                          ? 'text-amber-400'
+                          : 'text-red-400'
+                      )}
+                    >
+                      {r.score}
+                    </span>
+                  </>
+                )}
               </div>
             ))}
           </div>
@@ -438,6 +444,13 @@ export function LessonPlayer({ lesson, token, onComplete }: LessonPlayerProps) {
     }
   }, [isLastStep])
 
+  const handleRetry = useCallback(() => {
+    // Go back to the step so the user can re-answer (failed evaluation, no penalty)
+    setLatestResult(null)
+    setResults((prev) => prev.slice(0, -1))  // remove the failed result
+    setPhase('step')
+  }, [])
+
   const handleContinue = useCallback(() => {
     if (isLastStep) {
       setPhase('summary')
@@ -449,9 +462,10 @@ export function LessonPlayer({ lesson, token, onComplete }: LessonPlayerProps) {
   }, [isLastStep])
 
   const handleSummaryDone = useCallback(() => {
+    const valid = results.filter((r) => r.evaluation_valid !== false)
     const avgScore =
-      results.length > 0
-        ? Math.round(results.reduce((s, r) => s + r.score, 0) / results.length)
+      valid.length > 0
+        ? Math.round(valid.reduce((s, r) => s + r.score, 0) / valid.length)
         : 0
     onComplete(avgScore, totalXP)
   }, [results, totalXP, onComplete])
@@ -535,6 +549,7 @@ export function LessonPlayer({ lesson, token, onComplete }: LessonPlayerProps) {
           <StepFeedback
             result={latestResult}
             onContinue={handleContinue}
+            onRetry={handleRetry}
             isLast={isLastStep}
           />
         )}

@@ -1,7 +1,6 @@
 """Learning API routes — curriculum, lessons, step evaluation, XP, leaks."""
 
 import logging
-import uuid
 from datetime import datetime, timezone
 from typing import Any
 
@@ -245,11 +244,10 @@ async def get_module(
 @router.get("/learn/lesson/{slug}")
 async def get_lesson(
     slug: str,
-    current_user: dict = Depends(get_current_user),
+    _current_user: dict = Depends(get_current_user),
 ) -> dict:
     """Lesson detail with all steps ordered by position."""
     settings = get_settings()
-    _user_id: str = current_user.get("sub", "")
 
     try:
         rows = await _supabase_get(
@@ -303,17 +301,29 @@ async def evaluate_lesson_step(
         current_xp = user_row.get("total_xp", 0)
         streak = user_row.get("streak_days", 0)
 
-        # 4. Calculate XP
-        xp_result = calculate_step_xp(eval_result.xp_base, eval_result.score, body.time_ms, streak)
+        # 4. Calculate XP — ONLY when evaluation is valid
+        #    Failed evaluations produce zero XP; no fake credit is ever awarded.
+        if eval_result.evaluation_valid:
+            xp_result = calculate_step_xp(eval_result.xp_base, eval_result.score, body.time_ms, streak)
+        else:
+            from app.engines.learn.xp_calculator import XPResult
+            xp_result = XPResult(base_xp=0, speed_bonus=0, streak_bonus=0, total_xp=0,
+                                 level_before=0, level_after=0, leveled_up=False)
+            logger.info(
+                "Skipping XP for invalid evaluation lesson=%s step=%s user=%s error=%s",
+                lesson_id, step_id, user_id, eval_result.error_type,
+            )
+
         new_total_xp, new_level, leveled_up = apply_xp_to_user(current_xp, xp_result.total_xp)
 
-        # 5. Update user XP
-        await _supabase_patch(
-            "user_progress",
-            f"user_id=eq.{user_id}",
-            {"total_xp": new_total_xp, "level": new_level},
-            settings,
-        )
+        # 5. Update user XP (only writes if xp_result.total_xp > 0)
+        if xp_result.total_xp > 0:
+            await _supabase_patch(
+                "user_progress",
+                f"user_id=eq.{user_id}",
+                {"total_xp": new_total_xp, "level": new_level},
+                settings,
+            )
 
         # 6. Update SRS for each concept in this step
         concept_ids: list[str] = step.get("concept_ids") or []
@@ -393,29 +403,41 @@ async def evaluate_lesson_step(
                     settings,
                 )
 
-        # 8. Log the step attempt for analytics
+        # 8. Log the step attempt for analytics (includes pipeline metadata)
         await _supabase_post(
             "step_attempts",
             {
                 "user_id": user_id,
                 "lesson_id": lesson_id,
                 "step_id": step_id,
-                "score": eval_result.score,
-                "quality": eval_result.quality,
+                "score": eval_result.score if eval_result.evaluation_valid else None,
+                "quality": eval_result.quality if eval_result.evaluation_valid else None,
                 "ev_loss_bb": eval_result.ev_loss_bb,
                 "time_ms": body.time_ms,
                 "xp_earned": xp_result.total_xp,
+                "evaluation_source": eval_result.evaluation_source,
+                "evaluation_valid": eval_result.evaluation_valid,
+                "fallback_used": eval_result.fallback_used,
+                "error_type": eval_result.error_type,
                 "attempted_at": datetime.now(timezone.utc).isoformat(),
             },
             settings,
         )
 
         return {
-            "score": eval_result.score,
-            "quality": eval_result.quality,
+            # ── Evaluation result ─────────────────────────────────────────────
+            "score": eval_result.score if eval_result.evaluation_valid else None,
+            "quality": eval_result.quality if eval_result.evaluation_valid else None,
             "feedback": eval_result.feedback,
             "ev_loss_bb": eval_result.ev_loss_bb,
             "concept_triggered": eval_result.concept_triggered,
+            # ── Pipeline metadata (always present) ────────────────────────────
+            "evaluation_source": eval_result.evaluation_source,
+            "confidence": eval_result.confidence,
+            "evaluation_valid": eval_result.evaluation_valid,
+            "fallback_used": eval_result.fallback_used,
+            "error_type": eval_result.error_type,
+            # ── XP (zero when evaluation_valid=False) ─────────────────────────
             "xp": {
                 "base_xp": xp_result.base_xp,
                 "speed_bonus": xp_result.speed_bonus,

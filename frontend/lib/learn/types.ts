@@ -199,6 +199,11 @@ export interface UserLeak {
   resolved: boolean
 }
 
+// ── Evaluation pipeline metadata ─────────────────────────────────────────────
+
+export type EvaluationSource = 'solver' | 'theory_engine' | 'heuristic' | 'failed'
+export type EvaluationConfidence = 'high' | 'medium' | 'low' | null
+
 // ── Step evaluation result from API ──────────────────────────────────────────
 
 export interface StepResult {
@@ -212,6 +217,32 @@ export interface StepResult {
   level_after: number
   leveled_up: boolean
   concept_explanation?: string
+  // Evaluation pipeline metadata — always present from v2 onwards
+  evaluation_source: EvaluationSource
+  confidence: EvaluationConfidence
+  evaluation_valid: boolean
+  fallback_used: boolean
+  error_type?: string
+}
+
+// ── Sentinel: explicit failed result (no fake scores/XP) ─────────────────────
+
+export function makeFailedResult(errorType = 'network_error'): StepResult {
+  return {
+    score: 0,
+    quality: 'punt',          // never displayed in failed state
+    ev_loss_bb: 0,
+    feedback: '',
+    xp_earned: 0,             // NO XP for failed evaluations
+    level_before: 0,
+    level_after: 0,
+    leveled_up: false,
+    evaluation_source: 'failed',
+    confidence: null,
+    evaluation_valid: false,
+    fallback_used: false,
+    error_type: errorType,
+  }
 }
 
 // ── Personalized dashboard ────────────────────────────────────────────────────
