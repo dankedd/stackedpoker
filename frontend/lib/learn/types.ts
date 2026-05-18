@@ -12,6 +12,10 @@ export type StepType =
   | 'nut_advantage'
   | 'bluff_pick'
   | 'reflection_prompt'
+  // ── Interactive theory ──
+  | 'mdf_slider'       // adjustable bet-size slider; live MDF/alpha feedback
+  | 'scenario_tree'    // multi-branch postflop decision tree simulation
+  | 'range_heatmap'    // 13×13 grid with equity-density overlay for identification
 
 export type ActionQuality = 'perfect' | 'good' | 'acceptable' | 'mistake' | 'punt'
 export type LessonType = 'micro' | 'range_trainer' | 'puzzle_drill' | 'concept_reveal' | 'simulation'
@@ -27,6 +31,25 @@ export interface StepOption {
   ev_loss_bb?: number
   feedback: string
   concept_triggered?: string
+}
+
+// ── Scenario tree node (for scenario_tree step type) ────────────────────────
+
+export interface ScenarioOutcome {
+  ev_bb: number
+  label: string
+  quality: ActionQuality
+  explanation: string
+}
+
+export interface ScenarioNode {
+  id: string
+  label: string
+  description?: string
+  /** Child branches the user can choose */
+  children?: { option_label: string; node_id: string; is_optimal?: boolean }[]
+  /** Terminal node result */
+  outcome?: ScenarioOutcome
 }
 
 // ── A single interactive step within a lesson ─────────────────────────────────
@@ -49,17 +72,33 @@ export interface LessonStep {
   correct_answer?: string
   correct_feedback?: string
   wrong_feedback?: string
-  // Range builder
+  // Range builder / range heatmap
   range_target?: string
   range_combos?: string[]
   range_tolerance?: number
   range_hint?: string
+  /** For range_heatmap: equity value per hand (0–100) keyed by hand notation */
+  range_heatmap_data?: Record<string, number>
+  /** For range_heatmap: which hands are in the "target" range to identify */
+  range_heatmap_target?: string[]
   // Equity predict
   equity_actual?: number
   equity_tolerance?: number
   // Concept reveal content
   concept_content?: string
   concept_title?: string
+  // MDF slider
+  /** Question the user must answer via the slider */
+  mdf_slider_question?: string
+  /** Initial bet size displayed (% of pot, e.g. 50 = half-pot) */
+  mdf_slider_initial_bet_pct?: number
+  /** The numeric answer the user should land on (MDF% or alpha%) */
+  mdf_slider_target?: number
+  /** Tolerance for correct answer (default 3) */
+  mdf_slider_tolerance?: number
+  // Scenario tree
+  scenario_root?: string
+  scenario_nodes?: ScenarioNode[]
   // Visual
   visual?: 'table' | 'range_grid' | 'equity_bar' | 'heatmap' | 'pressure_chart'
   // XP
@@ -283,3 +322,213 @@ export const MASTERY_LABELS: Record<MasteryLevel, string> = {
   4: 'Proficient',
   5: 'Mastered',
 }
+
+// ── Achievement system ────────────────────────────────────────────────────────
+
+export type AchievementCategory =
+  | 'learning'
+  | 'consistency'
+  | 'mastery'
+  | 'exploration'
+  | 'performance'
+
+export interface Achievement {
+  id: string
+  title: string
+  description: string
+  /** Lucide icon name or emoji fallback */
+  icon: string
+  category: AchievementCategory
+  /** Human-readable unlock condition */
+  condition: string
+  xp_bonus: number
+  tier: 'bronze' | 'silver' | 'gold' | 'platinum'
+}
+
+export const ACHIEVEMENTS: Achievement[] = [
+  // Learning milestones
+  {
+    id: 'first_lesson',
+    title: 'First Steps',
+    description: 'Completed your first lesson',
+    icon: '🎯',
+    category: 'learning',
+    condition: 'Complete 1 lesson',
+    xp_bonus: 25,
+    tier: 'bronze',
+  },
+  {
+    id: 'ten_lessons',
+    title: 'Knowledge Seeker',
+    description: 'Completed 10 lessons',
+    icon: '📚',
+    category: 'learning',
+    condition: 'Complete 10 lessons',
+    xp_bonus: 100,
+    tier: 'silver',
+  },
+  {
+    id: 'fifty_lessons',
+    title: 'Scholar',
+    description: 'Completed 50 lessons',
+    icon: '🎓',
+    category: 'learning',
+    condition: 'Complete 50 lessons',
+    xp_bonus: 500,
+    tier: 'gold',
+  },
+  {
+    id: 'path_complete_beginner',
+    title: 'Foundation Builder',
+    description: 'Completed the Foundations path',
+    icon: '🏗️',
+    category: 'learning',
+    condition: 'Complete all Foundations modules',
+    xp_bonus: 300,
+    tier: 'silver',
+  },
+  {
+    id: 'path_complete_intermediate',
+    title: 'Range Thinker',
+    description: 'Completed the Range Thinking path',
+    icon: '🎰',
+    category: 'learning',
+    condition: 'Complete all Range Thinking modules',
+    xp_bonus: 600,
+    tier: 'gold',
+  },
+  {
+    id: 'path_complete_advanced',
+    title: 'GTO Warrior',
+    description: 'Completed the GTO Mastery path',
+    icon: '⚔️',
+    category: 'mastery',
+    condition: 'Complete all GTO Mastery modules',
+    xp_bonus: 1000,
+    tier: 'gold',
+  },
+  {
+    id: 'path_complete_pro',
+    title: 'Solver Elite',
+    description: 'Completed the Pro/Elite path',
+    icon: '👑',
+    category: 'mastery',
+    condition: 'Complete all Pro/Elite modules',
+    xp_bonus: 2000,
+    tier: 'platinum',
+  },
+  // Consistency
+  {
+    id: 'streak_3',
+    title: 'Consistent',
+    description: '3-day learning streak',
+    icon: '🔥',
+    category: 'consistency',
+    condition: 'Study 3 days in a row',
+    xp_bonus: 30,
+    tier: 'bronze',
+  },
+  {
+    id: 'streak_7',
+    title: 'On Fire',
+    description: '7-day learning streak',
+    icon: '🔥',
+    category: 'consistency',
+    condition: 'Study 7 days in a row',
+    xp_bonus: 100,
+    tier: 'silver',
+  },
+  {
+    id: 'streak_30',
+    title: 'Unstoppable',
+    description: '30-day learning streak',
+    icon: '⚡',
+    category: 'consistency',
+    condition: 'Study 30 days in a row',
+    xp_bonus: 500,
+    tier: 'gold',
+  },
+  // Performance
+  {
+    id: 'perfect_lesson',
+    title: 'Flawless',
+    description: 'Perfect score on a lesson',
+    icon: '💎',
+    category: 'performance',
+    condition: 'Score 100% on any lesson',
+    xp_bonus: 50,
+    tier: 'silver',
+  },
+  {
+    id: 'five_perfects',
+    title: 'Sharp Mind',
+    description: 'Five perfect lesson scores',
+    icon: '🧠',
+    category: 'performance',
+    condition: 'Score 100% on 5 different lessons',
+    xp_bonus: 200,
+    tier: 'gold',
+  },
+  // Mastery
+  {
+    id: 'concept_mastered',
+    title: 'Concept Locked In',
+    description: 'Mastered a concept (level 5)',
+    icon: '🔒',
+    category: 'mastery',
+    condition: 'Reach mastery level 5 on any concept',
+    xp_bonus: 75,
+    tier: 'bronze',
+  },
+  {
+    id: 'ten_concepts_mastered',
+    title: 'Poker Scholar',
+    description: 'Mastered 10 concepts',
+    icon: '📖',
+    category: 'mastery',
+    condition: 'Reach mastery level 5 on 10 concepts',
+    xp_bonus: 400,
+    tier: 'gold',
+  },
+  // Exploration
+  {
+    id: 'leak_resolved',
+    title: 'Leak Plugged',
+    description: 'Resolved your first detected leak',
+    icon: '🔧',
+    category: 'exploration',
+    condition: 'Fix a leak identified from hand analysis',
+    xp_bonus: 100,
+    tier: 'bronze',
+  },
+  {
+    id: 'coach_conversation',
+    title: 'Student of the Game',
+    description: 'Had your first AI coaching session',
+    icon: '🤝',
+    category: 'exploration',
+    condition: 'Complete an AI coaching conversation',
+    xp_bonus: 50,
+    tier: 'bronze',
+  },
+  {
+    id: 'level_10',
+    title: 'Rising Star',
+    description: 'Reached Level 10',
+    icon: '⭐',
+    category: 'mastery',
+    condition: 'Reach Level 10',
+    xp_bonus: 250,
+    tier: 'silver',
+  },
+  {
+    id: 'level_20',
+    title: 'Elite Player',
+    description: 'Reached Level 20',
+    icon: '🌟',
+    category: 'mastery',
+    condition: 'Reach Level 20',
+    xp_bonus: 1000,
+    tier: 'platinum',
+  },
+]
