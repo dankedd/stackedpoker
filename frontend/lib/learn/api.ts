@@ -11,6 +11,21 @@ import type {
   TrainingSession,
 } from './types'
 
+/**
+ * ARCHITECTURE NOTE
+ * -----------------
+ * Puzzle evaluation is LOCAL and DETERMINISTIC (see lib/learn/evaluator.ts).
+ * The server is NOT responsible for scoring, quality, XP, or pass/fail.
+ *
+ * The server role is:
+ *   - Content provider  (fetchLessonDetail, fetchLearningPaths, …)
+ *   - Progress tracker  (completeLesson, logStepResult)
+ *   - Personalization   (fetchLearningDashboard, fetchConceptMasteries)
+ *   - Optional AI coach (requestAIExplanation, sendCoachMessage)
+ *
+ * "Analysis unavailable" can NEVER occur for core puzzle correctness.
+ */
+
 // ── Range trainer types ───────────────────────────────────────────────────────
 
 export interface RangeTrainerSetup {
@@ -82,19 +97,53 @@ export async function fetchLessonDetail(slug: string, token: string): Promise<Le
   return learnFetch<Lesson>(`/api/learn/lessons/${encodeURIComponent(slug)}`, token)
 }
 
-// ── Step evaluation ───────────────────────────────────────────────────────────
+// ── Step analytics logging (fire-and-forget, never blocks UX) ────────────────
 
-export async function evaluateStep(
+/**
+ * Log a locally-evaluated step result to the server for analytics, leak
+ * detection, and spaced-repetition updates.  Never awaited — a failure here
+ * must not affect the user experience.
+ */
+export function logStepResult(
   lessonId: string,
   stepId: string,
   userResponse: unknown,
   timeMs: number,
+  result: StepResult,
   token: string,
-): Promise<StepResult> {
-  return learnFetch<StepResult>(`/api/learn/lessons/${encodeURIComponent(lessonId)}/steps/${encodeURIComponent(stepId)}/evaluate`, token, {
-    method: 'POST',
-    body: JSON.stringify({ user_response: userResponse, time_ms: timeMs }),
-  })
+): void {
+  fetch(
+    `/api/learn/lessons/${encodeURIComponent(lessonId)}/steps/${encodeURIComponent(stepId)}/log`,
+    {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body:    JSON.stringify({ user_response: userResponse, time_ms: timeMs, result }),
+    },
+  ).catch(() => { /* analytics failures are intentionally silent */ })
+}
+
+// ── Optional AI explanation (enhancement only, never required for scoring) ────
+
+/**
+ * Request a deeper AI explanation for a step after the user has already
+ * received their deterministic result.  This is purely additive — if it
+ * fails the user already has their score, feedback, and XP.
+ */
+export async function requestAIExplanation(
+  lessonId: string,
+  stepId: string,
+  userResponse: unknown,
+  result: StepResult,
+  token: string,
+): Promise<{ explanation: string }> {
+  return learnFetch<{ explanation: string }>(
+    `/api/learn/lessons/${encodeURIComponent(lessonId)}/steps/${encodeURIComponent(stepId)}/explain`,
+    token,
+    {
+      method: 'POST',
+      body:   JSON.stringify({ user_response: userResponse, result }),
+    },
+  )
 }
 
 // ── Lesson completion ─────────────────────────────────────────────────────────

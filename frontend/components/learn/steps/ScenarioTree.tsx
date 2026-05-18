@@ -132,7 +132,7 @@ function OptionButton({ label, onClick }: OptionButtonProps) {
 interface OutcomeCardProps {
   node: ScenarioNode
   trail: string[]
-  onContinue: (quality: ActionQuality, ev: number) => void
+  onContinue: (quality: ActionQuality, ev: number, explanation: string) => void
 }
 
 function OutcomeCard({ node, trail, onContinue }: OutcomeCardProps) {
@@ -171,7 +171,7 @@ function OutcomeCard({ node, trail, onContinue }: OutcomeCardProps) {
 
       <button
         type="button"
-        onClick={() => onContinue(outcome.quality, outcome.ev_bb)}
+        onClick={() => onContinue(outcome.quality, outcome.ev_bb, outcome.explanation)}
         className={cn(
           'group relative w-full inline-flex items-center justify-center gap-2',
           'rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200 overflow-hidden',
@@ -194,7 +194,7 @@ function OutcomeCard({ node, trail, onContinue }: OutcomeCardProps) {
 
 interface ScenarioTreeProps {
   step: LessonStep
-  onAnswer: (quality: ActionQuality, timeMs: number) => void
+  onAnswer: (quality: ActionQuality, explanation: string, timeMs: number) => void
   disabled?: boolean
 }
 
@@ -229,12 +229,10 @@ export function ScenarioTree({ step, onAnswer, disabled = false }: ScenarioTreeP
     setTrail([])
   }
 
-  function handleContinue(quality: ActionQuality, _ev: number) {
+  function handleContinue(quality: ActionQuality, _ev: number, explanation: string) {
     setDone(true)
-    // Map quality to a score to feed through the standard evaluator
     const elapsed = Date.now() - mountTime.current
-    // We pass quality string directly; the backend step evaluator already handles ActionQuality
-    onAnswer(quality, elapsed)
+    onAnswer(quality, explanation, elapsed)
   }
 
   if (!currentNode) {

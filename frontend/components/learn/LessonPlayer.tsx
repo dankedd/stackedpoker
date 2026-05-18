@@ -6,8 +6,8 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Lesson, LessonStep, StepResult } from '@/lib/learn/types'
-import { makeFailedResult } from '@/lib/learn/types'
-import { evaluateStep } from '@/lib/learn/api'
+import { evaluateStepLocally } from '@/lib/learn/evaluator'
+import { logStepResult } from '@/lib/learn/api'
 import { PokerContextBar } from '@/components/learn/PokerContextBar'
 import { StepFeedback } from '@/components/learn/StepFeedback'
 import { ConceptReveal } from '@/components/learn/steps/ConceptReveal'
@@ -62,120 +62,73 @@ function ProgressBar({
 
 function StepRenderer({
   step,
+  currentXP,
   lessonId,
   token,
   onResult,
   onConceptComplete,
 }: {
   step: LessonStep
+  currentXP: number
   lessonId: string
   token: string
   onResult: (result: StepResult) => void
   onConceptComplete: (result: StepResult) => void
 }) {
-  async function callEvaluate(userResponse: unknown, timeMs: number) {
-    try {
-      const result = await evaluateStep(lessonId, step.id, userResponse, timeMs, token)
-      onResult(result)
-    } catch {
-      onResult(makeFailedResult('network_error'))
-    }
+  // Evaluate locally — instant, deterministic, no network dependency
+  function evaluate(userResponse: unknown, timeMs: number) {
+    const result = evaluateStepLocally(step, userResponse, currentXP)
+    // Fire-and-forget analytics log; never blocks the user
+    logStepResult(lessonId, step.id, userResponse, timeMs, result, token)
+    onResult(result)
   }
 
   if (step.type === 'concept_reveal') {
     return (
       <ConceptReveal
         step={step}
-        onComplete={() =>
-          onConceptComplete({
-            score: 100,
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback: 'Concept reviewed.',
-            xp_earned: step.xp ?? 20,
-            level_before: 1,
-            level_after: 1,
-            leveled_up: false,
-            evaluation_source: 'theory_engine',
-            confidence: 'high',
-            evaluation_valid: true,
-            fallback_used: false,
-          })
-        }
+        onComplete={() => onConceptComplete(evaluateStepLocally(step, null, currentXP))}
       />
     )
   }
 
   if (step.type === 'bet_size_choose') {
-    return (
-      <BetSizeSlider
-        step={step}
-        onAnswer={(optionId, timeMs) => callEvaluate(optionId, timeMs)}
-      />
-    )
+    return <BetSizeSlider step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
   }
 
   if (step.type === 'decision_spot') {
-    return (
-      <DecisionSpot
-        step={step}
-        onAnswer={(optionId, timeMs) => callEvaluate(optionId, timeMs)}
-      />
-    )
+    return <DecisionSpot step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
   }
 
   if (step.type === 'equity_predict') {
-    return (
-      <EquityPredict
-        step={step}
-        onAnswer={(equity, timeMs) => callEvaluate(equity, timeMs)}
-      />
-    )
+    return <EquityPredict step={step} onAnswer={(eq, ms) => evaluate(eq, ms)} />
   }
 
   if (step.type === 'range_build') {
-    return (
-      <RangeBuild
-        step={step}
-        onAnswer={(combos, timeMs) => callEvaluate(combos, timeMs)}
-      />
-    )
+    return <RangeBuild step={step} onAnswer={(combos, ms) => evaluate(combos, ms)} />
   }
 
   if (step.type === 'range_heatmap') {
-    return (
-      <RangeHeatmap
-        step={step}
-        onAnswer={(hands, timeMs) => callEvaluate(hands, timeMs)}
-      />
-    )
+    return <RangeHeatmap step={step} onAnswer={(hands, ms) => evaluate(hands, ms)} />
   }
 
   if (step.type === 'mdf_slider') {
-    return (
-      <MdfSlider
-        step={step}
-        onAnswer={(value, timeMs) => callEvaluate(value, timeMs)}
-      />
-    )
+    return <MdfSlider step={step} onAnswer={(val, ms) => evaluate(val, ms)} />
   }
 
   if (step.type === 'scenario_tree') {
     return (
       <ScenarioTree
         step={step}
-        onAnswer={(quality: ActionQuality, timeMs: number) => callEvaluate(quality, timeMs)}
+        onAnswer={(quality: ActionQuality, explanation: string, ms: number) =>
+          evaluate({ quality, explanation }, ms)
+        }
       />
     )
   }
 
   // Classify-family: board_classify, nut_advantage, blocker_id, range_identify, bluff_pick, reflection_prompt
-  return (
-    <ClassifyStep
-      step={step}
-      onAnswer={(answer, timeMs) => callEvaluate(answer, timeMs)}
-    />
-  )
+  return <ClassifyStep step={step} onAnswer={(answer, ms) => evaluate(answer, ms)} />
 }
 
 // ── Intro screen ──────────────────────────────────────────────────────────────
@@ -244,15 +197,21 @@ function IntroScreen({ lesson, onStart }: { lesson: Lesson; onStart: () => void 
 interface LessonPlayerProps {
   lesson: Lesson
   token: string
+  /** User's total XP before starting this lesson — used for accurate level-up detection */
+  userXP?: number
   onComplete: (score: number, xpEarned: number) => void
 }
 
-export function LessonPlayer({ lesson, token, onComplete }: LessonPlayerProps) {
+export function LessonPlayer({ lesson, token, userXP = 0, onComplete }: LessonPlayerProps) {
   const [phase, setPhase] = useState<Phase>('intro')
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [results, setResults] = useState<StepResult[]>([])
   const [latestResult, setLatestResult] = useState<StepResult | null>(null)
   const [totalXP, setTotalXP] = useState(0)
+
+  // Running XP = user's pre-lesson total + XP earned so far in this lesson
+  // Used by the local evaluator for accurate level tracking
+  const runningXP = userXP + totalXP
 
   // Level-up overlay state
   const [showLevelUp, setShowLevelUp] = useState(false)
@@ -393,6 +352,7 @@ export function LessonPlayer({ lesson, token, onComplete }: LessonPlayerProps) {
         {phase === 'step' && (
           <StepRenderer
             step={currentStep}
+            currentXP={runningXP}
             lessonId={lesson.id}
             token={token}
             onResult={handleResult}
