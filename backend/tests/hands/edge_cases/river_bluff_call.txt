@@ -1,0 +1,35 @@
+PokerStars Hand #234567890400: Hold'em No Limit ($0.25/$0.50 USD) - 2024/03/05 21:00:00 ET
+Table 'Minerva II' 6-max Seat #4 is the Button
+Seat 2: HJPlayer ($55.00 in chips)
+Seat 3: COPlayer ($48.00 in chips)
+Seat 4: Hero ($50.00 in chips)
+Seat 5: SBPlayer ($62.00 in chips)
+Seat 6: BBPlayer ($47.50 in chips)
+SBPlayer: posts small blind $0.25
+BBPlayer: posts big blind $0.50
+*** HOLE CARDS ***
+Dealt to Hero [9h 8h]
+HJPlayer: folds
+COPlayer: folds
+Hero: raises $1.25 to $1.50
+SBPlayer: folds
+BBPlayer: calls $1.00
+*** FLOP *** [7s 6d 2c]
+BBPlayer: checks
+Hero: bets $2.00
+BBPlayer: calls $2.00
+*** TURN *** [7s 6d 2c] [5h]
+BBPlayer: checks
+Hero: bets $6.50
+BBPlayer: calls $6.50
+*** RIVER *** [7s 6d 2c 5h] [Jc]
+BBPlayer: checks
+Hero: bets $15.00
+BBPlayer: calls $15.00
+*** SHOW DOWN ***
+Hero: shows [9h 8h] (a straight, Five to Nine)
+BBPlayer: mucks hand
+*** SUMMARY ***
+Total pot $49.50 | Rake $1.00
+Board [7s 6d 2c 5h Jc]
+Seat 4: Hero (button) collected ($49.50)

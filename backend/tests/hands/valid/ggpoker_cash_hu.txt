@@ -1,0 +1,23 @@
+GGPoker Hand #RC0123456789: Hold'em No Limit ($1/$2) - 2024/01/20 12:30:00
+Table 'Rush & Cash' 2-max
+Seat 1: Hero ($200.00 in chips)
+Seat 2: Villain ($187.50 in chips)
+Hero: posts small blind $1.00
+Villain: posts big blind $2.00
+*** HOLE CARDS ***
+Dealt to Hero [Ks Qh]
+Hero: raises $4.00 to $6.00
+Villain: raises $14.00 to $18.00
+Hero: calls $12.00
+*** FLOP *** [Kh 7d 2s]
+Villain: bets $14.00
+Hero: raises $38.00 to $52.00
+Villain: calls $38.00
+*** TURN *** [Kh 7d 2s] [3c]
+Villain: checks
+Hero: bets $60.00
+Villain: folds
+*** SUMMARY ***
+Total pot $142.00 | Rake $1.00
+Board [Kh 7d 2s 3c]
+Seat 1: Hero (small blind) collected ($142.00)

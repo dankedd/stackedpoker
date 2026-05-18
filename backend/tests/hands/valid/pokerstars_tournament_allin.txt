@@ -1,0 +1,35 @@
+PokerStars Hand #234567890200: Tournament #3456789, $10+$1 USD Hold'em No Limit - Level X (500/1000) - 2024/02/01 20:00:00 ET
+Table '3456789 5' 9-max Seat #6 is the Button
+Seat 1: Player1 (8500 in chips)
+Seat 3: Player3 (22000 in chips)
+Seat 5: Player5 (15000 in chips)
+Seat 6: Hero (12000 in chips)
+Seat 8: Player8 (9500 in chips)
+Seat 9: Player9 (18000 in chips)
+Player1: posts ante 100
+Player3: posts ante 100
+Player5: posts ante 100
+Hero: posts ante 100
+Player8: posts ante 100
+Player9: posts ante 100
+Player8: posts small blind 500
+Player9: posts big blind 1000
+*** HOLE CARDS ***
+Dealt to Hero [As Ks]
+Player1: folds
+Player3: folds
+Player5: folds
+Hero: raises $2500 to $2500
+Player8: folds
+Player9: raises $16500 to $16500 and is all-in
+Hero: calls $9400 and is all-in
+*** FLOP *** [Qh Jd Tc]
+*** TURN *** [Qh Jd Tc] [2h]
+*** RIVER *** [Qh Jd Tc 2h] [5s]
+*** SHOW DOWN ***
+Player9: shows [Kh Qd] (a pair of Queens)
+Hero: shows [As Ks] (a straight, Ace high)
+*** SUMMARY ***
+Total pot 24200 | Rake 0
+Board [Qh Jd Tc 2h 5s]
+Seat 6: Hero collected (24200)

@@ -6,6 +6,7 @@ import type {
   SessionAnalysisResponse,
   TournamentAnalysisResponse,
 } from "./types";
+import type { PipelineResult, CanonicalHand, PipelineValidationResult } from "./hand-schema";
 import type { AnalysisSetupValue } from "@/components/poker/AnalysisSetup";
 
 // Empty base = Next.js rewrites (/api/* → FastAPI). No CORS needed.
@@ -144,6 +145,46 @@ export async function confirmHand(
   return apiFetch<VisionAnalysisResponse>("/api/confirm-hand", token ?? null, {
     method: "POST",
     body: JSON.stringify(state),
+  });
+}
+
+// ── Pipeline API (prepare → repair UI → analyze) ─────────────────────────────
+
+/**
+ * Step 1 of the 2-step pipeline.
+ * Parses, normalizes, and validates the hand text WITHOUT running analysis.
+ * Returns PipelineResult for the frontend to inspect before committing to analysis.
+ */
+export async function prepareHand(
+  handText: string,
+  token: string,
+  debug = false,
+): Promise<PipelineResult> {
+  return apiFetch<PipelineResult>("/api/pipeline/prepare", token, {
+    method: "POST",
+    body: JSON.stringify({ hand_text: handText, debug }),
+  });
+}
+
+/**
+ * Step 2 of the 2-step pipeline.
+ * Runs full GTO analysis on a pre-validated canonical hand.
+ * Throws if validation.can_analyze is false.
+ */
+export async function analyzeCanonical(
+  canonical: CanonicalHand,
+  validation: PipelineValidationResult,
+  token: string,
+  setup?: { gameType?: string; playerCount?: number },
+): Promise<AnalysisResponse> {
+  return apiFetch<AnalysisResponse>("/api/pipeline/analyze", token, {
+    method: "POST",
+    body: JSON.stringify({
+      canonical,
+      validation,
+      game_type: setup?.gameType,
+      player_count: setup?.playerCount,
+    }),
   });
 }
 

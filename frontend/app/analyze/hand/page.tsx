@@ -1,18 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-
-const ANALYSIS_STAGES = [
-  "Parsing hand history…",
-  "Detecting positions…",
-  "Calculating stack depths…",
-  "Rebuilding action sequence…",
-  "Evaluating decisions…",
-  "Generating AI coaching…",
-];
 import {
   ArrowLeft, RotateCcw, FileText, ImageIcon,
-  Zap, AlertTriangle, BookmarkCheck,
+  Zap, AlertTriangle, BookmarkCheck, ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
@@ -27,22 +18,37 @@ import { UpgradePrompt, LoginCTA } from "@/components/poker/UpgradePrompt";
 import { GGPokerImportGuide } from "@/components/onboarding/GGPokerImportGuide";
 import { HandReplay } from "@/components/replay/HandReplay";
 import { HandConfirmation } from "@/components/replay/HandConfirmation";
+import { HandRepairUI } from "@/components/poker/HandRepairUI";
+import { PipelineDebugPanel } from "@/components/poker/PipelineDebugPanel";
+import { ValidationBanner } from "@/components/poker/ValidationBanner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { useAnalysis } from "@/hooks/useAnalysis";
+import { usePipeline } from "@/hooks/usePipeline";
 import { useImageAnalysis } from "@/hooks/useImageAnalysis";
 import { useUsage } from "@/hooks/useUsage";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import type { PipelineResult } from "@/lib/hand-schema";
 
 type Tab = "text" | "image";
 
-const SETUP_KEY    = "poker_analysis_setup";
-const HAND_KEY     = "poker_session_hand_prefill";
+// Show debug panel only in dev builds
+const IS_DEV = process.env.NODE_ENV === "development";
+
+const SETUP_KEY     = "poker_analysis_setup";
+const HAND_KEY      = "poker_session_hand_prefill";
 const SES_SETUP_KEY = "poker_session_hand_setup";
 
+const PIPELINE_STAGES = [
+  "Parsing hand history…",
+  "Normalizing entities…",
+  "Validating structure…",
+  "Checking pot math…",
+  "Evaluating decisions…",
+  "Generating coaching…",
+];
+
 export default function AnalyzePage() {
-  // Read once on mount — no useSearchParams needed
   const [fromSession] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return new URLSearchParams(window.location.search).get("from") === "session";
@@ -50,7 +56,6 @@ export default function AnalyzePage() {
 
   const [activeTab, setActiveTab] = useState<Tab>("text");
 
-  // Initialise setup: sessionStorage (from session flow) → localStorage → default
   const [setup, setSetup] = useState<AnalysisSetupValue>(() => {
     if (typeof window === "undefined") return ANALYSIS_SETUP_DEFAULT;
     try {
@@ -61,7 +66,6 @@ export default function AnalyzePage() {
     } catch { return ANALYSIS_SETUP_DEFAULT; }
   });
 
-  // Prefill text from session flow
   const [prefillHand] = useState<string>(() => {
     if (typeof window === "undefined") return "";
     const t = sessionStorage.getItem(HAND_KEY) ?? "";
@@ -72,34 +76,30 @@ export default function AnalyzePage() {
   const { user, loading: authLoading } = useAuth();
   const { usage, loading: usageLoading, refetch: refetchUsage } = useUsage();
 
-  const handleSetupChange = (v: AnalysisSetupValue) => {
-    setSetup(v);
-    try { localStorage.setItem(SETUP_KEY, JSON.stringify(v)); } catch {}
-  };
+  // ── Hooks ────────────────────────────────────────────────────────────────
+  const pipeline = usePipeline();
+  const image    = useImageAnalysis();
 
-  const text  = useAnalysis();
-  const image = useImageAnalysis();
   const [stageIdx, setStageIdx] = useState(0);
-
   const resultRef    = useRef<HTMLDivElement>(null);
   const autoAnalyzed = useRef(false);
 
   const scrollToResult = () =>
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
 
-  // Auto-analyze when arriving from session and auth is ready
+  const handleSetupChange = (v: AnalysisSetupValue) => {
+    setSetup(v);
+    try { localStorage.setItem(SETUP_KEY, JSON.stringify(v)); } catch {}
+  };
+
+  // Auto-analyze from session flow
   useEffect(() => {
     if (
-      prefillHand &&
-      fromSession &&
-      !autoAnalyzed.current &&
-      !authLoading &&
-      !usageLoading &&
-      user &&
-      !usage?.isOverLimit
+      prefillHand && fromSession && !autoAnalyzed.current &&
+      !authLoading && !usageLoading && user && !usage?.isOverLimit
     ) {
       autoAnalyzed.current = true;
-      text.analyze(prefillHand, setup).then(() => {
+      pipeline.prepare(prefillHand, IS_DEV).then(() => {
         scrollToResult();
         refetchUsage();
       });
@@ -107,10 +107,18 @@ export default function AnalyzePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, usageLoading, user, usage?.isOverLimit]);
 
-  const handleTextAnalyze = async (t: string) => {
-    await text.analyze(t, setup);
+  const handleTextSubmit = async (text: string) => {
+    if (!user) return;
+    await pipeline.prepare(text, IS_DEV);
     scrollToResult();
-    if (text.status !== "error") refetchUsage();
+    if (pipeline.stage !== "error") refetchUsage();
+  };
+
+  const handleRepairAnalyze = async (repaired: PipelineResult) => {
+    if (!user) return;
+    await pipeline.analyze(repaired, setup);
+    scrollToResult();
+    refetchUsage();
   };
 
   const handleImageUpload = async (file: File) => {
@@ -120,35 +128,40 @@ export default function AnalyzePage() {
 
   const handleTabSwitch = (tab: Tab) => {
     setActiveTab(tab);
-    text.reset();
+    pipeline.reset();
     image.reset();
   };
 
-  // ── Derived state ──────────────────────────────────────────────────────
-  const imgBusy       = image.isExtracting || image.isAnalyzing;
-  const imgLoading    = activeTab === "image" && imgBusy;
-  const imgError      = activeTab === "image" && image.isError;
-  const imgConfirming = activeTab === "image" && image.isConfirming;
-  const imgSuccess    = activeTab === "image" && image.isSuccess;
-
-  const isLoading = activeTab === "text" ? text.status === "loading" : imgLoading;
+  // Loading stage animation
+  const isTextLoading = pipeline.stage === "preparing" || pipeline.stage === "analyzing";
+  const isLoading = activeTab === "text" ? isTextLoading : (image.isExtracting || image.isAnalyzing);
 
   useEffect(() => {
     if (!isLoading) { setStageIdx(0); return; }
-    const t = setInterval(() => setStageIdx(i => (i + 1) % ANALYSIS_STAGES.length), 2200);
+    const t = setInterval(() => setStageIdx(i => (i + 1) % PIPELINE_STAGES.length), 2000);
     return () => clearInterval(t);
   }, [isLoading]);
-  const hasError  = activeTab === "text" ? text.status === "error"   : imgError && !image.extraction;
-  const hasResult = activeTab === "text" ? text.status === "success" : imgSuccess;
 
-  const handleReset = activeTab === "text" ? text.reset : image.reset;
+  // ── Derived state ────────────────────────────────────────────────────────
+  const imgBusy       = image.isExtracting || image.isAnalyzing;
+  const imgConfirming = activeTab === "image" && image.isConfirming;
+  const imgSuccess    = activeTab === "image" && image.isSuccess;
+
+  const textRepairing = activeTab === "text" && pipeline.stage === "repairing";
+  const textSuccess   = activeTab === "text" && pipeline.stage === "success";
+  const textError     = activeTab === "text" && pipeline.stage === "error";
+  const imgError      = activeTab === "image" && image.isError && !image.extraction;
+
+  const hasError  = textError || imgError;
+  const hasResult = textSuccess || imgSuccess;
+
+  const handleReset = activeTab === "text" ? pipeline.reset : image.reset;
 
   const isAuthLoading = authLoading || (!!user && usageLoading);
   const isGated       = !authLoading && !user;
   const isOverLimit   = !isGated && !!usage?.isOverLimit;
   const canAnalyze    = !isGated && !isOverLimit;
 
-  // Hide input card when auto-analyzing from session (hand is already submitted)
   const hideInput = fromSession && !!prefillHand && autoAnalyzed.current;
 
   const backHref  = fromSession ? "/analyze/session" : "/analyze";
@@ -161,10 +174,9 @@ export default function AnalyzePage() {
       <main className="flex-1 py-10 sm:py-14">
         <div className={cn(
           "mx-auto px-4 sm:px-6",
-          hasResult ? "max-w-[1680px] xl:px-10" : "max-w-2xl",
+          hasResult || textRepairing ? "max-w-[1680px] xl:px-10" : "max-w-2xl",
         )}>
 
-          {/* Back */}
           <Link
             href={backHref}
             className="mb-8 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -173,13 +185,13 @@ export default function AnalyzePage() {
             {backLabel}
           </Link>
 
-          {/* ── Import guide (shown only when idle with no result) ──────── */}
-          {!hideInput && !imgConfirming && !imgSuccess && !hasResult && !isLoading && (
+          {/* Import guide */}
+          {!hideInput && !imgConfirming && !imgSuccess && !hasResult && !isLoading && !textRepairing && (
             <GGPokerImportGuide className="mb-5" />
           )}
 
           {/* ── Input card ─────────────────────────────────────────────── */}
-          {!hideInput && !imgConfirming && !imgSuccess && (
+          {!hideInput && !imgConfirming && !imgSuccess && !textRepairing && (
             <Card className={cn("border-border/50", hasResult && "border-violet-500/20 mb-8")}>
               <CardHeader className="pb-4">
                 <div className="flex items-start justify-between gap-3">
@@ -190,7 +202,7 @@ export default function AnalyzePage() {
                     <div>
                       <CardTitle>Hand Analysis</CardTitle>
                       <CardDescription className="mt-0.5">
-                        Paste a hand history or upload a GGPoker screenshot for instant GTO-inspired coaching.
+                        Paste a hand history or upload a screenshot. The hand is validated before any analysis runs.
                       </CardDescription>
                     </div>
                   </div>
@@ -240,7 +252,6 @@ export default function AnalyzePage() {
                 )}
 
                 {!isAuthLoading && isGated && <LoginCTA />}
-
                 {!isAuthLoading && isOverLimit && usage && (
                   <UpgradePrompt used={usage.used} limit={usage.limit} />
                 )}
@@ -255,12 +266,12 @@ export default function AnalyzePage() {
 
                     {activeTab === "text" ? (
                       <HandInput
-                        onAnalyze={handleTextAnalyze}
-                        isLoading={isLoading}
+                        onAnalyze={handleTextSubmit}
+                        isLoading={isTextLoading}
                         initialValue={prefillHand || undefined}
                       />
                     ) : (
-                      <ImageUpload onAnalyze={handleImageUpload} isLoading={imgLoading} />
+                      <ImageUpload onAnalyze={handleImageUpload} isLoading={imgBusy} />
                     )}
                   </div>
                 )}
@@ -268,10 +279,9 @@ export default function AnalyzePage() {
             </Card>
           )}
 
-          {/* ── Loading ────────────────────────────────────────────────── */}
+          {/* ── Loading ─────────────────────────────────────────────────── */}
           {isLoading && (
             <div className="flex flex-col items-center justify-center py-20 gap-7 animate-fade-in">
-              {/* Dual-ring spinner */}
               <div className="relative h-16 w-16">
                 <div className="absolute inset-0 rounded-full border border-violet-500/15" />
                 <div className="absolute inset-0 rounded-full border border-t-violet-400 border-r-violet-300/40 animate-spin" style={{ animationDuration: "1.1s" }} />
@@ -285,13 +295,14 @@ export default function AnalyzePage() {
                 <p className="font-medium text-foreground animate-fade-in" key={stageIdx}>
                   {image.isExtracting ? "Extracting poker state…" :
                    image.isAnalyzing  ? "Generating AI coaching…" :
-                   ANALYSIS_STAGES[stageIdx]}
+                   pipeline.stage === "preparing" ? PIPELINE_STAGES[Math.min(stageIdx, 3)] :
+                   PIPELINE_STAGES[Math.max(stageIdx, 4)]}
                 </p>
 
-                {/* Stage progress dots */}
+                {/* Stage dots */}
                 {!image.isExtracting && !image.isAnalyzing && (
                   <div className="flex items-center justify-center gap-1.5">
-                    {ANALYSIS_STAGES.map((_, i) => (
+                    {PIPELINE_STAGES.map((_, i) => (
                       <div
                         key={i}
                         className="rounded-full transition-all duration-300"
@@ -310,24 +321,24 @@ export default function AnalyzePage() {
                 )}
 
                 <p className="text-xs text-muted-foreground/60">
-                  {image.isExtracting
-                    ? "Preprocessing → OCR → AI extraction → validation"
-                    : image.isAnalyzing
-                    ? "Running GTO coaching on confirmed hand"
-                    : "Street-by-street GTO analysis in progress"}
+                  {pipeline.stage === "preparing"
+                    ? "Parse → normalize → validate (deterministic, no AI)"
+                    : pipeline.stage === "analyzing"
+                    ? "GTO analysis in progress"
+                    : "Processing…"}
                 </p>
               </div>
             </div>
           )}
 
-          {/* ── Error ──────────────────────────────────────────────────── */}
-          {(hasError || (imgError && !image.extraction)) && (
+          {/* ── Error ────────────────────────────────────────────────────── */}
+          {hasError && (
             <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-4">
               <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
               <div className="flex-1 space-y-3">
                 <p className="text-sm font-medium text-destructive">Analysis failed</p>
                 <p className="text-sm text-destructive/80">
-                  {activeTab === "text" ? text.error : image.error}
+                  {activeTab === "text" ? pipeline.error : image.error}
                 </p>
                 <div className="flex items-center gap-3">
                   {image.extraction && (
@@ -344,7 +355,38 @@ export default function AnalyzePage() {
             </div>
           )}
 
-          {/* ── Image: confirmation ────────────────────────────────────── */}
+          {/* ── Repair UI (validation failed or low confidence) ───────────── */}
+          {textRepairing && pipeline.pipeline && (
+            <div ref={resultRef}>
+              <div className="mb-4 flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-amber-400" />
+                <span className="text-xs text-amber-300/70">
+                  Validation required before analysis
+                </span>
+              </div>
+
+              <Card className="border-amber-500/20">
+                <CardContent className="pt-5">
+                  <HandRepairUI
+                    pipeline={pipeline.pipeline}
+                    onRepaired={pipeline.acceptRepair}
+                    onAnalyze={r => handleRepairAnalyze(r)}
+                    onReset={handleReset}
+                    isAnalyzing={pipeline.stage === "analyzing"}
+                  />
+                </CardContent>
+              </Card>
+
+              {IS_DEV && pipeline.pipeline && (
+                <PipelineDebugPanel
+                  pipeline={pipeline.pipeline}
+                  className="mt-4"
+                />
+              )}
+            </div>
+          )}
+
+          {/* ── Image confirmation ─────────────────────────────────────────── */}
           {imgConfirming && image.extraction && (
             <div ref={resultRef}>
               <div className="mb-4 flex items-center justify-between">
@@ -363,7 +405,7 @@ export default function AnalyzePage() {
             </div>
           )}
 
-          {/* ── Image: coaching generating (blurred confirmation) ──────── */}
+          {/* Image: analysis in progress (blurred confirmation) */}
           {image.isAnalyzing && image.extraction && (
             <div ref={resultRef} className="opacity-50 pointer-events-none">
               <HandConfirmation
@@ -375,16 +417,16 @@ export default function AnalyzePage() {
             </div>
           )}
 
-          {/* ── Results ────────────────────────────────────────────────── */}
+          {/* ── Results ──────────────────────────────────────────────────── */}
           {hasResult && (
             <div ref={resultRef}>
-              {activeTab === "text" && text.result && (
+              {activeTab === "text" && pipeline.result && (
                 <>
                   <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-xl font-bold">
                       Analysis Results
                       <span className="ml-2 text-sm text-muted-foreground font-normal">
-                        {text.result.parsed_hand.site} · ${text.result.parsed_hand.stakes}
+                        {pipeline.result.parsed_hand.site} · ${pipeline.result.parsed_hand.stakes}
                       </span>
                     </h2>
                     <Button variant="outline" size="sm" onClick={handleReset} className="gap-2">
@@ -392,7 +434,23 @@ export default function AnalyzePage() {
                       New Hand
                     </Button>
                   </div>
-                  {user && text.result.saved_id && (
+
+                  {/* Validation summary chip */}
+                  {pipeline.pipeline && (
+                    <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-500/15 bg-emerald-500/6 px-3 py-2">
+                      <ShieldCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                      <span className="text-xs text-emerald-400">
+                        Validated · {(pipeline.pipeline.validation.confidence * 100).toFixed(0)}% confidence
+                        {pipeline.pipeline.validation.warnings.length > 0 && (
+                          <span className="ml-2 text-amber-400/70">
+                            {pipeline.pipeline.validation.warnings.length} warning{pipeline.pipeline.validation.warnings.length > 1 ? "s" : ""}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  )}
+
+                  {user && pipeline.result.saved_id && (
                     <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/8 px-3 py-2">
                       <BookmarkCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
                       <span className="text-xs text-emerald-400">Saved to your account</span>
@@ -401,36 +459,39 @@ export default function AnalyzePage() {
                       </Link>
                     </div>
                   )}
-                  {user && !text.result.saved_id && (() => {
-                    if (text.result.save_error) {
-                      console.error("[history-save] failed:", text.result.save_error);
-                    }
-                    return (
-                      <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/8 px-3 py-2">
-                        <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-                        <span className="text-xs text-amber-400">
-                          Analysis complete — history save failed
-                          {text.result.save_error && (
-                            <span className="ml-1 opacity-70">({text.result.save_error})</span>
-                          )}
-                        </span>
-                      </div>
-                    );
-                  })()}
-                  {text.result.replay ? (
+
+                  {user && !pipeline.result.saved_id && pipeline.result.save_error && (
+                    <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/8 px-3 py-2">
+                      <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                      <span className="text-xs text-amber-400">
+                        Analysis complete — history save failed
+                        <span className="ml-1 opacity-70">({pipeline.result.save_error})</span>
+                      </span>
+                    </div>
+                  )}
+
+                  {pipeline.result.replay ? (
                     <HandReplay
-                      analysis={text.result.replay}
-                      filename={text.result.parsed_hand.hand_id}
+                      analysis={pipeline.result.replay}
+                      filename={pipeline.result.parsed_hand.hand_id}
                       validation={{
-                        confidence: 1.0,
-                        hero_detected_by: "hand_history",
-                        warnings: [],
+                        confidence: pipeline.pipeline?.validation.confidence ?? 1.0,
+                        hero_detected_by: pipeline.pipeline?.validation.hero_detected_by ?? "hand_history",
+                        warnings: (pipeline.pipeline?.validation.warnings ?? []).map(w => w.message),
                         errors: [],
                         is_valid: true,
                       }}
                     />
                   ) : (
-                    <AnalysisResult result={text.result} />
+                    <AnalysisResult result={pipeline.result} />
+                  )}
+
+                  {/* Debug panel (dev only) */}
+                  {IS_DEV && pipeline.pipeline && (
+                    <PipelineDebugPanel
+                      pipeline={pipeline.pipeline}
+                      className="mt-6"
+                    />
                   )}
                 </>
               )}

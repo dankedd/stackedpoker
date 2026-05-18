@@ -1,0 +1,15 @@
+PokerStars Hand #999000001: Hold'em No Limit ($0.50/$1.00 USD) - 2024/01/15 19:45:00 ET
+Table 'TestTable' 6-max Seat #3 is the Button
+Seat 1: Villain ($100.00 in chips)
+Seat 3: Hero ($100.00 in chips)
+Seat 4: Villain2 ($100.00 in chips)
+Villain2: posts small blind $0.50
+Villain: posts big blind $1.00
+*** HOLE CARDS ***
+Dealt to Hero [Ah Ah]
+Hero: raises $2.00 to $3.00
+Villain: folds
+Villain2: folds
+*** SUMMARY ***
+Total pot $3.50
+Seat 3: Hero collected ($3.50)

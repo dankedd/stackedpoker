@@ -1,0 +1,22 @@
+PokerStars Hand #234567890300: Hold'em No Limit ($1/$2) - 2024/03/01 15:00:00 ET
+Table 'Sirius IV' 6-max Seat #1 is the Button
+Seat 1: BTNPlayer ($200.00 in chips)
+Seat 2: SBPlayer ($40.00 in chips)
+Seat 3: Hero ($120.00 in chips)
+Seat 4: COPlayer ($85.00 in chips)
+SBPlayer: posts small blind $1.00
+Hero: posts big blind $2.00
+*** HOLE CARDS ***
+Dealt to Hero [Ks Kd]
+COPlayer: raises $6.00 to $8.00
+BTNPlayer: calls $8.00
+SBPlayer: raises $32.00 to $40.00 and is all-in
+Hero: raises $112.00 to $120.00 and is all-in
+COPlayer: calls $77.00 and is all-in
+BTNPlayer: folds
+*** FLOP *** [Kh 7c 2d]
+*** TURN *** [Kh 7c 2d] [Ac]
+*** RIVER *** [Kh 7c 2d Ac] [5s]
+*** SUMMARY ***
+Total pot $341.00
+Seat 3: Hero collected ($341.00)

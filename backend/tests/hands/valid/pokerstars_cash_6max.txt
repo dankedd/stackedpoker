@@ -1,0 +1,30 @@
+PokerStars Hand #234567890123: Hold'em No Limit ($0.50/$1.00 USD) - 2024/01/15 19:45:00 ET
+Table 'Altair V' 6-max Seat #3 is the Button
+Seat 1: VillainA ($120.50 in chips)
+Seat 2: VillainB ($98.25 in chips)
+Seat 3: Hero ($100.00 in chips)
+Seat 4: VillainC ($87.75 in chips)
+Seat 5: VillainD ($142.00 in chips)
+Seat 6: VillainE ($75.50 in chips)
+VillainC: posts small blind $0.50
+VillainD: posts big blind $1.00
+*** HOLE CARDS ***
+Dealt to Hero [Ah Kd]
+VillainE: folds
+VillainA: folds
+VillainB: folds
+Hero: raises $2.50 to $3.00
+VillainC: folds
+VillainD: calls $2.00
+*** FLOP *** [Jh 8d 2c]
+VillainD: checks
+Hero: bets $4.50
+VillainD: calls $4.50
+*** TURN *** [Jh 8d 2c] [Ac]
+VillainD: checks
+Hero: bets $12.00
+VillainD: folds
+*** SUMMARY ***
+Total pot $25.00 | Rake $0.50
+Board [Jh 8d 2c Ac]
+Seat 3: Hero (button) collected ($25.00)

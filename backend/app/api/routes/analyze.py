@@ -11,7 +11,6 @@ from app.models.schemas import (
 )
 from app.engines.scoring import score_all_hero_actions
 from app.engines.validator import validate_hand
-from app.parsers.detector import detect_and_parse
 from app.engines.analysis import analyse_hand
 from app.engines.pot_engine import compute_pot_states, find_blind_players
 from app.services.openai_coach import generate_coaching
@@ -206,15 +205,37 @@ async def analyze_hand(
     assert_usage_allowed(profile)
 
     try:
-        # 2. Parse
-        parsed = detect_and_parse(request.hand_text)
+        # 2. Parse + normalize + validate via the pipeline
+        from app.engines.pipeline import run_text_pipeline
+        pipeline_result = run_text_pipeline(request.hand_text)
 
-        # 3. Deterministic validation (card legality, action ordering, hero presence)
-        validation = validate_hand(parsed)
-        if validation.errors:
-            logger.warning(
-                "Hand validation errors for user=%s: %s", user_id, validation.errors
+        # 3. ANALYSIS GATE — hard block if pipeline says no
+        if not pipeline_result.validation.can_analyze:
+            error_summary = "; ".join(
+                e.message for e in pipeline_result.validation.errors[:3]
             )
+            logger.warning(
+                "Analysis blocked for user=%s: %s", user_id, error_summary
+            )
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "blocked": True,
+                    "reason": "hand_validation_failed",
+                    "errors": [e.model_dump() for e in pipeline_result.validation.errors],
+                    "warnings": [w.model_dump() for w in pipeline_result.validation.warnings],
+                    "confidence": pipeline_result.validation.confidence,
+                    "message": (
+                        f"This hand could not be validated: {error_summary}. "
+                        "Please use the repair UI to fix the detected issues."
+                    ),
+                },
+            )
+
+        # Compatibility: get legacy ParsedHand + ValidationInfo for existing engine
+        from app.engines.pipeline import _canonical_to_parsed_hand
+        parsed = _canonical_to_parsed_hand(pipeline_result.canonical)
+        validation = validate_hand(parsed)   # legacy ValidationInfo for AnalysisResponse field
 
         # 4. Structural analysis (no AI yet)
         result = analyse_hand(parsed)
