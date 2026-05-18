@@ -15,6 +15,13 @@ import { DecisionSpot } from '@/components/learn/steps/DecisionSpot'
 import { EquityPredict } from '@/components/learn/steps/EquityPredict'
 import { RangeBuild } from '@/components/learn/steps/RangeBuild'
 import { ClassifyStep } from '@/components/learn/steps/ClassifyStep'
+import { BetSizeSlider } from '@/components/learn/steps/BetSizeSlider'
+import { MdfSlider } from '@/components/learn/steps/MdfSlider'
+import { ScenarioTree } from '@/components/learn/steps/ScenarioTree'
+import { RangeHeatmap } from '@/components/learn/steps/RangeHeatmap'
+import type { ActionQuality } from '@/lib/learn/types'
+import { LevelUpOverlay } from '@/components/learn/LevelUpOverlay'
+import { ConceptTagRow } from '@/components/learn/ConceptPopover'
 
 // ── Phase type ────────────────────────────────────────────────────────────────
 
@@ -70,7 +77,6 @@ function StepRenderer({
       const result = await evaluateStep(lessonId, step.id, userResponse, timeMs, token)
       onResult(result)
     } catch {
-      // Provide graceful fallback result
       onResult({
         score: 50,
         quality: 'acceptable',
@@ -88,14 +94,13 @@ function StepRenderer({
     return (
       <ConceptReveal
         step={step}
-        // Concept reveals skip feedback — award fixed 20 XP and move straight to next step
         onComplete={() =>
           onConceptComplete({
             score: 100,
             quality: 'perfect',
             ev_loss_bb: 0,
             feedback: 'Concept reviewed.',
-            xp_earned: 20,
+            xp_earned: step.xp ?? 20,
             level_before: 1,
             level_after: 1,
             leveled_up: false,
@@ -105,7 +110,16 @@ function StepRenderer({
     )
   }
 
-  if (step.type === 'decision_spot' || step.type === 'bet_size_choose') {
+  if (step.type === 'bet_size_choose') {
+    return (
+      <BetSizeSlider
+        step={step}
+        onAnswer={(optionId, timeMs) => callEvaluate(optionId, timeMs)}
+      />
+    )
+  }
+
+  if (step.type === 'decision_spot') {
     return (
       <DecisionSpot
         step={step}
@@ -132,7 +146,34 @@ function StepRenderer({
     )
   }
 
-  // Classify-family: board_classify, nut_advantage, blocker_id, range_identify, bluff_pick
+  if (step.type === 'range_heatmap') {
+    return (
+      <RangeHeatmap
+        step={step}
+        onAnswer={(hands, timeMs) => callEvaluate(hands, timeMs)}
+      />
+    )
+  }
+
+  if (step.type === 'mdf_slider') {
+    return (
+      <MdfSlider
+        step={step}
+        onAnswer={(value, timeMs) => callEvaluate(value, timeMs)}
+      />
+    )
+  }
+
+  if (step.type === 'scenario_tree') {
+    return (
+      <ScenarioTree
+        step={step}
+        onAnswer={(quality: ActionQuality, timeMs: number) => callEvaluate(quality, timeMs)}
+      />
+    )
+  }
+
+  // Classify-family: board_classify, nut_advantage, blocker_id, range_identify, bluff_pick, reflection_prompt
   return (
     <ClassifyStep
       step={step}
@@ -144,6 +185,14 @@ function StepRenderer({
 // ── Intro screen ──────────────────────────────────────────────────────────────
 
 function IntroScreen({ lesson, onStart }: { lesson: Lesson; onStart: () => void }) {
+  const lessonTypeLabel = {
+    micro: 'Quick Lesson',
+    range_trainer: 'Range Training',
+    puzzle_drill: 'Puzzle Drill',
+    concept_reveal: 'Concept Reveal',
+    simulation: 'Simulation',
+  }[lesson.lesson_type] ?? lesson.lesson_type.replace(/_/g, ' ')
+
   return (
     <div className="flex flex-col items-center gap-6 py-8 text-center animate-in fade-in duration-300">
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-500/15 border border-violet-500/25">
@@ -152,7 +201,7 @@ function IntroScreen({ lesson, onStart }: { lesson: Lesson; onStart: () => void 
 
       <div className="space-y-2">
         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-violet-400/60">
-          {lesson.lesson_type.replace(/_/g, ' ')}
+          {lessonTypeLabel}
         </p>
         <h1 className="text-2xl font-bold text-foreground">{lesson.title}</h1>
       </div>
@@ -172,17 +221,9 @@ function IntroScreen({ lesson, onStart }: { lesson: Lesson; onStart: () => void 
         </div>
       </div>
 
+      {/* Concepts covered — with interactive popovers */}
       {lesson.concept_ids.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-1.5">
-          {lesson.concept_ids.map((id) => (
-            <span
-              key={id}
-              className="text-[10px] px-2.5 py-1 rounded-full border border-violet-500/20 bg-violet-500/8 text-violet-400/70"
-            >
-              {id.replace(/_/g, ' ')}
-            </span>
-          ))}
-        </div>
+        <ConceptTagRow conceptIds={lesson.concept_ids} />
       )}
 
       <button
@@ -231,10 +272,19 @@ function SummaryScreen({
       ? 'text-amber-400'
       : 'text-red-400'
 
+  const gradeBg =
+    avgScore >= 90
+      ? 'border-emerald-500/30 bg-emerald-500/10'
+      : avgScore >= 75
+      ? 'border-blue-500/30 bg-blue-500/10'
+      : avgScore >= 55
+      ? 'border-amber-500/30 bg-amber-500/10'
+      : 'border-red-500/30 bg-red-500/10'
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* Score header */}
-      <div className="rounded-2xl border border-border/50 bg-card/60 p-8 text-center">
+      <div className={cn('rounded-2xl border p-8 text-center', gradeBg)}>
         <div className="flex justify-center mb-4">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 border border-emerald-500/30 shadow-lg shadow-emerald-900/20">
             <Trophy className="h-8 w-8 text-emerald-400" />
@@ -264,7 +314,7 @@ function SummaryScreen({
           <div className="space-y-2.5">
             {results.map((r, i) => (
               <div key={i} className="flex items-center gap-3">
-                <span className="text-xs text-muted-foreground/50 w-16 shrink-0 capitalize">
+                <span className="text-xs text-muted-foreground/50 w-20 shrink-0 capitalize">
                   {lesson.steps[i]?.type?.replace(/_/g, ' ') ?? `Step ${i + 1}`}
                 </span>
                 <div className="flex-1 h-1.5 rounded-full bg-secondary/50 overflow-hidden">
@@ -298,23 +348,14 @@ function SummaryScreen({
         </div>
       )}
 
-      {/* Concept links */}
+      {/* Concepts covered — clickable */}
       {lesson.concept_ids.length > 0 && (
         <div className="rounded-2xl border border-border/50 bg-card/60 p-5">
           <div className="flex items-center gap-2 mb-3">
             <BookOpen className="h-4 w-4 text-violet-400" />
             <p className="text-sm font-semibold text-foreground">Concepts Covered</p>
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {lesson.concept_ids.map((id) => (
-              <span
-                key={id}
-                className="text-xs px-2.5 py-1 rounded-full border border-violet-500/20 bg-violet-500/8 text-violet-400/80"
-              >
-                {id.replace(/_/g, ' ')}
-              </span>
-            ))}
-          </div>
+          <ConceptTagRow conceptIds={lesson.concept_ids} />
         </div>
       )}
 
@@ -360,6 +401,10 @@ export function LessonPlayer({ lesson, token, onComplete }: LessonPlayerProps) {
   const [latestResult, setLatestResult] = useState<StepResult | null>(null)
   const [totalXP, setTotalXP] = useState(0)
 
+  // Level-up overlay state
+  const [showLevelUp, setShowLevelUp] = useState(false)
+  const [levelUpData, setLevelUpData] = useState<{ level: number; xp: number } | null>(null)
+
   const steps = lesson.steps
   const currentStep: LessonStep | undefined = steps[currentStepIndex]
   const isLastStep = currentStepIndex === steps.length - 1
@@ -373,9 +418,14 @@ export function LessonPlayer({ lesson, token, onComplete }: LessonPlayerProps) {
     setResults((prev) => [...prev, result])
     setTotalXP((prev) => prev + result.xp_earned)
     setPhase('feedback')
+
+    // Trigger level-up overlay
+    if (result.leveled_up && result.level_after) {
+      setLevelUpData({ level: result.level_after, xp: result.xp_earned })
+      setShowLevelUp(true)
+    }
   }, [])
 
-  // Concept reveals skip the feedback phase — go straight to next step
   const handleConceptComplete = useCallback((result: StepResult) => {
     setResults((prev) => [...prev, result])
     setTotalXP((prev) => prev + result.xp_earned)
@@ -405,6 +455,20 @@ export function LessonPlayer({ lesson, token, onComplete }: LessonPlayerProps) {
         : 0
     onComplete(avgScore, totalXP)
   }, [results, totalXP, onComplete])
+
+  // ── Level-up overlay ───────────────────────────────────────────────────────
+  if (showLevelUp && levelUpData) {
+    return (
+      <LevelUpOverlay
+        newLevel={levelUpData.level}
+        xpEarned={levelUpData.xp}
+        onDismiss={() => {
+          setShowLevelUp(false)
+          setLevelUpData(null)
+        }}
+      />
+    )
+  }
 
   // ── Intro ──────────────────────────────────────────────────────────────────
   if (phase === 'intro') {
@@ -448,6 +512,11 @@ export function LessonPlayer({ lesson, token, onComplete }: LessonPlayerProps) {
           street={currentStep.street}
           heroHand={currentStep.hero_hand}
         />
+      )}
+
+      {/* Concept tags — appear above interactive step */}
+      {currentStep.concept_ids && currentStep.concept_ids.length > 0 && phase === 'step' && (
+        <ConceptTagRow conceptIds={currentStep.concept_ids} />
       )}
 
       {/* Step card */}

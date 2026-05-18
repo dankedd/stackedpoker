@@ -31,6 +31,13 @@ export const LEARNING_PATHS: LearningPath[] = [
     tier_required: 'premium',
     sort_order: 3,
   },
+  {
+    id: 'pro',
+    title: 'Pro / Elite',
+    description: 'Solver-level thinking, ICM mastery, and exploit balancing for serious players',
+    tier_required: 'premium',
+    sort_order: 4,
+  },
 ]
 
 // ── Learning Modules ──────────────────────────────────────────────────────────
@@ -183,6 +190,74 @@ export const LEARNING_MODULES: LearningModule[] = [
     unlock_after: [],
     sort_order: 3,
     xp_reward: 400,
+  },
+  {
+    id: 'exploit-module',
+    path_id: 'advanced',
+    slug: 'exploit-module',
+    title: 'Exploitative Play',
+    description: 'Identify opponent leaks and deviate from GTO to maximise EV against specific tendencies.',
+    concept_ids: ['exploit'],
+    unlock_after: ['polarized-module'],
+    sort_order: 4,
+    xp_reward: 450,
+  },
+  {
+    id: 'mixed-strategies-module',
+    path_id: 'advanced',
+    slug: 'mixed-strategies-module',
+    title: 'Mixed Strategies & Frequencies',
+    description: 'Master indifference-based frequency play and stop being exploited by observant opponents.',
+    concept_ids: ['indifference', 'nash_equilibrium'],
+    unlock_after: ['mdf-module'],
+    sort_order: 5,
+    xp_reward: 500,
+  },
+
+  // ── Pro / Elite path ────────────────────────────────────────────────
+  {
+    id: 'icm-module',
+    path_id: 'pro',
+    slug: 'icm-module',
+    title: 'ICM & Tournament Pressure',
+    description: 'Convert chip stacks to real-money equity and tighten calling ranges near pay jumps.',
+    concept_ids: ['icm'],
+    unlock_after: [],
+    sort_order: 1,
+    xp_reward: 500,
+  },
+  {
+    id: 'population-reads-module',
+    path_id: 'pro',
+    slug: 'population-reads-module',
+    title: 'Population Reads',
+    description: 'Exploit systematic leaks that most player pools share: over-folds, over-calls, and more.',
+    concept_ids: ['exploit'],
+    unlock_after: ['icm-module'],
+    sort_order: 2,
+    xp_reward: 500,
+  },
+  {
+    id: 'advanced-ranges-module',
+    path_id: 'pro',
+    slug: 'advanced-ranges-module',
+    title: 'Solver-Level Range Construction',
+    description: 'Build statically and dynamically balanced ranges the way modern solvers construct them.',
+    concept_ids: ['hand_ranges', 'equity_buckets', 'bluff_value_ratio'],
+    unlock_after: ['population-reads-module'],
+    sort_order: 3,
+    xp_reward: 600,
+  },
+  {
+    id: 'multistreet-planning-module',
+    path_id: 'pro',
+    slug: 'multistreet-planning-module',
+    title: 'Multi-Street Planning',
+    description: 'Plan your entire hand from flop to river using geometric sizing and EV trees.',
+    concept_ids: ['geometric_sizing', 'equity_real'],
+    unlock_after: ['advanced-ranges-module'],
+    sort_order: 4,
+    xp_reward: 700,
   },
 ]
 
@@ -2080,6 +2155,517 @@ export const LESSONS: Lesson[] = [
         range_tolerance: 3,
         visual: 'range_grid',
         xp: 12,
+      },
+    ],
+  },
+
+  // ── 19. MDF Interactive Lab ───────────────────────────────────────────────
+  // Showcases the new mdf_slider step type
+  {
+    id: 'mdf-interactive-lab',
+    module_id: 'mdf-module',
+    slug: 'mdf-interactive-lab',
+    title: 'MDF Interactive Lab',
+    lesson_type: 'simulation',
+    concept_ids: ['mdf', 'alpha'],
+    estimated_min: 6,
+    xp_reward: 55,
+    sort_order: 2,
+    steps: [
+      {
+        id: 'mdf-lab-s1',
+        type: 'concept_reveal',
+        concept_ids: ['mdf', 'alpha'],
+        concept_title: 'How Bet Size Controls the Price',
+        concept_content:
+          'Every bet size creates a specific MDF and alpha. A pot-sized bet requires you to defend 50% of your range (MDF = 50%) and villain\'s bluff needs you to fold 50% (alpha = 50%). A half-pot bet requires 67% defense. As the bet size grows: alpha grows, MDF shrinks — making it harder to defend without over-folding.',
+        xp: 5,
+      },
+      {
+        id: 'mdf-lab-s2',
+        type: 'mdf_slider',
+        concept_ids: ['mdf'],
+        narrative: 'Villain bets various sizes on the river. Use the slider to explore how the required MDF and alpha change as bet size changes. When you\'re confident you understand the relationship, click "Lock In My Answer".',
+        mdf_slider_question: 'At what bet size (% of pot) does MDF drop below 50%?',
+        mdf_slider_initial_bet_pct: 50,
+        mdf_slider_target: 50,
+        mdf_slider_tolerance: 5,
+        xp: 15,
+      },
+      {
+        id: 'mdf-lab-s3',
+        type: 'equity_predict',
+        street: 'river',
+        pot_bb: 30,
+        narrative: 'Villain fires a 2× pot overbet (200% pot) on the river. What is your MDF? (How often must you continue as a whole number %.)',
+        equity_actual: 33,
+        equity_tolerance: 4,
+        correct_feedback:
+          'Correct. MDF = pot/(pot + bet) = 30/(30+60) = 33%. With a 2× overbet you only need to defend 1 in 3 hands. But those hands had better be your strongest ones.',
+        wrong_feedback:
+          'MDF = pot / (pot + bet) = 30 / 90 = 33%. Big overbets demand very tight defense — you fold 67% but protect the 33% with strong hands.',
+        xp: 15,
+      },
+      {
+        id: 'mdf-lab-s4',
+        type: 'concept_reveal',
+        concept_ids: ['mdf'],
+        concept_title: 'MDF in Practice: Constructing a Defense',
+        concept_content:
+          'MDF is the floor, not a prescription. Your actual defense frequency considers hand quality: fold trash, mix medium-strength hands, always continue strong hands. A common error is defending exactly MDF but with weak hands — villain\'s value hands still profit. Defend MDF with your strongest available hands, not random ones.',
+        xp: 5,
+      },
+    ],
+  },
+
+  // ── 20. Exploit Simulation ────────────────────────────────────────────────
+  // Showcases the scenario_tree step type
+  {
+    id: 'exploit-simulation',
+    module_id: 'exploit-module',
+    slug: 'exploit-simulation',
+    title: 'Exploit Simulation: Reading a Leak',
+    lesson_type: 'simulation',
+    concept_ids: ['exploit'],
+    estimated_min: 7,
+    xp_reward: 60,
+    sort_order: 1,
+    steps: [
+      {
+        id: 'exp-s1',
+        type: 'concept_reveal',
+        concept_ids: ['exploit'],
+        concept_title: 'Exploitative Play: Punishing Leaks',
+        concept_content:
+          'GTO is unexploitable but does not maximise EV against imperfect opponents. Against a player who folds too much on the river, bluffing more is +EV. Against a player who calls too wide, value betting thinner is +EV. The art is identifying the leak and adjusting precisely — overbetting exploits often create counter-exploits if the opponent adjusts.',
+        xp: 5,
+      },
+      {
+        id: 'exp-s2',
+        type: 'scenario_tree',
+        concept_ids: ['exploit'],
+        narrative:
+          'You\'ve noticed villain folds to river bets 70% of the time (MDF requires only 50% defense). Navigate this decision tree to extract maximum EV from this exploit.',
+        scenario_root: 'root',
+        scenario_nodes: [
+          {
+            id: 'root',
+            label: 'River: You hold a missed draw. Villain checked. Pot is 40bb.',
+            description: 'Villain\'s river fold frequency is 70% — well above the 50% required by MDF for a pot-size bet. How do you exploit this?',
+            children: [
+              { option_label: 'Check behind (give up)', node_id: 'check_behind' },
+              { option_label: 'Bet 20bb (50% pot)', node_id: 'bet_half' },
+              { option_label: 'Bet 40bb (pot-sized)', node_id: 'bet_pot' },
+              { option_label: 'Shove 80bb (2× pot overbet)', node_id: 'overbet' },
+            ],
+          },
+          {
+            id: 'check_behind',
+            label: 'You check behind.',
+            outcome: {
+              ev_bb: 0,
+              label: 'Missed value',
+              quality: 'mistake',
+              explanation:
+                'Against a player folding 70% of the time to river bets, checking behind leaves enormous money on the table. Your missed draw has zero showdown value — any bet profits when villain folds this often.',
+            },
+          },
+          {
+            id: 'bet_half',
+            label: 'You bet 20bb (half pot).',
+            description: 'Villain faces a half-pot bet. Alpha = 20/60 = 33%. Villain folds 70% — well above needed 33%.',
+            children: [
+              { option_label: 'This size works — villain folds enough', node_id: 'half_works', is_optimal: false },
+              { option_label: 'This size is correct but not maximizing the exploit', node_id: 'half_suboptimal', is_optimal: false },
+            ],
+          },
+          {
+            id: 'half_works',
+            label: 'Half-pot bet wins the pot.',
+            outcome: {
+              ev_bb: 13.4,
+              label: 'Profitable but sub-optimal',
+              quality: 'good',
+              explanation:
+                'EV = (0.70 × 40) − (0.30 × 20) = 28 − 6 = +22bb... wait, actually EV of a half-pot bluff when villain folds 70%: 0.70 × 40bb (win pot) − 0.30 × 20bb (lose bet) = 28 − 6 = +22bb. This works, but you left money on the table by not sizing up into a bigger fold frequency.',
+            },
+          },
+          {
+            id: 'half_suboptimal',
+            label: 'Correct insight — but half-pot is still the right answer here.',
+            outcome: {
+              ev_bb: 22,
+              label: 'Good exploitative thinking',
+              quality: 'good',
+              explanation:
+                'A half-pot bluff EV = 0.70×40 − 0.30×20 = 22bb profit. You\'re right that the pot-size bet also wins but for a larger amount. Both sizes profit here — a bet is always correct when villain folds more than alpha.',
+            },
+          },
+          {
+            id: 'bet_pot',
+            label: 'You bet 40bb (pot-sized).',
+            description: 'Villain faces a pot bet. Alpha = 40/80 = 50%. Villain folds 70% — 20% above the break-even threshold.',
+            children: [
+              { option_label: 'Calculate the EV of this bluff', node_id: 'pot_ev', is_optimal: true },
+              { option_label: 'This might be too big — villain could adjust', node_id: 'pot_fear' },
+            ],
+          },
+          {
+            id: 'pot_ev',
+            label: 'Pot-bet EV calculation',
+            outcome: {
+              ev_bb: 28,
+              label: 'Optimal exploit',
+              quality: 'perfect',
+              explanation:
+                'EV = (0.70 × 40bb) − (0.30 × 40bb) = 28 − 12 = +16bb per bluff. Actually even better: you win the whole pot 70% and lose your bet 30%. Pot-sized is the sweet spot — maximises the fold advantage without leaving exploit EV on the table like the overbet might.',
+            },
+          },
+          {
+            id: 'pot_fear',
+            label: 'You hesitate at pot-sizing.',
+            outcome: {
+              ev_bb: 0,
+              label: 'Exploitative thinking blocked by fear',
+              quality: 'acceptable',
+              explanation:
+                'Against a known over-folder, the pot-size bet is the correct exploitative choice. Worrying about villain adjusting is GTO-thinking — in exploitative play, you lean into the opponent\'s current tendencies until they show evidence of adjusting.',
+            },
+          },
+          {
+            id: 'overbet',
+            label: 'You shove 80bb (2× pot overbet).',
+            description: 'Alpha = 80/120 = 67%. Villain folds 70% — barely above break-even.',
+            children: [
+              { option_label: 'The bigger bet wins more when it works', node_id: 'overbet_thinking' },
+              { option_label: 'This size is too risky at 70% fold rate', node_id: 'overbet_correct' },
+            ],
+          },
+          {
+            id: 'overbet_thinking',
+            label: 'Overbet thinking',
+            outcome: {
+              ev_bb: 8,
+              label: 'Technically profitable but not optimal',
+              quality: 'acceptable',
+              explanation:
+                'EV = (0.70 × 40bb) − (0.30 × 80bb) = 28 − 24 = +4bb. This is profitable but barely — you\'re right at the edge. The pot-size bet (+16bb EV) is much more efficient. Overbets require very high fold rates to justify.',
+            },
+          },
+          {
+            id: 'overbet_correct',
+            label: 'You size down to pot-bet.',
+            outcome: {
+              ev_bb: 16,
+              label: 'Optimal exploit found',
+              quality: 'perfect',
+              explanation:
+                'Exactly right. The pot-sized bet (+16bb EV) dominates the overbet (+4bb EV). When someone folds 70%, the pot-bet captures the maximum risk-adjusted value. Save overbets for players who fold 80%+.',
+            },
+          },
+        ],
+        xp: 20,
+      },
+      {
+        id: 'exp-s3',
+        type: 'concept_reveal',
+        concept_ids: ['exploit'],
+        concept_title: 'Exploit vs Counter-Exploit',
+        concept_content:
+          'Every exploit creates vulnerability to a counter-exploit. If you bluff too much against an over-folder and they notice, they start calling wide — now you\'re value-thin with bad hands. Exploitative play is a game of ongoing adjustment: identify a leak, exploit it, watch for adjustment, re-adjust. The best exploitative players track adjustments in real time.',
+        xp: 5,
+      },
+    ],
+  },
+
+  // ── 21. Equity Heatmap Lab ────────────────────────────────────────────────
+  // Showcases the range_heatmap step type
+  {
+    id: 'equity-heatmap-lab',
+    module_id: 'range-construction-module',
+    slug: 'equity-heatmap-lab',
+    title: 'Equity Heatmap Lab',
+    lesson_type: 'range_trainer',
+    concept_ids: ['equity_buckets', 'hand_ranges'],
+    estimated_min: 7,
+    xp_reward: 55,
+    sort_order: 3,
+    steps: [
+      {
+        id: 'eq-heat-s1',
+        type: 'concept_reveal',
+        concept_ids: ['equity_buckets'],
+        concept_title: 'Equity Buckets: Classifying Hand Strength',
+        concept_content:
+          'Equity buckets organise your range into tiers: Strong (≥75% equity) — sets, top two pair, straights/flushes. Good (50–74%) — top pair strong kicker, overpairs. Weak (33–49%) — middle pair, bottom pair, strong draws. Trash (<33%) — air, weak backdoors. Understanding which bucket a hand falls into guides betting frequency and sizing.',
+        xp: 5,
+      },
+      {
+        id: 'eq-heat-s2',
+        type: 'range_heatmap',
+        concept_ids: ['equity_buckets', 'hand_ranges'],
+        street: 'flop',
+        board: ['As', 'Kd', '7c'],
+        hero_position: 'BTN',
+        villain_position: 'BB',
+        narrative:
+          'Board A♠K♦7♣. BTN opened, BB called. The heatmap below shows BTN\'s equity vs BB\'s range. Identify which hand categories are in the "Strong" bucket (≥75% equity — shown in green) by clicking on them.',
+        range_hint:
+          'Strong hands on AK7: sets (AA, KK, 77), top two pair (AK), and straights (65, is there one?). Look for the darkest green cells.',
+        range_heatmap_data: {
+          'AA': 95, 'AKs': 88, 'AKo': 87, 'AQs': 72, 'AQo': 71, 'AJs': 69, 'AJo': 68,
+          'ATs': 67, 'ATo': 66, 'A9s': 64, 'A9o': 63, 'A8s': 62, 'A8o': 61, 'A7s': 82,
+          'A7o': 80, 'A6s': 59, 'A6o': 58, 'A5s': 58, 'A5o': 57, 'A4s': 57, 'A4o': 56,
+          'A3s': 56, 'A3o': 55, 'A2s': 55, 'A2o': 54,
+          'KK': 91, 'KQs': 65, 'KQo': 64, 'KJs': 63, 'KJo': 62, 'KTs': 61, 'KTo': 60,
+          'K9s': 59, 'K9o': 58, 'K8s': 57, 'K8o': 56, 'K7s': 74, 'K7o': 72,
+          'QQ': 65, 'QJs': 40, 'QJo': 39, 'QTs': 38, 'QTo': 37,
+          'JJ': 62, 'JTs': 38, 'JTo': 37,
+          'TT': 60, 'T9s': 36, 'T9o': 35,
+          '99': 55, '98s': 34, '98o': 33,
+          '88': 53, '87s': 33, '87o': 32,
+          '77': 92, '76s': 32, '76o': 31,
+          '66': 40, '65s': 31, '65o': 30,
+          '55': 38, '54s': 29, '54o': 28,
+          '44': 36, '33': 34, '22': 33,
+        },
+        range_heatmap_target: ['AA', 'KK', '77', 'AKs', 'AKo', 'A7s', 'A7o', 'K7s', 'K7o'],
+        xp: 18,
+      },
+      {
+        id: 'eq-heat-s3',
+        type: 'board_classify',
+        board: ['As', 'Kd', '7c'],
+        narrative: 'On A♠K♦7♣, which player\'s range has more "Strong bucket" (≥75%) hands?',
+        correct_answer: 'BTN',
+        correct_feedback:
+          'Correct — BTN opened and has more AK, AA, KK, 77 combinations. This means BTN has the range advantage AND the nut advantage, justifying high-frequency, well-sized c-bets.',
+        wrong_feedback:
+          'BTN has more strong-bucket hands on AK7. As the preflop raiser, BTN holds AA/KK/AK at higher frequency. BB\'s wide calling range misses this board more often.',
+        options: [
+          { id: 'BTN', label: 'BTN (preflop raiser)', quality: 'perfect', feedback: 'Correct — BTN\'s opening range dominates AK7 with more sets and top-two-pair.' },
+          { id: 'BB', label: 'BB (preflop caller)', quality: 'mistake', feedback: 'No — BB\'s wide defense range has fewer AA, KK, AK combinations than BTN\'s opening range.' },
+        ],
+        xp: 10,
+      },
+    ],
+  },
+
+  // ── 22. ICM Fundamentals ──────────────────────────────────────────────────
+  {
+    id: 'icm-fundamentals',
+    module_id: 'icm-module',
+    slug: 'icm-fundamentals',
+    title: 'ICM: Stack Value vs Chip Value',
+    lesson_type: 'micro',
+    concept_ids: ['icm'],
+    estimated_min: 7,
+    xp_reward: 60,
+    sort_order: 1,
+    steps: [
+      {
+        id: 'icm-s1',
+        type: 'concept_reveal',
+        concept_ids: ['icm'],
+        concept_title: 'ICM: Chips Are Not Cash',
+        concept_content:
+          'In a tournament, doubling your chips does NOT double your equity in the prize pool. If you have 50% of chips 3-handed, you don\'t have 50% of the prize money — you might have 40% because other stacks have elimination value. The Independent Chip Model converts stacks to real-money equity, revealing that: (1) doubling up gains less EV than losing costs, (2) the chip leader pays a premium to gamble, (3) near bubbles, folding equity has massive value.',
+        xp: 8,
+      },
+      {
+        id: 'icm-s2',
+        type: 'decision_spot',
+        street: 'preflop',
+        hero_position: 'BTN',
+        villain_position: 'BB',
+        hero_hand: ['Ah', 'Kd'],
+        pot_bb: 1.5,
+        effective_stack_bb: 15,
+        narrative:
+          'Tournament final table, 3 players left. Payouts: 1st $10,000 / 2nd $6,000 / 3rd $4,000. Stacks: Hero (BTN) 15bb, Villain (BB) 30bb, CO 55bb. BTN shoves 15bb. BB calls with 99. You have AK. Is this a clear chip-EV call for villain?',
+        options: [
+          {
+            id: 'yes_call',
+            label: 'Yes — AK vs 99 is ~50/50, village should call',
+            quality: 'mistake',
+            ev_loss_bb: 0,
+            feedback:
+              'In pure chip EV, yes. But in ICM, villain loses far more EV when they bust you out incorrectly. Busting out costs villain position equity in the prize pool. ICM calls require stronger hands than chip-EV suggests — especially for big stacks risking a key portion of their stack.',
+          },
+          {
+            id: 'no_icm',
+            label: 'No — ICM makes this marginal/incorrect for villain',
+            quality: 'perfect',
+            ev_loss_bb: 0,
+            feedback:
+              'Correct. Villain (30bb big stack) calling 15bb more with 99 vs perceived strong hand range risks significant ICM equity. If villain loses, they drop to 15bb with short stack pressure. ICM analysis typically requires a significant chip-EV edge to justify marginal calls.',
+          },
+          {
+            id: 'depends',
+            label: 'Depends on exact stack distributions',
+            quality: 'good',
+            ev_loss_bb: 0,
+            feedback:
+              'Partially right — stack sizes matter enormously in ICM. But the core insight is that ICM makes big-stack calls tighter near the money. Against a shove with a likely strong range, 99 is often a fold in this configuration.',
+          },
+        ],
+        xp: 15,
+      },
+      {
+        id: 'icm-s3',
+        type: 'concept_reveal',
+        concept_ids: ['icm'],
+        concept_title: 'Bubble Play: Fold Equity is Massive',
+        concept_content:
+          'Near the bubble, everyone wants to survive. Short stacks can shove very wide because big stacks are ICM-terrified of calling. Medium stacks have the most pressure — they risk busting before the money but can also bully shorter stacks. The bubble creates asymmetric fold equity: a 10bb shove on the bubble might force a fold from a 40bb stack with 77 because the 77 holder doesn\'t want to risk their tournament life on a coin-flip.',
+        xp: 8,
+      },
+    ],
+  },
+
+  // ── 23. Multi-Street Geometric Planning ──────────────────────────────────
+  {
+    id: 'multistreet-geometric-planning',
+    module_id: 'multistreet-planning-module',
+    slug: 'multistreet-geometric-planning',
+    title: 'Multi-Street Geometric Planning',
+    lesson_type: 'simulation',
+    concept_ids: ['geometric_sizing', 'equity_real'],
+    estimated_min: 8,
+    xp_reward: 70,
+    sort_order: 1,
+    steps: [
+      {
+        id: 'ms-s1',
+        type: 'concept_reveal',
+        concept_ids: ['geometric_sizing'],
+        concept_title: 'Planning Streets in Advance',
+        concept_content:
+          'Elite players plan their multi-street lines before they bet street 1. Questions to answer: Which streets am I betting? What is my target on the river (jam? 75%?)? Does my hand have enough equity to barrel? Is villain\'s range capped (can they fold when I want)? Geometric sizing answers the "how much" question; hand equity and range analysis answer the "should I bet at all" question.',
+        xp: 8,
+      },
+      {
+        id: 'ms-s2',
+        type: 'scenario_tree',
+        concept_ids: ['geometric_sizing'],
+        narrative:
+          'You have top two pair on a wet board. Pot is 20bb, stacks are 100bb. Plan your 3-street line to maximise value.',
+        scenario_root: 'ms_root',
+        scenario_nodes: [
+          {
+            id: 'ms_root',
+            label: 'Flop: A♥K♦9♥. Pot 20bb. Stacks 100bb.',
+            description: 'You hold AK (top two pair). Villain checks. Board is moderately wet (flush draw present). What is your flop strategy?',
+            children: [
+              { option_label: 'Bet small (33% pot = 6.5bb)', node_id: 'small_flop' },
+              { option_label: 'Bet large (75% pot = 15bb)', node_id: 'large_flop', is_optimal: true },
+              { option_label: 'Check (slowplay)', node_id: 'check_flop' },
+            ],
+          },
+          {
+            id: 'small_flop',
+            label: 'Flop: Bet 6.5bb. Villain calls. Pot 33bb. Stacks 93.5bb.',
+            description: 'Turn: 2♣. Board is now A♥K♦9♥2♣. Villain checks. You need to set up a river jam.',
+            children: [
+              { option_label: 'Bet 25bb (75% pot)', node_id: 'small_flop_large_turn', is_optimal: true },
+              { option_label: 'Bet 10bb (small again)', node_id: 'small_flop_small_turn' },
+            ],
+          },
+          {
+            id: 'small_flop_large_turn',
+            label: 'Turn: Bet 25bb. Villain calls. Pot 83bb. Stacks 68.5bb.',
+            outcome: {
+              ev_bb: 55,
+              label: 'Good line — recovered with large turn',
+              quality: 'good',
+              explanation:
+                'You recovered by betting large on the turn. With 68.5bb behind into 83bb pot, the river shove is geometrically correct. However, starting with a larger flop bet would have allowed a more balanced 3-street line — villain would face equal pressure every street.',
+            },
+          },
+          {
+            id: 'small_flop_small_turn',
+            label: 'Turn: Bet 10bb. Villain calls. Pot 53bb. Stacks 83.5bb.',
+            outcome: {
+              ev_bb: 30,
+              label: 'Under-sizing cost value',
+              quality: 'mistake',
+              explanation:
+                'Two small bets in a row means your river jam (83.5bb into 53bb) becomes a 157% overbet that villain can easily fold against. You needed to size up earlier to create a natural geometric shove.',
+            },
+          },
+          {
+            id: 'large_flop',
+            label: 'Flop: Bet 15bb. Villain calls. Pot 50bb. Stacks 85bb.',
+            description: 'Turn: 2♣. A♥K♦9♥2♣. Villain checks. Pot 50bb, 85bb behind.',
+            children: [
+              { option_label: 'Bet 37.5bb (75% pot) — set up river shove', node_id: 'large_flop_correct_turn', is_optimal: true },
+              { option_label: 'Check behind (control the pot)', node_id: 'large_flop_check_turn' },
+            ],
+          },
+          {
+            id: 'large_flop_correct_turn',
+            label: 'Turn: Bet 37.5bb. Villain calls. Pot 125bb. Stacks 47.5bb.',
+            outcome: {
+              ev_bb: 75,
+              label: 'Geometric line — maximum value extracted',
+              quality: 'perfect',
+              explanation:
+                'Perfect geometric line. Flop: 75% pot (15bb). Turn: 75% pot (37.5bb). River: shove ~47.5bb into ~125bb (38% pot). Villain faced equal pressure every street and had no "cheap street" to exploit. Top two pair value maximised.',
+            },
+          },
+          {
+            id: 'large_flop_check_turn',
+            label: 'Turn: You check. River: 5♠. Villain bets 30bb.',
+            outcome: {
+              ev_bb: 20,
+              label: 'Slowplay cost significant value',
+              quality: 'mistake',
+              explanation:
+                'Checking top two pair on a wet board with a flush draw present is a mistake. You gave villain a free card to improve, and now face a bet with no control over the pot size. The large flop bet was right — don\'t stop the geometric pressure mid-hand.',
+            },
+          },
+          {
+            id: 'check_flop',
+            label: 'Flop: Check. Villain bets 12bb. Pot 44bb.',
+            description: 'Villain bet into you. What now?',
+            children: [
+              { option_label: 'Check-raise to 35bb', node_id: 'checkraise', is_optimal: true },
+              { option_label: 'Call 12bb and play reactively', node_id: 'slowcall' },
+            ],
+          },
+          {
+            id: 'checkraise',
+            label: 'Check-raise to 35bb. Villain calls.',
+            outcome: {
+              ev_bb: 50,
+              label: 'Good recovery — check-raise worked',
+              quality: 'good',
+              explanation:
+                'Check-raising is a reasonable play that builds the pot aggressively, but it allows villain to set the first bet size. Against certain villain types, leading is better with top two pair on a wet board — you don\'t want to give free flush-draw cards.',
+            },
+          },
+          {
+            id: 'slowcall',
+            label: 'Call 12bb. Pot 44bb. Turn: 8♥ (flush completes).',
+            outcome: {
+              ev_bb: 15,
+              label: 'Flush card arrived — value lost',
+              quality: 'mistake',
+              explanation:
+                'Calling and letting the flush draw complete loses significant EV. Top two pair on a wet board must charge draws. By check-calling, you gave villain a cheap card to hit the flush and now face a difficult turn decision.',
+            },
+          },
+        ],
+        xp: 25,
+      },
+      {
+        id: 'ms-s3',
+        type: 'concept_reveal',
+        concept_ids: ['geometric_sizing'],
+        concept_title: 'The Rule: Size For Your Last Street',
+        concept_content:
+          'When planning a multi-street hand, start from the end: what do you want the river action to be? Then work backwards. If you want to jam 100bb on the river into a 100bb pot, you need to build 100bb across three streets. Geometric sizing achieves this by keeping each bet as a constant fraction of the current pot. Oversimplified rule: with 100bb stacks, "pot-size flop, pot-size turn" leaves a natural pot-size jam on the river.',
+        xp: 8,
       },
     ],
   },
