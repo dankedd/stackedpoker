@@ -509,7 +509,7 @@ function CoachingContent({
   const verdictLabel = getVerdictLabel(coaching.quality, currentAction.action);
 
   return (
-    <div className="divide-y" style={{ divideColor: "rgba(255,255,255,0.04)" }}>
+    <div className="divide-y divide-white/[0.04]">
       {/* Verdict + Action taken */}
       <div className="px-5 py-4 space-y-3">
         <div className="flex items-start justify-between gap-2 flex-wrap">
