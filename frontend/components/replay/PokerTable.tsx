@@ -75,12 +75,12 @@ export function PokerTable({
 
   return (
     /**
-     * Compact oval: 700px max-width, 58% padding-bottom (≈ 12:7 ratio).
-     * Feels closer to the puzzle's focused table, not an empty arena.
+     * Compact oval: 560px max-width, 54% padding-bottom (≈ 2:1 ratio).
+     * Fits comfortably in the 60% left column of the split workspace.
      */
     <div
       className="relative w-full select-none mx-auto"
-      style={{ paddingBottom: "58%", maxWidth: "700px" }}
+      style={{ paddingBottom: "54%", maxWidth: "560px" }}
     >
       <div
         className="absolute inset-0 overflow-hidden"

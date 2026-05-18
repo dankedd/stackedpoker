@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import {
   Play, Pause, ChevronLeft, ChevronRight, SkipBack, SkipForward,
   AlertTriangle, CheckCircle2, Trophy, RotateCcw,
@@ -71,6 +71,19 @@ const REASON_LABEL: Record<string, string> = {
   MIN_RAISE:              "Min-Raise",
   BLOCKER_SPOT:           "Blocker Spot",
 };
+
+// ── Verdict pill helpers ──────────────────────────────────────────────────────
+
+const VERDICT_LABELS: Record<string, Record<string, string>> = {
+  Elite:    { fold: "EXCELLENT FOLD",    check: "EXCELLENT CHECK", call: "CORRECT CALL",       bet: "EXCELLENT BET",    raise: "EXCELLENT RAISE"          },
+  Good:     { fold: "GOOD FOLD",         check: "SOLID CHECK",     call: "REASONABLE CALL",    bet: "WELL-TIMED BET",   raise: "SOLID RAISE"              },
+  Standard: { fold: "DEFENSIBLE FOLD",   check: "ACCEPTABLE CHECK",call: "MARGINAL CALL",      bet: "STANDARD BET",     raise: "STANDARD RAISE"           },
+  Mistake:  { fold: "POTENTIAL OVERFOLD",check: "MISSED SPOT",     call: "LOOSE CALL",         bet: "QUESTIONABLE BET", raise: "AGGRESSIVE — QUESTIONABLE"},
+  Punt:     { fold: "MAJOR OVERFOLD",    check: "CRITICAL MISS",   call: "SIGNIFICANT OVERPAY",bet: "SIGNIFICANT ERROR",raise: "RECKLESS RAISE"           },
+};
+function getVerdictLabel(quality: string, action: string): string {
+  return VERDICT_LABELS[quality]?.[action.toLowerCase()] ?? quality.toUpperCase();
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PREMIUM HEADER
@@ -435,298 +448,279 @@ function ReplayControls({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SCORE RING
+// ANALYSIS PANEL  (permanent right-side panel)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function ScoreRing({
-  score, quality, mounted, size = 80,
+function AnalysisPanel({
+  coaching,
+  currentAction,
+  handSummary,
+  currentStreet,
+  step,
 }: {
-  score: number; quality: string; mounted: boolean; size?: number;
+  coaching: ActionCoaching | null;
+  currentAction: ReplayAction | null;
+  handSummary: HandSummaryData;
+  currentStreet: Street;
+  step: number;
 }) {
-  const qs = QUALITY_STYLE[quality] ?? QUALITY_STYLE.Standard;
-  const r = size * 0.36;
-  const circ = 2 * Math.PI * r;
-  const dashOffset = mounted ? circ * (1 - score / 100) : circ;
-  const c = size / 2;
-
+  const streetMeta = STREET_META[currentStreet];
   return (
-    <div
-      className="relative flex-shrink-0 flex items-center justify-center"
-      style={{ width: size, height: size }}
-    >
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
-        <circle cx={c} cy={c} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="4.5" />
-        <circle
-          cx={c} cy={c} r={r} fill="none"
-          stroke={qs.bar} strokeWidth="4.5" strokeLinecap="round"
-          strokeDasharray={circ} strokeDashoffset={dashOffset}
-          style={{
-            transition: "stroke-dashoffset 0.9s cubic-bezier(0.22, 1, 0.36, 1)",
-            filter: `drop-shadow(0 0 5px ${qs.bar}70)`,
-          }}
-        />
-      </svg>
-      <div className="absolute flex flex-col items-center justify-center">
+    <div className="flex flex-col h-full">
+      {/* Panel header */}
+      <div
+        className="flex items-center justify-between px-5 py-3 shrink-0"
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(0,0,0,0.22)" }}
+      >
         <span
-          className="font-black tabular-nums leading-none"
-          style={{ color: qs.text, fontSize: size * 0.27 }}
+          className="text-[10px] font-black tracking-[0.22em] uppercase"
+          style={{ color: "rgba(100,116,139,0.42)" }}
         >
-          {score}
+          Analysis
         </span>
         <span
-          className="font-medium leading-none mt-0.5"
-          style={{ color: "rgba(100,116,139,0.5)", fontSize: size * 0.11 }}
+          className="text-[9px] font-black tracking-[0.18em] uppercase px-2.5 py-1 rounded-md"
+          style={{ color: streetMeta.text, background: streetMeta.bg, border: `1px solid ${streetMeta.border}` }}
         >
-          / 100
+          {streetMeta.label}
         </span>
+      </div>
+
+      {/* Scrollable body */}
+      <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.08) transparent" }}>
+        {coaching && currentAction ? (
+          <CoachingContent coaching={coaching} currentAction={currentAction} />
+        ) : (
+          <EmptyAnalysisState handSummary={handSummary} step={step} />
+        )}
       </div>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// AI COACH PANEL
-// ─────────────────────────────────────────────────────────────────────────────
-
-function AICoachPanel({
+function CoachingContent({
   coaching,
-  actionIdx,
-  isCurrentAction,
   currentAction,
 }: {
   coaching: ActionCoaching;
-  actionIdx: number;
-  isCurrentAction: boolean;
   currentAction: ReplayAction;
 }) {
   const qs = QUALITY_STYLE[coaching.quality] ?? QUALITY_STYLE.Standard;
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setMounted(true));
-    return () => { cancelAnimationFrame(id); setMounted(false); };
-  }, [actionIdx]);
+  const verdictLabel = getVerdictLabel(coaching.quality, currentAction.action);
 
   return (
-    <div
-      className="animate-slide-up-in"
-      style={{
-        background: "rgba(0,0,0,0.18)",
-        borderTop: "1px solid rgba(255,255,255,0.06)",
-      }}
-    >
-      {/* Panel header bar */}
-      <div
-        className="flex items-center justify-between px-5 sm:px-6 py-3"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
-      >
-        <div className="flex items-center gap-2.5">
-          <div
-            className="w-1.5 h-5 rounded-full"
-            style={{ background: qs.bar, boxShadow: `0 0 8px ${qs.bar}70` }}
-          />
+    <div className="divide-y" style={{ divideColor: "rgba(255,255,255,0.04)" }}>
+      {/* Verdict + Action taken */}
+      <div className="px-5 py-4 space-y-3">
+        <div className="flex items-start justify-between gap-2 flex-wrap">
           <span
-            className="text-[10px] font-black tracking-[0.2em] uppercase"
-            style={{ color: "rgba(148,163,184,0.45)" }}
+            className="text-[10px] font-black tracking-[0.14em] px-3 py-1.5 rounded-full uppercase"
+            style={{
+              color: qs.text,
+              background: qs.bg,
+              border: `1px solid ${qs.border}`,
+              boxShadow: `0 0 14px ${qs.bar}28`,
+            }}
           >
-            AI Coach
-          </span>
-        </div>
-
-        <div
-          className="flex items-center gap-2 px-3 py-1 rounded-full"
-          style={{ background: qs.bg, border: `1px solid ${qs.border}` }}
-        >
-          <span
-            className="text-[10px] font-black"
-            style={{ color: qs.text }}
-          >
-            {qs.indicator}
-          </span>
-          <span className="text-xs font-bold" style={{ color: qs.text }}>
-            {qs.label}
+            {verdictLabel}
           </span>
           {coaching.mistake_level !== "None" && (
             <span
-              className="text-[10px]"
-              style={{ color: `${qs.text}80` }}
+              className="text-[9px] font-bold uppercase tracking-wider self-center"
+              style={{ color: `${qs.text}60` }}
             >
-              · {coaching.mistake_level}
+              {coaching.mistake_level}
+            </span>
+          )}
+        </div>
+        <div className="flex items-baseline gap-2">
+          <span
+            className="text-2xl font-black capitalize"
+            style={{ color: ACTION_COLOR_MAP[currentAction.action] ?? "#94A3B8" }}
+          >
+            {currentAction.action}
+          </span>
+          {currentAction.amount && (
+            <span
+              className="text-sm font-bold tabular-nums"
+              style={{ color: `${ACTION_COLOR_MAP[currentAction.action] ?? "#94A3B8"}70` }}
+            >
+              {currentAction.amount}
             </span>
           )}
         </div>
       </div>
 
-      {/* Content — 3-column desktop, stacked mobile */}
-      <div className="grid grid-cols-1 lg:grid-cols-[160px_1fr_1fr]">
-
-        {/* SCORE column */}
-        <div
-          className="flex flex-col items-center justify-center py-6 px-6 lg:border-r"
-          style={{ borderColor: "rgba(255,255,255,0.05)" }}
+      {/* Strategic analysis */}
+      <div className="px-5 py-4">
+        <p
+          className="text-[9px] uppercase tracking-[0.22em] font-bold mb-2.5"
+          style={{ color: "rgba(100,116,139,0.42)" }}
         >
-          <ScoreRing
-            score={coaching.score}
-            quality={coaching.quality}
-            mounted={mounted}
-            size={84}
-          />
-          <p className="mt-2.5 text-xs font-bold text-center" style={{ color: qs.text }}>
-            {qs.label}
-          </p>
+          Strategic Analysis
+        </p>
+        <p
+          className="text-[12.5px] leading-relaxed"
+          style={{ color: "rgba(203,213,225,0.70)" }}
+        >
+          {coaching.explanation}
+        </p>
+      </div>
+
+      {/* Strategic options */}
+      {coaching.strategic_options?.length > 0 && (
+        <div className="px-5 py-4">
           <p
-            className="text-[9px] text-center mt-0.5 uppercase tracking-wide"
-            style={{ color: "rgba(100,116,139,0.4)" }}
+            className="text-[9px] uppercase tracking-[0.22em] font-bold mb-3"
+            style={{ color: "rgba(100,116,139,0.42)" }}
           >
-            Action score
+            Recommended Lines
           </p>
-        </div>
-
-        {/* ANALYSIS column */}
-        <div
-          className="px-5 sm:px-6 py-5 lg:border-r"
-          style={{ borderColor: "rgba(255,255,255,0.05)" }}
-        >
-          {/* Action taken */}
-          <div className="mb-4">
-            <p
-              className="text-[9px] uppercase tracking-[0.22em] font-bold mb-2"
-              style={{ color: "rgba(100,116,139,0.5)" }}
-            >
-              Action Taken
-            </p>
-            <div className="flex items-baseline gap-2">
-              <span
-                className="text-lg font-black capitalize"
-                style={{ color: ACTION_COLOR_MAP[currentAction.action] ?? "#94A3B8" }}
-              >
-                {currentAction.action}
-              </span>
-              {currentAction.amount && (
-                <span
-                  className="text-sm font-bold tabular-nums"
-                  style={{ color: `${ACTION_COLOR_MAP[currentAction.action] ?? "#94A3B8"}99` }}
-                >
-                  {currentAction.amount}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Explanation */}
-          <div className="mb-4">
-            <p
-              className="text-[9px] uppercase tracking-[0.22em] font-bold mb-2"
-              style={{ color: "rgba(100,116,139,0.5)" }}
-            >
-              Analysis
-            </p>
-            <p
-              className="text-[13px] leading-relaxed"
-              style={{ color: "rgba(203,213,225,0.75)" }}
-            >
-              {coaching.explanation}
-            </p>
-          </div>
-
-          {/* Reason tags */}
-          {coaching.reason_codes.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {coaching.reason_codes.map((code) => (
-                <span
-                  key={code}
-                  className="text-[10px] font-medium px-2 py-0.5 rounded-md"
+          <div className="space-y-2">
+            {coaching.strategic_options.map((opt, i) => {
+              const isPrimary = opt.priority === 1;
+              const label = opt.priority === 1 ? "Primary" : opt.priority === 2 ? "Secondary" : "Alt";
+              return (
+                <div
+                  key={i}
+                  className="rounded-lg px-3.5 py-3"
                   style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.09)",
-                    color: "rgba(148,163,184,0.65)",
+                    background: isPrimary ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.015)",
+                    border: isPrimary ? `1px solid ${qs.border}` : "1px solid rgba(255,255,255,0.05)",
                   }}
                 >
-                  {REASON_LABEL[code] ?? code}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* RECOMMENDED column */}
-        <div className="px-5 sm:px-6 py-5">
-          {coaching.strategic_options?.length > 0 && (
-            <div className="mb-5">
-              <p
-                className="text-[9px] uppercase tracking-[0.22em] font-bold mb-3"
-                style={{ color: "rgba(100,116,139,0.5)" }}
-              >
-                Strategic Options
-              </p>
-              <div className="space-y-3">
-                {coaching.strategic_options.map((opt, i) => {
-                  const isPrimary = opt.priority === 1;
-                  const priorityLabel = opt.priority === 1 ? "Primary" : opt.priority === 2 ? "Secondary" : "Alt";
-                  return (
-                    <div
-                      key={i}
-                      className="rounded-lg p-3"
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span
+                      className="text-[11px] font-bold capitalize"
+                      style={{ color: isPrimary ? qs.text : "rgba(148,163,184,0.50)" }}
+                    >
+                      {opt.action}
+                    </span>
+                    <span
+                      className="text-[8px] font-black tracking-wide px-1.5 py-0.5 rounded-full uppercase"
                       style={{
-                        background: isPrimary ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.02)",
-                        border: isPrimary ? `1px solid ${qs.border}` : "1px solid rgba(255,255,255,0.05)",
+                        background: isPrimary ? qs.bg : "rgba(255,255,255,0.03)",
+                        color: isPrimary ? qs.text : "rgba(100,116,139,0.42)",
+                        border: `1px solid ${isPrimary ? qs.border : "rgba(255,255,255,0.06)"}`,
                       }}
                     >
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <span
-                          className="text-sm font-bold capitalize"
-                          style={{ color: isPrimary ? qs.text : "rgba(148,163,184,0.55)" }}
-                        >
-                          {opt.action}
-                        </span>
-                        <span
-                          className="text-[8px] px-1.5 py-0.5 rounded-full font-black tracking-wide"
-                          style={{
-                            background: isPrimary ? qs.bg : "rgba(255,255,255,0.04)",
-                            color: isPrimary ? qs.text : "rgba(100,116,139,0.5)",
-                            border: isPrimary ? `1px solid ${qs.border}` : "1px solid rgba(255,255,255,0.07)",
-                          }}
-                        >
-                          {priorityLabel}
-                        </span>
-                      </div>
-                      <p
-                        className="text-[11px] leading-relaxed"
-                        style={{ color: "rgba(148,163,184,0.5)" }}
-                      >
-                        {opt.reasoning}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Adjustment */}
-          <div>
-            <p
-              className="text-[9px] uppercase tracking-[0.22em] font-bold mb-2"
-              style={{ color: "rgba(100,116,139,0.5)" }}
-            >
-              Adjustment
-            </p>
-            <div
-              className="rounded-xl px-4 py-3"
-              style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.07)",
-              }}
-            >
-              <p
-                className="text-[12px] leading-relaxed"
-                style={{ color: "rgba(203,213,225,0.62)" }}
-              >
-                {coaching.adjustment}
-              </p>
-            </div>
+                      {label}
+                    </span>
+                  </div>
+                  <p
+                    className="text-[11px] leading-relaxed"
+                    style={{ color: "rgba(148,163,184,0.46)" }}
+                  >
+                    {opt.reasoning}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
+      )}
+
+      {/* Context tags */}
+      {coaching.reason_codes.length > 0 && (
+        <div className="px-5 py-4">
+          <p
+            className="text-[9px] uppercase tracking-[0.22em] font-bold mb-2.5"
+            style={{ color: "rgba(100,116,139,0.42)" }}
+          >
+            Context
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {coaching.reason_codes.map((code) => (
+              <span
+                key={code}
+                className="text-[10px] font-medium px-2 py-0.5 rounded-md"
+                style={{
+                  background: "rgba(255,255,255,0.035)",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                  color: "rgba(148,163,184,0.52)",
+                }}
+              >
+                {REASON_LABEL[code] ?? code}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Adjustment */}
+      <div className="px-5 py-4">
+        <p
+          className="text-[9px] uppercase tracking-[0.22em] font-bold mb-2.5"
+          style={{ color: "rgba(100,116,139,0.42)" }}
+        >
+          Adjustment
+        </p>
+        <p
+          className="text-[12px] leading-relaxed"
+          style={{ color: "rgba(148,163,184,0.56)" }}
+        >
+          {coaching.adjustment}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function EmptyAnalysisState({
+  handSummary,
+  step,
+}: {
+  handSummary: HandSummaryData;
+  step: number;
+}) {
+  return (
+    <div className="flex flex-col px-5 py-8 gap-6">
+      {/* Prompt */}
+      <div className="flex flex-col items-center gap-3 pt-2 text-center">
+        <div
+          className="h-11 w-11 rounded-full flex items-center justify-center"
+          style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
+        >
+          <Play className="h-4 w-4" style={{ color: "rgba(255,255,255,0.18)", marginLeft: 2 }} />
+        </div>
+        <p className="text-sm font-semibold" style={{ color: "rgba(148,163,184,0.42)" }}>
+          {step === 0 ? "Press Next Action to begin" : "Navigate to a hero action"}
+        </p>
+        <p className="text-xs leading-relaxed" style={{ color: "rgba(100,116,139,0.35)" }}>
+          Analysis appears after each hero decision
+        </p>
+      </div>
+
+      {/* Hand context */}
+      <div className="space-y-2">
+        {[
+          { label: "Position",  value: handSummary.hero_position },
+          { label: "Stack",     value: `${handSummary.effective_stack_bb.toFixed(0)}bb` },
+          { label: "Players",   value: String(handSummary.player_count) },
+          ...(handSummary.stakes ? [{ label: "Stakes", value: handSummary.stakes }] : []),
+        ].map(({ label, value }) => (
+          <div
+            key={label}
+            className="flex items-center justify-between px-4 py-2.5 rounded-lg"
+            style={{
+              background: "rgba(255,255,255,0.025)",
+              border: "1px solid rgba(255,255,255,0.05)",
+            }}
+          >
+            <span
+              className="text-[10px] font-bold uppercase tracking-[0.15em]"
+              style={{ color: "rgba(100,116,139,0.42)" }}
+            >
+              {label}
+            </span>
+            <span
+              className="text-[12px] font-bold tabular-nums"
+              style={{ color: label === "Stack" ? "rgba(56,189,248,0.72)" : "rgba(203,213,225,0.62)" }}
+            >
+              {value}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -744,81 +738,82 @@ function PremiumVerdict({ verdict }: { verdict: OverallVerdict }) {
     : verdict.score >= 28 ? "Mistake"
     : "Punt";
   const qs = QUALITY_STYLE[qualityKey];
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setMounted(true));
-    return () => { cancelAnimationFrame(id); setMounted(false); };
-  }, []);
 
   return (
-    <div className="px-5 sm:px-6 py-6 animate-slide-up-in">
-      <div className="flex items-center gap-2 mb-5">
-        <Trophy className="h-4 w-4" style={{ color: "#FBBF24" }} />
+    <div className="px-5 sm:px-6 py-5 animate-slide-up-in">
+      <div className="flex items-center gap-2 mb-4">
+        <Trophy className="h-3.5 w-3.5" style={{ color: "#FBBF24" }} />
         <span
           className="text-[10px] font-black tracking-[0.2em] uppercase"
-          style={{ color: "rgba(148,163,184,0.45)" }}
+          style={{ color: "rgba(148,163,184,0.42)" }}
         >
           Hand Verdict
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-6 md:gap-8">
-        <div className="flex flex-col items-center md:items-start gap-2">
-          <ScoreRing score={verdict.score} quality={qualityKey} mounted={mounted} size={88} />
-          <p className="text-sm font-bold text-center md:text-left" style={{ color: qs.text }}>
-            {verdict.title}
-          </p>
-        </div>
+      {/* Verdict pill + title */}
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
+        <span
+          className="text-[11px] font-black tracking-[0.14em] px-3.5 py-1.5 rounded-full uppercase"
+          style={{
+            color: qs.text,
+            background: qs.bg,
+            border: `1px solid ${qs.border}`,
+            boxShadow: `0 0 16px ${qs.bar}22`,
+          }}
+        >
+          {qs.label}
+        </span>
+        <span className="text-sm font-bold" style={{ color: qs.text }}>
+          {verdict.title}
+        </span>
+      </div>
 
-        <div>
-          <p
-            className="text-[13px] leading-relaxed mb-5"
-            style={{ color: "rgba(148,163,184,0.68)" }}
-          >
-            {verdict.summary}
-          </p>
+      <p
+        className="text-[13px] leading-relaxed mb-5"
+        style={{ color: "rgba(148,163,184,0.65)" }}
+      >
+        {verdict.summary}
+      </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {verdict.key_mistakes.length > 0 && (
-              <div>
-                <p
-                  className="text-[9px] uppercase tracking-[0.2em] font-black mb-2.5"
-                  style={{ color: "rgba(248,113,113,0.6)" }}
-                >
-                  Leaks
-                </p>
-                <div className="space-y-2">
-                  {verdict.key_mistakes.map((m, i) => (
-                    <div key={i} className="flex items-start gap-2">
-                      <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0 text-rose-400/70" />
-                      <p className="text-xs leading-snug" style={{ color: "rgba(148,163,184,0.62)" }}>{m}</p>
-                    </div>
-                  ))}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {verdict.key_mistakes.length > 0 && (
+          <div>
+            <p
+              className="text-[9px] uppercase tracking-[0.2em] font-black mb-2.5"
+              style={{ color: "rgba(248,113,113,0.55)" }}
+            >
+              Leaks
+            </p>
+            <div className="space-y-2">
+              {verdict.key_mistakes.map((m, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0 text-rose-400/60" />
+                  <p className="text-xs leading-snug" style={{ color: "rgba(148,163,184,0.60)" }}>{m}</p>
                 </div>
-              </div>
-            )}
-
-            {verdict.key_strengths.length > 0 && (
-              <div>
-                <p
-                  className="text-[9px] uppercase tracking-[0.2em] font-black mb-2.5"
-                  style={{ color: "rgba(34,197,94,0.6)" }}
-                >
-                  Strengths
-                </p>
-                <div className="space-y-2">
-                  {verdict.key_strengths.map((s, i) => (
-                    <div key={i} className="flex items-start gap-2">
-                      <CheckCircle2 className="h-3 w-3 mt-0.5 shrink-0 text-emerald-400/70" />
-                      <p className="text-xs leading-snug" style={{ color: "rgba(148,163,184,0.62)" }}>{s}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+
+        {verdict.key_strengths.length > 0 && (
+          <div>
+            <p
+              className="text-[9px] uppercase tracking-[0.2em] font-black mb-2.5"
+              style={{ color: "rgba(34,197,94,0.55)" }}
+            >
+              Strengths
+            </p>
+            <div className="space-y-2">
+              {verdict.key_strengths.map((s, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <CheckCircle2 className="h-3 w-3 mt-0.5 shrink-0 text-emerald-400/60" />
+                  <p className="text-xs leading-snug" style={{ color: "rgba(148,163,184,0.60)" }}>{s}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -888,7 +883,7 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
         boxShadow: "0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04)",
       }}
     >
-      {/* HEADER */}
+      {/* HEADER — full width */}
       <PremiumHeader
         hand_summary={hand_summary}
         currentStreet={currentStreet}
@@ -900,7 +895,7 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
         onGoTo={replay.goTo}
       />
 
-      {/* DEV — replay state overlay */}
+      {/* DEV overlay */}
       {process.env.NODE_ENV === "development" && (
         <div
           style={{
@@ -916,83 +911,97 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
         >
           <span>step:{replay.step}/{actions.length}</span>
           <span>action:{replay.step > 0 ? `${replay.step - 1}:${replay.currentAction?.player ?? "—"} ${replay.currentAction?.action ?? "—"}` : "none"}</span>
-          <span>applied:{replay.step}</span>
           <span>isFirst:{String(replay.isFirst)}</span>
           <span>isLast:{String(replay.isLast)}</span>
         </div>
       )}
 
-      {/* TABLE — visual focus */}
-      <div style={{ borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(4,10,6,0.55)" }}>
-        <PokerTable
-          seats={seats}
-          visibleBoard={replay.visibleBoard}
-          currentAction={replay.currentAction}
-          currentPot={replay.currentPot}
-          currentStep={replay.step}
-          bigBlind={
-            hand_summary.big_blind && hand_summary.big_blind > 1
-              ? hand_summary.big_blind
-              : undefined
-          }
-          currentHeroStack={replay.currentHeroStack}
-          currentVillainStack={replay.currentVillainStack}
-          playerStacksAfter={replay.currentPlayerStacks ?? undefined}
-          allInPlayers={replay.currentAllInPlayers}
-          sidePots={replay.currentSidePots}
-        />
-      </div>
+      {/* WORKSPACE — split on desktop */}
+      <div className="flex flex-col lg:grid lg:grid-cols-[3fr_2fr] lg:items-stretch">
 
-      {/* TIMELINE + CONTROLS */}
-      <div
-        style={{
-          background: "rgba(6,9,14,0.75)",
-          borderBottom: "1px solid rgba(255,255,255,0.05)",
-        }}
-      >
-        {actions.length === 0 ? (
-          /* Fallback: no action data — show a clear message instead of all-disabled controls */
-          <div className="flex flex-col items-center justify-center gap-2 px-5 py-8 text-center">
-            <p className="text-sm" style={{ color: "rgba(148,163,184,0.38)" }}>
-              No action sequence available for this hand.
-            </p>
-            <p className="text-xs" style={{ color: "rgba(100,116,139,0.25)" }}>
-              The replay requires action data generated by the analysis pipeline.
-            </p>
+        {/* LEFT: Table + Timeline + Controls */}
+        <div
+          className="flex flex-col"
+          style={{ borderRight: "1px solid rgba(255,255,255,0.05)" }}
+        >
+          {/* Table */}
+          <div
+            className="flex items-center justify-center"
+            style={{ background: "rgba(4,10,6,0.55)", borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+          >
+            <PokerTable
+              seats={seats}
+              visibleBoard={replay.visibleBoard}
+              currentAction={replay.currentAction}
+              currentPot={replay.currentPot}
+              currentStep={replay.step}
+              bigBlind={
+                hand_summary.big_blind && hand_summary.big_blind > 1
+                  ? hand_summary.big_blind
+                  : undefined
+              }
+              currentHeroStack={replay.currentHeroStack}
+              currentVillainStack={replay.currentVillainStack}
+              playerStacksAfter={replay.currentPlayerStacks ?? undefined}
+              allInPlayers={replay.currentAllInPlayers}
+              sidePots={replay.currentSidePots}
+            />
           </div>
-        ) : (
-          <>
-            <HorizontalTimeline
-              actions={actions}
-              step={replay.step}
-              onGoTo={replay.goTo}
-            />
-            <ReplayControls
-              isPlaying={replay.isPlaying}
-              isFirst={replay.isFirst}
-              isLast={replay.isLast}
-              onPlay={replay.play}
-              onPause={replay.pause}
-              onNext={replay.next}
-              onPrev={replay.prev}
-              onReset={replay.reset}
-              onSkipEnd={() => replay.goTo(actions.length)}
-            />
-          </>
-        )}
+
+          {/* Timeline + Controls */}
+          <div style={{ background: "rgba(6,9,14,0.75)" }}>
+            {actions.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 px-5 py-8 text-center">
+                <p className="text-sm" style={{ color: "rgba(148,163,184,0.38)" }}>
+                  No action sequence available for this hand.
+                </p>
+                <p className="text-xs" style={{ color: "rgba(100,116,139,0.25)" }}>
+                  The replay requires action data generated by the analysis pipeline.
+                </p>
+              </div>
+            ) : (
+              <>
+                <HorizontalTimeline
+                  actions={actions}
+                  step={replay.step}
+                  onGoTo={replay.goTo}
+                />
+                <ReplayControls
+                  isPlaying={replay.isPlaying}
+                  isFirst={replay.isFirst}
+                  isLast={replay.isLast}
+                  onPlay={replay.play}
+                  onPause={replay.pause}
+                  onNext={replay.next}
+                  onPrev={replay.prev}
+                  onReset={replay.reset}
+                  onSkipEnd={() => replay.goTo(actions.length)}
+                />
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT: Analysis Panel — always visible */}
+        <div
+          className="lg:overflow-y-auto"
+          style={{
+            background: "rgba(7,11,17,0.88)",
+            borderTop: "1px solid rgba(255,255,255,0.04)",
+            maxHeight: "none",
+          }}
+        >
+          <AnalysisPanel
+            coaching={activeCoaching?.coaching ?? null}
+            currentAction={activeCoaching ? actions[activeCoaching.actionIdx] : null}
+            handSummary={hand_summary}
+            currentStreet={currentStreet}
+            step={replay.step}
+          />
+        </div>
       </div>
 
-      {/* AI COACH PANEL */}
-      {activeCoaching && (
-        <AICoachPanel
-          coaching={activeCoaching.coaching}
-          actionIdx={activeCoaching.actionIdx}
-          isCurrentAction={activeCoaching.actionIdx === replay.step - 1}
-          currentAction={actions[activeCoaching.actionIdx]}
-        />
-      )}
-
-      {/* VERDICT */}
+      {/* VERDICT — full width, end of hand only */}
       {replay.showVerdict && (
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
           <PremiumVerdict verdict={overall_verdict} />
