@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import {
-  CheckCircle2, Clock, Zap, ChevronRight, Trophy, BookOpen, RotateCcw,
+  CheckCircle2, Clock, Zap, ChevronRight, BookOpen,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Lesson, LessonStep, StepResult } from '@/lib/learn/types'
@@ -23,6 +23,7 @@ import { RangeHeatmap } from '@/components/learn/steps/RangeHeatmap'
 import type { ActionQuality } from '@/lib/learn/types'
 import { LevelUpOverlay } from '@/components/learn/LevelUpOverlay'
 import { ConceptTagRow } from '@/components/learn/ConceptPopover'
+import { LessonCompletionScreen } from '@/components/learn/LessonCompletionScreen'
 
 // ── Phase type ────────────────────────────────────────────────────────────────
 
@@ -238,159 +239,6 @@ function IntroScreen({ lesson, onStart }: { lesson: Lesson; onStart: () => void 
   )
 }
 
-// ── Summary screen ────────────────────────────────────────────────────────────
-
-function SummaryScreen({
-  lesson,
-  results,
-  totalXP,
-  onContinue,
-}: {
-  lesson: Lesson
-  results: StepResult[]
-  totalXP: number
-  onContinue: () => void
-}) {
-  const validResults = results.filter((r) => r.evaluation_valid !== false)
-  const avgScore =
-    validResults.length > 0
-      ? Math.round(validResults.reduce((s, r) => s + r.score, 0) / validResults.length)
-      : 0
-
-  const leveledUp = results.some((r) => r.leveled_up)
-  const newLevel = results.findLast?.((r) => r.leveled_up)?.level_after
-
-  const gradeColor =
-    avgScore >= 90
-      ? 'text-emerald-400'
-      : avgScore >= 75
-      ? 'text-blue-400'
-      : avgScore >= 55
-      ? 'text-amber-400'
-      : 'text-red-400'
-
-  const gradeBg =
-    avgScore >= 90
-      ? 'border-emerald-500/30 bg-emerald-500/10'
-      : avgScore >= 75
-      ? 'border-blue-500/30 bg-blue-500/10'
-      : avgScore >= 55
-      ? 'border-amber-500/30 bg-amber-500/10'
-      : 'border-red-500/30 bg-red-500/10'
-
-  return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Score header */}
-      <div className={cn('rounded-2xl border p-8 text-center', gradeBg)}>
-        <div className="flex justify-center mb-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 border border-emerald-500/30 shadow-lg shadow-emerald-900/20">
-            <Trophy className="h-8 w-8 text-emerald-400" />
-          </div>
-        </div>
-        <h2 className="text-2xl font-bold text-foreground mb-1">Lesson Complete!</h2>
-        <div className="flex items-baseline justify-center gap-1 mb-2">
-          <span className={cn('text-5xl font-black', gradeColor)}>{avgScore}</span>
-          <span className="text-2xl text-muted-foreground/40">/100</span>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {results.length} step{results.length !== 1 ? 's' : ''} · {lesson.title}
-        </p>
-      </div>
-
-      {/* XP gain */}
-      <div className="flex justify-center">
-        <XPGain xp={totalXP} leveled_up={leveledUp} new_level={newLevel} />
-      </div>
-
-      {/* Step breakdown */}
-      {results.length > 0 && (
-        <div className="rounded-2xl border border-border/50 bg-card/60 p-5">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40 mb-4">
-            Step Breakdown
-          </p>
-          <div className="space-y-2.5">
-            {results.map((r, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <span className="text-xs text-muted-foreground/50 w-20 shrink-0 capitalize">
-                  {lesson.steps[i]?.type?.replace(/_/g, ' ') ?? `Step ${i + 1}`}
-                </span>
-                {r.evaluation_valid === false ? (
-                  <>
-                    <div className="flex-1 h-1.5 rounded-full bg-secondary/50" />
-                    <span className="text-xs font-bold w-8 text-right text-slate-500">—</span>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex-1 h-1.5 rounded-full bg-secondary/50 overflow-hidden">
-                      <div
-                        className={cn(
-                          'h-full rounded-full transition-all',
-                          r.score >= 80
-                            ? 'bg-emerald-500'
-                            : r.score >= 60
-                            ? 'bg-amber-500'
-                            : 'bg-red-500'
-                        )}
-                        style={{ width: `${r.score}%` }}
-                      />
-                    </div>
-                    <span
-                      className={cn(
-                        'text-xs font-bold w-8 text-right',
-                        r.score >= 80
-                          ? 'text-emerald-400'
-                          : r.score >= 60
-                          ? 'text-amber-400'
-                          : 'text-red-400'
-                      )}
-                    >
-                      {r.score}
-                    </span>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Concepts covered — clickable */}
-      {lesson.concept_ids.length > 0 && (
-        <div className="rounded-2xl border border-border/50 bg-card/60 p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <BookOpen className="h-4 w-4 text-violet-400" />
-            <p className="text-sm font-semibold text-foreground">Concepts Covered</p>
-          </div>
-          <ConceptTagRow conceptIds={lesson.concept_ids} />
-        </div>
-      )}
-
-      {/* Actions */}
-      <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={() => window.location.reload()}
-          className="flex items-center justify-center gap-2 rounded-xl border border-border/50 bg-secondary/30 px-4 py-3 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
-        >
-          <RotateCcw className="h-4 w-4" />
-          Retry
-        </button>
-        <button
-          type="button"
-          onClick={onContinue}
-          className="group relative flex-1 inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
-        >
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent"
-          />
-          Continue Learning
-          <ChevronRight className="h-4 w-4 shrink-0" />
-        </button>
-      </div>
-    </div>
-  )
-}
 
 // ── Main LessonPlayer ─────────────────────────────────────────────────────────
 
@@ -492,11 +340,19 @@ export function LessonPlayer({ lesson, token, onComplete }: LessonPlayerProps) {
   // ── Summary ────────────────────────────────────────────────────────────────
   if (phase === 'summary') {
     return (
-      <SummaryScreen
+      <LessonCompletionScreen
         lesson={lesson}
         results={results}
         totalXP={totalXP}
         onContinue={handleSummaryDone}
+        onRetry={() => {
+          setResults([])
+          setTotalXP(0)
+          setCurrentStepIndex(0)
+          setLatestResult(null)
+          setPhase('intro')
+        }}
+        onCoachReview={() => { window.location.href = '/coach' }}
       />
     )
   }
