@@ -110,7 +110,7 @@ def _build_recommendations(findings, spot, texture) -> list[str]:
     if texture.range_advantage == "pfr":
         recs.append(
             f"You have a range advantage on this {texture.bucket.replace('_', '-')} board. "
-            "Leverage it with high-frequency small bets."
+            "Small bets are theoretically well-supported to leverage the capped caller range."
         )
     elif texture.range_advantage == "caller":
         recs.append(

@@ -651,57 +651,54 @@ function AICoachPanel({
 
         {/* RECOMMENDED column */}
         <div className="px-5 sm:px-6 py-5">
-          {coaching.preferred_actions.length > 0 && (
+          {coaching.strategic_options?.length > 0 && (
             <div className="mb-5">
               <p
                 className="text-[9px] uppercase tracking-[0.22em] font-bold mb-3"
                 style={{ color: "rgba(100,116,139,0.5)" }}
               >
-                Recommended
+                Strategic Options
               </p>
-              <div className="space-y-3.5">
-                {coaching.preferred_actions.map((pa, i) => (
-                  <div key={i}>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2">
+              <div className="space-y-3">
+                {coaching.strategic_options.map((opt, i) => {
+                  const isPrimary = opt.priority === 1;
+                  const priorityLabel = opt.priority === 1 ? "Primary" : opt.priority === 2 ? "Secondary" : "Alt";
+                  return (
+                    <div
+                      key={i}
+                      className="rounded-lg p-3"
+                      style={{
+                        background: isPrimary ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.02)",
+                        border: isPrimary ? `1px solid ${qs.border}` : "1px solid rgba(255,255,255,0.05)",
+                      }}
+                    >
+                      <div className="flex items-center gap-2 mb-1.5">
                         <span
                           className="text-sm font-bold capitalize"
-                          style={{ color: i === 0 ? qs.text : "rgba(148,163,184,0.55)" }}
+                          style={{ color: isPrimary ? qs.text : "rgba(148,163,184,0.55)" }}
                         >
-                          {pa.action}
+                          {opt.action}
                         </span>
-                        {i === 0 && (
-                          <span
-                            className="text-[8px] px-1.5 py-0.5 rounded-full font-black tracking-wide"
-                            style={{ background: qs.bg, color: qs.text, border: `1px solid ${qs.border}` }}
-                          >
-                            GTO
-                          </span>
-                        )}
+                        <span
+                          className="text-[8px] px-1.5 py-0.5 rounded-full font-black tracking-wide"
+                          style={{
+                            background: isPrimary ? qs.bg : "rgba(255,255,255,0.04)",
+                            color: isPrimary ? qs.text : "rgba(100,116,139,0.5)",
+                            border: isPrimary ? `1px solid ${qs.border}` : "1px solid rgba(255,255,255,0.07)",
+                          }}
+                        >
+                          {priorityLabel}
+                        </span>
                       </div>
-                      <span
-                        className="text-sm font-black tabular-nums"
-                        style={{ color: i === 0 ? qs.text : "rgba(100,116,139,0.45)" }}
+                      <p
+                        className="text-[11px] leading-relaxed"
+                        style={{ color: "rgba(148,163,184,0.5)" }}
                       >
-                        {pa.frequency}%
-                      </span>
+                        {opt.reasoning}
+                      </p>
                     </div>
-                    <div
-                      className="h-1.5 rounded-full overflow-hidden"
-                      style={{ background: "rgba(255,255,255,0.05)" }}
-                    >
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{
-                          width: mounted ? `${pa.frequency}%` : "0%",
-                          background: i === 0 ? qs.bar : "rgba(148,163,184,0.18)",
-                          transition: `width 0.75s cubic-bezier(0.22, 1, 0.36, 1) ${i * 120}ms`,
-                          boxShadow: i === 0 ? `0 0 8px ${qs.bar}55` : "none",
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

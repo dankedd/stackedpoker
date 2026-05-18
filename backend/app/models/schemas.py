@@ -141,11 +141,20 @@ class PreferredAction(BaseModel):
     frequency: int = Field(..., ge=0, le=100)
 
 
+class StrategicOption(BaseModel):
+    """Priority-based strategic alternative — no fabricated frequencies."""
+    action: str
+    priority: int = Field(..., ge=1, le=3, description="1=primary, 2=secondary, 3=alternative")
+    confidence: Literal["high", "medium", "low"] = "medium"
+    reasoning: str = Field(..., description="Theory-grounded justification — no fake percentages")
+
+
 class ActionCoaching(BaseModel):
     score: int = Field(..., ge=0, le=100)
     quality: Literal["Elite", "Good", "Standard", "Mistake", "Punt"]
     mistake_level: Literal["None", "Minor", "Major", "Critical"]
-    preferred_actions: list[PreferredAction] = Field(default_factory=list)
+    preferred_actions: list[PreferredAction] = Field(default_factory=list)  # deprecated, kept for compatibility
+    strategic_options: list[StrategicOption] = Field(default_factory=list)
     reason_codes: list[str] = Field(default_factory=list)
     explanation: str
     adjustment: str

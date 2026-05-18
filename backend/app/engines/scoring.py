@@ -13,8 +13,8 @@ from app.models.schemas import (
     HandAction,
     HeuristicFinding,
     ParsedHand,
-    PreferredAction,
     SpotClassification,
+    StrategicOption,
 )
 from app.engines.preflop_ranges import detect_preflop_node, get_preflop_recommendation
 
@@ -61,7 +61,7 @@ def _score_action(
         score=score,
         quality=quality,
         mistake_level=mistake_level,
-        preferred_actions=_preferred_actions(action, relevant, spot, texture, hand, action_idx),
+        strategic_options=_strategic_options(action, relevant, spot, texture, hand, action_idx),
         reason_codes=_reason_codes(action, relevant, spot, texture),
         explanation=relevant[0].explanation if relevant else _default_explanation(action, spot, texture),
         adjustment=relevant[0].recommendation if relevant else _default_adjustment(action, spot, texture),
@@ -126,16 +126,16 @@ def _severity_to_mistake_level(severity: str) -> str:
     }.get(severity, "None")
 
 
-# ── Preferred actions lookup ───────────────────────────────────────────────
+# ── Strategic options lookup ───────────────────────────────────────────────
 
-def _preferred_actions(
+def _strategic_options(
     action: HandAction,
     findings: list[HeuristicFinding],
     spot: SpotClassification,
     texture: BoardTexture,
     hand: ParsedHand,
     action_idx: int,
-) -> list[PreferredAction]:
+) -> list[StrategicOption]:
     street = action.street
     act = action.action
     bucket = texture.bucket
@@ -143,84 +143,145 @@ def _preferred_actions(
     is_ip = spot.hero_is_ip
     severity = findings[0].severity if findings else None
 
-    def pa(a: str, f: int) -> PreferredAction:
-        return PreferredAction(action=a, frequency=f)
+    def so(a: str, p: int, reasoning: str, confidence: str = "medium") -> StrategicOption:
+        return StrategicOption(action=a, priority=p, confidence=confidence, reasoning=reasoning)
 
     if street == "preflop":
-        # Node-validated: only legal-action alternatives, range-based frequencies.
+        # Node-validated: derive strategic options from range recommendation
         node = detect_preflop_node(action_idx, hand.actions, hand.hero_position)
         rec = get_preflop_recommendation(node, act, hand.hero_cards)
-        return rec.alternatives
+        # Convert preflop alternatives to StrategicOption (no frequencies)
+        options = []
+        for i, pa in enumerate(rec.alternatives[:3], start=1):
+            options.append(so(pa.action, i, rec.reasoning, rec.confidence.lower() if hasattr(rec.confidence, "lower") else "medium"))
+        return options if options else [so(act.capitalize(), 1, rec.reasoning)]
 
-    # ── Postflop: node-aware, made-hand-priority alternatives ──────────────
-    # Resolve made-hand strength to drive sizing recommendations.
-    # Strong made hands (2pair+) bias toward value; draws bias toward semibluff.
+    # ── Postflop: made-hand-priority strategic options ─────────────────────
     made_category = _resolve_made_category(hand)
-
-    # Whether findings flag the action as wrong
     is_mistake = severity in ("mistake", "suboptimal")
-    # Strong made hand (category >= 2 = two pair or better)
-    is_strong_made = made_category >= 2
-    # Weak made hand (category == 1, pair)
+    is_strong_made = made_category >= 2   # two pair or better
     is_pair = made_category == 1
 
     if street == "flop":
         if act == "bet":
-            return _flop_bet_alts(pa, bucket, is_pfr, is_ip, is_strong_made, is_mistake)
+            return _flop_bet_options(so, bucket, is_pfr, is_ip, is_strong_made, is_mistake)
         if act == "check":
-            return _flop_check_alts(pa, bucket, is_pfr, is_ip, is_strong_made)
+            return _flop_check_options(so, bucket, is_pfr, is_ip, is_strong_made)
         if act == "call":
-            # Call is always legal when facing a bet
             if is_strong_made:
-                return [pa("Call", 55), pa("Raise", 45)]
-            return [pa("Call", 70), pa("Fold", 30)]
+                return [
+                    so("Call", 1, "Strong made hands can continue calling for value"),
+                    so("Raise", 2, "Raising strong hands for value and protection is also theoretically sound"),
+                ]
+            return [
+                so("Call", 1, "Calling keeps you in the hand to realize equity"),
+                so("Fold", 2, "Folding weak hands against strong bets preserves stack"),
+            ]
         if act == "fold":
             if is_strong_made:
-                # Folding with strong made hand is likely wrong
-                return [pa("Call", 65), pa("Raise", 35)]
-            return [pa("Fold", 65), pa("Call", 35)]
+                return [
+                    so("Call", 1, "Folding strong made hands is generally a significant error — continuing is correct", "high"),
+                    so("Raise", 2, "Raising for value and protection is an alternative to calling"),
+                ]
+            return [
+                so("Fold", 1, "Folding weak hands against strong bets is theoretically defensible"),
+                so("Call", 2, "Calling can be correct with sufficient pot odds or draw potential"),
+            ]
 
     elif street == "turn":
         if act == "bet":
             if is_strong_made:
-                return [pa("Bet 75%", 55), pa("Bet 50%", 30), pa("Check", 15)]
+                return [
+                    so("Bet 75%", 1, "Strong made hands benefit from larger sizing to build the pot on the turn", "high"),
+                    so("Bet 50%", 2, "Medium sizing balances between value extraction and keeping worse hands in"),
+                    so("Check", 3, "Checking strong hands occasionally adds deception and range balance"),
+                ]
             if is_pair:
-                return [pa("Bet 50%", 45), pa("Check", 35), pa("Bet 75%", 20)]
-            # Draw or air
-            return [pa("Check", 50), pa("Bet 50%", 30), pa("Bet 75%", 20)]
+                return [
+                    so("Bet 50%", 1, "One-pair hands prefer smaller sizing to keep worse hands in while managing pot size"),
+                    so("Check", 2, "Checking pairs on the turn controls pot size and protects against raises"),
+                    so("Bet 75%", 3, "Larger sizing with pairs can work as protection but risks folding out dominated hands"),
+                ]
+            return [
+                so("Check", 1, "Draws and weak hands generally prefer checking to realize equity cheaply"),
+                so("Bet 50%", 2, "Semi-bluffing with draws is theoretically supported when fold equity is significant"),
+                so("Bet 75%", 3, "Polar larger bets can work with strong draws but increase variance"),
+            ]
         if act == "check":
             if is_strong_made and is_pfr and is_ip:
-                return [pa("Bet 75%", 55), pa("Check", 45)]
-            return [pa("Check", 55), pa("Bet 50%", 45)]
+                return [
+                    so("Bet 75%", 1, "IP PFR with a strong made hand generally prefers betting to build the pot", "high"),
+                    so("Check", 2, "Checking strong hands occasionally is theoretically sound for balance"),
+                ]
+            return [
+                so("Check", 1, "Checking is theoretically correct to control pot size and realize equity"),
+                so("Bet 50%", 2, "Betting for value or protection is an alternative when board favors aggressor"),
+            ]
         if act == "call":
             if is_strong_made:
-                return [pa("Call", 60), pa("Raise", 40)]
-            return [pa("Call", 60), pa("Fold", 40)]
+                return [
+                    so("Call", 1, "Continuing with strong hands against a turn bet is correct"),
+                    so("Raise", 2, "Raising for value on the turn builds the pot with strong made hands"),
+                ]
+            return [
+                so("Call", 1, "Calling with pot odds and equity justification is theoretically sound"),
+                so("Fold", 2, "Folding marginal hands to pressure preserves stack for better spots"),
+            ]
         if act == "fold":
             if is_strong_made:
-                return [pa("Call", 60), pa("Raise", 40)]
-            return [pa("Fold", 65), pa("Call", 35)]
+                return [
+                    so("Call", 1, "Folding strong made hands to a turn bet is generally a major error", "high"),
+                    so("Raise", 2, "Raising is also an option with strong made hands on the turn"),
+                ]
+            return [
+                so("Fold", 1, "Folding is theoretically defensible when pot odds don't justify continuing"),
+                so("Call", 2, "Calling can be correct with strong draws or significant implied odds"),
+            ]
 
     elif street == "river":
         if act == "bet":
             if is_strong_made:
-                return [pa("Bet 75%", 55), pa("Bet 50%", 30), pa("Check", 15)]
-            # Bluff or thin value — check is always an alternative
-            return [pa("Check", 55), pa("Bet 75%", 45)]
+                return [
+                    so("Bet 75%", 1, "Strong made hands on the river prefer larger sizing to maximize value", "high"),
+                    so("Bet 50%", 2, "Smaller river sizing can induce calls from a wider range of worse hands"),
+                    so("Check", 3, "Checking strong hands adds balance and can induce bluffs"),
+                ]
+            return [
+                so("Check", 1, "Weak hands and bluffs should generally check on the river to control pot size"),
+                so("Bet 75%", 2, "Polar river bets with blockers can be theoretically justified as bluffs"),
+            ]
         if act == "check":
             if is_strong_made and is_pfr and is_ip:
-                return [pa("Bet 75%", 55), pa("Check", 45)]
-            return [pa("Check", 60), pa("Bet 75%", 40)]
+                return [
+                    so("Bet 75%", 1, "IP PFR with a strong river hand generally prefers betting for maximum value", "high"),
+                    so("Check", 2, "Checking strong hands occasionally for balance and to induce bluffs"),
+                ]
+            return [
+                so("Check", 1, "Checking marginal hands on the river is often correct to avoid thin value"),
+                so("Bet 75%", 2, "Betting for thin value or as a bluff is an alternative depending on range advantage"),
+            ]
         if act == "call":
             if is_strong_made:
-                return [pa("Call", 65), pa("Fold", 35)]
-            return [pa("Fold", 55), pa("Call", 45)]
+                return [
+                    so("Call", 1, "Calling with strong hands is correct — avoid folding to river bets", "high"),
+                    so("Fold", 2, "Folding is rarely correct with strong made hands on the river"),
+                ]
+            return [
+                so("Fold", 1, "Folding weak hands on the river when pot odds don't justify calling is theoretically correct"),
+                so("Call", 2, "Calling can be justified with enough pot odds relative to opponent's bluffing frequency"),
+            ]
         if act == "fold":
             if is_strong_made:
-                return [pa("Call", 70), pa("Fold", 30)]
-            return [pa("Fold", 65), pa("Call", 35)]
+                return [
+                    so("Call", 1, "Folding strong made hands to a river bet is generally a major error", "high"),
+                    so("Fold", 2, "Only fold strong hands when facing extreme bet sizes and opponent has a very narrow range"),
+                ]
+            return [
+                so("Fold", 1, "Folding is theoretically correct when pot odds do not justify continuing"),
+                so("Call", 2, "Calling is justified when opponent's bluffing range is wide enough"),
+            ]
 
-    return [pa(act.capitalize(), 100)]
+    return [so(act.capitalize(), 1, "Standard action for this spot")]
 
 
 # ── Postflop alternative helpers ───────────────────────────────────────────
@@ -241,63 +302,111 @@ def _resolve_made_category(hand: ParsedHand) -> int:
     return 0
 
 
-def _flop_bet_alts(
-    pa,
+def _flop_bet_options(
+    so,
     bucket: str,
     is_pfr: bool,
     is_ip: bool,
     is_strong_made: bool,
     is_mistake: bool,
-) -> list:
-    """Node-aware flop bet alternatives.  Sizing derived from texture + made-hand strength.
-
-    Donk bet (OOP caller betting into PFR) always includes check as primary alternative.
-    IP PFR on a dry board with strong made hand prefers small sizing for value.
-    """
+) -> list[StrategicOption]:
+    """Node-aware flop bet strategic options. Sizing derived from texture + made-hand strength."""
     is_donk = not is_pfr and not is_ip  # OOP caller leading into PFR = donk
 
     if is_strong_made:
         if is_donk:
-            # Donk with strong hand: check-raise is often better
-            return [pa("Check", 55), pa("Bet 50%", 30), pa("Bet 75%", 15)]
+            return [
+                so("Check", 1, "Donk-betting strong hands is often suboptimal — checking to induce PFR continuation or check-raise is stronger"),
+                so("Bet 50%", 2, "If leading, medium sizing keeps the PFR's range wide enough to get value"),
+                so("Bet 75%", 3, "Larger donk sizing risks folding out the PFR's weaker hands prematurely"),
+            ]
         if bucket in ("A_high_dry", "K_high_dry"):
-            return [pa("Bet 33%", 50), pa("Bet 50%", 35), pa("Check", 15)]
+            return [
+                so("Bet 33%", 1, "Small sizing on dry high-card boards is theoretically optimal — keeps opponent's range wide", "high"),
+                so("Bet 50%", 2, "Medium sizing is also viable to build the pot with strong made hands"),
+                so("Check", 3, "Checking occasionally maintains range balance and traps opponents"),
+            ]
         if bucket in ("wet_broadway", "A_high_wet", "low_connected"):
-            return [pa("Bet 50%", 50), pa("Bet 75%", 30), pa("Check", 20)]
-        return [pa("Bet 50%", 55), pa("Bet 33%", 25), pa("Check", 20)]
+            return [
+                so("Bet 50%", 1, "Medium sizing on wet boards balances value and protection against draws"),
+                so("Bet 75%", 2, "Larger sizing on draw-heavy boards charges opponents to continue with draws"),
+                so("Check", 3, "Checking strong hands occasionally is correct for range balance on wet boards"),
+            ]
+        return [
+            so("Bet 50%", 1, "Medium sizing is generally correct with strong made hands on this texture"),
+            so("Bet 33%", 2, "Smaller sizing keeps a wider range of worse hands in"),
+            so("Check", 3, "Checking is an option for deception and range balance"),
+        ]
 
-    # Weak made hand or draw: bucket-appropriate sizing
+    # Weak made hand or draw
     if is_donk:
-        return [pa("Check", 65), pa("Bet 33%", 35)]
+        return [
+            so("Check", 1, "Donk-betting with weak hands or draws into the PFR is generally inadvisable — check is preferred"),
+            so("Bet 33%", 2, "If leading with a draw, small sizing is the least costly option"),
+        ]
     if bucket in ("A_high_dry", "K_high_dry"):
         if is_mistake:
-            return [pa("Bet 33%", 65), pa("Check", 35)]
-        return [pa("Bet 33%", 55), pa("Bet 50%", 30), pa("Check", 15)]
+            return [
+                so("Bet 33%", 1, "Small sizing is the theoretically correct approach on dry boards when betting"),
+                so("Check", 2, "Checking is also viable to realize equity cheaply on this dry texture"),
+            ]
+        return [
+            so("Bet 33%", 1, "Small sizing on dry high-card boards is theoretically supported for the PFR", "high"),
+            so("Bet 50%", 2, "Medium sizing is an alternative when board strongly favors PFR's range"),
+            so("Check", 3, "Checking is correct to include in range for balance and equity realization"),
+        ]
     if bucket in ("wet_broadway", "A_high_wet"):
         if is_mistake:
-            return [pa("Check", 50), pa("Bet 33%", 35), pa("Bet 50%", 15)]
-        return [pa("Bet 33%", 45), pa("Bet 50%", 30), pa("Check", 25)]
+            return [
+                so("Check", 1, "Checking is often preferable on wet boards with weak hands — avoid inflating the pot"),
+                so("Bet 33%", 2, "Small sizing with draws or weak hands minimizes risk if betting"),
+                so("Bet 50%", 3, "Medium sizing requires stronger hands to justify on draw-heavy boards"),
+            ]
+        return [
+            so("Bet 33%", 1, "Small sizing with draws maintains good risk-reward ratio on wet boards"),
+            so("Bet 50%", 2, "Medium sizing works when semi-bluffing with strong draws"),
+            so("Check", 3, "Checking draws to realize equity freely is also theoretically correct"),
+        ]
     if bucket in ("low_connected", "monotone"):
-        return [pa("Check", 55), pa("Bet 33%", 30), pa("Bet 50%", 15)]
-    return [pa("Bet 33%", 50), pa("Bet 50%", 30), pa("Check", 20)]
+        return [
+            so("Check", 1, "Checking is generally preferred on low-connected or monotone boards — these favor caller ranges"),
+            so("Bet 33%", 2, "Small sizing is the least risky option if betting on this texture"),
+            so("Bet 50%", 3, "Medium sizing requires strong equity advantage to justify on these boards"),
+        ]
+    return [
+        so("Bet 33%", 1, "Small sizing is generally the default approach on this flop texture"),
+        so("Bet 50%", 2, "Medium sizing works with stronger portions of range"),
+        so("Check", 3, "Checking is correct for hands that prefer to realize equity passively"),
+    ]
 
 
-def _flop_check_alts(
-    pa,
+def _flop_check_options(
+    so,
     bucket: str,
     is_pfr: bool,
     is_ip: bool,
     is_strong_made: bool,
-) -> list:
-    """Node-aware flop check alternatives."""
+) -> list[StrategicOption]:
+    """Node-aware flop check strategic options."""
     if is_strong_made and is_pfr and is_ip:
-        # IP PFR with strong made hand checking: bet is the main alternative
         if bucket in ("A_high_dry", "K_high_dry"):
-            return [pa("Bet 33%", 60), pa("Check", 40)]
-        return [pa("Bet 50%", 55), pa("Check", 45)]
+            return [
+                so("Bet 33%", 1, "IP PFR with a strong hand on a dry board should generally bet small for value", "high"),
+                so("Check", 2, "Checking strong hands occasionally maintains range balance and trapping potential"),
+            ]
+        return [
+            so("Bet 50%", 1, "IP PFR with a strong made hand generally prefers betting on this texture"),
+            so("Check", 2, "Checking is an option for deception and to balance the checking range"),
+        ]
     if is_pfr and is_ip and bucket in ("A_high_dry", "K_high_dry"):
-        return [pa("Bet 33%", 65), pa("Check", 35)]
-    return [pa("Check", 55), pa("Bet 33%", 45)]
+        return [
+            so("Bet 33%", 1, "Small sizing on a dry board is theoretically correct for the IP PFR with range advantage", "high"),
+            so("Check", 2, "Checking is a valid alternative to balance range and avoid being exploitable"),
+        ]
+    return [
+        so("Check", 1, "Checking is theoretically correct here to realize equity and avoid bloating the pot"),
+        so("Bet 33%", 2, "Small betting is an alternative when hand strength justifies continuation"),
+    ]
 
 
 # ── Reason codes ───────────────────────────────────────────────────────────
@@ -408,11 +517,11 @@ def _default_adjustment(
     if street == "flop":
         if act == "bet":
             if texture.range_advantage == "pfr" and spot.hero_is_pfr:
-                return "High range affinity: use 25-33% pot at high frequency on this texture."
+                return "Range advantage supports a small sizing (25-33% pot) on this texture to keep opponent's range wide."
             return "Use 33-50% pot sizing to keep your range balanced across strong hands and bluffs."
         return "Include strong draws and weak made hands in your check range for balance."
 
     if street == "turn":
-        return "Use ~50-75% pot for polar bets. Check non-continuing hands to protect your range."
+        return "Polar turn bets prefer 50-75% pot sizing. Check non-continuing hands to protect your range."
 
     return "River: pot-sized bluffs with blockers to the nuts; 50-75% pot for thin value."

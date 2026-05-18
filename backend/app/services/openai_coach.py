@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 # ── System prompt (never changes) ──────────────────────────────────────────
 
 _SYSTEM_PROMPT = """\
-You are a solver-grade GTO poker coach.  Your ONLY job is to explain decisions
+You are a theory-grounded poker coach.  Your ONLY job is to explain decisions
 using the structured data you are given.
 
 ABSOLUTE RULES:
@@ -45,8 +45,10 @@ ABSOLUTE RULES:
 2. NEVER reference information not present in the structured context block.
 3. NEVER restate the hand facts — coach the decision-making only.
 4. Use precise poker terminology: SPR, range advantage, equity, blocker,
-   polarity, pot odds, EV, ICM (when relevant).
+   polarity, pot odds, ICM (when relevant).
 5. Be terse and actionable.  No filler.  No praise sentences.
+6. NEVER cite specific solver frequencies, exact EVs, or fabricated GTO percentages.
+   State theory principles and directional guidance only.
 
 VALIDATION GATE:
 If the structured context shows validation errors, write ONLY:
@@ -61,7 +63,7 @@ OUTPUT FORMAT — use exactly these four headers, each with 1-3 sentences:
 <verdict: good / suboptimal / mistake, and why>
 
 **Preferred Line**
-<what the solver-optimal line is and why>
+<what the theoretically sound line is and why — no fabricated percentages>
 
 **Takeaway**
 <one transferable concept for this spot type>
@@ -310,7 +312,7 @@ def _spot_template(spot: SpotClassification, texture: BoardTexture) -> str:
     # Range advantage coaching frame
     if adv == "pfr":
         if is_pfr:
-            lines.append("Hero (PFR) holds the range advantage: high-frequency small bets are correct.")
+            lines.append("Hero (PFR) holds the range advantage: small bets are theoretically well-supported on this texture.")
         else:
             lines.append("Opponent (PFR) holds the range advantage: be selective, prefer check/call over donk.")
     elif adv == "caller":
@@ -357,7 +359,7 @@ def _fallback_coaching(
     if texture.range_advantage == "pfr" and spot.hero_is_pfr:
         eval_line = (
             "Range advantage favours the PFR (hero) on this board. "
-            "High-frequency small bets are correct to exploit the capped caller range."
+            "Small bets are theoretically well-supported to exploit the capped caller range."
         )
     elif texture.range_advantage == "caller" and not spot.hero_is_pfr:
         eval_line = (
@@ -389,6 +391,5 @@ def _fallback_coaching(
         f"**Spot**\n{spot_line}\n\n"
         f"**Evaluation**\n{eval_line}\n\n"
         f"**Preferred Line**\n{preferred_line}\n\n"
-        f"**Takeaway**\n{takeaway}\n\n"
-        "*Add your OpenAI API key to receive personalised AI coaching.*"
+        f"**Takeaway**\n{takeaway}"
     )

@@ -80,11 +80,22 @@ export interface PreferredAction {
   frequency: number;
 }
 
+/** Priority-based strategic alternative — no fabricated frequencies. */
+export interface StrategicOption {
+  action: string;
+  /** 1 = primary, 2 = secondary, 3 = alternative */
+  priority: 1 | 2 | 3;
+  confidence: "high" | "medium" | "low";
+  reasoning: string;
+}
+
 export interface ActionCoaching {
   score: number;
   quality: "Elite" | "Good" | "Standard" | "Mistake" | "Punt";
   mistake_level: "None" | "Minor" | "Major" | "Critical";
+  /** @deprecated Use strategic_options instead */
   preferred_actions: PreferredAction[];
+  strategic_options: StrategicOption[];
   reason_codes: string[];
   explanation: string;
   adjustment: string;
