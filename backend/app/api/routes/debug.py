@@ -26,6 +26,8 @@ from pydantic import BaseModel
 
 from app.models.canonical import CanonicalHand
 from app.solver.abstractions import NodeKey, SpotAbstraction
+from app.solver.board_features import BoardFeatures
+from app.solver.models import SolverSpot
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -209,11 +211,11 @@ class NodeKeyResponse(BaseModel):
 class SpotDebugResponse(BaseModel):
     """Full solver abstraction output for a single CanonicalHand."""
 
-    spot: dict[str, Any]
-    """SolverSpot model fields (board_texture nested inline)."""
+    spot: SolverSpot
+    """SolverSpot with all strategic dimensions — spot_type, matchup, SPR, board_class, etc."""
 
-    board_features: Optional[dict[str, Any]]
-    """BoardFeatures profile, or null for preflop-only hands."""
+    board_features: Optional[BoardFeatures]
+    """Full board texture profile (20 fields), or null for preflop-only hands."""
 
     node_key: NodeKeyResponse
     """NodeKey with string representations and prefix helpers."""
@@ -309,14 +311,6 @@ async def debug_spot(
     spot = abstraction.solver_spot
     key = abstraction.node_key
 
-    # ── Spot dict ────────────────────────────────────────────────────────────
-    spot_dict = spot.model_dump()
-
-    # ── Board features ───────────────────────────────────────────────────────
-    board_features_dict: Optional[dict[str, Any]] = (
-        spot.board_texture.model_dump() if spot.board_texture is not None else None
-    )
-
     # ── NodeKey ──────────────────────────────────────────────────────────────
     node_key_response = NodeKeyResponse(
         string=key.to_string(),
@@ -335,8 +329,8 @@ async def debug_spot(
     summary = _build_summary(spot, key)
 
     return SpotDebugResponse(
-        spot=spot_dict,
-        board_features=board_features_dict,
+        spot=spot,
+        board_features=spot.board_texture,
         node_key=node_key_response,
         summary=summary,
     )
