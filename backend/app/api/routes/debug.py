@@ -186,11 +186,105 @@ _EXAMPLE_BTN_BB_SRP: dict[str, Any] = {
 
 # BTN vs BB SRP on a low dynamic board: 9h 8h 7c
 # Expected NodeKey: SRP::BTN_vs_BB::100bb::8_PLUS::LOW_DYNAMIC::flop::2p
+#
+# IMPORTANT: This must be a fully standalone dict — NOT built via {**_EXAMPLE_BTN_BB_SRP}.
+# FastAPI's openapi_extra deep-merges dicts, which concatenates lists instead of
+# replacing them, causing duplicated players (4 instead of 2) and streets (4 instead of 2).
 _EXAMPLE_BTN_BB_987: dict[str, Any] = {
-    **_EXAMPLE_BTN_BB_SRP,
     "hand_id": "debug-btn-bb-srp-987",
+    "site": "GGPoker",
+    "game_type": "NLHE",
+    "is_tournament": False,
+    "schema_version": "1.0",
+    "stakes": {
+        "small_blind_bb": 0.5,
+        "big_blind": 1.0,
+        "ante_bb": 0.0,
+        "straddle_bb": 0.0,
+        "currency": "USD",
+        "display": "$0.50/$1.00"
+    },
+    "table_name": "Debug Table",
+    "table_max_seats": 6,
+    "players": [
+        {
+            "id": "seat_1",
+            "name": "Hero",
+            "seat": 1,
+            "position": "BTN",
+            "stack_bb": 100.0,
+            "hole_cards": [
+                {"rank": "9", "suit": "s", "notation": "9s"},
+                {"rank": "8", "suit": "s", "notation": "8s"}
+            ],
+            "is_hero": True,
+            "is_active": True
+        },
+        {
+            "id": "seat_2",
+            "name": "Villain",
+            "seat": 2,
+            "position": "BB",
+            "stack_bb": 100.0,
+            "hole_cards": [],
+            "is_hero": False,
+            "is_active": True
+        }
+    ],
+    "hero_id": "seat_1",
     "streets": [
-        _EXAMPLE_BTN_BB_SRP["streets"][0],  # same preflop
+        {
+            "name": "preflop",
+            "board_cards": [],
+            "pot_start_bb": 0.0,
+            "actions": [
+                {
+                    "sequence": 0,
+                    "street": "preflop",
+                    "player_id": "seat_2",
+                    "player_name": "Villain",
+                    "action": "post_bb",
+                    "amount_bb": 1.0,
+                    "total_bet_bb": 1.0,
+                    "is_hero": False,
+                    "is_all_in": False,
+                    "stack_before_bb": 100.0,
+                    "stack_after_bb": 99.0,
+                    "pot_before_bb": 0.0,
+                    "pot_after_bb": 1.0
+                },
+                {
+                    "sequence": 1,
+                    "street": "preflop",
+                    "player_id": "seat_1",
+                    "player_name": "Hero",
+                    "action": "raise",
+                    "amount_bb": 2.5,
+                    "total_bet_bb": 2.5,
+                    "is_hero": True,
+                    "is_all_in": False,
+                    "stack_before_bb": 100.0,
+                    "stack_after_bb": 97.5,
+                    "pot_before_bb": 1.0,
+                    "pot_after_bb": 3.5
+                },
+                {
+                    "sequence": 2,
+                    "street": "preflop",
+                    "player_id": "seat_2",
+                    "player_name": "Villain",
+                    "action": "call",
+                    "amount_bb": 1.5,
+                    "total_bet_bb": 2.5,
+                    "is_hero": False,
+                    "is_all_in": False,
+                    "stack_before_bb": 99.0,
+                    "stack_after_bb": 97.5,
+                    "pot_before_bb": 3.5,
+                    "pot_after_bb": 5.0
+                }
+            ]
+        },
         {
             "name": "flop",
             "board_cards": [
@@ -233,6 +327,9 @@ _EXAMPLE_BTN_BB_987: dict[str, Any] = {
             ]
         }
     ],
+    "effective_stack_bb": 97.5,
+    "final_pot_bb": 8.5,
+    "parse_source": "manual"
 }
 
 # ── Response schemas ──────────────────────────────────────────────────────────
@@ -304,46 +401,33 @@ class SpotDebugResponse(BaseModel):
         "this is the pure abstraction layer."
     ),
     tags=["debug"],
-    openapi_extra={
-        "requestBody": {
-            "content": {
-                "application/json": {
-                    "examples": {
-                        "BTN_vs_BB_SRP_AK3_dry": {
-                            "summary": "BTN vs BB SRP — Ah Kd 3c (A-high dry)",
-                            "description": (
-                                "Hero opens BTN to 2.5bb, BB calls. Flop Ah Kd 3c. "
-                                "Expected: SRP::BTN_vs_BB::100bb::8_PLUS::A_HIGH_DRY::flop::2p"
-                            ),
-                            "value": _EXAMPLE_BTN_BB_SRP,
-                        },
-                        "BTN_vs_BB_SRP_987_dynamic": {
-                            "summary": "BTN vs BB SRP — 9h 8h 7c (low dynamic)",
-                            "description": (
-                                "Hero opens BTN to 2.5bb, BB calls. Flop 9h 8h 7c. "
-                                "Expected: SRP::BTN_vs_BB::100bb::8_PLUS::LOW_DYNAMIC::flop::2p"
-                            ),
-                            "value": _EXAMPLE_BTN_BB_987,
-                        },
-                    }
-                }
-            }
-        }
-    },
+    # NOTE: Do NOT use openapi_extra for request body examples here.
+    # FastAPI deep-merges openapi_extra with the auto-generated spec, which
+    # CONCATENATES list fields (players, streets, actions) instead of replacing
+    # them — producing duplicated players (4 instead of 2) and streets (4 instead
+    # of 2) in the serialised OpenAPI JSON.  Body(openapi_examples=...) is the
+    # correct mechanism and does not suffer from this bug.
 )
 async def debug_spot(
     hand: CanonicalHand = Body(
         ...,
-        # example= makes Swagger pre-fill this payload when the user clicks
-        # "Try it out", so they don't accidentally send the empty schema defaults.
-        example=_EXAMPLE_BTN_BB_SRP,
+        # openapi_examples provides the named dropdown entries in Swagger UI.
+        # The first example is also used as the pre-fill when clicking "Try it out".
         openapi_examples={
             "BTN_vs_BB_SRP_AK3_dry": {
                 "summary": "BTN vs BB SRP — AKo on Ah Kd 3c (A-high dry)",
+                "description": (
+                    "Hero opens BTN to 2.5bb, BB calls. Flop Ah Kd 3c. "
+                    "Expected: SRP::BTN_vs_BB::100bb::8_PLUS::A_HIGH_DRY::flop::2p"
+                ),
                 "value": _EXAMPLE_BTN_BB_SRP,
             },
             "BTN_vs_BB_SRP_987_dynamic": {
                 "summary": "BTN vs BB SRP — 9h 8h 7c (low dynamic)",
+                "description": (
+                    "Hero opens BTN to 2.5bb, BB calls. Flop 9h 8h 7c. "
+                    "Expected: SRP::BTN_vs_BB::100bb::8_PLUS::LOW_DYNAMIC::flop::2p"
+                ),
                 "value": _EXAMPLE_BTN_BB_987,
             },
         },
