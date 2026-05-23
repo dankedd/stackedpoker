@@ -184,6 +184,57 @@ _EXAMPLE_BTN_BB_SRP: dict[str, Any] = {
     "parse_source": "manual"
 }
 
+# BTN vs BB SRP on a low dynamic board: 9h 8h 7c
+# Expected NodeKey: SRP::BTN_vs_BB::100bb::8_PLUS::LOW_DYNAMIC::flop::2p
+_EXAMPLE_BTN_BB_987: dict[str, Any] = {
+    **_EXAMPLE_BTN_BB_SRP,
+    "hand_id": "debug-btn-bb-srp-987",
+    "streets": [
+        _EXAMPLE_BTN_BB_SRP["streets"][0],  # same preflop
+        {
+            "name": "flop",
+            "board_cards": [
+                {"rank": "9", "suit": "h", "notation": "9h"},
+                {"rank": "8", "suit": "h", "notation": "8h"},
+                {"rank": "7", "suit": "c", "notation": "7c"}
+            ],
+            "pot_start_bb": 5.0,
+            "actions": [
+                {
+                    "sequence": 3,
+                    "street": "flop",
+                    "player_id": "seat_2",
+                    "player_name": "Villain",
+                    "action": "check",
+                    "amount_bb": 0.0,
+                    "total_bet_bb": 0.0,
+                    "is_hero": False,
+                    "is_all_in": False,
+                    "stack_before_bb": 97.5,
+                    "stack_after_bb": 97.5,
+                    "pot_before_bb": 5.0,
+                    "pot_after_bb": 5.0
+                },
+                {
+                    "sequence": 4,
+                    "street": "flop",
+                    "player_id": "seat_1",
+                    "player_name": "Hero",
+                    "action": "bet",
+                    "amount_bb": 3.5,
+                    "total_bet_bb": 3.5,
+                    "is_hero": True,
+                    "is_all_in": False,
+                    "stack_before_bb": 97.5,
+                    "stack_after_bb": 94.0,
+                    "pot_before_bb": 5.0,
+                    "pot_after_bb": 8.5
+                }
+            ]
+        }
+    ],
+}
+
 # ── Response schemas ──────────────────────────────────────────────────────────
 
 
@@ -258,14 +309,22 @@ class SpotDebugResponse(BaseModel):
             "content": {
                 "application/json": {
                     "examples": {
-                        "BTN_vs_BB_SRP_AKo_flop": {
-                            "summary": "BTN vs BB SRP — AKo on Ah Kd 3c (A-high dry)",
+                        "BTN_vs_BB_SRP_AK3_dry": {
+                            "summary": "BTN vs BB SRP — Ah Kd 3c (A-high dry)",
                             "description": (
                                 "Hero opens BTN to 2.5bb, BB calls. Flop Ah Kd 3c. "
                                 "Expected: SRP::BTN_vs_BB::100bb::8_PLUS::A_HIGH_DRY::flop::2p"
                             ),
                             "value": _EXAMPLE_BTN_BB_SRP,
-                        }
+                        },
+                        "BTN_vs_BB_SRP_987_dynamic": {
+                            "summary": "BTN vs BB SRP — 9h 8h 7c (low dynamic)",
+                            "description": (
+                                "Hero opens BTN to 2.5bb, BB calls. Flop 9h 8h 7c. "
+                                "Expected: SRP::BTN_vs_BB::100bb::8_PLUS::LOW_DYNAMIC::flop::2p"
+                            ),
+                            "value": _EXAMPLE_BTN_BB_987,
+                        },
                     }
                 }
             }
@@ -275,11 +334,18 @@ class SpotDebugResponse(BaseModel):
 async def debug_spot(
     hand: CanonicalHand = Body(
         ...,
+        # example= makes Swagger pre-fill this payload when the user clicks
+        # "Try it out", so they don't accidentally send the empty schema defaults.
+        example=_EXAMPLE_BTN_BB_SRP,
         openapi_examples={
-            "BTN_vs_BB_SRP": {
-                "summary": "BTN vs BB SRP — Ah Kd 3c flop",
+            "BTN_vs_BB_SRP_AK3_dry": {
+                "summary": "BTN vs BB SRP — AKo on Ah Kd 3c (A-high dry)",
                 "value": _EXAMPLE_BTN_BB_SRP,
-            }
+            },
+            "BTN_vs_BB_SRP_987_dynamic": {
+                "summary": "BTN vs BB SRP — 9h 8h 7c (low dynamic)",
+                "value": _EXAMPLE_BTN_BB_987,
+            },
         },
     ),
 ) -> SpotDebugResponse:
