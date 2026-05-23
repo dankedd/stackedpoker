@@ -7,6 +7,11 @@ class Settings(BaseSettings):
     app_name: str = "Stacked Poker"
     debug: bool = False
 
+    # Docs/OpenAPI availability is decoupled from debug logging.
+    # True by default so local dev always has Swagger UI.
+    # Set DOCS_ENABLED=false in production to suppress /docs, /redoc, /openapi.json.
+    docs_enabled: bool = True
+
     # DATABASE_URL is injected by Railway automatically in production.
     # Local dev uses .env or this default.
     # Railway provides postgresql:// or postgres:// — normalised to

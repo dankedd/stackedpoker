@@ -7,7 +7,7 @@ from app.config import get_settings
 from app.database import init_db
 from app.middleware.rate_limiter import RateLimitMiddleware
 from app.utils.logging import setup_logging
-from app.api.routes import health, parse, analyze, image_analyze, image_extract, session, stripe_routes, history, tournament, learn, coach, train
+from app.api.routes import health, parse, analyze, image_analyze, image_extract, session, stripe_routes, history, tournament, learn, coach, train, debug
 from app.api.routes import pipeline as pipeline_routes
 
 settings = get_settings()
@@ -60,10 +60,12 @@ app = FastAPI(
     description="Premium AI-powered poker hand analysis and GTO coaching",
     version="1.0.0",
     lifespan=lifespan,
-    # Never expose internal error details in production
-    openapi_url="/openapi.json" if settings.debug else None,
-    docs_url="/docs" if settings.debug else None,
-    redoc_url="/redoc" if settings.debug else None,
+    # Docs are controlled by DOCS_ENABLED (default: True) — independent of the
+    # DEBUG flag so local dev always has Swagger UI regardless of log verbosity.
+    # Set DOCS_ENABLED=false in Railway/production to suppress public exposure.
+    openapi_url="/openapi.json" if settings.docs_enabled else None,
+    docs_url="/docs" if settings.docs_enabled else None,
+    redoc_url="/redoc" if settings.docs_enabled else None,
 )
 
 # ── Rate limiting ─────────────────────────────────────────────────────────────
@@ -126,8 +128,22 @@ app.include_router(learn.router, prefix="/api")
 app.include_router(coach.router, prefix="/api")
 app.include_router(train.router, prefix="/api")
 app.include_router(pipeline_routes.router, prefix="/api")
+app.include_router(debug.router, prefix="/api")
 
 
 @app.get("/")
 async def root():
     return {"message": "Stacked Poker API"}
+
+
+@app.get("/health-debug", tags=["debug"])
+async def health_debug():
+    """Temporary debug endpoint — confirm docs are enabled and routes work."""
+    return {
+        "docs_url": app.docs_url,
+        "openapi_url": app.openapi_url,
+        "redoc_url": app.redoc_url,
+        "registered_paths": [
+            r.path for r in app.routes if hasattr(r, "path")
+        ],
+    }
