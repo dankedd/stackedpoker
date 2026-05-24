@@ -30,6 +30,10 @@ def _log_env_check() -> None:
         level = logger.info if present else logger.warning
         level("  %-30s %s", var, "OK" if present else "MISSING")
 
+    # Strategy engine status
+    logger.info("  %-30s %s", "ENABLE_SOLVER_ENGINE", "ON" if settings.enable_solver_engine else "OFF")
+    logger.info("  %-30s %s", "DEBUG_STRATEGY_ENABLED", "ON" if settings.debug_strategy_enabled else "OFF")
+
     missing = [k for k, v in checks.items() if not v]
     if missing:
         logger.warning("Missing env vars: %s", missing)

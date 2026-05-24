@@ -106,6 +106,36 @@ class HeuristicFinding(BaseModel):
     freq_recommendation: str | None = None
 
 
+# ── Strategy profile (Phase 4 solver strategy layer) ──────────────────────
+
+class ActionFrequencyResponse(BaseModel):
+    action: str
+    frequency: float
+    sizing: str | None = None
+
+
+class StrategyProfileResponse(BaseModel):
+    """
+    Deterministic strategy profile resolved from a NodeKey.
+
+    Numeric signals (range_advantage, etc.) express relative theoretical
+    advantage — they are NOT fabricated solver percentages.
+    """
+    node_key: str
+    bet_frequency: float
+    check_frequency: float
+    primary_sizing: str | None = None
+    range_advantage: float
+    nut_advantage: float
+    pressure_score: float
+    volatility_score: float
+    equity_realization: float
+    action_frequencies: list[ActionFrequencyResponse] = Field(default_factory=list)
+    rationale: str = ""
+    caveats: list[str] = Field(default_factory=list)
+    source: str = "registry"
+
+
 # ── Full analysis ──────────────────────────────────────────────────────────
 
 class AnalysisResponse(BaseModel):
@@ -121,6 +151,7 @@ class AnalysisResponse(BaseModel):
     replay: ReplayAnalysis | None = None
     saved_id: str | None = None      # set after Supabase persist; None = save failed
     save_error: str | None = None    # exact Supabase/network error if save failed
+    strategy_profile: StrategyProfileResponse | None = None  # Phase 4 solver strategy
 
 
 class ParseResponse(BaseModel):

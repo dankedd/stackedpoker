@@ -1,29 +1,30 @@
 """
+Debug routes for solver pipeline inspection.
+
 POST /api/debug/spot
+  Accepts a CanonicalHand and returns the full solver abstraction output
+  (SolverSpot, BoardFeatures, NodeKey). No auth required.
 
-Developer endpoint — accepts a raw CanonicalHand JSON body and returns the
-full solver abstraction output for that hand:
+POST /api/debug/full-analysis
+  Runs the complete pipeline — abstraction + strategy retrieval + findings.
+  Protected by DEBUG_STRATEGY_ENABLED env flag and optional X-Debug-Token.
+  Returns partial data on any failure (never crashes).
 
-    SolverSpot      — all strategic dimensions
-    BoardFeatures   — full board texture profile (None for preflop-only hands)
-    NodeKey         — hashable spot identifier with prefix helpers
-    Derived strings — node_key_string, positional_prefix, street_prefix
-
-Intended for integration testing, solver pipeline validation, and debugging
-the CanonicalHand → SolverSpot → NodeKey pipeline without touching the UI.
-
-No auth guard: this is a debug/internal route.  Gate behind settings.debug
-or an API key if you expose it to production.
+GET /api/debug/strategy-store/stats
+  Returns store/cache/metrics stats. Same protection as full-analysis.
 """
 
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any, Optional
 
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, Header, HTTPException
 from pydantic import BaseModel
 
+from app.api.examples.spot_examples import SPOT_OPENAPI_EXAMPLES
+from app.config import get_settings
 from app.models.canonical import CanonicalHand
 from app.solver.abstractions import NodeKey, SpotAbstraction
 from app.solver.board_features import BoardFeatures
@@ -31,306 +32,35 @@ from app.solver.models import SolverSpot
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+settings = get_settings()
 
 
-# ── Swagger example payload ────────────────────────────────────────────────────
-#
-# BTN vs BB, SRP, 100 BB deep, flop Ah Kd 3c (A-high dry rainbow).
-# Hero is BTN (seat_1), villain is BB (seat_2).
-# Preflop: BTN opens 2.5bb, BB calls → pot 5bb.
-# Flop: BB checks, BTN bets 3.5bb.
-#
-# Expected NodeKey: SRP::BTN_vs_BB::100bb::8_PLUS::A_HIGH_DRY::flop::2p
-#
-_EXAMPLE_BTN_BB_SRP: dict[str, Any] = {
-    "hand_id": "debug-btn-bb-srp-001",
-    "site": "GGPoker",
-    "game_type": "NLHE",
-    "is_tournament": False,
-    "schema_version": "1.0",
-    "stakes": {
-        "small_blind_bb": 0.5,
-        "big_blind": 1.0,
-        "ante_bb": 0.0,
-        "straddle_bb": 0.0,
-        "currency": "USD",
-        "display": "$0.50/$1.00"
-    },
-    "table_name": "Debug Table",
-    "table_max_seats": 6,
-    "players": [
-        {
-            "id": "seat_1",
-            "name": "Hero",
-            "seat": 1,
-            "position": "BTN",
-            "stack_bb": 100.0,
-            "hole_cards": [
-                {"rank": "A", "suit": "h", "notation": "Ah"},
-                {"rank": "K", "suit": "d", "notation": "Kd"}
-            ],
-            "is_hero": True,
-            "is_active": True
-        },
-        {
-            "id": "seat_2",
-            "name": "Villain",
-            "seat": 2,
-            "position": "BB",
-            "stack_bb": 100.0,
-            "hole_cards": [],
-            "is_hero": False,
-            "is_active": True
-        }
-    ],
-    "hero_id": "seat_1",
-    "streets": [
-        {
-            "name": "preflop",
-            "board_cards": [],
-            "pot_start_bb": 0.0,
-            "actions": [
-                {
-                    "sequence": 0,
-                    "street": "preflop",
-                    "player_id": "seat_2",
-                    "player_name": "Villain",
-                    "action": "post_bb",
-                    "amount_bb": 1.0,
-                    "total_bet_bb": 1.0,
-                    "is_hero": False,
-                    "is_all_in": False,
-                    "stack_before_bb": 100.0,
-                    "stack_after_bb": 99.0,
-                    "pot_before_bb": 0.0,
-                    "pot_after_bb": 1.0
-                },
-                {
-                    "sequence": 1,
-                    "street": "preflop",
-                    "player_id": "seat_1",
-                    "player_name": "Hero",
-                    "action": "raise",
-                    "amount_bb": 2.5,
-                    "total_bet_bb": 2.5,
-                    "is_hero": True,
-                    "is_all_in": False,
-                    "stack_before_bb": 100.0,
-                    "stack_after_bb": 97.5,
-                    "pot_before_bb": 1.0,
-                    "pot_after_bb": 3.5
-                },
-                {
-                    "sequence": 2,
-                    "street": "preflop",
-                    "player_id": "seat_2",
-                    "player_name": "Villain",
-                    "action": "call",
-                    "amount_bb": 1.5,
-                    "total_bet_bb": 2.5,
-                    "is_hero": False,
-                    "is_all_in": False,
-                    "stack_before_bb": 99.0,
-                    "stack_after_bb": 97.5,
-                    "pot_before_bb": 3.5,
-                    "pot_after_bb": 5.0
-                }
-            ]
-        },
-        {
-            "name": "flop",
-            "board_cards": [
-                {"rank": "A", "suit": "h", "notation": "Ah"},
-                {"rank": "K", "suit": "d", "notation": "Kd"},
-                {"rank": "3", "suit": "c", "notation": "3c"}
-            ],
-            "pot_start_bb": 5.0,
-            "actions": [
-                {
-                    "sequence": 3,
-                    "street": "flop",
-                    "player_id": "seat_2",
-                    "player_name": "Villain",
-                    "action": "check",
-                    "amount_bb": 0.0,
-                    "total_bet_bb": 0.0,
-                    "is_hero": False,
-                    "is_all_in": False,
-                    "stack_before_bb": 97.5,
-                    "stack_after_bb": 97.5,
-                    "pot_before_bb": 5.0,
-                    "pot_after_bb": 5.0
-                },
-                {
-                    "sequence": 4,
-                    "street": "flop",
-                    "player_id": "seat_1",
-                    "player_name": "Hero",
-                    "action": "bet",
-                    "amount_bb": 3.5,
-                    "total_bet_bb": 3.5,
-                    "is_hero": True,
-                    "is_all_in": False,
-                    "stack_before_bb": 97.5,
-                    "stack_after_bb": 94.0,
-                    "pot_before_bb": 5.0,
-                    "pot_after_bb": 8.5
-                }
-            ]
-        }
-    ],
-    "effective_stack_bb": 97.5,
-    "final_pot_bb": 8.5,
-    "parse_source": "manual"
-}
+# ── Auth guard ────────────────────────────────────────────────────────────────
 
-# BTN vs BB SRP on a low dynamic board: 9h 8h 7c
-# Expected NodeKey: SRP::BTN_vs_BB::100bb::8_PLUS::LOW_DYNAMIC::flop::2p
-#
-# IMPORTANT: This must be a fully standalone dict — NOT built via {**_EXAMPLE_BTN_BB_SRP}.
-# FastAPI's openapi_extra deep-merges dicts, which concatenates lists instead of
-# replacing them, causing duplicated players (4 instead of 2) and streets (4 instead of 2).
-_EXAMPLE_BTN_BB_987: dict[str, Any] = {
-    "hand_id": "debug-btn-bb-srp-987",
-    "site": "GGPoker",
-    "game_type": "NLHE",
-    "is_tournament": False,
-    "schema_version": "1.0",
-    "stakes": {
-        "small_blind_bb": 0.5,
-        "big_blind": 1.0,
-        "ante_bb": 0.0,
-        "straddle_bb": 0.0,
-        "currency": "USD",
-        "display": "$0.50/$1.00"
-    },
-    "table_name": "Debug Table",
-    "table_max_seats": 6,
-    "players": [
-        {
-            "id": "seat_1",
-            "name": "Hero",
-            "seat": 1,
-            "position": "BTN",
-            "stack_bb": 100.0,
-            "hole_cards": [
-                {"rank": "9", "suit": "s", "notation": "9s"},
-                {"rank": "8", "suit": "s", "notation": "8s"}
-            ],
-            "is_hero": True,
-            "is_active": True
-        },
-        {
-            "id": "seat_2",
-            "name": "Villain",
-            "seat": 2,
-            "position": "BB",
-            "stack_bb": 100.0,
-            "hole_cards": [],
-            "is_hero": False,
-            "is_active": True
-        }
-    ],
-    "hero_id": "seat_1",
-    "streets": [
-        {
-            "name": "preflop",
-            "board_cards": [],
-            "pot_start_bb": 0.0,
-            "actions": [
-                {
-                    "sequence": 0,
-                    "street": "preflop",
-                    "player_id": "seat_2",
-                    "player_name": "Villain",
-                    "action": "post_bb",
-                    "amount_bb": 1.0,
-                    "total_bet_bb": 1.0,
-                    "is_hero": False,
-                    "is_all_in": False,
-                    "stack_before_bb": 100.0,
-                    "stack_after_bb": 99.0,
-                    "pot_before_bb": 0.0,
-                    "pot_after_bb": 1.0
-                },
-                {
-                    "sequence": 1,
-                    "street": "preflop",
-                    "player_id": "seat_1",
-                    "player_name": "Hero",
-                    "action": "raise",
-                    "amount_bb": 2.5,
-                    "total_bet_bb": 2.5,
-                    "is_hero": True,
-                    "is_all_in": False,
-                    "stack_before_bb": 100.0,
-                    "stack_after_bb": 97.5,
-                    "pot_before_bb": 1.0,
-                    "pot_after_bb": 3.5
-                },
-                {
-                    "sequence": 2,
-                    "street": "preflop",
-                    "player_id": "seat_2",
-                    "player_name": "Villain",
-                    "action": "call",
-                    "amount_bb": 1.5,
-                    "total_bet_bb": 2.5,
-                    "is_hero": False,
-                    "is_all_in": False,
-                    "stack_before_bb": 99.0,
-                    "stack_after_bb": 97.5,
-                    "pot_before_bb": 3.5,
-                    "pot_after_bb": 5.0
-                }
-            ]
-        },
-        {
-            "name": "flop",
-            "board_cards": [
-                {"rank": "9", "suit": "h", "notation": "9h"},
-                {"rank": "8", "suit": "h", "notation": "8h"},
-                {"rank": "7", "suit": "c", "notation": "7c"}
-            ],
-            "pot_start_bb": 5.0,
-            "actions": [
-                {
-                    "sequence": 3,
-                    "street": "flop",
-                    "player_id": "seat_2",
-                    "player_name": "Villain",
-                    "action": "check",
-                    "amount_bb": 0.0,
-                    "total_bet_bb": 0.0,
-                    "is_hero": False,
-                    "is_all_in": False,
-                    "stack_before_bb": 97.5,
-                    "stack_after_bb": 97.5,
-                    "pot_before_bb": 5.0,
-                    "pot_after_bb": 5.0
-                },
-                {
-                    "sequence": 4,
-                    "street": "flop",
-                    "player_id": "seat_1",
-                    "player_name": "Hero",
-                    "action": "bet",
-                    "amount_bb": 3.5,
-                    "total_bet_bb": 3.5,
-                    "is_hero": True,
-                    "is_all_in": False,
-                    "stack_before_bb": 97.5,
-                    "stack_after_bb": 94.0,
-                    "pot_before_bb": 5.0,
-                    "pot_after_bb": 8.5
-                }
-            ]
-        }
-    ],
-    "effective_stack_bb": 97.5,
-    "final_pot_bb": 8.5,
-    "parse_source": "manual"
-}
+def _check_debug_access(x_debug_token: str | None) -> None:
+    """
+    Raise 403 if debug strategy endpoints are disabled or token is wrong.
+
+    Rules:
+      - If DEBUG_STRATEGY_ENABLED is False → always 403
+      - If DEBUG_ADMIN_TOKEN is set → X-Debug-Token header must match
+      - Otherwise (dev mode, no token configured) → allow
+    """
+    if not settings.debug_strategy_enabled:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Strategy debug endpoints are disabled. "
+                "Set DEBUG_STRATEGY_ENABLED=true to enable."
+            ),
+        )
+    if settings.debug_admin_token:
+        if x_debug_token != settings.debug_admin_token:
+            raise HTTPException(
+                status_code=403,
+                detail="Invalid or missing X-Debug-Token header.",
+            )
+
 
 # ── Response schemas ──────────────────────────────────────────────────────────
 
@@ -413,24 +143,9 @@ async def debug_spot(
         ...,
         # openapi_examples provides the named dropdown entries in Swagger UI.
         # The first example is also used as the pre-fill when clicking "Try it out".
-        openapi_examples={
-            "BTN_vs_BB_SRP_AK3_dry": {
-                "summary": "BTN vs BB SRP — AKo on Ah Kd 3c (A-high dry)",
-                "description": (
-                    "Hero opens BTN to 2.5bb, BB calls. Flop Ah Kd 3c. "
-                    "Expected: SRP::BTN_vs_BB::100bb::8_PLUS::A_HIGH_DRY::flop::2p"
-                ),
-                "value": _EXAMPLE_BTN_BB_SRP,
-            },
-            "BTN_vs_BB_SRP_987_dynamic": {
-                "summary": "BTN vs BB SRP — 9h 8h 7c (low dynamic)",
-                "description": (
-                    "Hero opens BTN to 2.5bb, BB calls. Flop 9h 8h 7c. "
-                    "Expected: SRP::BTN_vs_BB::100bb::8_PLUS::LOW_DYNAMIC::flop::2p"
-                ),
-                "value": _EXAMPLE_BTN_BB_987,
-            },
-        },
+        # 20 examples covering all major abstraction categories — imported from
+        # app.api.examples.spot_examples to keep this file focused on routing.
+        openapi_examples=SPOT_OPENAPI_EXAMPLES,
     ),
 ) -> SpotDebugResponse:
     """
@@ -527,4 +242,279 @@ def _build_summary(spot, key: NodeKey) -> dict[str, str]:
         "board": board_desc,
         "street": key.street,
         "node_key": key.to_string(),
+    }
+
+
+# ── Full-analysis endpoint ────────────────────────────────────────────────────
+
+
+class FullAnalysisResponse(BaseModel):
+    """
+    Complete solver-backed analysis output for a CanonicalHand.
+
+    Returns all pipeline stages in a single response for end-to-end validation.
+    Never crashes — partial data is returned on any internal failure.
+    """
+    node_key: str
+    solver_spot: dict[str, Any]
+    retrieval: dict[str, Any]
+    strategy_profile: dict[str, Any]
+    findings: list[dict[str, Any]]
+    latency_ms: float
+    error: str | None = None
+
+
+@router.post(
+    "/debug/full-analysis",
+    response_model=FullAnalysisResponse,
+    summary="Run full solver pipeline on a CanonicalHand (debug only)",
+    description=(
+        "Runs the complete pipeline:\n\n"
+        "```\nCanonicalHand → SpotAbstraction → NodeKey → retrieve_strategy"
+        " → StrategyProfile → findings\n```\n\n"
+        "**Protected by** `DEBUG_STRATEGY_ENABLED` env var. "
+        "Set `X-Debug-Token` header if `DEBUG_ADMIN_TOKEN` is configured.\n\n"
+        "Returns partial data on failure — never returns 500."
+    ),
+    tags=["debug"],
+)
+async def full_analysis(
+    hand: CanonicalHand = Body(..., openapi_examples=SPOT_OPENAPI_EXAMPLES),
+    x_debug_token: str | None = Header(default=None),
+) -> FullAnalysisResponse:
+    """
+    POST /api/debug/full-analysis
+
+    End-to-end pipeline inspection endpoint. Returns all intermediate
+    outputs for manual validation and regression testing.
+    """
+    _check_debug_access(x_debug_token)
+
+    t0 = time.perf_counter()
+    node_key_str = ""
+    solver_spot_dict: dict[str, Any] = {}
+    retrieval_dict: dict[str, Any] = {}
+    profile_dict: dict[str, Any] = {}
+    findings_list: list[dict[str, Any]] = []
+    error: str | None = None
+
+    try:
+        # Stage 1: SpotAbstraction
+        abstraction = SpotAbstraction.from_canonical_hand(hand)
+        key = abstraction.node_key
+        spot = abstraction.solver_spot
+        node_key_str = key.to_string()
+
+        solver_spot_dict = {
+            "spot_type":        spot.spot_type,
+            "hero_position":    spot.hero_position,
+            "villain_position": spot.villain_position,
+            "position_matchup": str(spot.position_matchup),
+            "is_ip":            spot.is_ip,
+            "spr":              round(spot.spr, 3),
+            "spr_bucket":       str(spot.spr_bucket),
+            "stack_depth_bucket": str(spot.stack_depth_bucket),
+            "street":           str(spot.street),
+            "player_count":     spot.player_count,
+            "board_class":      key.board_class,
+        }
+
+        # Stage 2: Strategy retrieval
+        from app.strategy_db.retrieval import retrieve_strategy
+        retrieval = retrieve_strategy(key, spot)
+
+        strategy_source = retrieval.debug.get("store_source", "unknown")
+        retrieval_dict = {
+            "retrieval_type":    retrieval.retrieval_type,
+            "strategy_source":   strategy_source,
+            "solver_engine":     strategy_source if strategy_source in ("texassolver", "gto_plus", "pio", "gto_wizard") else None,
+            "similarity_score":  retrieval.similarity_score,
+            "cache_hit":         retrieval.cache_hit,
+            "matched_node_key":  retrieval.matched_node_key,
+            **{k: v for k, v in retrieval.debug.items() if k != "store_source"},
+        }
+
+        # Stage 3: Profile
+        p = retrieval.profile
+        profile_dict = {
+            "bet_frequency":      round(p.bet_frequency, 4),
+            "check_frequency":    round(p.check_frequency, 4),
+            "primary_sizing":     p.primary_sizing,
+            "range_advantage":    round(p.range_advantage, 4),
+            "nut_advantage":      round(p.nut_advantage, 4),
+            "pressure_score":     round(p.pressure_score, 4),
+            "volatility_score":   round(p.volatility_score, 4),
+            "equity_realization": round(p.equity_realization, 4),
+            "rationale":          p.rationale,
+            "caveats":            p.caveats,
+            "source":             p.source,
+        }
+
+        # Stage 4: Findings
+        try:
+            from app.strategy.recommendations import strategy_findings_for_hand
+            from app.engines.pipeline import _canonical_to_parsed_hand
+            parsed = _canonical_to_parsed_hand(hand)
+            strat_findings = strategy_findings_for_hand(p, parsed, spot)
+            findings_list = [
+                {
+                    "severity": f.severity,
+                    "category": f.category,
+                    "message":  f.message,
+                    "detail":   getattr(f, "detail", None),
+                }
+                for f in strat_findings
+            ]
+        except Exception:
+            logger.warning("Findings generation failed", exc_info=True)
+
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("full-analysis failed for hand %s", hand.hand_id)
+        error = str(exc)
+
+    latency_ms = round((time.perf_counter() - t0) * 1000, 2)
+
+    logger.info(
+        "[full-analysis] hand=%s node_key=%s retrieval=%s latency=%.1fms",
+        hand.hand_id,
+        node_key_str or "—",
+        retrieval_dict.get("retrieval_type", "—"),
+        latency_ms,
+    )
+
+    return FullAnalysisResponse(
+        node_key=node_key_str,
+        solver_spot=solver_spot_dict,
+        retrieval=retrieval_dict,
+        strategy_profile=profile_dict,
+        findings=findings_list,
+        latency_ms=latency_ms,
+        error=error,
+    )
+
+
+# ── Store stats endpoint ──────────────────────────────────────────────────────
+
+
+@router.get(
+    "/debug/strategy-store/stats",
+    summary="Strategy store + retrieval metrics (debug only)",
+    tags=["debug"],
+)
+async def strategy_store_stats(
+    x_debug_token: str | None = Header(default=None),
+) -> dict[str, Any]:
+    """
+    GET /api/debug/strategy-store/stats
+
+    Returns store node count, cache stats, and retrieval metrics.
+    Protected by DEBUG_STRATEGY_ENABLED.
+    """
+    _check_debug_access(x_debug_token)
+    from app.strategy_db.retrieval import store_stats
+    return store_stats()
+
+
+# ── Compare endpoint ─────────────────────────────────────────────────────────
+
+
+class CompareRequest(BaseModel):
+    """Two CanonicalHands to compare side-by-side."""
+    hand_a: CanonicalHand
+    hand_b: CanonicalHand
+
+
+@router.post(
+    "/debug/compare",
+    summary="Compare strategy profiles for two hands (debug only)",
+    tags=["debug"],
+)
+async def compare_strategies(
+    request: CompareRequest = Body(...),
+    x_debug_token: str | None = Header(default=None),
+) -> dict[str, Any]:
+    """
+    POST /api/debug/compare
+
+    Runs the full pipeline on two hands and returns both results
+    side-by-side for comparison. Useful for validating that board
+    texture / position changes produce expected strategy shifts.
+
+    Protected by DEBUG_STRATEGY_ENABLED.
+    """
+    _check_debug_access(x_debug_token)
+
+    results: dict[str, Any] = {}
+
+    for label, hand in [("a", request.hand_a), ("b", request.hand_b)]:
+        entry: dict[str, Any] = {
+            "node_key": "",
+            "solver_spot": {},
+            "retrieval": {},
+            "strategy_profile": {},
+            "error": None,
+        }
+        try:
+            abstraction = SpotAbstraction.from_canonical_hand(hand)
+            key = abstraction.node_key
+            spot = abstraction.solver_spot
+            entry["node_key"] = key.to_string()
+
+            entry["solver_spot"] = {
+                "spot_type":         spot.spot_type,
+                "position_matchup":  str(spot.position_matchup),
+                "is_ip":             spot.is_ip,
+                "spr_bucket":        str(spot.spr_bucket),
+                "board_class":       key.board_class,
+                "street":            str(spot.street),
+            }
+
+            from app.strategy_db.retrieval import retrieve_strategy
+            retrieval = retrieve_strategy(key, spot)
+            strategy_source = retrieval.debug.get("store_source", "unknown")
+            entry["retrieval"] = {
+                "retrieval_type":  retrieval.retrieval_type,
+                "strategy_source": strategy_source,
+                "solver_engine":   strategy_source if strategy_source in ("texassolver", "gto_plus", "pio", "gto_wizard") else None,
+                "similarity_score": retrieval.similarity_score,
+                "cache_hit":       retrieval.cache_hit,
+                "matched_node_key": retrieval.matched_node_key,
+            }
+
+            p = retrieval.profile
+            entry["strategy_profile"] = {
+                "bet_frequency":      round(p.bet_frequency, 4),
+                "check_frequency":    round(p.check_frequency, 4),
+                "primary_sizing":     p.primary_sizing,
+                "range_advantage":    round(p.range_advantage, 4),
+                "nut_advantage":      round(p.nut_advantage, 4),
+                "pressure_score":     round(p.pressure_score, 4),
+                "volatility_score":   round(p.volatility_score, 4),
+                "equity_realization": round(p.equity_realization, 4),
+                "rationale":          p.rationale,
+                "source":             p.source,
+            }
+        except Exception as exc:
+            logger.warning("compare: hand_%s failed: %s", label, exc, exc_info=True)
+            entry["error"] = str(exc)
+
+        results[label] = entry
+
+    # Compute deltas between the two profiles
+    deltas: dict[str, float] = {}
+    pa = results.get("a", {}).get("strategy_profile", {})
+    pb = results.get("b", {}).get("strategy_profile", {})
+    for signal in ("bet_frequency", "range_advantage", "nut_advantage",
+                    "pressure_score", "volatility_score", "equity_realization"):
+        va = pa.get(signal)
+        vb = pb.get(signal)
+        if isinstance(va, (int, float)) and isinstance(vb, (int, float)):
+            deltas[signal] = round(vb - va, 4)
+
+    return {
+        "a": results.get("a"),
+        "b": results.get("b"),
+        "deltas": deltas,
     }

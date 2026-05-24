@@ -1,8 +1,15 @@
 """
-Solver-inspired heuristic rules engine.
+Theory-grounded heuristic rules engine.
 
 Rules are organized by spot type + board texture and return
 HeuristicFinding objects with severity, explanation and recommendations.
+
+DESIGN RULES (enforced here):
+  - NO fake frequencies in freq_recommendation (e.g. "65-75%")
+  - NO fake solver percentages in explanation text
+  - Language must be appropriately hedged by confidence level
+  - Structural logic (bucket detection, sizing evaluation) is preserved
+  - Only qualitative claims that are STRATEGICALLY DEFENSIBLE
 """
 from __future__ import annotations
 from app.models.schemas import (
@@ -95,7 +102,6 @@ def _evaluate_flop(
     findings = []
 
     if not hero_actions:
-        # Hero checked or is not acting on the flop yet
         return findings
 
     first_action = hero_actions[0]
@@ -133,28 +139,29 @@ def _evaluate_ip_pfr_cbet(bet_frac: float, bucket: str, texture: BoardTexture) -
                 severity="suboptimal",
                 street="flop",
                 action_taken=f"Large c-bet ({bet_frac:.0%} pot)",
-                recommendation="Use a smaller sizing (25-40% pot)",
+                recommendation="Consider smaller sizing on this dry high-card board",
                 explanation=(
-                    "On ace/king-high dry boards, your range has a significant equity advantage. "
-                    "Smaller bets (25-40% pot) allow you to bet at a high frequency and extract "
-                    "value while keeping the pot manageable. Large bets are inefficient here "
-                    "because the caller's range is capped and weak."
+                    "On ace/king-high dry boards, the preflop raiser's range typically holds "
+                    "a meaningful equity advantage. Smaller bet sizes are generally more efficient "
+                    "on these textures — the caller's range is relatively capped, so large bets "
+                    "are not required to extract value or deny equity. Theory supports "
+                    "small, high-frequency bets on dry high-card boards."
                 ),
-                freq_recommendation="High frequency small bet (33% pot)",
+                freq_recommendation="Small bet sizing is generally preferred on dry high-card boards",
             ))
         elif 0.25 <= bet_frac <= 0.45:
             findings.append(HeuristicFinding(
                 severity="good",
                 street="flop",
                 action_taken=f"Small c-bet ({bet_frac:.0%} pot)",
-                recommendation="Optimal sizing on this board texture",
+                recommendation="Sizing is consistent with range advantage theory on this texture",
                 explanation=(
-                    "Excellent sizing on a dry ace/king-high board. This small bet exploits your "
-                    "range advantage — the preflop raiser's range connects much better with these "
-                    "boards than the caller's. You can bet at high frequency and force the caller "
-                    "to defend with weak holdings."
+                    "Small bet sizing on a dry ace/king-high board aligns with range advantage "
+                    "principles — the preflop raiser's range connects more strongly with these boards "
+                    "than the caller's. This approach allows continued pressure while keeping "
+                    "the pot proportionate."
                 ),
-                freq_recommendation="High frequency (65-75%)",
+                freq_recommendation="Small bet approach is theoretically supported on dry high-card boards",
             ))
 
     elif bucket in ("wet_broadway", "A_high_wet"):
@@ -163,26 +170,28 @@ def _evaluate_ip_pfr_cbet(bet_frac: float, bucket: str, texture: BoardTexture) -
                 severity="suboptimal",
                 street="flop",
                 action_taken=f"Large c-bet ({bet_frac:.0%} pot)",
-                recommendation="Reduce sizing or check more frequently (33-50% pot)",
+                recommendation="Consider smaller sizing or mixing in more checks on wet boards",
                 explanation=(
-                    "On wet connected boards, your range advantage is reduced because the caller "
-                    "has many draws and connected holdings. Large c-bets are risky as you will "
-                    "often get raised, and you may be building the pot in a spot where your "
-                    "equity is more vulnerable. Mix in checks and use medium sizing."
+                    "On wet connected boards, the preflop raiser's range advantage is reduced "
+                    "because the caller has more draws and connected holdings. Large c-bets "
+                    "carry more risk on these textures — the caller's range can comfortably "
+                    "continue with draws and made hands. Theory suggests mixing checks "
+                    "with medium sizing rather than committing to large bets."
                 ),
-                freq_recommendation="Medium frequency (40-55%), smaller sizing",
+                freq_recommendation="Check frequency should generally increase on wet boards",
             ))
         elif 0.33 <= bet_frac <= 0.55:
             findings.append(HeuristicFinding(
                 severity="good",
                 street="flop",
                 action_taken=f"Medium c-bet ({bet_frac:.0%} pot)",
-                recommendation="Good sizing for a wet board",
+                recommendation="Reasonable sizing for a wet board",
                 explanation=(
-                    "Reasonable sizing on a wet board. You're not overcommitting the pot on a "
-                    "board where your opponent can have many draws and strong made hands."
+                    "Medium sizing on a wet board avoids over-committing the pot on a "
+                    "texture where the opponent can hold many draws and strong made hands. "
+                    "This approach is defensible from a range construction standpoint."
                 ),
-                freq_recommendation="Medium frequency (45-55%)",
+                freq_recommendation="Selective continuation with medium sizing is theoretically sound on wet boards",
             ))
 
     elif bucket == "monotone":
@@ -191,14 +200,15 @@ def _evaluate_ip_pfr_cbet(bet_frac: float, bucket: str, texture: BoardTexture) -
                 severity="suboptimal",
                 street="flop",
                 action_taken=f"Large c-bet ({bet_frac:.0%} pot) on monotone board",
-                recommendation="Check or use small bet (25-33% pot)",
+                recommendation="Consider checking or using smaller sizing on monotone boards",
                 explanation=(
-                    "Monotone boards heavily favour the player with flush draws or made flushes. "
-                    "On rainbow preflop ranges, the caller often has more flush combos in some "
-                    "positions. Large bets on monotone boards are risky — consider checking "
-                    "more of your range or betting very small with your made hands for protection."
+                    "Monotone boards significantly redistribute equity based on flush "
+                    "holdings. Large bets on these boards carry more risk when the "
+                    "caller's range may contain more flush draw combinations in some "
+                    "matchups. Theory generally favors checking more of your range "
+                    "or using small bets when continuing on monotone boards."
                 ),
-                freq_recommendation="Low-medium frequency, small sizing",
+                freq_recommendation="Increased check frequency is generally appropriate on monotone boards",
             ))
 
     elif bucket == "low_connected":
@@ -207,14 +217,15 @@ def _evaluate_ip_pfr_cbet(bet_frac: float, bucket: str, texture: BoardTexture) -
                 severity="mistake",
                 street="flop",
                 action_taken=f"Large c-bet ({bet_frac:.0%} pot) on low connected board",
-                recommendation="Check or use small-medium bet (33-50% pot)",
+                recommendation="Check or use smaller sizing on low connected boards",
                 explanation=(
-                    "Low connected boards (e.g. 7-8-9, 6-7-8) are where the caller's range "
-                    "has the most equity — they often have more two-pairs, sets, and straights. "
-                    "Large bets here often have poor EV. Prefer checking or small bets that "
-                    "don't over-invest on unfavourable board textures."
+                    "Low connected boards (e.g., 7-8-9, 6-7-8) are where the caller's range "
+                    "tends to hold more equity — two-pairs, sets, and straight draws are common "
+                    "in a BB defending range on these textures. Large bets here are generally "
+                    "not supported by range dynamics. Checking or small bets are "
+                    "more appropriate on boards that connect well with the caller's range."
                 ),
-                freq_recommendation="Low frequency (25-35%), small sizing",
+                freq_recommendation="Checking is generally preferred on low connected boards when range advantage is absent",
             ))
 
     elif bucket == "paired_board":
@@ -223,13 +234,14 @@ def _evaluate_ip_pfr_cbet(bet_frac: float, bucket: str, texture: BoardTexture) -
                 severity="note",
                 street="flop",
                 action_taken=f"Medium/large c-bet ({bet_frac:.0%} pot) on paired board",
-                recommendation="Small bets (25-33%) are often preferred on paired boards",
+                recommendation="Small bets are generally preferred on paired boards",
                 explanation=(
-                    "Paired boards reduce drawing equity for both sides. They typically favour "
-                    "the preflop raiser since they have more trips and full houses in their range. "
-                    "Small bets at high frequency are generally preferred over large bets."
+                    "Paired boards reduce drawing equity for both ranges. Theory generally "
+                    "supports small bets at higher frequency on paired boards — the preflop "
+                    "raiser's range typically contains more trips and full houses, but the "
+                    "board's structure doesn't demand large bets to extract value."
                 ),
-                freq_recommendation="High frequency small bet (25-33%)",
+                freq_recommendation="Small bet approach is generally sound on paired boards",
             ))
 
     return findings
@@ -244,14 +256,14 @@ def _evaluate_oop_pfr_cbet(bet_frac: float, bucket: str, texture: BoardTexture) 
                 severity="suboptimal",
                 street="flop",
                 action_taken=f"Large OOP c-bet ({bet_frac:.0%} pot)",
-                recommendation="Use smaller sizing (25-40%) OOP on dry boards",
+                recommendation="Prefer smaller sizing out of position on dry boards",
                 explanation=(
-                    "Out of position, even on dry high-card boards, prefer smaller c-bets. "
-                    "You are more exposed to raises and have less information about your "
-                    "opponent's range. Small bets (25-40%) maintain initiative while "
-                    "keeping the pot smaller when you don't have strong equity."
+                    "Out of position, even on dry high-card boards, smaller c-bets "
+                    "are generally more efficient. Acting first on every street increases "
+                    "exposure to raises and limits information before committing. "
+                    "Small bets OOP maintain initiative while keeping the pot manageable."
                 ),
-                freq_recommendation="Medium frequency (50-65%), small sizing",
+                freq_recommendation="OOP c-bets are generally more effective at smaller sizing",
             ))
     elif bucket in ("low_connected", "wet_broadway", "monotone"):
         findings.append(HeuristicFinding(
@@ -260,12 +272,12 @@ def _evaluate_oop_pfr_cbet(bet_frac: float, bucket: str, texture: BoardTexture) 
             action_taken=f"OOP c-bet ({bet_frac:.0%} pot) on wet board",
             recommendation="Check-call or check-raise is often preferred OOP on wet boards",
             explanation=(
-                "Out of position on wet boards, your continuation bet frequency should be "
-                "significantly reduced. You have less fold equity and face more difficult "
-                "decisions on future streets. Check-calling with strong hands and "
-                "check-raising with sets/two-pairs is often superior."
+                "Out of position on wet boards, c-bet frequency should be meaningfully "
+                "reduced. Positional disadvantage combines with reduced range advantage "
+                "on these textures. Check-calling with strong hands and "
+                "check-raising with two-pairs and sets is generally more effective OOP."
             ),
-            freq_recommendation="Low frequency OOP c-bet on wet boards (25-35%)",
+            freq_recommendation="Checking OOP is generally preferred on wet boards",
         ))
 
     return findings
@@ -276,14 +288,15 @@ def _evaluate_ip_caller_donk(bet_frac: float, bucket: str) -> list[HeuristicFind
         severity="note",
         street="flop",
         action_taken=f"Donk bet ({bet_frac:.0%} pot) as IP caller",
-        recommendation="Check or raise instead of donk betting",
+        recommendation="Checking is generally preferred as the caller",
         explanation=(
-            "Donk betting (betting out of position into the preflop raiser) is generally "
-            "a non-GTO play that gives up positional advantage. Prefer checking to allow "
-            "the PFR to c-bet, then respond accordingly. This keeps the PFR's range wide "
-            "and gives you more information before committing chips."
+            "Donk betting (leading into the preflop raiser) disrupts the natural "
+            "range dynamic and generally gives up information advantage. "
+            "Checking allows the preflop raiser to continue with their range, "
+            "giving you more information before committing. This approach is "
+            "theoretically sound in most configurations."
         ),
-        freq_recommendation="Check at high frequency as OOP caller",
+        freq_recommendation="Checking at high frequency is the theoretically standard play as the caller",
     )]
 
 
@@ -293,14 +306,15 @@ def _evaluate_ip_pfr_check(bucket: str, texture: BoardTexture) -> list[Heuristic
             severity="good",
             street="flop",
             action_taken="Check back IP as PFR",
-            recommendation="Good check on a board that favours the caller's range",
+            recommendation="Checking back aligns with theory on a board that connects with the caller's range",
             explanation=(
-                "Checking back on a wet/connected board as the IP PFR is often correct. "
-                "These boards have more draws and strong combos for the caller's range. "
-                "By checking, you protect your checking range, keep the pot smaller, "
-                "and avoid building a large pot in an unfavourable spot."
+                "Checking back on a wet or connected board as the IP preflop raiser is "
+                "a theoretically sound approach. These boards have more draws and strong "
+                "combinations for the caller's range. Checking protects your range, "
+                "manages pot size, and avoids building a large pot in a potentially "
+                "unfavorable equity spot."
             ),
-            freq_recommendation="High check frequency on wet boards",
+            freq_recommendation="Checking back is generally supported on wet boards where range advantage is reduced",
         )]
     return []
 
@@ -329,14 +343,15 @@ def _evaluate_turn(
                     severity="suboptimal",
                     street="turn",
                     action_taken="Large turn barrel after flop bet",
-                    recommendation="Keep consistent sizing or use polarized large bets with strong hands/bluffs only",
+                    recommendation="Maintain consistent sizing or use polarized large bets only with strong hands or bluffs",
                     explanation=(
-                        "Turn bets after a flop c-bet should generally be consistent or "
-                        "slightly larger for value. Extremely large turn bets can be "
-                        "inefficient unless you are very polarized (strong made hand or pure bluff). "
-                        "Consider your hand's equity before sizing up on the turn."
+                        "A significant increase in sizing on the turn, relative to the flop bet, "
+                        "is generally most appropriate when your range is very polarized — "
+                        "either strong value hands or bluffs. For a merged range of medium-strength "
+                        "hands, consistent or moderately larger sizing is typically more balanced "
+                        "and harder to exploit."
                     ),
-                    freq_recommendation="Turn sizing ~50-75% pot for balanced range",
+                    freq_recommendation="Turn sizing should be consistent with the hand's equity and range composition",
                 ))
 
     return findings
@@ -366,14 +381,15 @@ def _evaluate_river(
                 severity="note",
                 street="river",
                 action_taken="River bet without strong blockers",
-                recommendation="River bluffs should prioritise hands with blockers to villain's calling range",
+                recommendation="River bluffs are more effective when holding blockers to the opponent's calling range",
                 explanation=(
-                    "Effective river bluffing requires holding cards that reduce the "
-                    "number of strong value combos in your opponent's range (blockers). "
-                    "Without blockers to nuts/strong hands, your bluff has lower EV "
-                    "since your opponent can call at a higher frequency."
+                    "Effective river bluffing benefits from holding cards that reduce "
+                    "the number of strong value combinations in the opponent's range (blockers). "
+                    "Without blockers to key hands, fold equity is reduced "
+                    "because the opponent can call with strong holdings at a higher rate. "
+                    "Blocker selection is an important component of polarized river betting ranges."
                 ),
-                freq_recommendation="Prioritize blocker-heavy hands for river bluffs",
+                freq_recommendation="Blockers to the nuts improve bluff EV on the river",
             ))
 
     return findings
@@ -423,13 +439,13 @@ def _evaluate_preflop(
                     severity="suboptimal",
                     street="preflop",
                     action_taken=f"Fold {' '.join(hand.hero_cards)} in {hand.hero_position} RFI",
-                    recommendation=f"Open to 2.5-3bb — {' '.join(hand.hero_cards)} is in the {hand.hero_position} range",
+                    recommendation=f"Consider opening — {' '.join(hand.hero_cards)} is within the {hand.hero_position} opening range",
                     explanation=(
                         f"{' '.join(hand.hero_cards)} ({hand_bucket}) is within the {hand.hero_position} "
-                        f"opening range. Folding misses EV from stealing the blinds and playing "
-                        f"a range-strong hand."
+                        f"opening range based on standard range construction. Folding misses the "
+                        f"opportunity to play a hand with positive expected value from this position."
                     ),
-                    freq_recommendation=f"Open {' '.join(hand.hero_cards)} at high frequency from {hand.hero_position}",
+                    freq_recommendation=f"Opening {' '.join(hand.hero_cards)} from {hand.hero_position} is generally supported",
                 ))
 
             elif act == "raise" and not in_range:
@@ -437,13 +453,13 @@ def _evaluate_preflop(
                     severity="mistake",
                     street="preflop",
                     action_taken=f"Open {' '.join(hand.hero_cards)} from {hand.hero_position}",
-                    recommendation=f"Fold — {' '.join(hand.hero_cards)} is below the {hand.hero_position} opening range",
+                    recommendation=f"Folding is generally correct — {' '.join(hand.hero_cards)} is below the standard {hand.hero_position} opening range",
                     explanation=(
-                        f"{' '.join(hand.hero_cards)} ({hand_bucket}) is not in the {hand.hero_position} "
-                        f"GTO opening range. Opening this hand bloats the pot with a below-range "
-                        f"holding and makes post-flop play difficult."
+                        f"{' '.join(hand.hero_cards)} ({hand_bucket}) falls below the standard {hand.hero_position} "
+                        f"opening range in most GTO frameworks. Opening this hand bloats the pot with a "
+                        f"below-range holding and creates difficult postflop spots."
                     ),
-                    freq_recommendation=f"Fold {' '.join(hand.hero_cards)} from {hand.hero_position}",
+                    freq_recommendation=f"Folding {' '.join(hand.hero_cards)} from {hand.hero_position} aligns with standard range construction",
                 ))
 
             # Sizing check for raises
@@ -465,29 +481,30 @@ def _evaluate_preflop_sizing(size_bb: float, spot: SpotClassification) -> list[H
                 severity="mistake",
                 street="preflop",
                 action_taken=f"Min-raise to {size_bb}BB",
-                recommendation="Open to 2.5-3BB for a standard raise",
+                recommendation="Open to approximately 2.5-3BB",
                 explanation=(
-                    "Min-raising preflop (2BB) is generally suboptimal as it gives the "
-                    "big blind excellent pot odds to call with almost any two cards, reducing "
-                    "your fold equity and making post-flop spots more difficult. "
-                    "Standard opens of 2.5-3x are more common in modern GTO play."
+                    "Min-raising preflop (2BB) gives the big blind strong pot odds to "
+                    "continue with a very wide range, significantly reducing fold equity. "
+                    "Standard opening sizes in modern play are typically 2.5x from late "
+                    "position and 3x from early position, balancing fold equity with "
+                    "stack depth management."
                 ),
-                freq_recommendation="Standard open sizing: 2.5x BTN, 3x EP",
+                freq_recommendation="Standard open sizing is generally 2.5x from late position, 3x from early position",
             )]
         elif size_bb > 5.0:
             return [HeuristicFinding(
                 severity="suboptimal",
                 street="preflop",
                 action_taken=f"Large open to {size_bb}BB",
-                recommendation="Reduce open size to 2.5-3BB",
+                recommendation="Reduce open size to approximately 2.5-3BB",
                 explanation=(
-                    "Opening too large preflop reduces your ability to build a balanced "
-                    "range and may cause opponents to play more exploitatively against you. "
-                    "Large opens also leave less room for post-flop play. "
-                    "Standard sizing of 2.5-3BB achieves good fold equity while maintaining "
-                    "playability."
+                    "Very large preflop opens reduce the range of hands that can "
+                    "profitably call, but also reduce postflop playability and pot odds "
+                    "for your own hand. Standard sizing of 2.5-3BB is more commonly "
+                    "supported as it achieves effective fold equity while maintaining "
+                    "stack-to-pot flexibility."
                 ),
-                freq_recommendation="2.5-3x standard open sizing",
+                freq_recommendation="Standard open sizing is generally 2.5-3BB across most situations",
             )]
     return []
 
@@ -495,12 +512,7 @@ def _evaluate_preflop_sizing(size_bb: float, spot: SpotClassification) -> list[H
 # ── Utility ────────────────────────────────────────────────────────────────
 
 def _estimate_pot_at_street(hand: ParsedHand, street: str) -> float:
-    """Estimate pot size (in BB) at the start of a given street.
-
-    Starts from 1.5bb (SB + BB) then adds all action sizes from prior streets.
-    Previously broken: `hand.big_blind / hand.big_blind + 0.5` always returned 1.5
-    regardless of action — operator precedence bug.  Now correctly sums action sizes.
-    """
+    """Estimate pot size (in BB) at the start of a given street."""
     streets_before = {
         "preflop": [],
         "flop": ["preflop"],
@@ -555,14 +567,14 @@ def _evaluate_draw_spot(
                     severity="note",
                     street=street,
                     action_taken=f"{first.action.capitalize()} with backdoor draws only",
-                    recommendation="Treat backdoor draws as high-card equity, not a draw",
+                    recommendation="Treat backdoor draws as supplemental equity, not a primary driver",
                     explanation=(
                         f"Your hand has only backdoor draw potential ({label}). "
-                        "Backdoor draws add ~4-6% equity — not enough to drive aggressive "
+                        "Backdoor draws add modest equity — not enough to drive aggressive "
                         "lines on their own. Any betting should be based on showdown value, "
-                        "fold equity, or a pair; not the draw."
+                        "fold equity, or a pair; the backdoor draw is a secondary consideration."
                     ),
-                    freq_recommendation="Back-door draws ≈ 4-6% extra equity — size accordingly",
+                    freq_recommendation="Backdoor draws provide supplemental equity; treat them as supporting, not leading",
                 ))
         return findings
 
@@ -573,28 +585,28 @@ def _evaluate_draw_spot(
                 severity="note",
                 street=street,
                 action_taken=f"Check with {outs}-out combo draw",
-                recommendation="Consider semibluffing — combo draws are strong enough to bet for value",
+                recommendation="Consider semi-bluffing — combo draws have strong equity to improve",
                 explanation=(
-                    f"You hold a powerful combo draw ({label}, ~{outs} outs). "
-                    f"This gives approximately {outs * 4}% equity to improve by the river. "
-                    "Semibluffing builds the pot when you have massive equity and generates "
-                    f"fold equity {'IP' if is_ip else 'OOP'}. "
-                    "Checking is fine as a deception play, but leading/raising is highly +EV."
+                    f"You hold a strong combo draw ({label}, approximately {outs} outs). "
+                    "Semi-bluffing builds the pot when you have substantial equity to improve "
+                    f"and generates fold equity {'when in position' if is_ip else 'out of position'}. "
+                    "Checking is defensible as a deception play, but aggressive lines "
+                    "with high-equity draws are generally theoretically supported."
                 ),
-                freq_recommendation=f"Semibet ~{min(70, 50 + outs * 2)}% of the time with combo draws",
+                freq_recommendation="Combo draws are generally strong candidates for semi-bluffing",
             ))
         elif first.action in ("bet", "raise"):
             findings.append(HeuristicFinding(
                 severity="good",
                 street=street,
-                action_taken=f"Semibluff with {outs}-out combo draw",
-                recommendation="Correct — combo draws are strong semibluffing hands",
+                action_taken=f"Semi-bluff with {outs}-out combo draw",
+                recommendation="Aggressive line is supported with a strong combo draw",
                 explanation=(
-                    f"Betting with a combo draw ({label}, ~{outs} outs) is excellent. "
-                    f"You have ~{outs * 4}% raw equity to improve by the river, plus fold equity. "
-                    "This is a highly +EV semibluff that builds the pot on your terms."
+                    f"Betting with a combo draw ({label}, approximately {outs} outs) "
+                    "is generally supported by theory. You have strong equity to improve "
+                    "plus fold equity — two ways to win this hand."
                 ),
-                freq_recommendation="High semibluff frequency with 12+ out combo draws",
+                freq_recommendation="Combo draws are strong semi-bluffing candidates",
             ))
         return findings
 
@@ -604,15 +616,14 @@ def _evaluate_draw_spot(
             findings.append(HeuristicFinding(
                 severity="good",
                 street=street,
-                action_taken=f"Semibluff with {outs}-out draw",
-                recommendation="Good semibluff with a strong single draw",
+                action_taken=f"Semi-bluff with {outs}-out draw",
+                recommendation="Aggressive play is generally supported with a strong single draw",
                 explanation=(
-                    f"Semibluffing with {label} ({outs} outs) is correct. "
-                    f"You have ~{outs * 4}% equity to improve to the best hand by the river. "
-                    "Strong draws play best as semibluffs — they protect your betting range "
-                    "and can win two ways: by making the best hand or by folding out equity."
+                    f"Semi-bluffing with {label} ({outs} outs) is theoretically defensible. "
+                    "Strong draws have meaningful equity to improve and generate fold equity "
+                    "simultaneously — both paths can lead to winning the pot."
                 ),
-                freq_recommendation=f"Mix semibet (~55%) and check (~45%) for balance",
+                freq_recommendation="Strong single draws are generally sound semi-bluffing candidates",
             ))
         return findings
 
@@ -623,15 +634,15 @@ def _evaluate_draw_spot(
                 severity="note",
                 street=street,
                 action_taken=f"Bet/raise with gutshot ({outs} outs)",
-                recommendation="Gutshots are weak semibluffs — prefer checking or calling with pot odds",
+                recommendation="Gutshots are generally weak semi-bluffs — prefer pot-odds-based calls or checks",
                 explanation=(
-                    f"A gutshot ({label}) has only {outs} outs — approximately "
-                    f"{outs * 4}% equity to improve. Unless you have additional "
-                    "showdown value (overcards, backdoor draws), gutshots are generally "
-                    "better played as check/calls, using pot odds rather than "
-                    "generating fold equity."
+                    f"A gutshot ({label}) has only {outs} outs, providing limited equity to improve. "
+                    "Without additional showdown value (overcards, backdoor draws), gutshots "
+                    "are generally better played using pot odds as a guide for calling rather "
+                    "than aggressive semi-bluffing. The fold equity required to make gutshot "
+                    "bluffs profitable is typically high."
                 ),
-                freq_recommendation="Check-call with gutshots; semibet only with added equity",
+                freq_recommendation="Gutshots generally work better as check-calls unless combined with additional equity",
             ))
 
     return findings

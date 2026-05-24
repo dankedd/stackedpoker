@@ -48,12 +48,12 @@ export const LEARNING_MODULES: LearningModule[] = [
     id: 'positions-module',
     path_id: 'beginner',
     slug: 'positions-module',
-    title: 'Positions & Seats',
-    description: 'Learn how your seat at the table dictates your strategy on every street.',
-    concept_ids: ['position_value'],
+    title: 'Positions & Positional Advantage',
+    description: 'Master the 6-max seat map, IP vs OOP dynamics, and how acting order determines preflop ranges and postflop leverage.',
+    concept_ids: ['position_value', 'ip_advantage'],
     unlock_after: [],
     sort_order: 1,
-    xp_reward: 100,
+    xp_reward: 200,
   },
   {
     id: 'pot-odds-module',
@@ -265,74 +265,76 @@ export const LEARNING_MODULES: LearningModule[] = [
 
 export const LESSONS: Lesson[] = [
 
-  // ── 1. Positions Fundamentals ─────────────────────────────────────────────
+  // ── Positions & Positional Advantage (positions-module) ──────────────────
+
+  // Lesson 1 — The 6-Max Seat Map
   {
-    id: 'positions-fundamentals',
+    id: 'position-seat-map',
     module_id: 'positions-module',
-    slug: 'positions-fundamentals',
-    title: 'Positions & Seat Power',
+    slug: 'position-seat-map',
+    title: 'The 6-Max Seat Map',
     lesson_type: 'micro',
     concept_ids: ['position_value'],
-    estimated_min: 5,
-    xp_reward: 40,
+    estimated_min: 4,
+    xp_reward: 35,
     sort_order: 1,
     steps: [
       {
-        id: 'pos-s1',
+        id: 'psm-s1',
         type: 'concept_reveal',
         concept_ids: ['position_value'],
-        concept_title: 'What Is Position?',
+        concept_title: 'Preflop and Postflop Acting Order',
         concept_content:
-          'Position = acting order on each street. The dealer button (BTN) acts last postflop — that is maximum information. UTG acts first — minimum information. The order from weakest to strongest: UTG → UTG+1 → MP → HJ → CO → BTN. The blinds (SB/BB) are forced-money positions that act last preflop but first postflop — making them the most costly seats over time.',
+          'In 6-max cash, preflop action starts with UTG and moves clockwise: UTG → HJ → CO → BTN → SB → BB. UTG is first to act — it has no information about anyone else\'s intentions. BTN is last preflop and last postflop, which is maximum leverage. The blinds (SB and BB) act last preflop but first on every postflop street, making them the most structurally costly seats over time.',
         visual: 'table',
         xp: 5,
       },
       {
-        id: 'pos-s2',
+        id: 'psm-s2',
         type: 'decision_spot',
         street: 'preflop',
         hero_position: 'UTG',
         hero_hand: ['8s', '7s'],
         pot_bb: 1.5,
         effective_stack_bb: 100,
-        narrative: 'Six-max, 100bb cash. Folds around — action is on you in UTG with 87s.',
+        narrative: 'Six-max, 100bb effective. Action starts on you in UTG with 8♠7♠. Five players remain behind.',
         options: [
           {
             id: 'open',
             label: 'Open raise to 2.5bb',
             quality: 'mistake',
-            ev_loss_bb: 1.5,
+            ev_loss_bb: 1.3,
             feedback:
-              '87s is a fine hand, but UTG in 6-max still means five players act behind you. Your hand plays poorly out of position against 3-bets and multi-way pots. Open only your strongest suited connectors (JTs, T9s) from UTG.',
+              '87s is a playable hand, but UTG is the worst position in 6-max — five players act behind you. Against 3-bets you are OOP the rest of the hand. GTO UTG ranges include JTs and T9s, but 87s is below the threshold at 100bb.',
           },
           {
             id: 'fold',
             label: 'Fold',
-            quality: 'good',
+            quality: 'perfect',
             ev_loss_bb: 0,
             feedback:
-              'Correct. 87s is just outside the profitable UTG opening range in most 6-max solutions. Save it for HJ, CO, or BTN where you have positional leverage.',
+              'Correct. 87s does not clear the profitability bar from UTG in 6-max. Positional leverage matters — this hand is a standard open from HJ, CO, or BTN, not from first position.',
           },
           {
             id: 'limp',
-            label: 'Limp',
+            label: 'Limp to 1bb',
             quality: 'punt',
-            ev_loss_bb: 2.5,
+            ev_loss_bb: 2.2,
             feedback:
-              'Limping in 6-max cash is almost always a major leak. You announce weakness, invite everyone behind to raise, and enter the pot without initiative.',
+              'Limping in 6-max cash is a major structural leak. You cede initiative, invite isolation raises behind you, and enter the pot without fold equity.',
           },
         ],
-        xp: 10,
+        xp: 12,
       },
       {
-        id: 'pos-s3',
+        id: 'psm-s3',
         type: 'decision_spot',
         street: 'preflop',
         hero_position: 'BTN',
-        hero_hand: ['Kh', '9o'],
+        hero_hand: ['Kh', '9d'],
         pot_bb: 1.5,
         effective_stack_bb: 100,
-        narrative: 'Folds to the BTN (you) with K9o. SB and BB remain.',
+        narrative: 'UTG, HJ, and CO fold. Action is on you in the BTN with K♥9♦. Only SB and BB remain.',
         options: [
           {
             id: 'open',
@@ -340,51 +342,361 @@ export const LESSONS: Lesson[] = [
             quality: 'perfect',
             ev_loss_bb: 0,
             feedback:
-              'K9o is a clear BTN open. You have the best position postflop and only two opponents left. Open wide here — BTN opening ranges run 40–50% in 6-max solutions.',
+              'K9o is a standard BTN open. Acting last postflop against both blinds gives you a large structural edge. BTN RFI ranges run roughly 40–45% in equilibrium solutions — K9o is comfortably inside that.',
           },
           {
             id: 'fold',
             label: 'Fold',
             quality: 'mistake',
-            ev_loss_bb: 1.2,
+            ev_loss_bb: 1.1,
             feedback:
-              'Folding K9o on the BTN is too tight. You have a positional advantage over both blinds and K9o has enough equity and playability to show profit.',
+              'Too tight. You have the best position at the table and only two opponents left. K9o realizes its equity well from the BTN and shows a clear long-run profit here.',
+          },
+        ],
+        xp: 12,
+      },
+    ],
+  },
+
+  // Lesson 2 — IP vs OOP: Postflop Acting Order
+  {
+    id: 'ip-oop-postflop',
+    module_id: 'positions-module',
+    slug: 'ip-oop-postflop',
+    title: 'IP vs OOP: Postflop Acting Order',
+    lesson_type: 'micro',
+    concept_ids: ['ip_advantage', 'position_value'],
+    estimated_min: 4,
+    xp_reward: 35,
+    sort_order: 2,
+    steps: [
+      {
+        id: 'iop-s1',
+        type: 'concept_reveal',
+        concept_ids: ['ip_advantage'],
+        concept_title: 'The Information Asymmetry of Position',
+        concept_content:
+          'On every postflop street the OOP player must act first — they declare a check or bet before seeing what the IP player will do. The IP player always reacts with full information: they see the check (signalling weakness) or bet (giving price information) before choosing their action. This structural information edge is worth roughly 8–12% more equity realization for the IP player across all hand types, independent of hand strength.',
+        xp: 5,
+      },
+      {
+        id: 'iop-s2',
+        type: 'decision_spot',
+        street: 'flop',
+        hero_position: 'BB',
+        villain_position: 'BTN',
+        board: ['Ks', '7c', '2d'],
+        pot_bb: 5.5,
+        effective_stack_bb: 97,
+        narrative: 'BTN opened 2.5bb, you defended BB. Flop K♠7♣2♦. Pot 5.5bb. You are OOP. Action is on you.',
+        options: [
+          {
+            id: 'check',
+            label: 'Check',
+            quality: 'perfect',
+            ev_loss_bb: 0,
+            feedback:
+              'Correct. K♠7♣2♦ is a board that heavily favors BTN\'s opening range — BTN has many Kx combos while BB\'s calling range connects less frequently. OOP against a range advantage, checking and responding to BTN\'s action is the highest-EV line.',
           },
           {
-            id: 'limp',
-            label: 'Limp',
+            id: 'donk',
+            label: 'Lead bet 3bb',
+            quality: 'mistake',
+            ev_loss_bb: 1.8,
+            feedback:
+              'Donk-betting OOP into the preflop raiser on a board that strongly favors their range is a structural error. You lose information about their hand strength, surrender your check-raise option, and bet into their range advantage.',
+          },
+        ],
+        xp: 12,
+      },
+      {
+        id: 'iop-s3',
+        type: 'decision_spot',
+        street: 'flop',
+        hero_position: 'BTN',
+        villain_position: 'BB',
+        board: ['Ks', '7c', '2d'],
+        pot_bb: 5.5,
+        effective_stack_bb: 97,
+        narrative: 'You opened BTN 2.5bb, BB called. Flop K♠7♣2♦. Pot 5.5bb. BB checks to you.',
+        options: [
+          {
+            id: 'bet',
+            label: 'Bet 1.8bb (1/3 pot)',
+            quality: 'perfect',
+            ev_loss_bb: 0,
+            feedback:
+              'Correct. IP with a range advantage on a dry board, a small c-bet forces BB to defend or fold — and BB folds a large portion of their range here. You generate immediate fold equity while risking very little relative to the pot.',
+          },
+          {
+            id: 'check',
+            label: 'Check back',
+            quality: 'acceptable',
+            ev_loss_bb: 0.5,
+            feedback:
+              'Checking back is not a catastrophic error but misses EV on a board you dominate. You are giving BB a free card and surrendering the initiative that your positional and range advantage warrant.',
+          },
+        ],
+        xp: 12,
+      },
+    ],
+  },
+
+  // Lesson 3 — Opening Ranges Scale with Position
+  {
+    id: 'opening-by-position',
+    module_id: 'positions-module',
+    slug: 'opening-by-position',
+    title: 'Opening Ranges Scale with Position',
+    lesson_type: 'micro',
+    concept_ids: ['position_value', 'rfi_theory'],
+    estimated_min: 4,
+    xp_reward: 35,
+    sort_order: 3,
+    steps: [
+      {
+        id: 'obp-s1',
+        type: 'concept_reveal',
+        concept_ids: ['rfi_theory'],
+        concept_title: 'RFI Frequency by Position',
+        concept_content:
+          'RFI (Raise First In) frequency in 6-max equilibrium solutions scales directly with positional advantage. Approximate ranges at 100bb: UTG ~14%, HJ ~20%, CO ~27%, BTN ~44%, SB ~35% (heads-up vs BB), BB closes preflop action and does not RFI. Each position\'s range is a strict subset of the previous position — the BTN opens hands that UTG would never touch. The underlying principle: more position means more postflop leverage, which makes weaker hands profitable to open.',
+        xp: 5,
+      },
+      {
+        id: 'obp-s2',
+        type: 'decision_spot',
+        street: 'preflop',
+        hero_position: 'CO',
+        hero_hand: ['Qc', 'Jd'],
+        pot_bb: 1.5,
+        effective_stack_bb: 100,
+        narrative: 'UTG and HJ fold. Action is on you in the CO with Q♣J♦.',
+        options: [
+          {
+            id: 'open',
+            label: 'Open raise to 2.5bb',
+            quality: 'perfect',
+            ev_loss_bb: 0,
+            feedback:
+              'QJo is a standard CO open. CO\'s ~27% RFI range includes QJo — it has reasonable equity, playability postflop, and only three players remain behind. Opening here is straightforward.',
+          },
+          {
+            id: 'fold',
+            label: 'Fold',
+            quality: 'mistake',
+            ev_loss_bb: 0.9,
+            feedback:
+              'Too tight for CO. QJo clears the profitability threshold here. You have decent equity, three remaining opponents rather than five, and enough positional leverage to profit.',
+          },
+        ],
+        xp: 12,
+      },
+      {
+        id: 'obp-s3',
+        type: 'decision_spot',
+        street: 'preflop',
+        hero_position: 'UTG',
+        hero_hand: ['Jc', '7c'],
+        pot_bb: 1.5,
+        effective_stack_bb: 100,
+        narrative: 'Action starts on you in UTG with J♣7♣. You are first to act.',
+        options: [
+          {
+            id: 'open',
+            label: 'Open raise to 2.5bb',
+            quality: 'mistake',
+            ev_loss_bb: 1.4,
+            feedback:
+              'J7s does not clear the UTG opening threshold. UTG opens the tightest range in 6-max — roughly 14%. J7s lacks the strength and connectivity to profit from first position against five opponents, most of whom will have position on you.',
+          },
+          {
+            id: 'fold',
+            label: 'Fold',
+            quality: 'perfect',
+            ev_loss_bb: 0,
+            feedback:
+              'Correct. J7s is not in UTG\'s opening range at 100bb. The hand is too speculative for a position where you will play most of the hand first-to-act against several opponents.',
+          },
+        ],
+        xp: 12,
+      },
+    ],
+  },
+
+  // Lesson 4 — Leveraging IP Postflop
+  {
+    id: 'leveraging-position-postflop',
+    module_id: 'positions-module',
+    slug: 'leveraging-position-postflop',
+    title: 'Leveraging IP Postflop',
+    lesson_type: 'micro',
+    concept_ids: ['ip_advantage', 'equity_realization'],
+    estimated_min: 5,
+    xp_reward: 40,
+    sort_order: 4,
+    steps: [
+      {
+        id: 'lpp-s1',
+        type: 'concept_reveal',
+        concept_ids: ['ip_advantage'],
+        concept_title: 'Four Ways IP Generates Value',
+        concept_content:
+          'IP translates into concrete EV through four mechanisms. (1) Free cards: when IP checks back, they see the next card at no cost while OOP cannot take the same action profitably. (2) Pot control: IP can check back weak holdings on any street to prevent the pot from growing. (3) Bluff efficiency: OOP must fold or raise blind to IP bets — check-raising as a bluff is expensive and infrequent. (4) River decisions: IP sees OOP\'s river action (check or bet, and bet sizing) before committing chips — dramatically reducing decision error.',
+        xp: 5,
+      },
+      {
+        id: 'lpp-s2',
+        type: 'decision_spot',
+        street: 'flop',
+        hero_position: 'BTN',
+        villain_position: 'BB',
+        board: ['As', '6c', '2h'],
+        pot_bb: 5.5,
+        effective_stack_bb: 97,
+        narrative: 'BTN vs BB single-raised pot. Flop A♠6♣2♥. Pot 5.5bb. BB checks to you.',
+        options: [
+          {
+            id: 'bet',
+            label: 'Bet 1.8bb (1/3 pot)',
+            quality: 'perfect',
+            ev_loss_bb: 0,
+            feedback:
+              'Correct. A♠6♣2♥ is a dry board that heavily favors BTN\'s opening range (many Ax combos) over BB\'s defending range. A small frequent c-bet extracts value from BB\'s weak holdings and forces folds from hands with live equity like 87 or KQ.',
+          },
+          {
+            id: 'check',
+            label: 'Check back',
             quality: 'acceptable',
             ev_loss_bb: 0.6,
             feedback:
-              'Some solvers do mix in BTN limps, but raising is higher EV for most player pools. Limping gives up initiative and fold equity.',
+              'Checking back is not catastrophic — you preserve your range\'s balance and can extract value on later streets. But it concedes a free card on a board where you have a clear range advantage, giving up meaningful EV.',
           },
         ],
-        xp: 10,
+        xp: 12,
       },
       {
-        id: 'pos-s4',
-        type: 'board_classify',
+        id: 'lpp-s3',
+        type: 'decision_spot',
         street: 'flop',
-        narrative: 'A hand reaches the flop. One player is Out Of Position (OOP), one is In Position (IP). Who acts first on every postflop street?',
-        correct_answer: 'oop',
-        correct_feedback:
-          'Correct — the OOP player always acts first on every postflop street. This is the fundamental positional disadvantage: they must declare their action before seeing what the IP player does.',
-        wrong_feedback:
-          'No — postflop, OOP acts first on flop, turn, and river. The IP player gets to react with full information every street.',
+        hero_position: 'BB',
+        villain_position: 'BTN',
+        board: ['As', '6c', '2h'],
+        hero_hand: ['9h', '8h'],
+        pot_bb: 5.5,
+        effective_stack_bb: 97,
+        narrative: 'BB vs BTN single-raised pot. Flop A♠6♣2♥. Pot 5.5bb. You hold 9♥8♥. Action is on you OOP.',
         options: [
-          { id: 'oop', label: 'OOP player (e.g. BB) acts first', quality: 'perfect', feedback: 'Correct — OOP declares before IP on every postflop street.' },
-          { id: 'ip', label: 'IP player (e.g. BTN) acts first', quality: 'mistake', feedback: 'No — BTN acts last postflop, which is the positional advantage.' },
+          {
+            id: 'check',
+            label: 'Check',
+            quality: 'perfect',
+            ev_loss_bb: 0,
+            feedback:
+              'Check is correct. You are OOP on a board that strongly favors BTN\'s range. 9♥8♥ has limited equity here — no pair, backdoor flush only. Checking puts the action on BTN and lets you respond to their sizing before investing chips.',
+          },
+          {
+            id: 'donk',
+            label: 'Lead bet 3bb',
+            quality: 'mistake',
+            ev_loss_bb: 2.1,
+            feedback:
+              'Leading OOP with a weak draw on an ace-high dry board is a large error. You are betting into BTN\'s range advantage, losing your check-raise option, and investing chips without the initiative or equity to justify the bet.',
+          },
         ],
-        xp: 8,
+        xp: 12,
+      },
+    ],
+  },
+
+  // Lesson 5 — The Blind Tax
+  {
+    id: 'blind-positions',
+    module_id: 'positions-module',
+    slug: 'blind-positions',
+    title: 'The Blind Tax',
+    lesson_type: 'micro',
+    concept_ids: ['position_value', 'bb_defense'],
+    estimated_min: 5,
+    xp_reward: 40,
+    sort_order: 5,
+    steps: [
+      {
+        id: 'bp-s1',
+        type: 'concept_reveal',
+        concept_ids: ['bb_defense'],
+        concept_title: 'Why the Blinds Lose Money Structurally',
+        concept_content:
+          'SB and BB are the only seats forced to invest chips before seeing cards. Worse, both act first on every postflop street — paying money to play OOP. The BB defends most widely because it already has 1bb invested: facing a 2.5bb open it only needs to call 1.5bb more into a pot of roughly 4bb, requiring just 27% equity to break even (1.5 ÷ 5.5). Despite this favourable price, BB still loses money per hand over time due to OOP disadvantage. SB is the worst seat overall — it pays 0.5bb, plays even shorter stacked relative to the pot, and is always OOP postflop.',
+        xp: 5,
       },
       {
-        id: 'pos-s5',
-        type: 'concept_reveal',
-        concept_ids: ['position_value'],
-        concept_title: 'Position Summary',
-        concept_content:
-          "Position is the single biggest structural edge in poker. Playing IP you see villain's action before deciding: their check signals weakness, their bet gives you price info, and your hand's realized equity is roughly 8–12% higher than OOP. Tight from early position, wide from late position — this one rule underlies most preflop strategy.",
-        xp: 5,
+        id: 'bp-s2',
+        type: 'decision_spot',
+        street: 'preflop',
+        hero_position: 'BB',
+        villain_position: 'BTN',
+        hero_hand: ['Ts', '8s'],
+        pot_bb: 3.5,
+        effective_stack_bb: 98.5,
+        narrative: 'BTN opens 2.5bb. Folds to you in the BB. Pot is 3.5bb (BTN 2.5 + SB dead 0.5 + BB 0.5). Call costs 1.5bb.',
+        options: [
+          {
+            id: 'call',
+            label: 'Call 1.5bb',
+            quality: 'perfect',
+            ev_loss_bb: 0,
+            feedback:
+              'Correct. T♠8♠ is a clear BB defend. Pot odds require only 27% equity (1.5 ÷ 5.5) and T8s has roughly 38% equity vs BTN\'s wide opening range. The hand plays well multiway, has straight and flush potential, and the price is correct.',
+          },
+          {
+            id: 'fold',
+            label: 'Fold',
+            quality: 'mistake',
+            ev_loss_bb: 0.8,
+            feedback:
+              'Folding T8s from the BB vs a BTN open is too tight. You are getting 3.7:1 pot odds, the hand is suited with strong connectivity, and your equity far exceeds the 27% required to call. Over-folding from BB is one of the most common population leaks.',
+          },
+        ],
+        xp: 12,
+      },
+      {
+        id: 'bp-s3',
+        type: 'decision_spot',
+        street: 'preflop',
+        hero_position: 'SB',
+        villain_position: 'UTG',
+        hero_hand: ['Qc', 'Jd'],
+        pot_bb: 3.0,
+        effective_stack_bb: 99,
+        narrative: 'UTG opens 2.5bb. HJ, CO, BTN all fold. Action is on you in the SB with Q♣J♦.',
+        options: [
+          {
+            id: '3bet',
+            label: '3-bet to 8bb',
+            quality: 'good',
+            ev_loss_bb: 0,
+            feedback:
+              'A 3-bet is the preferred line with QJo from SB vs UTG. Calling is dangerous: you play the hand OOP in a single-raised pot against UTG\'s tight range. 3-betting forces UTG to fold many hands and, when called, you retain initiative despite being OOP.',
+          },
+          {
+            id: 'fold',
+            label: 'Fold',
+            quality: 'acceptable',
+            ev_loss_bb: 0.4,
+            feedback:
+              'Folding QJo vs UTG is defensible — UTG has a tight range that dominates QJo frequently (AQ, KQ, JJ+). If you are not 3-betting here, folding is preferable to calling OOP with a dominated hand.',
+          },
+          {
+            id: 'call',
+            label: 'Call 2bb',
+            quality: 'mistake',
+            ev_loss_bb: 1.5,
+            feedback:
+              'Flat-calling QJo from SB vs UTG open is the weakest option. You enter a pot OOP with a hand that is often dominated by UTG\'s range (AQ, KQ, QQ+), without initiative, and with no ability to profit from fold equity. Either 3-bet or fold.',
+          },
+        ],
+        xp: 12,
       },
     ],
   },

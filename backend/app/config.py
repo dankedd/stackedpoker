@@ -39,6 +39,21 @@ class Settings(BaseSettings):
     stripe_pro_price_id: str = ""
     stripe_premium_price_id: str = ""
 
+    # ── Solver engine controls ────────────────────────────────────────────────
+    # Master switch for solver-backed strategy retrieval in the analysis pipeline.
+    # When False, the pipeline skips the strategy DB layer entirely.
+    # Default: True — safe because the retrieval layer never crashes; it falls
+    # back to deterministic heuristics if no solver data is available.
+    enable_solver_engine: bool = True
+
+    # ── Strategy debug controls ───────────────────────────────────────────────
+    # Set DEBUG_STRATEGY_ENABLED=true in dev/staging to expose debug endpoints.
+    # NEVER enable in production without also setting DEBUG_ADMIN_TOKEN.
+    debug_strategy_enabled: bool = False
+    # If non-empty, the X-Debug-Token header must match this value to access
+    # debug endpoints. Leave empty to disable token protection (dev only).
+    debug_admin_token: str = ""
+
     # Pydantic reads .env for local dev; real env vars always win over .env file.
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

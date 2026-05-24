@@ -1,0 +1,48 @@
+# GTO+ combo-level export — BTN vs BB, SRP, 100bb, flop strategy
+# Format: node_id,board,position,pot_chips,stack_chips,street,spot_type,combo,equity,ev_chips,action_name,frequency
+# Multiple rows per (node_id, combo) — one row per action
+node_id,board,position,pot_chips,stack_chips,street,spot_type,combo,equity,ev_chips,action_name,frequency
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,AsKs,0.92,2.15,Bet 33%,1.00
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,AsKs,0.92,2.15,Check,0.00
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,AhKh,0.91,2.10,Bet 33%,1.00
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,AhKh,0.91,2.10,Check,0.00
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,AcKd,0.90,2.05,Bet 33%,0.95
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,AcKd,0.90,2.05,Check,0.05
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,AdKc,0.90,2.05,Bet 33%,0.95
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,AdKc,0.90,2.05,Check,0.05
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,AsJs,0.68,1.55,Bet 33%,0.75
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,AsJs,0.68,1.55,Check,0.25
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,AhJh,0.68,1.55,Bet 33%,0.75
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,AhJh,0.68,1.55,Check,0.25
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,KhQh,0.58,1.32,Bet 33%,0.60
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,KhQh,0.58,1.32,Check,0.40
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,KsQs,0.58,1.32,Bet 33%,0.60
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,KsQs,0.58,1.32,Check,0.40
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,7h6h,0.35,1.10,Bet 33%,0.45
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,7h6h,0.35,1.10,Check,0.55
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,6s5s,0.28,0.95,Bet 33%,0.20
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,6s5s,0.28,0.95,Check,0.80
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,2h2s,0.22,0.85,Bet 33%,0.10
+1,Ah Kc 7d,BTN,6.5,96.75,flop,SRP,2h2s,0.22,0.85,Check,0.90
+2,9h 8c 7d,BTN,6.5,96.75,flop,SRP,Ts9s,0.78,1.85,Bet 33%,0.80
+2,9h 8c 7d,BTN,6.5,96.75,flop,SRP,Ts9s,0.78,1.85,Check,0.20
+2,9h 8c 7d,BTN,6.5,96.75,flop,SRP,TsJs,0.72,1.75,Bet 33%,0.75
+2,9h 8c 7d,BTN,6.5,96.75,flop,SRP,TsJs,0.72,1.75,Check,0.25
+2,9h 8c 7d,BTN,6.5,96.75,flop,SRP,6h5h,0.68,1.65,Bet 33%,0.70
+2,9h 8c 7d,BTN,6.5,96.75,flop,SRP,6h5h,0.68,1.65,Check,0.30
+2,9h 8c 7d,BTN,6.5,96.75,flop,SRP,AsKs,0.42,1.20,Bet 33%,0.35
+2,9h 8c 7d,BTN,6.5,96.75,flop,SRP,AsKs,0.42,1.20,Check,0.65
+2,9h 8c 7d,BTN,6.5,96.75,flop,SRP,AhKh,0.40,1.18,Bet 33%,0.30
+2,9h 8c 7d,BTN,6.5,96.75,flop,SRP,AhKh,0.40,1.18,Check,0.70
+2,9h 8c 7d,BTN,6.5,96.75,flop,SRP,2h2s,0.35,1.05,Bet 33%,0.28
+2,9h 8c 7d,BTN,6.5,96.75,flop,SRP,2h2s,0.35,1.05,Check,0.72
+3,Ah 8h 2h,BTN,6.5,96.75,flop,SRP,AsKs,0.72,1.75,Bet 33%,0.65
+3,Ah 8h 2h,BTN,6.5,96.75,flop,SRP,AsKs,0.72,1.75,Check,0.35
+3,Ah 8h 2h,BTN,6.5,96.75,flop,SRP,9h7h,0.68,1.65,Bet 33%,0.60
+3,Ah 8h 2h,BTN,6.5,96.75,flop,SRP,9h7h,0.68,1.65,Check,0.40
+3,Ah 8h 2h,BTN,6.5,96.75,flop,SRP,Kh5h,0.65,1.60,Bet 33%,0.70
+3,Ah 8h 2h,BTN,6.5,96.75,flop,SRP,Kh5h,0.65,1.60,Check,0.30
+3,Ah 8h 2h,BTN,6.5,96.75,flop,SRP,JsTs,0.38,1.05,Bet 33%,0.40
+3,Ah 8h 2h,BTN,6.5,96.75,flop,SRP,JsTs,0.38,1.05,Check,0.60
+3,Ah 8h 2h,BTN,6.5,96.75,flop,SRP,5s4s,0.30,0.90,Bet 33%,0.35
+3,Ah 8h 2h,BTN,6.5,96.75,flop,SRP,5s4s,0.30,0.90,Check,0.65

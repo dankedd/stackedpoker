@@ -18,7 +18,9 @@ import {
   CheckCircle2,
   Users,
   Coins,
+  BarChart3,
 } from "lucide-react";
+import type { StrategyProfile } from "@/lib/types";
 
 interface AnalysisResultProps {
   result: AnalysisResponse;
@@ -133,6 +135,11 @@ export function AnalysisResult({ result }: AnalysisResultProps) {
         </Card>
       </div>
 
+      {/* Strategy Profile */}
+      {result.strategy_profile && (
+        <StrategyProfilePanel profile={result.strategy_profile} />
+      )}
+
       {/* Findings */}
       {findings.length > 0 && (
         <Card className="border-border/50">
@@ -213,5 +220,94 @@ export function AnalysisResult({ result }: AnalysisResultProps) {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+// ── Strategy Profile Panel ──────────────────────────────────────────────────
+
+function SignalBar({ label, value }: { label: string; value: number }) {
+  const pct = Math.round(value * 100);
+  const color =
+    pct >= 70 ? "bg-green-500" :
+    pct >= 45 ? "bg-yellow-500" :
+    "bg-orange-500";
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-mono font-medium">{pct}%</span>
+      </div>
+      <div className="h-1.5 w-full rounded bg-secondary">
+        <div className={`h-full rounded ${color} transition-all`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function StrategyProfilePanel({ profile }: { profile: StrategyProfile }) {
+  const sourceLabel =
+    profile.source === "exact" ? "Exact Match" :
+    profile.source === "similar" ? "Similar Match" :
+    profile.source === "fallback" ? "Heuristic" :
+    "Default";
+
+  const sourceColor =
+    profile.source === "exact" ? "text-green-400" :
+    profile.source === "similar" ? "text-yellow-400" :
+    profile.source === "fallback" ? "text-orange-400" :
+    "text-red-400";
+
+  return (
+    <Card className="border-border/50">
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <BarChart3 className="h-4 w-4 text-violet-400" />
+            Strategy Profile
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className={sourceColor}>
+              {sourceLabel}
+            </Badge>
+            {profile.primary_sizing && (
+              <Badge variant="outline">
+                {profile.primary_sizing}
+              </Badge>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3">
+            <SignalBar label="Bet Frequency" value={profile.bet_frequency} />
+            <SignalBar label="Range Advantage" value={profile.range_advantage} />
+            <SignalBar label="Nut Advantage" value={profile.nut_advantage} />
+          </div>
+          <div className="space-y-3">
+            <SignalBar label="Pressure Score" value={profile.pressure_score} />
+            <SignalBar label="Volatility Score" value={profile.volatility_score} />
+            <SignalBar label="Equity Realization" value={profile.equity_realization} />
+          </div>
+        </div>
+
+        {profile.rationale && (
+          <p className="text-xs text-muted-foreground italic border-t border-border pt-3">
+            {profile.rationale}
+          </p>
+        )}
+
+        {profile.caveats.length > 0 && (
+          <div className="space-y-1">
+            {profile.caveats.map((c, i) => (
+              <div key={i} className="flex items-start gap-1.5 text-xs text-yellow-400/80">
+                <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                <span>{c}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

@@ -118,6 +118,67 @@ async def analyze_canonical(
         from app.engines.analysis import analyse_hand
         result = analyse_hand(parsed)
 
+        # ── Phase 5: strategy DB retrieval layer ──────────────────────────
+        # Uses 4-tier retrieval (cache → exact DB → similar → fallback).
+        # Never blocks analysis — all errors are logged and swallowed.
+        # Gated by ENABLE_SOLVER_ENGINE feature flag.
+        from app.config import get_settings as _get_settings
+        _solver_enabled = _get_settings().enable_solver_engine
+        if _solver_enabled:
+            try:
+                from app.solver.abstractions import SpotAbstraction
+                from app.strategy_db.retrieval import retrieve_strategy
+                from app.strategy.recommendations import strategy_findings_for_hand
+                from app.models.schemas import ActionFrequencyResponse, StrategyProfileResponse
+
+                abstraction = SpotAbstraction.from_canonical_hand(request.canonical)
+                retrieval = retrieve_strategy(abstraction.node_key, abstraction.solver_spot)
+                profile = retrieval.profile
+
+                result.strategy_profile = StrategyProfileResponse(
+                    node_key=profile.node_key,
+                    bet_frequency=profile.bet_frequency,
+                    check_frequency=profile.check_frequency,
+                    primary_sizing=profile.primary_sizing,
+                    range_advantage=profile.range_advantage,
+                    nut_advantage=profile.nut_advantage,
+                    pressure_score=profile.pressure_score,
+                    volatility_score=profile.volatility_score,
+                    equity_realization=profile.equity_realization,
+                    action_frequencies=[
+                        ActionFrequencyResponse(
+                            action=af.action, frequency=af.frequency, sizing=af.sizing
+                        )
+                        for af in profile.action_frequencies
+                    ],
+                    rationale=profile.rationale,
+                    caveats=profile.caveats,
+                    source=retrieval.retrieval_type,  # "exact"|"similar"|"fallback"|"default"
+                )
+
+                strategy_findings = strategy_findings_for_hand(
+                    profile, parsed, result.spot_classification
+                )
+                if strategy_findings:
+                    result.findings = list(result.findings) + strategy_findings
+
+                logger.info(
+                    "Strategy retrieved: key=%s type=%s source=%s cache=%s similarity=%.3f findings=%d",
+                    retrieval.matched_node_key,
+                    retrieval.retrieval_type,
+                    retrieval.debug.get("store_source", "unknown"),
+                    retrieval.cache_hit,
+                    retrieval.similarity_score,
+                    len(strategy_findings),
+                )
+            except Exception:
+                logger.warning(
+                    "Strategy layer failed — analysis returned without strategy profile",
+                    exc_info=True,
+                )
+        else:
+            logger.info("Solver engine disabled (ENABLE_SOLVER_ENGINE=false) — skipping strategy retrieval")
+
         from app.services.openai_coach import generate_coaching
         coaching = await generate_coaching(
             hand=parsed,

@@ -324,6 +324,30 @@ export interface TournamentAnalysisResponse {
   save_error?: string | null;
 }
 
+// ── Strategy profile (from solver-backed retrieval layer) ────────────────
+
+export interface ActionFrequencyInfo {
+  action: string;
+  frequency: number;
+  sizing: string | null;
+}
+
+export interface StrategyProfile {
+  node_key: string;
+  bet_frequency: number;
+  check_frequency: number;
+  primary_sizing: string | null;
+  range_advantage: number;
+  nut_advantage: number;
+  pressure_score: number;
+  volatility_score: number;
+  equity_realization: number;
+  action_frequencies: ActionFrequencyInfo[];
+  rationale: string;
+  caveats: string[];
+  source: string;  // "exact" | "similar" | "fallback" | "default"
+}
+
 export interface AnalysisResponse {
   parsed_hand: ParsedHand;
   spot_classification: SpotClassification;
@@ -336,5 +360,6 @@ export interface AnalysisResponse {
   replay?: ReplayAnalysis;
   saved_id?: string | null;
   save_error?: string | null;
+  strategy_profile?: StrategyProfile | null;
 }
 
