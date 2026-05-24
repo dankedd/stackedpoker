@@ -108,9 +108,42 @@ def normalize_hand(parsed: ParsedHand, raw_text: str | None = None) -> Canonical
         player_by_name[p.name] = cp
         player_id_by_name[p.name] = pid
 
+    # ── 1b. Infer players from actions when player list is empty ─────────────
+    # This handles truncated inputs (OCR, partial pastes) where the seat
+    # definitions are missing but the action history is intact.
+    if not players and parsed.actions:
+        _log.info(
+            "No players found in parsed hand — inferring from %d actions",
+            len(parsed.actions),
+        )
+        players, player_by_name, player_id_by_name = _infer_players_from_actions(
+            parsed.actions,
+            parsed.hero_name,
+            parsed.hero_position,
+            parsed.effective_stack_bb,
+        )
+
     # ── 2. Assign hero cards ──────────────────────────────────────────────────
     hero_player = player_by_name.get(parsed.hero_name)
-    hero_id = player_id_by_name.get(parsed.hero_name, "seat_0")
+    hero_id = player_id_by_name.get(parsed.hero_name)
+    if hero_id is None and players:
+        # hero_name didn't match any player.  If players were inferred from
+        # actions, the first is_hero player is the correct match.  If players
+        # came from the parser (seat definitions), the mismatch is real and
+        # the validator should flag it — so we keep hero_id pointing to a
+        # non-existent ID only when inference was NOT used.
+        hero_candidate = next((p for p in players if p.is_hero), None)
+        if hero_candidate is not None:
+            hero_id = hero_candidate.id
+            hero_player = hero_candidate
+            _log.debug("Hero name %r unmatched — mapped to is_hero player %s", parsed.hero_name, hero_id)
+        else:
+            # No player marked is_hero.  Keep the stale ID so the validator
+            # can report HERO_NOT_IN_PLAYERS.
+            hero_id = f"seat_0"
+    elif hero_id is None:
+        hero_id = "seat_0"
+
     if hero_player and parsed.hero_cards:
         hero_player.hole_cards = [
             c for c in (normalize_card(raw) for raw in parsed.hero_cards)
@@ -167,6 +200,131 @@ def normalize_hand(parsed: ParsedHand, raw_text: str | None = None) -> Canonical
         parse_source=ParseSource.TEXT_HISTORY,
         raw_text=raw_text,
     )
+
+
+# ── Player inference from actions ─────────────────────────────────────────────
+
+# Names that imply positions (case-insensitive)
+_NAME_TO_POSITION: dict[str, str] = {
+    "hero": "",       # hero position comes from parsed.hero_position
+    "villain": "",    # assigned later
+    "btn": "BTN", "button": "BTN",
+    "sb": "SB", "small blind": "SB",
+    "bb": "BB", "big blind": "BB",
+    "utg": "UTG", "utg+1": "UTG+1", "utg+2": "UTG+2",
+    "lj": "LJ", "hj": "HJ", "co": "CO",
+    "mp": "HJ", "ep": "UTG",
+}
+
+# For heads-up defaults when no positions can be inferred
+_HU_POSITIONS = ["BTN", "BB"]
+_DEFAULT_POSITIONS = ["BTN", "SB", "BB", "UTG", "HJ", "CO", "LJ", "UTG+1", "UTG+2"]
+
+
+def _infer_position_from_name(name: str) -> str:
+    """Try to derive a canonical position from a player name/alias."""
+    key = name.strip().lower()
+    if key in _NAME_TO_POSITION:
+        return _NAME_TO_POSITION[key]
+    # Also check the existing position alias map
+    normalized = _POS_ALIASES.get(key)
+    if normalized:
+        return normalized
+    return ""
+
+
+def _infer_players_from_actions(
+    actions: list[HandAction],
+    hero_name: str,
+    hero_position: str,
+    effective_stack_bb: float,
+) -> tuple[list[CanonicalPlayer], dict[str, CanonicalPlayer], dict[str, str]]:
+    """
+    Reconstruct a player list from parsed actions when seat definitions are missing.
+
+    Extracts unique player names from actions, assigns seats and positions,
+    and marks the hero. Uses name-based heuristics and preflop action order
+    to infer positions.
+
+    Returns:
+        (players, player_by_name, player_id_by_name)
+    """
+    # Collect unique player names in order of first appearance
+    seen: set[str] = set()
+    ordered_names: list[str] = []
+    for a in actions:
+        if a.player not in seen:
+            seen.add(a.player)
+            ordered_names.append(a.player)
+
+    if not ordered_names:
+        return [], {}, {}
+
+    # Default stack for inferred players
+    default_stack = effective_stack_bb if effective_stack_bb > 0 else 100.0
+
+    # Try to assign positions from names
+    name_positions: dict[str, str] = {}
+    for name in ordered_names:
+        pos = _infer_position_from_name(name)
+        if pos:
+            name_positions[name] = pos
+
+    # Assign hero position
+    if hero_name and hero_name in seen:
+        hero_pos = normalize_position(hero_position) if hero_position else ""
+        if hero_pos and hero_pos != "?":
+            name_positions[hero_name] = hero_pos
+
+    # Fill remaining positions from defaults
+    used_positions = set(name_positions.values()) - {""}
+    n_players = len(ordered_names)
+
+    if n_players == 2:
+        available = [p for p in _HU_POSITIONS if p not in used_positions]
+    else:
+        available = [p for p in _DEFAULT_POSITIONS if p not in used_positions]
+
+    avail_idx = 0
+    for name in ordered_names:
+        if name not in name_positions or name_positions[name] == "":
+            if avail_idx < len(available):
+                name_positions[name] = available[avail_idx]
+                avail_idx += 1
+            else:
+                name_positions[name] = "?"
+
+    # Build CanonicalPlayer list
+    players: list[CanonicalPlayer] = []
+    player_by_name: dict[str, CanonicalPlayer] = {}
+    player_id_by_name: dict[str, str] = {}
+
+    for seat_idx, name in enumerate(ordered_names, start=1):
+        pid = f"seat_{seat_idx}"
+        position = name_positions.get(name, "?")
+        is_hero = (name == hero_name) if hero_name else (seat_idx == 1)
+
+        cp = CanonicalPlayer(
+            id=pid,
+            name=name,
+            seat=seat_idx,
+            position=position,
+            stack_bb=default_stack,
+            hole_cards=[],
+            is_hero=is_hero,
+            is_active=True,
+        )
+        players.append(cp)
+        player_by_name[name] = cp
+        player_id_by_name[name] = pid
+
+    _log.info(
+        "Inferred %d player(s) from actions: %s",
+        len(players),
+        [(p.name, p.position, p.id) for p in players],
+    )
+
+    return players, player_by_name, player_id_by_name
 
 
 # ── Internal helpers ───────────────────────────────────────────────────────────

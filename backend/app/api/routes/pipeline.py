@@ -91,6 +91,29 @@ async def analyze_canonical(
 
     Returns 422 if can_analyze=False.
     """
+    # ── Server-side repair: infer missing players from actions ────────────
+    # The frontend may send a CanonicalHand with empty players if the
+    # original parse couldn't extract seat definitions (OCR, partial paste).
+    # Re-run normalization to reconstruct players from action history.
+    canonical = request.canonical
+    if not canonical.players and any(
+        a for s in canonical.streets for a in s.actions
+    ):
+        logger.info(
+            "Empty players with actions present — re-normalizing hand %s",
+            canonical.hand_id,
+        )
+        from app.engines.pipeline import _canonical_to_parsed_hand
+        from app.engines.normalizer import normalize_hand
+        from app.engines.canonical_validator import validate_canonical
+
+        parsed = _canonical_to_parsed_hand(canonical)
+        canonical = normalize_hand(parsed, raw_text=canonical.raw_text)
+        request.canonical = canonical
+        # Re-validate with repaired canonical
+        server_validation = validate_canonical(canonical)
+        request.validation = server_validation
+
     if not request.validation.can_analyze:
         error_summary = "; ".join(
             e.message for e in request.validation.errors[:3]
