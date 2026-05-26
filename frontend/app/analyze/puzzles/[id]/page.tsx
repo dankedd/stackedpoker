@@ -16,37 +16,30 @@ import { buildPokerState } from "@/lib/puzzles/pokerState";
 import { runGoldenTests, validateAllPuzzles } from "@/lib/puzzles/puzzleValidator";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Puzzle pot & stack engine
-// Derives pot size and player stacks from puzzle metadata + hero's action history.
-// No AI, no hardcoded values — pure chip accounting from context strings + choices.
+// Puzzle pot & stack engine (unchanged)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Parse the big blind dollar value from a stakes string like "$1/$2" or "€0.50/€1". */
 function parseBigBlind(stakes: string): number {
   const m = stakes.match(/[\$€£]?(\d+(?:\.\d+)?)\s*\/\s*[\$€£]?(\d+(?:\.\d+)?)/);
   return m ? parseFloat(m[2]) : 1;
 }
 
-/** Format a BB amount for display: integers show as "80bb", decimals as "24.5bb". */
 function fmtBb(bb: number): string {
   const rounded = Math.round(bb * 10) / 10;
   return rounded % 1 === 0 ? `${rounded}bb` : `${rounded.toFixed(1)}bb`;
 }
 
-/** Convert all $X / €X / £X amounts in a display string to Xbb notation. */
 function bbifyText(text: string, bbDollars: number): string {
   if (bbDollars <= 0) return text;
   return text.replace(/[$€£](\d+(?:\.\d+)?)/g, (_, amt) => fmtBb(parseFloat(amt) / bbDollars));
 }
 
-/** Extract explicit "Pot $X" value from a step context string, converting to BB. */
 function extractContextPotBb(context: string, bbDollars: number): number | null {
   const m = context.match(/[Pp]ot[:\s]+[\$€£]?(\d+(?:\.\d+)?)/);
   if (!m || bbDollars <= 0) return null;
   return parseFloat(m[1]) / bbDollars;
 }
 
-/** Extract villain's bet/raise size in BB from a context string. Returns 0 if villain checked. */
 function extractVillainBetBb(context: string, bbDollars: number): number {
   if (bbDollars <= 0) return 0;
   const m = context.match(
@@ -55,7 +48,6 @@ function extractVillainBetBb(context: string, bbDollars: number): number {
   return m ? parseFloat(m[1]) / bbDollars : 0;
 }
 
-/** Extract villain's preflop raise size in BB from a context string. */
 function extractPreflopVillainRaiseBb(context: string, bbDollars: number): number {
   if (bbDollars <= 0) return 2.5;
   const m =
@@ -65,50 +57,27 @@ function extractPreflopVillainRaiseBb(context: string, bbDollars: number): numbe
   return m ? parseFloat(m[1]) / bbDollars : 2.5;
 }
 
-/**
- * Compute how many BB hero commits for a chosen option.
- * heroAlreadyInBb = chips hero already has in THIS street (1 for BB preflop, 0.5 for SB preflop, 0 post-flop).
- */
 function heroInvestBb(optionLabel: string, bbDollars: number, heroAlreadyInBb: number): number {
   const lo = optionLabel.toLowerCase().trim();
   if (/^(fold|check)/.test(lo)) return 0;
-
-  // "Raise to $X" or "3-bet to $X" — total chips committed this street
   const raiseToM = optionLabel.match(/(?:raise\s+to|3.?bet\s+to)\s+[\$€£]?(\d+(?:\.\d+)?)/i);
   if (raiseToM && bbDollars > 0) {
     const totalBb = parseFloat(raiseToM[1]) / bbDollars;
     return Math.max(0, totalBb - heroAlreadyInBb);
   }
-
-  // Dollar amount in label: "Call $3", "Bet $18 (33%)", "Raise $20" — additional chips
   const amtM = optionLabel.match(/[\$€£](\d+(?:\.\d+)?)/);
   if (amtM && bbDollars > 0) return parseFloat(amtM[1]) / bbDollars;
-
-  // All-in / shove with no explicit amount
   if (/(?:jam|all.?in|shove)/i.test(lo)) return Infinity;
-
   return 0;
 }
 
 interface PuzzleStackState {
-  potBb: number;         // pot size before hero acts at this step
-  heroStack: number;     // hero's stack before hero acts at this step
-  villainStack: number;  // villain's stack before hero acts at this step
-  heroAlreadyIn: number; // chips hero already has in the pot THIS street
+  potBb: number;
+  heroStack: number;
+  villainStack: number;
+  heroAlreadyIn: number;
 }
 
-/**
- * Deterministic pot + stack calculation for puzzle state.
- *
- * Algorithm:
- *   1. Seed blinds from hero position.
- *   2. Walk through past hero choices, deducting investments.
- *   3. For each past step, extract villain's action from the NEXT step's context pot delta.
- *   4. For the current step, read explicit context pot + villain bet.
- *
- * Villain stack is derived from the canonical pot (from context strings) minus hero's total
- * investment minus third-party blinds (SB from folded players).
- */
 function computePuzzleState(
   puzzle: { heroPosition: string; villainPosition: string; effectiveStack: number; stakes: string; steps: Array<{ street: string; context: string; board: string[] }> },
   stepIdx: number,
@@ -119,88 +88,59 @@ function computePuzzleState(
   const heroPos = puzzle.heroPosition.toUpperCase();
   const steps = puzzle.steps;
 
-  // ── Blind seeding ──────────────────────────────────────────────────────────
-  // How much each party has posted before any action.
-  // sbInPot: chips from a third-party SB who has already folded (not hero, not villain).
-  const sbInPot = heroPos === "SB" ? 0 : 0.5; // hero IS the SB → counted in heroTotalIn; else a third party posted
+  const sbInPot = heroPos === "SB" ? 0 : 0.5;
   let heroTotalIn = heroPos === "BB" ? 1 : heroPos === "SB" ? 0.5 : 0;
 
-  // ── Walk through past decisions ────────────────────────────────────────────
-  let heroStreetIn = heroTotalIn; // tracks hero's investment in the current-loop street
+  let heroStreetIn = heroTotalIn;
   let prevStreet = "preflop";
 
   for (let i = 0; i < Math.min(stepIdx, stepResults.length); i++) {
     const step = steps[i];
     const choice = stepResults[i]?.option;
     if (!choice) break;
-
-    // Street transition → reset per-street tracker
     if (step.street !== prevStreet) {
       prevStreet = step.street;
       heroStreetIn = 0;
     }
-
     const invest = heroInvestBb(choice.label, bbDollars, heroStreetIn);
     const actualInvest = Math.min(invest, Math.max(0, startStack - heroTotalIn));
     heroStreetIn += actualInvest;
     heroTotalIn += actualInvest;
   }
 
-  // ── Current step pot & stacks ──────────────────────────────────────────────
   const currentStep = steps[stepIdx];
   const currentStreet = currentStep.street;
 
-  // heroAlreadyIn for the CURRENT step (what hero has committed this street before acting now)
   const heroAlreadyIn =
     currentStreet === "preflop"
       ? heroPos === "BB" ? 1 : heroPos === "SB" ? 0.5 : 0
-      : // post-flop: if the previous step was the same street, hero invested heroStreetIn
-      stepIdx > 0 && steps[stepIdx - 1]?.street === currentStreet
+      : stepIdx > 0 && steps[stepIdx - 1]?.street === currentStreet
       ? heroStreetIn
       : 0;
 
   let potBb: number;
-
   const contextPot = extractContextPotBb(currentStep.context, bbDollars);
   const villainBet = extractVillainBetBb(currentStep.context, bbDollars);
 
   if (currentStreet === "preflop" && contextPot === null) {
-    // Preflop: pot = blinds posted + villain's raise (before hero acts)
     if (heroPos === "BB") {
-      // Villain raised to X; hero (BB) already posted 1bb
       const villainRaise = extractPreflopVillainRaiseBb(currentStep.context, bbDollars);
-      potBb = 0.5 + 1 + villainRaise; // SB + BB + villain raise
+      potBb = 0.5 + 1 + villainRaise;
     } else if (heroPos === "SB") {
-      // Hero is SB acting first or facing BB, or 3bet situation
       const villainRaise = extractPreflopVillainRaiseBb(currentStep.context, bbDollars);
       potBb = villainRaise > 0 ? 0.5 + 1 + villainRaise : 0.5 + 1;
     } else {
-      // Hero is IP (BTN, CO, etc.): pot = just the blinds before hero opens
       potBb = 1.5;
     }
   } else if (contextPot !== null) {
-    // Context explicitly states the pot at the start of this street.
-    // Add villain's bet on top (villain bet before hero acts this street).
     potBb = contextPot + villainBet;
   } else {
-    // Fallback: derive from what we've tracked
     potBb = sbInPot + heroTotalIn + villainBet;
   }
 
   const heroStack = Math.max(0, startStack - heroTotalIn);
-
-  // Villain stack: derived from canonical pot minus all other contributions.
-  // pot = sbInPot + heroTotalIn + villainTotalIn → villainTotalIn = pot - sbInPot - heroTotalIn
   const villainTotalIn = Math.max(0, potBb - sbInPot - heroTotalIn);
   const villainStack = Math.max(0, startStack - villainTotalIn);
-
-  if (process.env.NODE_ENV === "development") {
-    console.debug(
-      `[Puzzle] step ${stepIdx} (${currentStreet}) — ` +
-      `pot: ${potBb.toFixed(2)}bb | hero: ${heroStack.toFixed(2)}bb | villain: ${villainStack.toFixed(2)}bb | ` +
-      `heroTotalIn: ${heroTotalIn.toFixed(2)} | villainTotalIn: ${villainTotalIn.toFixed(2)} | sbInPot: ${sbInPot}`
-    );
-  }
 
   return {
     potBb: Math.max(0, potBb),
@@ -211,14 +151,9 @@ function computePuzzleState(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Helpers
+// Table actor parsing (unchanged)
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Table player visibility — parse context strings for explicit position mentions
-// ─────────────────────────────────────────────────────────────────────────────
-
-/** Table position ordering: SB/BB first, then UTG→BTN clockwise. */
 const CANONICAL_POS_ORDER = ['SB', 'BB', 'UTG', 'UTG+1', 'UTG+2', 'LJ', 'HJ', 'CO', 'BTN', 'MP'];
 
 type PositionStatus = 'hero' | 'villain' | 'active' | 'folded';
@@ -228,11 +163,6 @@ interface TableActor {
   status: PositionStatus;
 }
 
-/**
- * Parse all step contexts up to and including the current step.
- * Returns every EXPLICITLY mentioned position and its last-known state.
- * Hero/villain are always included.
- */
 function parseTableActors(
   contexts: string[],
   heroPos: string,
@@ -246,17 +176,14 @@ function parseTableActors(
   seen.set(villainNorm, 'villain');
 
   for (const ctx of contexts) {
-    // "POSITION folds" — explicit, terminal
     for (const m of ctx.matchAll(/\b(UTG\+1|UTG\+2|UTG|LJ|HJ|CO|BTN|SB|BB|MP)\s+folds?\b/gi)) {
       const p = m[1].toUpperCase();
       if (p !== heroNorm) seen.set(p, 'folded');
     }
-    // "Folds to POSITION" — named position is the aggressor (active)
     for (const m of ctx.matchAll(/[Ff]olds?\s+to\s+(UTG\+1|UTG\+2|UTG|LJ|HJ|CO|BTN|SB|BB|MP)/gi)) {
       const p = m[1].toUpperCase();
       if (seen.get(p) !== 'folded') seen.set(p, p === villainNorm ? 'villain' : 'active');
     }
-    // "POSITION verb" — position is acting (active unless previously folded)
     for (const m of ctx.matchAll(/\b(UTG\+1|UTG\+2|UTG|LJ|HJ|CO|BTN|SB|BB|MP)\s+(?:raises?|re.raises?|opens?|bets?|calls?|cold.calls?|3.bets?|4.bets?|squeezes?|checks?|defends?|jams?|shoves?|leads?|barrels?|fires?)/gi)) {
       const p = m[1].toUpperCase();
       if (p !== heroNorm && seen.get(p) !== 'folded') {
@@ -265,7 +192,6 @@ function parseTableActors(
     }
   }
 
-  // Sort by canonical table order
   return Array.from(seen.entries())
     .map(([pos, status]) => ({ pos, status }))
     .sort((a, b) => {
@@ -275,7 +201,6 @@ function parseTableActors(
     });
 }
 
-/** Compact strip of all explicitly-mentioned table positions with state styling. */
 function TablePositionStrip({
   actors,
   heroPos,
@@ -285,40 +210,41 @@ function TablePositionStrip({
   heroPos: string;
   villainPos: string;
 }) {
-  // Only render when there are more participants than hero + villain
   if (actors.length <= 2) return null;
-
   return (
-    <div className="flex items-center justify-center gap-1.5 mb-4 flex-wrap">
+    <div className="flex items-center justify-center gap-1 mt-3 flex-wrap">
       {actors.map(({ pos, status }) => {
         const isFolded  = status === 'folded';
         const isHero    = pos === heroPos.toUpperCase();
         const isVillain = pos === villainPos.toUpperCase() && status !== 'folded';
-
         return (
           <div
             key={pos}
             title={isFolded ? `${pos} folded` : `${pos} in hand`}
             className={cn(
-              "h-6 px-2.5 flex items-center rounded-full text-[10px] font-semibold border transition-all select-none",
+              "h-5 px-2 flex items-center rounded-full text-[9px] font-semibold transition-all select-none",
               isHero
-                ? "bg-violet-500/15 border-violet-500/25 text-violet-400"
+                ? "bg-violet-500/12 text-violet-400/80"
                 : isVillain
-                ? "bg-secondary/60 border-border/40 text-muted-foreground/80"
+                ? "bg-white/[0.04] text-muted-foreground/60"
                 : isFolded
-                ? "opacity-25 border-border/15 bg-transparent text-muted-foreground/40"
-                : /* other active */ "bg-secondary/35 border-border/25 text-muted-foreground/60"
+                ? "opacity-20 text-muted-foreground/30"
+                : "bg-white/[0.03] text-muted-foreground/45"
             )}
           >
-            {isFolded && <span className="mr-0.5 text-[8px]">✕</span>}
+            {isFolded && <span className="mr-0.5 text-[7px]">✕</span>}
             {pos}
-            {isHero && <span className="ml-0.5 text-[8px] opacity-50">YOU</span>}
+            {isHero && <span className="ml-0.5 text-[7px] opacity-40">YOU</span>}
           </div>
         );
       })}
     </div>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Stats persistence (unchanged)
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface PuzzleStats {
   solved: string[];
@@ -385,7 +311,7 @@ function pickRandomPuzzle(excludeId?: string) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Card components — premium tactile cards (mirrors PlayingCard.tsx tokens)
+// Card components (unchanged)
 // ─────────────────────────────────────────────────────────────────────────────
 
 type CardSize = "sm" | "md" | "lg" | "xl";
@@ -401,7 +327,6 @@ const CARD_RANK: Record<CardSize, string> = { sm: "text-[11px]", md: "text-[15px
 const CARD_SYM: Record<CardSize, string>  = { sm: "text-[9px]",  md: "text-[12px]", lg: "text-[15px]", xl: "text-[19px]" };
 const CARD_CTR: Record<CardSize, string>  = { sm: "text-[22px]", md: "text-[29px]", lg: "text-[40px]", xl: "text-[52px]" };
 
-// Matches PlayingCard.tsx color palette
 const PZ_RED   = "#B41C22";
 const PZ_BLACK = "#1C1917";
 
@@ -428,7 +353,6 @@ function CardFace({ card, size = "md" }: { card: string; size?: CardSize }) {
         border: "1px solid rgba(200,193,182,0.80)",
       }}
     >
-      {/* Top gloss */}
       <div
         className="absolute inset-x-0 top-0 pointer-events-none"
         style={{ height: "42%", background: "linear-gradient(180deg, rgba(255,255,255,0.36) 0%, transparent 100%)", borderRadius: "inherit" }}
@@ -463,7 +387,6 @@ function CardBack({ size = "md" }: { size?: CardSize }) {
         border: "1px solid rgba(139,92,246,0.28)",
       }}
     >
-      {/* Diamond grid */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
@@ -474,19 +397,17 @@ function CardBack({ size = "md" }: { size?: CardSize }) {
           backgroundSize: "8px 8px",
         }}
       />
-      {/* Central emblem */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div style={{ width: "42%", height: "58%", border: "1px solid rgba(139,92,246,0.22)", boxShadow: "0 0 0 3px rgba(139,92,246,0.07)", borderRadius: "3px", transform: "rotate(3deg)" }} />
         <div className="absolute" style={{ width: "26%", height: "38%", border: "1px solid rgba(167,139,250,0.18)", borderRadius: "2px", transform: "rotate(3deg)" }} />
       </div>
-      {/* Edge ambient */}
       <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(139,92,246,0.12) 0%, transparent 65%)", borderRadius: "inherit" }} />
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Quality badge
+// Quality & stack helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
 const QUALITY = {
@@ -497,125 +418,12 @@ const QUALITY = {
   punt:       { label: "Major punt",  cls: "text-red-400     bg-red-500/10     border-red-500/30" },
 } as const;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Stack depth HUD helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
 function stackZone(bb: number): { label: string; textCls: string; bgCls: string } {
   if (bb <= 12)  return { label: "jam/fold",  textCls: "text-red-400",     bgCls: "bg-red-500/10 border-red-500/22" };
   if (bb <= 20)  return { label: "short",     textCls: "text-orange-400",  bgCls: "bg-orange-500/10 border-orange-500/22" };
   if (bb <= 40)  return { label: "medium",    textCls: "text-amber-400",   bgCls: "bg-amber-500/10 border-amber-500/22" };
   if (bb <= 100) return { label: "deep",      textCls: "text-sky-400",     bgCls: "bg-sky-500/10 border-sky-500/22" };
   return               { label: "very deep",  textCls: "text-emerald-400", bgCls: "bg-emerald-500/10 border-emerald-500/22" };
-}
-
-function StackHUD({ bb, className }: { bb: number; className?: string }) {
-  const zone = stackZone(bb);
-  const display = Number.isInteger(bb) ? `${bb}` : `${bb}`;
-  return (
-    <div className={cn("flex items-center justify-center", className)}>
-      <div
-        className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 border"
-        style={{
-          background: "rgba(56,189,248,0.06)",
-          borderColor: "rgba(56,189,248,0.16)",
-          boxShadow: "0 0 12px rgba(56,189,248,0.06), inset 0 1px 0 rgba(255,255,255,0.03)",
-        }}
-      >
-        <div className="h-1.5 w-1.5 rounded-full bg-sky-400/55 shrink-0" />
-        <span className="text-[15px] font-black text-sky-200/90 tabular-nums leading-none">
-          {display}
-          <span className="text-[11px] font-semibold text-sky-400/55 ml-[2px]">bb</span>
-        </span>
-        <span className="text-[11px] text-muted-foreground/35 leading-none">effective</span>
-        <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded border", zone.textCls, zone.bgCls)}>
-          {zone.label}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function StackPill({ bb }: { bb: number }) {
-  return (
-    <div
-      className="h-6 px-2 flex items-center rounded-full"
-      style={{
-        background: "rgba(56,189,248,0.07)",
-        border: "1px solid rgba(56,189,248,0.16)",
-      }}
-    >
-      <span className="text-[11px] font-bold text-sky-300/80 tabular-nums leading-none">
-        {bb}bb
-      </span>
-    </div>
-  );
-}
-
-/** Live pot + stack display row shown on the poker table between board and hero cards. */
-function PotStackRow({
-  potBb,
-  heroStack,
-  villainStack,
-}: {
-  potBb: number;
-  heroStack: number;
-  villainStack: number;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-2 w-full px-1 mb-3">
-      {/* Villain stack */}
-      <div className="flex items-center gap-1.5 min-w-0">
-        <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/35 shrink-0">
-          Villain
-        </span>
-        <div
-          className="flex items-center h-5 px-2 rounded-full shrink-0"
-          style={{
-            background: "rgba(100,116,139,0.08)",
-            border: "1px solid rgba(100,116,139,0.16)",
-          }}
-        >
-          <span className="text-[11px] font-bold text-slate-400/70 tabular-nums leading-none">
-            {fmtBb(villainStack)}
-          </span>
-        </div>
-      </div>
-
-      {/* Pot — centered, prominent */}
-      <div
-        className="flex items-center gap-1.5 h-6 px-3 rounded-full shrink-0"
-        style={{
-          background: "rgba(251,191,36,0.07)",
-          border: "1px solid rgba(251,191,36,0.18)",
-          boxShadow: "0 0 10px rgba(251,191,36,0.06)",
-        }}
-      >
-        <div className="h-1.5 w-1.5 rounded-full bg-amber-400/50 shrink-0" />
-        <span className="text-[11px] font-black text-amber-300/80 tabular-nums leading-none">
-          Pot: {fmtBb(potBb)}
-        </span>
-      </div>
-
-      {/* Hero stack */}
-      <div className="flex items-center gap-1.5 min-w-0 justify-end">
-        <div
-          className="flex items-center h-5 px-2 rounded-full shrink-0"
-          style={{
-            background: "rgba(124,92,255,0.08)",
-            border: "1px solid rgba(124,92,255,0.18)",
-          }}
-        >
-          <span className="text-[11px] font-bold text-violet-300/70 tabular-nums leading-none">
-            {fmtBb(heroStack)}
-          </span>
-        </div>
-        <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/35 shrink-0">
-          Hero
-        </span>
-      </div>
-    </div>
-  );
 }
 
 function QualityBadge({ quality }: { quality: ActionOption["quality"] }) {
@@ -628,20 +436,155 @@ function QualityBadge({ quality }: { quality: ActionOption["quality"] }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Action button
+// Solver-native visual indicators
+// ─────────────────────────────────────────────────────────────────────────────
+
+const HUD_STREETS = {
+  preflop: { label: "PRE",   color: "#38BDF8", glow: "rgba(56,189,248,0.30)",  bg: "rgba(56,189,248,0.09)",  border: "rgba(56,189,248,0.24)"  },
+  flop:    { label: "FLOP",  color: "#34D399", glow: "rgba(52,211,153,0.30)",  bg: "rgba(52,211,153,0.09)",  border: "rgba(52,211,153,0.24)"  },
+  turn:    { label: "TURN",  color: "#FBBF24", glow: "rgba(251,191,36,0.30)",  bg: "rgba(251,191,36,0.09)",  border: "rgba(251,191,36,0.24)"  },
+  river:   { label: "RIVER", color: "#F87171", glow: "rgba(248,113,113,0.30)", bg: "rgba(248,113,113,0.09)", border: "rgba(248,113,113,0.24)" },
+} as const;
+
+/** Derive solver frequency from quality (approximate). */
+function deriveFrequency(quality: ActionOption["quality"]): number {
+  switch (quality) {
+    case "perfect":    return 0.72;
+    case "good":       return 0.28;
+    case "acceptable": return 0.10;
+    case "mistake":    return 0.02;
+    case "punt":       return 0;
+  }
+}
+
+/** Derive decision pressure from context. */
+function derivePressure(
+  street: string,
+  effectiveStack: number,
+  options: ActionOption[],
+): { cls: string; label: string } {
+  const goodCount = options.filter(o => o.quality === "perfect" || o.quality === "good").length;
+  const isLate = street === "river" || street === "turn";
+  const isShort = effectiveStack <= 25;
+
+  if (isLate && goodCount > 1) return { cls: "pressure-hard", label: "Critical spot" };
+  if (isLate || isShort)       return { cls: "pressure-marginal", label: "High pressure" };
+  if (goodCount > 1)           return { cls: "pressure-easy", label: "Mixing region" };
+  return                              { cls: "pressure-easy", label: "Standard spot" };
+}
+
+/** Derive if this is a mixing spot (multiple solver-approved lines). */
+function isMixingSpot(options: ActionOption[]): boolean {
+  return options.filter(o => o.quality === "perfect" || o.quality === "good").length > 1;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Horizontal street progress — replaces vertical StepPip list
+// ─────────────────────────────────────────────────────────────────────────────
+
+function StreetProgress({
+  steps,
+  stepIdx,
+  stepResults,
+}: {
+  steps: PuzzleStep[];
+  stepIdx: number;
+  stepResults: Array<{ quality: ActionOption["quality"]; score: number }>;
+}) {
+  return (
+    <div className="flex items-center justify-center gap-1 mb-6">
+      {steps.map((step, i) => {
+        const isPast   = i < stepIdx;
+        const isActive = i === stepIdx;
+        const result   = stepResults[i];
+        const sm = HUD_STREETS[step.street as keyof typeof HUD_STREETS] ?? HUD_STREETS.preflop;
+
+        return (
+          <div key={i} className="flex items-center">
+            {/* Street node */}
+            <div className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all duration-300",
+              isActive
+                ? "street-glow-active"
+                : isPast
+                ? "opacity-60"
+                : "opacity-25"
+            )}>
+              {/* Quality dot for completed */}
+              {isPast && result && (
+                <div className={cn(
+                  "h-1.5 w-1.5 rounded-full shrink-0",
+                  result.score >= 80 ? "bg-emerald-400" :
+                  result.score >= 60 ? "bg-yellow-400" : "bg-red-400"
+                )} />
+              )}
+              {isActive && (
+                <div className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: sm.color, boxShadow: `0 0 8px ${sm.glow}` }} />
+              )}
+              <span
+                className={cn(
+                  "text-[11px] font-bold tracking-[0.15em] uppercase leading-none",
+                  isActive ? "font-black" : ""
+                )}
+                style={{ color: isActive ? sm.color : isPast ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.25)" }}
+              >
+                {sm.label}
+              </span>
+            </div>
+
+            {/* Connector line */}
+            {i < steps.length - 1 && (
+              <div
+                className="w-8 h-px mx-0.5 shrink-0"
+                style={{
+                  background: i < stepIdx
+                    ? "rgba(255,255,255,0.15)"
+                    : "rgba(255,255,255,0.06)",
+                }}
+              />
+            )}
+          </div>
+        );
+      })}
+
+      {/* Running score — compact */}
+      {stepResults.length > 0 && (
+        <div className="ml-4 flex items-center gap-1.5">
+          <div className="w-px h-4 bg-white/[0.08]" />
+          <span className={cn(
+            "text-sm font-black tabular-nums",
+            Math.round(stepResults.reduce((s, r) => s + r.score, 0) / stepResults.length) >= 80
+              ? "text-emerald-400/80"
+              : Math.round(stepResults.reduce((s, r) => s + r.score, 0) / stepResults.length) >= 60
+              ? "text-yellow-400/80"
+              : "text-red-400/80"
+          )}>
+            {Math.round(stepResults.reduce((s, r) => s + r.score, 0) / stepResults.length)}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Action button — redesigned with solver visual language
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ActionBtn({
-  option, chosen, disabled, onClick, displayLabel
+  option, chosen, disabled, onClick, displayLabel, isHighCommit
 }: {
   option: ActionOption;
   chosen: ActionOption | null;
   disabled: boolean;
   onClick: (o: ActionOption) => void;
   displayLabel?: string;
+  isHighCommit?: boolean;
 }) {
   const isChosen = chosen?.id === option.id;
   const hasChosen = !!chosen;
+  const label = (displayLabel ?? option.label).toLowerCase();
+  const isFold = /^fold/.test(label);
 
   return (
     <button
@@ -649,95 +592,79 @@ function ActionBtn({
       disabled={disabled}
       onClick={() => onClick(option)}
       className={cn(
-        "rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-150 active:scale-[0.97] border",
+        "group relative rounded-xl px-5 py-4 text-sm font-semibold transition-all duration-200 border overflow-hidden",
         isChosen
-          ? cn("shadow-lg", QUALITY[option.quality].cls.replace("text-", "border-").split(" ").slice(0, 1)[0],
-              QUALITY[option.quality].cls)
+          ? cn(
+              "shadow-lg",
+              `result-${option.quality}`,
+              QUALITY[option.quality].cls,
+            )
           : hasChosen
-          ? "border-border/30 bg-secondary/20 text-muted-foreground/40 cursor-default"
-          : "border-border/50 bg-secondary/40 text-foreground hover:bg-secondary/70 hover:border-violet-500/30 hover:shadow-lg hover:shadow-violet-900/10"
+          ? "border-white/[0.04] bg-white/[0.015] text-muted-foreground/30 cursor-default"
+          : isFold
+          ? "border-white/[0.05] bg-white/[0.015] text-muted-foreground/50 hover:bg-white/[0.03] hover:text-muted-foreground/70"
+          : isHighCommit
+          ? "action-glow border-violet-500/20 bg-violet-500/[0.06] text-foreground hover:bg-violet-500/[0.1] hover:border-violet-500/30 hover:scale-[1.02] active:scale-[0.98]"
+          : "border-white/[0.08] bg-white/[0.025] text-foreground hover:bg-white/[0.05] hover:border-white/[0.12] hover:scale-[1.01] active:scale-[0.98]"
       )}
     >
-      {displayLabel ?? option.label}
+      {/* Hover shimmer */}
+      {!hasChosen && !isFold && (
+        <div
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+          style={{
+            background: "linear-gradient(105deg, transparent 40%, rgba(124,92,255,0.04) 50%, transparent 60%)",
+          }}
+        />
+      )}
+      <span className="relative z-10">{displayLabel ?? option.label}</span>
     </button>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Position matchup badge
+// Solver coaching indicators
 // ─────────────────────────────────────────────────────────────────────────────
 
-function PositionMatchupBadge({
-  heroPos,
-  villainPos,
-  heroIsOop,
-}: {
-  heroPos: string;
-  villainPos: string;
-  heroIsOop: boolean;
-}) {
+function FrequencyBar({ option, maxFreq }: { option: ActionOption; maxFreq: number }) {
+  const freq = deriveFrequency(option.quality);
+  const pct = maxFreq > 0 ? (freq / maxFreq) * 100 : 0;
+  const freqDisplay = Math.round(freq * 100);
+
   return (
-    <div className="flex items-center gap-1.5">
-      <div className={cn(
-        "h-5 px-2 flex items-center rounded-full text-[10px] font-semibold border",
-        "bg-violet-500/10 border-violet-500/20 text-violet-400"
-      )}>
-        {heroPos} {heroIsOop ? "(OOP)" : "(IP)"}
+    <div className="flex items-center gap-2">
+      <div className="flex-1 h-1 rounded-full bg-white/[0.06] overflow-hidden">
+        <div
+          className={cn(
+            "h-full rounded-full animate-confidence-fill",
+            option.quality === "perfect" ? "bg-emerald-400/70" :
+            option.quality === "good"    ? "bg-blue-400/60" :
+            option.quality === "acceptable" ? "bg-yellow-400/50" :
+            "bg-red-400/40"
+          )}
+          style={{ width: `${pct}%` }}
+        />
       </div>
-      <span className="text-muted-foreground/30 text-[10px]">vs</span>
-      <div className={cn(
-        "h-5 px-2 flex items-center rounded-full text-[10px] font-semibold border",
-        "bg-secondary/50 border-border/30 text-muted-foreground/60"
-      )}>
-        {villainPos} {heroIsOop ? "(IP)" : "(OOP)"}
-      </div>
+      <span className="text-[10px] tabular-nums text-muted-foreground/40 w-7 text-right">
+        {freqDisplay}%
+      </span>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Street progress pip
-// ─────────────────────────────────────────────────────────────────────────────
-
-function StepPip({ step, index, current, result }: {
-  step: PuzzleStep;
-  index: number;
-  current: number;
-  result?: { quality: ActionOption["quality"]; score: number };
-}) {
-  const isPast = index < current;
-  const isActive = index === current;
-
+function EvDelta({ evLoss }: { evLoss: number }) {
+  if (evLoss === 0) {
+    return <span className="text-[10px] font-semibold text-emerald-400/70">+EV</span>;
+  }
   return (
-    <div className="flex items-center gap-2.5">
-      <div className={cn(
-        "flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold shrink-0 transition-all",
-        isPast
-          ? result
-            ? result.score >= 80
-              ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-              : result.score >= 60
-              ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
-              : "bg-red-500/20 text-red-400 border border-red-500/30"
-            : "bg-secondary/60 text-muted-foreground/50 border border-border/30"
-          : isActive
-          ? "bg-violet-500 text-white shadow-sm shadow-violet-500/40"
-          : "bg-secondary/40 border border-border/30 text-muted-foreground/40"
-      )}>
-        {isPast && result ? (result.score >= 80 ? "✓" : result.score >= 60 ? "~" : "✗") : index + 1}
-      </div>
-      <div>
-        <p className={cn("text-xs font-medium capitalize", index <= current ? "text-foreground" : "text-muted-foreground/40")}>
-          {step.street}
-        </p>
-        {result && <QualityBadge quality={result.quality} />}
-      </div>
-    </div>
+    <span className="text-[10px] font-semibold text-red-400/60 tabular-nums">
+      −{evLoss.toFixed(1)}bb
+    </span>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Result screen
+// Result screen — refined
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ResultScreen({
@@ -778,56 +705,36 @@ function ResultScreen({
   const worstStep = stepResults.reduce((worst, r, i) => r.score < stepResults[worst].score ? i : worst, 0);
 
   return (
-    <div className="mx-auto max-w-2xl animate-fade-in">
+    <div className="mx-auto max-w-xl animate-fade-in">
       {/* Score header */}
-      <div className="rounded-2xl border border-border/50 bg-card/60 p-8 text-center mb-6">
-        <div className="flex justify-center mb-4">
-          {finalScore >= 80 ? (
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 border border-emerald-500/30 shadow-lg shadow-emerald-900/20">
-              <CheckCircle2 className="h-8 w-8 text-emerald-400" />
-            </div>
-          ) : finalScore >= 50 ? (
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-yellow-500/15 border border-yellow-500/30">
-              <AlertTriangle className="h-8 w-8 text-yellow-400" />
-            </div>
-          ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500/15 border border-red-500/30">
-              <XCircle className="h-8 w-8 text-red-400" />
-            </div>
-          )}
+      <div className="glass-panel-elevated rounded-2xl p-8 text-center mb-5">
+        <div className="flex items-end justify-center gap-3 mb-2">
+          <span className={cn("text-6xl font-black tracking-tight", gradeColor)}>{finalScore}</span>
+          <span className="text-muted-foreground/40 text-xl mb-1.5">/100</span>
+          <span className={cn("text-3xl font-black ml-2 mb-1", gradeColor)}>{grade}</span>
         </div>
-
-        <div className="flex items-end justify-center gap-2 mb-1">
-          <span className={cn("text-6xl font-black", gradeColor)}>{finalScore}</span>
-          <span className="text-muted-foreground text-2xl mb-1">/100</span>
-          <span className={cn("text-4xl font-black ml-3 mb-0.5", gradeColor)}>{grade}</span>
-        </div>
-        <p className="text-muted-foreground text-sm mt-1">
-          {totalEvLoss > 0 ? `${totalEvLoss.toFixed(1)} BB EV lost across ${puzzle.steps.length} decisions` : "Flawless — no EV lost"}
+        <p className="text-sm text-muted-foreground/50">
+          {totalEvLoss > 0 ? `${totalEvLoss.toFixed(1)}bb EV lost · ${puzzle.steps.length} decisions` : "Flawless — zero EV lost"}
         </p>
       </div>
 
-      {/* Step breakdown */}
-      <div className="rounded-2xl border border-border/50 bg-card/60 p-6 mb-6">
-        <h3 className="text-sm font-semibold text-foreground mb-4">Street Breakdown</h3>
-        <div className="space-y-3">
+      {/* Street breakdown */}
+      <div className="glass-panel rounded-2xl p-5 mb-5">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/35 mb-4">Breakdown</p>
+        <div className="space-y-2.5">
           {stepResults.map((r, i) => (
             <div key={i} className={cn(
-              "flex items-start justify-between gap-4 rounded-xl px-4 py-3 border",
-              i === bestStep  ? "bg-emerald-500/5 border-emerald-500/20" :
-              i === worstStep ? "bg-red-500/5 border-red-500/20" : "bg-secondary/20 border-border/30"
+              "flex items-center justify-between gap-3 rounded-xl px-4 py-2.5 border",
+              i === bestStep  ? "bg-emerald-500/[0.04] border-emerald-500/15" :
+              i === worstStep ? "bg-red-500/[0.04] border-red-500/15" : "bg-white/[0.015] border-white/[0.04]"
             )}>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-xs font-semibold text-foreground capitalize">{puzzle.steps[i].street}</span>
-                  {i === bestStep && <span className="text-[10px] text-emerald-400">Best play</span>}
-                  {i === worstStep && stepResults.length > 1 && <span className="text-[10px] text-red-400">Biggest leak</span>}
-                </div>
-                <p className="text-xs text-muted-foreground/80 truncate">{bbifyText(r.option.label, bbD)}</p>
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="text-[11px] font-semibold text-foreground/80 capitalize w-10">{puzzle.steps[i].street}</span>
+                <span className="text-xs text-muted-foreground/50 truncate">{bbifyText(r.option.label, bbD)}</span>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <QualityBadge quality={r.quality} />
-                <span className={cn("text-xs font-bold",
+                <span className={cn("text-xs font-bold tabular-nums",
                   r.score >= 80 ? "text-emerald-400" : r.score >= 60 ? "text-yellow-400" : "text-red-400"
                 )}>
                   {r.score}
@@ -839,27 +746,26 @@ function ResultScreen({
       </div>
 
       {/* Coaching summary */}
-      <div className="rounded-2xl border border-border/50 bg-card/60 p-6 mb-8">
+      <div className="glass-panel rounded-2xl p-5 mb-6">
         <div className="flex items-center gap-2 mb-3">
-          <Zap className="h-4 w-4 text-violet-400" />
-          <span className="text-sm font-semibold text-foreground">Coaching Summary</span>
+          <Zap className="h-3.5 w-3.5 text-violet-400/70" />
+          <span className="text-xs font-semibold text-foreground/70">Summary</span>
         </div>
-        <p className="text-sm text-muted-foreground leading-relaxed">{puzzle.summary}</p>
+        <p className="text-sm text-muted-foreground/60 leading-relaxed">{puzzle.summary}</p>
       </div>
 
       {/* Actions */}
       {isRandom ? (
         <div className="space-y-3">
-          {/* Random streak banner */}
           {randomStreak > 0 && (
-            <div className="flex items-center justify-center gap-2 rounded-xl border border-orange-500/20 bg-orange-500/8 px-4 py-2.5">
-              <Flame className="h-4 w-4 text-orange-400" />
-              <span className="text-sm font-semibold text-orange-300">{randomStreak} random streak</span>
+            <div className="flex items-center justify-center gap-2 rounded-xl border border-orange-500/15 bg-orange-500/[0.04] px-4 py-2">
+              <Flame className="h-3.5 w-3.5 text-orange-400/70" />
+              <span className="text-sm font-semibold text-orange-300/80">{randomStreak} streak</span>
             </div>
           )}
           <button
             onClick={onNextRandom}
-            className="group relative w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
+            className="group relative w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
           >
             <div aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
             <Shuffle className="h-4 w-4 shrink-0" />
@@ -878,12 +784,10 @@ function ResultScreen({
       ) : (
         <div className="flex gap-3">
           <Button variant="outline" size="lg" className="flex-1 gap-2" onClick={onRetry}>
-            <RotateCcw className="h-4 w-4" />
-            Retry Puzzle
+            <RotateCcw className="h-4 w-4" /> Retry
           </Button>
           <Button variant="poker" size="lg" className="flex-1 gap-2" onClick={onNext}>
-            Next Puzzle
-            <ChevronRight className="h-4 w-4" />
+            Next Puzzle <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       )}
@@ -912,7 +816,6 @@ export default function PuzzlePlayerPage() {
   const [savedRandomStreak, setSavedRandomStreak] = useState(0);
   const coachingRef = useRef<HTMLDivElement>(null);
 
-  // Scroll coaching panel into view on mobile after choosing
   useEffect(() => {
     if (chosen && coachingRef.current) {
       const isMobile = window.innerWidth < 1024;
@@ -980,23 +883,14 @@ export default function PuzzlePlayerPage() {
     if (next) router.push(`/analyze/puzzles/${next.id}?mode=random`);
   }
 
-  const runningScore = stepResults.length > 0
-    ? Math.round(stepResults.reduce((s, r) => s + r.score, 0) / stepResults.length)
-    : null;
-
-  // ── Live pot & stack state ─────────────────────────────────────────────
-  // Derived deterministically from the puzzle metadata and hero's past choices.
+  // ── Derived state ─────────────────────────────────────────────────
   const stackState = useMemo(
     () => computePuzzleState(puzzle, stepIdx, stepResults),
     [puzzle, stepIdx, stepResults]
   );
 
-  // ── BB formatting ──────────────────────────────────────────────────────
   const bbDollars = parseBigBlind(puzzle.stakes);
 
-  // ── Table player visibility ────────────────────────────────────────────
-  // Accumulate contexts from step 0 through current step so folded players
-  // remain visible (dimmed) on later streets.
   const tableActors = useMemo(
     () => parseTableActors(
       puzzle.steps.slice(0, stepIdx + 1).map(s => s.context),
@@ -1006,13 +900,23 @@ export default function PuzzlePlayerPage() {
     [puzzle, stepIdx]
   );
 
-  // ── Canonical PokerState ───────────────────────────────────────────────
   const pokerState = useMemo(
     () => buildPokerState(puzzle, stepIdx, stackState.potBb, stackState.heroStack, stackState.villainStack),
     [puzzle, stepIdx, stackState.potBb, stackState.heroStack, stackState.villainStack]
   );
 
-  // ── Dev-mode validation ────────────────────────────────────────────────
+  const pressure = useMemo(
+    () => derivePressure(currentStep.street, puzzle.effectiveStack, currentStep.options),
+    [currentStep, puzzle.effectiveStack]
+  );
+
+  const mixing = useMemo(() => isMixingSpot(currentStep.options), [currentStep.options]);
+  const maxFreq = useMemo(
+    () => Math.max(...currentStep.options.map(o => deriveFrequency(o.quality))),
+    [currentStep.options]
+  );
+
+  // ── Dev-mode validation ────────────────────────────────────────────
   useEffect(() => {
     if (process.env.NODE_ENV === "development") {
       runGoldenTests();
@@ -1021,18 +925,26 @@ export default function PuzzlePlayerPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Result screen ──────────────────────────────────────────────────────
+  const sm = HUD_STREETS[currentStep.street as keyof typeof HUD_STREETS] ?? HUD_STREETS.preflop;
+  const isPreflop = currentStep.street === "preflop";
+
+  // ── Short title from puzzle title ─────────────────────────────────
+  const titleParts = puzzle.title.split(/\s*[—–-]\s*/);
+  const titleMain = titleParts[0]?.trim() ?? puzzle.title;
+  const titleSub  = titleParts.slice(1).join(" — ").trim();
+
+  // ── Result screen ──────────────────────────────────────────────────
   if (done) {
     return (
       <div className="flex min-h-screen flex-col">
         <Navbar variant="static" />
         <main className="flex-1 py-10 sm:py-14">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6">
             <div className="mb-8 flex items-center justify-between">
-              <Link href="/analyze/puzzles" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="/analyze/puzzles" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground/50 hover:text-foreground transition-colors">
                 <ArrowLeft className="h-4 w-4" /> Puzzles
               </Link>
-              <p className="text-sm text-muted-foreground font-medium">{puzzle.title}</p>
+              <p className="text-xs text-muted-foreground/40">{puzzle.title}</p>
             </div>
             <ResultScreen
               puzzle={puzzle}
@@ -1045,363 +957,223 @@ export default function PuzzlePlayerPage() {
             />
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
 
-  // ── Puzzle player ──────────────────────────────────────────────────────
+  // ── Puzzle player ──────────────────────────────────────────────────
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar variant="static" />
 
-      <main className="flex-1 py-8 sm:py-12">
-        <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
+      <main className="flex-1 py-5 sm:py-8">
+        <div className="mx-auto max-w-[1480px] px-4 sm:px-6">
 
-          {/* Top bar */}
-          <div className="mb-6 flex items-center justify-between gap-4">
-            <Link href="/analyze/puzzles" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0">
-              <ArrowLeft className="h-4 w-4" /> Puzzles
+          {/* ── Compact header ───────────────────────────────────── */}
+          <div className="mb-4 flex items-center justify-between gap-4">
+            <Link href="/analyze/puzzles" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground/40 hover:text-foreground transition-colors shrink-0">
+              <ArrowLeft className="h-3.5 w-3.5" />
             </Link>
-            {isRandomMode ? (
-              <div className="hidden sm:flex items-center gap-2 min-w-0">
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-500/15 border border-violet-500/25">
-                  <Shuffle className="h-3 w-3 text-violet-400" />
-                  <span className="text-xs font-semibold text-violet-400">Random Spot</span>
-                </div>
-                <span className="text-muted-foreground/40 text-xs">·</span>
-                <span className="text-xs text-muted-foreground/60 truncate">
-                  {puzzle.effectiveStack}bb · {puzzle.format} · {puzzle.steps[stepIdx]?.street}
-                </span>
-              </div>
-            ) : (
-              <h1 className="text-sm font-semibold text-foreground hidden sm:block truncate">{puzzle.title}</h1>
-            )}
-            <div className="flex items-center gap-3 shrink-0">
-              <span className="text-xs text-muted-foreground">
-                {stepIdx + 1}/{puzzle.steps.length} decisions
+
+            <div className="flex flex-col items-center min-w-0">
+              <h1 className="text-sm font-semibold text-foreground/90 truncate">
+                {titleMain}
+              </h1>
+              {titleSub && (
+                <p className="text-[11px] text-muted-foreground/35 truncate">{titleSub}</p>
+              )}
+              <p className="text-[10px] text-muted-foreground/25 mt-0.5">
+                {puzzle.heroPosition} vs {puzzle.villainPosition} · {puzzle.format} · {puzzle.effectiveStack}bb
+                {isRandomMode && (
+                  <span className="ml-1.5 text-violet-400/50">· Random</span>
+                )}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[11px] text-muted-foreground/30 tabular-nums">
+                {stepIdx + 1}/{puzzle.steps.length}
               </span>
-              <Button variant="outline" size="sm" onClick={handleRetry} className="gap-1.5">
-                <RotateCcw className="h-3.5 w-3.5" /> Restart
-              </Button>
+              <button
+                onClick={handleRetry}
+                className="h-7 w-7 flex items-center justify-center rounded-lg bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.05] transition-colors"
+                title="Restart"
+              >
+                <RotateCcw className="h-3 w-3 text-muted-foreground/40" />
+              </button>
             </div>
           </div>
 
-          {/* Progress bar */}
-          <div className="h-1 rounded-full bg-secondary/50 mb-8 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-violet-500 to-blue-500 transition-all duration-500"
-              style={{ width: `${((stepIdx) / puzzle.steps.length) * 100}%` }}
-            />
-          </div>
+          {/* ── Horizontal street progress ────────────────────────── */}
+          <StreetProgress steps={puzzle.steps} stepIdx={stepIdx} stepResults={stepResults} />
 
-          {/* 3-column layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr_288px] gap-6">
+          {/* ── 2-column layout ───────────────────────────────────── */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
 
-            {/* ── LEFT SIDEBAR ─────────────────────────────────────────── */}
-            <div className="space-y-4 order-3 lg:order-1">
+            {/* ═══ MAIN: Table + Actions ═══════════════════════════ */}
+            <div className="order-1 animate-street-enter" key={`step-${stepIdx}`}>
 
-              {/* Puzzle info */}
-              <div className="rounded-2xl border border-border/50 bg-card/60 p-4 space-y-3">
-                <h2 className="font-semibold text-foreground text-sm leading-snug">{puzzle.title}</h2>
-                <p className="text-xs text-muted-foreground/70 leading-relaxed">{puzzle.description}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  <span className={cn("text-[10px] px-2 py-0.5 rounded-full border font-semibold uppercase tracking-wider",
-                    puzzle.difficulty === "beginner"     ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/25" :
-                    puzzle.difficulty === "intermediate" ? "bg-amber-500/10  text-amber-400  border-amber-500/25" :
-                    puzzle.difficulty === "advanced"     ? "bg-red-500/10    text-red-400    border-red-500/25" :
-                                                          "bg-purple-500/10 text-purple-400 border-purple-500/25"
-                  )}>{puzzle.difficulty}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary/50 text-muted-foreground/60 border border-border/30">
-                    {puzzle.format}
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary/50 text-muted-foreground/60 border border-border/30">
-                    {puzzle.category}
-                  </span>
+              {/* ── CINEMATIC TABLE HUD ─────────────────────────────── */}
+              <div
+                className={cn("glass-panel-elevated rounded-2xl overflow-hidden mb-5", pressure.cls)}
+                style={{ minHeight: "340px" }}
+              >
+                {/* Chromatic edge */}
+                <div
+                  className="h-px w-full"
+                  style={{ background: `linear-gradient(90deg, transparent 0%, ${sm.color}40 30%, rgba(124,92,255,0.4) 70%, transparent 100%)` }}
+                />
+                {/* Shimmer sweep */}
+                <div
+                  className="absolute inset-y-0 w-[45%] pointer-events-none animate-hud-shimmer"
+                  style={{
+                    background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.015) 50%, transparent 100%)",
+                    transform: "skewX(-14deg)",
+                  }}
+                />
+
+                <div className="relative flex flex-col items-center py-6 px-6 gap-5">
+
+                  {/* Street badge — top left */}
+                  <div className="absolute top-4 left-5">
+                    <div
+                      className="px-2.5 py-[3px] rounded-md text-[10px] font-black tracking-[0.24em] uppercase leading-none"
+                      style={{
+                        color: sm.color,
+                        background: sm.bg,
+                        border: `1px solid ${sm.border}`,
+                        boxShadow: `0 0 12px ${sm.glow}`,
+                      }}
+                    >
+                      {sm.label}
+                    </div>
+                  </div>
+
+                  {/* Pressure tag — top right */}
+                  <div className="absolute top-4 right-5">
+                    <span className="text-[9px] font-semibold tracking-wider uppercase text-muted-foreground/20">
+                      {pressure.label}
+                    </span>
+                  </div>
+
+                  {/* ── VILLAIN area ────────────────────────── */}
+                  <div className="flex items-center gap-3 mt-4">
+                    <div className="flex gap-1">
+                      <CardBack size="sm" />
+                      <CardBack size="sm" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold tracking-wide" style={{ color: "rgba(251,191,36,0.45)" }}>
+                        {puzzle.villainPosition}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground/20 tabular-nums">
+                        {fmtBb(stackState.villainStack)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* ── BOARD ───────────────────────────────── */}
+                  <div className="flex flex-col items-center gap-2.5">
+                    <div className="flex gap-1.5 items-center">
+                      {isPreflop
+                        ? [0,1,2,3,4].map(i => (
+                            <div
+                              key={i}
+                              className="w-[42px] h-[60px] rounded-lg"
+                              style={{ background: "rgba(255,255,255,0.018)", border: "1px solid rgba(255,255,255,0.045)" }}
+                            />
+                          ))
+                        : (
+                          <>
+                            {currentStep.board.map((card, i) => <CardFace key={i} card={card} size="md" />)}
+                            {Array.from({ length: 5 - currentStep.board.length }).map((_, i) => (
+                              <div
+                                key={`e-${i}`}
+                                className="w-[42px] h-[60px] rounded-lg"
+                                style={{ background: "rgba(255,255,255,0.018)", border: "1px solid rgba(255,255,255,0.045)" }}
+                              />
+                            ))}
+                          </>
+                        )}
+                    </div>
+
+                    {/* Pot badge */}
+                    <div
+                      className="flex items-center gap-1.5 h-6 px-3 rounded-full"
+                      style={{
+                        background: "rgba(251,191,36,0.06)",
+                        border: "1px solid rgba(251,191,36,0.15)",
+                        boxShadow: "0 0 12px rgba(251,191,36,0.05)",
+                      }}
+                    >
+                      <div className="h-1 w-1 rounded-full bg-amber-400/40 shrink-0" />
+                      <span className="text-[11px] font-black text-amber-300/70 tabular-nums leading-none">
+                        {fmtBb(stackState.potBb)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* ── HERO area ───────────────────────────── */}
+                  <div className="flex items-center gap-4">
+                    <div className="flex gap-2">
+                      {puzzle.heroCards.map((card, i) => <CardFace key={i} card={card} size="xl" />)}
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="h-2 w-2 rounded-full shrink-0"
+                          style={{ background: "rgba(124,92,255,0.9)", boxShadow: "0 0 8px rgba(124,92,255,0.6)" }}
+                        />
+                        <span className="text-[12px] font-black tracking-wide" style={{ color: "rgba(167,139,250,0.9)" }}>
+                          {puzzle.heroPosition}
+                        </span>
+                        <span
+                          className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                          style={{ background: "rgba(124,92,255,0.1)", color: "rgba(124,92,255,0.5)" }}
+                        >
+                          {pokerState.heroIsOop ? "OOP" : "IP"}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground/20 tabular-nums ml-4">
+                        {fmtBb(stackState.heroStack)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Multiway strip */}
+                  <TablePositionStrip
+                    actors={tableActors}
+                    heroPos={puzzle.heroPosition}
+                    villainPos={puzzle.villainPosition}
+                  />
                 </div>
               </div>
 
-              {/* Decision progress */}
-              <div className="rounded-2xl border border-border/50 bg-card/60 p-4">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 mb-4">
-                  Progress
-                </p>
-                <div className="space-y-3">
-                  {puzzle.steps.map((step, i) => (
-                    <StepPip
-                      key={i}
-                      step={step}
-                      index={i}
-                      current={stepIdx}
-                      result={stepResults[i]}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Running score */}
-              {runningScore !== null && (
-                <div className="rounded-2xl border border-border/50 bg-card/60 px-5 py-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 mb-1">
-                    Score so far
-                  </p>
-                  <p className={cn("text-3xl font-black",
-                    runningScore >= 80 ? "text-emerald-400" :
-                    runningScore >= 60 ? "text-yellow-400" : "text-red-400"
-                  )}>
-                    {runningScore}
-                    <span className="text-lg text-muted-foreground font-normal">/100</span>
-                  </p>
+              {/* Dev-mode validation error */}
+              {process.env.NODE_ENV === "development" && pokerState.validationErrors.length > 0 && (
+                <div className="rounded-xl bg-red-500/10 border border-red-500/30 px-3 py-2 mb-3 text-xs text-red-400">
+                  <span className="font-semibold">Actor-order error:</span>{" "}
+                  {pokerState.validationErrors[0]}
                 </div>
               )}
 
-              {/* Hand meta */}
-              <div className="rounded-2xl border border-border/50 bg-card/60 p-4">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 mb-3">
-                  Situation
-                </p>
-                {/* Stack — full-width highlighted row */}
-                <div className="mb-3 rounded-xl border px-3 py-2.5"
-                  style={{ background: "rgba(56,189,248,0.05)", borderColor: "rgba(56,189,248,0.14)" }}>
-                  <p className="text-[10px] text-sky-400/50 mb-0.5">Effective stack</p>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-xl font-black text-sky-200/90 tabular-nums leading-none">
-                      {puzzle.effectiveStack}
-                    </span>
-                    <span className="text-sm font-semibold text-sky-400/55">BB</span>
-                    <span className={cn("ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded border",
-                      stackZone(puzzle.effectiveStack).textCls, stackZone(puzzle.effectiveStack).bgCls
-                    )}>
-                      {stackZone(puzzle.effectiveStack).label}
-                    </span>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
-                  {[
-                    ["Stakes", puzzle.stakes],
-                    ["Hero", puzzle.heroPosition],
-                    ["Villain", puzzle.villainPosition],
-                    ["Type", puzzle.gameType],
-                    ["Format", puzzle.format],
-                  ].map(([k, v]) => (
-                    <div key={k}>
-                      <p className="text-muted-foreground/50 text-[10px]">{k}</p>
-                      <p className="text-foreground font-medium">{v}</p>
-                    </div>
-                  ))}
-                </div>
+              {/* ── Context — minimal floating surface ────────────── */}
+              <div className="glass-panel rounded-xl px-5 py-3.5 mb-5">
+                <p className="text-[13px] text-muted-foreground/50 leading-relaxed">{bbifyText(currentStep.context, bbDollars)}</p>
+                <p className="text-[13px] font-semibold text-foreground/85 mt-1">{bbifyText(currentStep.prompt, bbDollars)}</p>
               </div>
-            </div>
 
-            {/* ── CENTER: hand visual ───────────────────────────────────── */}
-            <div className="order-1 lg:order-2">
-              <div className="rounded-2xl border border-border/50 bg-card/60 p-6">
-
-                {/* ── CINEMATIC HAND HUD ──────────────────────────────────── */}
-                {(() => {
-                  const HUD_STREETS = {
-                    preflop: { label: "PRE",   color: "#38BDF8", glow: "rgba(56,189,248,0.30)",  bg: "rgba(56,189,248,0.09)",  border: "rgba(56,189,248,0.24)"  },
-                    flop:    { label: "FLOP",  color: "#34D399", glow: "rgba(52,211,153,0.30)",  bg: "rgba(52,211,153,0.09)",  border: "rgba(52,211,153,0.24)"  },
-                    turn:    { label: "TURN",  color: "#FBBF24", glow: "rgba(251,191,36,0.30)",  bg: "rgba(251,191,36,0.09)",  border: "rgba(251,191,36,0.24)"  },
-                    river:   { label: "RIVER", color: "#F87171", glow: "rgba(248,113,113,0.30)", bg: "rgba(248,113,113,0.09)", border: "rgba(248,113,113,0.24)" },
-                  } as const;
-                  const sm        = HUD_STREETS[currentStep.street as keyof typeof HUD_STREETS] ?? HUD_STREETS.preflop;
-                  const isPreflop = currentStep.street === "preflop";
-                  const zone      = stackZone(puzzle.effectiveStack);
-
-                  return (
-                    <div
-                      className="relative overflow-hidden rounded-2xl mb-5"
-                      style={{
-                        background: "linear-gradient(145deg, rgba(10,6,24,0.96) 0%, rgba(6,8,20,0.98) 100%)",
-                        border: "1px solid rgba(124,92,255,0.16)",
-                        boxShadow: "0 2px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.02), inset 0 1px 0 rgba(255,255,255,0.04)",
-                      }}
-                    >
-                      {/* Chromatic top-edge glow */}
-                      <div
-                        className="absolute inset-x-0 top-0 h-px pointer-events-none"
-                        style={{ background: "linear-gradient(90deg, transparent 0%, rgba(124,92,255,0.6) 25%, rgba(56,189,248,0.45) 65%, transparent 100%)" }}
-                      />
-                      {/* Ambient shimmer sweep */}
-                      <div
-                        className="absolute inset-y-0 w-[45%] pointer-events-none animate-hud-shimmer"
-                        style={{
-                          background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.018) 50%, transparent 100%)",
-                          transform: "skewX(-14deg)",
-                        }}
-                      />
-
-                      <div className="flex items-stretch">
-
-                        {/* ── LEFT: Hero cards + position ── */}
-                        <div className="flex items-center gap-4 px-5 py-4 flex-1 min-w-0">
-                          <div className="flex flex-col items-start gap-2.5">
-                            {/* Street badge */}
-                            <div
-                              className="px-2.5 py-[3px] rounded-md text-[10px] font-black tracking-[0.24em] uppercase leading-none"
-                              style={{
-                                color: sm.color,
-                                background: sm.bg,
-                                border: `1px solid ${sm.border}`,
-                                boxShadow: `0 0 10px ${sm.glow}`,
-                              }}
-                            >
-                              {sm.label}
-                            </div>
-                            {/* Hero hole cards */}
-                            <div className="flex gap-2">
-                              {puzzle.heroCards.map((card, i) => <CardFace key={i} card={card} size="xl" />)}
-                            </div>
-                          </div>
-
-                          {/* Matchup — segmented vertical */}
-                          <div className="flex flex-col gap-1.5 ml-2 self-center">
-                            {/* Hero seat */}
-                            <div className="flex items-center gap-2">
-                              <div
-                                className="h-2 w-2 rounded-full shrink-0"
-                                style={{ background: "rgba(124,92,255,0.9)", boxShadow: "0 0 7px rgba(124,92,255,0.75), 0 0 14px rgba(124,92,255,0.3)" }}
-                              />
-                              <span className="text-[12px] font-black tracking-wide" style={{ color: "rgba(167,139,250,0.95)" }}>
-                                {puzzle.heroPosition}
-                              </span>
-                              <span
-                                className="text-[9px] font-bold px-1.5 py-0.5 rounded"
-                                style={{ background: "rgba(124,92,255,0.12)", color: "rgba(124,92,255,0.6)", border: "1px solid rgba(124,92,255,0.18)" }}
-                              >
-                                {pokerState.heroIsOop ? "OOP" : "IP"}
-                              </span>
-                            </div>
-                            {/* Connector line */}
-                            <div className="ml-[3px] h-4 w-px" style={{ background: "rgba(255,255,255,0.07)" }} />
-                            {/* Villain seat */}
-                            <div className="flex items-center gap-2">
-                              <div
-                                className="h-2 w-2 rounded-full shrink-0"
-                                style={{ background: "rgba(251,191,36,0.38)" }}
-                              />
-                              <span className="text-[12px] font-bold tracking-wide" style={{ color: "rgba(251,191,36,0.52)" }}>
-                                {puzzle.villainPosition}
-                              </span>
-                              <span className="text-[9px] font-bold" style={{ color: "rgba(251,191,36,0.28)" }}>
-                                {pokerState.heroIsOop ? "IP" : "OOP"}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Soft vertical separator */}
-                        <div className="w-px self-stretch my-3" style={{ background: "rgba(255,255,255,0.05)" }} />
-
-                        {/* ── CENTER: Board + pot ── */}
-                        <div className="flex flex-col items-center justify-center gap-2 px-5 py-4">
-                          <div className="flex gap-1.5 items-center">
-                            {isPreflop
-                              ? [0,1,2,3,4].map(i => (
-                                  <div
-                                    key={i}
-                                    className="w-9 h-[52px] rounded-lg"
-                                    style={{ background: "rgba(255,255,255,0.022)", border: "1px solid rgba(255,255,255,0.052)" }}
-                                  />
-                                ))
-                              : (
-                                <>
-                                  {currentStep.board.map((card, i) => <CardFace key={i} card={card} size="sm" />)}
-                                  {Array.from({ length: 5 - currentStep.board.length }).map((_, i) => (
-                                    <div
-                                      key={`e-${i}`}
-                                      className="w-9 h-[52px] rounded-lg"
-                                      style={{ background: "rgba(255,255,255,0.022)", border: "1px solid rgba(255,255,255,0.052)" }}
-                                    />
-                                  ))}
-                                </>
-                              )}
-                          </div>
-                          {/* Pot badge — amber */}
-                          <div
-                            className="flex items-center gap-1.5 h-6 px-3 rounded-full shrink-0"
-                            style={{
-                              background: "rgba(251,191,36,0.07)",
-                              border: "1px solid rgba(251,191,36,0.18)",
-                              boxShadow: "0 0 10px rgba(251,191,36,0.06)",
-                            }}
-                          >
-                            <div className="h-1.5 w-1.5 rounded-full bg-amber-400/50 shrink-0" />
-                            <span className="text-[11px] font-black text-amber-300/80 tabular-nums leading-none">
-                              Pot: {fmtBb(stackState.potBb)}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Soft vertical separator */}
-                        <div className="w-px self-stretch my-3" style={{ background: "rgba(255,255,255,0.05)" }} />
-
-                        {/* ── RIGHT: Stack meta + villain cards ── */}
-                        <div className="flex flex-col justify-center items-end gap-3 px-5 py-4 min-w-[132px]">
-                          {/* Villain card backs */}
-                          <div className="flex gap-1">
-                            <CardBack size="sm" />
-                            <CardBack size="sm" />
-                          </div>
-
-                          {/* Effective stack — large, sky blue */}
-                          <div className="flex flex-col items-end gap-1">
-                            <span
-                              className="text-[9px] uppercase tracking-[0.26em] font-bold"
-                              style={{ color: "rgba(56,189,248,0.38)" }}
-                            >
-                              effective stack
-                            </span>
-                            <div className="flex items-baseline gap-1">
-                              <span
-                                className="text-[26px] font-black tabular-nums leading-none"
-                                style={{ color: "rgba(186,230,253,0.92)", textShadow: "0 0 20px rgba(56,189,248,0.18)" }}
-                              >
-                                {puzzle.effectiveStack}
-                              </span>
-                              <span className="text-[12px] font-bold" style={{ color: "rgba(56,189,248,0.42)" }}>bb</span>
-                            </div>
-                            <span className={cn("text-[9px] font-semibold px-2 py-0.5 rounded border", zone.textCls, zone.bgCls)}>
-                              {zone.label}
-                            </span>
-                          </div>
-                        </div>
-
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* Multiway position strip — only when >2 players */}
-                <TablePositionStrip
-                  actors={tableActors}
-                  heroPos={puzzle.heroPosition}
-                  villainPos={puzzle.villainPosition}
-                />
-
-                {/* Dev-mode validation error banner */}
-                {process.env.NODE_ENV === "development" && pokerState.validationErrors.length > 0 && (
-                  <div className="rounded-xl bg-red-500/10 border border-red-500/30 px-3 py-2 mb-3 text-xs text-red-400 leading-relaxed">
-                    <span className="font-semibold">Actor-order error:</span>{" "}
-                    {pokerState.validationErrors[0]}
-                  </div>
-                )}
-
-                {/* Situation context */}
-                <div className="rounded-xl bg-secondary/20 border border-border/25 px-4 py-3.5 mb-5">
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-1.5">{bbifyText(currentStep.context, bbDollars)}</p>
-                  <p className="text-sm font-semibold text-foreground">{bbifyText(currentStep.prompt, bbDollars)}</p>
-                </div>
-
-                {/* Action buttons */}
-                {!chosen ? (
-                  <div className={cn(
-                    "grid gap-2.5",
-                    currentStep.options.length === 2 ? "grid-cols-2" :
-                    currentStep.options.length === 3 ? "grid-cols-3" : "grid-cols-2"
-                  )}>
-                    {currentStep.options.map(opt => (
+              {/* ── Action buttons ────────────────────────────────── */}
+              {!chosen ? (
+                <div className={cn(
+                  "grid gap-3",
+                  currentStep.options.length === 2 ? "grid-cols-2" :
+                  currentStep.options.length === 3 ? "grid-cols-3" : "grid-cols-2"
+                )}>
+                  {currentStep.options.map(opt => {
+                    const label = opt.label.toLowerCase();
+                    const isHighCommit = /raise|bet|3.?bet|shove|jam|all.?in/i.test(label);
+                    return (
                       <ActionBtn
                         key={opt.id}
                         option={opt}
@@ -1409,139 +1181,170 @@ export default function PuzzlePlayerPage() {
                         disabled={false}
                         onClick={handleAction}
                         displayLabel={bbifyText(opt.label, bbDollars)}
+                        isHighCommit={isHighCommit}
                       />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {/* Chosen action summary */}
-                    <div className={cn(
-                      "rounded-xl border px-4 py-3 flex items-center justify-between gap-3",
-                      chosen.quality === "perfect"    ? "border-emerald-500/30 bg-emerald-500/8" :
-                      chosen.quality === "good"       ? "border-blue-500/30    bg-blue-500/8" :
-                      chosen.quality === "acceptable" ? "border-yellow-500/30  bg-yellow-500/8" :
-                      chosen.quality === "mistake"    ? "border-orange-500/30  bg-orange-500/8" :
-                                                        "border-red-500/30     bg-red-500/8"
-                    )}>
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">{bbifyText(chosen.label, bbDollars)}</p>
-                        {chosen.evLoss > 0 && (
-                          <p className="text-xs text-muted-foreground/60 mt-0.5">−{chosen.evLoss} BB EV lost</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <QualityBadge quality={chosen.quality} />
-                        <span className={cn("text-lg font-black",
-                          QUALITY_SCORE[chosen.quality] >= 80 ? "text-emerald-400" :
-                          QUALITY_SCORE[chosen.quality] >= 60 ? "text-yellow-400" : "text-red-400"
-                        )}>
-                          {QUALITY_SCORE[chosen.quality]}
-                        </span>
-                      </div>
-                    </div>
-
-                    <Button
-                      variant="poker"
-                      size="sm"
-                      className="w-full gap-2"
-                      onClick={handleContinue}
-                    >
-                      {isLastStep ? (
-                        <>
-                          <Trophy className="h-4 w-4" /> See Results
-                        </>
-                      ) : (
-                        <>
-                          Next Street <ChevronRight className="h-4 w-4" />
-                        </>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="space-y-3 animate-fade-in">
+                  {/* Chosen action result */}
+                  <div className={cn(
+                    "glass-panel rounded-xl px-5 py-4 flex items-center justify-between gap-3",
+                    `result-${chosen.quality}`
+                  )}>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground/90">{bbifyText(chosen.label, bbDollars)}</p>
+                      {chosen.evLoss > 0 && (
+                        <p className="text-xs text-muted-foreground/40 mt-0.5">−{chosen.evLoss}bb EV</p>
                       )}
-                    </Button>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <QualityBadge quality={chosen.quality} />
+                      <span className={cn("text-lg font-black tabular-nums",
+                        QUALITY_SCORE[chosen.quality] >= 80 ? "text-emerald-400" :
+                        QUALITY_SCORE[chosen.quality] >= 60 ? "text-yellow-400" : "text-red-400"
+                      )}>
+                        {QUALITY_SCORE[chosen.quality]}
+                      </span>
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  <Button
+                    variant="poker"
+                    size="sm"
+                    className="w-full gap-2"
+                    onClick={handleContinue}
+                  >
+                    {isLastStep ? (
+                      <>
+                        <Trophy className="h-4 w-4" /> See Results
+                      </>
+                    ) : (
+                      <>
+                        Next Street <ChevronRight className="h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
 
-            {/* ── RIGHT SIDEBAR: coaching ───────────────────────────────── */}
-            <div className="space-y-4 order-2 lg:order-3" ref={coachingRef}>
+            {/* ═══ RIGHT PANEL: Coaching + Meta ════════════════════ */}
+            <div className="space-y-4 order-2" ref={coachingRef}>
 
-              {/* Coaching panel */}
-              <div className="rounded-2xl border border-border/50 bg-card/60 p-5">
+              {/* ── Coaching panel ─────────────────────────────────── */}
+              <div className="glass-panel rounded-2xl p-5">
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/15">
-                    <Zap className="h-3.5 w-3.5 text-violet-400" />
-                  </div>
-                  <p className="text-sm font-semibold text-foreground">Coaching</p>
+                  <Zap className="h-3.5 w-3.5 text-violet-400/60" />
+                  <p className="text-xs font-semibold text-foreground/70 tracking-wide">Coaching</p>
                 </div>
 
                 {!chosen ? (
-                  <div className="flex flex-col items-center py-8 text-center">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-violet-500/8 border border-violet-500/15 mb-3">
-                      <Target className="h-5 w-5 text-violet-400/40" />
+                  <div className="flex flex-col items-center py-6 text-center">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-500/[0.06] mb-3">
+                      <Target className="h-4 w-4 text-violet-400/30" />
                     </div>
-                    <p className="text-sm text-muted-foreground/60">
-                      Make a decision to see coaching analysis.
+                    <p className="text-xs text-muted-foreground/35">
+                      Choose an action to see analysis
                     </p>
+                    {mixing && (
+                      <div className="mt-3 px-3 py-1.5 rounded-full bg-blue-500/[0.06] border border-blue-500/10">
+                        <span className="text-[10px] font-semibold text-blue-400/50">
+                          Solver mixes here
+                        </span>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-4 animate-fade-in">
-                    <QualityBadge quality={chosen.quality} />
-                    <p className="text-sm text-muted-foreground leading-relaxed">{bbifyText(chosen.coaching, bbDollars)}</p>
+                    {/* Quality + EV */}
+                    <div className="flex items-center justify-between">
+                      <QualityBadge quality={chosen.quality} />
+                      <EvDelta evLoss={chosen.evLoss} />
+                    </div>
 
-                    {/* All options breakdown */}
-                    <div className="pt-3 border-t border-border/25">
-                      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40 mb-3">
-                        All Options
+                    {/* Coaching text */}
+                    <p className="text-[13px] text-muted-foreground/60 leading-relaxed">{bbifyText(chosen.coaching, bbDollars)}</p>
+
+                    {/* Solver frequency breakdown */}
+                    <div className="pt-3 border-t border-white/[0.04]">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/25 mb-3">
+                        Solver Frequency
                       </p>
                       <div className="space-y-2">
-                        {currentStep.options.map(opt => (
-                          <div
-                            key={opt.id}
-                            className={cn(
-                              "rounded-lg p-3 border text-xs",
-                              opt.id === chosen.id
-                                ? "bg-secondary/40 border-border/50"
-                                : "bg-secondary/15 border-border/20"
-                            )}
-                          >
-                            <div className="flex items-center justify-between mb-1.5">
-                              <span className={cn("font-semibold", opt.id === chosen.id ? "text-foreground" : "text-muted-foreground/60")}>
+                        {currentStep.options
+                          .slice()
+                          .sort((a, b) => deriveFrequency(b.quality) - deriveFrequency(a.quality))
+                          .map(opt => (
+                          <div key={opt.id}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className={cn(
+                                "text-[11px] font-medium",
+                                opt.id === chosen.id ? "text-foreground/70" : "text-muted-foreground/35"
+                              )}>
                                 {bbifyText(opt.label, bbDollars)}
                               </span>
-                              <QualityBadge quality={opt.quality} />
+                              <EvDelta evLoss={opt.evLoss} />
                             </div>
-                            {opt.id !== chosen.id && (
-                              <p className="text-muted-foreground/50 text-[11px] leading-relaxed line-clamp-2">
-                                {bbifyText(opt.coaching, bbDollars)}
-                              </p>
-                            )}
+                            <FrequencyBar option={opt} maxFreq={maxFreq} />
                           </div>
                         ))}
                       </div>
                     </div>
+
+                    {/* Coaching for non-chosen options (collapsed) */}
+                    {currentStep.options.filter(o => o.id !== chosen.id).length > 0 && (
+                      <div className="pt-3 border-t border-white/[0.04]">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/25 mb-3">
+                          Other Lines
+                        </p>
+                        <div className="space-y-2">
+                          {currentStep.options
+                            .filter(o => o.id !== chosen.id)
+                            .map(opt => (
+                            <div
+                              key={opt.id}
+                              className="rounded-lg p-2.5 bg-white/[0.015] border border-white/[0.03]"
+                            >
+                              <div className="flex items-center justify-between mb-1">
+                                <span className="text-[11px] font-medium text-muted-foreground/40">
+                                  {bbifyText(opt.label, bbDollars)}
+                                </span>
+                                <QualityBadge quality={opt.quality} />
+                              </div>
+                              <p className="text-[11px] text-muted-foreground/30 leading-relaxed line-clamp-2">
+                                {bbifyText(opt.coaching, bbDollars)}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
 
-              {/* Score tracker */}
+              {/* ── Score breakdown ─────────────────────────────────── */}
               {stepResults.length > 0 && (
-                <div className="rounded-2xl border border-border/50 bg-card/60 p-5">
-                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50 mb-3">
-                    Score breakdown
+                <div className="glass-panel rounded-2xl p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/25 mb-3">
+                    Score
                   </p>
                   <div className="space-y-2">
                     {stepResults.map((r, i) => (
                       <div key={i} className="flex items-center gap-2">
-                        <span className="text-[11px] capitalize text-muted-foreground/60 w-14">{puzzle.steps[i].street}</span>
-                        <div className="flex-1 h-1.5 rounded-full bg-secondary/50 overflow-hidden">
+                        <span className="text-[10px] capitalize text-muted-foreground/35 w-10 truncate">{puzzle.steps[i].street}</span>
+                        <div className="flex-1 h-1 rounded-full bg-white/[0.04] overflow-hidden">
                           <div
-                            className={cn("h-full rounded-full transition-all",
-                              r.score >= 80 ? "bg-emerald-500" : r.score >= 60 ? "bg-yellow-500" : "bg-red-500"
+                            className={cn("h-full rounded-full transition-all animate-confidence-fill",
+                              r.score >= 80 ? "bg-emerald-500/70" : r.score >= 60 ? "bg-yellow-500/70" : "bg-red-500/70"
                             )}
                             style={{ width: `${r.score}%` }}
                           />
                         </div>
-                        <span className={cn("text-xs font-bold w-8 text-right",
-                          r.score >= 80 ? "text-emerald-400" : r.score >= 60 ? "text-yellow-400" : "text-red-400"
+                        <span className={cn("text-[10px] font-bold w-6 text-right tabular-nums",
+                          r.score >= 80 ? "text-emerald-400/70" : r.score >= 60 ? "text-yellow-400/70" : "text-red-400/70"
                         )}>
                           {r.score}
                         </span>
@@ -1551,22 +1354,36 @@ export default function PuzzlePlayerPage() {
                 </div>
               )}
 
-              {/* Puzzle tip */}
-              <div className="rounded-2xl border border-violet-500/15 bg-violet-500/5 p-4">
-                <div className="flex items-start gap-2.5">
-                  <Flame className="h-4 w-4 text-violet-400 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-xs font-semibold text-violet-400 mb-1">Tip</p>
-                    <p className="text-xs text-muted-foreground/70 leading-relaxed">
-                      {currentStep.street === "preflop"
-                        ? "Consider your hand equity, stack depth, and positional advantage before acting."
-                        : currentStep.street === "flop"
-                        ? "Think about board texture, your range advantage, and whether to build or control the pot."
-                        : currentStep.street === "turn"
-                        ? "The turn defines hand strengths. Consider your range, villain's range, and remaining streets."
-                        : "River decisions are all about hand strength vs pot odds. No more cards are coming."}
-                    </p>
-                  </div>
+              {/* ── Compact situation card ──────────────────────────── */}
+              <div className="glass-panel rounded-xl p-3.5">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground/35">
+                  <span className="font-bold text-sky-300/50 tabular-nums">{puzzle.effectiveStack}bb</span>
+                  <span>{puzzle.heroPosition} vs {puzzle.villainPosition}</span>
+                  <span>{puzzle.stakes}</span>
+                  <span>{puzzle.format}</span>
+                  <span className={cn(
+                    "text-[9px] font-semibold px-1.5 py-0.5 rounded",
+                    stackZone(puzzle.effectiveStack).textCls,
+                    stackZone(puzzle.effectiveStack).bgCls
+                  )}>
+                    {stackZone(puzzle.effectiveStack).label}
+                  </span>
+                </div>
+              </div>
+
+              {/* ── Contextual tip ─────────────────────────────────── */}
+              <div className="rounded-xl bg-violet-500/[0.03] border border-violet-500/[0.08] p-3.5">
+                <div className="flex items-start gap-2">
+                  <Flame className="h-3.5 w-3.5 text-violet-400/30 mt-0.5 shrink-0" />
+                  <p className="text-[11px] text-muted-foreground/35 leading-relaxed">
+                    {currentStep.street === "preflop"
+                      ? "Consider equity, stack depth, and position before acting."
+                      : currentStep.street === "flop"
+                      ? "Evaluate board texture, range advantage, and pot control."
+                      : currentStep.street === "turn"
+                      ? "Hand strengths crystallize. Assess ranges and remaining streets."
+                      : "Pure hand strength vs pot odds. No more cards coming."}
+                  </p>
                 </div>
               </div>
             </div>
@@ -1574,8 +1391,6 @@ export default function PuzzlePlayerPage() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }
