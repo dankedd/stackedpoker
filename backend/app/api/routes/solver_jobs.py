@@ -325,3 +325,93 @@ async def solver_health_deep() -> dict:
             else "Some solver systems unavailable — check details"
         ),
     }
+
+
+@router.get("/test-binary", response_model=dict)
+async def test_solver_binary() -> dict:
+    """
+    Execute the solver binary directly and return full runtime diagnostics.
+
+    Tests: file existence, permissions, shared libraries, actual execution.
+    """
+    import os
+    import subprocess
+    import platform
+    from pathlib import Path
+
+    result: dict = {
+        "platform": platform.machine(),
+        "python_platform": platform.platform(),
+    }
+
+    # Find binary
+    from main import _find_solver_binary
+    resolved = _find_solver_binary()
+    result["texassolver_bin_env"] = os.getenv("TEXASSOLVER_BIN", "(not set)")
+    result["resolved_path"] = resolved or "(not found)"
+    result["binary_exists"] = bool(resolved) and Path(resolved).exists()
+
+    if not resolved or not Path(resolved).exists():
+        result["error"] = "Binary not found"
+        return result
+
+    result["binary_executable"] = os.access(resolved, os.X_OK)
+
+    # File type
+    try:
+        ft = subprocess.run(["file", resolved], capture_output=True, text=True, timeout=5)
+        result["file_type"] = ft.stdout.strip()
+    except Exception as e:
+        result["file_type"] = f"error: {e}"
+
+    # Shared libraries
+    try:
+        ldd = subprocess.run(["ldd", resolved], capture_output=True, text=True, timeout=5)
+        lines = ldd.stdout.strip().splitlines()
+        missing = [l.strip() for l in lines if "not found" in l]
+        result["shared_libs_total"] = len(lines)
+        result["shared_libs_missing"] = missing
+        result["ldd_exit_code"] = ldd.returncode
+        if ldd.stderr:
+            result["ldd_stderr"] = ldd.stderr[:300]
+    except Exception as e:
+        result["ldd_error"] = str(e)
+
+    # Resources
+    res_dir = os.getenv("TEXASSOLVER_RESOURCE_DIR", "/opt/texassolver/resources")
+    compairer = Path(res_dir) / "compairer"
+    result["resource_dir"] = res_dir
+    result["resources_exist"] = compairer.exists()
+    if compairer.exists():
+        try:
+            result["resource_files"] = len(list(compairer.iterdir()))
+        except Exception:
+            result["resource_files"] = 0
+
+    # EXECUTE binary
+    try:
+        proc = subprocess.run(
+            [resolved, "--help"],
+            capture_output=True, text=True, timeout=10,
+        )
+        result["exec_exit_code"] = proc.returncode
+        result["exec_stdout"] = proc.stdout[:500] if proc.stdout else ""
+        result["exec_stderr"] = proc.stderr[:500] if proc.stderr else ""
+        result["exec_success"] = proc.returncode == 0 or bool(proc.stdout)
+    except FileNotFoundError:
+        result["exec_error"] = "FileNotFoundError"
+        result["exec_success"] = False
+    except PermissionError:
+        result["exec_error"] = "PermissionError"
+        result["exec_success"] = False
+    except subprocess.TimeoutExpired:
+        result["exec_error"] = "TimeoutExpired (>10s)"
+        result["exec_success"] = False
+    except OSError as e:
+        result["exec_error"] = f"OSError: {e.strerror} (errno={e.errno})"
+        result["exec_success"] = False
+    except Exception as e:
+        result["exec_error"] = f"{type(e).__name__}: {e}"
+        result["exec_success"] = False
+
+    return result

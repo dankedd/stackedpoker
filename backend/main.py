@@ -49,9 +49,30 @@ def _log_env_check() -> None:
         )
 
 
-def _solver_self_test() -> None:
-    """Verify TexasSolver binary is available and executable at startup."""
+def _find_solver_binary() -> str:
+    """Locate solver binary from env var or known filesystem paths."""
     import os
+    from pathlib import Path
+
+    solver_bin = os.getenv("TEXASSOLVER_BIN", "")
+    if solver_bin and Path(solver_bin).exists():
+        return solver_bin
+
+    for candidate in [
+        "/opt/texassolver/bin/console_solver",
+        str(Path.home() / "TexasSolver" / "console_solver"),
+    ]:
+        if Path(candidate).exists():
+            return candidate
+
+    return ""
+
+
+def _solver_self_test() -> None:
+    """Verify TexasSolver binary: exists, executable, libraries present, runs."""
+    import os
+    import subprocess
+    import platform
     from pathlib import Path
 
     enabled = os.getenv("ENABLE_SOLVER_ENGINE", "true").lower() == "true"
@@ -59,57 +80,87 @@ def _solver_self_test() -> None:
     logger.info("=== Solver Self-Test ===")
     logger.info("  %-30s %s", "ENABLE_SOLVER_ENGINE", "ON" if enabled else "OFF")
     logger.info("  %-30s %s", "TEXASSOLVER_BIN (env)", os.getenv("TEXASSOLVER_BIN", "(not set)"))
+    logger.info("  %-30s %s", "platform", platform.machine())
 
     if not enabled:
-        logger.info("  Solver engine disabled — skipping binary check")
+        logger.info("  Solver engine disabled — skipping")
         return
 
-    # Search for binary: env var first, then known Docker paths
-    solver_bin = os.getenv("TEXASSOLVER_BIN", "")
-    known_paths = [
-        "/opt/texassolver/bin/console_solver",
-        str(Path.home() / "TexasSolver" / "console_solver"),
-    ]
+    resolved = _find_solver_binary()
+    if not resolved:
+        searched = [os.getenv("TEXASSOLVER_BIN", ""), "/opt/texassolver/bin/console_solver"]
+        logger.warning("  binary NOT FOUND at: %s", [p for p in searched if p])
+        return
 
-    resolved_path = ""
-    if solver_bin and Path(solver_bin).exists():
-        resolved_path = solver_bin
-        logger.info("  %-30s %s (from env)", "resolved binary", resolved_path)
-    else:
-        for candidate in known_paths:
-            if Path(candidate).exists():
-                resolved_path = candidate
-                logger.info("  %-30s %s (from known path)", "resolved binary", resolved_path)
-                break
+    logger.info("  %-30s %s", "resolved binary", resolved)
+    logger.info("  %-30s %s", "file exists", True)
+    logger.info("  %-30s %s", "executable bit", os.access(resolved, os.X_OK))
 
-    if not resolved_path:
-        all_searched = [solver_bin] + known_paths if solver_bin else known_paths
-        logger.warning(
-            "  SOLVER SELF-TEST: binary NOT FOUND at any of: %s",
-            all_searched,
+    # Check file type (ELF architecture)
+    try:
+        file_result = subprocess.run(
+            ["file", resolved], capture_output=True, text=True, timeout=5,
         )
-        logger.warning("  Live solving will use heuristic fallback until binary is available")
-        return
+        logger.info("  %-30s %s", "file type", file_result.stdout.strip())
+    except Exception as exc:
+        logger.info("  %-30s %s", "file cmd", f"unavailable ({exc})")
 
-    executable = os.access(resolved_path, os.X_OK)
-    logger.info("  %-30s %s", "binary exists", True)
-    logger.info("  %-30s %s", "binary executable", executable)
-
-    if not executable:
-        logger.error("  SOLVER SELF-TEST FAILED: binary not executable at %s", resolved_path)
-        return
+    # Check shared library dependencies
+    try:
+        ldd_result = subprocess.run(
+            ["ldd", resolved], capture_output=True, text=True, timeout=5,
+        )
+        if ldd_result.returncode == 0:
+            missing = [
+                line.strip() for line in ldd_result.stdout.splitlines()
+                if "not found" in line
+            ]
+            if missing:
+                logger.error("  MISSING SHARED LIBRARIES:")
+                for lib in missing:
+                    logger.error("    %s", lib)
+            else:
+                lib_count = len(ldd_result.stdout.strip().splitlines())
+                logger.info("  %-30s %d libraries, all resolved", "shared libs", lib_count)
+        else:
+            logger.warning("  %-30s exit=%d: %s", "ldd", ldd_result.returncode, ldd_result.stderr[:200])
+    except Exception as exc:
+        logger.info("  %-30s %s", "ldd cmd", f"unavailable ({exc})")
 
     # Check resources
     res_dir = os.getenv("TEXASSOLVER_RESOURCE_DIR", "/opt/texassolver/resources")
     compairer = Path(res_dir) / "compairer"
     res_ok = compairer.exists() and any(compairer.iterdir()) if compairer.exists() else False
-    logger.info("  %-30s %s (%s)", "resources available", res_ok, res_dir)
+    logger.info("  %-30s %s (%s)", "resources", "OK" if res_ok else "MISSING", res_dir)
 
-    if not res_ok:
-        logger.warning("  Solver resources missing at %s — solves may fail", res_dir)
-        return
+    # ACTUALLY RUN the binary
+    logger.info("  --- Execution test ---")
+    try:
+        proc = subprocess.run(
+            [resolved, "--help"],
+            capture_output=True, text=True, timeout=10,
+        )
+        logger.info("  %-30s %d", "exit code", proc.returncode)
+        if proc.stdout:
+            logger.info("  %-30s %s", "stdout (first 200)", proc.stdout[:200].replace("\n", " | "))
+        if proc.stderr:
+            logger.info("  %-30s %s", "stderr (first 200)", proc.stderr[:200].replace("\n", " | "))
 
-    logger.info("  SOLVER SELF-TEST PASSED — live solving enabled at %s", resolved_path)
+        if proc.returncode == 0 or proc.stdout:
+            logger.info("  SOLVER SELF-TEST PASSED — binary executes successfully")
+        else:
+            logger.warning("  SOLVER SELF-TEST: binary runs but returned code %d", proc.returncode)
+
+    except FileNotFoundError:
+        logger.error("  EXECUTION FAILED: FileNotFoundError — binary not found at runtime")
+    except PermissionError:
+        logger.error("  EXECUTION FAILED: PermissionError — insufficient permissions")
+    except subprocess.TimeoutExpired:
+        logger.error("  EXECUTION FAILED: TimeoutExpired — binary hung for >10s")
+    except OSError as exc:
+        logger.error("  EXECUTION FAILED: OSError — %s (errno=%s)", exc.strerror, exc.errno)
+    except Exception as exc:
+        logger.error("  EXECUTION FAILED: %s: %s", type(exc).__name__, exc)
 
 
 @asynccontextmanager
