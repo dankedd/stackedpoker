@@ -763,7 +763,7 @@ function StreetProgress({
   stepResults: Array<{ quality: ActionOption["quality"]; score: number }>;
 }) {
   return (
-    <div className="flex items-center justify-center gap-1 mb-6">
+    <div className="flex items-center justify-center gap-1 mb-3">
       {steps.map((step, i) => {
         const isPast   = i < stepIdx;
         const isActive = i === stepIdx;
@@ -885,7 +885,7 @@ function ActionBtn({
       disabled={disabled}
       onClick={() => onClick(option)}
       className={cn(
-        "group relative rounded-xl px-5 py-4 text-sm font-semibold transition-all duration-200 border overflow-hidden",
+        "group relative rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 border overflow-hidden",
         isChosen
           ? cn(
               "shadow-lg",
@@ -1180,6 +1180,63 @@ export default function PuzzlePlayerPage() {
 
   const bbDollars = parseBigBlind(puzzle.stakes);
 
+  // ── Live stack display: includes current chosen action's investment ──
+  const displayStackState = useMemo(() => {
+    if (!chosen) return stackState;
+    const invest = heroInvestBb(chosen.label, bbDollars, stackState.heroAlreadyIn);
+    const actual = invest === Infinity
+      ? stackState.heroStack
+      : Math.min(invest, stackState.heroStack);
+    return {
+      ...stackState,
+      heroStack: Math.max(0, stackState.heroStack - actual),
+      potBb: stackState.potBb + actual,
+    };
+  }, [stackState, chosen, bbDollars]);
+
+  // ── Action validation: cap impossible bet sizes to remaining stack ──
+  const validatedOptions = useMemo(() => {
+    const remaining = stackState.heroStack;
+    if (remaining <= 0) return currentStep.options;
+
+    // Pre-check: is there already an explicit jam/all-in option?
+    const hasExplicitJam = currentStep.options.some(o =>
+      /jam|all.?in|shove/i.test(o.label)
+    );
+
+    return currentStep.options.filter(opt => {
+      const lo = opt.label.toLowerCase();
+      // Fold/check always valid
+      if (/^(fold|check)/.test(lo)) return true;
+      // Jam/all-in always valid (will use actual remaining)
+      if (/jam|all.?in|shove/i.test(lo)) return true;
+      // Parse the bet/raise amount
+      const invest = heroInvestBb(opt.label, bbDollars, stackState.heroAlreadyIn);
+      if (invest <= 0) return true;
+      // If bet exceeds remaining stack, drop it if there's already a jam option
+      if (invest > remaining && hasExplicitJam) return false;
+      return true;
+    });
+  }, [currentStep.options, stackState, bbDollars]);
+
+  /** Cap a display label to the remaining stack if needed. */
+  function capLabel(rawLabel: string): string {
+    const remaining = stackState.heroStack;
+    const lo = rawLabel.toLowerCase();
+    if (/^(fold|check)/.test(lo) || /jam|all.?in|shove/i.test(lo)) {
+      // For jam labels, ensure the amount shown is the actual remaining stack
+      if (/jam|all.?in|shove/i.test(lo)) {
+        return `Jam ${fmtBb(remaining)}`;
+      }
+      return rawLabel;
+    }
+    const invest = heroInvestBb(rawLabel, bbDollars, stackState.heroAlreadyIn);
+    if (invest > 0 && invest > remaining) {
+      return `Jam ${fmtBb(remaining)}`;
+    }
+    return rawLabel;
+  }
+
   const tableActors = useMemo(
     () => parseTableActors(
       puzzle.steps.slice(0, stepIdx + 1).map(s => s.context),
@@ -1297,11 +1354,11 @@ export default function PuzzlePlayerPage() {
     <div className="flex min-h-screen flex-col">
       <Navbar variant="static" />
 
-      <main className="flex-1 py-5 sm:py-8">
+      <main className="flex-1 py-3 sm:py-4">
         <div className="mx-auto max-w-[1480px] px-4 sm:px-6">
 
           {/* ── Compact header ───────────────────────────────────── */}
-          <div className="mb-4 flex items-center justify-between gap-4">
+          <div className="mb-2 flex items-center justify-between gap-4">
             <Link href="/analyze/puzzles" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground/40 hover:text-foreground transition-colors shrink-0">
               <ArrowLeft className="h-3.5 w-3.5" />
             </Link>
@@ -1339,15 +1396,14 @@ export default function PuzzlePlayerPage() {
           <StreetProgress steps={puzzle.steps} stepIdx={stepIdx} stepResults={stepResults} />
 
           {/* ── 2-column layout ───────────────────────────────────── */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4">
 
             {/* ═══ MAIN: Table + Actions ═══════════════════════════ */}
             <div className="order-1 animate-street-enter" key={`step-${stepIdx}`}>
 
               {/* ── CINEMATIC TABLE HUD ─────────────────────────────── */}
               <div
-                className={cn("glass-panel-elevated rounded-2xl overflow-hidden mb-5", pressure.cls)}
-                style={{ minHeight: "340px" }}
+                className={cn("glass-panel-elevated rounded-2xl overflow-hidden mb-3", pressure.cls)}
               >
                 {/* Chromatic edge */}
                 <div
@@ -1373,7 +1429,7 @@ export default function PuzzlePlayerPage() {
                   )} />
                 )}
 
-                <div className="relative flex flex-col items-center py-6 px-6 gap-4">
+                <div className="relative flex flex-col items-center py-4 px-5 gap-2">
 
                   {/* Street badge — top left */}
                   <div className="absolute top-4 left-5">
@@ -1398,7 +1454,7 @@ export default function PuzzlePlayerPage() {
                   </div>
 
                   {/* ── VILLAIN area ────────────────────────── */}
-                  <div className="flex flex-col items-center gap-1.5 mt-4">
+                  <div className="flex flex-col items-center gap-1.5 mt-1">
                     <div className="flex items-center gap-3">
                       <div className="flex gap-1">
                         <CardBack size="sm" />
@@ -1409,7 +1465,7 @@ export default function PuzzlePlayerPage() {
                           {puzzle.villainPosition}
                         </span>
                         <span className="text-[10px] text-muted-foreground/20 tabular-nums">
-                          {fmtBb(stackState.villainStack)}
+                          {fmtBb(displayStackState.villainStack)}
                         </span>
                       </div>
                     </div>
@@ -1463,7 +1519,7 @@ export default function PuzzlePlayerPage() {
                     >
                       <div className="h-1 w-1 rounded-full bg-amber-400/40 shrink-0" />
                       <span className="text-[11px] font-black text-amber-300/70 tabular-nums leading-none">
-                        {fmtBb(stackState.potBb)}
+                        {fmtBb(displayStackState.potBb)}
                       </span>
                     </div>
 
@@ -1473,11 +1529,11 @@ export default function PuzzlePlayerPage() {
 
                   {/* ── HERO area — with decision glow ──────── */}
                   <div className={cn(
-                    "flex items-center gap-4 rounded-2xl px-3 py-2 -mx-3 transition-all",
+                    "flex items-center gap-3 rounded-2xl px-3 py-1.5 -mx-3 transition-all",
                     !chosen && "hero-decision-active"
                   )}>
                     <div className="flex gap-2">
-                      {puzzle.heroCards.map((card, i) => <CardFace key={i} card={card} size="xl" />)}
+                      {puzzle.heroCards.map((card, i) => <CardFace key={i} card={card} size="lg" />)}
                     </div>
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
@@ -1499,7 +1555,7 @@ export default function PuzzlePlayerPage() {
                         </span>
                       </div>
                       <span className="text-[10px] text-muted-foreground/20 tabular-nums ml-4">
-                        {fmtBb(stackState.heroStack)}
+                        {fmtBb(displayStackState.heroStack)}
                       </span>
                       {/* Hero decision indicator or last action */}
                       {!chosen ? (
@@ -1532,7 +1588,7 @@ export default function PuzzlePlayerPage() {
               )}
 
               {/* ── Context — minimal floating surface ────────────── */}
-              <div className="glass-panel rounded-xl px-5 py-3.5 mb-5">
+              <div className="glass-panel rounded-xl px-4 py-2.5 mb-3">
                 <p className="text-[13px] text-muted-foreground/50 leading-relaxed">{bbifyText(currentStep.context, bbDollars)}</p>
                 <p className="text-[13px] font-semibold text-foreground/85 mt-1">{bbifyText(currentStep.prompt, bbDollars)}</p>
               </div>
@@ -1541,17 +1597,17 @@ export default function PuzzlePlayerPage() {
               {!chosen ? (
                 <div className={cn(
                   "grid gap-3",
-                  currentStep.options.length === 2 ? "grid-cols-2" :
-                  currentStep.options.length === 3 ? "grid-cols-3" : "grid-cols-2"
+                  validatedOptions.length === 2 ? "grid-cols-2" :
+                  validatedOptions.length === 3 ? "grid-cols-3" : "grid-cols-2"
                 )}>
-                  {currentStep.options.map(opt => (
+                  {validatedOptions.map(opt => (
                       <ActionBtn
                         key={opt.id}
                         option={opt}
                         chosen={chosen}
                         disabled={false}
                         onClick={handleAction}
-                        displayLabel={sanitizeLabel(bbifyText(opt.label, bbDollars))}
+                        displayLabel={capLabel(sanitizeLabel(bbifyText(opt.label, bbDollars)))}
                       />
                     ))}
                 </div>
@@ -1600,17 +1656,17 @@ export default function PuzzlePlayerPage() {
             </div>
 
             {/* ═══ RIGHT PANEL: Coaching + Meta ════════════════════ */}
-            <div className="space-y-4 order-2" ref={coachingRef}>
+            <div className="space-y-3 order-2" ref={coachingRef}>
 
               {/* ── Coaching panel ─────────────────────────────────── */}
-              <div className="glass-panel rounded-2xl p-5">
-                <div className="flex items-center gap-2 mb-4">
+              <div className="glass-panel rounded-2xl p-4">
+                <div className="flex items-center gap-2 mb-3">
                   <Zap className="h-3.5 w-3.5 text-violet-400/60" />
                   <p className="text-xs font-semibold text-foreground/70 tracking-wide">Coaching</p>
                 </div>
 
                 {!chosen ? (
-                  <div className="flex flex-col items-center py-6 text-center">
+                  <div className="flex flex-col items-center py-3 text-center">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-500/[0.06] mb-3">
                       <Target className="h-4 w-4 text-violet-400/30" />
                     </div>
@@ -1645,7 +1701,7 @@ export default function PuzzlePlayerPage() {
                                 "text-[11px] font-medium",
                                 opt.id === chosen.id ? "text-foreground/70" : "text-muted-foreground/35"
                               )}>
-                                {bbifyText(opt.label, bbDollars)}
+                                {capLabel(bbifyText(opt.label, bbDollars))}
                               </span>
                               <EvDelta evLoss={opt.evLoss} />
                             </div>
@@ -1671,7 +1727,7 @@ export default function PuzzlePlayerPage() {
                             >
                               <div className="flex items-center justify-between mb-1">
                                 <span className="text-[11px] font-medium text-muted-foreground/40">
-                                  {bbifyText(opt.label, bbDollars)}
+                                  {capLabel(bbifyText(opt.label, bbDollars))}
                                 </span>
                                 <QualityBadge quality={opt.quality} />
                               </div>
@@ -1689,8 +1745,8 @@ export default function PuzzlePlayerPage() {
 
               {/* ── Score breakdown ─────────────────────────────────── */}
               {stepResults.length > 0 && (
-                <div className="glass-panel rounded-2xl p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/25 mb-3">
+                <div className="glass-panel rounded-2xl p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/25 mb-2">
                     Score
                   </p>
                   <div className="space-y-2">
@@ -1717,8 +1773,8 @@ export default function PuzzlePlayerPage() {
               )}
 
               {/* ── Compact situation card ──────────────────────────── */}
-              <div className="glass-panel rounded-xl p-3.5">
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground/35">
+              <div className="glass-panel rounded-xl p-2.5">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground/35">
                   <span className="font-bold text-sky-300/50 tabular-nums">{puzzle.effectiveStack}bb</span>
                   <span>{puzzle.heroPosition} vs {puzzle.villainPosition}</span>
                   <span>{puzzle.stakes}</span>
@@ -1734,7 +1790,7 @@ export default function PuzzlePlayerPage() {
               </div>
 
               {/* ── Contextual tip ─────────────────────────────────── */}
-              <div className="rounded-xl bg-violet-500/[0.03] border border-violet-500/[0.08] p-3.5">
+              <div className="rounded-xl bg-violet-500/[0.03] border border-violet-500/[0.08] p-2.5">
                 <div className="flex items-start gap-2">
                   <Flame className="h-3.5 w-3.5 text-violet-400/30 mt-0.5 shrink-0" />
                   <p className="text-[11px] text-muted-foreground/35 leading-relaxed">
