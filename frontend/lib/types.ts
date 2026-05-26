@@ -361,6 +361,9 @@ export interface AnalysisResponse {
   saved_id?: string | null;
   save_error?: string | null;
   strategy_profile?: StrategyProfile | null;
+  /** Sanitized copy with illegal actions corrected (e.g. fold→check).
+   *  Use for pot engine / replay animation. null when no corrections needed. */
+  parsed_hand_sanitized?: ParsedHand | null;
   engine_version?: string | null;
   corrections_applied?: string[];
 }

@@ -1,15 +1,16 @@
 """
-Regression tests for the fold-facing-no-bet pipeline corruption bug.
+Regression tests for the fold-facing-no-bet pipeline bug.
 
 Scenario: Hero folds on the river after Villain checks. No bet was ever
-made on the river. This is an illegal game action — you cannot fold when
-not facing a bet.
+made on the river. This is an illegal game action.
 
 The system should:
-  1. Auto-correct fold → check in the normalizer
-  2. Flag it as a warning in the validator
-  3. Detect it as a mistake in heuristics
-  4. Never recommend Fold as primary when facing no bet
+  1. PRESERVE the original fold in parsed_hand (for coaching fidelity)
+  2. Create a SANITIZED copy (fold→check) for pot engine / replay legality
+  3. Flag the fold as a mistake in heuristics
+  4. Score/grade the user's ACTUAL fold (not the sanitized check)
+  5. Recommend Check as the primary action
+  6. Never produce "Good Fold" when facing no bet
 """
 
 import pytest
@@ -22,6 +23,7 @@ from app.engines.normalizer import normalize_hand
 from app.engines.canonical_validator import validate_canonical
 from app.engines.heuristics import run_heuristics, _detect_fold_facing_no_bet
 from app.engines.scoring import score_all_hero_actions, _is_facing_bet
+from app.engines.analysis import analyse_hand, _sanitize_illegal_folds
 from app.engines.spot_classifier import classify_spot
 from app.engines.board_texture import classify_board
 
@@ -87,26 +89,24 @@ def _make_bug_hand() -> ParsedHand:
     )
 
 
-# ── Normalizer tests ─────────────────────────────────────────────────────────
+# ── Normalizer: preserves original action ────────────────────────────────────
 
-class TestNormalizerAutoCorrection:
-    def test_fold_facing_no_bet_becomes_check(self):
-        """The normalizer must auto-correct fold→check when no bet is outstanding."""
+class TestNormalizerPreservesOriginal:
+    def test_fold_facing_no_bet_preserved_in_canonical(self):
+        """The normalizer must preserve the user's actual fold (not rewrite it)."""
         parsed = _make_bug_hand()
         canonical = normalize_hand(parsed)
 
-        # Find the river actions
         river_street = next(s for s in canonical.streets if s.name.value == "river")
         hero_river = next(a for a in river_street.actions if a.is_hero)
 
-        assert hero_river.action.value == "check", (
-            f"Expected auto-correction to 'check', got '{hero_river.action.value}'"
+        assert hero_river.action.value == "fold", (
+            f"Normalizer must preserve original fold, got '{hero_river.action.value}'"
         )
 
     def test_fold_facing_bet_preserved(self):
-        """A legitimate fold facing a bet should NOT be auto-corrected."""
+        """A legitimate fold facing a bet should be preserved."""
         parsed = _make_bug_hand()
-        # Change the river: villain bets, then hero folds (legitimate)
         parsed.actions[8] = HandAction(street="river", player="Villain", action="bet", size_bb=20.0)
         parsed.actions[9] = HandAction(street="river", player="Hero", action="fold", is_hero=True)
 
@@ -114,52 +114,80 @@ class TestNormalizerAutoCorrection:
         river_street = next(s for s in canonical.streets if s.name.value == "river")
         hero_river = next(a for a in river_street.actions if a.is_hero)
 
-        assert hero_river.action.value == "fold", "Legitimate fold should be preserved"
+        assert hero_river.action.value == "fold"
 
-    def test_flop_fold_facing_no_bet_corrected(self):
-        """Fold-facing-no-bet on flop should also be corrected."""
-        parsed = ParsedHand(
-            site="Unknown", game_type="NLHE", stakes="0.5/1",
-            hand_id="test_flop", hero_name="Hero", hero_position="BTN",
-            effective_stack_bb=100.0, hero_cards=["As", "Kh"],
-            board=BoardCards(flop=["Kd", "8c", "3h"]),
-            players=[
-                PlayerInfo(name="Hero", seat=1, stack_bb=100.0, position="BTN"),
-                PlayerInfo(name="Villain", seat=2, stack_bb=100.0, position="BB"),
-            ],
-            actions=[
-                HandAction(street="preflop", player="Hero", action="raise", size_bb=2.5, is_hero=True),
-                HandAction(street="preflop", player="Villain", action="call", size_bb=2.0),
-                HandAction(street="flop", player="Villain", action="check"),
-                HandAction(street="flop", player="Hero", action="fold", is_hero=True),
-            ],
-            pot_size_bb=5.0, big_blind=1.0,
+
+# ── Sanitizer: creates legal copy for pot engine ─────────────────────────────
+
+class TestSanitizer:
+    def test_sanitizer_converts_fold_to_check(self):
+        """_sanitize_illegal_folds creates a copy with fold→check."""
+        parsed = _make_bug_hand()
+        sanitized, corrections = _sanitize_illegal_folds(parsed)
+
+        river_actions = [a for a in sanitized.actions if a.street == "river" and a.is_hero]
+        assert len(river_actions) == 1
+        assert river_actions[0].action == "check"
+
+    def test_sanitizer_preserves_original(self):
+        """The original hand is not mutated by the sanitizer."""
+        parsed = _make_bug_hand()
+        _sanitize_illegal_folds(parsed)
+
+        river_actions = [a for a in parsed.actions if a.street == "river" and a.is_hero]
+        assert river_actions[0].action == "fold", "Original must not be mutated"
+
+    def test_corrections_list_populated(self):
+        parsed = _make_bug_hand()
+        _, corrections = _sanitize_illegal_folds(parsed)
+
+        assert len(corrections) == 1
+        assert "fold_to_check" in corrections[0]
+        assert "Hero" in corrections[0]
+        assert "river" in corrections[0]
+
+    def test_no_corrections_for_legal_hand(self):
+        parsed = _make_bug_hand()
+        parsed.actions[9] = HandAction(
+            street="river", player="Hero", action="check", is_hero=True,
         )
-        canonical = normalize_hand(parsed)
-        flop_street = next(s for s in canonical.streets if s.name.value == "flop")
-        hero_flop = next(a for a in flop_street.actions if a.is_hero)
-        assert hero_flop.action.value == "check"
+        _, corrections = _sanitize_illegal_folds(parsed)
+        assert corrections == []
+
+    def test_legitimate_fold_not_sanitized(self):
+        parsed = _make_bug_hand()
+        parsed.actions[8] = HandAction(street="river", player="Villain", action="bet", size_bb=20.0)
+        parsed.actions[9] = HandAction(street="river", player="Hero", action="fold", is_hero=True)
+
+        sanitized, corrections = _sanitize_illegal_folds(parsed)
+        river_hero = [a for a in sanitized.actions if a.street == "river" and a.is_hero]
+        assert river_hero[0].action == "fold"
+        assert corrections == []
 
 
-# ── Validator tests ──────────────────────────────────────────────────────────
+# ── Validator ────────────────────────────────────────────────────────────────
 
 class TestValidatorDetection:
-    def test_auto_corrected_hand_passes_validation(self):
-        """After auto-correction, the hand should pass validation."""
+    def test_fold_facing_no_bet_flagged_as_warning(self):
+        """Validator should flag fold-facing-no-bet."""
         parsed = _make_bug_hand()
         canonical = normalize_hand(parsed)
         result = validate_canonical(canonical)
-        assert result.can_analyze, (
-            f"Should be analyzable after correction. Errors: "
-            f"{[e.message for e in result.errors]}"
-        )
+        warning_codes = [w.code for w in result.warnings]
+        assert "FOLD_FACING_NO_BET" in warning_codes
+
+    def test_hand_still_analyzable(self):
+        """Fold-facing-no-bet is a warning, not a blocking error."""
+        parsed = _make_bug_hand()
+        canonical = normalize_hand(parsed)
+        result = validate_canonical(canonical)
+        assert result.can_analyze
 
 
-# ── Heuristic tests ──────────────────────────────────────────────────────────
+# ── Heuristics ───────────────────────────────────────────────────────────────
 
 class TestHeuristicDetection:
-    def test_fold_facing_no_bet_detected_in_raw_hand(self):
-        """The heuristic catches fold-facing-no-bet in the raw ParsedHand."""
+    def test_fold_facing_no_bet_detected_as_mistake(self):
         parsed = _make_bug_hand()
         findings = _detect_fold_facing_no_bet(parsed)
         assert len(findings) == 1
@@ -167,99 +195,141 @@ class TestHeuristicDetection:
         assert "river" in findings[0].street
 
     def test_no_false_positive_on_legitimate_fold(self):
-        """No finding when hero folds facing an actual bet."""
         parsed = _make_bug_hand()
         parsed.actions[8] = HandAction(street="river", player="Villain", action="bet", size_bb=20.0)
         parsed.actions[9] = HandAction(street="river", player="Hero", action="fold", is_hero=True)
-
         findings = _detect_fold_facing_no_bet(parsed)
         assert len(findings) == 0
 
     def test_no_false_positive_on_check(self):
-        """No finding when hero checks (not a fold)."""
         parsed = _make_bug_hand()
         parsed.actions[9] = HandAction(street="river", player="Hero", action="check", is_hero=True)
-
         findings = _detect_fold_facing_no_bet(parsed)
         assert len(findings) == 0
 
 
-# ── Scoring engine tests ─────────────────────────────────────────────────────
+# ── Scoring ──────────────────────────────────────────────────────────────────
 
 class TestScoringFacingBet:
     def test_is_facing_bet_false_after_check(self):
-        """Hero should not be considered facing a bet after villain checks."""
         parsed = _make_bug_hand()
         hero_fold = parsed.actions[9]
         assert not _is_facing_bet(parsed, hero_fold)
 
     def test_is_facing_bet_true_after_villain_bet(self):
-        """Hero should be considered facing a bet after villain bets."""
         parsed = _make_bug_hand()
         parsed.actions[8] = HandAction(street="river", player="Villain", action="bet", size_bb=20.0)
         hero_fold = parsed.actions[9]
         assert _is_facing_bet(parsed, hero_fold)
 
-    def test_fold_facing_no_bet_never_primary_fold(self):
-        """Scoring must never recommend Fold as primary when facing no bet."""
+    def test_fold_facing_no_bet_primary_is_check(self):
+        """Scoring must recommend Check as primary when facing no bet."""
         parsed = _make_bug_hand()
         spot = classify_spot(parsed)
         texture = classify_board(parsed.board.flop, parsed.board.turn, parsed.board.river)
 
         coaching = score_all_hero_actions(parsed, [], spot, texture)
-        # Action index 9 = hero fold on river
         fold_coaching = coaching[9]
 
         primary = next((o for o in fold_coaching.strategic_options if o.priority == 1), None)
         assert primary is not None
-        assert primary.action.lower() != "fold", (
-            f"Primary should be Check, got {primary.action}"
-        )
-        assert "check" in primary.action.lower()
+        assert "check" in primary.action.lower(), f"Primary should be Check, got {primary.action}"
 
+    def test_fold_facing_no_bet_not_good(self):
+        """Fold facing no bet must NOT be graded 'Good'."""
+        parsed = _make_bug_hand()
+        spot = classify_spot(parsed)
+        texture = classify_board(parsed.board.flop, parsed.board.turn, parsed.board.river)
 
-# ── Full pipeline integration test ───────────────────────────────────────────
+        coaching = score_all_hero_actions(parsed, [], spot, texture)
+        fold_coaching = coaching[9]
 
-class TestFullPipelineIntegration:
-    def test_bug_hand_through_full_pipeline(self):
-        """The exact bug hand should produce a corrected, analyzable result."""
-        from app.engines.pipeline import run_text_pipeline
-
-        result = run_text_pipeline(HAND_TEXT)
-
-        # Should be analyzable
-        assert result.validation.can_analyze, (
-            f"Hand should be analyzable. Errors: "
-            f"{[e.message for e in result.validation.errors]}"
+        assert fold_coaching.quality != "Good", (
+            f"Illegal fold should not be Good, got quality={fold_coaching.quality} score={fold_coaching.score}"
         )
 
-        # River action should be auto-corrected to check
-        river_street = next(
-            (s for s in result.canonical.streets if s.name.value == "river"), None
-        )
-        assert river_street is not None
-        hero_river = next(
-            (a for a in river_street.actions if a.is_hero), None
-        )
-        assert hero_river is not None
-        assert hero_river.action.value == "check", (
-            f"River fold should be auto-corrected to check, got {hero_river.action.value}"
-        )
 
-    def test_bug_hand_analysis_no_contradiction(self):
-        """After correction, the analysis should not produce contradictory verdicts."""
-        from app.engines.analysis import analyse_hand
-        from app.parsers.detector import detect_and_parse
+# ── Full pipeline integration ────────────────────────────────────────────────
 
-        parsed = detect_and_parse(HAND_TEXT)
+class TestFullPipeline:
+    def test_analysis_preserves_original_fold(self):
+        """analyse_hand must preserve the user's actual fold in parsed_hand."""
+        parsed = _make_bug_hand()
         result = analyse_hand(parsed)
 
-        # Find the river hero action coaching (should now be a check, not fold)
-        if result.replay:
-            for action in result.replay.actions:
-                if action.is_hero and action.street == "river":
-                    if action.coaching:
-                        # Should NOT be labeled as a fold
-                        assert "fold" not in (action.coaching.quality or "").lower() or True
-                        # Score should be reasonable for a check
-                        assert action.coaching.score >= 50
+        river_hero = [a for a in result.parsed_hand.actions
+                      if a.street == "river" and a.is_hero]
+        assert len(river_hero) == 1
+        assert river_hero[0].action == "fold", (
+            "parsed_hand must show the user's actual fold"
+        )
+
+    def test_analysis_provides_sanitized_copy(self):
+        """analyse_hand must provide a sanitized copy with fold→check."""
+        parsed = _make_bug_hand()
+        result = analyse_hand(parsed)
+
+        assert result.parsed_hand_sanitized is not None, (
+            "parsed_hand_sanitized must be provided when corrections exist"
+        )
+        river_hero = [a for a in result.parsed_hand_sanitized.actions
+                      if a.street == "river" and a.is_hero]
+        assert len(river_hero) == 1
+        assert river_hero[0].action == "check"
+
+    def test_analysis_corrections_field(self):
+        parsed = _make_bug_hand()
+        result = analyse_hand(parsed)
+
+        assert len(result.corrections_applied) == 1
+        assert "fold_to_check" in result.corrections_applied[0]
+
+    def test_analysis_engine_version(self):
+        parsed = _make_bug_hand()
+        result = analyse_hand(parsed)
+        assert result.engine_version is not None
+        assert result.engine_version >= "2.2"
+
+    def test_analysis_finds_illegal_fold_mistake(self):
+        """The analysis must produce a 'mistake' finding for the illegal fold."""
+        parsed = _make_bug_hand()
+        result = analyse_hand(parsed)
+
+        fold_findings = [
+            f for f in result.findings
+            if f.street == "river" and "fold" in f.action_taken.lower()
+        ]
+        assert len(fold_findings) >= 1, "Must have a finding about the illegal fold"
+        assert fold_findings[0].severity == "mistake"
+
+    def test_analysis_overall_score_penalized(self):
+        """The overall score must be penalized for the illegal fold."""
+        parsed = _make_bug_hand()
+        result = analyse_hand(parsed)
+
+        # A hand with a mistake finding should score below 70
+        assert result.overall_score < 70, (
+            f"Score {result.overall_score} too high for hand with illegal fold"
+        )
+
+    def test_no_sanitized_copy_for_legal_hand(self):
+        """Legal hands should not produce a sanitized copy."""
+        parsed = _make_bug_hand()
+        parsed.actions[9] = HandAction(
+            street="river", player="Hero", action="check", is_hero=True,
+        )
+        result = analyse_hand(parsed)
+        assert result.parsed_hand_sanitized is None
+
+    def test_text_pipeline_preserves_fold(self):
+        """The text pipeline must preserve the original fold in canonical."""
+        from app.engines.pipeline import run_text_pipeline
+        result = run_text_pipeline(HAND_TEXT)
+
+        river_street = next(
+            s for s in result.canonical.streets if s.name.value == "river"
+        )
+        hero_river = next(a for a in river_street.actions if a.is_hero)
+        assert hero_river.action.value == "fold", (
+            "Pipeline must preserve user's actual fold in canonical"
+        )

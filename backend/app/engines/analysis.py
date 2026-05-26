@@ -28,22 +28,27 @@ from app.engines.poker_state import PokerState
 _log = logging.getLogger(__name__)
 
 
-_ENGINE_VERSION = "2.1"  # bump on every behavioral change for deploy verification
+_ENGINE_VERSION = "2.2"  # bump on every behavioral change for deploy verification
 
 
 def analyse_hand(hand: ParsedHand, ai_coaching: str = "") -> AnalysisResponse:
     _log.info("analyse_hand v%s hand=%s", _ENGINE_VERSION, hand.hand_id)
 
-    # ── 0. Sanitize illegal folds facing no bet (defense-in-depth) ────────
-    # This catches any path that reaches analysis without going through
-    # the normalizer (legacy routes, image analysis, direct calls).
-    hand, corrections = _sanitize_illegal_folds(hand)
+    # ── 0. Detect illegal actions and build sanitized copy ────────────────
+    # The ORIGINAL hand (with the user's actual actions) is preserved for
+    # coaching, scoring, and findings.  A SANITIZED copy (illegal folds
+    # replaced with checks) is used only for the pot engine and replay
+    # state, which require a legal game tree.
+    original_hand = hand
+    sanitized_hand, corrections = _sanitize_illegal_folds(hand)
 
     # ── 1. Spot classification (IP/OOP, PFR, pot type) ────────────────────
-    spot = classify_spot(hand)
+    # Uses sanitized hand so spot classification sees a legal game tree
+    spot = classify_spot(sanitized_hand)
 
     # ── 2. Canonical PokerState — single source of truth ──────────────────
-    poker_state = PokerState.build(hand, spot.hero_is_ip, spot.hero_is_pfr)
+    # Uses sanitized hand for valid pot/stack tracking
+    poker_state = PokerState.build(sanitized_hand, spot.hero_is_ip, spot.hero_is_pfr)
 
     if poker_state.validation_errors:
         _log.warning(
@@ -77,9 +82,11 @@ def analyse_hand(hand: ParsedHand, ai_coaching: str = "") -> AnalysisResponse:
                 exc,
             )
 
-    # ── 5. Heuristics — receives PokerState for made-hand priority ─────────
+    # ── 5. Heuristics — evaluates the ORIGINAL actions (what the user did)
+    # The heuristic engine must see the actual fold to detect it as a
+    # mistake, not the sanitized check.
     findings = run_heuristics(
-        hand, spot, texture,
+        original_hand, spot, texture,
         draw_analysis=draw_analysis,
         poker_state=poker_state,
     )
@@ -90,7 +97,8 @@ def analyse_hand(hand: ParsedHand, ai_coaching: str = "") -> AnalysisResponse:
     recommendations = _build_recommendations(findings, spot, texture)
 
     return AnalysisResponse(
-        parsed_hand=hand,
+        parsed_hand=original_hand,       # user's ACTUAL actions (never rewritten)
+        parsed_hand_sanitized=sanitized_hand if corrections else None,  # legal copy for replay
         spot_classification=spot,
         board_texture=texture,
         findings=findings,

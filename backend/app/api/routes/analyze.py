@@ -65,10 +65,17 @@ def _build_replay(result: AnalysisResponse) -> ReplayAnalysis:
 
     Uses the deterministic pot engine for accurate per-action pot sizes.
     No hardcoded starting pot — computed from blind structure.
+
+    Design: the ORIGINAL hand (user's actual actions) drives coaching and
+    scoring.  The SANITIZED hand (illegal folds corrected to checks) drives
+    the pot engine, which requires a legal game tree.  The replay displays
+    the original actions so the user sees what they actually did.
     """
-    parsed = result.parsed_hand
+    parsed = result.parsed_hand          # original actions — for coaching/display
+    pot_hand = result.parsed_hand_sanitized or parsed  # legal copy — for pot engine
 
     # Deterministic per-action coaching (no LLM — same input → same output).
+    # Scoring sees the ORIGINAL actions so it evaluates what the user did.
     coaching_by_idx = score_all_hero_actions(
         parsed, result.findings, result.spot_classification, result.board_texture
     )
@@ -80,11 +87,12 @@ def _build_replay(result: AnalysisResponse) -> ReplayAnalysis:
         finding_by_key.setdefault((f.street.lower(), verb), f)
 
     # ── Pot engine: deterministic per-action pot states ───────────────────
-    sb_player, bb_player = find_blind_players(parsed.players, parsed.actions)
+    # Uses the SANITIZED hand for legal pot math (fold→check corrected).
+    sb_player, bb_player = find_blind_players(pot_hand.players, pot_hand.actions)
     sb_bb = 0.5  # standard half-BB small blind
     pot_states = compute_pot_states(
-        actions=parsed.actions,
-        players=parsed.players,
+        actions=pot_hand.actions,
+        players=pot_hand.players,
         sb_bb=sb_bb,
         antes_bb=0.0,
         sb_player=sb_player,
