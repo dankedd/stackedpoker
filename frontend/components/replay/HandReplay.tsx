@@ -26,6 +26,8 @@ interface HandReplayProps {
   correctionsApplied?: string[];
   /** Live solver result — real equilibrium frequencies/EVs. */
   solver?: import("@/lib/types").SolverLiveResult | null;
+  /** Full pipeline trace from backend. */
+  trace?: import("@/lib/types").PipelineTrace | null;
 }
 
 const STREETS = ["preflop", "flop", "turn", "river"] as const;
@@ -739,8 +741,10 @@ function CoachingContent({
         </p>
       </div>
 
-      {/* Strategic options */}
-      {coaching.strategic_options?.length > 0 && (
+      {/* Strategic options — hidden when solver frequencies are available
+           (solver equilibrium supersedes heuristic PRIMARY/SECONDARY labels) */}
+      {coaching.strategic_options?.length > 0
+       && !(solver?.status === "ready" && currentAction.street === "river") && (
         <div className="px-5 py-4">
           <p
             className="text-[9px] uppercase tracking-[0.22em] font-bold mb-3"
@@ -1215,7 +1219,7 @@ function PremiumVerdict({ verdict }: { verdict: OverallVerdict }) {
 // MAIN EXPORT
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function HandReplay({ analysis, filename, validation, engineVersion, correctionsApplied, solver }: HandReplayProps) {
+export function HandReplay({ analysis, filename, validation, engineVersion, correctionsApplied, solver, trace }: HandReplayProps) {
   const replay = useReplay(analysis);
   const { hand_summary, overall_verdict } = analysis;
   // Defensive: actions may be undefined if the backend returned a partial response
@@ -1307,66 +1311,104 @@ export function HandReplay({ analysis, filename, validation, engineVersion, corr
         onGoTo={replay.goTo}
       />
 
-      {/* ── DEPLOYMENT + REPLAY STATE DEBUG OVERLAY ────────────────────────
-           Always visible until aggression rendering is confirmed on live site. */}
-      <div
+      {/* ── PIPELINE DEBUG PANEL ─────────────────────────────────────────────
+           Compact forensic overlay. Shows version stamps, action counts at
+           every pipeline stage, solver state, and replay state. */}
+      <details
         style={{
-          background: replay.pendingAggression
-            ? "rgba(248,113,113,0.12)"
+          background: trace?.action_count_mismatch
+            ? "rgba(248,113,113,0.10)"
             : "rgba(0,0,0,0.80)",
-          borderBottom: replay.pendingAggression
-            ? "2px solid rgba(248,113,113,0.5)"
-            : "1px solid rgba(251,191,36,0.2)",
-          padding: "6px 16px",
-          fontFamily: "monospace",
-          fontSize: "10px",
-          color: "rgba(251,191,36,0.8)",
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "10px",
-          alignItems: "center",
+          borderBottom: trace?.action_count_mismatch
+            ? "2px solid rgba(248,113,113,0.4)"
+            : "1px solid rgba(255,255,255,0.06)",
         }}
       >
-        <span style={{ color: "rgba(56,189,248,0.7)" }}>FE:0fb94af</span>
-        <span style={{ color: engineVersion ? "rgba(34,197,94,0.7)" : "rgba(248,113,113,0.7)" }}>
-          BE:{engineVersion ?? "MISSING"}
-        </span>
-        {correctionsApplied && correctionsApplied.length > 0 && (
-          <span style={{ color: "rgba(251,191,36,0.6)" }}>
-            {correctionsApplied.filter(c => c.startsWith("trace:")).map(c => c.replace("trace:", "")).join(" | ")}
+        <summary
+          style={{
+            padding: "5px 16px",
+            fontSize: "9px",
+            fontFamily: "monospace",
+            color: trace?.action_count_mismatch ? "rgba(248,113,113,0.8)" : "rgba(100,116,139,0.5)",
+            cursor: "pointer",
+            display: "flex",
+            gap: "10px",
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
+          <span style={{ color: "rgba(56,189,248,0.6)" }}>BE:{engineVersion ?? "?"}</span>
+          <span>
+            {trace
+              ? `can=${trace.canonical?.action_count ?? "?"} par=${trace.parsed?.action_count ?? "?"} rep=${trace.replay?.action_count ?? "?"}`
+              : `rep=${actions.length}`}
           </span>
-        )}
-        <span>step:{replay.step}/{actions.length}</span>
-        <span>
-          cur:{replay.step > 0
-            ? `${replay.currentAction?.player ?? "—"} ${replay.currentAction?.action ?? "—"}${replay.currentAction?.amount ? " " + replay.currentAction.amount : ""}`
-            : "—"}
-        </span>
-        {replay.pendingAggression ? (
-          <span style={{ color: "#F87171", fontWeight: "bold" }}>
-            FACING: {replay.pendingAggression.player} {replay.pendingAggression.action}
-            {replay.pendingAggression.amount ? ` ${replay.pendingAggression.amount}` : " (no amt)"}
-            {replay.pendingAggression.is_all_in ? " ALL-IN" : ""}
+          <span>step:{replay.step}/{actions.length}</span>
+          {replay.pendingAggression ? (
+            <span style={{ color: "#F87171", fontWeight: "bold" }}>
+              FACING:{replay.pendingAggression.player} {replay.pendingAggression.action}
+              {replay.pendingAggression.amount ? ` ${replay.pendingAggression.amount}` : ""}
+            </span>
+          ) : null}
+          {trace?.action_count_mismatch && (
+            <span style={{ color: "#F87171", fontWeight: "bold" }}>MISMATCH</span>
+          )}
+          <span style={{ color: "rgba(100,116,139,0.35)" }}>
+            solver:{trace?.solver ? (trace.solver as Record<string,unknown>).status as string ?? "?" : solver?.status ?? "none"}
           </span>
-        ) : (
-          <span style={{ color: "rgba(100,116,139,0.5)" }}>facing:none</span>
-        )}
-      </div>
-      {/* Full action dump — always visible */}
-      <details style={{ background: "rgba(0,0,0,0.88)", borderBottom: "1px solid rgba(251,191,36,0.15)" }}>
-        <summary style={{ padding: "4px 16px", fontSize: "9px", color: "rgba(251,191,36,0.5)", cursor: "pointer", fontFamily: "monospace" }}>
-          actions[{actions.length}] — click to inspect
         </summary>
-        <div style={{ padding: "4px 16px", fontSize: "9px", color: "rgba(251,191,36,0.6)", fontFamily: "monospace", maxHeight: "200px", overflow: "auto" }}>
-          {actions.map((a, i) => (
-            <div key={i} style={{
-              color: a.is_hero ? "rgba(124,92,255,0.8)" : "rgba(251,191,36,0.6)",
-              fontWeight: (a.action === "bet" || a.action === "raise") && !a.is_hero ? "bold" : "normal",
-              background: (a.action === "bet" || a.action === "raise") && !a.is_hero ? "rgba(248,113,113,0.08)" : "transparent",
-            }}>
-              [{i}] {a.street} {a.player} {a.action} amt={a.amount ?? "NULL"} hero={String(a.is_hero)} allin={String(a.is_all_in)} pot={a.pot_after}
+
+        <div style={{ padding: "6px 16px", fontSize: "9px", fontFamily: "monospace", color: "rgba(251,191,36,0.6)" }}>
+          {/* Pipeline stage counts */}
+          {trace && (
+            <div style={{ marginBottom: "6px", display: "flex", gap: "16px", flexWrap: "wrap" }}>
+              <span>input={trace.input?.action_count ?? "?"}</span>
+              <span>sanitized={trace.sanitized?.action_count ?? "?"}</span>
+              <span>canonical={trace.canonical?.action_count ?? "?"}</span>
+              <span>parsed={trace.parsed?.action_count ?? "?"}</span>
+              <span>replay={trace.replay?.action_count ?? "?"}</span>
             </div>
-          ))}
+          )}
+          {/* River actions at each stage */}
+          {trace?.canonical?.river_actions && (
+            <div style={{ color: "rgba(56,189,248,0.5)" }}>
+              river(canonical): {trace.canonical.river_actions.join(" → ") || "none"}
+            </div>
+          )}
+          {trace?.replay?.river_actions && (
+            <div style={{ color: "rgba(34,197,94,0.5)" }}>
+              river(replay): {trace.replay.river_actions.join(" → ") || "none"}
+            </div>
+          )}
+          {trace?.action_count_mismatch && (
+            <div style={{ color: "#F87171", fontWeight: "bold", marginTop: "4px" }}>
+              {trace.action_count_mismatch}
+            </div>
+          )}
+          {/* Solver detail */}
+          {trace?.solver && (
+            <div style={{ marginTop: "4px", color: "rgba(34,197,94,0.5)" }}>
+              solver: {JSON.stringify(trace.solver).slice(0, 200)}
+            </div>
+          )}
+          {/* Corrections */}
+          {trace?.corrections && trace.corrections.length > 0 && (
+            <div style={{ marginTop: "4px", color: "rgba(251,191,36,0.5)" }}>
+              corrections: {trace.corrections.join(", ")}
+            </div>
+          )}
+          {/* Full action dump */}
+          <div style={{ marginTop: "6px", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "4px" }}>
+            {actions.map((a, i) => (
+              <div key={i} style={{
+                color: a.is_hero ? "rgba(124,92,255,0.7)" : "rgba(251,191,36,0.5)",
+                fontWeight: ["bet", "raise"].includes(a.action) && !a.is_hero ? "bold" : "normal",
+                background: ["bet", "raise"].includes(a.action) && !a.is_hero ? "rgba(248,113,113,0.06)" : "transparent",
+              }}>
+                [{i}] {a.street} {a.player} {a.action} amt={a.amount ?? "null"} allin={String(a.is_all_in)} pot={a.pot_after}
+              </div>
+            ))}
+          </div>
         </div>
       </details>
 

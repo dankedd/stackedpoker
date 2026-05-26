@@ -280,27 +280,54 @@ async def analyze_canonical(
             except Exception:
                 logger.warning("Live solver layer failed entirely", exc_info=True)
 
-        # ── Inject action trace into corrections_applied for debugging ───
+        # ── Enrich pipeline trace ─────────────────────────────────────────
         replay_action_count = len(result.replay.actions) if result.replay else 0
         replay_river = [
             f"{a.player}:{a.action}:{a.amount}:{a.is_all_in}"
             for a in (result.replay.actions if result.replay else [])
             if a.street == "river"
         ]
-        result.corrections_applied = list(result.corrections_applied or []) + [
-            f"trace:canonical={canonical_action_count}",
-            f"trace:parsed={parsed_action_count}",
-            f"trace:analysed={len(result.parsed_hand.actions)}",
-            f"trace:replay={replay_action_count}",
-            f"trace:canonical_river={canonical_river_actions}",
-            f"trace:parsed_river={parsed_river_actions}",
-            f"trace:replay_river={replay_river}",
-        ]
+        # Merge pipeline-level trace into the analysis trace
+        if result.trace is None:
+            result.trace = {}
+        result.trace["canonical"] = {
+            "action_count": canonical_action_count,
+            "river_actions": canonical_river_actions,
+        }
+        result.trace["parsed"] = {
+            "action_count": parsed_action_count,
+            "river_actions": parsed_river_actions,
+        }
+        result.trace["replay"] = {
+            "action_count": replay_action_count,
+            "river_actions": replay_river,
+        }
+        result.trace["solver"] = result.solver.copy() if result.solver else {"status": "skipped"}
+
+        # ── Action count validation — fail loudly ─────────────────────────
+        counts = {
+            "canonical": canonical_action_count,
+            "parsed": parsed_action_count,
+            "analysed": len(result.parsed_hand.actions),
+            "replay": replay_action_count,
+        }
+        mismatches = []
+        expected = counts["canonical"]
+        for stage, count in counts.items():
+            if count != expected:
+                mismatches.append(f"{stage}={count}")
+        if mismatches:
+            mismatch_msg = f"ACTION COUNT MISMATCH: expected={expected} got {', '.join(mismatches)}"
+            logger.error(mismatch_msg)
+            result.trace["action_count_mismatch"] = mismatch_msg
+        else:
+            result.trace["action_count_mismatch"] = None
+
         logger.info(
-            "Action trace: canonical=%d parsed=%d analysed=%d replay=%d | river: %s",
+            "Pipeline trace: canonical=%d parsed=%d analysed=%d replay=%d | mismatch=%s",
             canonical_action_count, parsed_action_count,
             len(result.parsed_hand.actions), replay_action_count,
-            replay_river,
+            bool(mismatches),
         )
 
         from app.services.supabase_persistence import save_hand_analysis as save_to_supabase

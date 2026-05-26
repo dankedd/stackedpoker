@@ -28,11 +28,29 @@ from app.engines.poker_state import PokerState
 _log = logging.getLogger(__name__)
 
 
-_ENGINE_VERSION = "2.2"  # bump on every behavioral change for deploy verification
+_ENGINE_VERSION = "3.0"  # bump on every behavioral change for deploy verification
+
+
+def _snapshot_actions(hand: ParsedHand, label: str) -> dict:
+    """Capture a lightweight action snapshot for the pipeline trace."""
+    river = [
+        f"{a.player}:{a.action}:{a.size_bb}:{a.is_all_in}"
+        for a in hand.actions if a.street == "river"
+    ]
+    return {
+        "stage": label,
+        "action_count": len(hand.actions),
+        "river_actions": river,
+        "streets": list({a.street for a in hand.actions}),
+    }
 
 
 def analyse_hand(hand: ParsedHand, ai_coaching: str = "") -> AnalysisResponse:
     _log.info("analyse_hand v%s hand=%s", _ENGINE_VERSION, hand.hand_id)
+
+    # ── Pipeline trace — accumulates stage snapshots ─────────────────────
+    trace: dict[str, object] = {"engine_version": _ENGINE_VERSION}
+    trace["input"] = _snapshot_actions(hand, "input")
 
     # ── 0. Detect illegal actions and build sanitized copy ────────────────
     # The ORIGINAL hand (with the user's actual actions) is preserved for
@@ -41,6 +59,8 @@ def analyse_hand(hand: ParsedHand, ai_coaching: str = "") -> AnalysisResponse:
     # state, which require a legal game tree.
     original_hand = hand
     sanitized_hand, corrections = _sanitize_illegal_folds(hand)
+    trace["sanitized"] = _snapshot_actions(sanitized_hand, "sanitized")
+    trace["corrections"] = corrections
 
     # ── 1. Spot classification (IP/OOP, PFR, pot type) ────────────────────
     # Uses sanitized hand so spot classification sees a legal game tree
@@ -96,6 +116,22 @@ def analyse_hand(hand: ParsedHand, ai_coaching: str = "") -> AnalysisResponse:
     mistakes = sum(1 for f in findings if f.severity == "mistake")
     recommendations = _build_recommendations(findings, spot, texture)
 
+    # ── Trace: final snapshot ─────────────────────────────────────────────
+    trace["analysed"] = _snapshot_actions(original_hand, "analysed")
+    trace["analysed_sanitized"] = _snapshot_actions(sanitized_hand, "analysed_sanitized")
+
+    # ── Action count validation ───────────────────────────────────────────
+    input_count = trace["input"]["action_count"]
+    analysed_count = trace["analysed"]["action_count"]
+    if input_count != analysed_count:
+        _log.error(
+            "ACTION COUNT MISMATCH: input=%d analysed=%d (hand=%s)",
+            input_count, analysed_count, hand.hand_id,
+        )
+        trace["action_count_mismatch"] = True
+    else:
+        trace["action_count_mismatch"] = False
+
     return AnalysisResponse(
         parsed_hand=original_hand,       # user's ACTUAL actions (never rewritten)
         parsed_hand_sanitized=sanitized_hand if corrections else None,  # legal copy for replay
@@ -108,6 +144,7 @@ def analyse_hand(hand: ParsedHand, ai_coaching: str = "") -> AnalysisResponse:
         recommendations=recommendations,
         engine_version=_ENGINE_VERSION,
         corrections_applied=corrections,
+        trace=trace,
     )
 
 

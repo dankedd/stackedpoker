@@ -383,5 +383,20 @@ export interface AnalysisResponse {
   parsed_hand_sanitized?: ParsedHand | null;
   engine_version?: string | null;
   corrections_applied?: string[];
+  /** Full pipeline trace — action counts at every stage, solver state, mismatches. */
+  trace?: PipelineTrace | null;
+}
+
+export interface PipelineTrace {
+  engine_version?: string;
+  input?: { stage: string; action_count: number; river_actions: string[] };
+  sanitized?: { stage: string; action_count: number; river_actions: string[] };
+  analysed?: { stage: string; action_count: number; river_actions: string[] };
+  canonical?: { action_count: number; river_actions: string[] };
+  parsed?: { action_count: number; river_actions: string[] };
+  replay?: { action_count: number; river_actions: string[] };
+  solver?: Record<string, unknown>;
+  corrections?: string[];
+  action_count_mismatch?: string | null;
 }
 

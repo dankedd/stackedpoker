@@ -161,6 +161,8 @@ class AnalysisResponse(BaseModel):
     # Diagnostics — for deployment verification and debugging
     engine_version: str | None = None
     corrections_applied: list[str] = Field(default_factory=list)
+    # Full pipeline trace — action counts + river actions at every stage
+    trace: dict | None = None
 
 
 class ParseResponse(BaseModel):
