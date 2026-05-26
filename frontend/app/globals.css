@@ -564,6 +564,17 @@
   animation: action-banner-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+/* ── Puzzle: seat-level action pill entrance ──────────────────── */
+
+@keyframes seat-action-in {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-seat-action-in {
+  animation: seat-action-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 /* ── Puzzle: chip slide in ───────────────────────────────────── */
 
 @keyframes chip-slide-in {

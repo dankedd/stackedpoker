@@ -134,9 +134,26 @@ async def analyze_canonical(
     assert_usage_allowed(profile)
 
     try:
+        # ── Action count tracing (for deployment debugging) ──────────────
+        canonical_action_count = sum(
+            len(s.actions) for s in request.canonical.streets
+        )
+        canonical_river_actions = []
+        for s in request.canonical.streets:
+            if s.name.value == "river":
+                for a in s.actions:
+                    canonical_river_actions.append(
+                        f"{a.player_name}:{a.action.value}:{a.amount_bb}"
+                    )
+
         # Convert canonical → ParsedHand for existing analysis engine
         from app.engines.pipeline import _canonical_to_parsed_hand
         parsed = _canonical_to_parsed_hand(request.canonical)
+        parsed_action_count = len(parsed.actions)
+        parsed_river_actions = [
+            f"{a.player}:{a.action}:{a.size_bb}"
+            for a in parsed.actions if a.street == "river"
+        ]
 
         from app.engines.analysis import analyse_hand
         result = analyse_hand(parsed)
@@ -216,6 +233,29 @@ async def analyze_canonical(
 
         from app.api.routes.analyze import _build_replay
         result.replay = _build_replay(result)
+
+        # ── Inject action trace into corrections_applied for debugging ───
+        replay_action_count = len(result.replay.actions) if result.replay else 0
+        replay_river = [
+            f"{a.player}:{a.action}:{a.amount}:{a.is_all_in}"
+            for a in (result.replay.actions if result.replay else [])
+            if a.street == "river"
+        ]
+        result.corrections_applied = list(result.corrections_applied or []) + [
+            f"trace:canonical={canonical_action_count}",
+            f"trace:parsed={parsed_action_count}",
+            f"trace:analysed={len(result.parsed_hand.actions)}",
+            f"trace:replay={replay_action_count}",
+            f"trace:canonical_river={canonical_river_actions}",
+            f"trace:parsed_river={parsed_river_actions}",
+            f"trace:replay_river={replay_river}",
+        ]
+        logger.info(
+            "Action trace: canonical=%d parsed=%d analysed=%d replay=%d | river: %s",
+            canonical_action_count, parsed_action_count,
+            len(result.parsed_hand.actions), replay_action_count,
+            replay_river,
+        )
 
         from app.services.supabase_persistence import save_hand_analysis as save_to_supabase
         raw_text = request.canonical.raw_text or ""

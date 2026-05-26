@@ -23,6 +23,8 @@ export interface PokerTableProps {
   sidePots?: SidePot[];
   /** Villain bet/raise that hero is responding to — kept visible on table. */
   pendingAggression?: ReplayAction | null;
+  /** All actions in the hand (for computing per-seat last-action indicators). */
+  actions?: ReplayAction[];
 }
 
 // ── Design tokens (exported so consumers can match them) ──────────────────────
@@ -36,8 +38,11 @@ export const STREET_COLOR: Record<string, string> = {
 
 const IS_DEV = process.env.NODE_ENV === "development";
 
-function fmtStack(bb: number): string {
-  return bb % 1 === 0 ? `${bb}bb` : `${bb.toFixed(1)}bb`;
+function fmtStack(bb: number | string): string {
+  // Defensive: strip any existing "bb" suffix to prevent "5bbbb"
+  const num = typeof bb === "string" ? parseFloat(String(bb).replace(/bb$/i, "")) : bb;
+  if (isNaN(num)) return "0bb";
+  return num % 1 === 0 ? `${num}bb` : `${num.toFixed(1)}bb`;
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -63,6 +68,7 @@ export function PokerTable({
   allInPlayers = [],
   sidePots = [],
   pendingAggression = null,
+  actions = [],
 }: PokerTableProps) {
   const N             = seats.length;
   const tableCoords   = SEAT_COORDS[N] ?? SEAT_COORDS[6];
@@ -70,6 +76,12 @@ export function PokerTable({
   const currentStreet = currentAction?.street ?? "preflop";
   const streetColor   = STREET_COLOR[currentStreet] ?? "#38BDF8";
   const aggressorPlayer = pendingAggression?.player ?? null;
+
+  // Build per-player last action map from actions applied so far (0..step-1)
+  const lastActionMap = new Map<string, ReplayAction>();
+  for (let i = 0; i < currentStep && i < actions.length; i++) {
+    lastActionMap.set(actions[i].player, actions[i]);
+  }
 
   const allBoardCards = [
     ...visibleBoard.flop,
@@ -243,6 +255,9 @@ export function PokerTable({
                 flipLayout={coord.ty === "0%"}
                 pendingAggression={
                   seat.playerName === aggressorPlayer ? pendingAggression : null
+                }
+                lastAction={
+                  seat.playerName ? lastActionMap.get(seat.playerName) ?? null : null
                 }
               />
             </div>

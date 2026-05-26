@@ -24,8 +24,11 @@ function parseBigBlind(stakes: string): number {
   return m ? parseFloat(m[2]) : 1;
 }
 
-function fmtBb(bb: number): string {
-  const rounded = Math.round(bb * 10) / 10;
+function fmtBb(bb: number | string): string {
+  // Defensive: strip any existing "bb" suffix to prevent "5bbbb"
+  const num = typeof bb === "string" ? parseFloat(String(bb).replace(/bb$/i, "")) : bb;
+  if (isNaN(num)) return "0bb";
+  const rounded = Math.round(num * 10) / 10;
   return rounded % 1 === 0 ? `${rounded}bb` : `${rounded.toFixed(1)}bb`;
 }
 
@@ -548,6 +551,42 @@ function parseFacingAction(context: string, bbDollars: number): TableAction | nu
   return last.action;
 }
 
+/**
+ * Parse ALL actions from context text — returns per-position last action.
+ * Used to show action indicators at each seat.
+ */
+function parseAllContextActions(
+  contexts: string[],
+  bbDollars: number,
+): Map<string, TableAction> {
+  const map = new Map<string, TableAction>();
+
+  for (const context of contexts) {
+    const patterns: Array<{ re: RegExp; type: TableAction["type"]; verb: string }> = [
+      { re: new RegExp(`${POS_RE}\\s+(?:jams?|shoves?|goes?\\s+all.?in)(?:\\s+[\\$€£]?(\\d+(?:\\.\\d+)?))?`, 'gi'), type: "allin", verb: "ALL-IN" },
+      { re: new RegExp(`${POS_RE}\\s+check-?raises?\\s*(?:to\\s+)?[\\$€£]?(\\d+(?:\\.\\d+)?)`, 'gi'), type: "raise", verb: "x/raises" },
+      { re: new RegExp(`${POS_RE}\\s+(?:3-?bets?|4-?bets?)\\s+(?:to\\s+)?[\\$€£]?(\\d+(?:\\.\\d+)?)`, 'gi'), type: "raise", verb: "3-bets" },
+      { re: new RegExp(`${POS_RE}\\s+raises?\\s+(?:to\\s+)?[\\$€£]?(\\d+(?:\\.\\d+)?)`, 'gi'), type: "raise", verb: "raises to" },
+      { re: new RegExp(`${POS_RE}\\s+opens?\\s+(?:to\\s+)?[\\$€£]?(\\d+(?:\\.\\d+)?)`, 'gi'), type: "open", verb: "opens" },
+      { re: new RegExp(`${POS_RE}\\s+(?:overbets?|bets?|fires?|leads?\\s*(?:out)?|barrels?|double.?barrels?)\\s+[\\$€£]?(\\d+(?:\\.\\d+)?)`, 'gi'), type: "bet", verb: "bets" },
+      { re: new RegExp(`${POS_RE}\\s+(?:calls?|defends?)(?:\\s+[\\$€£]?(\\d+(?:\\.\\d+)?))?`, 'gi'), type: "call", verb: "calls" },
+      { re: new RegExp(`${POS_RE}\\s+checks?`, 'gi'), type: "check", verb: "checks" },
+      { re: new RegExp(`${POS_RE}\\s+folds?`, 'gi'), type: "fold", verb: "folds" },
+    ];
+
+    for (const { re, type, verb } of patterns) {
+      let m;
+      while ((m = re.exec(context)) !== null) {
+        const actor = m[1].toUpperCase();
+        const sizeBb = m[2] && bbDollars > 0 ? parseFloat(m[2]) / bbDollars : null;
+        map.set(actor, { actor, verb, sizeBb, type });
+      }
+    }
+  }
+
+  return map;
+}
+
 /** Compact trail of all actions in the hand so far. */
 interface TrailItem { label: string; isHero: boolean; }
 
@@ -572,7 +611,49 @@ function buildActionTrail(
   return trail;
 }
 
-// ── Table Action Banner ─────────────────────────────────────────────────────
+// ── Seat-level Action Pill ──────────────────────────────────────────────────
+
+const ACTION_PILL_STYLE: Record<TableAction["type"], { text: string; bg: string; border: string; glow: string }> = {
+  check: { text: "rgba(148,163,184,0.50)", bg: "rgba(148,163,184,0.06)", border: "rgba(148,163,184,0.12)", glow: "none" },
+  fold:  { text: "rgba(100,116,139,0.40)", bg: "rgba(100,116,139,0.04)", border: "rgba(100,116,139,0.08)", glow: "none" },
+  call:  { text: "rgba(56,189,248,0.60)",  bg: "rgba(56,189,248,0.06)",  border: "rgba(56,189,248,0.14)",  glow: "0 0 8px rgba(56,189,248,0.06)" },
+  open:  { text: "rgba(52,211,153,0.65)",  bg: "rgba(52,211,153,0.06)",  border: "rgba(52,211,153,0.15)",  glow: "0 0 8px rgba(52,211,153,0.06)" },
+  bet:   { text: "rgba(251,191,36,0.65)",  bg: "rgba(251,191,36,0.06)",  border: "rgba(251,191,36,0.16)",  glow: "0 0 8px rgba(251,191,36,0.06)" },
+  raise: { text: "rgba(251,146,60,0.70)",  bg: "rgba(251,146,60,0.07)",  border: "rgba(251,146,60,0.18)",  glow: "0 0 10px rgba(251,146,60,0.08)" },
+  allin: { text: "rgba(248,113,113,0.80)", bg: "rgba(248,113,113,0.08)", border: "rgba(248,113,113,0.22)", glow: "0 0 12px rgba(248,113,113,0.10)" },
+};
+
+function SeatActionPill({ action }: { action: TableAction | null }) {
+  if (!action) return null;
+  const s = ACTION_PILL_STYLE[action.type];
+  const label = action.type === "check" ? "CHECK"
+    : action.type === "fold" ? "FOLD"
+    : action.type === "call" ? `CALL${action.sizeBb !== null ? ` ${fmtBb(action.sizeBb)}` : ""}`
+    : action.type === "allin" ? `ALL-IN${action.sizeBb !== null ? ` ${fmtBb(action.sizeBb)}` : ""}`
+    : action.type === "open" ? `OPEN${action.sizeBb !== null ? ` ${fmtBb(action.sizeBb)}` : ""}`
+    : action.type === "raise" ? `RAISE${action.sizeBb !== null ? ` ${fmtBb(action.sizeBb)}` : ""}`
+    : `BET${action.sizeBb !== null ? ` ${fmtBb(action.sizeBb)}` : ""}`;
+
+  return (
+    <div
+      className="inline-flex items-center gap-1.5 px-2.5 py-[3px] rounded-full animate-seat-action-in"
+      style={{
+        background: s.bg,
+        border: `1px solid ${s.border}`,
+        boxShadow: s.glow,
+      }}
+    >
+      <span
+        className="text-[9px] font-bold tracking-[0.12em] uppercase leading-none whitespace-nowrap"
+        style={{ color: s.text }}
+      >
+        {label}
+      </span>
+    </div>
+  );
+}
+
+// ── Table Action Banner (center table — kept for aggressive actions) ────────
 
 function TableActionBanner({
   action, potBb, effectiveStack,
@@ -580,40 +661,37 @@ function TableActionBanner({
   action: TableAction | null; potBb: number; effectiveStack: number;
 }) {
   if (!action) return null;
-  const { sizeBb, type, actor, verb } = action;
-  const potPct = sizeBb !== null && potBb > 0 ? Math.round((sizeBb / potBb) * 100) : null;
+  const { sizeBb, type } = action;
   const isAggressive = type === "bet" || type === "raise" || type === "allin" || type === "open";
+  // Only show center banner for aggressive actions (non-aggressive shown at seat only)
+  if (!isAggressive) return null;
 
   return (
     <div className="flex items-center justify-center gap-2 animate-action-banner">
-      {sizeBb !== null && isAggressive && (
+      {sizeBb !== null && (
         <ChipStack sizeBb={sizeBb} effectiveStack={effectiveStack} />
       )}
       <div className={cn(
         "flex items-center gap-2 px-3.5 py-1.5 rounded-full transition-all",
         type === "allin"  ? "bg-red-500/10 border border-red-500/20 animate-allin-pulse"
         : type === "raise"  ? "bg-orange-400/[0.07] border border-orange-400/15"
-        : type === "bet" || type === "open" ? "bg-amber-400/[0.06] border border-amber-400/12"
-        : type === "call"   ? "bg-white/[0.025] border border-white/[0.05]"
-        :                     "bg-white/[0.015] border border-white/[0.03]"
+        : "bg-amber-400/[0.06] border border-amber-400/12"
       )}>
         <span className={cn(
           "text-[10px] font-bold uppercase tracking-wider",
           type === "allin" ? "text-red-400/70"
           : type === "raise" ? "text-orange-400/60"
-          : type === "bet" || type === "open" ? "text-amber-400/55"
-          : "text-muted-foreground/25"
+          : "text-amber-400/55"
         )}>
-          {actor}
+          {action.actor}
         </span>
         <span className={cn(
           "text-[11px] font-semibold",
           type === "allin" ? "text-red-300/80 font-black tracking-wider uppercase"
           : type === "raise" ? "text-orange-300/65"
-          : type === "bet" || type === "open" ? "text-amber-300/60"
-          : "text-muted-foreground/35"
+          : "text-amber-300/60"
         )}>
-          {verb}
+          {action.verb}
         </span>
         {sizeBb !== null && (
           <span className={cn(
@@ -625,13 +703,8 @@ function TableActionBanner({
             {fmtBb(sizeBb)}
           </span>
         )}
-        {potPct !== null && type !== "allin" && (
-          <span className="text-[9px] text-muted-foreground/20 tabular-nums">
-            {potPct}%
-          </span>
-        )}
       </div>
-      {sizeBb !== null && isAggressive && (
+      {sizeBb !== null && (
         <ChipStack sizeBb={sizeBb} effectiveStack={effectiveStack} />
       )}
     </div>
@@ -1143,6 +1216,37 @@ export default function PuzzlePlayerPage() {
     [puzzle, stepIdx, stepResults, bbDollars]
   );
 
+  // Per-seat last actions — parsed from all contexts up to current step
+  const seatActions = useMemo(
+    () => parseAllContextActions(
+      puzzle.steps.slice(0, stepIdx + 1).map(s => s.context),
+      bbDollars,
+    ),
+    [puzzle, stepIdx, bbDollars]
+  );
+  const villainSeatAction = seatActions.get(puzzle.villainPosition.toUpperCase()) ?? null;
+  // Hero's last action comes from stepResults (what they chose), not context
+  const heroLastAction: TableAction | null = stepIdx > 0 && stepResults[stepIdx - 1]
+    ? (() => {
+        const label = stepResults[stepIdx - 1].option.label.toLowerCase();
+        if (/^fold/.test(label)) return { actor: puzzle.heroPosition, verb: "folds", sizeBb: null, type: "fold" as const };
+        if (/^check/.test(label)) return { actor: puzzle.heroPosition, verb: "checks", sizeBb: null, type: "check" as const };
+        if (/^call/.test(label)) return { actor: puzzle.heroPosition, verb: "calls", sizeBb: null, type: "call" as const };
+        if (/jam|all.?in|shove/i.test(label)) return { actor: puzzle.heroPosition, verb: "ALL-IN", sizeBb: stackState.heroStack, type: "allin" as const };
+        if (/raise|3.?bet/i.test(label)) {
+          const m = label.match(/[\$€£]?(\d+(?:\.\d+)?)/);
+          const sizeBb = m && bbDollars > 0 ? parseFloat(m[1]) / bbDollars : null;
+          return { actor: puzzle.heroPosition, verb: "raises", sizeBb, type: "raise" as const };
+        }
+        if (/bet/i.test(label)) {
+          const m = label.match(/[\$€£]?(\d+(?:\.\d+)?)/);
+          const sizeBb = m && bbDollars > 0 ? parseFloat(m[1]) / bbDollars : null;
+          return { actor: puzzle.heroPosition, verb: "bets", sizeBb, type: "bet" as const };
+        }
+        return null;
+      })()
+    : null;
+
   // ── Dev-mode validation ────────────────────────────────────────────
   useEffect(() => {
     if (process.env.NODE_ENV === "development") {
@@ -1294,19 +1398,23 @@ export default function PuzzlePlayerPage() {
                   </div>
 
                   {/* ── VILLAIN area ────────────────────────── */}
-                  <div className="flex items-center gap-3 mt-4">
-                    <div className="flex gap-1">
-                      <CardBack size="sm" />
-                      <CardBack size="sm" />
+                  <div className="flex flex-col items-center gap-1.5 mt-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex gap-1">
+                        <CardBack size="sm" />
+                        <CardBack size="sm" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold tracking-wide" style={{ color: "rgba(251,191,36,0.45)" }}>
+                          {puzzle.villainPosition}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground/20 tabular-nums">
+                          {fmtBb(stackState.villainStack)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-bold tracking-wide" style={{ color: "rgba(251,191,36,0.45)" }}>
-                        {puzzle.villainPosition}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground/20 tabular-nums">
-                        {fmtBb(stackState.villainStack)}
-                      </span>
-                    </div>
+                    {/* Villain's last action — persists at seat */}
+                    <SeatActionPill key={`v-${villainSeatAction?.type}-${villainSeatAction?.sizeBb}`} action={villainSeatAction} />
                   </div>
 
                   {/* ── ACTION BANNER — villain's facing action ── */}
@@ -1393,12 +1501,16 @@ export default function PuzzlePlayerPage() {
                       <span className="text-[10px] text-muted-foreground/20 tabular-nums ml-4">
                         {fmtBb(stackState.heroStack)}
                       </span>
-                      {/* Hero decision indicator */}
-                      {!chosen && (
+                      {/* Hero decision indicator or last action */}
+                      {!chosen ? (
                         <span className="text-[9px] font-semibold text-violet-400/40 ml-4 tracking-wider uppercase">
                           Your action
                         </span>
-                      )}
+                      ) : heroLastAction ? (
+                        <div className="ml-4">
+                          <SeatActionPill action={heroLastAction} />
+                        </div>
+                      ) : null}
                     </div>
                   </div>
 

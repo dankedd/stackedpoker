@@ -48,8 +48,11 @@ const OPP_IDLE_STACK    = "rgba(255,255,255,0.14)";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function fmtStack(bb: number): string {
-  return bb % 1 === 0 ? `${bb}bb` : `${bb.toFixed(1)}bb`;
+function fmtStack(bb: number | string): string {
+  // Defensive: strip any existing "bb" suffix to prevent "5bbbb"
+  const num = typeof bb === "string" ? parseFloat(String(bb).replace(/bb$/i, "")) : bb;
+  if (isNaN(num)) return "0bb";
+  return num % 1 === 0 ? `${num}bb` : `${num.toFixed(1)}bb`;
 }
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -69,6 +72,8 @@ export interface PokerSeatProps {
   flipLayout?: boolean;
   /** Villain's bet/raise that persists while hero responds. */
   pendingAggression?: ReplayAction | null;
+  /** This player's most recent action (for persistent seat-level indicator). */
+  lastAction?: ReplayAction | null;
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────

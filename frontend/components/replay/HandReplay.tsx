@@ -1070,10 +1070,15 @@ export function HandReplay({ analysis, filename, validation, engineVersion, corr
           alignItems: "center",
         }}
       >
-        <span style={{ color: "rgba(56,189,248,0.7)" }}>FE:9a427aa</span>
+        <span style={{ color: "rgba(56,189,248,0.7)" }}>FE:0fb94af</span>
         <span style={{ color: engineVersion ? "rgba(34,197,94,0.7)" : "rgba(248,113,113,0.7)" }}>
           BE:{engineVersion ?? "MISSING"}
         </span>
+        {correctionsApplied && correctionsApplied.length > 0 && (
+          <span style={{ color: "rgba(251,191,36,0.6)" }}>
+            {correctionsApplied.filter(c => c.startsWith("trace:")).map(c => c.replace("trace:", "")).join(" | ")}
+          </span>
+        )}
         <span>step:{replay.step}/{actions.length}</span>
         <span>
           cur:{replay.step > 0
@@ -1138,6 +1143,7 @@ export function HandReplay({ analysis, filename, validation, engineVersion, corr
               allInPlayers={replay.currentAllInPlayers}
               sidePots={replay.currentSidePots}
               pendingAggression={replay.pendingAggression}
+              actions={actions}
             />
           </div>
 
