@@ -582,6 +582,12 @@ function CoachingContent({
   const qs = QUALITY_STYLE[coaching.quality] ?? QUALITY_STYLE.Standard;
   const verdictLabel = getVerdictLabel(coaching.quality, currentAction.action);
 
+  // Detect deviation: did hero's action differ from the primary recommendation?
+  const primary = coaching.strategic_options?.find(o => o.priority === 1);
+  const primaryVerb = primary?.action?.toLowerCase().split(" ")[0] ?? "";
+  const actualVerb = currentAction.action.toLowerCase();
+  const isDeviation = !!primary && primaryVerb !== actualVerb;
+
   return (
     <div className="divide-y divide-white/[0.04]">
       {/* Facing-bet context — shows villain's bet/shove BEFORE hero's response */}
@@ -592,46 +598,124 @@ function CoachingContent({
         />
       )}
 
-      {/* Verdict + Action taken */}
-      <div className="px-5 py-4 space-y-3">
-        <div className="flex items-start justify-between gap-2 flex-wrap">
-          <span
-            className="text-[10px] font-black tracking-[0.14em] px-3 py-1.5 rounded-full uppercase"
-            style={{
-              color: qs.text,
-              background: qs.bg,
-              border: `1px solid ${qs.border}`,
-              boxShadow: `0 0 14px ${qs.bar}28`,
-            }}
-          >
-            {verdictLabel}
-          </span>
-          {coaching.mistake_level !== "None" && (
-            <span
-              className="text-[9px] font-bold uppercase tracking-wider self-center"
-              style={{ color: `${qs.text}60` }}
+      {/* ── Solver preference + deviation indicator ── */}
+      {isDeviation && primary ? (
+        <div className="px-5 py-4 space-y-4">
+          {/* Solver preference — visually dominant */}
+          <div>
+            <p
+              className="text-[9px] uppercase tracking-[0.22em] font-bold mb-2"
+              style={{ color: "rgba(100,116,139,0.42)" }}
             >
-              {coaching.mistake_level}
-            </span>
-          )}
-        </div>
-        <div className="flex items-baseline gap-2">
-          <span
-            className="text-2xl font-black capitalize"
-            style={{ color: ACTION_COLOR_MAP[currentAction.action] ?? "#94A3B8" }}
-          >
-            {currentAction.action}
-          </span>
-          {currentAction.amount && (
-            <span
-              className="text-sm font-bold tabular-nums"
-              style={{ color: `${ACTION_COLOR_MAP[currentAction.action] ?? "#94A3B8"}70` }}
+              Solver Prefers
+            </p>
+            <div
+              className="flex items-center gap-3 px-4 py-3 rounded-xl"
+              style={{
+                background: "rgba(34,197,94,0.06)",
+                border: "1px solid rgba(34,197,94,0.22)",
+                boxShadow: "0 0 16px rgba(34,197,94,0.06)",
+              }}
             >
-              {currentAction.amount}
-            </span>
-          )}
+              <span
+                className="text-xl font-black capitalize"
+                style={{ color: "rgba(34,197,94,0.90)" }}
+              >
+                {primary.action}
+              </span>
+              <span
+                className="text-[8px] font-black tracking-wide px-2 py-0.5 rounded-full uppercase"
+                style={{
+                  background: "rgba(34,197,94,0.10)",
+                  color: "rgba(34,197,94,0.70)",
+                  border: "1px solid rgba(34,197,94,0.25)",
+                }}
+              >
+                Primary
+              </span>
+            </div>
+          </div>
+
+          {/* Hero's actual action — de-emphasized */}
+          <div>
+            <p
+              className="text-[9px] uppercase tracking-[0.22em] font-bold mb-2"
+              style={{ color: "rgba(100,116,139,0.35)" }}
+            >
+              You Chose
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="flex items-baseline gap-1.5">
+                <span
+                  className="text-base font-bold capitalize"
+                  style={{ color: "rgba(148,163,184,0.55)" }}
+                >
+                  {currentAction.action}
+                </span>
+                {currentAction.amount && (
+                  <span
+                    className="text-xs font-medium tabular-nums"
+                    style={{ color: "rgba(148,163,184,0.35)" }}
+                  >
+                    {currentAction.amount}
+                  </span>
+                )}
+              </div>
+              <span
+                className="text-[10px] font-black tracking-[0.14em] px-3 py-1.5 rounded-full uppercase"
+                style={{
+                  color: qs.text,
+                  background: qs.bg,
+                  border: `1px solid ${qs.border}`,
+                }}
+              >
+                {verdictLabel}
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
+      ) : (
+        /* ── No deviation — standard display ── */
+        <div className="px-5 py-4 space-y-3">
+          <div className="flex items-start justify-between gap-2 flex-wrap">
+            <span
+              className="text-[10px] font-black tracking-[0.14em] px-3 py-1.5 rounded-full uppercase"
+              style={{
+                color: qs.text,
+                background: qs.bg,
+                border: `1px solid ${qs.border}`,
+                boxShadow: `0 0 14px ${qs.bar}28`,
+              }}
+            >
+              {verdictLabel}
+            </span>
+            {coaching.mistake_level !== "None" && (
+              <span
+                className="text-[9px] font-bold uppercase tracking-wider self-center"
+                style={{ color: `${qs.text}60` }}
+              >
+                {coaching.mistake_level}
+              </span>
+            )}
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span
+              className="text-2xl font-black capitalize"
+              style={{ color: ACTION_COLOR_MAP[currentAction.action] ?? "#94A3B8" }}
+            >
+              {currentAction.action}
+            </span>
+            {currentAction.amount && (
+              <span
+                className="text-sm font-bold tabular-nums"
+                style={{ color: `${ACTION_COLOR_MAP[currentAction.action] ?? "#94A3B8"}70` }}
+              >
+                {currentAction.amount}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Strategic analysis */}
       <div className="px-5 py-4">
@@ -661,33 +745,50 @@ function CoachingContent({
           <div className="space-y-2">
             {coaching.strategic_options.map((opt, i) => {
               const isPrimary = opt.priority === 1;
-              const label = opt.priority === 1 ? "Primary" : opt.priority === 2 ? "Secondary" : "Alt";
+              const isActualAction = opt.action.toLowerCase().split(" ")[0] === actualVerb;
+              const label = isPrimary ? "Primary" : opt.priority === 2 ? "Secondary" : "Alt";
               return (
                 <div
                   key={i}
                   className="rounded-lg px-3.5 py-3"
                   style={{
-                    background: isPrimary ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.015)",
-                    border: isPrimary ? `1px solid ${qs.border}` : "1px solid rgba(255,255,255,0.05)",
+                    background: isPrimary
+                      ? "rgba(34,197,94,0.04)"
+                      : isActualAction && isDeviation
+                        ? "rgba(148,163,184,0.04)"
+                        : "rgba(255,255,255,0.015)",
+                    border: isPrimary
+                      ? "1px solid rgba(34,197,94,0.20)"
+                      : isActualAction && isDeviation
+                        ? `1px solid ${qs.border}`
+                        : "1px solid rgba(255,255,255,0.05)",
                   }}
                 >
                   <div className="flex items-center gap-2 mb-1.5">
                     <span
                       className="text-[11px] font-bold capitalize"
-                      style={{ color: isPrimary ? qs.text : "rgba(148,163,184,0.50)" }}
+                      style={{ color: isPrimary ? "rgba(34,197,94,0.85)" : isActualAction ? qs.text : "rgba(148,163,184,0.50)" }}
                     >
                       {opt.action}
                     </span>
                     <span
                       className="text-[8px] font-black tracking-wide px-1.5 py-0.5 rounded-full uppercase"
                       style={{
-                        background: isPrimary ? qs.bg : "rgba(255,255,255,0.03)",
-                        color: isPrimary ? qs.text : "rgba(100,116,139,0.42)",
-                        border: `1px solid ${isPrimary ? qs.border : "rgba(255,255,255,0.06)"}`,
+                        background: isPrimary ? "rgba(34,197,94,0.08)" : isActualAction && isDeviation ? qs.bg : "rgba(255,255,255,0.03)",
+                        color: isPrimary ? "rgba(34,197,94,0.70)" : isActualAction && isDeviation ? qs.text : "rgba(100,116,139,0.42)",
+                        border: `1px solid ${isPrimary ? "rgba(34,197,94,0.22)" : isActualAction && isDeviation ? qs.border : "rgba(255,255,255,0.06)"}`,
                       }}
                     >
                       {label}
                     </span>
+                    {isActualAction && isDeviation && (
+                      <span
+                        className="text-[8px] font-bold tracking-wide px-1.5 py-0.5 rounded-full uppercase"
+                        style={{ color: "rgba(148,163,184,0.40)", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+                      >
+                        Your choice
+                      </span>
+                    )}
                   </div>
                   <p
                     className="text-[11px] leading-relaxed"
