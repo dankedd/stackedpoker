@@ -494,6 +494,7 @@ export default function AnalyzePage() {
                       }}
                       engineVersion={pipeline.result.engine_version}
                       correctionsApplied={pipeline.result.corrections_applied}
+                      solver={pipeline.result.solver}
                     />
                   ) : (
                     <AnalysisResult result={pipeline.result} />

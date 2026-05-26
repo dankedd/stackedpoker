@@ -152,6 +152,8 @@ class AnalysisResponse(BaseModel):
     saved_id: str | None = None      # set after Supabase persist; None = save failed
     save_error: str | None = None    # exact Supabase/network error if save failed
     strategy_profile: StrategyProfileResponse | None = None  # Phase 4 solver strategy
+    # Live solver result — real equilibrium data when available
+    solver: dict | None = None  # SolverResult.to_dict() — frequencies, EVs, preferred action
     # Sanitized hand for replay (illegal actions corrected for valid pot math).
     # None when no corrections were needed. Frontend should use this for the
     # pot engine / replay animation, but display parsed_hand for coaching.

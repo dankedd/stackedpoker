@@ -234,6 +234,52 @@ async def analyze_canonical(
         from app.api.routes.analyze import _build_replay
         result.replay = _build_replay(result)
 
+        # ── Phase 6: Live solver (async, non-blocking) ───────────────────
+        # Attempts a real TexasSolver solve for the river decision node.
+        # Falls back to synthetic solver if TexasSolver is not installed.
+        # Never blocks analysis — timeout after 15s, graceful fallback.
+        if _solver_enabled:
+            try:
+                from app.solver.live_solver import solve_river_async, solve_river_synthetic
+                from app.solver.abstractions import SpotAbstraction as _SA
+
+                _abs = _SA.from_canonical_hand(request.canonical)
+                # Determine hero's river action for EV loss computation
+                _hero_river_action = None
+                for _s in request.canonical.streets:
+                    if _s.name.value == "river":
+                        for _a in _s.actions:
+                            if _a.player_id == request.canonical.hero_id:
+                                _hero_river_action = _a.action.value
+                                break
+
+                try:
+                    solver_result = await solve_river_async(
+                        request.canonical, _abs.solver_spot, _hero_river_action,
+                    )
+                except Exception:
+                    # TexasSolver not available — use synthetic fallback
+                    solver_result = solve_river_synthetic(
+                        request.canonical, _abs.solver_spot, _hero_river_action,
+                    )
+
+                if solver_result.status in ("ready", "cached"):
+                    result.solver = solver_result.to_dict()
+                    logger.info(
+                        "Live solver: status=%s preferred=%s freqs=%s time=%.0fms",
+                        solver_result.status, solver_result.preferred_action,
+                        solver_result.frequencies, solver_result.solve_time_ms,
+                    )
+                else:
+                    # Solver failed — try synthetic as fallback
+                    solver_result = solve_river_synthetic(
+                        request.canonical, _abs.solver_spot, _hero_river_action,
+                    )
+                    result.solver = solver_result.to_dict()
+                    logger.info("Live solver fallback to synthetic: %s", solver_result.preferred_action)
+            except Exception:
+                logger.warning("Live solver layer failed entirely", exc_info=True)
+
         # ── Inject action trace into corrections_applied for debugging ───
         replay_action_count = len(result.replay.actions) if result.replay else 0
         replay_river = [

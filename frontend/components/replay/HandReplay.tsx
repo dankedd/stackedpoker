@@ -24,6 +24,8 @@ interface HandReplayProps {
   engineVersion?: string | null;
   /** Corrections applied by the backend (e.g. fold_to_check). */
   correctionsApplied?: string[];
+  /** Live solver result — real equilibrium frequencies/EVs. */
+  solver?: import("@/lib/types").SolverLiveResult | null;
 }
 
 const STREETS = ["preflop", "flop", "turn", "river"] as const;
@@ -462,6 +464,7 @@ function AnalysisPanel({
   handSummary,
   currentStreet,
   step,
+  solver,
 }: {
   coaching: ActionCoaching | null;
   currentAction: ReplayAction | null;
@@ -469,6 +472,7 @@ function AnalysisPanel({
   handSummary: HandSummaryData;
   currentStreet: Street;
   step: number;
+  solver?: import("@/lib/types").SolverLiveResult | null;
 }) {
   const streetMeta = STREET_META[currentStreet];
   return (
@@ -495,7 +499,7 @@ function AnalysisPanel({
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.08) transparent" }}>
         {coaching && currentAction ? (
-          <CoachingContent coaching={coaching} currentAction={currentAction} facingAction={facingAction} />
+          <CoachingContent coaching={coaching} currentAction={currentAction} facingAction={facingAction} solver={solver} />
         ) : (
           <EmptyAnalysisState handSummary={handSummary} step={step} />
         )}
@@ -574,10 +578,12 @@ function CoachingContent({
   coaching,
   currentAction,
   facingAction,
+  solver,
 }: {
   coaching: ActionCoaching;
   currentAction: ReplayAction;
   facingAction: ReplayAction | null;
+  solver?: import("@/lib/types").SolverLiveResult | null;
 }) {
   const qs = QUALITY_STYLE[coaching.quality] ?? QUALITY_STYLE.Standard;
   const verdictLabel = getVerdictLabel(coaching.quality, currentAction.action);
@@ -845,6 +851,11 @@ function CoachingContent({
           {coaching.adjustment}
         </p>
       </div>
+
+      {/* Solver equilibrium — real frequencies when available */}
+      {solver && solver.status === "ready" && currentAction.street === "river" && (
+        <SolverFrequencies solver={solver} heroAction={currentAction.action} />
+      )}
     </div>
   );
 }
@@ -963,6 +974,151 @@ function EmptyAnalysisState({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SOLVER FREQUENCIES
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SolverFrequencies({
+  solver,
+  heroAction,
+}: {
+  solver: import("@/lib/types").SolverLiveResult;
+  heroAction: string;
+}) {
+  const freqs = Object.entries(solver.frequencies).sort((a, b) => b[1] - a[1]);
+  const preferredAction = solver.preferred_action;
+  const heroVerb = heroAction.toLowerCase();
+  const evLoss = solver.hero_action_ev_loss;
+
+  return (
+    <div className="px-5 py-4" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+      <div className="flex items-center justify-between mb-3">
+        <p
+          className="text-[9px] uppercase tracking-[0.22em] font-bold"
+          style={{ color: "rgba(34,197,94,0.55)" }}
+        >
+          Solver Equilibrium
+        </p>
+        <span
+          className="text-[8px] font-bold tracking-wide px-2 py-0.5 rounded-full uppercase"
+          style={{
+            background: solver.source.includes("synthetic") ? "rgba(251,191,36,0.08)" : "rgba(34,197,94,0.08)",
+            color: solver.source.includes("synthetic") ? "rgba(251,191,36,0.6)" : "rgba(34,197,94,0.55)",
+            border: `1px solid ${solver.source.includes("synthetic") ? "rgba(251,191,36,0.18)" : "rgba(34,197,94,0.18)"}`,
+          }}
+        >
+          {solver.source.includes("synthetic") ? "Estimated" : "Solved"}
+          {solver.cache_hit ? " · Cached" : ""}
+        </span>
+      </div>
+
+      {/* Frequency bars */}
+      <div className="space-y-2 mb-3">
+        {freqs.map(([action, freq]) => {
+          const pct = Math.round(freq * 100);
+          const isPreferred = action === preferredAction;
+          const isHeroAction = action === heroVerb;
+          const barColor = isPreferred
+            ? "rgba(34,197,94,0.75)"
+            : isHeroAction
+              ? "rgba(56,189,248,0.60)"
+              : "rgba(148,163,184,0.30)";
+          const textColor = isPreferred
+            ? "rgba(34,197,94,0.90)"
+            : isHeroAction
+              ? "rgba(56,189,248,0.80)"
+              : "rgba(148,163,184,0.55)";
+
+          return (
+            <div key={action}>
+              <div className="flex items-center justify-between mb-0.5">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-[11px] font-bold capitalize"
+                    style={{ color: textColor }}
+                  >
+                    {action}
+                  </span>
+                  {isPreferred && (
+                    <span
+                      className="text-[7px] font-black tracking-wider px-1.5 py-0.5 rounded uppercase"
+                      style={{ background: "rgba(34,197,94,0.10)", color: "rgba(34,197,94,0.65)", border: "1px solid rgba(34,197,94,0.20)" }}
+                    >
+                      GTO
+                    </span>
+                  )}
+                  {isHeroAction && !isPreferred && (
+                    <span
+                      className="text-[7px] font-black tracking-wider px-1.5 py-0.5 rounded uppercase"
+                      style={{ background: "rgba(56,189,248,0.08)", color: "rgba(56,189,248,0.55)", border: "1px solid rgba(56,189,248,0.15)" }}
+                    >
+                      You
+                    </span>
+                  )}
+                </div>
+                <span
+                  className="text-[12px] font-black tabular-nums"
+                  style={{ color: textColor }}
+                >
+                  {pct}%
+                </span>
+              </div>
+              <div
+                className="h-1.5 rounded-full"
+                style={{ background: "rgba(255,255,255,0.04)" }}
+              >
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${pct}%`, background: barColor }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* EV loss indicator */}
+      {evLoss < -0.01 && (
+        <div
+          className="flex items-center gap-2 px-3 py-2 rounded-lg"
+          style={{
+            background: "rgba(248,113,113,0.06)",
+            border: "1px solid rgba(248,113,113,0.15)",
+          }}
+        >
+          <span className="text-[10px] font-bold" style={{ color: "rgba(248,113,113,0.65)" }}>
+            EV Loss
+          </span>
+          <span className="text-[12px] font-black tabular-nums" style={{ color: "rgba(248,113,113,0.85)" }}>
+            {evLoss.toFixed(2)}bb
+          </span>
+        </div>
+      )}
+
+      {/* Solver metadata */}
+      <div className="flex flex-wrap gap-3 mt-3">
+        {solver.solve_time_ms > 0 && (
+          <span className="text-[9px] tabular-nums" style={{ color: "rgba(100,116,139,0.35)" }}>
+            {solver.solve_time_ms < 1000
+              ? `${solver.solve_time_ms.toFixed(0)}ms`
+              : `${(solver.solve_time_ms / 1000).toFixed(1)}s`}
+          </span>
+        )}
+        {solver.iterations > 0 && (
+          <span className="text-[9px] tabular-nums" style={{ color: "rgba(100,116,139,0.35)" }}>
+            {solver.iterations} iter
+          </span>
+        )}
+        {solver.exploitability > 0 && (
+          <span className="text-[9px] tabular-nums" style={{ color: "rgba(100,116,139,0.35)" }}>
+            {solver.exploitability.toFixed(1)}% expl
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // PREMIUM VERDICT
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1059,7 +1215,7 @@ function PremiumVerdict({ verdict }: { verdict: OverallVerdict }) {
 // MAIN EXPORT
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function HandReplay({ analysis, filename, validation, engineVersion, correctionsApplied }: HandReplayProps) {
+export function HandReplay({ analysis, filename, validation, engineVersion, correctionsApplied, solver }: HandReplayProps) {
   const replay = useReplay(analysis);
   const { hand_summary, overall_verdict } = analysis;
   // Defensive: actions may be undefined if the backend returned a partial response
@@ -1298,6 +1454,7 @@ export function HandReplay({ analysis, filename, validation, engineVersion, corr
             handSummary={hand_summary}
             currentStreet={currentStreet}
             step={replay.step}
+            solver={solver}
           />
         </div>
       </div>

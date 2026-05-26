@@ -348,6 +348,21 @@ export interface StrategyProfile {
   source: string;  // "exact" | "similar" | "fallback" | "default"
 }
 
+export interface SolverLiveResult {
+  status: "ready" | "solving" | "timeout" | "error" | "cached";
+  source: string;
+  frequencies: Record<string, number>;
+  ev: Record<string, number>;
+  preferred_action: string;
+  hero_action_ev_loss: number;
+  iterations: number;
+  exploitability: number;
+  solve_time_ms: number;
+  cache_hit: boolean;
+  node_key: string;
+  error?: string | null;
+}
+
 export interface AnalysisResponse {
   parsed_hand: ParsedHand;
   spot_classification: SpotClassification;
@@ -361,6 +376,8 @@ export interface AnalysisResponse {
   saved_id?: string | null;
   save_error?: string | null;
   strategy_profile?: StrategyProfile | null;
+  /** Live solver result — real equilibrium frequencies and EVs when available. */
+  solver?: SolverLiveResult | null;
   /** Sanitized copy with illegal actions corrected (e.g. fold→check).
    *  Use for pot engine / replay animation. null when no corrections needed. */
   parsed_hand_sanitized?: ParsedHand | null;
