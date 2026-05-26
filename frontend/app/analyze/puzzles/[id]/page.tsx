@@ -63,13 +63,29 @@ function extractPreflopVillainRaiseBb(context: string, bbDollars: number): numbe
 function heroInvestBb(optionLabel: string, bbDollars: number, heroAlreadyInBb: number): number {
   const lo = optionLabel.toLowerCase().trim();
   if (/^(fold|check)/.test(lo)) return 0;
-  const raiseToM = optionLabel.match(/(?:raise\s+to|3.?bet\s+to)\s+[\$€£]?(\d+(?:\.\d+)?)/i);
-  if (raiseToM && bbDollars > 0) {
-    const totalBb = parseFloat(raiseToM[1]) / bbDollars;
-    return Math.max(0, totalBb - heroAlreadyInBb);
+
+  // Helper: parse an amount from text, detecting $ (dollars) vs bb (big blinds)
+  function parseAmtBb(text: string): number | null {
+    // "$X" → dollars, convert to bb
+    const dollarM = text.match(/[\$€£](\d+(?:\.\d+)?)/);
+    if (dollarM && bbDollars > 0) return parseFloat(dollarM[1]) / bbDollars;
+    // "Xbb" → already in big blinds
+    const bbM = text.match(/(\d+(?:\.\d+)?)\s*bb\b/i);
+    if (bbM) return parseFloat(bbM[1]);
+    return null;
   }
-  const amtM = optionLabel.match(/[\$€£](\d+(?:\.\d+)?)/);
-  if (amtM && bbDollars > 0) return parseFloat(amtM[1]) / bbDollars;
+
+  // "raise to X" / "3-bet to X" → total amount, subtract already-in
+  const raiseToM = optionLabel.match(/(?:raise\s+to|3.?bet\s+to)\s+/i);
+  if (raiseToM) {
+    const totalBb = parseAmtBb(optionLabel.slice(raiseToM.index!));
+    if (totalBb !== null) return Math.max(0, totalBb - heroAlreadyInBb);
+  }
+
+  // Any other sizing: bet, call, etc.
+  const amt = parseAmtBb(optionLabel);
+  if (amt !== null) return amt;
+
   if (/(?:jam|all.?in|shove)/i.test(lo)) return Infinity;
   return 0;
 }
@@ -649,81 +665,6 @@ function SeatActionPill({ action }: { action: TableAction | null }) {
       >
         {label}
       </span>
-    </div>
-  );
-}
-
-// ── Table Action Banner (center table — kept for aggressive actions) ────────
-
-function TableActionBanner({
-  action, potBb, effectiveStack,
-}: {
-  action: TableAction | null; potBb: number; effectiveStack: number;
-}) {
-  if (!action) return null;
-  const { sizeBb, type } = action;
-  const isAggressive = type === "bet" || type === "raise" || type === "allin" || type === "open";
-  // Only show center banner for aggressive actions (non-aggressive shown at seat only)
-  if (!isAggressive) return null;
-
-  return (
-    <div className="flex items-center justify-center gap-2 animate-action-banner">
-      {sizeBb !== null && (
-        <ChipStack sizeBb={sizeBb} effectiveStack={effectiveStack} />
-      )}
-      <div className={cn(
-        "flex items-center gap-2 px-3.5 py-1.5 rounded-full transition-all",
-        type === "allin"  ? "bg-red-500/10 border border-red-500/20 animate-allin-pulse"
-        : type === "raise"  ? "bg-orange-400/[0.07] border border-orange-400/15"
-        : "bg-amber-400/[0.06] border border-amber-400/12"
-      )}>
-        <span className={cn(
-          "text-[10px] font-bold uppercase tracking-wider",
-          type === "allin" ? "text-red-400/70"
-          : type === "raise" ? "text-orange-400/60"
-          : "text-amber-400/55"
-        )}>
-          {action.actor}
-        </span>
-        <span className={cn(
-          "text-[11px] font-semibold",
-          type === "allin" ? "text-red-300/80 font-black tracking-wider uppercase"
-          : type === "raise" ? "text-orange-300/65"
-          : "text-amber-300/60"
-        )}>
-          {action.verb}
-        </span>
-        {sizeBb !== null && (
-          <span className={cn(
-            "text-[12px] font-black tabular-nums",
-            type === "allin" ? "text-red-200/85"
-            : type === "raise" ? "text-orange-200/75"
-            : "text-amber-200/65"
-          )}>
-            {fmtBb(sizeBb)}
-          </span>
-        )}
-      </div>
-      {sizeBb !== null && (
-        <ChipStack sizeBb={sizeBb} effectiveStack={effectiveStack} />
-      )}
-    </div>
-  );
-}
-
-// ── Chip Stack Visualization ────────────────────────────────────────────────
-
-function ChipStack({ sizeBb, effectiveStack }: { sizeBb: number; effectiveStack: number }) {
-  const ratio = Math.min(1, sizeBb / effectiveStack);
-  const count = ratio >= 0.7 ? 5 : ratio >= 0.4 ? 4 : ratio >= 0.2 ? 3 : ratio >= 0.08 ? 2 : 1;
-  const color = ratio >= 0.5 ? "rgba(239,68,68,0.55)" : ratio >= 0.2 ? "rgba(251,191,36,0.55)" : "rgba(56,189,248,0.45)";
-  const glow  = ratio >= 0.5 ? "rgba(239,68,68,0.3)"  : ratio >= 0.2 ? "rgba(251,191,36,0.3)"  : "rgba(56,189,248,0.2)";
-
-  return (
-    <div className="flex flex-col-reverse items-center gap-[1px] animate-chip-slide">
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="rounded-full" style={{ width: "7px", height: "3px", background: color, boxShadow: `0 0 4px ${glow}` }} />
-      ))}
     </div>
   );
 }
@@ -1472,13 +1413,6 @@ export default function PuzzlePlayerPage() {
                     {/* Villain's last action — persists at seat */}
                     <SeatActionPill key={`v-${villainSeatAction?.type}-${villainSeatAction?.sizeBb}`} action={villainSeatAction} />
                   </div>
-
-                  {/* ── ACTION BANNER — villain's facing action ── */}
-                  <TableActionBanner
-                    action={facingAction}
-                    potBb={stackState.potBb}
-                    effectiveStack={puzzle.effectiveStack}
-                  />
 
                   {/* ── BOARD ───────────────────────────────── */}
                   <div className="flex flex-col items-center gap-2">
