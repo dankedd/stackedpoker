@@ -49,11 +49,64 @@ def _log_env_check() -> None:
         )
 
 
+def _solver_self_test() -> None:
+    """Verify TexasSolver binary is available and executable at startup."""
+    import os
+    import shutil
+    from pathlib import Path
+
+    solver_bin = os.getenv("TEXASSOLVER_BIN", "")
+    enabled = os.getenv("ENABLE_SOLVER_ENGINE", "true").lower() == "true"
+
+    logger.info("=== Solver Self-Test ===")
+    logger.info("  %-30s %s", "ENABLE_SOLVER_ENGINE", "ON" if enabled else "OFF")
+    logger.info("  %-30s %s", "TEXASSOLVER_BIN", solver_bin or "(not set)")
+
+    if not enabled:
+        logger.info("  Solver engine disabled — skipping binary check")
+        return
+
+    if not solver_bin:
+        logger.warning("  TEXASSOLVER_BIN not set — live solving will use heuristic fallback")
+        return
+
+    path = Path(solver_bin)
+    exists = path.exists()
+    executable = os.access(str(path), os.X_OK) if exists else False
+
+    logger.info("  %-30s %s", "binary exists", exists)
+    logger.info("  %-30s %s", "binary executable", executable)
+
+    if not exists:
+        logger.error(
+            "  SOLVER SELF-TEST FAILED: binary not found at %s", solver_bin,
+        )
+        return
+
+    if not executable:
+        logger.error(
+            "  SOLVER SELF-TEST FAILED: binary exists but is not executable at %s", solver_bin,
+        )
+        return
+
+    # Check resources
+    res_dir = os.getenv("TEXASSOLVER_RESOURCE_DIR", "/opt/texassolver/resources")
+    compairer = Path(res_dir) / "compairer"
+    res_ok = compairer.exists() and any(compairer.iterdir()) if compairer.exists() else False
+    logger.info("  %-30s %s", "resources available", res_ok)
+
+    if not res_ok:
+        logger.warning("  Solver resources missing at %s — solves may fail", res_dir)
+
+    logger.info("  SOLVER SELF-TEST PASSED — live solving enabled")
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     logger.info("=== Stacked Poker starting ===")
     logger.info("Allowed origins: %s", settings.allowed_origins)
     _log_env_check()
+    _solver_self_test()
     await init_db()
     yield
     logger.info("=== Stacked Poker stopped ===")

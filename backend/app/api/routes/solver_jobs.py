@@ -251,3 +251,77 @@ async def solver_health() -> dict:
     checker = HealthChecker(settings, queue.redis)
     status = await checker.check_all()
     return status.to_dict()
+
+
+@router.get("/health/deep", response_model=dict)
+async def solver_health_deep() -> dict:
+    """
+    Deep solver health check — verifies binary, resources, runtime,
+    strategy DB, and Redis connectivity end-to-end.
+    """
+    import os
+    import shutil
+    from pathlib import Path
+
+    checks: dict[str, bool] = {}
+    details: dict[str, str] = {}
+
+    # 1. Feature flag
+    enabled = os.getenv("ENABLE_SOLVER_ENGINE", "true").lower() == "true"
+    checks["solver_enabled"] = enabled
+    details["enable_solver_engine"] = str(enabled)
+
+    # 2. Binary configuration
+    solver_bin = os.getenv("TEXASSOLVER_BIN", "")
+    checks["binary_configured"] = bool(solver_bin)
+    details["texassolver_bin"] = solver_bin or "(not set)"
+
+    # 3. Binary exists
+    if solver_bin:
+        path = Path(solver_bin)
+        checks["binary_exists"] = path.exists()
+        checks["binary_executable"] = os.access(str(path), os.X_OK) if path.exists() else False
+    else:
+        checks["binary_exists"] = False
+        checks["binary_executable"] = False
+
+    # 4. Resources
+    res_dir = os.getenv("TEXASSOLVER_RESOURCE_DIR", "/opt/texassolver/resources")
+    compairer = Path(res_dir) / "compairer"
+    checks["resources_available"] = compairer.exists() and any(compairer.iterdir()) if compairer.exists() else False
+    details["resource_dir"] = res_dir
+
+    # 5. Strategy DB
+    try:
+        from app.strategy_db.storage import StrategyStore
+        store = StrategyStore(seed_on_init=True)
+        node_count = store.count()
+        checks["strategy_db_populated"] = node_count > 0
+        details["strategy_node_count"] = str(node_count)
+    except Exception as exc:
+        checks["strategy_db_populated"] = False
+        details["strategy_db_error"] = str(exc)
+
+    # 6. Redis
+    try:
+        queue = await _get_queue()
+        await queue.redis.ping()
+        checks["redis_connected"] = True
+        depth = await queue.queue_depth()
+        details["queue_depth"] = str(depth)
+    except Exception as exc:
+        checks["redis_connected"] = False
+        details["redis_error"] = str(exc)
+
+    # 7. Overall health
+    all_ok = all(checks.values())
+
+    return {
+        "healthy": all_ok,
+        "checks": checks,
+        "details": details,
+        "summary": (
+            "All solver systems operational" if all_ok
+            else "Some solver systems unavailable — check details"
+        ),
+    }

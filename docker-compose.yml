@@ -39,7 +39,8 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       ALLOWED_ORIGINS: http://localhost:3000
       REDIS_URL: redis://redis:6379/0
-      TEXASSOLVER_BIN: ${TEXASSOLVER_BIN:-}
+      TEXASSOLVER_BIN: /opt/texassolver/bin/console_solver
+      TEXASSOLVER_RESOURCE_DIR: /opt/texassolver/resources
       ENABLE_SOLVER_ENGINE: "true"
     depends_on:
       db:
