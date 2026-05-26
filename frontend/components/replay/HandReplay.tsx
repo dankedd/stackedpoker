@@ -1046,26 +1046,49 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
         onGoTo={replay.goTo}
       />
 
-      {/* DEV overlay */}
-      {process.env.NODE_ENV === "development" && (
-        <div
-          style={{
-            background: "rgba(0,0,0,0.75)",
-            borderBottom: "1px solid rgba(251,191,36,0.2)",
-            padding: "4px 16px",
-            fontFamily: "monospace",
-            fontSize: "10px",
-            color: "rgba(251,191,36,0.7)",
-            display: "flex",
-            gap: "16px",
-          }}
-        >
-          <span>step:{replay.step}/{actions.length}</span>
-          <span>action:{replay.step > 0 ? `${replay.step - 1}:${replay.currentAction?.player ?? "—"} ${replay.currentAction?.action ?? "—"}` : "none"}</span>
-          <span>isFirst:{String(replay.isFirst)}</span>
-          <span>isLast:{String(replay.isLast)}</span>
-        </div>
-      )}
+      {/* ── REPLAY STATE DEBUG OVERLAY ─────────────────────────────────────
+           Always visible — shows raw replay state to diagnose render issues.
+           TODO: gate behind a dev flag once aggression rendering is confirmed. */}
+      <div
+        style={{
+          background: replay.pendingAggression
+            ? "rgba(248,113,113,0.12)"
+            : "rgba(0,0,0,0.75)",
+          borderBottom: replay.pendingAggression
+            ? "2px solid rgba(248,113,113,0.5)"
+            : "1px solid rgba(251,191,36,0.2)",
+          padding: "6px 16px",
+          fontFamily: "monospace",
+          fontSize: "10px",
+          color: "rgba(251,191,36,0.8)",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "12px",
+          alignItems: "center",
+        }}
+      >
+        <span>step:{replay.step}/{actions.length}</span>
+        <span>
+          action:{replay.step > 0
+            ? `${replay.currentAction?.player ?? "—"} ${replay.currentAction?.action ?? "—"}${replay.currentAction?.amount ? " " + replay.currentAction.amount : ""}`
+            : "none"}
+        </span>
+        {replay.pendingAggression ? (
+          <span style={{ color: "#F87171", fontWeight: "bold" }}>
+            FACING: {replay.pendingAggression.player} {replay.pendingAggression.action}
+            {replay.pendingAggression.amount ? ` ${replay.pendingAggression.amount}` : ""}
+            {replay.pendingAggression.is_all_in ? " [ALL-IN]" : ""}
+          </span>
+        ) : (
+          <span style={{ color: "rgba(100,116,139,0.5)" }}>facing: none</span>
+        )}
+        {facingAction ? (
+          <span style={{ color: "#38BDF8" }}>
+            facingAction: {facingAction.player} {facingAction.action}
+            {facingAction.amount ? ` ${facingAction.amount}` : ""}
+          </span>
+        ) : null}
+      </div>
 
       {/* WORKSPACE — split on desktop */}
       <div className="flex flex-col lg:grid lg:grid-cols-[3fr_2fr] lg:items-stretch">
