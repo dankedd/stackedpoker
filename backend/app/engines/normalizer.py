@@ -378,11 +378,25 @@ def _build_streets(
         street_bets: dict[str, float] = {}
 
         c_actions: list[CanonicalAction] = []
+        # Track the current street bet to detect illegal folds
+        current_street_bet: float = 0.0
+
         for a in raw_actions:
             pid = player_id_by_name.get(a.player, f"unknown_{a.player}")
             action_type = normalize_action_type(a.action)
             stack_before = stacks.get(a.player, 0.0)
             pot_before = pot
+
+            # ── Auto-correct illegal fold facing no bet → check ──────────
+            # In poker, you cannot fold when not facing a bet (current_bet=0).
+            # Some hand histories or OCR extractions produce this; auto-correct
+            # to check to maintain a legal game state.
+            if action_type == ActionType.FOLD and current_street_bet == 0.0 and street_name != "preflop":
+                _log.warning(
+                    "Illegal fold by %s on %s facing no bet — auto-corrected to check",
+                    a.player, street_name,
+                )
+                action_type = ActionType.CHECK
 
             # Compute amount committed this action
             amount_bb = 0.0
@@ -421,6 +435,10 @@ def _build_streets(
             stacks[a.player] = max(0.0, stack_before - amount_bb)
             pot += amount_bb
             street_bets[a.player] = street_bets.get(a.player, 0.0) + amount_bb
+
+            # Track current outstanding bet for fold-legality checks
+            if action_type in (ActionType.BET, ActionType.RAISE):
+                current_street_bet = total_bet if total_bet > 0 else amount_bb
 
             c_actions.append(CanonicalAction(
                 sequence=global_seq,

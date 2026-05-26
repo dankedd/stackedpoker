@@ -248,6 +248,8 @@ class ValidationErrorCode(str, Enum):
     OVERBET_STACK               = "OVERBET_STACK"
     # Blinds
     MISSING_BIG_BLIND           = "MISSING_BIG_BLIND"
+    # Illegal actions
+    FOLD_FACING_NO_BET          = "FOLD_FACING_NO_BET"
     # General
     NO_ACTIONS_PARSED           = "NO_ACTIONS_PARSED"
     EFFECTIVE_STACK_ZERO        = "EFFECTIVE_STACK_ZERO"

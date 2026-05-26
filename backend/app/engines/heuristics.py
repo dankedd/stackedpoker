@@ -69,6 +69,9 @@ def run_heuristics(
     preflop_actions = [a for a in hand.actions if a.street == "preflop" and a.is_hero]
     findings += _evaluate_preflop(preflop_actions, spot, hand)
 
+    # ── Cross-street: fold facing no bet ─────────────────────────────────
+    findings += _detect_fold_facing_no_bet(hand)
+
     return findings
 
 
@@ -392,6 +395,46 @@ def _evaluate_river(
                 freq_recommendation="Blockers to the nuts improve bluff EV on the river",
             ))
 
+    return findings
+
+
+# ── Fold-facing-no-bet detector ────────────────────────────────────────────
+
+def _detect_fold_facing_no_bet(hand: ParsedHand) -> list[HeuristicFinding]:
+    """
+    Detect hero folding on a postflop street when no villain bet/raise is
+    outstanding.  This is an illegal game action (should be a check) and
+    indicates either a corrupted hand history or parsing error.
+
+    If the normalizer auto-corrected fold→check, this won't fire because
+    the action is already a check.  This catches any remaining edge cases.
+    """
+    findings: list[HeuristicFinding] = []
+
+    for street_name in ("flop", "turn", "river"):
+        street_actions = [a for a in hand.actions if a.street == street_name]
+        current_bet = 0.0
+        for a in street_actions:
+            if a.action in ("bet", "raise"):
+                current_bet = a.size_bb or 1.0
+            if a.is_hero and a.action == "fold" and current_bet == 0.0:
+                findings.append(HeuristicFinding(
+                    severity="mistake",
+                    street=street_name,
+                    action_taken=f"Fold on {street_name} facing no bet",
+                    recommendation=(
+                        "You cannot fold when not facing a bet — checking is "
+                        "the correct action. This fold forfeits a pot you could "
+                        "have won for free."
+                    ),
+                    explanation=(
+                        f"On the {street_name}, no opponent bet or raised before your action. "
+                        "Folding in this spot surrenders the entire pot unnecessarily. "
+                        "When facing no aggression, checking keeps you in the hand at zero cost. "
+                        "This is a fundamental game-state error that should never occur."
+                    ),
+                    freq_recommendation=None,
+                ))
     return findings
 
 

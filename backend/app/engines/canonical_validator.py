@@ -194,6 +194,23 @@ def validate_canonical(hand: CanonicalHand) -> PipelineValidationResult:
         prev_street_rank = max(prev_street_rank, rank)
         prev_street_name = a.street
 
+    # ── 8b. Fold-facing-no-bet detection ────────────────────────────────────
+    # A fold is illegal when no bet/raise is outstanding on the current street
+    # (the player should check instead). The normalizer auto-corrects this,
+    # but if a fold slips through, flag it as a warning.
+    for s in hand.streets:
+        if s.name == Street.PREFLOP:
+            continue  # preflop has implied BB bet
+        street_bet = 0.0
+        for a in s.actions:
+            if a.action in (ActionType.BET, ActionType.RAISE):
+                street_bet = a.total_bet_bb if a.total_bet_bb > 0 else a.amount_bb
+            if a.action == ActionType.FOLD and street_bet == 0.0:
+                warn(ValidationErrorCode.FOLD_FACING_NO_BET,
+                     f"{a.player_name!r} folded on {s.name.value} facing no bet "
+                     f"(auto-corrected to check if normalizer ran)",
+                     f"action[{a.sequence}]")
+
     # ── 9. Per-action amount sanity ───────────────────────────────────────────
     for a in all_actions:
         if a.action in (ActionType.BET, ActionType.RAISE, ActionType.CALL):

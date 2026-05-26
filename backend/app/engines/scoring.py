@@ -47,24 +47,50 @@ def _score_action(
     relevant = _find_relevant(action, findings)
     severity = relevant[0].severity if relevant else "note"
 
-    score = _severity_to_score(severity, action, spot)
-    quality = _score_to_quality(score)
-    mistake_level = _severity_to_mistake_level(severity)
-
     # Resolve action index for preflop node detection
     try:
         action_idx = hand.actions.index(action)
     except ValueError:
         action_idx = 0
 
+    # Compute strategic options FIRST — they encode hand-strength-aware
+    # recommendations that the base heuristic severity may miss.
+    options = _strategic_options(action, relevant, spot, texture, hand, action_idx)
+
+    # ── Strategy-deviation penalty ────────────────────────────────────────
+    # If the primary strategic recommendation disagrees with the actual
+    # action, apply a score penalty proportional to confidence.
+    # This prevents contradictions like "Good Fold" when primary = Call.
+    score = _severity_to_score(severity, action, spot)
+    deviation = _compute_deviation(action, options)
+    if deviation.is_deviation:
+        score = max(0, score - deviation.penalty)
+        # Upgrade severity to match the deviation
+        if deviation.penalty >= 25:
+            severity = "mistake"
+        elif deviation.penalty >= 12:
+            severity = "suboptimal"
+
+    quality = _score_to_quality(score)
+    mistake_level = _severity_to_mistake_level(severity)
+
+    explanation = relevant[0].explanation if relevant else _default_explanation(action, spot, texture)
+    adjustment = relevant[0].recommendation if relevant else _default_adjustment(action, spot, texture)
+
+    # Override explanation when a strong deviation is detected but heuristics
+    # missed it (no relevant finding).
+    if deviation.is_deviation and not relevant:
+        explanation = deviation.explanation
+        adjustment = deviation.adjustment
+
     return ActionCoaching(
         score=score,
         quality=quality,
         mistake_level=mistake_level,
-        strategic_options=_strategic_options(action, relevant, spot, texture, hand, action_idx),
+        strategic_options=options,
         reason_codes=_reason_codes(action, relevant, spot, texture),
-        explanation=relevant[0].explanation if relevant else _default_explanation(action, spot, texture),
-        adjustment=relevant[0].recommendation if relevant else _default_adjustment(action, spot, texture),
+        explanation=explanation,
+        adjustment=adjustment,
     )
 
 
@@ -126,6 +152,114 @@ def _severity_to_mistake_level(severity: str) -> str:
     }.get(severity, "None")
 
 
+# ── Strategy-deviation detection ──────────────────────────────────────────
+
+class _Deviation:
+    """Result of comparing actual action against primary strategic recommendation."""
+    __slots__ = ("is_deviation", "penalty", "explanation", "adjustment")
+
+    def __init__(
+        self,
+        is_deviation: bool = False,
+        penalty: int = 0,
+        explanation: str = "",
+        adjustment: str = "",
+    ):
+        self.is_deviation = is_deviation
+        self.penalty = penalty
+        self.explanation = explanation
+        self.adjustment = adjustment
+
+
+# Confidence → penalty weight when actual action deviates from primary
+_CONFIDENCE_PENALTY: dict[str, int] = {
+    "high":   30,
+    "medium": 18,
+    "low":    8,
+}
+
+
+def _normalize_action_verb(action: str) -> str:
+    """Collapse action strings to a comparable verb."""
+    a = action.strip().lower()
+    # "Bet 33%", "Bet 75%" → "bet"
+    if a.startswith("bet"):
+        return "bet"
+    if a.startswith("raise"):
+        return "raise"
+    return a
+
+
+def _compute_deviation(
+    action: HandAction,
+    options: list[StrategicOption],
+) -> _Deviation:
+    """
+    Check whether the actual action deviates from the primary strategic
+    recommendation.  Returns a _Deviation with the appropriate penalty.
+
+    Rules:
+      - If no options exist, no deviation.
+      - Primary option (priority=1) is authoritative.
+      - If actual action matches primary, no deviation.
+      - If actual action matches a secondary/alternative, minor deviation.
+      - If actual action matches nothing, full penalty scaled by confidence.
+    """
+    if not options:
+        return _Deviation()
+
+    primary = next((o for o in options if o.priority == 1), None)
+    if primary is None:
+        return _Deviation()
+
+    actual_verb = _normalize_action_verb(action.action)
+    primary_verb = _normalize_action_verb(primary.action)
+
+    # Exact match with primary → no deviation
+    if actual_verb == primary_verb:
+        return _Deviation()
+
+    # Check if actual matches any secondary/alternative option
+    secondary_match = any(
+        _normalize_action_verb(o.action) == actual_verb
+        for o in options
+        if o.priority > 1
+    )
+
+    base_penalty = _CONFIDENCE_PENALTY.get(primary.confidence, 18)
+
+    if secondary_match:
+        # Actual action is a recognized alternative — minor penalty
+        penalty = max(4, base_penalty // 3)
+        return _Deviation(
+            is_deviation=True,
+            penalty=penalty,
+            explanation=(
+                f"Your {action.action} is a recognized alternative, but the "
+                f"primary strategic recommendation is {primary.action.lower()}. "
+                f"{primary.reasoning}"
+            ),
+            adjustment=(
+                f"Consider {primary.action.lower()} as the default line here. "
+                f"{primary.reasoning}"
+            ),
+        )
+
+    # Actual action is NOT any listed option — full penalty
+    return _Deviation(
+        is_deviation=True,
+        penalty=base_penalty,
+        explanation=(
+            f"Your {action.action} deviates from the primary recommendation "
+            f"({primary.action.lower()}). {primary.reasoning}"
+        ),
+        adjustment=(
+            f"The strategically correct action here is to {primary.action.lower()}. "
+            f"{primary.reasoning}"
+        ),
+    )
+
+
 # ── Strategic options lookup ───────────────────────────────────────────────
 
 def _strategic_options(
@@ -156,11 +290,27 @@ def _strategic_options(
             options.append(so(pa.action, i, rec.reasoning, rec.confidence.lower() if hasattr(rec.confidence, "lower") else "medium"))
         return options if options else [so(act.capitalize(), 1, rec.reasoning)]
 
+    # ── Facing-bet detection ─────────────────────────────────────────────
+    # Determine if hero faces a bet/raise on this street.  If not, fold is
+    # never a valid primary recommendation — check/bet are the only options.
+    facing_bet = _is_facing_bet(hand, action)
+
+    # If hero folded facing no bet, always recommend Check as primary
+    if act == "fold" and not facing_bet and street != "preflop":
+        return [
+            so("Check", 1,
+               "No opponent bet to face — checking costs nothing and keeps you in the hand",
+               "high"),
+            so("Bet", 2,
+               "Betting for value or as a bluff is also an option when not facing aggression"),
+        ]
+
     # ── Postflop: made-hand-priority strategic options ─────────────────────
     made_category = _resolve_made_category(hand)
+    is_overpair = _is_overpair(hand)
     is_mistake = severity in ("mistake", "suboptimal")
-    is_strong_made = made_category >= 2   # two pair or better
-    is_pair = made_category == 1
+    is_strong_made = made_category >= 2 or is_overpair  # two pair+, OR overpair
+    is_pair = made_category == 1 and not is_overpair
 
     if street == "flop":
         if act == "bet":
@@ -286,6 +436,17 @@ def _strategic_options(
 
 # ── Postflop alternative helpers ───────────────────────────────────────────
 
+def _is_facing_bet(hand: ParsedHand, hero_action: HandAction) -> bool:
+    """Return True if there is an outstanding bet/raise on this street before hero acts."""
+    street_actions = [a for a in hand.actions if a.street == hero_action.street]
+    for a in street_actions:
+        if a is hero_action or (a.player == hero_action.player and a.is_hero == hero_action.is_hero):
+            break  # reached hero's action — stop looking
+        if a.action in ("bet", "raise"):
+            return True
+    return False
+
+
 def _resolve_made_category(hand: ParsedHand) -> int:
     """Return made-hand category (0-8) for hero using available board cards."""
     try:
@@ -300,6 +461,42 @@ def _resolve_made_category(hand: ParsedHand) -> int:
     except Exception:
         pass
     return 0
+
+
+_RANK_ORDER = "23456789TJQKA"
+
+
+def _is_overpair(hand: ParsedHand) -> bool:
+    """Return True if hero holds a pocket pair higher than every board card.
+
+    Overpairs (e.g. KK on J-7-2) are at the top of the one-pair range and
+    should be treated as strong made hands for strategic-options purposes.
+    """
+    if not hand.hero_cards or len(hand.hero_cards) != 2:
+        return False
+    c1, c2 = hand.hero_cards[0], hand.hero_cards[1]
+    if len(c1) < 2 or len(c2) < 2:
+        return False
+    r1, r2 = c1[0].upper(), c2[0].upper()
+    if r1 != r2:
+        return False  # not a pocket pair
+
+    board = list(hand.board.flop)
+    if hand.board.turn:
+        board += list(hand.board.turn)
+    if hand.board.river:
+        board += list(hand.board.river)
+    if not board:
+        return False
+
+    pair_rank = _RANK_ORDER.index(r1) if r1 in _RANK_ORDER else -1
+    for card in board:
+        if len(card) < 2:
+            continue
+        board_rank = _RANK_ORDER.index(card[0].upper()) if card[0].upper() in _RANK_ORDER else -1
+        if board_rank >= pair_rank:
+            return False  # board has a card as high or higher
+    return True
 
 
 def _flop_bet_options(

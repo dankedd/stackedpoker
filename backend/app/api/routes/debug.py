@@ -518,3 +518,241 @@ async def compare_strategies(
         "b": results.get("b"),
         "deltas": deltas,
     }
+
+
+# ── Full pipeline trace endpoint ─────────────────────────────────────────────
+
+
+@router.post(
+    "/debug/full-trace",
+    summary="Full forensic pipeline trace for a raw hand history (debug only)",
+    tags=["debug"],
+)
+async def full_trace(
+    hand_text: str = Body(..., media_type="text/plain"),
+    x_debug_token: str | None = Header(default=None),
+) -> dict[str, Any]:
+    """
+    POST /api/debug/full-trace
+
+    Runs the complete pipeline on raw hand text and returns EVERY
+    intermediate state for forensic debugging:
+
+    1. Raw parsed actions
+    2. Canonical actions (with auto-corrections noted)
+    3. Per-action betting state (pot, facing_bet, legality)
+    4. Heuristic findings
+    5. Per-action scoring (quality, strategic_options, deviation)
+    6. Solver abstraction + retrieval
+    7. Overall score + verdict
+
+    Protected by DEBUG_STRATEGY_ENABLED.
+    """
+    _check_debug_access(x_debug_token)
+
+    trace: dict[str, Any] = {}
+
+    try:
+        # Stage 1: Parse
+        from app.parsers.detector import detect_and_parse
+        parsed = detect_and_parse(hand_text)
+        trace["1_parsed"] = {
+            "site": parsed.site,
+            "hero": parsed.hero_name,
+            "hero_position": parsed.hero_position,
+            "hero_cards": parsed.hero_cards,
+            "players": [
+                {"name": p.name, "position": p.position, "stack_bb": p.stack_bb}
+                for p in parsed.players
+            ],
+            "actions": [
+                {
+                    "index": i,
+                    "street": a.street,
+                    "player": a.player,
+                    "action": a.action,
+                    "size_bb": a.size_bb,
+                    "is_hero": a.is_hero,
+                }
+                for i, a in enumerate(parsed.actions)
+            ],
+            "board": {
+                "flop": parsed.board.flop,
+                "turn": parsed.board.turn,
+                "river": parsed.board.river,
+            },
+        }
+
+        # Stage 2: Normalize
+        from app.engines.normalizer import normalize_hand
+        canonical = normalize_hand(parsed, raw_text=hand_text)
+
+        corrections: list[dict] = []
+        # Detect corrections by comparing parsed actions vs canonical
+        parsed_idx = 0
+        for s in canonical.streets:
+            for a in s.actions:
+                if parsed_idx < len(parsed.actions):
+                    pa = parsed.actions[parsed_idx]
+                    if pa.action != a.action.value:
+                        corrections.append({
+                            "sequence": a.sequence,
+                            "street": s.name.value,
+                            "player": a.player_name,
+                            "original_action": pa.action,
+                            "corrected_action": a.action.value,
+                            "reason": "fold_facing_no_bet" if pa.action == "fold" else "unknown",
+                        })
+                parsed_idx += 1
+
+        trace["2_canonical"] = {
+            "players": [
+                {"id": p.id, "name": p.name, "position": p.position, "is_hero": p.is_hero}
+                for p in canonical.players
+            ],
+            "hero_id": canonical.hero_id,
+            "corrections": corrections,
+            "streets": [
+                {
+                    "name": s.name.value,
+                    "board": [c.notation for c in s.board_cards],
+                    "pot_start": s.pot_start_bb,
+                    "actions": [
+                        {
+                            "seq": a.sequence,
+                            "player": a.player_name,
+                            "action": a.action.value,
+                            "amount_bb": round(a.amount_bb, 2),
+                            "pot_before": round(a.pot_before_bb, 2),
+                            "pot_after": round(a.pot_after_bb, 2),
+                            "stack_before": round(a.stack_before_bb, 2),
+                            "stack_after": round(a.stack_after_bb, 2),
+                        }
+                        for a in s.actions
+                    ],
+                }
+                for s in canonical.streets
+            ],
+        }
+
+        # Stage 3: Validate
+        from app.engines.canonical_validator import validate_canonical
+        validation = validate_canonical(canonical)
+        trace["3_validation"] = {
+            "valid": validation.valid,
+            "can_analyze": validation.can_analyze,
+            "confidence": validation.confidence,
+            "errors": [{"code": e.code, "message": e.message} for e in validation.errors],
+            "warnings": [{"code": w.code, "message": w.message} for w in validation.warnings],
+        }
+
+        # Stage 4: Per-action betting state
+        from app.engines.scoring import _is_facing_bet
+        betting_state: list[dict] = []
+        for a in parsed.actions:
+            facing = _is_facing_bet(parsed, a)
+            legal = ["check", "bet", "raise", "fold", "call"]
+            if a.street != "preflop" and not facing:
+                legal = ["check", "bet"]  # cannot fold/call if no bet
+            is_illegal = a.action == "fold" and not facing and a.street != "preflop"
+
+            betting_state.append({
+                "index": parsed.actions.index(a),
+                "street": a.street,
+                "player": a.player,
+                "action": a.action,
+                "facing_bet": facing,
+                "legal_actions": legal,
+                "is_illegal": is_illegal,
+            })
+        trace["4_betting_state"] = betting_state
+
+        # Stage 5: Heuristics + Scoring
+        from app.engines.spot_classifier import classify_spot
+        from app.engines.board_texture import classify_board
+        from app.engines.heuristics import run_heuristics
+        from app.engines.scoring import score_all_hero_actions, _compute_deviation
+
+        spot = classify_spot(parsed)
+        texture = classify_board(parsed.board.flop, parsed.board.turn, parsed.board.river)
+
+        try:
+            from app.engines.draw_evaluator import analyze_draws
+            from app.engines.poker_state import PokerState
+            draw_analysis = analyze_draws(parsed.hero_cards, parsed.board.flop)
+            poker_state = PokerState.build(parsed, spot.hero_is_ip, spot.hero_is_pfr)
+        except Exception:
+            draw_analysis = None
+            poker_state = None
+
+        findings = run_heuristics(parsed, spot, texture, draw_analysis=draw_analysis, poker_state=poker_state)
+        trace["5_findings"] = [
+            {
+                "severity": f.severity,
+                "street": f.street,
+                "action_taken": f.action_taken,
+                "recommendation": f.recommendation[:200],
+            }
+            for f in findings
+        ]
+
+        coaching = score_all_hero_actions(parsed, findings, spot, texture)
+        trace["6_scoring"] = {}
+        for idx, c in sorted(coaching.items()):
+            action = parsed.actions[idx]
+            dev = _compute_deviation(action, c.strategic_options)
+            trace["6_scoring"][str(idx)] = {
+                "street": action.street,
+                "action": action.action,
+                "score": c.score,
+                "quality": c.quality,
+                "mistake_level": c.mistake_level,
+                "facing_bet": _is_facing_bet(parsed, action),
+                "deviation": {
+                    "is_deviation": dev.is_deviation,
+                    "penalty": dev.penalty,
+                },
+                "primary_recommendation": (
+                    c.strategic_options[0].action if c.strategic_options else None
+                ),
+                "strategic_options": [
+                    {"priority": o.priority, "action": o.action, "confidence": o.confidence}
+                    for o in c.strategic_options
+                ],
+            }
+
+        # Stage 7: Solver context
+        try:
+            abstraction = SpotAbstraction.from_canonical_hand(canonical)
+            from app.strategy_db.retrieval import retrieve_strategy as _retrieve
+            retrieval = _retrieve(abstraction.node_key, abstraction.solver_spot)
+            trace["7_solver"] = {
+                "node_key": abstraction.node_key.to_string(),
+                "retrieval_type": retrieval.retrieval_type,
+                "strategy_source": retrieval.debug.get("store_source", "unknown"),
+                "similarity_score": retrieval.similarity_score,
+            }
+        except Exception as exc:
+            trace["7_solver"] = {"error": str(exc)}
+
+        # Stage 8: Overall verdict
+        from app.engines.analysis import _calculate_score
+        overall_score = _calculate_score(findings)
+        trace["8_verdict"] = {
+            "overall_score": overall_score,
+            "title": (
+                "Excellent play" if overall_score >= 85 else
+                "Solid play" if overall_score >= 70 else
+                "Room for improvement" if overall_score >= 55 else
+                "Significant errors detected" if overall_score >= 40 else
+                "Major strategic errors"
+            ),
+            "findings_count": len(findings),
+            "mistakes_count": sum(1 for f in findings if f.severity == "mistake"),
+        }
+
+    except Exception as exc:
+        logger.exception("full-trace failed")
+        trace["error"] = str(exc)
+
+    return trace
