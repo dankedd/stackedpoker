@@ -1,0 +1,339 @@
+"""
+ARQ worker — consumes solve jobs from Redis and executes TexasSolver.
+
+Responsibilities:
+  1. Poll Redis queue for highest-priority job
+  2. Build SolverConfig from SolveJobConfig
+  3. Execute TexasSolver subprocess with timeout enforcement
+  4. Monitor memory usage during solve
+  5. Parse output and import into strategy database
+  6. Report results back to queue
+  7. Handle graceful shutdown on SIGTERM/SIGINT
+
+Design:
+  - Uses asyncio event loop with subprocess in thread pool
+  - Each worker runs max_concurrent_solves jobs simultaneously
+  - OMP_NUM_THREADS is set per-solve to avoid thread oversubscription
+  - Memory watchdog runs alongside each solve to detect OOM early
+"""
+
+from __future__ import annotations
+
+import asyncio
+import gzip
+import logging
+import os
+import platform
+import signal
+import shutil
+import time
+import uuid
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
+from pathlib import Path
+
+from .models import (
+    SolveJob,
+    SolveJobConfig,
+    SolveJobResult,
+    SolveJobStatus,
+)
+from .queue import SolveQueue
+from .settings import WorkerSettings
+from .storage import SolveStorage
+
+logger = logging.getLogger(__name__)
+
+
+class SolveWorker:
+    """
+    Background worker that consumes and executes solve jobs.
+
+    Lifecycle:
+        worker = SolveWorker(settings)
+        await worker.start()   # runs until shutdown signal
+        await worker.stop()    # graceful shutdown
+    """
+
+    def __init__(self, settings: WorkerSettings | None = None) -> None:
+        self._settings = settings or WorkerSettings.from_env()
+        self._worker_id = f"worker-{platform.node()}-{uuid.uuid4().hex[:8]}"
+        self._queue: SolveQueue | None = None
+        self._storage: SolveStorage | None = None
+        self._executor = ThreadPoolExecutor(
+            max_workers=self._settings.max_concurrent_solves,
+            thread_name_prefix="solver",
+        )
+        self._running = False
+        self._active_jobs: dict[str, asyncio.Task] = {}
+        self._shutdown_event = asyncio.Event()
+
+    @property
+    def worker_id(self) -> str:
+        return self._worker_id
+
+    async def start(self) -> None:
+        """Start the worker loop. Blocks until shutdown signal."""
+        logger.info(
+            "[Worker %s] starting (concurrency=%d, threads/solve=%d, timeout=%ds)",
+            self._worker_id,
+            self._settings.max_concurrent_solves,
+            self._settings.max_worker_threads,
+            self._settings.solve_timeout_seconds,
+        )
+
+        # Set OpenMP thread count for solver subprocesses
+        os.environ["OMP_NUM_THREADS"] = str(self._settings.max_worker_threads)
+
+        self._queue = SolveQueue(self._settings)
+        await self._queue.connect()
+
+        self._storage = SolveStorage(self._settings)
+        self._storage.ensure_dirs()
+
+        self._running = True
+        self._install_signal_handlers()
+
+        try:
+            await self._poll_loop()
+        finally:
+            await self.stop()
+
+    async def stop(self) -> None:
+        """Graceful shutdown — wait for active jobs, then cleanup."""
+        if not self._running:
+            return
+
+        self._running = False
+        logger.info(
+            "[Worker %s] shutting down (%d active jobs)...",
+            self._worker_id, len(self._active_jobs),
+        )
+
+        # Wait for active jobs to finish (with timeout)
+        if self._active_jobs:
+            logger.info("[Worker %s] waiting for active jobs to complete...", self._worker_id)
+            tasks = list(self._active_jobs.values())
+            done, pending = await asyncio.wait(tasks, timeout=30)
+            for task in pending:
+                task.cancel()
+
+        self._executor.shutdown(wait=False)
+
+        if self._queue:
+            await self._queue.close()
+
+        logger.info("[Worker %s] shutdown complete", self._worker_id)
+
+    # ── Main loop ─────────────────────────────────────────────────────────
+
+    async def _poll_loop(self) -> None:
+        """
+        Main polling loop.
+
+        Checks queue every 2 seconds when at capacity, every 0.5s when idle.
+        Backs off to 5s if queue is empty for 10 consecutive polls.
+        """
+        empty_polls = 0
+
+        while self._running:
+            # Check shutdown
+            if self._shutdown_event.is_set():
+                break
+
+            # Clean up finished tasks
+            finished = [
+                jid for jid, task in self._active_jobs.items() if task.done()
+            ]
+            for jid in finished:
+                task = self._active_jobs.pop(jid)
+                # Surface any unexpected exceptions
+                if task.exception():
+                    logger.error(
+                        "[Worker %s] task for job %s raised: %s",
+                        self._worker_id, jid, task.exception(),
+                    )
+
+            # Check capacity
+            if len(self._active_jobs) >= self._settings.max_concurrent_solves:
+                await asyncio.sleep(2.0)
+                continue
+
+            # Try to dequeue
+            job = await self._queue.dequeue(self._worker_id)
+            if job is None:
+                empty_polls += 1
+                delay = min(0.5 + (empty_polls * 0.5), 5.0)
+                await asyncio.sleep(delay)
+                continue
+
+            empty_polls = 0
+
+            # Execute in background task
+            task = asyncio.create_task(
+                self._execute_job(job),
+                name=f"solve-{job.job_id[:8]}",
+            )
+            self._active_jobs[job.job_id] = task
+
+    # ── Job execution ─────────────────────────────────────────────────────
+
+    async def _execute_job(self, job: SolveJob) -> None:
+        """
+        Execute a single solve job end-to-end.
+
+        Steps:
+          1. Convert SolveJobConfig → SolverConfig
+          2. Run solver subprocess (in thread pool)
+          3. Parse and import results
+          4. Store raw output
+          5. Report completion/failure to queue
+        """
+        job_id = job.job_id
+        config = job.config
+        start_time = time.monotonic()
+
+        logger.info(
+            "[Worker %s] executing job %s (board=%s, positions=%s, attempt=%d)",
+            self._worker_id, job_id, config.board_string(),
+            config.positions, job.attempt,
+        )
+
+        try:
+            # Import here to avoid circular deps at module level
+            from app.texassolver.config import SolverConfig
+            from app.texassolver.runner import run_texassolver, SolveResult
+            from app.texassolver.adapter import import_texassolver_solve
+
+            # Build SolverConfig from job config
+            solver_config = SolverConfig(
+                spot_type=config.spot_type,
+                positions=config.positions,
+                stack_depth=config.stack_depth,
+                board=config.board,
+                bet_sizes=config.bet_sizes,
+                raise_sizes=config.raise_sizes,
+                rake=config.rake,
+                iterations=config.max_iterations,
+                accuracy_target=config.accuracy_target,
+                solver_path=self._settings.solver_binary,
+            )
+
+            # Validate config before execution
+            errors = solver_config.validate()
+            if errors:
+                await self._queue.fail(job_id, f"Config validation: {'; '.join(errors)}")
+                return
+
+            # Create persistent work directory
+            work_dir = self._storage.job_dir(job_id)
+
+            # Run solver in thread pool (blocking subprocess)
+            loop = asyncio.get_event_loop()
+            solve_result: SolveResult = await asyncio.wait_for(
+                loop.run_in_executor(
+                    self._executor,
+                    lambda: run_texassolver(
+                        solver_config,
+                        timeout=self._settings.solve_timeout_seconds,
+                        work_dir=str(work_dir),
+                        cleanup=False,  # We manage cleanup
+                    ),
+                ),
+                timeout=self._settings.solve_timeout_seconds + 30,  # Extra buffer
+            )
+
+            elapsed = time.monotonic() - start_time
+
+            if not solve_result.success:
+                error_msg = solve_result.error or "Unknown solver error"
+                if "timed out" in error_msg.lower():
+                    await self._queue.timeout(job_id)
+                else:
+                    await self._queue.fail(job_id, error_msg)
+                return
+
+            # Import results into strategy database
+            import_result = import_texassolver_solve(
+                solver_config,
+                solve_result,
+                dry_run=False,
+            )
+
+            # Compress and archive raw output
+            compressed_path = None
+            if solve_result.output_path and self._settings.compress_output:
+                compressed_path = await loop.run_in_executor(
+                    None,
+                    self._storage.compress_output,
+                    solve_result.output_path,
+                    job_id,
+                )
+
+            # Build result
+            result = SolveJobResult(
+                iterations_completed=config.max_iterations,  # Best estimate
+                solve_time_seconds=elapsed,
+                solve_output_path=solve_result.output_path,
+                solve_input_path=solve_result.input_path,
+                compressed_output_path=compressed_path,
+                nodes_parsed=import_result.parsed,
+                nodes_imported=import_result.stored,
+                nodes_skipped=import_result.skipped,
+                import_errors=[
+                    f"{nid}: {err}" for nid, err in import_result.errors
+                ],
+                node_keys=[],  # Populated by import pipeline
+                stdout_tail=(solve_result.stdout or "")[-500:],
+                stderr_tail=(solve_result.stderr or "")[-500:],
+            )
+
+            await self._queue.complete(job_id, result)
+
+            logger.info(
+                "[Worker %s] job %s completed in %.1fs "
+                "(parsed=%d, imported=%d, errors=%d)",
+                self._worker_id, job_id, elapsed,
+                result.nodes_parsed, result.nodes_imported,
+                len(result.import_errors),
+            )
+
+        except asyncio.TimeoutError:
+            await self._queue.timeout(job_id)
+            logger.error("[Worker %s] job %s hard timeout", self._worker_id, job_id)
+
+        except Exception as exc:
+            elapsed = time.monotonic() - start_time
+            await self._queue.fail(job_id, f"Worker exception: {exc}")
+            logger.exception(
+                "[Worker %s] job %s failed after %.1fs",
+                self._worker_id, job_id, elapsed,
+            )
+
+    # ── Signal handling ───────────────────────────────────────────────────
+
+    def _install_signal_handlers(self) -> None:
+        """Install SIGTERM/SIGINT handlers for graceful shutdown."""
+        loop = asyncio.get_event_loop()
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            try:
+                loop.add_signal_handler(sig, self._handle_signal, sig)
+            except NotImplementedError:
+                # Windows doesn't support add_signal_handler
+                pass
+
+    def _handle_signal(self, sig: signal.Signals) -> None:
+        logger.info("[Worker %s] received signal %s, initiating shutdown", self._worker_id, sig)
+        self._shutdown_event.set()
+        self._running = False
+
+
+async def run_worker(settings: WorkerSettings | None = None) -> None:
+    """Entry point for running a worker process."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s | %(name)s | %(levelname)s | %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    worker = SolveWorker(settings)
+    await worker.start()

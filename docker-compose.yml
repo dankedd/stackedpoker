@@ -13,6 +13,20 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy noeviction
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
   backend:
     build:
       context: ./backend
@@ -24,8 +38,44 @@ services:
       DATABASE_URL: postgresql+asyncpg://postgres:password@db:5432/stacked_poker
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       ALLOWED_ORIGINS: http://localhost:3000
+      REDIS_URL: redis://redis:6379/0
     depends_on:
-      - db
+      db:
+        condition: service_started
+      redis:
+        condition: service_healthy
+
+  solver-worker:
+    build:
+      context: .
+      dockerfile: docker/solver-worker/Dockerfile
+    restart: unless-stopped
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      DATABASE_URL: postgresql+asyncpg://postgres:password@db:5432/stacked_poker
+      TEXASSOLVER_BIN: /opt/texassolver/bin/console_solver
+      TEXASSOLVER_RESOURCE_DIR: /opt/texassolver/resources
+      SOLVE_OUTPUT_DIR: /data/solves/output
+      MAX_CONCURRENT_SOLVES: "2"
+      SOLVER_THREADS: "4"
+      SOLVE_TIMEOUT: "600"
+      LOG_LEVEL: INFO
+    volumes:
+      - solver_output:/data/solves/output
+      - solver_archive:/data/solves/archive
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 4G
+        reservations:
+          cpus: "2"
+          memory: 2G
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_started
 
   frontend:
     build:
@@ -41,3 +91,6 @@ services:
 
 volumes:
   pgdata:
+  redisdata:
+  solver_output:
+  solver_archive:

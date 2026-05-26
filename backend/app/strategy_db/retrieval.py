@@ -126,11 +126,33 @@ def _get_cache() -> StrategyCache:
     return _cache
 
 
+_abstraction_retriever = None
+
+
+def _get_abstraction_retriever():
+    """Lazy-init the abstraction retriever. Returns None if not available."""
+    global _abstraction_retriever
+    if _abstraction_retriever is None:
+        try:
+            from app.abstraction.clusters import ClusterIndex
+            from app.abstraction.retrieval import AbstractionRetriever
+            index = ClusterIndex()
+            _abstraction_retriever = AbstractionRetriever(
+                cluster_index=index,
+                strategy_store=_get_store(),
+            )
+        except Exception:
+            logger.debug("[retrieve_strategy] abstraction retriever not available")
+            return None
+    return _abstraction_retriever
+
+
 def _reset_singletons() -> None:
     """For tests only — force fresh store + cache on next call."""
-    global _store, _cache
+    global _store, _cache, _abstraction_retriever
     _store = None
     _cache = None
+    _abstraction_retriever = None
 
 
 # ── RetrievalResult ───────────────────────────────────────────────────────────
@@ -288,7 +310,70 @@ def retrieve_strategy(node_key: NodeKey, spot: SolverSpot) -> RetrievalResult:
             debug={"store_source": node.source},
         )
 
-    # ── Tier 3: nearest-neighbour ─────────────────────────────────────────
+    # ── Tier 2.5: Abstraction-based retrieval ────────────────────────────
+    # If the abstraction system is initialized, try cluster-based lookup
+    # before falling back to the coarser NodeKey nearest-neighbour.
+    try:
+        from app.abstraction.retrieval import AbstractionRetriever
+        from app.abstraction.models import RetrievalQuery
+
+        retriever = _get_abstraction_retriever()
+        if retriever is not None and spot.board_texture is not None:
+            board_cards = spot.metadata.get("board_cards", [])
+            if board_cards and len(board_cards) >= 3:
+                abs_query = RetrievalQuery(
+                    board=board_cards,
+                    spot_type=spot.spot_type.value,
+                    positions=spot.position_matchup.value,
+                    stack_depth=int(spot.effective_stack_bb),
+                    is_ip=is_ip,
+                )
+                abs_response = retriever.retrieve(abs_query)
+                if (
+                    abs_response.best_match
+                    and abs_response.best_match.confidence >= 0.50
+                    and abs_response.best_match.node_key
+                ):
+                    match = abs_response.best_match
+                    matched_node = store.get_by_node_key(match.node_key, is_ip)
+                    if matched_node is not None:
+                        cache.put(
+                            f"{key_str}::{'ip' if is_ip else 'oop'}",
+                            matched_node,
+                        )
+                        profile = _node_to_profile(matched_node, key_str)
+                        logger.debug(
+                            "[retrieve_strategy] abstraction hit: %s (confidence=%.3f, tier=%s)",
+                            match.node_key, match.confidence, abs_response.retrieval_tier,
+                        )
+                        _record(
+                            "similar", False,
+                            (_time.perf_counter() - _t0) * 1000,
+                            match.overall_similarity,
+                        )
+                        return RetrievalResult(
+                            profile=profile,
+                            retrieval_type="similar",
+                            matched_node_key=matched_node.extended_key,
+                            similarity_score=round(match.overall_similarity, 4),
+                            cache_hit=False,
+                            debug={
+                                "store_source": matched_node.source,
+                                "abstraction_tier": abs_response.retrieval_tier,
+                                "cluster_id": match.cluster_id,
+                                "board_similarity": round(match.board_similarity, 4),
+                                "confidence": round(match.confidence, 4),
+                            },
+                        )
+    except ImportError:
+        pass  # Abstraction module not installed — skip
+    except Exception:
+        logger.debug(
+            "[retrieve_strategy] abstraction retrieval failed, falling through",
+            exc_info=True,
+        )
+
+    # ── Tier 3: nearest-neighbour (NodeKey similarity) ────────────────────
     try:
         similar = store.search_similar(
             key_str, is_ip, top_k=1, min_score=SIMILAR_THRESHOLD

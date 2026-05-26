@@ -7,7 +7,7 @@ from app.config import get_settings
 from app.database import init_db
 from app.middleware.rate_limiter import RateLimitMiddleware
 from app.utils.logging import setup_logging
-from app.api.routes import health, parse, analyze, image_analyze, image_extract, session, stripe_routes, history, tournament, learn, coach, train, debug
+from app.api.routes import health, parse, analyze, image_analyze, image_extract, session, stripe_routes, history, tournament, learn, coach, train, debug, solver_jobs, abstraction, coaching, ai_coach, social, realtime
 from app.api.routes import pipeline as pipeline_routes
 
 settings = get_settings()
@@ -133,6 +133,12 @@ app.include_router(coach.router, prefix="/api")
 app.include_router(train.router, prefix="/api")
 app.include_router(pipeline_routes.router, prefix="/api")
 app.include_router(debug.router, prefix="/api")
+app.include_router(solver_jobs.router, prefix="/api")
+app.include_router(abstraction.router, prefix="/api")
+app.include_router(coaching.router, prefix="/api")
+app.include_router(ai_coach.router, prefix="/api")
+app.include_router(social.router, prefix="/api")
+app.include_router(realtime.router, prefix="/api")
 
 
 @app.get("/")
