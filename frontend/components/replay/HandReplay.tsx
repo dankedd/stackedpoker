@@ -454,12 +454,14 @@ function ReplayControls({
 function AnalysisPanel({
   coaching,
   currentAction,
+  facingAction,
   handSummary,
   currentStreet,
   step,
 }: {
   coaching: ActionCoaching | null;
   currentAction: ReplayAction | null;
+  facingAction: ReplayAction | null;
   handSummary: HandSummaryData;
   currentStreet: Street;
   step: number;
@@ -489,9 +491,75 @@ function AnalysisPanel({
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(255,255,255,0.08) transparent" }}>
         {coaching && currentAction ? (
-          <CoachingContent coaching={coaching} currentAction={currentAction} />
+          <CoachingContent coaching={coaching} currentAction={currentAction} facingAction={facingAction} />
         ) : (
           <EmptyAnalysisState handSummary={handSummary} step={step} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FacingBetContext({
+  villainAction,
+  potBefore,
+}: {
+  villainAction: ReplayAction;
+  potBefore: number;
+}) {
+  const isAllIn = villainAction.is_all_in || villainAction.action === "raise" && villainAction.amount && parseFloat(villainAction.amount) > potBefore * 2;
+  const betAmount = villainAction.amount ?? "?";
+  const actionLabel = isAllIn ? "shoves" : villainAction.action === "raise" ? "raises to" : `${villainAction.action}s`;
+
+  return (
+    <div
+      className="mx-5 mt-4 mb-1 px-4 py-3 rounded-xl"
+      style={{
+        background: "rgba(248,113,113,0.06)",
+        border: "1px solid rgba(248,113,113,0.18)",
+      }}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <div
+          className="h-2 w-2 rounded-full"
+          style={{ background: "#F87171", boxShadow: "0 0 8px rgba(248,113,113,0.4)" }}
+        />
+        <span
+          className="text-[9px] font-black tracking-[0.2em] uppercase"
+          style={{ color: "rgba(248,113,113,0.55)" }}
+        >
+          Facing Aggression
+        </span>
+      </div>
+      <div className="flex items-baseline gap-2">
+        <span
+          className="text-[13px] font-bold"
+          style={{ color: "rgba(248,113,113,0.80)" }}
+        >
+          {villainAction.player} {actionLabel}
+        </span>
+        <span
+          className="text-lg font-black tabular-nums"
+          style={{ color: "rgba(248,113,113,0.95)" }}
+        >
+          {betAmount}
+        </span>
+      </div>
+      <div className="flex items-center gap-3 mt-1.5">
+        <span className="text-[11px] tabular-nums" style={{ color: "rgba(148,163,184,0.45)" }}>
+          Pot: <span style={{ color: "rgba(203,213,225,0.65)" }}>{potBefore.toFixed(1)}bb</span>
+        </span>
+        {villainAction.pot_after > 0 && (
+          <span className="text-[11px] tabular-nums" style={{ color: "rgba(148,163,184,0.45)" }}>
+            Pot after: <span style={{ color: "rgba(203,213,225,0.65)" }}>{villainAction.pot_after.toFixed(1)}bb</span>
+          </span>
+        )}
+        {villainAction.amount && potBefore > 0 && (
+          <span className="text-[11px] tabular-nums" style={{ color: "rgba(148,163,184,0.45)" }}>
+            Odds: <span style={{ color: "rgba(56,189,248,0.75)" }}>
+              {(potBefore / parseFloat(villainAction.amount) * 100).toFixed(0)}%
+            </span>
+          </span>
         )}
       </div>
     </div>
@@ -501,15 +569,25 @@ function AnalysisPanel({
 function CoachingContent({
   coaching,
   currentAction,
+  facingAction,
 }: {
   coaching: ActionCoaching;
   currentAction: ReplayAction;
+  facingAction: ReplayAction | null;
 }) {
   const qs = QUALITY_STYLE[coaching.quality] ?? QUALITY_STYLE.Standard;
   const verdictLabel = getVerdictLabel(coaching.quality, currentAction.action);
 
   return (
     <div className="divide-y divide-white/[0.04]">
+      {/* Facing-bet context — shows villain's bet/shove BEFORE hero's response */}
+      {facingAction && (
+        <FacingBetContext
+          villainAction={facingAction}
+          potBefore={facingAction.pot_after - (facingAction.amount ? parseFloat(facingAction.amount) : 0)}
+        />
+      )}
+
       {/* Verdict + Action taken */}
       <div className="px-5 py-4 space-y-3">
         <div className="flex items-start justify-between gap-2 flex-wrap">
@@ -661,6 +739,59 @@ function CoachingContent({
         >
           {coaching.adjustment}
         </p>
+      </div>
+    </div>
+  );
+}
+
+/** Compact action log for the current street — provides full context. */
+function StreetActionLog({
+  actions,
+  currentStreet,
+  heroActionIdx,
+}: {
+  actions: ReplayAction[];
+  currentStreet: string;
+  heroActionIdx: number;
+}) {
+  // Get all actions on this street up to and including the hero action
+  const streetActions = actions.filter(
+    (a, i) => a.street === currentStreet && i <= heroActionIdx,
+  );
+  if (streetActions.length <= 1) return null; // no context to show
+
+  return (
+    <div className="px-5 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+      <p
+        className="text-[9px] uppercase tracking-[0.22em] font-bold mb-2"
+        style={{ color: "rgba(100,116,139,0.30)" }}
+      >
+        Action Sequence
+      </p>
+      <div className="flex flex-wrap items-center gap-1.5">
+        {streetActions.map((a, i) => {
+          const isHero = a.is_hero;
+          const color = ACTION_COLOR_MAP[a.action] ?? "#94A3B8";
+          return (
+            <div key={i} className="flex items-center gap-1">
+              {i > 0 && (
+                <span style={{ color: "rgba(255,255,255,0.12)", fontSize: "8px" }}>{'>'}</span>
+              )}
+              <span
+                className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
+                style={{
+                  color: isHero ? color : "rgba(148,163,184,0.55)",
+                  background: isHero ? `${color}12` : "transparent",
+                  border: isHero ? `1px solid ${color}30` : "1px solid transparent",
+                }}
+              >
+                {a.player.length > 8 ? a.player.slice(0, 8) : a.player}{" "}
+                {a.action}
+                {a.amount ? ` ${a.amount}` : ""}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -860,6 +991,26 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
     return null;
   }, [replay.step, actions]);
 
+  // Compute the villain action that the current hero action is responding to.
+  // This is the most recent non-hero bet/raise BEFORE the hero's action on the same street.
+  const facingAction = useMemo<ReplayAction | null>(() => {
+    if (!activeCoaching) return null;
+    const heroIdx = activeCoaching.actionIdx;
+    const heroAction = actions[heroIdx];
+    if (!heroAction) return null;
+    // Only show facing-bet context for responsive actions (call, fold, raise)
+    if (!["call", "fold", "raise"].includes(heroAction.action)) return null;
+    // Walk backward from the hero action to find the villain's bet/raise on same street
+    for (let i = heroIdx - 1; i >= 0; i--) {
+      const a = actions[i];
+      if (a.street !== heroAction.street) break; // crossed street boundary
+      if (!a.is_hero && ["bet", "raise"].includes(a.action)) {
+        return a;
+      }
+    }
+    return null;
+  }, [activeCoaching, actions]);
+
   const currentStreet = replay.currentStreet as Street;
 
   const availableStreets = useMemo(
@@ -994,6 +1145,7 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
           <AnalysisPanel
             coaching={activeCoaching?.coaching ?? null}
             currentAction={activeCoaching ? actions[activeCoaching.actionIdx] : null}
+            facingAction={facingAction}
             handSummary={hand_summary}
             currentStreet={currentStreet}
             step={replay.step}
