@@ -350,6 +350,8 @@ export interface StrategyProfile {
 
 export interface SolverLiveResult {
   status: "ready" | "solving" | "timeout" | "error" | "cached";
+  /** Solver mode: live, cached, synthetic, or failed. */
+  mode: "live" | "cached" | "synthetic" | "failed";
   source: string;
   frequencies: Record<string, number>;
   ev: Record<string, number>;
@@ -360,7 +362,11 @@ export interface SolverLiveResult {
   solve_time_ms: number;
   cache_hit: boolean;
   node_key: string;
+  /** Human-readable node description: "BTN vs BB | River [...] | Pot 30bb" */
+  node_description: string;
   error?: string | null;
+  /** Reason for fallback when mode=synthetic or mode=failed. */
+  fallback_reason?: string | null;
 }
 
 export interface AnalysisResponse {

@@ -981,6 +981,14 @@ function EmptyAnalysisState({
 // SOLVER FREQUENCIES
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Mode → styling
+const SOLVER_MODE_STYLE: Record<string, { accent: string; bg: string; border: string; label: string; sublabel: string }> = {
+  live:      { accent: "#22C55E", bg: "rgba(34,197,94,0.06)",   border: "rgba(34,197,94,0.22)",   label: "LIVE TEXASSOLVER",     sublabel: "Real equilibrium" },
+  cached:    { accent: "#38BDF8", bg: "rgba(56,189,248,0.06)",  border: "rgba(56,189,248,0.22)",  label: "CACHED SOLUTION",      sublabel: "Previously solved" },
+  synthetic: { accent: "#FBBF24", bg: "rgba(251,191,36,0.06)",  border: "rgba(251,191,36,0.22)",  label: "HEURISTIC ESTIMATE",   sublabel: "TexasSolver unavailable" },
+  failed:    { accent: "#F87171", bg: "rgba(248,113,113,0.06)", border: "rgba(248,113,113,0.22)", label: "SOLVER FAILED",        sublabel: "No equilibrium data" },
+};
+
 function SolverFrequencies({
   solver,
   heroAction,
@@ -993,41 +1001,88 @@ function SolverFrequencies({
   const heroVerb = heroAction.toLowerCase();
   const evLoss = solver.hero_action_ev_loss;
 
+  const mode = solver.mode ?? (solver.source?.includes("synthetic") ? "synthetic" : "live");
+  const ms = SOLVER_MODE_STYLE[mode] ?? SOLVER_MODE_STYLE.failed;
+  const isTrustworthy = mode === "live" || mode === "cached";
+
   return (
     <div className="px-5 py-4" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-      <div className="flex items-center justify-between mb-3">
-        <p
-          className="text-[9px] uppercase tracking-[0.22em] font-bold"
-          style={{ color: "rgba(34,197,94,0.55)" }}
-        >
-          Solver Equilibrium
-        </p>
-        <span
-          className="text-[8px] font-bold tracking-wide px-2 py-0.5 rounded-full uppercase"
-          style={{
-            background: solver.source.includes("synthetic") ? "rgba(251,191,36,0.08)" : "rgba(34,197,94,0.08)",
-            color: solver.source.includes("synthetic") ? "rgba(251,191,36,0.6)" : "rgba(34,197,94,0.55)",
-            border: `1px solid ${solver.source.includes("synthetic") ? "rgba(251,191,36,0.18)" : "rgba(34,197,94,0.18)"}`,
-          }}
-        >
-          {solver.source.includes("synthetic") ? "Estimated" : "Solved"}
-          {solver.cache_hit ? " · Cached" : ""}
-        </span>
+      {/* ── Solver status badge ── */}
+      <div
+        className="flex items-center justify-between mb-3 px-3 py-2 rounded-lg"
+        style={{ background: ms.bg, border: `1px solid ${ms.border}` }}
+      >
+        <div className="flex items-center gap-2">
+          <div
+            className="h-2 w-2 rounded-full shrink-0"
+            style={{
+              background: ms.accent,
+              boxShadow: mode === "live" ? `0 0 8px ${ms.accent}60` : undefined,
+              animation: mode === "live" ? "glow-pulse 1.8s ease-in-out infinite" : undefined,
+            }}
+          />
+          <div>
+            <span
+              className="text-[9px] font-black tracking-[0.18em] uppercase block"
+              style={{ color: ms.accent }}
+            >
+              {ms.label}
+            </span>
+            <span className="text-[8px]" style={{ color: `${ms.accent}80` }}>
+              {ms.sublabel}
+            </span>
+          </div>
+        </div>
+        {/* Provenance metadata */}
+        <div className="flex flex-col items-end gap-0.5">
+          {isTrustworthy && solver.iterations > 0 && (
+            <span className="text-[8px] tabular-nums" style={{ color: `${ms.accent}70` }}>
+              {solver.iterations} iter · {solver.exploitability.toFixed(1)}% expl
+            </span>
+          )}
+          {solver.solve_time_ms > 1 && (
+            <span className="text-[8px] tabular-nums" style={{ color: `${ms.accent}50` }}>
+              {solver.solve_time_ms < 1000
+                ? `${solver.solve_time_ms.toFixed(0)}ms`
+                : `${(solver.solve_time_ms / 1000).toFixed(1)}s`}
+              {solver.cache_hit ? " · cache hit" : ""}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Frequency bars */}
+      {/* Node description */}
+      {solver.node_description && (
+        <p className="text-[9px] mb-3 px-1" style={{ color: "rgba(148,163,184,0.40)" }}>
+          {solver.node_description}
+        </p>
+      )}
+
+      {/* Fallback warning */}
+      {solver.fallback_reason && (
+        <div
+          className="flex items-start gap-2 px-3 py-2 rounded-lg mb-3"
+          style={{ background: "rgba(251,191,36,0.05)", border: "1px solid rgba(251,191,36,0.15)" }}
+        >
+          <span className="text-[10px]" style={{ color: "rgba(251,191,36,0.7)" }}>
+            {solver.fallback_reason}
+          </span>
+        </div>
+      )}
+
+      {/* ── Frequency bars ── */}
       <div className="space-y-2 mb-3">
         {freqs.map(([action, freq]) => {
           const pct = Math.round(freq * 100);
           const isPreferred = action === preferredAction;
           const isHeroAction = action === heroVerb;
           const barColor = isPreferred
-            ? "rgba(34,197,94,0.75)"
+            ? `${ms.accent}C0`
             : isHeroAction
               ? "rgba(56,189,248,0.60)"
               : "rgba(148,163,184,0.30)";
           const textColor = isPreferred
-            ? "rgba(34,197,94,0.90)"
+            ? ms.accent
             : isHeroAction
               ? "rgba(56,189,248,0.80)"
               : "rgba(148,163,184,0.55)";
@@ -1036,18 +1091,15 @@ function SolverFrequencies({
             <div key={action}>
               <div className="flex items-center justify-between mb-0.5">
                 <div className="flex items-center gap-2">
-                  <span
-                    className="text-[11px] font-bold capitalize"
-                    style={{ color: textColor }}
-                  >
+                  <span className="text-[11px] font-bold capitalize" style={{ color: textColor }}>
                     {action}
                   </span>
                   {isPreferred && (
                     <span
                       className="text-[7px] font-black tracking-wider px-1.5 py-0.5 rounded uppercase"
-                      style={{ background: "rgba(34,197,94,0.10)", color: "rgba(34,197,94,0.65)", border: "1px solid rgba(34,197,94,0.20)" }}
+                      style={{ background: `${ms.accent}15`, color: `${ms.accent}AA`, border: `1px solid ${ms.accent}30` }}
                     >
-                      GTO
+                      {isTrustworthy ? "GTO" : "EST"}
                     </span>
                   )}
                   {isHeroAction && !isPreferred && (
@@ -1059,17 +1111,11 @@ function SolverFrequencies({
                     </span>
                   )}
                 </div>
-                <span
-                  className="text-[12px] font-black tabular-nums"
-                  style={{ color: textColor }}
-                >
+                <span className="text-[12px] font-black tabular-nums" style={{ color: textColor }}>
                   {pct}%
                 </span>
               </div>
-              <div
-                className="h-1.5 rounded-full"
-                style={{ background: "rgba(255,255,255,0.04)" }}
-              >
+              <div className="h-1.5 rounded-full" style={{ background: "rgba(255,255,255,0.04)" }}>
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{ width: `${pct}%`, background: barColor }}
@@ -1080,44 +1126,28 @@ function SolverFrequencies({
         })}
       </div>
 
+      {/* Source label — ALWAYS visible */}
+      <div className="flex items-center gap-2 mt-2 px-1">
+        <span className="text-[8px] uppercase tracking-[0.15em] font-bold" style={{ color: "rgba(100,116,139,0.35)" }}>
+          Source:
+        </span>
+        <span className="text-[8px] font-bold uppercase tracking-wide" style={{ color: `${ms.accent}90` }}>
+          {ms.label}
+        </span>
+      </div>
+
       {/* EV loss indicator */}
       {evLoss < -0.01 && (
         <div
-          className="flex items-center gap-2 px-3 py-2 rounded-lg"
-          style={{
-            background: "rgba(248,113,113,0.06)",
-            border: "1px solid rgba(248,113,113,0.15)",
-          }}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg mt-3"
+          style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.15)" }}
         >
-          <span className="text-[10px] font-bold" style={{ color: "rgba(248,113,113,0.65)" }}>
-            EV Loss
-          </span>
+          <span className="text-[10px] font-bold" style={{ color: "rgba(248,113,113,0.65)" }}>EV Loss</span>
           <span className="text-[12px] font-black tabular-nums" style={{ color: "rgba(248,113,113,0.85)" }}>
             {evLoss.toFixed(2)}bb
           </span>
         </div>
       )}
-
-      {/* Solver metadata */}
-      <div className="flex flex-wrap gap-3 mt-3">
-        {solver.solve_time_ms > 0 && (
-          <span className="text-[9px] tabular-nums" style={{ color: "rgba(100,116,139,0.35)" }}>
-            {solver.solve_time_ms < 1000
-              ? `${solver.solve_time_ms.toFixed(0)}ms`
-              : `${(solver.solve_time_ms / 1000).toFixed(1)}s`}
-          </span>
-        )}
-        {solver.iterations > 0 && (
-          <span className="text-[9px] tabular-nums" style={{ color: "rgba(100,116,139,0.35)" }}>
-            {solver.iterations} iter
-          </span>
-        )}
-        {solver.exploitability > 0 && (
-          <span className="text-[9px] tabular-nums" style={{ color: "rgba(100,116,139,0.35)" }}>
-            {solver.exploitability.toFixed(1)}% expl
-          </span>
-        )}
-      </div>
     </div>
   );
 }

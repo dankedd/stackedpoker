@@ -64,10 +64,28 @@ class SolverResult:
     cache_hit: bool = False
     node_key: str = ""
     error: str | None = None
+    fallback_reason: str | None = None  # populated when synthetic/failed
+
+    # Solved node context
+    node_description: str = ""  # e.g. "BTN vs BB | River | Pot 30.5bb | Facing 91bb"
+
+    @property
+    def mode(self) -> str:
+        """Solver mode: live, cached, synthetic, or failed."""
+        if self.cache_hit and self.status == "ready":
+            return "cached"
+        if "synthetic" in self.source:
+            return "synthetic"
+        if self.status in ("timeout", "error"):
+            return "failed"
+        if self.status == "ready":
+            return "live"
+        return "failed"
 
     def to_dict(self) -> dict:
         return {
             "status": self.status,
+            "mode": self.mode,
             "source": self.source,
             "frequencies": self.frequencies,
             "ev": self.ev,
@@ -78,7 +96,9 @@ class SolverResult:
             "solve_time_ms": round(self.solve_time_ms, 1),
             "cache_hit": self.cache_hit,
             "node_key": self.node_key,
+            "node_description": self.node_description,
             "error": self.error,
+            "fallback_reason": self.fallback_reason,
         }
 
 
@@ -278,6 +298,33 @@ def _parse_solver_result(
     )
 
 
+def _build_node_description(
+    hand: CanonicalHand,
+    spot: SolverSpot,
+    config: SolverConfig | None = None,
+) -> str:
+    """Build a human-readable description of the solved node."""
+    hero = next((p for p in hand.players if p.id == hand.hero_id), None)
+    villain = next((p for p in hand.players if p.id != hand.hero_id), None)
+    hero_pos = hero.position if hero else "?"
+    villain_pos = villain.position if villain else "?"
+    pot = config.pot_size_bb() if config else 0.0
+
+    # Check if facing a bet on river
+    facing_amt = ""
+    for s in hand.streets:
+        if s.name == Street.RIVER:
+            for a in s.actions:
+                if a.player_id != hand.hero_id and a.action.value in ("bet", "raise"):
+                    facing_amt = f" | Facing {a.amount_bb:.0f}bb"
+                    break
+
+    board_str = " ".join(
+        c.notation for s in hand.streets for c in s.board_cards
+    )
+    return f"{hero_pos} vs {villain_pos} | River [{board_str}] | Pot {pot:.0f}bb{facing_amt}"
+
+
 def solve_river_sync(
     hand: CanonicalHand,
     spot: SolverSpot,
@@ -332,11 +379,14 @@ def solve_river_sync(
     result.solve_time_ms = elapsed_ms
     result.node_key = cache_key
 
+    result.node_description = _build_node_description(hand, spot, config)
+
     if result.status == "ready":
         _cache_put(cache_key, result)
         _log.info(
-            "Live solve complete (%.0fms): preferred=%s freqs=%s",
-            elapsed_ms, result.preferred_action, result.frequencies,
+            "[TEXASSOLVER] mode=%s node=%s preferred=%s freqs=%s time=%.0fms iter=%d expl=%.1f%% cache=miss",
+            result.mode, cache_key, result.preferred_action,
+            result.frequencies, elapsed_ms, result.iterations, result.exploitability,
         )
 
     return result
@@ -443,6 +493,11 @@ def solve_river_synthetic(
     if hero_action and hero_action in ev and preferred in ev:
         ev_loss = round(ev[hero_action] - ev[preferred], 3)
 
+    _log.info(
+        "[TEXASSOLVER FALLBACK] reason=solver_unavailable mode=synthetic board=%s preferred=%s",
+        board_class, preferred,
+    )
+
     return SolverResult(
         status="ready",
         frequencies=frequencies,
@@ -450,9 +505,11 @@ def solve_river_synthetic(
         preferred_action=preferred,
         hero_action_ev_loss=ev_loss,
         source="texassolver_synthetic",
-        iterations=200,
-        exploitability=1.5,
+        iterations=0,
+        exploitability=0.0,
         solve_time_ms=0.5,
         cache_hit=False,
         node_key=f"synthetic_{board_class}_{spot.is_ip}",
+        fallback_reason="TexasSolver binary not available — using heuristic approximation",
+        node_description=_build_node_description(hand, spot),
     )
