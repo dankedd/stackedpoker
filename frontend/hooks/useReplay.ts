@@ -47,6 +47,8 @@ export interface ReplayState {
   showVerdict: boolean;
   // Engine state (present when canonical hand is provided)
   engineState: ReplayEngineState | null;
+  /** Villain bet/raise that hero is currently responding to (null if not facing aggression). */
+  pendingAggression: ReplayAction | null;
 }
 
 export interface ReplayControls {
@@ -193,6 +195,25 @@ export function useReplay(
 
   const currentStreet: ReplayAction["street"] = currentAction?.street ?? "preflop";
 
+  // ── Pending aggression ──────────────────────────────────────────────────
+  // When hero is responding to a villain bet/raise, keep the aggression
+  // visible on the table so the user understands the decision context.
+  const pendingAggression = useMemo<ReplayAction | null>(() => {
+    if (!currentAction) return null;
+    // Only show pending aggression for hero responses
+    if (!currentAction.is_hero) return null;
+    if (!["call", "fold", "raise"].includes(currentAction.action)) return null;
+    // Walk backward from current action to find the villain bet/raise on same street
+    for (let i = step - 2; i >= 0; i--) {  // step-2 because step-1 is currentAction
+      const a = actions[i];
+      if (a.street !== currentAction.street) break;
+      if (!a.is_hero && ["bet", "raise"].includes(a.action)) {
+        return a;
+      }
+    }
+    return null;
+  }, [step, actions, currentAction]);
+
   const isFirst = step === 0;
   const isLast  = totalSteps > 0 ? step >= totalSteps : false;
   const showVerdict = step >= totalSteps && totalSteps > 0;
@@ -306,6 +327,7 @@ export function useReplay(
     isLast,
     showVerdict,
     engineState,
+    pendingAggression,
     goTo,
     next,
     prev,

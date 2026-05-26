@@ -1096,6 +1096,7 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
               playerStacksAfter={replay.currentPlayerStacks ?? undefined}
               allInPlayers={replay.currentAllInPlayers}
               sidePots={replay.currentSidePots}
+              pendingAggression={replay.pendingAggression}
             />
           </div>
 

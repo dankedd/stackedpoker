@@ -67,6 +67,8 @@ export interface PokerSeatProps {
   isAllIn?: boolean;
   /** true → render position label ABOVE cards (top-oval seats). */
   flipLayout?: boolean;
+  /** Villain's bet/raise that persists while hero responds. */
+  pendingAggression?: ReplayAction | null;
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────
@@ -80,15 +82,11 @@ export function PokerSeat({
   liveStack,
   isAllIn = false,
   flipLayout = false,
+  pendingAggression = null,
 }: PokerSeatProps) {
   if (!seat.isSitting) return null;
 
   const isActing     = !!seat.playerName && seat.playerName === actingPlayer;
-  // step=N means N actions applied; foldedAtStep is a 0-based action index.
-  // The current action is actions[step-1].
-  // isFoldingNow: fold IS the current action (foldedAtStep === step - 1)
-  // isFoldedPast: fold happened before the current action (foldedAtStep < step - 1)
-  // At step=0 (clean state): both are false — no fold visible.
   const isFoldedPast = seat.foldedAtStep !== null && seat.foldedAtStep < currentStep - 1;
   const isFoldingNow = seat.foldedAtStep !== null && seat.foldedAtStep === currentStep - 1;
   const showBadge    = isActing && !!currentAction;
@@ -96,6 +94,9 @@ export function PokerSeat({
     ? (currentAction!.feedback?.rating as "good" | "okay" | "mistake" | undefined)
     : undefined;
   const stack        = liveStack ?? seat.stack_bb;
+
+  // Show persistent aggression badge when this opponent has a pending bet/raise
+  const showAggression = !isActing && !!pendingAggression;
 
   return seat.isHero
     ? (
@@ -126,6 +127,7 @@ export function PokerSeat({
         stack={stack}
         isAllIn={isAllIn}
         flipLayout={flipLayout}
+        pendingAggression={showAggression ? pendingAggression : null}
       />
     );
 }
@@ -278,6 +280,7 @@ function OpponentSeat({
   stack,
   isAllIn,
   flipLayout,
+  pendingAggression = null,
 }: {
   seat: SeatDescriptor;
   isActing: boolean;
@@ -291,7 +294,10 @@ function OpponentSeat({
   stack?: number;
   isAllIn: boolean;
   flipLayout: boolean;
+  pendingAggression?: ReplayAction | null;
 }) {
+  const hasAggression = isActing || !!pendingAggression;
+
   const cardSection = (
     <div
       className={cn(
@@ -299,7 +305,7 @@ function OpponentSeat({
         isFoldingNow && "animate-card-muck",
       )}
       style={
-        isActing
+        hasAggression
           ? { filter: OPP_ACTIVE_GLOW, transform: "scale(1.08)" }
           : {}
       }
@@ -315,14 +321,14 @@ function OpponentSeat({
       <div
         className="flex items-center gap-1.5 px-2 py-0.5 rounded-full transition-all duration-300"
         style={
-          isActing
+          hasAggression
             ? { background: OPP_ACTIVE_BG, border: OPP_ACTIVE_BORDER }
             : { background: "transparent", border: "1px solid transparent" }
         }
       >
         <span
           className="text-[11px] font-bold tracking-wide transition-colors duration-300"
-          style={{ color: isActing ? OPP_ACTIVE_TEXT : OPP_IDLE_TEXT }}
+          style={{ color: hasAggression ? OPP_ACTIVE_TEXT : OPP_IDLE_TEXT }}
         >
           {seat.position}
         </span>
@@ -339,7 +345,7 @@ function OpponentSeat({
       {stack !== undefined && (
         <span
           className="text-[10px] tabular-nums font-medium transition-all duration-300"
-          style={{ color: isActing ? OPP_ACTIVE_STACK : OPP_IDLE_STACK }}
+          style={{ color: hasAggression ? OPP_ACTIVE_STACK : OPP_IDLE_STACK }}
         >
           {fmtStack(stack)}
           {bigBlind && bigBlind > 1 && (
@@ -359,7 +365,7 @@ function OpponentSeat({
         isFoldedPast && !isFoldingNow && "opacity-[0.18] grayscale",
       )}
     >
-      {/* Action badge */}
+      {/* Action badge — current action (transient) */}
       {showBadge && (
         <div
           key={currentStep}
@@ -372,6 +378,27 @@ function OpponentSeat({
         >
           {currentAction!.action}
           {currentAction!.amount ? ` ${currentAction!.amount}` : ""}
+        </div>
+      )}
+
+      {/* Persistent aggression badge — stays while hero responds */}
+      {!showBadge && pendingAggression && (
+        <div
+          className={cn(
+            "absolute left-1/2 -translate-x-1/2 z-20 whitespace-nowrap",
+            flipLayout ? "-bottom-7" : "-top-7",
+            "px-3 py-1 rounded-full text-[10px] font-black shadow-xl",
+          )}
+          style={{
+            background: "rgba(248,113,113,0.18)",
+            border: "1px solid rgba(248,113,113,0.40)",
+            color: "rgba(248,113,113,0.95)",
+            boxShadow: "0 0 16px rgba(248,113,113,0.20), 0 0 40px rgba(248,113,113,0.08)",
+            animation: "glow-pulse 2s ease-in-out infinite",
+          }}
+        >
+          {pendingAggression.is_all_in ? "ALL-IN" : pendingAggression.action.toUpperCase()}
+          {pendingAggression.amount ? ` ${pendingAggression.amount}` : ""}
         </div>
       )}
 

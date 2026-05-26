@@ -21,6 +21,8 @@ export interface PokerTableProps {
   playerStacksAfter?: Record<string, number>;
   allInPlayers?: string[];
   sidePots?: SidePot[];
+  /** Villain bet/raise that hero is responding to — kept visible on table. */
+  pendingAggression?: ReplayAction | null;
 }
 
 // ── Design tokens (exported so consumers can match them) ──────────────────────
@@ -60,12 +62,14 @@ export function PokerTable({
   playerStacksAfter,
   allInPlayers = [],
   sidePots = [],
+  pendingAggression = null,
 }: PokerTableProps) {
   const N             = seats.length;
   const tableCoords   = SEAT_COORDS[N] ?? SEAT_COORDS[6];
   const actingPlayer  = currentAction?.player ?? null;
   const currentStreet = currentAction?.street ?? "preflop";
   const streetColor   = STREET_COLOR[currentStreet] ?? "#38BDF8";
+  const aggressorPlayer = pendingAggression?.player ?? null;
 
   const allBoardCards = [
     ...visibleBoard.flop,
@@ -204,6 +208,9 @@ export function PokerTable({
                 liveStack={liveStack}
                 isAllIn={isAllIn}
                 flipLayout={coord.ty === "0%"}
+                pendingAggression={
+                  seat.playerName === aggressorPlayer ? pendingAggression : null
+                }
               />
             </div>
           );
