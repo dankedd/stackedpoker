@@ -68,6 +68,7 @@ class SolverResult:
 
     # Solved node context
     node_description: str = ""  # e.g. "BTN vs BB | River | Pot 30.5bb | Facing 91bb"
+    street_supported: bool = True  # False when solver doesn't support this street yet
 
     @property
     def mode(self) -> str:
@@ -97,6 +98,7 @@ class SolverResult:
             "cache_hit": self.cache_hit,
             "node_key": self.node_key,
             "node_description": self.node_description,
+            "street_supported": self.street_supported,
             "error": self.error,
             "fallback_reason": self.fallback_reason,
         }

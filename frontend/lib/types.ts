@@ -364,6 +364,8 @@ export interface SolverLiveResult {
   node_key: string;
   /** Human-readable node description: "BTN vs BB | River [...] | Pot 30bb" */
   node_description: string;
+  /** Whether the current street is supported by the solver. */
+  street_supported: boolean;
   error?: string | null;
   /** Reason for fallback when mode=synthetic or mode=failed. */
   fallback_reason?: string | null;

@@ -238,45 +238,59 @@ async def analyze_canonical(
         # Attempts a real TexasSolver solve for the river decision node.
         # Falls back to synthetic solver if TexasSolver is not installed.
         # Never blocks analysis — timeout after 15s, graceful fallback.
+        # For non-river streets, returns explicit "unsupported" mode.
         if _solver_enabled:
             try:
-                from app.solver.live_solver import solve_river_async, solve_river_synthetic
+                from app.solver.live_solver import SolverResult as _SR, solve_river_async, solve_river_synthetic
                 from app.solver.abstractions import SpotAbstraction as _SA
 
-                _abs = _SA.from_canonical_hand(request.canonical)
-                # Determine hero's river action for EV loss computation
+                # Detect if hand has a river street with hero action
+                _has_river_hero = False
                 _hero_river_action = None
+                _last_hero_street = "preflop"
                 for _s in request.canonical.streets:
+                    for _a in _s.actions:
+                        if _a.player_id == request.canonical.hero_id:
+                            _last_hero_street = _s.name.value
                     if _s.name.value == "river":
                         for _a in _s.actions:
                             if _a.player_id == request.canonical.hero_id:
                                 _hero_river_action = _a.action.value
+                                _has_river_hero = True
                                 break
 
-                try:
-                    solver_result = await solve_river_async(
-                        request.canonical, _abs.solver_spot, _hero_river_action,
-                    )
-                except Exception:
-                    # TexasSolver not available — use synthetic fallback
-                    solver_result = solve_river_synthetic(
-                        request.canonical, _abs.solver_spot, _hero_river_action,
-                    )
+                if _has_river_hero:
+                    _abs = _SA.from_canonical_hand(request.canonical)
+                    try:
+                        solver_result = await solve_river_async(
+                            request.canonical, _abs.solver_spot, _hero_river_action,
+                        )
+                    except Exception:
+                        solver_result = solve_river_synthetic(
+                            request.canonical, _abs.solver_spot, _hero_river_action,
+                        )
 
-                if solver_result.status in ("ready", "cached"):
-                    result.solver = solver_result.to_dict()
-                    logger.info(
-                        "Live solver: status=%s preferred=%s freqs=%s time=%.0fms",
-                        solver_result.status, solver_result.preferred_action,
-                        solver_result.frequencies, solver_result.solve_time_ms,
-                    )
+                    if solver_result.status in ("ready", "cached"):
+                        result.solver = solver_result.to_dict()
+                        logger.info(
+                            "Live solver: mode=%s preferred=%s freqs=%s time=%.0fms",
+                            solver_result.mode, solver_result.preferred_action,
+                            solver_result.frequencies, solver_result.solve_time_ms,
+                        )
+                    else:
+                        solver_result = solve_river_synthetic(
+                            request.canonical, _abs.solver_spot, _hero_river_action,
+                        )
+                        result.solver = solver_result.to_dict()
+                        logger.info("Live solver fallback to synthetic: %s", solver_result.preferred_action)
                 else:
-                    # Solver failed — try synthetic as fallback
-                    solver_result = solve_river_synthetic(
-                        request.canonical, _abs.solver_spot, _hero_river_action,
-                    )
-                    result.solver = solver_result.to_dict()
-                    logger.info("Live solver fallback to synthetic: %s", solver_result.preferred_action)
+                    # Non-river street — solver not yet supported
+                    result.solver = _SR(
+                        status="error",
+                        source="none",
+                        street_supported=False,
+                        fallback_reason=f"{_last_hero_street.capitalize()} solving not yet supported — using heuristic analysis",
+                    ).to_dict()
             except Exception:
                 logger.warning("Live solver layer failed entirely", exc_info=True)
 

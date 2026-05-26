@@ -52,6 +52,14 @@ const QUALITY_STYLE: Record<string, {
   Punt:     { text: "#F87171", border: "rgba(248,113,113,0.4)",   bg: "rgba(248,113,113,0.10)", bar: "#F87171", label: "Major Error", indicator: "✕" },
 };
 
+/** True only when solver has real frequency data that should supersede heuristics. */
+function _solverHasFrequencies(solver: import("@/lib/types").SolverLiveResult | null | undefined): boolean {
+  if (!solver) return false;
+  if (!solver.frequencies || Object.keys(solver.frequencies).length === 0) return false;
+  if (solver.street_supported === false) return false;
+  return true;
+}
+
 const ACTION_COLOR_MAP: Record<string, string> = {
   fold:     "#64748B",
   check:    "#94A3B8",
@@ -741,10 +749,10 @@ function CoachingContent({
         </p>
       </div>
 
-      {/* Strategic options — hidden when solver frequencies are available
-           (solver equilibrium supersedes heuristic PRIMARY/SECONDARY labels) */}
+      {/* Strategic options — hidden when solver has real frequencies.
+           Solver frequencies supersede heuristic PRIMARY/SECONDARY labels. */}
       {coaching.strategic_options?.length > 0
-       && !(solver?.status === "ready" && currentAction.street === "river") && (
+       && !_solverHasFrequencies(solver) && (
         <div className="px-5 py-4">
           <p
             className="text-[9px] uppercase tracking-[0.22em] font-bold mb-3"
@@ -856,9 +864,27 @@ function CoachingContent({
         </p>
       </div>
 
-      {/* Solver equilibrium — real frequencies when available */}
-      {solver && solver.status === "ready" && currentAction.street === "river" && (
-        <SolverFrequencies solver={solver} heroAction={currentAction.action} />
+      {/* Solver equilibrium — shown whenever solver has real frequencies */}
+      {_solverHasFrequencies(solver) && (
+        <SolverFrequencies solver={solver!} heroAction={currentAction.action} />
+      )}
+
+      {/* Solver unsupported label — when solver exists but doesn't support this street */}
+      {solver && !solver.street_supported && solver.fallback_reason && (
+        <div className="px-5 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+          <div
+            className="flex items-center gap-2 px-3 py-2 rounded-lg"
+            style={{ background: "rgba(251,191,36,0.05)", border: "1px solid rgba(251,191,36,0.15)" }}
+          >
+            <div className="h-1.5 w-1.5 rounded-full bg-amber-400/50 shrink-0" />
+            <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: "rgba(251,191,36,0.6)" }}>
+              Heuristic Analysis
+            </span>
+            <span className="text-[9px]" style={{ color: "rgba(251,191,36,0.40)" }}>
+              {solver.fallback_reason}
+            </span>
+          </div>
+        </div>
       )}
     </div>
   );
