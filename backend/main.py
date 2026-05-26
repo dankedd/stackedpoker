@@ -1,4 +1,5 @@
 import logging
+import time
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,6 +10,12 @@ from app.middleware.rate_limiter import RateLimitMiddleware
 from app.utils.logging import setup_logging
 from app.api.routes import health, parse, analyze, image_analyze, image_extract, session, stripe_routes, history, tournament, learn, coach, train, debug, solver_jobs, abstraction, coaching, ai_coach, social, realtime
 from app.api.routes import pipeline as pipeline_routes
+
+# ── Immutable build identity ──────────────────────────────────────────────
+# Change BUILD_ID on every deploy-critical push so we can verify
+# the running container matches the latest code.
+BUILD_ID = "solver-runtime-v8"
+BUILD_TIMESTAMP = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 settings = get_settings()
 setup_logging(settings.debug)
@@ -165,8 +172,18 @@ def _solver_self_test() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    logger.info("=== Stacked Poker starting ===")
-    logger.info("Allowed origins: %s", settings.allowed_origins)
+    resolved = _find_solver_binary()
+    import os
+    from pathlib import Path as _P
+    logger.info("========================================")
+    logger.info("  STACKED POKER — BUILD IDENTITY")
+    logger.info("  BUILD_ID         = %s", BUILD_ID)
+    logger.info("  BUILD_TIMESTAMP  = %s", BUILD_TIMESTAMP)
+    logger.info("  SOLVER_ENGINE    = %s", os.getenv("ENABLE_SOLVER_ENGINE", "true"))
+    logger.info("  SOLVER_BIN_ENV   = %s", os.getenv("TEXASSOLVER_BIN", "(not set)"))
+    logger.info("  SOLVER_RESOLVED  = %s", resolved or "(not found)")
+    logger.info("  BINARY_EXISTS    = %s", bool(resolved and _P(resolved).exists()))
+    logger.info("========================================")
     _log_env_check()
     _solver_self_test()
     await init_db()
@@ -258,7 +275,24 @@ app.include_router(realtime.router, prefix="/api")
 
 @app.get("/")
 async def root():
-    return {"message": "Stacked Poker API"}
+    return {"message": "Stacked Poker API", "build_id": BUILD_ID}
+
+
+@app.get("/api/version", tags=["system"])
+async def version():
+    """Immutable build identity — use to verify which code is actually running."""
+    import os
+    from pathlib import Path as _P
+    resolved = _find_solver_binary()
+    return {
+        "build_id": BUILD_ID,
+        "build_timestamp": BUILD_TIMESTAMP,
+        "solver_engine_enabled": os.getenv("ENABLE_SOLVER_ENGINE", "true").lower() == "true",
+        "texassolver_bin_env": os.getenv("TEXASSOLVER_BIN", "(not set)"),
+        "solver_binary_resolved": resolved or "(not found)",
+        "solver_binary_exists": bool(resolved and _P(resolved).exists()),
+        "solver_binary_executable": os.access(resolved, os.X_OK) if resolved and _P(resolved).exists() else False,
+    }
 
 
 @app.get("/health-debug", tags=["debug"])
