@@ -1089,6 +1089,19 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
           </span>
         ) : null}
       </div>
+      {/* Full action dump — diagnose missing actions */}
+      <details style={{ background: "rgba(0,0,0,0.85)", borderBottom: "1px solid rgba(251,191,36,0.15)" }}>
+        <summary style={{ padding: "4px 16px", fontSize: "9px", color: "rgba(251,191,36,0.5)", cursor: "pointer", fontFamily: "monospace" }}>
+          actions[{actions.length}]
+        </summary>
+        <div style={{ padding: "4px 16px", fontSize: "9px", color: "rgba(251,191,36,0.6)", fontFamily: "monospace" }}>
+          {actions.map((a, i) => (
+            <div key={i} style={{ color: a.is_hero ? "rgba(124,92,255,0.8)" : "rgba(251,191,36,0.6)" }}>
+              [{i}] {a.street} {a.player} {a.action} amt={a.amount ?? "null"} hero={String(a.is_hero)} allin={String(a.is_all_in)}
+            </div>
+          ))}
+        </div>
+      </details>
 
       {/* WORKSPACE — split on desktop */}
       <div className="flex flex-col lg:grid lg:grid-cols-[3fr_2fr] lg:items-stretch">

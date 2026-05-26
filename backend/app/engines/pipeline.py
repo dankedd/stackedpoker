@@ -235,11 +235,18 @@ def _canonical_to_parsed_hand(canonical: CanonicalHand) -> ParsedHand:
         for a in street.actions:
             if a.action.value in ("post_sb", "post_bb", "post_ante", "post_straddle"):
                 continue  # skip posting actions — analysis engine doesn't use them
+            # Recover bet size: prefer total_bet_bb, then amount_bb, then
+            # the pot delta as last resort (catches normalizer zero-amount bug).
+            size = a.total_bet_bb or a.amount_bb or None
+            if size is None and a.action.value in ("bet", "raise", "call"):
+                pot_delta = round(a.pot_after_bb - a.pot_before_bb, 2)
+                if pot_delta > 0:
+                    size = pot_delta
             actions.append(HandAction(
                 street=a.street.value,
                 player=a.player_name,
                 action=a.action.value,
-                size_bb=a.total_bet_bb or a.amount_bb or None,
+                size_bb=size,
                 is_hero=a.is_hero,
                 is_all_in=a.is_all_in,
             ))

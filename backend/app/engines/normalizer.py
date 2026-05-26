@@ -335,14 +335,17 @@ def _build_streets(
     players: list[CanonicalPlayer],
 ) -> list[CanonicalStreet]:
     """Build CanonicalStreet list with full per-action pot/stack tracking."""
-    # Starting stacks
-    stacks: dict[str, float] = {p.name: p.stack_bb for p in parsed.players}
+    # Starting stacks — use the canonical players list (which may have been
+    # inferred from actions) rather than parsed.players (which may be empty).
+    stacks: dict[str, float] = {p.name: p.stack_bb for p in players} if players else {p.name: p.stack_bb for p in parsed.players}
     folded: set[str] = set()
 
     # Seed pot with blinds (standard 0.5bb SB + 1.0bb BB)
     pot = 0.0
-    sb_name = next((p.name for p in parsed.players if p.position in ("SB", "sb")), "")
-    bb_name = next((p.name for p in parsed.players if p.position in ("BB", "bb")), "")
+    # Search both canonical players and parsed players for blind positions
+    all_player_records = players if players else parsed.players
+    sb_name = next((p.name for p in all_player_records if getattr(p, 'position', '') in ("SB", "sb")), "")
+    bb_name = next((p.name for p in all_player_records if getattr(p, 'position', '') in ("BB", "bb")), "")
     if sb_name and sb_name in stacks:
         sb_amount = min(0.5, stacks[sb_name])
         stacks[sb_name] -= sb_amount
