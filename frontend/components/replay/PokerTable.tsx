@@ -158,6 +158,39 @@ export function PokerTable({
               </span>
             </div>
           )}
+
+          {/* ── Facing aggression banner — table level ── */}
+          {/* Renders directly on the table when hero faces a villain bet/shove.
+              This is independent of the seat prop chain — guaranteed visible. */}
+          {pendingAggression && (
+            <div
+              className="flex items-center gap-2 px-4 py-1.5 rounded-full transition-all duration-300"
+              style={{
+                background: "rgba(248,113,113,0.12)",
+                border: "1px solid rgba(248,113,113,0.35)",
+                boxShadow: "0 0 20px rgba(248,113,113,0.15), 0 0 50px rgba(248,113,113,0.06)",
+              }}
+            >
+              <div
+                className="h-2 w-2 rounded-full shrink-0"
+                style={{
+                  background: "#F87171",
+                  boxShadow: "0 0 6px rgba(248,113,113,0.6)",
+                  animation: "glow-pulse 1.8s ease-in-out infinite",
+                }}
+              />
+              <span className="text-[10px] font-black tracking-wide text-rose-300/90 uppercase">
+                {pendingAggression.player}
+                {" "}
+                {pendingAggression.is_all_in ? "ALL-IN" : pendingAggression.action}
+              </span>
+              {pendingAggression.amount && (
+                <span className="text-[12px] font-black tabular-nums text-rose-200/95">
+                  {pendingAggression.amount}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ── Seats ── */}
