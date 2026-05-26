@@ -28,7 +28,17 @@ from app.engines.poker_state import PokerState
 _log = logging.getLogger(__name__)
 
 
+_ENGINE_VERSION = "2.1"  # bump on every behavioral change for deploy verification
+
+
 def analyse_hand(hand: ParsedHand, ai_coaching: str = "") -> AnalysisResponse:
+    _log.info("analyse_hand v%s hand=%s", _ENGINE_VERSION, hand.hand_id)
+
+    # ── 0. Sanitize illegal folds facing no bet (defense-in-depth) ────────
+    # This catches any path that reaches analysis without going through
+    # the normalizer (legacy routes, image analysis, direct calls).
+    hand, corrections = _sanitize_illegal_folds(hand)
+
     # ── 1. Spot classification (IP/OOP, PFR, pot type) ────────────────────
     spot = classify_spot(hand)
 
@@ -88,6 +98,8 @@ def analyse_hand(hand: ParsedHand, ai_coaching: str = "") -> AnalysisResponse:
         ai_coaching=ai_coaching,
         mistakes_count=mistakes,
         recommendations=recommendations,
+        engine_version=_ENGINE_VERSION,
+        corrections_applied=corrections,
     )
 
 
@@ -99,6 +111,49 @@ def _calculate_score(findings: list[HeuristicFinding]) -> int:
         score -= deductions.get(f.severity, 0)
         score += bonuses.get(f.severity, 0)
     return max(0, min(100, score))
+
+
+def _sanitize_illegal_folds(hand: ParsedHand) -> tuple[ParsedHand, list[str]]:
+    """Replace postflop folds facing no bet with checks.
+
+    Defense-in-depth: ensures illegal game states never reach the
+    heuristics/scoring engines regardless of which API route was used.
+
+    Returns (sanitized_hand, list_of_correction_descriptions).
+    """
+    corrections: list[str] = []
+    new_actions: list = []
+    for street_name in ("flop", "turn", "river"):
+        street_actions = [a for a in hand.actions if a.street == street_name]
+        current_bet = 0.0
+        for a in street_actions:
+            if a.action in ("bet", "raise"):
+                current_bet = a.size_bb or 1.0
+            if a.action == "fold" and current_bet == 0.0:
+                from app.models.schemas import HandAction
+                new_actions.append(HandAction(
+                    street=a.street,
+                    player=a.player,
+                    action="check",
+                    size_bb=None,
+                    is_hero=a.is_hero,
+                    is_all_in=False,
+                ))
+                desc = f"fold_to_check:{a.player}:{street_name}"
+                corrections.append(desc)
+                _log.warning(
+                    "SANITIZE: illegal fold by %s on %s facing no bet -> check",
+                    a.player, street_name,
+                )
+            else:
+                new_actions.append(a)
+
+    if not corrections:
+        return hand, []
+
+    preflop = [a for a in hand.actions if a.street == "preflop"]
+    hand_copy = hand.model_copy(update={"actions": preflop + new_actions})
+    return hand_copy, corrections
 
 
 def _build_recommendations(findings, spot, texture) -> list[str]:

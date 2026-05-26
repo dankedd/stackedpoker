@@ -152,6 +152,9 @@ class AnalysisResponse(BaseModel):
     saved_id: str | None = None      # set after Supabase persist; None = save failed
     save_error: str | None = None    # exact Supabase/network error if save failed
     strategy_profile: StrategyProfileResponse | None = None  # Phase 4 solver strategy
+    # Diagnostics — for deployment verification and debugging
+    engine_version: str | None = None
+    corrections_applied: list[str] = Field(default_factory=list)
 
 
 class ParseResponse(BaseModel):

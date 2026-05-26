@@ -361,5 +361,7 @@ export interface AnalysisResponse {
   saved_id?: string | null;
   save_error?: string | null;
   strategy_profile?: StrategyProfile | null;
+  engine_version?: string | null;
+  corrections_applied?: string[];
 }
 
