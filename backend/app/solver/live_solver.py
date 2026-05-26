@@ -23,7 +23,6 @@ import logging
 import tempfile
 import time
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Optional
 
 from app.models.canonical import CanonicalHand, CanonicalAction, Street
@@ -177,9 +176,19 @@ def _extract_river_node(
     river_bet_sizes = [0.75]
     river_raise_sizes = [1.0]  # pot-sized raise
 
-    # Resolve solver binary path from environment
+    # Resolve solver binary path: env var overrides, then check known locations
     import os
+    from pathlib import Path as _Path
     solver_path = os.getenv("TEXASSOLVER_BIN") or None
+    if not solver_path:
+        # Check known Docker image paths (Dockerfile copies binary here)
+        for candidate in [
+            "/opt/texassolver/bin/console_solver",
+            _Path.home() / "TexasSolver" / "console_solver",
+        ]:
+            if _Path(candidate).exists():
+                solver_path = str(candidate)
+                break
 
     return SolverConfig(
         spot_type=str(spot.spot_type) if hasattr(spot.spot_type, 'value') else spot.spot_type,
@@ -507,17 +516,21 @@ def solve_river_synthetic(
 
     # Determine specific fallback reason
     import os
+    from pathlib import Path as _FPath
     solver_bin = os.getenv("TEXASSOLVER_BIN", "")
+    # Also check the hardcoded Docker path
+    _docker_path = "/opt/texassolver/bin/console_solver"
+    if not solver_bin and _FPath(_docker_path).exists():
+        solver_bin = _docker_path
     if solver_bin:
-        from pathlib import Path
-        if not Path(solver_bin).exists():
+        if not _FPath(solver_bin).exists():
             reason = f"TexasSolver binary not found at {solver_bin} — using heuristic approximation"
         else:
             reason = "TexasSolver execution failed — using heuristic approximation"
     else:
         reason = (
-            "TEXASSOLVER_BIN not configured — set the environment variable to enable "
-            "real solver analysis. Using heuristic approximation."
+            "TexasSolver binary not available — not found at TEXASSOLVER_BIN env var "
+            "or /opt/texassolver/bin/console_solver. Using heuristic approximation."
         )
 
     _log.info(

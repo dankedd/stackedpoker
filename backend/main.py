@@ -52,53 +52,64 @@ def _log_env_check() -> None:
 def _solver_self_test() -> None:
     """Verify TexasSolver binary is available and executable at startup."""
     import os
-    import shutil
     from pathlib import Path
 
-    solver_bin = os.getenv("TEXASSOLVER_BIN", "")
     enabled = os.getenv("ENABLE_SOLVER_ENGINE", "true").lower() == "true"
 
     logger.info("=== Solver Self-Test ===")
     logger.info("  %-30s %s", "ENABLE_SOLVER_ENGINE", "ON" if enabled else "OFF")
-    logger.info("  %-30s %s", "TEXASSOLVER_BIN", solver_bin or "(not set)")
+    logger.info("  %-30s %s", "TEXASSOLVER_BIN (env)", os.getenv("TEXASSOLVER_BIN", "(not set)"))
 
     if not enabled:
         logger.info("  Solver engine disabled — skipping binary check")
         return
 
-    if not solver_bin:
-        logger.warning("  TEXASSOLVER_BIN not set — live solving will use heuristic fallback")
+    # Search for binary: env var first, then known Docker paths
+    solver_bin = os.getenv("TEXASSOLVER_BIN", "")
+    known_paths = [
+        "/opt/texassolver/bin/console_solver",
+        str(Path.home() / "TexasSolver" / "console_solver"),
+    ]
+
+    resolved_path = ""
+    if solver_bin and Path(solver_bin).exists():
+        resolved_path = solver_bin
+        logger.info("  %-30s %s (from env)", "resolved binary", resolved_path)
+    else:
+        for candidate in known_paths:
+            if Path(candidate).exists():
+                resolved_path = candidate
+                logger.info("  %-30s %s (from known path)", "resolved binary", resolved_path)
+                break
+
+    if not resolved_path:
+        all_searched = [solver_bin] + known_paths if solver_bin else known_paths
+        logger.warning(
+            "  SOLVER SELF-TEST: binary NOT FOUND at any of: %s",
+            all_searched,
+        )
+        logger.warning("  Live solving will use heuristic fallback until binary is available")
         return
 
-    path = Path(solver_bin)
-    exists = path.exists()
-    executable = os.access(str(path), os.X_OK) if exists else False
-
-    logger.info("  %-30s %s", "binary exists", exists)
+    executable = os.access(resolved_path, os.X_OK)
+    logger.info("  %-30s %s", "binary exists", True)
     logger.info("  %-30s %s", "binary executable", executable)
 
-    if not exists:
-        logger.error(
-            "  SOLVER SELF-TEST FAILED: binary not found at %s", solver_bin,
-        )
-        return
-
     if not executable:
-        logger.error(
-            "  SOLVER SELF-TEST FAILED: binary exists but is not executable at %s", solver_bin,
-        )
+        logger.error("  SOLVER SELF-TEST FAILED: binary not executable at %s", resolved_path)
         return
 
     # Check resources
     res_dir = os.getenv("TEXASSOLVER_RESOURCE_DIR", "/opt/texassolver/resources")
     compairer = Path(res_dir) / "compairer"
     res_ok = compairer.exists() and any(compairer.iterdir()) if compairer.exists() else False
-    logger.info("  %-30s %s", "resources available", res_ok)
+    logger.info("  %-30s %s (%s)", "resources available", res_ok, res_dir)
 
     if not res_ok:
         logger.warning("  Solver resources missing at %s — solves may fail", res_dir)
+        return
 
-    logger.info("  SOLVER SELF-TEST PASSED — live solving enabled")
+    logger.info("  SOLVER SELF-TEST PASSED — live solving enabled at %s", resolved_path)
 
 
 @asynccontextmanager
