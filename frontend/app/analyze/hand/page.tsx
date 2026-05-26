@@ -177,13 +177,28 @@ export default function AnalyzePage() {
           hasResult || textRepairing ? "max-w-[1680px] xl:px-10" : "max-w-2xl",
         )}>
 
-          <Link
-            href={backHref}
-            className="mb-8 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {backLabel}
-          </Link>
+          {/* ── Navigation: back link OR "New Hand" ghost button ──── */}
+          {hasResult ? (
+            <button
+              type="button"
+              onClick={() => {
+                handleReset();
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground/70 hover:text-violet-400 transition-colors group"
+            >
+              <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+              New Hand
+            </button>
+          ) : (
+            <Link
+              href={backHref}
+              className="mb-8 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              {backLabel}
+            </Link>
+          )}
 
           {/* Import guide */}
           {!hideInput && !imgConfirming && !imgSuccess && !hasResult && !isLoading && !textRepairing && (
@@ -191,7 +206,7 @@ export default function AnalyzePage() {
           )}
 
           {/* ── Input card ─────────────────────────────────────────────── */}
-          {!hideInput && !imgConfirming && !imgSuccess && !textRepairing && (
+          {!hideInput && !hasResult && !imgConfirming && !imgSuccess && !textRepairing && (
             <Card className={cn("border-border/50", hasResult && "border-violet-500/20 mb-8")}>
               <CardHeader className="pb-4">
                 <div className="flex items-start justify-between gap-3">
@@ -422,17 +437,13 @@ export default function AnalyzePage() {
             <div ref={resultRef}>
               {activeTab === "text" && pipeline.result && (
                 <>
-                  <div className="mb-4 flex items-center justify-between">
+                  <div className="mb-4">
                     <h2 className="text-xl font-bold">
                       Analysis Results
                       <span className="ml-2 text-sm text-muted-foreground font-normal">
                         {pipeline.result.parsed_hand.site} · ${pipeline.result.parsed_hand.stakes}
                       </span>
                     </h2>
-                    <Button variant="outline" size="sm" onClick={handleReset} className="gap-2">
-                      <RotateCcw className="h-3.5 w-3.5" />
-                      New Hand
-                    </Button>
                   </div>
 
                   {/* Validation summary chip */}
@@ -481,6 +492,8 @@ export default function AnalyzePage() {
                         errors: [],
                         is_valid: true,
                       }}
+                      engineVersion={pipeline.result.engine_version}
+                      correctionsApplied={pipeline.result.corrections_applied}
                     />
                   ) : (
                     <AnalysisResult result={pipeline.result} />
@@ -498,12 +511,8 @@ export default function AnalyzePage() {
 
               {activeTab === "image" && image.result && (
                 <>
-                  <div className="mb-4 flex items-center justify-between">
+                  <div className="mb-4">
                     <h2 className="text-xl font-bold">Screenshot Analysis</h2>
-                    <Button variant="outline" size="sm" onClick={image.reset} className="gap-2">
-                      <RotateCcw className="h-3.5 w-3.5" />
-                      New Screenshot
-                    </Button>
                   </div>
                   {user && (
                     <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/8 px-3 py-2">

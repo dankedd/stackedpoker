@@ -20,6 +20,10 @@ interface HandReplayProps {
   analysis: ReplayAnalysis;
   filename: string;
   validation?: ValidationInfo;
+  /** Backend engine version — for deployment verification. */
+  engineVersion?: string | null;
+  /** Corrections applied by the backend (e.g. fold_to_check). */
+  correctionsApplied?: string[];
 }
 
 const STREETS = ["preflop", "flop", "turn", "river"] as const;
@@ -954,7 +958,7 @@ function PremiumVerdict({ verdict }: { verdict: OverallVerdict }) {
 // MAIN EXPORT
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function HandReplay({ analysis, filename, validation }: HandReplayProps) {
+export function HandReplay({ analysis, filename, validation, engineVersion, correctionsApplied }: HandReplayProps) {
   const replay = useReplay(analysis);
   const { hand_summary, overall_verdict } = analysis;
   // Defensive: actions may be undefined if the backend returned a partial response
@@ -1046,14 +1050,13 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
         onGoTo={replay.goTo}
       />
 
-      {/* ── REPLAY STATE DEBUG OVERLAY ─────────────────────────────────────
-           Always visible — shows raw replay state to diagnose render issues.
-           TODO: gate behind a dev flag once aggression rendering is confirmed. */}
+      {/* ── DEPLOYMENT + REPLAY STATE DEBUG OVERLAY ────────────────────────
+           Always visible until aggression rendering is confirmed on live site. */}
       <div
         style={{
           background: replay.pendingAggression
             ? "rgba(248,113,113,0.12)"
-            : "rgba(0,0,0,0.75)",
+            : "rgba(0,0,0,0.80)",
           borderBottom: replay.pendingAggression
             ? "2px solid rgba(248,113,113,0.5)"
             : "1px solid rgba(251,191,36,0.2)",
@@ -1063,41 +1066,43 @@ export function HandReplay({ analysis, filename, validation }: HandReplayProps) 
           color: "rgba(251,191,36,0.8)",
           display: "flex",
           flexWrap: "wrap",
-          gap: "12px",
+          gap: "10px",
           alignItems: "center",
         }}
       >
+        <span style={{ color: "rgba(56,189,248,0.7)" }}>FE:9a427aa</span>
+        <span style={{ color: engineVersion ? "rgba(34,197,94,0.7)" : "rgba(248,113,113,0.7)" }}>
+          BE:{engineVersion ?? "MISSING"}
+        </span>
         <span>step:{replay.step}/{actions.length}</span>
         <span>
-          action:{replay.step > 0
+          cur:{replay.step > 0
             ? `${replay.currentAction?.player ?? "—"} ${replay.currentAction?.action ?? "—"}${replay.currentAction?.amount ? " " + replay.currentAction.amount : ""}`
-            : "none"}
+            : "—"}
         </span>
         {replay.pendingAggression ? (
           <span style={{ color: "#F87171", fontWeight: "bold" }}>
             FACING: {replay.pendingAggression.player} {replay.pendingAggression.action}
-            {replay.pendingAggression.amount ? ` ${replay.pendingAggression.amount}` : ""}
-            {replay.pendingAggression.is_all_in ? " [ALL-IN]" : ""}
+            {replay.pendingAggression.amount ? ` ${replay.pendingAggression.amount}` : " (no amt)"}
+            {replay.pendingAggression.is_all_in ? " ALL-IN" : ""}
           </span>
         ) : (
-          <span style={{ color: "rgba(100,116,139,0.5)" }}>facing: none</span>
+          <span style={{ color: "rgba(100,116,139,0.5)" }}>facing:none</span>
         )}
-        {facingAction ? (
-          <span style={{ color: "#38BDF8" }}>
-            facingAction: {facingAction.player} {facingAction.action}
-            {facingAction.amount ? ` ${facingAction.amount}` : ""}
-          </span>
-        ) : null}
       </div>
-      {/* Full action dump — diagnose missing actions */}
-      <details style={{ background: "rgba(0,0,0,0.85)", borderBottom: "1px solid rgba(251,191,36,0.15)" }}>
+      {/* Full action dump — always visible */}
+      <details style={{ background: "rgba(0,0,0,0.88)", borderBottom: "1px solid rgba(251,191,36,0.15)" }}>
         <summary style={{ padding: "4px 16px", fontSize: "9px", color: "rgba(251,191,36,0.5)", cursor: "pointer", fontFamily: "monospace" }}>
-          actions[{actions.length}]
+          actions[{actions.length}] — click to inspect
         </summary>
-        <div style={{ padding: "4px 16px", fontSize: "9px", color: "rgba(251,191,36,0.6)", fontFamily: "monospace" }}>
+        <div style={{ padding: "4px 16px", fontSize: "9px", color: "rgba(251,191,36,0.6)", fontFamily: "monospace", maxHeight: "200px", overflow: "auto" }}>
           {actions.map((a, i) => (
-            <div key={i} style={{ color: a.is_hero ? "rgba(124,92,255,0.8)" : "rgba(251,191,36,0.6)" }}>
-              [{i}] {a.street} {a.player} {a.action} amt={a.amount ?? "null"} hero={String(a.is_hero)} allin={String(a.is_all_in)}
+            <div key={i} style={{
+              color: a.is_hero ? "rgba(124,92,255,0.8)" : "rgba(251,191,36,0.6)",
+              fontWeight: (a.action === "bet" || a.action === "raise") && !a.is_hero ? "bold" : "normal",
+              background: (a.action === "bet" || a.action === "raise") && !a.is_hero ? "rgba(248,113,113,0.08)" : "transparent",
+            }}>
+              [{i}] {a.street} {a.player} {a.action} amt={a.amount ?? "NULL"} hero={String(a.is_hero)} allin={String(a.is_all_in)} pot={a.pot_after}
             </div>
           ))}
         </div>
