@@ -67,6 +67,19 @@ export function usePipeline(): UsePipelineReturn {
     setPipeline(null);
     setResult(null);
 
+    // ── Frontend guard: reject obviously empty/short input ────────────
+    const trimmed = handText.trim();
+    if (!trimmed) {
+      setError("Please paste a hand history before analyzing.");
+      setStage("error");
+      return;
+    }
+    if (trimmed.length < 30) {
+      setError("Input is too short to be a valid hand history. Please paste the complete hand.");
+      setStage("error");
+      return;
+    }
+
     try {
       const supabase = createClient();
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -76,7 +89,7 @@ export function usePipeline(): UsePipelineReturn {
         return;
       }
       const token = session.access_token;
-      const pipelineResult = await prepareHand(handText, token, debug);
+      const pipelineResult = await prepareHand(trimmed, token, debug);
       setPipeline(pipelineResult);
 
       const { validation } = pipelineResult;

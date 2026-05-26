@@ -155,6 +155,15 @@ def normalize_hand(parsed: ParsedHand, raw_text: str | None = None) -> Canonical
 
     # ── 4. Compute effective stack and final pot ───────────────────────────────
     effective_stack = parsed.effective_stack_bb
+    # Fallback: if effective stack is 0 or missing, derive from player stacks
+    if effective_stack <= 0 and players:
+        player_stacks = [p.stack_bb for p in players if p.stack_bb > 0]
+        if player_stacks:
+            effective_stack = min(player_stacks)
+            _log.info("Effective stack was 0 — inferred %.1fbb from player stacks", effective_stack)
+        else:
+            effective_stack = 100.0
+            _log.info("Effective stack was 0 and no player stacks — defaulting to 100bb")
     final_pot = _compute_final_pot(streets)
 
     # ── 5. Build stakes ───────────────────────────────────────────────────────
@@ -354,6 +363,20 @@ def _build_streets(
         bb_amount = min(1.0, stacks[bb_name])
         stacks[bb_name] -= bb_amount
         pot += bb_amount
+
+    # Fallback: if no blind players were identified but we have players,
+    # seed with standard 1.5bb pot anyway. Without this, pot stays at 0
+    # and all downstream pot calculations are broken.
+    if pot == 0.0 and stacks:
+        _log.info("Blind players not identified — seeding pot with default 1.5bb")
+        pot = 1.5
+        # Deduct from the last two players in the list (heuristic: SB and BB)
+        player_names = list(stacks.keys())
+        if len(player_names) >= 2:
+            stacks[player_names[-1]] = max(0.0, stacks[player_names[-1]] - 1.0)
+            stacks[player_names[-2]] = max(0.0, stacks[player_names[-2]] - 0.5)
+        elif len(player_names) == 1:
+            stacks[player_names[0]] = max(0.0, stacks[player_names[0]] - 1.0)
 
     # Group actions by street
     street_actions: dict[str, list[HandAction]] = {

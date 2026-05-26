@@ -522,7 +522,7 @@ def _analyze_draws_simple(
     try:
         from app.engines.draw_evaluator import analyze_draws
         if len(board_cards) >= 3:
-            da = analyze_draws(hero_cards, board_cards[:3])  # Use flop for state
+            da = analyze_draws(hero_cards, board_cards)  # Use full board for street-aware analysis
             return {
                 "has_direct_draw": da.has_direct_straight_draw or da.has_flush_draw,
                 "draw_type": (
@@ -539,34 +539,49 @@ def _analyze_draws_simple(
 
 
 def _has_nut_flush(hero_cards: list[str], board_cards: list[str]) -> bool:
-    """True if hero has the nut flush (Ace of dominant suit + one more)."""
+    """
+    True if hero has the nut flush: hero holds Ace of a suit AND
+    total suited cards (hero + board) >= 5 for that suit.
+    """
     try:
         from collections import Counter
-        board_suits = Counter(c[1].lower() for c in board_cards)
-        if not board_suits:
-            return False
-        dominant = board_suits.most_common(1)[0][0]
-        hero_suit_cards = [c for c in hero_cards if c[1].lower() == dominant]
-        if len(hero_suit_cards) >= 1:
-            ranks = [c[0].upper() for c in hero_suit_cards]
-            return "A" in ranks
+        all_cards = hero_cards + board_cards
+        suit_counts = Counter(c[1].lower() for c in all_cards)
+        for suit, count in suit_counts.items():
+            if count < 5:
+                continue  # no flush possible in this suit
+            hero_of_suit = [c for c in hero_cards if c[1].lower() == suit]
+            if not hero_of_suit:
+                continue
+            ranks = [c[0].upper() for c in hero_of_suit]
+            if "A" in ranks:
+                # Verify ace of this suit is not on board (hero must hold it)
+                board_aces_of_suit = [c for c in board_cards if c[0].upper() == "A" and c[1].lower() == suit]
+                if not board_aces_of_suit:
+                    return True
     except Exception:
         pass
     return False
 
 
 def _has_near_nut_flush(hero_cards: list[str], board_cards: list[str]) -> bool:
-    """True if hero has King or Ace of dominant suit."""
+    """
+    True if hero has near-nut flush: hero holds K or A of a suit AND
+    total suited cards (hero + board) >= 5 for that suit.
+    """
     try:
         from collections import Counter
-        board_suits = Counter(c[1].lower() for c in board_cards)
-        if not board_suits:
-            return False
-        dominant = board_suits.most_common(1)[0][0]
-        hero_suit_cards = [c for c in hero_cards if c[1].lower() == dominant]
-        if hero_suit_cards:
-            ranks = [c[0].upper() for c in hero_suit_cards]
-            return "A" in ranks or "K" in ranks
+        all_cards = hero_cards + board_cards
+        suit_counts = Counter(c[1].lower() for c in all_cards)
+        for suit, count in suit_counts.items():
+            if count < 5:
+                continue  # no flush possible in this suit
+            hero_of_suit = [c for c in hero_cards if c[1].lower() == suit]
+            if not hero_of_suit:
+                continue
+            ranks = [c[0].upper() for c in hero_of_suit]
+            if "A" in ranks or "K" in ranks:
+                return True
     except Exception:
         pass
     return False

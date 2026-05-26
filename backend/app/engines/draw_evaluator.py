@@ -158,6 +158,12 @@ def analyze_draws(
         analysis.made_hand_category = "high_card"
         analysis.made_hand_description = "Preflop — no board yet"
 
+    # ── River: no draws exist — hand is complete ────────────────────────────
+    if street == "river":
+        analysis.diagnostics.append("River — no draws possible, hand is final.")
+        _assign_primary_label(analysis)
+        return analysis
+
     # ── Flush draws ───────────────────────────────────────────────────────────
     analysis.flush_draws = _detect_flush_draws(hole, board)
     analysis.has_flush_draw = any(
@@ -167,10 +173,23 @@ def analyze_draws(
         fd.draw_type == "backdoor_flush" for fd in analysis.flush_draws
     )
 
+    # ── Turn: suppress backdoor draws (only 1 card coming) ────────────────────
+    if street == "turn":
+        analysis.flush_draws = [
+            fd for fd in analysis.flush_draws if fd.draw_type != "backdoor_flush"
+        ]
+        analysis.has_backdoor_flush = False
+
     # ── Straight draws ────────────────────────────────────────────────────────
     all_ranks = _build_rank_set(hole + board)
     hole_ranks = _build_rank_set(hole)
     analysis.straight_draws = _detect_straight_draws(all_ranks, hole_ranks)
+
+    # Turn: suppress backdoor straight draws
+    if street == "turn":
+        analysis.straight_draws = [
+            sd for sd in analysis.straight_draws if sd.draw_type != "backdoor_straight"
+        ]
 
     for sd in analysis.straight_draws:
         if sd.draw_type in ("oesd", "double_gutter", "gutshot"):
@@ -221,8 +240,8 @@ def _detect_flush_draws(hole: list[Card], board: list[Card]) -> list[FlushDrawIn
         if not hole_of_suit:
             continue  # hero not contributing to this suit
 
-        if n == 5:
-            # Already made flush — not a "draw"
+        if n >= 5:
+            # Already made flush (5, 6, or 7 suited cards) — not a "draw"
             continue
         elif n == 4:
             draws.append(FlushDrawInfo(

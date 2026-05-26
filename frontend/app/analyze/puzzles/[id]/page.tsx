@@ -14,6 +14,7 @@ import { PUZZLES, QUALITY_SCORE, type ActionOption, type PuzzleStep } from "@/li
 import { cn } from "@/lib/utils";
 import { buildPokerState } from "@/lib/puzzles/pokerState";
 import { runGoldenTests, validateAllPuzzles } from "@/lib/puzzles/puzzleValidator";
+import { sortOptionsPassiveToAggressive, validatePuzzleIntegrity } from "@/lib/puzzles/puzzleIntegrity";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Puzzle pot & stack engine (unchanged)
@@ -808,6 +809,22 @@ function sanitizeLabel(label: string): string {
 // Action button — neutral solver-style decision controls
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Map a label to an aggression tier: 0=passive, 1=neutral, 2=aggressive */
+function aggressionTier(label: string): 0 | 1 | 2 {
+  const lo = label.toLowerCase();
+  if (/\bfold\b/.test(lo) || /\bcheck\b/.test(lo)) return 0;
+  if (/\bjam\b/.test(lo) || /\ball[- ]?in\b/.test(lo) || /\bshove\b/.test(lo) || /\boverbet\b/.test(lo)) return 2;
+  if (/\braise\b/.test(lo) || /\b[34]-?bet\b/.test(lo)) return 2;
+  return 1; // call, bet (standard)
+}
+
+/** Visual hierarchy classes by aggression tier (pre-selection only) */
+const TIER_CLASSES: Record<0 | 1 | 2, string> = {
+  0: "border-white/[0.06] bg-white/[0.02] text-muted-foreground/70 hover:bg-white/[0.035] hover:border-white/[0.10]",
+  1: "border-white/[0.08] bg-white/[0.025] text-foreground/85 hover:bg-white/[0.04] hover:border-violet-500/20",
+  2: "border-violet-500/15 bg-violet-500/[0.04] text-foreground hover:bg-violet-500/[0.07] hover:border-violet-500/30 hover:shadow-md hover:shadow-violet-900/10",
+};
+
 function ActionBtn({
   option, chosen, disabled, onClick, displayLabel,
 }: {
@@ -819,6 +836,7 @@ function ActionBtn({
 }) {
   const isChosen = chosen?.id === option.id;
   const hasChosen = !!chosen;
+  const tier = aggressionTier(displayLabel ?? option.label);
 
   return (
     <button
@@ -826,7 +844,7 @@ function ActionBtn({
       disabled={disabled}
       onClick={() => onClick(option)}
       className={cn(
-        "group relative rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 border overflow-hidden",
+        "group relative rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-200 border overflow-hidden active:scale-[0.98]",
         isChosen
           ? cn(
               "shadow-lg",
@@ -835,7 +853,7 @@ function ActionBtn({
             )
           : hasChosen
           ? "border-white/[0.04] bg-white/[0.015] text-muted-foreground/30 cursor-default"
-          : "border-white/[0.08] bg-white/[0.025] text-foreground hover:bg-white/[0.04] hover:border-white/[0.12] hover:brightness-110 active:scale-[0.98]"
+          : TIER_CLASSES[tier]
       )}
     >
       {/* Subtle hover shimmer — identical for all buttons */}
@@ -843,7 +861,9 @@ function ActionBtn({
         <div
           className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
           style={{
-            background: "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.02) 50%, transparent 60%)",
+            background: tier === 2
+              ? "linear-gradient(105deg, transparent 30%, rgba(139,92,246,0.04) 50%, transparent 70%)"
+              : "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.02) 50%, transparent 60%)",
           }}
         />
       )}
@@ -1145,7 +1165,7 @@ export default function PuzzlePlayerPage() {
       /jam|all.?in|shove/i.test(o.label)
     );
 
-    return currentStep.options.filter(opt => {
+    const filtered = currentStep.options.filter(opt => {
       const lo = opt.label.toLowerCase();
       // Fold/check always valid
       if (/^(fold|check)/.test(lo)) return true;
@@ -1158,6 +1178,8 @@ export default function PuzzlePlayerPage() {
       if (invest > remaining && hasExplicitJam) return false;
       return true;
     });
+    // Sort: passive → aggressive (left to right), sizing ascending
+    return sortOptionsPassiveToAggressive([...filtered]);
   }, [currentStep.options, stackState, bbDollars]);
 
   /** Cap a display label to the remaining stack if needed. */
@@ -1250,6 +1272,20 @@ export default function PuzzlePlayerPage() {
     if (process.env.NODE_ENV === "development") {
       runGoldenTests();
       validateAllPuzzles(PUZZLES);
+      // Puzzle integrity checks (hand strength, draws, ordering, sizing)
+      const integrityResults = PUZZLES.map(validatePuzzleIntegrity);
+      const failed = integrityResults.filter(r => !r.valid);
+      if (failed.length > 0) {
+        console.group("[PuzzleIntegrity] FAILED puzzles:");
+        for (const r of failed) {
+          for (const issue of r.issues.filter(i => i.severity === "error")) {
+            console.error(`[${r.puzzleId}] step ${issue.stepIdx}: ${issue.message}`);
+          }
+        }
+        console.groupEnd();
+      } else {
+        console.log(`[PuzzleIntegrity] All ${integrityResults.length} puzzles passed.`);
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -172,13 +172,15 @@ def validate_canonical(hand: CanonicalHand) -> PipelineValidationResult:
     all_actions = [a for s in hand.streets for a in s.actions]
 
     if not all_actions:
-        warn(ValidationErrorCode.NO_ACTIONS_PARSED,
-             "No actions parsed — hand may be truncated")
+        err(ValidationErrorCode.NO_ACTIONS_PARSED,
+            "No actions parsed — cannot analyze an empty hand. "
+            "Check that the hand history includes a complete action sequence.")
 
     hero_actions = [a for a in all_actions if a.is_hero]
-    if not hero_actions:
-        warn(ValidationErrorCode.NO_HERO_ACTIONS,
-             "No hero actions found — cannot evaluate play")
+    if all_actions and not hero_actions:
+        err(ValidationErrorCode.NO_HERO_ACTIONS,
+            "No hero actions found — cannot evaluate play without hero decisions. "
+            "Ensure the hand history identifies which player is the hero.")
 
     # Check action street ordering
     street_order = {Street.PREFLOP: 0, Street.FLOP: 1, Street.TURN: 2, Street.RIVER: 3}

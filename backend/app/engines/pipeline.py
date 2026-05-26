@@ -53,20 +53,44 @@ def run_text_pipeline(
         raw_text:  Raw hand history paste.
         debug:     If True, include parse_diagnostics and raw entities in result.
     """
-    _log.debug("pipeline.run_text_pipeline: len=%d chars", len(raw_text))
+    _log.info("pipeline.run_text_pipeline: len=%d chars", len(raw_text))
 
     # ── Step 1: Parse ─────────────────────────────────────────────────────────
     parsed: ParsedHand = detect_and_parse(raw_text)
-    _log.debug(
-        "pipeline: parsed site=%s hand_id=%s actions=%d",
-        parsed.site, parsed.hand_id, len(parsed.actions),
+    _log.info(
+        "pipeline[1-PARSE]: site=%s hand_id=%s players=%d actions=%d hero=%s hero_cards=%s board_flop=%s",
+        parsed.site, parsed.hand_id, len(parsed.players), len(parsed.actions),
+        parsed.hero_name, parsed.hero_cards, parsed.board.flop,
     )
+    if not parsed.players:
+        _log.warning("pipeline[1-PARSE]: WARNING — parser returned 0 players")
+    if not parsed.actions:
+        _log.warning("pipeline[1-PARSE]: WARNING — parser returned 0 actions")
 
     # ── Step 2: Normalize ─────────────────────────────────────────────────────
     canonical: CanonicalHand = normalize_hand(parsed, raw_text=raw_text)
+    canonical_action_count = sum(len(s.actions) for s in canonical.streets)
+    _log.info(
+        "pipeline[2-NORMALIZE]: players=%d streets=%d actions=%d hero_id=%s eff_stack=%.1f final_pot=%.1f",
+        len(canonical.players), len(canonical.streets), canonical_action_count,
+        canonical.hero_id, canonical.effective_stack_bb, canonical.final_pot_bb,
+    )
+    if not canonical.players:
+        _log.warning("pipeline[2-NORMALIZE]: WARNING — canonical has 0 players after normalization")
+    if canonical.final_pot_bb == 0:
+        _log.warning("pipeline[2-NORMALIZE]: WARNING — final pot is 0.0 after normalization")
 
     # ── Step 3: Validate ──────────────────────────────────────────────────────
     validation = validate_canonical(canonical)
+    _log.info(
+        "pipeline[3-VALIDATE]: valid=%s can_analyze=%s confidence=%.3f errors=%d warnings=%d",
+        validation.valid, validation.can_analyze, validation.confidence,
+        len(validation.errors), len(validation.warnings),
+    )
+    for e in validation.errors:
+        _log.warning("pipeline[3-VALIDATE]: ERROR — [%s] %s", e.code, e.message)
+    for w in validation.warnings:
+        _log.info("pipeline[3-VALIDATE]: WARN — [%s] %s", w.code, w.message)
 
     # Apply confidence gate: block analysis even if no hard errors when confidence is too low
     if validation.can_analyze and validation.confidence < _MIN_ANALYSIS_CONFIDENCE:
