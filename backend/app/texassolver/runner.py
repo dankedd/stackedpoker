@@ -177,19 +177,22 @@ def _find_solver_executable(config: SolverConfig) -> str | None:
     Locate the TexasSolver executable.
 
     Priority:
-      1. config.solver_path (explicit override)
+      1. config.solver_path (explicit override / TEXASSOLVER_BIN)
       2. System PATH lookup
+      3. Common installation locations
     """
     if config.solver_path:
         path = Path(config.solver_path)
         if path.exists():
+            logger.info("[TexasSolver] binary found at configured path: %s", path)
             return str(path)
-        logger.warning("Configured solver_path does not exist: %s", config.solver_path)
+        logger.warning("[TexasSolver] configured solver_path does not exist: %s", config.solver_path)
         return None
 
     # Try system PATH
     exe = shutil.which(DEFAULT_SOLVER_EXE)
     if exe:
+        logger.info("[TexasSolver] binary found in PATH: %s", exe)
         return exe
 
     # Try common locations
@@ -197,11 +200,18 @@ def _find_solver_executable(config: SolverConfig) -> str | None:
         Path.home() / "TexasSolver" / "console_solver",
         Path.home() / "TexasSolver" / "console_solver.exe",
         Path("/usr/local/bin/console_solver"),
+        Path("/opt/texassolver/bin/console_solver"),
     ]
     for p in common_paths:
         if p.exists():
+            logger.info("[TexasSolver] binary found at common location: %s", p)
             return str(p)
 
+    logger.warning(
+        "[TexasSolver] binary NOT FOUND. Searched: solver_path=%s, PATH=%s, common=%s",
+        config.solver_path, DEFAULT_SOLVER_EXE,
+        [str(p) for p in common_paths],
+    )
     return None
 
 

@@ -260,29 +260,40 @@ async def analyze_canonical(
                                 break
 
                 if _has_river_hero:
+                    logger.info("[SOLVER] river hero action detected: %s — attempting live solve", _hero_river_action)
                     _abs = _SA.from_canonical_hand(request.canonical)
                     try:
                         solver_result = await solve_river_async(
                             request.canonical, _abs.solver_spot, _hero_river_action,
                         )
-                    except Exception:
+                        logger.info(
+                            "[SOLVER] async result: status=%s mode=%s source=%s",
+                            solver_result.status, solver_result.mode, solver_result.source,
+                        )
+                    except Exception as _solve_exc:
+                        logger.warning("[SOLVER] async solve exception: %s — falling back to synthetic", _solve_exc)
                         solver_result = solve_river_synthetic(
                             request.canonical, _abs.solver_spot, _hero_river_action,
                         )
 
-                    if solver_result.status in ("ready", "cached"):
+                    if solver_result.status in ("ready", "cached") and "synthetic" not in solver_result.source:
                         result.solver = solver_result.to_dict()
                         logger.info(
-                            "Live solver: mode=%s preferred=%s freqs=%s time=%.0fms",
+                            "[SOLVER] REAL solver data: mode=%s preferred=%s freqs=%s time=%.0fms",
                             solver_result.mode, solver_result.preferred_action,
                             solver_result.frequencies, solver_result.solve_time_ms,
                         )
                     else:
-                        solver_result = solve_river_synthetic(
-                            request.canonical, _abs.solver_spot, _hero_river_action,
-                        )
+                        if solver_result.status not in ("ready", "cached"):
+                            logger.info("[SOLVER] solve failed (status=%s) — using synthetic", solver_result.status)
+                            solver_result = solve_river_synthetic(
+                                request.canonical, _abs.solver_spot, _hero_river_action,
+                            )
                         result.solver = solver_result.to_dict()
-                        logger.info("Live solver fallback to synthetic: %s", solver_result.preferred_action)
+                        logger.info(
+                            "[SOLVER] SYNTHETIC fallback: preferred=%s reason=%s",
+                            solver_result.preferred_action, solver_result.fallback_reason,
+                        )
                 else:
                     # Non-river street — solver not yet supported
                     result.solver = _SR(

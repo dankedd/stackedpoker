@@ -177,6 +177,10 @@ def _extract_river_node(
     river_bet_sizes = [0.75]
     river_raise_sizes = [1.0]  # pot-sized raise
 
+    # Resolve solver binary path from environment
+    import os
+    solver_path = os.getenv("TEXASSOLVER_BIN") or None
+
     return SolverConfig(
         spot_type=str(spot.spot_type) if hasattr(spot.spot_type, 'value') else spot.spot_type,
         positions=positions,
@@ -187,7 +191,7 @@ def _extract_river_node(
         rake=None,
         iterations=200,        # fast solve for live use
         accuracy_target=1.0,   # 1% exploitability target
-        solver_path=None,      # auto-detect
+        solver_path=solver_path,
     )
 
 
@@ -351,9 +355,10 @@ def solve_river_sync(
         return cached
 
     _log.info(
-        "Live solver: board=%s pot=%.1f stack=%.1f iter=%d",
+        "[SOLVER] attempting live solve: board=%s pot=%.1f stack=%.1f iter=%d solver_path=%s",
         config.board_string(), config.pot_size_bb(),
         config.effective_stack_chips(), config.iterations,
+        config.solver_path or "(auto-detect)",
     )
 
     solve_result = run_texassolver(
@@ -365,7 +370,12 @@ def solve_river_sync(
     elapsed_ms = (time.perf_counter() - t0) * 1000
 
     if not solve_result.success:
-        _log.warning("Live solve failed (%.0fms): %s", elapsed_ms, solve_result.error)
+        _log.warning(
+            "[SOLVER] live solve FAILED (%.0fms): %s | exit_code=%s | stderr=%s",
+            elapsed_ms, solve_result.error,
+            solve_result.exit_code,
+            (solve_result.stderr or "")[:200],
+        )
         return SolverResult(
             status="timeout" if "timed out" in (solve_result.error or "") else "error",
             error=solve_result.error,
@@ -495,9 +505,24 @@ def solve_river_synthetic(
     if hero_action and hero_action in ev and preferred in ev:
         ev_loss = round(ev[hero_action] - ev[preferred], 3)
 
+    # Determine specific fallback reason
+    import os
+    solver_bin = os.getenv("TEXASSOLVER_BIN", "")
+    if solver_bin:
+        from pathlib import Path
+        if not Path(solver_bin).exists():
+            reason = f"TexasSolver binary not found at {solver_bin} — using heuristic approximation"
+        else:
+            reason = "TexasSolver execution failed — using heuristic approximation"
+    else:
+        reason = (
+            "TEXASSOLVER_BIN not configured — set the environment variable to enable "
+            "real solver analysis. Using heuristic approximation."
+        )
+
     _log.info(
-        "[TEXASSOLVER FALLBACK] reason=solver_unavailable mode=synthetic board=%s preferred=%s",
-        board_class, preferred,
+        "[TEXASSOLVER FALLBACK] reason=%s mode=synthetic board=%s preferred=%s",
+        reason, board_class, preferred,
     )
 
     return SolverResult(
@@ -512,6 +537,6 @@ def solve_river_synthetic(
         solve_time_ms=0.5,
         cache_hit=False,
         node_key=f"synthetic_{board_class}_{spot.is_ip}",
-        fallback_reason="TexasSolver binary not available — using heuristic approximation",
+        fallback_reason=reason,
         node_description=_build_node_description(hand, spot),
     )
