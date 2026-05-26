@@ -1259,7 +1259,17 @@ export default function PuzzlePlayerPage() {
                   }}
                 />
 
-                <div className="relative flex flex-col items-center py-6 px-6 gap-5">
+                {/* Aggression ambient overlay — driven by facing action type */}
+                {facingAction && facingAction.type !== "check" && facingAction.type !== "fold" && facingAction.type !== "call" && (
+                  <div className={cn(
+                    "absolute inset-0 pointer-events-none rounded-2xl transition-opacity duration-700",
+                    facingAction.type === "allin" ? "aggression-allin"
+                    : facingAction.type === "raise" ? "aggression-raise"
+                    : "aggression-bet"
+                  )} />
+                )}
+
+                <div className="relative flex flex-col items-center py-6 px-6 gap-4">
 
                   {/* Street badge — top left */}
                   <div className="absolute top-4 left-5">
@@ -1276,14 +1286,12 @@ export default function PuzzlePlayerPage() {
                     </div>
                   </div>
 
-                  {/* Pressure tag — only shown after action chosen */}
-                  {chosen && (
-                    <div className="absolute top-4 right-5">
-                      <span className="text-[9px] font-semibold tracking-wider uppercase text-muted-foreground/20">
-                        {pressure.label}
-                      </span>
-                    </div>
-                  )}
+                  {/* Pressure tag — top right */}
+                  <div className="absolute top-4 right-5">
+                    <span className="text-[9px] font-semibold tracking-wider uppercase text-muted-foreground/20">
+                      {pressure.label}
+                    </span>
+                  </div>
 
                   {/* ── VILLAIN area ────────────────────────── */}
                   <div className="flex items-center gap-3 mt-4">
@@ -1301,8 +1309,15 @@ export default function PuzzlePlayerPage() {
                     </div>
                   </div>
 
+                  {/* ── ACTION BANNER — villain's facing action ── */}
+                  <TableActionBanner
+                    action={facingAction}
+                    potBb={stackState.potBb}
+                    effectiveStack={puzzle.effectiveStack}
+                  />
+
                   {/* ── BOARD ───────────────────────────────── */}
-                  <div className="flex flex-col items-center gap-2.5">
+                  <div className="flex flex-col items-center gap-2">
                     <div className="flex gap-1.5 items-center">
                       {isPreflop
                         ? [0,1,2,3,4].map(i => (
@@ -1326,9 +1341,12 @@ export default function PuzzlePlayerPage() {
                         )}
                     </div>
 
-                    {/* Pot badge */}
+                    {/* Pot badge — pulses on all-in */}
                     <div
-                      className="flex items-center gap-1.5 h-6 px-3 rounded-full"
+                      className={cn(
+                        "flex items-center gap-1.5 h-6 px-3 rounded-full",
+                        facingAction?.type === "allin" && "animate-allin-pulse"
+                      )}
                       style={{
                         background: "rgba(251,191,36,0.06)",
                         border: "1px solid rgba(251,191,36,0.15)",
@@ -1340,17 +1358,26 @@ export default function PuzzlePlayerPage() {
                         {fmtBb(stackState.potBb)}
                       </span>
                     </div>
+
+                    {/* ── ACTION TRAIL — compact hand flow ────── */}
+                    <ActionTrail trail={actionTrail} />
                   </div>
 
-                  {/* ── HERO area ───────────────────────────── */}
-                  <div className="flex items-center gap-4">
+                  {/* ── HERO area — with decision glow ──────── */}
+                  <div className={cn(
+                    "flex items-center gap-4 rounded-2xl px-3 py-2 -mx-3 transition-all",
+                    !chosen && "hero-decision-active"
+                  )}>
                     <div className="flex gap-2">
                       {puzzle.heroCards.map((card, i) => <CardFace key={i} card={card} size="xl" />)}
                     </div>
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
                         <div
-                          className="h-2 w-2 rounded-full shrink-0"
+                          className={cn(
+                            "h-2 w-2 rounded-full shrink-0 transition-all",
+                            !chosen && "animate-border-pulse"
+                          )}
                           style={{ background: "rgba(124,92,255,0.9)", boxShadow: "0 0 8px rgba(124,92,255,0.6)" }}
                         />
                         <span className="text-[12px] font-black tracking-wide" style={{ color: "rgba(167,139,250,0.9)" }}>
@@ -1366,6 +1393,12 @@ export default function PuzzlePlayerPage() {
                       <span className="text-[10px] text-muted-foreground/20 tabular-nums ml-4">
                         {fmtBb(stackState.heroStack)}
                       </span>
+                      {/* Hero decision indicator */}
+                      {!chosen && (
+                        <span className="text-[9px] font-semibold text-violet-400/40 ml-4 tracking-wider uppercase">
+                          Your action
+                        </span>
+                      )}
                     </div>
                   </div>
 
