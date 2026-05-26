@@ -479,6 +479,204 @@ function isMixingSpot(options: ActionOption[]): boolean {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Live Action Layer — action parser, banner, trail, chips
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface TableAction {
+  actor: string;
+  verb: string;
+  sizeBb: number | null;
+  type: "open" | "bet" | "raise" | "call" | "check" | "fold" | "allin";
+}
+
+const POS_RE = '(UTG\\+[12]|UTG|LJ|HJ|CO|BTN|SB|BB|MP)';
+
+/**
+ * Extract the action hero is FACING from the current step context.
+ * Looks after street markers (Flop:/Turn:/River:) to skip carry-over actions,
+ * then returns the LAST meaningful action verb.
+ */
+function parseFacingAction(context: string, bbDollars: number): TableAction | null {
+  const streetIdx = context.search(/(?:Flop|Turn|River)\s*:/i);
+  const search = streetIdx >= 0 ? context.slice(streetIdx) : context;
+
+  const patterns: Array<{ re: RegExp; type: TableAction["type"]; verb: string }> = [
+    { re: new RegExp(`${POS_RE}\\s+(?:jams?|shoves?|goes?\\s+all.?in)(?:\\s+[\\$€£]?(\\d+(?:\\.\\d+)?))?`, 'gi'), type: "allin", verb: "ALL-IN" },
+    { re: new RegExp(`${POS_RE}\\s+check-?raises?\\s*(?:to\\s+)?[\\$€£]?(\\d+(?:\\.\\d+)?)`, 'gi'), type: "raise", verb: "x/raises" },
+    { re: new RegExp(`${POS_RE}\\s+(?:3-?bets?|4-?bets?)\\s+(?:to\\s+)?[\\$€£]?(\\d+(?:\\.\\d+)?)`, 'gi'), type: "raise", verb: "3-bets" },
+    { re: new RegExp(`${POS_RE}\\s+raises?\\s+(?:to\\s+)?[\\$€£]?(\\d+(?:\\.\\d+)?)`, 'gi'), type: "raise", verb: "raises to" },
+    { re: new RegExp(`${POS_RE}\\s+opens?\\s+(?:to\\s+)?[\\$€£]?(\\d+(?:\\.\\d+)?)`, 'gi'), type: "open", verb: "opens" },
+    { re: new RegExp(`${POS_RE}\\s+(?:overbets?|bets?|fires?|leads?\\s*(?:out)?|barrels?|double.?barrels?)\\s+[\\$€£]?(\\d+(?:\\.\\d+)?)`, 'gi'), type: "bet", verb: "bets" },
+    { re: new RegExp(`${POS_RE}\\s+(?:calls?|defends?)(?:\\s+[\\$€£]?(\\d+(?:\\.\\d+)?))?`, 'gi'), type: "call", verb: "calls" },
+    { re: new RegExp(`${POS_RE}\\s+checks?`, 'gi'), type: "check", verb: "checks" },
+    { re: new RegExp(`${POS_RE}\\s+folds?`, 'gi'), type: "fold", verb: "folds" },
+  ];
+
+  const matches: Array<{ idx: number; action: TableAction }> = [];
+
+  for (const { re, type, verb } of patterns) {
+    let m;
+    while ((m = re.exec(search)) !== null) {
+      const actor = m[1].toUpperCase();
+      const sizeBb = m[2] && bbDollars > 0 ? parseFloat(m[2]) / bbDollars : null;
+      matches.push({ idx: m.index, action: { actor, verb, sizeBb, type } });
+    }
+  }
+
+  if (matches.length === 0) return null;
+  matches.sort((a, b) => a.idx - b.idx);
+  const last = matches[matches.length - 1];
+
+  // Fallback: check for aggressive verbs AFTER the last POS-prefixed match.
+  // Handles "BB calls turn and leads out $18" where "leads" isn't POS-prefixed.
+  const afterLast = search.slice(last.idx + 10);
+  const aggrVerb = afterLast.match(
+    /(?:leads?\s*(?:out)?|bets?|fires?|barrels?|raises?\s*(?:to\s+)?|jams?|shoves?)\s+[\$€£]?(\d+(?:\.\d+)?)/i
+  );
+  if (aggrVerb && (last.action.type === "call" || last.action.type === "check")) {
+    const sizeBb = aggrVerb[1] && bbDollars > 0 ? parseFloat(aggrVerb[1]) / bbDollars : null;
+    const isAllIn = /jams?|shoves?/i.test(aggrVerb[0]);
+    const isRaise = /raises?/i.test(aggrVerb[0]);
+    return {
+      actor: last.action.actor,
+      verb: isAllIn ? "ALL-IN" : isRaise ? "raises to" : "bets",
+      sizeBb,
+      type: isAllIn ? "allin" : isRaise ? "raise" : "bet",
+    };
+  }
+
+  return last.action;
+}
+
+/** Compact trail of all actions in the hand so far. */
+interface TrailItem { label: string; isHero: boolean; }
+
+function buildActionTrail(
+  puzzle: { heroPosition: string; steps: PuzzleStep[]; stakes: string },
+  stepIdx: number,
+  stepResults: Array<{ option: ActionOption }>,
+  bbDollars: number,
+): TrailItem[] {
+  const trail: TrailItem[] = [];
+  for (let i = 0; i <= stepIdx; i++) {
+    const action = parseFacingAction(puzzle.steps[i].context, bbDollars);
+    if (action) {
+      let label = action.verb;
+      if (action.sizeBb !== null) label += ` ${fmtBb(action.sizeBb)}`;
+      trail.push({ label, isHero: false });
+    }
+    if (i < stepIdx && stepResults[i]) {
+      trail.push({ label: bbifyText(stepResults[i].option.label, bbDollars), isHero: true });
+    }
+  }
+  return trail;
+}
+
+// ── Table Action Banner ─────────────────────────────────────────────────────
+
+function TableActionBanner({
+  action, potBb, effectiveStack,
+}: {
+  action: TableAction | null; potBb: number; effectiveStack: number;
+}) {
+  if (!action) return null;
+  const { sizeBb, type, actor, verb } = action;
+  const potPct = sizeBb !== null && potBb > 0 ? Math.round((sizeBb / potBb) * 100) : null;
+  const isAggressive = type === "bet" || type === "raise" || type === "allin" || type === "open";
+
+  return (
+    <div className="flex items-center justify-center gap-2 animate-action-banner">
+      {sizeBb !== null && isAggressive && (
+        <ChipStack sizeBb={sizeBb} effectiveStack={effectiveStack} />
+      )}
+      <div className={cn(
+        "flex items-center gap-2 px-3.5 py-1.5 rounded-full transition-all",
+        type === "allin"  ? "bg-red-500/10 border border-red-500/20 animate-allin-pulse"
+        : type === "raise"  ? "bg-orange-400/[0.07] border border-orange-400/15"
+        : type === "bet" || type === "open" ? "bg-amber-400/[0.06] border border-amber-400/12"
+        : type === "call"   ? "bg-white/[0.025] border border-white/[0.05]"
+        :                     "bg-white/[0.015] border border-white/[0.03]"
+      )}>
+        <span className={cn(
+          "text-[10px] font-bold uppercase tracking-wider",
+          type === "allin" ? "text-red-400/70"
+          : type === "raise" ? "text-orange-400/60"
+          : type === "bet" || type === "open" ? "text-amber-400/55"
+          : "text-muted-foreground/25"
+        )}>
+          {actor}
+        </span>
+        <span className={cn(
+          "text-[11px] font-semibold",
+          type === "allin" ? "text-red-300/80 font-black tracking-wider uppercase"
+          : type === "raise" ? "text-orange-300/65"
+          : type === "bet" || type === "open" ? "text-amber-300/60"
+          : "text-muted-foreground/35"
+        )}>
+          {verb}
+        </span>
+        {sizeBb !== null && (
+          <span className={cn(
+            "text-[12px] font-black tabular-nums",
+            type === "allin" ? "text-red-200/85"
+            : type === "raise" ? "text-orange-200/75"
+            : "text-amber-200/65"
+          )}>
+            {fmtBb(sizeBb)}
+          </span>
+        )}
+        {potPct !== null && type !== "allin" && (
+          <span className="text-[9px] text-muted-foreground/20 tabular-nums">
+            {potPct}%
+          </span>
+        )}
+      </div>
+      {sizeBb !== null && isAggressive && (
+        <ChipStack sizeBb={sizeBb} effectiveStack={effectiveStack} />
+      )}
+    </div>
+  );
+}
+
+// ── Chip Stack Visualization ────────────────────────────────────────────────
+
+function ChipStack({ sizeBb, effectiveStack }: { sizeBb: number; effectiveStack: number }) {
+  const ratio = Math.min(1, sizeBb / effectiveStack);
+  const count = ratio >= 0.7 ? 5 : ratio >= 0.4 ? 4 : ratio >= 0.2 ? 3 : ratio >= 0.08 ? 2 : 1;
+  const color = ratio >= 0.5 ? "rgba(239,68,68,0.55)" : ratio >= 0.2 ? "rgba(251,191,36,0.55)" : "rgba(56,189,248,0.45)";
+  const glow  = ratio >= 0.5 ? "rgba(239,68,68,0.3)"  : ratio >= 0.2 ? "rgba(251,191,36,0.3)"  : "rgba(56,189,248,0.2)";
+
+  return (
+    <div className="flex flex-col-reverse items-center gap-[1px] animate-chip-slide">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="rounded-full" style={{ width: "7px", height: "3px", background: color, boxShadow: `0 0 4px ${glow}` }} />
+      ))}
+    </div>
+  );
+}
+
+// ── Action History Trail ────────────────────────────────────────────────────
+
+function ActionTrail({ trail }: { trail: TrailItem[] }) {
+  if (trail.length === 0) return null;
+  return (
+    <div className="flex items-center justify-center gap-1 overflow-x-auto scrollbar-none max-w-[360px] mx-auto mt-1.5">
+      {trail.map((item, i) => (
+        <div key={i} className="flex items-center gap-1 shrink-0">
+          {i > 0 && <span className="text-[7px] text-white/[0.07]">→</span>}
+          <span className={cn(
+            "text-[9px] font-medium whitespace-nowrap",
+            item.isHero ? "text-violet-400/30" : "text-muted-foreground/20"
+          )}>
+            {item.label}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Horizontal street progress — replaces vertical StepPip list
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -568,23 +766,45 @@ function StreetProgress({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Action button — redesigned with solver visual language
+// Neutral label sanitizer — strips strategic hints, keeps action + sizing only
+// ─────────────────────────────────────────────────────────────────────────────
+
+function sanitizeLabel(label: string): string {
+  // Remove parenthetical hints: "(complete giveup)", "(thin value)", etc.
+  let clean = label.replace(/\s*\([^)]*\)\s*/g, " ").trim();
+  // Remove trailing descriptive phrases after the core action+sizing
+  // e.g. "Fold the flush draw" → "Fold", "Call $6 hero call" → "Call $6"
+  clean = clean
+    .replace(/^(Fold)\s+(?:the\s+|to\s+|on\s+|here|now).*$/i, "$1")
+    .replace(/^(Check)\s+(?:back|behind|through|down).*$/i, "$1")
+    .replace(/^(Call\s+[\$€£]?\d+(?:\.\d+)?(?:\s*bb)?)\s+.*$/i, "$1")
+    .replace(/^(Raise\s+(?:to\s+)?[\$€£]?\d+(?:\.\d+)?(?:\s*bb)?)\s+.*$/i, "$1")
+    .replace(/^(Bet\s+[\$€£]?\d+(?:\.\d+)?(?:\s*\(\d+%\))?)\s+.*$/i, "$1")
+    .replace(/^(Jam\s+[\$€£]?\d+(?:\.\d+)?(?:\s*bb)?)\s+.*$/i, "$1")
+    .replace(/^(3-bet\s+(?:to\s+)?[\$€£]?\d+(?:\.\d+)?(?:\s*bb)?)\s+.*$/i, "$1")
+    .replace(/^(Squeeze\s+(?:to\s+)?[\$€£]?\d+(?:\.\d+)?(?:\s*bb)?)\s+.*$/i, "$1");
+  // Remove strategic words that might remain
+  clean = clean.replace(/\b(slowplay|trap|bluff|thin value|protection|merge|block|giveup|showdown value|pot control|standard|hero call|bluff catch)\b/gi, "").trim();
+  // Collapse multiple spaces
+  clean = clean.replace(/\s{2,}/g, " ").trim();
+  return clean;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Action button — neutral solver-style decision controls
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ActionBtn({
-  option, chosen, disabled, onClick, displayLabel, isHighCommit
+  option, chosen, disabled, onClick, displayLabel,
 }: {
   option: ActionOption;
   chosen: ActionOption | null;
   disabled: boolean;
   onClick: (o: ActionOption) => void;
   displayLabel?: string;
-  isHighCommit?: boolean;
 }) {
   const isChosen = chosen?.id === option.id;
   const hasChosen = !!chosen;
-  const label = (displayLabel ?? option.label).toLowerCase();
-  const isFold = /^fold/.test(label);
 
   return (
     <button
@@ -601,19 +821,15 @@ function ActionBtn({
             )
           : hasChosen
           ? "border-white/[0.04] bg-white/[0.015] text-muted-foreground/30 cursor-default"
-          : isFold
-          ? "border-white/[0.05] bg-white/[0.015] text-muted-foreground/50 hover:bg-white/[0.03] hover:text-muted-foreground/70"
-          : isHighCommit
-          ? "action-glow border-violet-500/20 bg-violet-500/[0.06] text-foreground hover:bg-violet-500/[0.1] hover:border-violet-500/30 hover:scale-[1.02] active:scale-[0.98]"
-          : "border-white/[0.08] bg-white/[0.025] text-foreground hover:bg-white/[0.05] hover:border-white/[0.12] hover:scale-[1.01] active:scale-[0.98]"
+          : "border-white/[0.08] bg-white/[0.025] text-foreground hover:bg-white/[0.04] hover:border-white/[0.12] hover:brightness-110 active:scale-[0.98]"
       )}
     >
-      {/* Hover shimmer */}
-      {!hasChosen && !isFold && (
+      {/* Subtle hover shimmer — identical for all buttons */}
+      {!hasChosen && (
         <div
           className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
           style={{
-            background: "linear-gradient(105deg, transparent 40%, rgba(124,92,255,0.04) 50%, transparent 60%)",
+            background: "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.02) 50%, transparent 60%)",
           }}
         />
       )}
@@ -916,6 +1132,17 @@ export default function PuzzlePlayerPage() {
     [currentStep.options]
   );
 
+  // ── Live action layer state ────────────────────────────────────────
+  const facingAction = useMemo(
+    () => parseFacingAction(currentStep.context, bbDollars),
+    [currentStep.context, bbDollars]
+  );
+
+  const actionTrail = useMemo(
+    () => buildActionTrail(puzzle, stepIdx, stepResults, bbDollars),
+    [puzzle, stepIdx, stepResults, bbDollars]
+  );
+
   // ── Dev-mode validation ────────────────────────────────────────────
   useEffect(() => {
     if (process.env.NODE_ENV === "development") {
@@ -1049,12 +1276,14 @@ export default function PuzzlePlayerPage() {
                     </div>
                   </div>
 
-                  {/* Pressure tag — top right */}
-                  <div className="absolute top-4 right-5">
-                    <span className="text-[9px] font-semibold tracking-wider uppercase text-muted-foreground/20">
-                      {pressure.label}
-                    </span>
-                  </div>
+                  {/* Pressure tag — only shown after action chosen */}
+                  {chosen && (
+                    <div className="absolute top-4 right-5">
+                      <span className="text-[9px] font-semibold tracking-wider uppercase text-muted-foreground/20">
+                        {pressure.label}
+                      </span>
+                    </div>
+                  )}
 
                   {/* ── VILLAIN area ────────────────────────── */}
                   <div className="flex items-center gap-3 mt-4">
@@ -1170,21 +1399,16 @@ export default function PuzzlePlayerPage() {
                   currentStep.options.length === 2 ? "grid-cols-2" :
                   currentStep.options.length === 3 ? "grid-cols-3" : "grid-cols-2"
                 )}>
-                  {currentStep.options.map(opt => {
-                    const label = opt.label.toLowerCase();
-                    const isHighCommit = /raise|bet|3.?bet|shove|jam|all.?in/i.test(label);
-                    return (
+                  {currentStep.options.map(opt => (
                       <ActionBtn
                         key={opt.id}
                         option={opt}
                         chosen={chosen}
                         disabled={false}
                         onClick={handleAction}
-                        displayLabel={bbifyText(opt.label, bbDollars)}
-                        isHighCommit={isHighCommit}
+                        displayLabel={sanitizeLabel(bbifyText(opt.label, bbDollars))}
                       />
-                    );
-                  })}
+                    ))}
                 </div>
               ) : (
                 <div className="space-y-3 animate-fade-in">
@@ -1248,13 +1472,6 @@ export default function PuzzlePlayerPage() {
                     <p className="text-xs text-muted-foreground/35">
                       Choose an action to see analysis
                     </p>
-                    {mixing && (
-                      <div className="mt-3 px-3 py-1.5 rounded-full bg-blue-500/[0.06] border border-blue-500/10">
-                        <span className="text-[10px] font-semibold text-blue-400/50">
-                          Solver mixes here
-                        </span>
-                      </div>
-                    )}
                   </div>
                 ) : (
                   <div className="space-y-4 animate-fade-in">
