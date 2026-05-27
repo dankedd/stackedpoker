@@ -9,7 +9,9 @@ import type {
 import type { PipelineResult, CanonicalHand, PipelineValidationResult } from "./hand-schema";
 import type { AnalysisSetupValue } from "@/components/poker/AnalysisSetup";
 
-// Empty base = Next.js rewrites (/api/* → FastAPI). No CORS needed.
+// Next.js rewrites proxy /api/* → Railway backend (see next.config.ts).
+// In production (Vercel), relative paths go through the rewrite proxy.
+// NEXT_PUBLIC_API_URL must be set on Vercel for the rewrite to work.
 const API_BASE = "";
 
 async function apiFetch<T>(path: string, token?: string | null, init?: RequestInit): Promise<T> {
