@@ -89,6 +89,8 @@ class Settings(BaseSettings):
 
         if not isinstance(v, str):
             return v
+        # Strip whitespace/newlines that Railway's UI may inject
+        v = v.strip()
         if v.startswith("postgres://"):
             return "postgresql+asyncpg://" + v[len("postgres://"):]
         if v.startswith("postgresql://"):
