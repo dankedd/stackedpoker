@@ -12,41 +12,38 @@ from app.config import get_settings
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-# ── Log raw env var presence (NEVER log the value — contains password) ────
-_raw_env = os.environ.get("DATABASE_URL", "")
-logger.info("=== Database Configuration ===")
-logger.info("  DATABASE_URL env var present: %s", bool(_raw_env))
-logger.info("  DATABASE_URL env var length:  %d", len(_raw_env))
-if _raw_env:
-    # Log just the scheme and host from the RAW env var (before pydantic touches it)
-    _at = _raw_env.find("@")
-    if _at > 0 and len(_raw_env) > _at + 1:
-        logger.info("  DATABASE_URL raw host part:   ...@%s", _raw_env[_at + 1:][:60])
-logger.info("  settings.database_url scheme: %s", settings.database_url.split("://")[0] if "://" in settings.database_url else "NONE")
-logger.info("  .env file exists at CWD:      %s", os.path.exists(".env"))
+# ── Early diagnostics (print, not logger — logging not configured yet) ───
+_raw_db_env = os.environ.get("DATABASE_URL", "")
+_settings_url = settings.database_url
+print(f"[DB EARLY] DATABASE_URL env present: {bool(_raw_db_env)}, len={len(_raw_db_env)}")
+print(f"[DB EARLY] settings.database_url scheme: {_settings_url.split('://')[0] if '://' in _settings_url else 'NONE'}")
+print(f"[DB EARLY] .env file exists: {os.path.exists('.env')}")
+if _raw_db_env:
+    # Show scheme + host only (never credentials)
+    _at = _raw_db_env.find("@")
+    _scheme_end = _raw_db_env.find("://")
+    if _scheme_end > 0:
+        print(f"[DB EARLY] raw env scheme: {_raw_db_env[:_scheme_end]}")
+    if _at > 0:
+        print(f"[DB EARLY] raw env after @: {_raw_db_env[_at+1:][:80]}")
+    else:
+        print(f"[DB EARLY] raw env has NO @ sign — format may be incomplete")
 
-# ── Parse using SQLAlchemy's make_url (handles all driver schemes) ────────
-_db_url_str = settings.database_url
+# ── Parse URL ────────────────────────────────────────────────────────────
 try:
-    _sa_url = make_url(_db_url_str)
+    _sa_url = make_url(_settings_url)
     _db_host = _sa_url.host or "unknown"
     _db_port = _sa_url.port or 5432
     _db_user = _sa_url.username or "unknown"
     _db_name = _sa_url.database or "unknown"
-    _db_driver = _sa_url.drivername
-    logger.info("  Parsed driver:   %s", _db_driver)
-    logger.info("  Parsed host:     %s:%s", _db_host, _db_port)
-    logger.info("  Parsed user:     %s", _db_user)
-    logger.info("  Parsed database: %s", _db_name)
-    logger.info("  Password present: %s", bool(_sa_url.password))
+    print(f"[DB EARLY] parsed: user={_db_user} host={_db_host}:{_db_port} db={_db_name} password={'YES' if _sa_url.password else 'NO'}")
 except Exception as exc:
     _db_host = "unknown"
     _db_user = "unknown"
     _db_name = "unknown"
-    _db_driver = "unknown"
-    logger.error("  FAILED to parse DATABASE_URL: %s", exc)
+    print(f"[DB EARLY] PARSE FAILED: {exc}")
 
-# ── Create async engine ──────────────────────────────────────────────────
+# ── Engine creation ──────────────────────────────────────────────────────
 _connect_args: dict = {}
 _is_cloud = _db_host not in ("localhost", "127.0.0.1", "db", "unknown", "")
 if _is_cloud:
@@ -54,12 +51,10 @@ if _is_cloud:
     _ssl_ctx.check_hostname = False
     _ssl_ctx.verify_mode = ssl.CERT_NONE
     _connect_args["ssl"] = _ssl_ctx
-    logger.info("  SSL: enabled (cloud host: %s)", _db_host)
-else:
-    logger.info("  SSL: disabled (local host)")
+    print(f"[DB EARLY] SSL: enabled for cloud host {_db_host}")
 
 engine = create_async_engine(
-    _db_url_str,
+    _settings_url,
     echo=settings.debug,
     pool_pre_ping=True,
     connect_args=_connect_args,
