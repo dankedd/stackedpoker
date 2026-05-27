@@ -69,8 +69,17 @@ if [ -f "TexasSolverGui.pro" ]; then
     echo "  ~ renamed main_backup -> main in console.cpp"
   fi
 
-  # Write a clean console-only .pro file
-  cat > TexasSolverGui.pro << 'PROEOF'
+  # Discover ALL .cpp files in src/ (exclude pybind and ui)
+  echo "  Discovering source files..."
+  FOUND_SOURCES=""
+  while IFS= read -r cpp; do
+    FOUND_SOURCES="${FOUND_SOURCES}    ${cpp} \\
+"
+    echo "    src: $cpp"
+  done < <(find src -name '*.cpp' | grep -v 'pybind' | grep -v 'src/ui/' | sort)
+
+  # Write a clean console-only .pro file with ALL discovered sources
+  cat > TexasSolverGui.pro << PROEOF
 QT += core
 QT -= gui widgets
 CONFIG += c++17 console
@@ -78,38 +87,14 @@ CONFIG -= app_bundle
 TARGET = console_solver
 TEMPLATE = app
 
-QMAKE_CXXFLAGS += -fopenmp
+QMAKE_CXXFLAGS += -fopenmp -w
 QMAKE_LFLAGS += -fopenmp
 QMAKE_CXXFLAGS_RELEASE += -O2
 
 INCLUDEPATH += include
 
-SOURCES += \
-    src/console.cpp \
-    src/Card.cpp \
-    src/Deck.cpp \
-    src/GameTree.cpp \
-    src/library.cpp \
-    src/nodes/ActionNode.cpp \
-    src/nodes/TerminalNode.cpp \
-    src/nodes/ShowdownNode.cpp \
-    src/nodes/ChanceNode.cpp \
-    src/solver/CfrSolver.cpp \
-    src/solver/PCfrSolver.cpp \
-    src/solver/BestResponse.cpp \
-    src/ranges/PrivateCards.cpp \
-    src/ranges/RiverRangeManager.cpp \
-    src/ranges/PrivateCardsManager.cpp \
-    src/ranges/PrivateRangeConverter.cpp \
-    src/trainable/CfrPlusTrainable.cpp \
-    src/trainable/DiscountedCfrTrainable.cpp \
-    src/runtime/PokerSolver.cpp \
-    src/tools/CommandLineTool.cpp \
-    src/tools/GameTreeBuildingSettings.cpp \
-    src/tools/StreetSetting.cpp \
-    src/tools/Rule.cpp \
-    src/compairer/Compairer.cpp \
-    src/compairer/Dic5Compairer.cpp
+SOURCES += \\
+${FOUND_SOURCES}    src/console.cpp
 PROEOF
 
   echo "  ~ wrote console-only .pro file"
