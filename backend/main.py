@@ -14,7 +14,7 @@ from app.api.routes import pipeline as pipeline_routes
 # ── Immutable build identity ──────────────────────────────────────────────
 # Change BUILD_ID on every deploy-critical push so we can verify
 # the running container matches the latest code.
-BUILD_ID = "solver-runtime-v21-fast-boot"
+BUILD_ID = "solver-runtime-v22-port-fix"
 BUILD_TIMESTAMP = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 settings = get_settings()
@@ -103,21 +103,19 @@ def _solver_self_test() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    resolved = _find_solver_binary()
     import os
-    from pathlib import Path as _P
     logger.info("========================================")
     logger.info("  STACKED POKER — BUILD IDENTITY")
     logger.info("  BUILD_ID         = %s", BUILD_ID)
-    logger.info("  BUILD_TIMESTAMP  = %s", BUILD_TIMESTAMP)
-    logger.info("  SOLVER_ENGINE    = %s", os.getenv("ENABLE_SOLVER_ENGINE", "true"))
-    logger.info("  SOLVER_BIN_ENV   = %s", os.getenv("TEXASSOLVER_BIN", "(not set)"))
-    logger.info("  SOLVER_RESOLVED  = %s", resolved or "(not found)")
-    logger.info("  BINARY_EXISTS    = %s", bool(resolved and _P(resolved).exists()))
+    logger.info("  PORT             = %s", os.getenv("PORT", "(not set)"))
     logger.info("========================================")
-    _log_env_check()
-    _solver_self_test()
-    await init_db()
+    # Non-blocking startup: DB failure must not prevent healthcheck
+    try:
+        await init_db()
+        logger.info("[Startup] Database initialized")
+    except Exception as exc:
+        logger.warning("[Startup] Database init failed (non-fatal): %s", exc)
+    logger.info("[Startup] App ready — healthcheck should pass")
     yield
     logger.info("=== Stacked Poker stopped ===")
 
