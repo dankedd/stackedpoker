@@ -57,11 +57,11 @@ def _get_settings() -> WorkerSettings:
 _redis_available = True
 
 
-async def _get_queue() -> SolveQueue:
+async def _get_queue() -> SolveQueue | None:
     """Lazy-init queue connection. Returns None if Redis unavailable."""
     global _queue, _redis_available
     if not _redis_available:
-        raise HTTPException(503, "Redis unavailable — solver queue offline")
+        return None
     if _queue is None:
         try:
             settings = _get_settings()
@@ -71,8 +71,16 @@ async def _get_queue() -> SolveQueue:
         except Exception as exc:
             _redis_available = False
             print(f"[Redis] Connection failed — solver queue disabled: {exc}")
-            raise HTTPException(503, f"Redis unavailable: {exc}")
+            return None
     return _queue
+
+
+async def _require_queue() -> SolveQueue:
+    """FastAPI dependency: get queue or raise 503."""
+    q = await _get_queue()
+    if q is None:
+        raise HTTPException(503, "Redis unavailable — solver queue offline. Solver job features require Redis.")
+    return q
 
 
 # ── Request/Response models ───────────────────────────────────────────────
@@ -108,7 +116,7 @@ class CoverageResponse(BaseModel):
 @router.post("/jobs", response_model=SubmitJobResponse)
 async def submit_job(
     request: SubmitJobRequest,
-    queue: SolveQueue = Depends(_get_queue),
+    queue: SolveQueue = Depends(_require_queue),
 ) -> SubmitJobResponse:
     """Submit a single solve job to the queue."""
     job = await queue.enqueue(
@@ -132,7 +140,7 @@ async def submit_job(
 @router.post("/jobs/batch", response_model=BatchSolveResponse)
 async def submit_batch(
     request: BatchSolveRequest,
-    queue: SolveQueue = Depends(_get_queue),
+    queue: SolveQueue = Depends(_require_queue),
 ) -> BatchSolveResponse:
     """Submit a batch of solve jobs."""
     jobs = await queue.enqueue_batch(
@@ -153,7 +161,7 @@ async def list_jobs(
     status: SolveJobStatus | None = None,
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
-    queue: SolveQueue = Depends(_get_queue),
+    queue: SolveQueue = Depends(_require_queue),
 ) -> list[SolveJobSummary]:
     """List solve jobs, optionally filtered by status."""
     jobs = await queue.list_jobs(status=status, limit=limit, offset=offset)
@@ -163,7 +171,7 @@ async def list_jobs(
 @router.get("/jobs/{job_id}", response_model=SolveJob)
 async def get_job(
     job_id: str,
-    queue: SolveQueue = Depends(_get_queue),
+    queue: SolveQueue = Depends(_require_queue),
 ) -> SolveJob:
     """Get full details for a specific job."""
     job = await queue.get_job(job_id)
@@ -175,7 +183,7 @@ async def get_job(
 @router.get("/jobs/{job_id}/result", response_model=SolveJobResult)
 async def get_job_result(
     job_id: str,
-    queue: SolveQueue = Depends(_get_queue),
+    queue: SolveQueue = Depends(_require_queue),
 ) -> SolveJobResult:
     """Get the solve result for a completed job."""
     result = await queue.get_result(job_id)
@@ -194,7 +202,7 @@ async def get_job_result(
 @router.post("/jobs/{job_id}/cancel")
 async def cancel_job(
     job_id: str,
-    queue: SolveQueue = Depends(_get_queue),
+    queue: SolveQueue = Depends(_require_queue),
 ) -> dict:
     """Cancel a queued or running job."""
     job = await queue.cancel(job_id)
@@ -205,7 +213,7 @@ async def cancel_job(
 
 @router.get("/queue/stats")
 async def queue_stats(
-    queue: SolveQueue = Depends(_get_queue),
+    queue: SolveQueue = Depends(_require_queue),
 ) -> dict:
     """Get queue health statistics."""
     return await queue.queue_stats()
@@ -213,7 +221,7 @@ async def queue_stats(
 
 @router.get("/metrics")
 async def solver_metrics(
-    queue: SolveQueue = Depends(_get_queue),
+    queue: SolveQueue = Depends(_require_queue),
 ) -> dict:
     """Get solver metrics snapshot."""
     from app.solver_worker.metrics import SolveMetrics
@@ -225,7 +233,7 @@ async def solver_metrics(
 @router.post("/schedule/coverage", response_model=CoverageResponse)
 async def schedule_coverage(
     request: CoverageRequest,
-    queue: SolveQueue = Depends(_get_queue),
+    queue: SolveQueue = Depends(_require_queue),
 ) -> CoverageResponse:
     """Generate and enqueue a batch of coverage solve jobs."""
     scheduler = SolveScheduler(queue)
@@ -246,7 +254,7 @@ async def estimate_coverage(
     stack_depths: str = Query(default="100"),
 ) -> dict:
     """Estimate the size of a coverage batch without enqueuing."""
-    queue = await _get_queue()
+    queue = await _require_queue()
     scheduler = SolveScheduler(queue)
     return await scheduler.estimate_batch_size(
         spot_types=spot_types.split(","),
@@ -257,8 +265,10 @@ async def estimate_coverage(
 @router.get("/health", response_model=dict)
 async def solver_health() -> dict:
     """Worker system health check."""
-    settings = _get_settings()
     queue = await _get_queue()
+    if queue is None:
+        return {"healthy": False, "checks": {"redis": False}, "details": {"error": "Redis unavailable"}}
+    settings = _get_settings()
     checker = HealthChecker(settings, queue.redis)
     status = await checker.check_all()
     return status.to_dict()
@@ -314,15 +324,19 @@ async def solver_health_deep() -> dict:
         details["strategy_db_error"] = str(exc)
 
     # 6. Redis
-    try:
-        queue = await _get_queue()
-        await queue.redis.ping()
-        checks["redis_connected"] = True
-        depth = await queue.queue_depth()
-        details["queue_depth"] = str(depth)
-    except Exception as exc:
+    queue = await _get_queue()
+    if queue is not None:
+        try:
+            await queue.redis.ping()
+            checks["redis_connected"] = True
+            depth = await queue.queue_depth()
+            details["queue_depth"] = str(depth)
+        except Exception as exc:
+            checks["redis_connected"] = False
+            details["redis_error"] = str(exc)
+    else:
         checks["redis_connected"] = False
-        details["redis_error"] = str(exc)
+        details["redis_error"] = "Redis unavailable"
 
     # 7. Overall health
     all_ok = all(checks.values())
