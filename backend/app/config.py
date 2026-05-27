@@ -55,7 +55,12 @@ class Settings(BaseSettings):
     debug_admin_token: str = ""
 
     # Pydantic reads .env for local dev; real env vars always win over .env file.
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    # In Docker/Railway, .env should NOT exist — but if it does, this won't
+    # break because real env vars take priority in pydantic-settings.
+    model_config = {
+        "env_file": ".env" if __import__("os").path.exists(".env") else None,
+        "env_file_encoding": "utf-8",
+    }
 
     @field_validator("database_url", mode="before")
     @classmethod
