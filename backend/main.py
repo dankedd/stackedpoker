@@ -16,7 +16,7 @@ from app.api.routes import pipeline as pipeline_routes
 # ── Immutable build identity ──────────────────────────────────────────────
 # Change BUILD_ID on every deploy-critical push so we can verify
 # the running container matches the latest code.
-BUILD_ID = "solver-runtime-v32-strip-url"
+BUILD_ID = "solver-runtime-v33-low-memory"
 BUILD_TIMESTAMP = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 settings = get_settings()
@@ -196,21 +196,21 @@ app.include_router(coach.router, prefix="/api")
 app.include_router(train.router, prefix="/api")
 app.include_router(pipeline_routes.router, prefix="/api")
 app.include_router(debug.router, prefix="/api")
-# Phase 2-8 routes: lazy-imported to avoid heavy startup import chains
-# These modules pull in redis, coaching models, solver abstractions etc.
-# which add seconds to startup and can OOM on Railway's limited builders.
-try:
-    from app.api.routes import solver_jobs, abstraction, coaching, ai_coach, social, realtime
-    app.include_router(solver_jobs.router, prefix="/api")
-    app.include_router(abstraction.router, prefix="/api")
-    app.include_router(coaching.router, prefix="/api")
-    app.include_router(ai_coach.router, prefix="/api")
-    app.include_router(social.router, prefix="/api")
-    app.include_router(realtime.router, prefix="/api")
-except Exception as _route_err:
-    logging.getLogger(__name__).warning(
-        "Phase 2-8 routes failed to load (non-fatal): %s", _route_err
-    )
+# Phase 2-8 routes DISABLED — Railway Trial has 512MB RAM limit.
+# These modules (redis, coaching, solver workers, social, realtime)
+# add ~150MB of imports. Re-enable when upgrading Railway plan.
+# To re-enable: uncomment the block below.
+#
+# try:
+#     from app.api.routes import solver_jobs, abstraction, coaching, ai_coach, social, realtime
+#     app.include_router(solver_jobs.router, prefix="/api")
+#     app.include_router(abstraction.router, prefix="/api")
+#     app.include_router(coaching.router, prefix="/api")
+#     app.include_router(ai_coach.router, prefix="/api")
+#     app.include_router(social.router, prefix="/api")
+#     app.include_router(realtime.router, prefix="/api")
+# except Exception as _route_err:
+#     logging.getLogger(__name__).warning("Phase 2-8 routes: %s", _route_err)
 
 
 @app.exception_handler(Exception)

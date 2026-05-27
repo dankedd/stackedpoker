@@ -163,7 +163,8 @@ async def analyze_canonical(
         # Never blocks analysis — all errors are logged and swallowed.
         # Gated by ENABLE_SOLVER_ENGINE feature flag.
         from app.config import get_settings as _get_settings
-        _solver_enabled = _get_settings().enable_solver_engine
+        # Solver disabled to save RAM on Railway Trial (512MB limit)
+        _solver_enabled = False  # _get_settings().enable_solver_engine
         if _solver_enabled:
             try:
                 from app.solver.abstractions import SpotAbstraction
