@@ -68,7 +68,7 @@ class ConnectionManager:
         self._connections: dict[str, Connection] = {}  # user_id → connection
         self._bus: EventBus | None = None
 
-    async def _get_bus(self) -> EventBus:
+    async def _get_bus(self) -> EventBus | None:
         if self._bus is None:
             self._bus = await get_event_bus()
         return self._bus
@@ -129,10 +129,11 @@ class ConnectionManager:
             payload = msg.get("payload", {})
             if channel in conn.subscriptions:
                 bus = await self._get_bus()
-                await bus.publish(channel, "user_message", {
-                    "user_id": conn.user_id,
-                    **payload,
-                })
+                if bus:
+                    await bus.publish(channel, "user_message", {
+                        "user_id": conn.user_id,
+                        **payload,
+                    })
 
     async def broadcast_to_user(self, user_id: str, event_type: str, payload: dict) -> bool:
         """Send directly to a specific user's WebSocket."""
@@ -158,6 +159,8 @@ class ConnectionManager:
 
         conn.subscriptions.add(channel)
         bus = await self._get_bus()
+        if not bus:
+            return  # Redis unavailable — skip subscription
 
         # Start a background listener for this channel
         async def _listener():

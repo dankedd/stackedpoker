@@ -54,13 +54,24 @@ def _get_settings() -> WorkerSettings:
     return _settings
 
 
+_redis_available = True
+
+
 async def _get_queue() -> SolveQueue:
-    """Lazy-init queue connection. Shared across requests."""
-    global _queue
+    """Lazy-init queue connection. Returns None if Redis unavailable."""
+    global _queue, _redis_available
+    if not _redis_available:
+        raise HTTPException(503, "Redis unavailable — solver queue offline")
     if _queue is None:
-        settings = _get_settings()
-        _queue = SolveQueue(settings)
-        await _queue.connect()
+        try:
+            settings = _get_settings()
+            _queue = SolveQueue(settings)
+            await _queue.connect()
+            print("[Redis] Connected to solver queue")
+        except Exception as exc:
+            _redis_available = False
+            print(f"[Redis] Connection failed — solver queue disabled: {exc}")
+            raise HTTPException(503, f"Redis unavailable: {exc}")
     return _queue
 
 

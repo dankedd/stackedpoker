@@ -145,13 +145,23 @@ class EventBus:
 
 # Module singleton
 _bus: EventBus | None = None
+_bus_failed: bool = False
 
 
-async def get_event_bus() -> EventBus:
-    global _bus
+async def get_event_bus() -> EventBus | None:
+    """Returns EventBus or None if Redis unavailable."""
+    global _bus, _bus_failed
+    if _bus_failed:
+        return None
     if _bus is None:
-        import os
-        url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-        _bus = EventBus(url)
-        await _bus.connect()
+        try:
+            import os
+            url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+            _bus = EventBus(url)
+            await _bus.connect()
+            print("[Redis] EventBus connected")
+        except Exception as exc:
+            _bus_failed = True
+            print(f"[Redis] EventBus connection failed (non-fatal): {exc}")
+            return None
     return _bus

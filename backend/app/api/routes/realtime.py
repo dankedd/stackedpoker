@@ -185,11 +185,12 @@ async def process_action(session_id: str, req: ProcessActionRequest) -> dict:
 
         response["coaching"] = result.coaching_event
 
-        # Broadcast via event bus
+        # Broadcast via event bus (optional — Redis may not be available)
         try:
             bus = await get_event_bus()
-            channel = EventBus.session_channel(session_id)
-            await bus.publish(channel, "coaching", result.coaching_event)
+            if bus:
+                channel = EventBus.session_channel(session_id)
+                await bus.publish(channel, "coaching", result.coaching_event)
         except Exception:
             pass  # Non-critical
 
