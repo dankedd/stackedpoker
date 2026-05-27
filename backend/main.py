@@ -16,7 +16,7 @@ from app.api.routes import pipeline as pipeline_routes
 # ── Immutable build identity ──────────────────────────────────────────────
 # Change BUILD_ID on every deploy-critical push so we can verify
 # the running container matches the latest code.
-BUILD_ID = "solver-runtime-v24-lazy-routes"
+BUILD_ID = "solver-runtime-v25-global-catch"
 BUILD_TIMESTAMP = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 settings = get_settings()
@@ -210,6 +210,17 @@ try:
 except Exception as _route_err:
     logging.getLogger(__name__).warning(
         "Phase 2-8 routes failed to load (non-fatal): %s", _route_err
+    )
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Catch-all: log every unhandled exception and return 500 JSON, never 502."""
+    logger.exception("UNHANDLED EXCEPTION on %s %s", request.method, request.url.path)
+    from fastapi.responses import JSONResponse
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Internal server error: {type(exc).__name__}: {str(exc)[:200]}"},
     )
 
 

@@ -102,7 +102,7 @@ async def generate_coaching(
     if not settings.openai_api_key:
         return _fallback_coaching(spot, texture, findings)
 
-    client = AsyncOpenAI(api_key=settings.openai_api_key)
+    client = AsyncOpenAI(api_key=settings.openai_api_key, timeout=15.0)
     prompt = _build_prompt(hand, spot, texture, findings, overall_score, game_type, player_count, poker_state)
 
     try:
