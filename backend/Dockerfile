@@ -87,7 +87,8 @@ ENV TEXASSOLVER_RESOURCE_DIR="/opt/texassolver/resources"
 ENV ENABLE_SOLVER_ENGINE="true"
 ENV PYTHONUNBUFFERED="1"
 
-EXPOSE 8000
+EXPOSE 8080
 
-# Railway sets PORT dynamically. Fall back to 8000 for local dev.
-CMD uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+# main.py reads PORT env var and calls uvicorn.run() directly.
+# No shell interpretation needed — Python handles it.
+CMD ["python", "main.py"]
