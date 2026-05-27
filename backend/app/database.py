@@ -56,13 +56,16 @@ except Exception as exc:
 
 # ── Engine creation ──────────────────────────────────────────────────────
 _connect_args: dict = {}
-_is_cloud = _db_host not in ("localhost", "127.0.0.1", "db", "unknown", "")
-if _is_cloud:
+# Railway's proxy does NOT require SSL for internal connections.
+# Only enable SSL if explicitly requested via sslmode in the URL.
+if "sslmode" in _settings_url:
     _ssl_ctx = ssl.create_default_context()
     _ssl_ctx.check_hostname = False
     _ssl_ctx.verify_mode = ssl.CERT_NONE
     _connect_args["ssl"] = _ssl_ctx
-    print(f"[DB EARLY] SSL: enabled for cloud host {_db_host}")
+    print(f"[DB EARLY] SSL: enabled (sslmode in URL)")
+else:
+    print(f"[DB EARLY] SSL: disabled (no sslmode in URL)")
 
 engine = create_async_engine(
     _settings_url,
