@@ -8,13 +8,15 @@ from app.config import get_settings
 from app.database import init_db
 from app.middleware.rate_limiter import RateLimitMiddleware
 from app.utils.logging import setup_logging
-from app.api.routes import health, parse, analyze, image_analyze, image_extract, session, stripe_routes, history, tournament, learn, coach, train, debug, solver_jobs, abstraction, coaching, ai_coach, social, realtime
+# Core routes — imported eagerly (lightweight, always needed)
+from app.api.routes import health, parse, analyze, image_analyze, image_extract, session, stripe_routes, history, tournament, learn, coach, train, debug
 from app.api.routes import pipeline as pipeline_routes
+# Phase 2-8 routes are registered lazily below to avoid heavy import chains at startup
 
 # ── Immutable build identity ──────────────────────────────────────────────
 # Change BUILD_ID on every deploy-critical push so we can verify
 # the running container matches the latest code.
-BUILD_ID = "solver-runtime-v23-crash-proof"
+BUILD_ID = "solver-runtime-v24-lazy-routes"
 BUILD_TIMESTAMP = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 settings = get_settings()
@@ -194,12 +196,21 @@ app.include_router(coach.router, prefix="/api")
 app.include_router(train.router, prefix="/api")
 app.include_router(pipeline_routes.router, prefix="/api")
 app.include_router(debug.router, prefix="/api")
-app.include_router(solver_jobs.router, prefix="/api")
-app.include_router(abstraction.router, prefix="/api")
-app.include_router(coaching.router, prefix="/api")
-app.include_router(ai_coach.router, prefix="/api")
-app.include_router(social.router, prefix="/api")
-app.include_router(realtime.router, prefix="/api")
+# Phase 2-8 routes: lazy-imported to avoid heavy startup import chains
+# These modules pull in redis, coaching models, solver abstractions etc.
+# which add seconds to startup and can OOM on Railway's limited builders.
+try:
+    from app.api.routes import solver_jobs, abstraction, coaching, ai_coach, social, realtime
+    app.include_router(solver_jobs.router, prefix="/api")
+    app.include_router(abstraction.router, prefix="/api")
+    app.include_router(coaching.router, prefix="/api")
+    app.include_router(ai_coach.router, prefix="/api")
+    app.include_router(social.router, prefix="/api")
+    app.include_router(realtime.router, prefix="/api")
+except Exception as _route_err:
+    logging.getLogger(__name__).warning(
+        "Phase 2-8 routes failed to load (non-fatal): %s", _route_err
+    )
 
 
 @app.get("/")
