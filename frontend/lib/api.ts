@@ -188,6 +188,100 @@ export async function analyzeCanonical(
   });
 }
 
+// ── Solver Jobs ───────────────────────────────────────────────────────────────
+
+export interface SolverJobSubmission {
+  config: {
+    spot_type: string;
+    positions: string;
+    stack_depth: number;
+    board: string[];
+    bet_sizes?: number[];
+    raise_sizes?: number[];
+    max_iterations?: number;
+    accuracy_target?: number;
+  };
+  priority?: "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
+}
+
+export interface SolverJobResponse {
+  job_id: string | null;
+  status: string;
+  message: string;
+}
+
+export interface SolverJobStatus {
+  job_id: string;
+  status: "queued" | "running" | "completed" | "failed" | "cancelled" | "timeout";
+  config: SolverJobSubmission["config"];
+  attempt: number;
+  created_at: string;
+  error?: string | null;
+}
+
+export interface SolverStrategy {
+  status: string;
+  mode: string;
+  source: string;
+  job_id: string;
+  frequencies: Record<string, number>;
+  ev: Record<string, number>;
+  preferred_action: string;
+  hero_action_ev_loss: number;
+  iterations: number;
+  exploitability: number;
+  solve_time_ms: number;
+  node_description: string;
+  street_supported: boolean;
+  strategies: {
+    [player: string]: {
+      position: string;
+      actions: string[];
+      frequencies: Record<string, number>;
+      preferred_action: string;
+      combo_count: number;
+      combos: Array<{
+        hand: string;
+        actions: Record<string, number>;
+        equity: number | null;
+        ev: number | null;
+      }>;
+    };
+  };
+  board: string[];
+  spot_type: string;
+  positions: string;
+  nodes_parsed: number;
+  nodes_imported: number;
+}
+
+/** Submit a solve job to the queue. */
+export async function submitSolverJob(
+  submission: SolverJobSubmission,
+  token: string,
+): Promise<SolverJobResponse> {
+  return apiFetch<SolverJobResponse>("/api/solver/jobs", token, {
+    method: "POST",
+    body: JSON.stringify(submission),
+  });
+}
+
+/** Get current status of a solver job. */
+export async function getSolverJobStatus(
+  jobId: string,
+  token: string,
+): Promise<SolverJobStatus> {
+  return apiFetch<SolverJobStatus>(`/api/solver/jobs/${jobId}`, token);
+}
+
+/** Get parsed strategy data for a completed solver job. */
+export async function getSolverStrategy(
+  jobId: string,
+  token: string,
+): Promise<SolverStrategy> {
+  return apiFetch<SolverStrategy>(`/api/solver/jobs/${jobId}/strategy`, token);
+}
+
 // ── Stripe Billing ─────────────────────────────────────────────────────────
 
 /** Create a Stripe Checkout Session and return the redirect URL. */

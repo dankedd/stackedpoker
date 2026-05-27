@@ -25,8 +25,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { usePipeline } from "@/hooks/usePipeline";
 import { useImageAnalysis } from "@/hooks/useImageAnalysis";
+import { useSolver } from "@/hooks/useSolver";
 import { useUsage } from "@/hooks/useUsage";
 import { useAuth } from "@/contexts/AuthContext";
+import SolverPanel from "@/components/solver/SolverPanel";
 import { cn } from "@/lib/utils";
 import type { PipelineResult } from "@/lib/hand-schema";
 
@@ -79,6 +81,7 @@ export default function AnalyzePage() {
   // ── Hooks ────────────────────────────────────────────────────────────────
   const pipeline = usePipeline();
   const image    = useImageAnalysis();
+  const solver   = useSolver();
 
   const [stageIdx, setStageIdx] = useState(0);
   const resultRef    = useRef<HTMLDivElement>(null);
@@ -500,6 +503,30 @@ export default function AnalyzePage() {
                   ) : (
                     <AnalysisResult result={pipeline.result} />
                   )}
+
+                  {/* Solver Panel — detailed GTO strategy with combo breakdowns */}
+                  <div className="mt-4">
+                    <SolverPanel
+                      state={solver.state}
+                      strategy={solver.strategy}
+                      error={solver.error}
+                      onSolve={() => {
+                        const board = pipeline.result?.parsed_hand?.board;
+                        const spot = pipeline.result?.spot_classification;
+                        if (!board || !spot) return;
+                        const flopCards = board.flop ?? [];
+                        if (flopCards.length < 3) return;
+                        solver.solve({
+                          spot_type: spot.pot_type ?? "SRP",
+                          positions: spot.position_matchup ?? "BTN_vs_BB",
+                          stack_depth: pipeline.result?.parsed_hand?.effective_stack_bb ?? 100,
+                          board: flopCards,
+                          max_iterations: 100,
+                          accuracy_target: 0.5,
+                        });
+                      }}
+                    />
+                  </div>
 
                   {/* Debug panel (dev only) */}
                   {IS_DEV && pipeline.pipeline && (

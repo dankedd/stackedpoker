@@ -241,19 +241,62 @@ async def analyze_canonical(
         except Exception:
             logger.warning("Replay build failed — continuing without it", exc_info=True)
 
-        # ── Phase 6: Live solver (fully optional, never crashes analysis) ──
-        if _solver_enabled:
-            try:
-                from app.solver.live_solver import SolverResult as _SR, solve_river_synthetic
+        # ── Phase 6: Solver — inject real solver data from strategy store ──
+        try:
+            from app.solver.live_solver import SolverResult as _SR
+            from app.strategy_db.storage import StrategyStore
+
+            store = StrategyStore(seed_on_init=True)
+
+            # Check if we have real TexasSolver data for this spot
+            hero_is_ip = result.spot_classification.get("hero_is_ip", True) if isinstance(result.spot_classification, dict) else getattr(result.spot_classification, "hero_is_ip", True)
+            spot_id = result.spot_classification.get("spot_id", "") if isinstance(result.spot_classification, dict) else getattr(result.spot_classification, "spot_id", "")
+
+            # Try to find a stored strategy node
+            node = store.get_by_node_key(spot_id, hero_is_ip) if spot_id else None
+
+            if node and node.source == "texassolver":
+                # Real solver data available — build SolverLiveResult
+                frequencies = {}
+                if node.check_frequency > 0.001:
+                    frequencies["check"] = round(node.check_frequency, 4)
+                if node.bet_frequency > 0.001:
+                    frequencies["bet"] = round(node.bet_frequency, 4)
+                # Ensure frequencies sum to ~1.0
+                remaining = 1.0 - sum(frequencies.values())
+                if remaining > 0.01:
+                    if "check" not in frequencies and "bet" not in frequencies:
+                        frequencies["check"] = round(remaining, 4)
+                    elif "check" in frequencies:
+                        frequencies["bet"] = round(remaining, 4)
+                    else:
+                        frequencies["check"] = round(remaining, 4)
+
+                preferred = max(frequencies, key=frequencies.get) if frequencies else "check"
                 result.solver = _SR(
-                    status="error",
-                    source="none",
-                    street_supported=False,
-                    fallback_reason="Solver enhancement skipped — heuristic analysis used",
+                    status="ready",
+                    source="texassolver",
+                    frequencies=frequencies,
+                    preferred_action=preferred,
+                    node_key=spot_id,
+                    node_description=f"{spot_id} | TexasSolver GTO",
+                    street_supported=True,
+                    iterations=100,
+                    solve_time_ms=0,
                 ).to_dict()
-                logger.info("[SOLVER] Using heuristic-only mode (live solving disabled for stability)")
-            except Exception:
-                logger.warning("[SOLVER] Could not even import solver module", exc_info=True)
+                logger.info("[SOLVER] Real TexasSolver data injected for spot %s", spot_id)
+            else:
+                # No solver data — use heuristic fallback
+                result.solver = _SR(
+                    status="ready",
+                    source="heuristic_strategy_db",
+                    frequencies={},
+                    street_supported=True,
+                    fallback_reason="Heuristic analysis — run solver for GTO frequencies",
+                ).to_dict()
+                logger.info("[SOLVER] No TexasSolver data for spot %s — heuristic mode", spot_id)
+        except Exception:
+            logger.warning("[SOLVER] Solver integration failed — continuing without it", exc_info=True)
 
         # ── Enrich pipeline trace ─────────────────────────────────────────
         replay_action_count = len(result.replay.actions) if result.replay else 0

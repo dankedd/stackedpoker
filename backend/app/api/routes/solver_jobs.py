@@ -499,3 +499,115 @@ async def test_solver_binary() -> dict:
         result["exec_success"] = False
 
     return result
+
+
+# ── Strategy endpoints ──────────────────────────────────────────────────────
+
+@router.get("/jobs/{job_id}/strategy", response_model=dict)
+async def get_job_strategy(
+    job_id: str,
+    queue: SolveQueue = Depends(_require_queue),
+) -> dict:
+    """
+    Get parsed solver strategy for a completed job.
+
+    Returns frontend-friendly format matching SolverLiveResult interface:
+    - frequencies (aggregate action probabilities)
+    - per-combo breakdowns
+    - IP and OOP strategies
+    - metadata (iterations, solve time, node description)
+    """
+    from pathlib import Path
+
+    # Get job and result
+    job = await queue.get_job(job_id)
+    if job is None:
+        raise HTTPException(404, f"Job {job_id} not found")
+
+    res = await queue.get_result(job_id)
+    if res is None:
+        if job.status.value in ("queued", "running"):
+            return {
+                "status": "solving",
+                "mode": "live",
+                "job_status": job.status.value,
+                "message": f"Job is {job.status.value}",
+            }
+        raise HTTPException(409, f"Job {job_id} is {job.status.value}, no result")
+
+    # Read the raw solver output JSON
+    output_path = res.solve_output_path
+    if not output_path or not Path(output_path).exists():
+        raise HTTPException(404, "Solve output file not found")
+
+    # Parse the output using our parser
+    from app.texassolver.config import SolverConfig
+    from app.texassolver.parser import parse_texassolver_output
+
+    config = SolverConfig(
+        spot_type=job.config.spot_type,
+        positions=job.config.positions,
+        stack_depth=job.config.stack_depth,
+        board=job.config.board,
+    )
+    nodes = parse_texassolver_output(output_path, config)
+
+    # Build frontend-friendly response
+    strategies = {}
+    for node in nodes:
+        player = "ip" if "ip" in node.node_id else "oop"
+
+        freq_dict = {a.action_name: round(a.frequency, 4) for a in node.actions}
+        preferred = max(node.actions, key=lambda a: a.frequency).action_name if node.actions else ""
+
+        combos = []
+        for combo in node.combos[:200]:  # Limit for response size
+            combos.append({
+                "hand": combo.combo,
+                "actions": {a.action_name: round(a.frequency, 4) for a in combo.actions},
+                "equity": combo.equity,
+                "ev": combo.ev_chips,
+            })
+
+        strategies[player] = {
+            "position": node.position,
+            "actions": [a.action_name for a in node.actions],
+            "frequencies": freq_dict,
+            "preferred_action": preferred,
+            "combo_count": len(node.combos),
+            "combos": combos,
+        }
+
+    # Use OOP as the primary display (first to act in most spots)
+    primary = strategies.get("oop", strategies.get("ip", {}))
+
+    return {
+        "status": "ready",
+        "mode": "live",
+        "source": "texassolver",
+        "job_id": job_id,
+        "frequencies": primary.get("frequencies", {}),
+        "ev": {},
+        "preferred_action": primary.get("preferred_action", ""),
+        "hero_action_ev_loss": 0.0,
+        "iterations": job.config.max_iterations,
+        "exploitability": 0.0,
+        "solve_time_ms": round(res.solve_time_seconds * 1000, 1),
+        "cache_hit": False,
+        "node_key": f"{config.spot_type}::{config.positions}::{config.stack_depth}bb",
+        "node_description": (
+            f"{config.ip_position()} vs {config.oop_position()} | "
+            f"{'Flop' if len(config.board) == 3 else 'Turn' if len(config.board) == 4 else 'River'} "
+            f"[{' '.join(config.board)}] | "
+            f"Pot {config.pot_size_bb():.0f}bb"
+        ),
+        "street_supported": True,
+        "error": None,
+        "fallback_reason": None,
+        "strategies": strategies,
+        "board": config.board,
+        "spot_type": config.spot_type,
+        "positions": config.positions,
+        "nodes_parsed": res.nodes_parsed,
+        "nodes_imported": res.nodes_imported,
+    }
