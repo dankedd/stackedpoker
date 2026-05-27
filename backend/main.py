@@ -16,7 +16,7 @@ from app.api.routes import pipeline as pipeline_routes
 # ── Immutable build identity ──────────────────────────────────────────────
 # Change BUILD_ID on every deploy-critical push so we can verify
 # the running container matches the latest code.
-BUILD_ID = "solver-runtime-v35-pydantic-fix"
+BUILD_ID = "solver-runtime-v36-boot-trace"
 BUILD_TIMESTAMP = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 settings = get_settings()
@@ -182,6 +182,7 @@ async def add_security_headers(request: Request, call_next) -> Response:
     return response
 
 
+print("[BOOT] Registering core routes...")
 app.include_router(health.router, prefix="/api")
 app.include_router(parse.router, prefix="/api")
 app.include_router(analyze.router, prefix="/api")
@@ -196,17 +197,24 @@ app.include_router(coach.router, prefix="/api")
 app.include_router(train.router, prefix="/api")
 app.include_router(pipeline_routes.router, prefix="/api")
 app.include_router(debug.router, prefix="/api")
+print("[BOOT] Core routes registered OK")
+
 # Phase 2-8 routes — enabled with Railway Hobby plan (8GB RAM)
+print("[BOOT] Importing Phase 2-8 routes...")
 try:
     from app.api.routes import solver_jobs, abstraction, coaching, ai_coach, social, realtime
+    print("[BOOT] Phase 2-8 imports OK, registering routers...")
     app.include_router(solver_jobs.router, prefix="/api")
     app.include_router(abstraction.router, prefix="/api")
     app.include_router(coaching.router, prefix="/api")
     app.include_router(ai_coach.router, prefix="/api")
     app.include_router(social.router, prefix="/api")
     app.include_router(realtime.router, prefix="/api")
+    print("[BOOT] Phase 2-8 routes registered OK")
 except Exception as _route_err:
-    logging.getLogger(__name__).warning("Phase 2-8 routes failed: %s", _route_err)
+    import traceback
+    print(f"[BOOT] Phase 2-8 routes FAILED: {_route_err}")
+    traceback.print_exc()
 
 
 @app.exception_handler(Exception)
