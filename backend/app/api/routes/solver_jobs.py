@@ -344,9 +344,16 @@ async def test_solver_binary() -> dict:
         "python_platform": platform.platform(),
     }
 
-    # Find binary
-    from main import _find_solver_binary
-    resolved = _find_solver_binary()
+    # Find binary (inline to avoid circular import with main.py)
+    resolved = os.getenv("TEXASSOLVER_BIN", "")
+    if not resolved or not Path(resolved).exists():
+        for candidate in [
+            "/opt/texassolver/bin/console_solver",
+            str(Path.home() / "TexasSolver" / "console_solver"),
+        ]:
+            if Path(candidate).exists():
+                resolved = candidate
+                break
     result["texassolver_bin_env"] = os.getenv("TEXASSOLVER_BIN", "(not set)")
     result["resolved_path"] = resolved or "(not found)"
     result["binary_exists"] = bool(resolved) and Path(resolved).exists()
