@@ -117,8 +117,8 @@ class HealthChecker:
             return False
 
     def _check_solver_binary(self) -> bool:
-        path = Path(self._settings.solver_binary)
-        return path.exists() and os.access(str(path), os.X_OK)
+        from .solver_path import solver_binary_executable
+        return solver_binary_executable(self._settings.solver_binary)
 
     def _check_resources(self) -> bool:
         res_dir = Path(self._settings.solver_resource_dir)

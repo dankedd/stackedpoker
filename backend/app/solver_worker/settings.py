@@ -13,6 +13,9 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass, field
+from pathlib import Path
+
+from .solver_path import detect_platform, PLATFORM_WINDOWS
 
 
 @dataclass(frozen=True)
@@ -32,6 +35,8 @@ class WorkerSettings:
     job_status_ttl: int = 86400 * 30      # 30 days
 
     # ── TexasSolver ───────────────────────────────────────────────────────
+    # Defaults are platform-aware — set at class level as fallbacks,
+    # overridden by from_env() which uses detect_platform().
     solver_binary: str = "/opt/texassolver/bin/console_solver"
     solver_resource_dir: str = "/opt/texassolver/resources"
 
@@ -66,11 +71,26 @@ class WorkerSettings:
     @classmethod
     def from_env(cls) -> WorkerSettings:
         """Build settings from environment variables with sensible defaults."""
+        from .solver_path import default_solver_path, resolve_solver_path
+
+        # Resolve solver binary: env var → auto-detect → platform default
+        env_bin = os.getenv("TEXASSOLVER_BIN")
+        resolved = resolve_solver_path(explicit_path=env_bin)
+        solver_bin = resolved or env_bin or default_solver_path()
+
+        # Resolve resource dir with platform-aware default
+        plat = detect_platform()
+        default_res = (
+            str(Path(__file__).resolve().parent.parent.parent / "vendor" / "texassolver" / "resources")
+            if plat == PLATFORM_WINDOWS
+            else cls.solver_resource_dir
+        )
+
         return cls(
             redis_url=os.getenv("REDIS_URL", cls.redis_url),
-            solver_binary=os.getenv("TEXASSOLVER_BIN", cls.solver_binary),
+            solver_binary=solver_bin,
             solver_resource_dir=os.getenv(
-                "TEXASSOLVER_RESOURCE_DIR", cls.solver_resource_dir,
+                "TEXASSOLVER_RESOURCE_DIR", default_res,
             ),
             solve_timeout_seconds=int(
                 os.getenv("SOLVE_TIMEOUT", str(cls.solve_timeout_seconds)),

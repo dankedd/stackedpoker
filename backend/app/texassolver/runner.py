@@ -21,10 +21,9 @@ from __future__ import annotations
 
 import hashlib
 import logging
-import shutil
 import subprocess
 import tempfile
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 from .config import SolverConfig
@@ -174,43 +173,23 @@ def _generate_input_file(config: SolverConfig, work_dir: Path) -> Path:
 
 def _find_solver_executable(config: SolverConfig) -> str | None:
     """
-    Locate the TexasSolver executable.
+    Locate the TexasSolver executable using platform-aware resolution.
 
-    Priority:
+    Delegates to solver_path.resolve_solver_path() which checks:
       1. config.solver_path (explicit override / TEXASSOLVER_BIN)
-      2. System PATH lookup
-      3. Common installation locations
+      2. TEXASSOLVER_BIN environment variable
+      3. System PATH lookup
+      4. Platform-specific candidate paths (Windows/Linux/Railway)
     """
-    if config.solver_path:
-        path = Path(config.solver_path)
-        if path.exists():
-            logger.info("[TexasSolver] binary found at configured path: %s", path)
-            return str(path)
-        logger.warning("[TexasSolver] configured solver_path does not exist: %s", config.solver_path)
-        return None
+    from app.solver_worker.solver_path import resolve_solver_path
 
-    # Try system PATH
-    exe = shutil.which(DEFAULT_SOLVER_EXE)
-    if exe:
-        logger.info("[TexasSolver] binary found in PATH: %s", exe)
-        return exe
-
-    # Try common locations
-    common_paths = [
-        Path.home() / "TexasSolver" / "console_solver",
-        Path.home() / "TexasSolver" / "console_solver.exe",
-        Path("/usr/local/bin/console_solver"),
-        Path("/opt/texassolver/bin/console_solver"),
-    ]
-    for p in common_paths:
-        if p.exists():
-            logger.info("[TexasSolver] binary found at common location: %s", p)
-            return str(p)
+    resolved = resolve_solver_path(explicit_path=config.solver_path)
+    if resolved:
+        return resolved
 
     logger.warning(
-        "[TexasSolver] binary NOT FOUND. Searched: solver_path=%s, PATH=%s, common=%s",
-        config.solver_path, DEFAULT_SOLVER_EXE,
-        [str(p) for p in common_paths],
+        "[TexasSolver] binary NOT FOUND. config.solver_path=%s",
+        config.solver_path,
     )
     return None
 
@@ -269,11 +248,17 @@ def run_texassolver(
         # Find solver executable
         solver_exe = _find_solver_executable(config)
         if solver_exe is None:
+            from app.solver_worker.solver_path import (
+                detect_platform, get_install_instructions,
+            )
+            plat = detect_platform()
             result.error = (
-                "TexasSolver executable not found. "
-                "Set solver_path in SolverConfig or add to PATH."
+                f"TexasSolver executable not found (platform={plat}). "
+                "Set TEXASSOLVER_BIN env var or place binary in vendor/texassolver/. "
+                "Run GET /api/solver/health/deep for details."
             )
             logger.error("[TexasSolver] %s", result.error)
+            logger.info("[TexasSolver] Install instructions:\n%s", get_install_instructions())
             return result
 
         # Execute solver

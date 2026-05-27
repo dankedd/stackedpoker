@@ -74,6 +74,8 @@ class SolveWorker:
 
     async def start(self) -> None:
         """Start the worker loop. Blocks until shutdown signal."""
+        from .solver_path import log_solver_status, solver_binary_exists
+
         logger.info(
             "[Worker %s] starting (concurrency=%d, threads/solve=%d, timeout=%ds)",
             self._worker_id,
@@ -81,6 +83,15 @@ class SolveWorker:
             self._settings.max_worker_threads,
             self._settings.solve_timeout_seconds,
         )
+
+        # Log solver binary status at startup
+        solver_status = log_solver_status()
+        if not solver_status["binary_exists"]:
+            logger.warning(
+                "[Worker %s] solver binary NOT found — jobs will fail until binary is available. "
+                "See GET /api/solver/health/deep for install instructions.",
+                self._worker_id,
+            )
 
         # Set OpenMP thread count for solver subprocesses
         os.environ["OMP_NUM_THREADS"] = str(self._settings.max_worker_threads)

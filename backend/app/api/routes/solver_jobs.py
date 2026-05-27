@@ -279,35 +279,54 @@ async def solver_health_deep() -> dict:
     """
     Deep solver health check — verifies binary, resources, runtime,
     strategy DB, and Redis connectivity end-to-end.
+
+    Returns:
+      - solver binary found, executable permissions, resolved path
+      - detected OS / platform
+      - redis connected, worker running
+      - install instructions if binary missing
     """
     import os
-    import shutil
     from pathlib import Path
+
+    from app.solver_worker.solver_path import (
+        detect_platform,
+        resolve_solver_path,
+        solver_binary_exists,
+        solver_binary_executable,
+        get_install_instructions,
+        log_solver_status,
+    )
 
     checks: dict[str, bool] = {}
     details: dict[str, str] = {}
 
-    # 1. Feature flag
+    # 1. Platform detection
+    plat = detect_platform()
+    import platform as _platform
+    details["detected_platform"] = plat
+    details["os"] = _platform.system()
+    details["arch"] = _platform.machine()
+    details["python"] = _platform.python_version()
+
+    # 2. Feature flag
     enabled = os.getenv("ENABLE_SOLVER_ENGINE", "true").lower() == "true"
     checks["solver_enabled"] = enabled
     details["enable_solver_engine"] = str(enabled)
 
-    # 2. Binary configuration
-    solver_bin = os.getenv("TEXASSOLVER_BIN", "")
-    checks["binary_configured"] = bool(solver_bin)
-    details["texassolver_bin"] = solver_bin or "(not set)"
+    # 3. Binary resolution (platform-aware)
+    env_bin = os.getenv("TEXASSOLVER_BIN", "")
+    resolved = resolve_solver_path(explicit_path=env_bin or None)
+    details["texassolver_bin_env"] = env_bin or "(not set)"
+    details["resolved_path"] = resolved or "(not found)"
 
-    # 3. Binary exists
-    if solver_bin:
-        path = Path(solver_bin)
-        checks["binary_exists"] = path.exists()
-        checks["binary_executable"] = os.access(str(path), os.X_OK) if path.exists() else False
-    else:
-        checks["binary_exists"] = False
-        checks["binary_executable"] = False
+    checks["binary_configured"] = bool(env_bin or resolved)
+    checks["binary_exists"] = solver_binary_exists(resolved)
+    checks["binary_executable"] = solver_binary_executable(resolved)
 
     # 4. Resources
-    res_dir = os.getenv("TEXASSOLVER_RESOURCE_DIR", "/opt/texassolver/resources")
+    settings = _get_settings()
+    res_dir = settings.solver_resource_dir
     compairer = Path(res_dir) / "compairer"
     checks["resources_available"] = compairer.exists() and any(compairer.iterdir()) if compairer.exists() else False
     details["resource_dir"] = res_dir
@@ -341,7 +360,7 @@ async def solver_health_deep() -> dict:
     # 7. Overall health
     all_ok = all(checks.values())
 
-    return {
+    result = {
         "healthy": all_ok,
         "checks": checks,
         "details": details,
@@ -351,6 +370,12 @@ async def solver_health_deep() -> dict:
         ),
     }
 
+    # 8. Include install instructions if binary is missing
+    if not checks["binary_exists"]:
+        result["install_instructions"] = get_install_instructions()
+
+    return result
+
 
 @router.get("/test-binary", response_model=dict)
 async def test_solver_binary() -> dict:
@@ -358,59 +383,69 @@ async def test_solver_binary() -> dict:
     Execute the solver binary directly and return full runtime diagnostics.
 
     Tests: file existence, permissions, shared libraries, actual execution.
+    Cross-platform: works on Windows, Linux, and Railway.
     """
     import os
     import subprocess
     import platform
     from pathlib import Path
 
+    from app.solver_worker.solver_path import (
+        detect_platform,
+        resolve_solver_path,
+        solver_binary_executable,
+        get_install_instructions,
+        PLATFORM_WINDOWS,
+    )
+
+    plat = detect_platform()
     result: dict = {
-        "platform": platform.machine(),
+        "detected_platform": plat,
+        "os": platform.system(),
+        "arch": platform.machine(),
         "python_platform": platform.platform(),
     }
 
-    # Find binary (inline to avoid circular import with main.py)
-    resolved = os.getenv("TEXASSOLVER_BIN", "")
-    if not resolved or not Path(resolved).exists():
-        for candidate in [
-            "/opt/texassolver/bin/console_solver",
-            str(Path.home() / "TexasSolver" / "console_solver"),
-        ]:
-            if Path(candidate).exists():
-                resolved = candidate
-                break
+    # Find binary using platform-aware resolution
+    resolved = resolve_solver_path()
     result["texassolver_bin_env"] = os.getenv("TEXASSOLVER_BIN", "(not set)")
     result["resolved_path"] = resolved or "(not found)"
     result["binary_exists"] = bool(resolved) and Path(resolved).exists()
 
     if not resolved or not Path(resolved).exists():
         result["error"] = "Binary not found"
+        result["install_instructions"] = get_install_instructions()
         return result
 
-    result["binary_executable"] = os.access(resolved, os.X_OK)
+    result["binary_executable"] = solver_binary_executable(resolved)
 
-    # File type
-    try:
-        ft = subprocess.run(["file", resolved], capture_output=True, text=True, timeout=5)
-        result["file_type"] = ft.stdout.strip()
-    except Exception as e:
-        result["file_type"] = f"error: {e}"
+    # File type (Linux/macOS only — `file` command not available on Windows)
+    if plat != PLATFORM_WINDOWS:
+        try:
+            ft = subprocess.run(["file", resolved], capture_output=True, text=True, timeout=5)
+            result["file_type"] = ft.stdout.strip()
+        except Exception as e:
+            result["file_type"] = f"error: {e}"
+    else:
+        result["file_type"] = f"Windows executable ({Path(resolved).suffix})"
 
-    # Shared libraries
-    try:
-        ldd = subprocess.run(["ldd", resolved], capture_output=True, text=True, timeout=5)
-        lines = ldd.stdout.strip().splitlines()
-        missing = [l.strip() for l in lines if "not found" in l]
-        result["shared_libs_total"] = len(lines)
-        result["shared_libs_missing"] = missing
-        result["ldd_exit_code"] = ldd.returncode
-        if ldd.stderr:
-            result["ldd_stderr"] = ldd.stderr[:300]
-    except Exception as e:
-        result["ldd_error"] = str(e)
+    # Shared libraries (Linux only)
+    if plat != PLATFORM_WINDOWS:
+        try:
+            ldd = subprocess.run(["ldd", resolved], capture_output=True, text=True, timeout=5)
+            lines = ldd.stdout.strip().splitlines()
+            missing = [ln.strip() for ln in lines if "not found" in ln]
+            result["shared_libs_total"] = len(lines)
+            result["shared_libs_missing"] = missing
+            result["ldd_exit_code"] = ldd.returncode
+            if ldd.stderr:
+                result["ldd_stderr"] = ldd.stderr[:300]
+        except Exception as e:
+            result["ldd_error"] = str(e)
 
     # Resources
-    res_dir = os.getenv("TEXASSOLVER_RESOURCE_DIR", "/opt/texassolver/resources")
+    settings = _get_settings()
+    res_dir = settings.solver_resource_dir
     compairer = Path(res_dir) / "compairer"
     result["resource_dir"] = res_dir
     result["resources_exist"] = compairer.exists()

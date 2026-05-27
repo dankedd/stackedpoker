@@ -176,19 +176,9 @@ def _extract_river_node(
     river_bet_sizes = [0.75]
     river_raise_sizes = [1.0]  # pot-sized raise
 
-    # Resolve solver binary path: env var overrides, then check known locations
-    import os
-    from pathlib import Path as _Path
-    solver_path = os.getenv("TEXASSOLVER_BIN") or None
-    if not solver_path:
-        # Check known Docker image paths (Dockerfile copies binary here)
-        for candidate in [
-            "/opt/texassolver/bin/console_solver",
-            _Path.home() / "TexasSolver" / "console_solver",
-        ]:
-            if _Path(candidate).exists():
-                solver_path = str(candidate)
-                break
+    # Resolve solver binary path using platform-aware detection
+    from app.solver_worker.solver_path import resolve_solver_path
+    solver_path = resolve_solver_path()
 
     return SolverConfig(
         spot_type=str(spot.spot_type) if hasattr(spot.spot_type, 'value') else spot.spot_type,
