@@ -190,6 +190,17 @@ export async function analyzeCanonical(
 
 // ── Solver Jobs ───────────────────────────────────────────────────────────────
 
+/** Backend SolveJobPriority values — lower number = higher priority. */
+export const SolverPriority = {
+  CRITICAL: 0,
+  HIGH: 10,
+  NORMAL: 50,
+  LOW: 90,
+  BACKFILL: 100,
+} as const;
+
+export type SolverPriorityValue = (typeof SolverPriority)[keyof typeof SolverPriority];
+
 export interface SolverJobSubmission {
   config: {
     spot_type: string;
@@ -201,7 +212,7 @@ export interface SolverJobSubmission {
     max_iterations?: number;
     accuracy_target?: number;
   };
-  priority?: "LOW" | "NORMAL" | "HIGH" | "CRITICAL";
+  priority?: SolverPriorityValue;
 }
 
 export interface SolverJobResponse {

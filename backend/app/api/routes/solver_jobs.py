@@ -21,7 +21,7 @@ import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from app.solver_worker.models import (
     BatchSolveRequest,
@@ -85,10 +85,34 @@ async def _require_queue() -> SolveQueue:
 
 # ── Request/Response models ───────────────────────────────────────────────
 
+_PRIORITY_NAME_MAP: dict[str, int] = {
+    "CRITICAL": SolveJobPriority.CRITICAL,
+    "HIGH": SolveJobPriority.HIGH,
+    "NORMAL": SolveJobPriority.NORMAL,
+    "LOW": SolveJobPriority.LOW,
+    "BACKFILL": SolveJobPriority.BACKFILL,
+}
+
+
 class SubmitJobRequest(BaseModel):
     config: SolveJobConfig
     priority: SolveJobPriority = SolveJobPriority.NORMAL
     deduplicate: bool = True
+
+    # Accept both int (0/10/50/90/100) and string ("HIGH"/"NORMAL"/…)
+    @field_validator("priority", mode="before")
+    @classmethod
+    def _coerce_priority(cls, v):  # noqa: N805
+        if isinstance(v, str):
+            upper = v.strip().upper()
+            if upper in _PRIORITY_NAME_MAP:
+                return _PRIORITY_NAME_MAP[upper]
+            # Try parsing as int string
+            try:
+                return int(v)
+            except ValueError:
+                pass
+        return v
 
 
 class SubmitJobResponse(BaseModel):

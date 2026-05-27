@@ -5,6 +5,7 @@ import {
   submitSolverJob,
   getSolverJobStatus,
   getSolverStrategy,
+  SolverPriority,
   type SolverJobSubmission,
   type SolverStrategy,
 } from "@/lib/api";
@@ -131,7 +132,7 @@ export function useSolver(): UseSolverReturn {
 
       try {
         const resp = await submitSolverJob(
-          { config, priority: "HIGH" },
+          { config, priority: SolverPriority.HIGH },
           token,
         );
         if (!resp.job_id) {
