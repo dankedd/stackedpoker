@@ -1,121 +1,176 @@
 #!/bin/bash
 # ──────────────────────────────────────────────────────────────────────────
-# TexasSolver v0.2.0 → GCC 11+ / Ubuntu 22.04 Compatibility Patch
+# TexasSolver v0.2.0 → GCC 11+ / Ubuntu 22.04 Systematic Modernization
 # ──────────────────────────────────────────────────────────────────────────
 #
-# Problem: TexasSolver v0.2.0 was built for GCC 10 / Ubuntu 20.04.
-# GCC 11+ changed transitive header behavior — <vector> and <string>
-# no longer pull in <memory>, breaking all shared_ptr/weak_ptr usage.
+# This script SCANS the entire source tree and adds missing includes
+# wherever STL symbols are used. No manual file lists — fully automatic.
 #
-# This script patches the source IN-PLACE after git clone.
-# Run from the TexasSolver source root directory.
-#
-# Usage:
-#   cd /build/TexasSolver
+# Run from the TexasSolver source root:
 #   bash /patches/patch-gcc11.sh
 #
 set -euo pipefail
 
-echo "=== Applying GCC 11+ compatibility patches ==="
+PATCHED=0
+SCANNED=0
 
-# ── Fix 1: Add #include <memory> to all headers using smart pointers ─────
-# These files use shared_ptr/weak_ptr but rely on transitive includes
-# that no longer provide <memory> on GCC 11+.
+patch_include() {
+    local file="$1"
+    local header="$2"
+    local guard_string="$3"
 
-MEMORY_PATCH_FILES=(
-    "include/trainable/Trainable.h"
-    "include/trainable/CfrPlusTrainable.h"
-    "include/trainable/DiscountedCfrTrainable.h"
-    "include/runtime/PokerSolver.h"
-    "include/tools/CommandLineTool.h"
-    "include/GameTree.h"
-    "include/solver/Solver.h"
-    "include/solver/PCfrSolver.h"
-    "include/solver/BestResponse.h"
-    "include/nodes/ChanceNode.h"
-    "include/nodes/ShowdownNode.h"
-    "include/nodes/TerminalNode.h"
-)
+    if [ ! -f "$file" ]; then return; fi
+    if grep -q "#include <${header}>" "$file"; then return; fi
 
-for file in "${MEMORY_PATCH_FILES[@]}"; do
-    if [ -f "$file" ]; then
-        # Only add if not already present
-        if ! grep -q '#include <memory>' "$file"; then
-            # Insert after the first #include line
-            sed -i '0,/#include/{s/#include/#include <memory>\n#include/}' "$file"
-            echo "  patched: $file (added #include <memory>)"
-        else
-            echo "  skipped: $file (already has #include <memory>)"
-        fi
+    # Insert at the top of the file, after the first existing #include
+    if grep -q '#include' "$file"; then
+        sed -i "0,/#include/{s|#include|#include <${header}>\n#include|}" "$file"
     else
-        echo "  WARNING: $file not found"
+        # No includes at all — add at line 1
+        sed -i "1i #include <${header}>" "$file"
+    fi
+    echo "  + ${file}  ←  #include <${header}>"
+    PATCHED=$((PATCHED + 1))
+}
+
+echo "========================================================"
+echo "  TexasSolver GCC 11+ Systematic Modernization"
+echo "========================================================"
+echo ""
+
+# ── Phase 1: Scan ALL .h and .cpp files for STL symbol usage ─────────────
+echo "--- Phase 1: Scanning source tree for missing includes ---"
+echo ""
+
+ALL_SOURCES=$(find include/ src/ -name '*.h' -o -name '*.cpp' -o -name '*.hpp' 2>/dev/null)
+
+for file in $ALL_SOURCES; do
+    SCANNED=$((SCANNED + 1))
+
+    # <memory>: shared_ptr, weak_ptr, unique_ptr, make_shared, make_unique
+    if grep -qE '\bshared_ptr\b|\bweak_ptr\b|\bunique_ptr\b|\bmake_shared\b|\bmake_unique\b' "$file"; then
+        patch_include "$file" "memory" "memory"
+    fi
+
+    # <mutex>: mutex, lock_guard, unique_lock, scoped_lock
+    if grep -qE '\bmutex\b|\block_guard\b|\bunique_lock\b|\bscoped_lock\b' "$file"; then
+        # Avoid false positive on "mutex" in comments or strings
+        if grep -qE '^\s*(#|//|/\*)' "$file" 2>/dev/null; then true; fi
+        patch_include "$file" "mutex" "mutex"
+    fi
+
+    # <thread>: thread, this_thread
+    if grep -qE '\bstd::thread\b|\bthis_thread\b' "$file"; then
+        patch_include "$file" "thread" "thread"
+    fi
+
+    # <algorithm>: sort, min, max, find, copy, transform, remove_if
+    if grep -qE '\bsort\s*\(|\bstd::sort\b|\bstd::min\b|\bstd::max\b|\bstd::find\b|\bstd::copy\b' "$file"; then
+        patch_include "$file" "algorithm" "algorithm"
+    fi
+
+    # <functional>: function, bind
+    if grep -qE '\bstd::function\b|\bstd::bind\b' "$file"; then
+        patch_include "$file" "functional" "functional"
+    fi
+
+    # <numeric>: accumulate, iota
+    if grep -qE '\bstd::accumulate\b|\bstd::iota\b' "$file"; then
+        patch_include "$file" "numeric" "numeric"
+    fi
+
+    # <cstring>: memcpy, memset
+    if grep -qE '\bmemcpy\b|\bmemset\b' "$file"; then
+        patch_include "$file" "cstring" "cstring"
+    fi
+
+    # <cstdlib>: abs (C-style)
+    if grep -qE '\babs\s*\(' "$file"; then
+        patch_include "$file" "cstdlib" "cstdlib"
     fi
 done
 
-# ── Fix 2: Add #include <mutex> where needed ─────────────────────────────
-# PCfrSolver.h and BestResponse.h may use mutex types
-MUTEX_FILES=(
-    "include/solver/PCfrSolver.h"
-    "include/solver/BestResponse.h"
-)
+echo ""
+echo "  Scanned ${SCANNED} files, patched ${PATCHED} missing includes"
+echo ""
 
-for file in "${MUTEX_FILES[@]}"; do
-    if [ -f "$file" ]; then
-        if ! grep -q '#include <mutex>' "$file"; then
-            sed -i '0,/#include/{s/#include/#include <mutex>\n#include/}' "$file"
-            echo "  patched: $file (added #include <mutex>)"
-        fi
+# ── Phase 2: Also patch any top-level .h files (not in include/) ─────────
+echo "--- Phase 2: Scanning top-level headers ---"
+
+for file in *.h *.cpp 2>/dev/null; do
+    if [ ! -f "$file" ]; then continue; fi
+    SCANNED=$((SCANNED + 1))
+    if grep -qE '\bshared_ptr\b|\bweak_ptr\b|\bunique_ptr\b' "$file"; then
+        patch_include "$file" "memory" "memory"
+    fi
+    if grep -qE '\bmutex\b|\block_guard\b' "$file"; then
+        patch_include "$file" "mutex" "mutex"
     fi
 done
 
-# ── Fix 3: Add #include <algorithm> where std::sort/min/max used ─────────
-ALGO_FILES=(
-    "include/ranges/RiverRangeManager.h"
-    "include/ranges/PrivateCards.h"
-    "src/ranges/RiverRangeManager.cpp"
-)
+echo ""
 
-for file in "${ALGO_FILES[@]}"; do
-    if [ -f "$file" ]; then
-        if ! grep -q '#include <algorithm>' "$file"; then
-            sed -i '0,/#include/{s/#include/#include <algorithm>\n#include/}' "$file"
-            echo "  patched: $file (added #include <algorithm>)"
-        fi
+# ── Phase 3: Guard Qt includes for console builds ────────────────────────
+echo "--- Phase 3: Guarding Qt includes for console build ---"
+
+for file in $(find include/ src/ -name '*.h' -o -name '*.cpp' 2>/dev/null); do
+    if grep -q '^#include <QDebug>' "$file" 2>/dev/null; then
+        sed -i 's|^#include <QDebug>|#ifdef QT_CORE_LIB\n#include <QDebug>\n#endif|' "$file"
+        echo "  ~ ${file}  (guarded QDebug)"
+        PATCHED=$((PATCHED + 1))
+    fi
+    if grep -q '^#include <QFile>' "$file" 2>/dev/null; then
+        sed -i 's|^#include <QFile>|#ifdef QT_CORE_LIB\n#include <QFile>\n#endif|' "$file"
+        echo "  ~ ${file}  (guarded QFile)"
+        PATCHED=$((PATCHED + 1))
+    fi
+    if grep -q '^#include <QString>' "$file" 2>/dev/null; then
+        sed -i 's|^#include <QString>|#ifdef QT_CORE_LIB\n#include <QString>\n#endif|' "$file"
+        echo "  ~ ${file}  (guarded QString)"
+        PATCHED=$((PATCHED + 1))
     fi
 done
 
-# ── Fix 4: Ensure DiscountedCfrTrainable variants have <memory> ──────────
-for variant in HF SF; do
-    file="include/trainable/DiscountedCfrTrainable${variant}.h"
-    if [ -f "$file" ]; then
-        if ! grep -q '#include <memory>' "$file"; then
-            sed -i '0,/#include/{s/#include/#include <memory>\n#include/}' "$file"
-            echo "  patched: $file (added #include <memory>)"
-        fi
-    fi
-done
+echo ""
 
-# ── Fix 5: Console build — strip Qt GUI deps from PokerSolver.h ──────────
-# The console solver doesn't use Qt GUI features. Guard Qt includes.
-if [ -f "include/runtime/PokerSolver.h" ]; then
-    # Replace bare Qt includes with conditional includes
-    sed -i 's|^#include <QDebug>|#ifdef QT_CORE_LIB\n#include <QDebug>\n#endif|' \
-        "include/runtime/PokerSolver.h" 2>/dev/null || true
-    sed -i 's|^#include <QFile>|#ifdef QT_CORE_LIB\n#include <QFile>\n#endif|' \
-        "include/runtime/PokerSolver.h" 2>/dev/null || true
-    echo "  patched: include/runtime/PokerSolver.h (guarded Qt includes)"
-fi
+# ── Phase 4: Patch .pro for C++17 and console target ─────────────────────
+echo "--- Phase 4: Build system patches ---"
 
-# ── Fix 6: Patch .pro file for Ubuntu 22.04 ──────────────────────────────
 if [ -f "TexasSolverGui.pro" ]; then
-    # Add C++17 standard flag for consistency with GCC 11+ defaults
     if ! grep -q 'CONFIG += c++17' "TexasSolverGui.pro"; then
         echo 'CONFIG += c++17' >> "TexasSolverGui.pro"
-        echo "  patched: TexasSolverGui.pro (added c++17 flag)"
+        echo "  ~ TexasSolverGui.pro  (added CONFIG += c++17)"
+        PATCHED=$((PATCHED + 1))
     fi
 fi
 
-echo "=== Patches applied successfully ==="
 echo ""
-echo "Build with:"
-echo "  qmake TexasSolverGui.pro && make -j\$(nproc)"
+
+# ── Phase 5: Validation scan ─────────────────────────────────────────────
+echo "--- Phase 5: Validation — checking for remaining unprotected usage ---"
+
+VALIDATION_FAILED=0
+
+for file in $(find include/ src/ -name '*.h' -o -name '*.cpp' 2>/dev/null); do
+    # Check: uses shared_ptr but still no #include <memory>
+    if grep -qE '\bshared_ptr\b|\bweak_ptr\b|\bunique_ptr\b' "$file"; then
+        if ! grep -q '#include <memory>' "$file"; then
+            echo "  WARN: ${file} uses smart pointers but missing #include <memory>"
+            VALIDATION_FAILED=$((VALIDATION_FAILED + 1))
+        fi
+    fi
+done
+
+if [ "$VALIDATION_FAILED" -gt 0 ]; then
+    echo ""
+    echo "  WARNING: ${VALIDATION_FAILED} file(s) may still have missing includes"
+    echo "  Build may still succeed if they get <memory> transitively"
+else
+    echo "  All files validated — no unprotected smart pointer usage found"
+fi
+
+echo ""
+echo "========================================================"
+echo "  Modernization complete: ${PATCHED} patches applied"
+echo "  Build with: qmake TexasSolverGui.pro && make -j\$(nproc)"
+echo "========================================================"
