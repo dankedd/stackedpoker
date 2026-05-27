@@ -14,7 +14,7 @@ from app.api.routes import pipeline as pipeline_routes
 # ── Immutable build identity ──────────────────────────────────────────────
 # Change BUILD_ID on every deploy-critical push so we can verify
 # the running container matches the latest code.
-BUILD_ID = "solver-runtime-v19-fix-link"
+BUILD_ID = "solver-runtime-v20-dedup-console"
 BUILD_TIMESTAMP = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 settings = get_settings()

@@ -82,6 +82,7 @@ if [ -f "TexasSolverGui.pro" ]; then
     | grep -v 'qsolverjob' \
     | grep -v 'qstextedit' \
     | grep -v 'qstreeview' \
+    | grep -v 'src/console\.cpp' \
     | sort)
 
   # Write a clean console-only .pro file with ALL discovered sources
