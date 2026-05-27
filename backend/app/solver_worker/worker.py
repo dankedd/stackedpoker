@@ -86,10 +86,15 @@ class SolveWorker:
 
         # Log solver binary status at startup
         solver_status = log_solver_status()
-        if not solver_status["binary_exists"]:
+        if not solver_status["binary_exists"] and not solver_status.get("docker_available"):
             logger.warning(
-                "[Worker %s] solver binary NOT found — jobs will fail until binary is available. "
-                "See GET /api/solver/health/deep for install instructions.",
+                "[Worker %s] solver NOT available — no native binary, no Docker image. "
+                "Jobs will fail. See GET /api/solver/health/deep for install instructions.",
+                self._worker_id,
+            )
+        elif not solver_status["binary_exists"] and solver_status.get("docker_available"):
+            logger.info(
+                "[Worker %s] using Docker fallback (texassolver:local) for solver execution.",
                 self._worker_id,
             )
 

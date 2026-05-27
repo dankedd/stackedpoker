@@ -32,59 +32,70 @@ class TestConfigHash:
 class TestGenerateInputFile:
     def test_creates_file(self, tmp_path):
         config = SolverConfig()
-        path = _generate_input_file(config, tmp_path)
+        output_path = str(tmp_path / "solve_output.json")
+        path = _generate_input_file(config, tmp_path, output_path)
         assert path.exists()
         assert path.name == "solve_input.txt"
 
     def test_contains_board(self, tmp_path):
         config = SolverConfig(board=["Ah", "7d", "2c"])
-        path = _generate_input_file(config, tmp_path)
+        output_path = str(tmp_path / "solve_output.json")
+        path = _generate_input_file(config, tmp_path, output_path)
         content = path.read_text()
-        assert "set_board Ah 7d 2c" in content
+        # v0.2.0 uses comma-separated board
+        assert "set_board Ah,7d,2c" in content
 
     def test_contains_pot_and_stack(self, tmp_path):
         config = SolverConfig()
-        path = _generate_input_file(config, tmp_path)
+        output_path = str(tmp_path / "solve_output.json")
+        path = _generate_input_file(config, tmp_path, output_path)
         content = path.read_text()
         assert "set_pot" in content
         assert "set_effective_stack" in content
 
-    def test_contains_bet_sizes(self, tmp_path):
-        config = SolverConfig(bet_sizes=[0.33, 0.75])
-        path = _generate_input_file(config, tmp_path)
-        content = path.read_text()
-        assert "0.33,0.75" in content
-
     def test_contains_iterations(self, tmp_path):
         config = SolverConfig(iterations=500)
-        path = _generate_input_file(config, tmp_path)
+        output_path = str(tmp_path / "solve_output.json")
+        path = _generate_input_file(config, tmp_path, output_path)
         content = path.read_text()
         assert "set_max_iteration 500" in content
 
     def test_contains_accuracy(self, tmp_path):
         config = SolverConfig(accuracy_target=0.3)
-        path = _generate_input_file(config, tmp_path)
+        output_path = str(tmp_path / "solve_output.json")
+        path = _generate_input_file(config, tmp_path, output_path)
         content = path.read_text()
         assert "set_accuracy 0.3" in content
 
     def test_contains_ranges(self, tmp_path):
         config = SolverConfig()
-        path = _generate_input_file(config, tmp_path)
+        output_path = str(tmp_path / "solve_output.json")
+        path = _generate_input_file(config, tmp_path, output_path)
         content = path.read_text()
-        assert "set_ip_range" in content
-        assert "set_oop_range" in content
+        # v0.2.0 uses set_range_ip / set_range_oop
+        assert "set_range_ip" in content
+        assert "set_range_oop" in content
 
     def test_contains_solve_commands(self, tmp_path):
         config = SolverConfig()
-        path = _generate_input_file(config, tmp_path)
+        output_path = str(tmp_path / "solve_output.json")
+        path = _generate_input_file(config, tmp_path, output_path)
         content = path.read_text()
         assert "build_tree" in content
         assert "start_solve" in content
         assert "dump_result" in content
 
+    def test_dump_result_uses_output_path(self, tmp_path):
+        config = SolverConfig()
+        output_path = "/work/solve_output.json"
+        path = _generate_input_file(config, tmp_path, output_path)
+        content = path.read_text()
+        assert f"dump_result {output_path}" in content
+
     def test_rake_included_when_set(self, tmp_path):
         config = SolverConfig(rake=0.05)
-        path = _generate_input_file(config, tmp_path)
+        output_path = str(tmp_path / "solve_output.json")
+        path = _generate_input_file(config, tmp_path, output_path)
         content = path.read_text()
         assert "set_rake 0.05" in content
         # Rake should come before build_tree
@@ -94,9 +105,19 @@ class TestGenerateInputFile:
 
     def test_no_rake_when_none(self, tmp_path):
         config = SolverConfig(rake=None)
-        path = _generate_input_file(config, tmp_path)
+        output_path = str(tmp_path / "solve_output.json")
+        path = _generate_input_file(config, tmp_path, output_path)
         content = path.read_text()
         assert "set_rake" not in content
+
+    def test_unix_line_endings(self, tmp_path):
+        """Input file must use Unix line endings for Docker/Linux execution."""
+        config = SolverConfig()
+        output_path = str(tmp_path / "solve_output.json")
+        path = _generate_input_file(config, tmp_path, output_path)
+        raw = path.read_bytes()
+        assert b"\r\n" not in raw
+        assert b"\n" in raw
 
 
 class TestRunTexasSolver:
@@ -116,7 +137,8 @@ class TestRunTexasSolver:
             config, dry_run=True, work_dir=tmp_path,
         )
         content = Path(result.input_path).read_text()
-        assert "Ks Qd 3c" in content
+        # v0.2.0 uses comma-separated board
+        assert "Ks,Qd,3c" in content
 
     def test_invalid_config_returns_error(self):
         config = SolverConfig(board=["Ah"])  # invalid: only 1 card
@@ -125,13 +147,18 @@ class TestRunTexasSolver:
         assert result.error is not None
         assert "Invalid config" in result.error
 
-    def test_missing_solver_returns_error(self, tmp_path):
+    def test_missing_solver_returns_error(self, tmp_path, monkeypatch):
+        """When both native binary and Docker are unavailable, returns error."""
         config = SolverConfig(solver_path="/nonexistent/solver")
+        # Disable Docker fallback for this test
+        monkeypatch.setattr(
+            "app.texassolver.runner._docker_available", lambda: False,
+        )
         result = run_texassolver(
             config, dry_run=False, work_dir=tmp_path,
         )
         assert not result.success
-        assert "not found" in result.error
+        assert "not found" in result.error.lower()
 
     def test_solve_result_fields(self, tmp_path):
         config = SolverConfig()

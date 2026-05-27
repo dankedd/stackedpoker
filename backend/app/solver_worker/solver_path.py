@@ -217,14 +217,29 @@ def solver_binary_executable(path: str | None = None) -> bool:
     return os.access(str(p), os.X_OK)
 
 
+def docker_solver_available() -> bool:
+    """Check if the TexasSolver Docker image is available as a fallback."""
+    import subprocess as _sp
+    try:
+        proc = _sp.run(
+            ["docker", "image", "inspect", "texassolver:local"],
+            capture_output=True, text=True, timeout=10,
+        )
+        return proc.returncode == 0
+    except (FileNotFoundError, _sp.TimeoutExpired):
+        return False
+
+
 # ── Build / download instructions ────────────────────────────────────────
 
 _WINDOWS_INSTRUCTIONS = """\
 TexasSolver binary not found for Windows.
 
-To get the solver binary:
+Option 1 — Docker (recommended, one command):
+  docker build -f docker/texassolver/Dockerfile.build -t texassolver:local .
+  # The runner automatically uses Docker when no native binary is found.
 
-Option 1 — Build from source (requires CMake + MSVC/MinGW):
+Option 2 — Build from source (requires CMake + MSVC/MinGW):
   git clone https://github.com/bupticybee/TexasSolver.git
   cd TexasSolver
   mkdir build && cd build
@@ -233,17 +248,11 @@ Option 1 — Build from source (requires CMake + MSVC/MinGW):
   # Copy build/Release/console_solver.exe to:
   #   {vendor_path}
 
-Option 2 — Use Docker (recommended for solving):
-  docker compose up solver-worker
-  # The Docker image compiles the solver automatically.
-
 Option 3 — Download a pre-built release (if available):
   Check https://github.com/bupticybee/TexasSolver/releases
 
-Expected binary location:
+Expected native binary location:
   {vendor_path}
-
-Or set the TEXASSOLVER_BIN environment variable to your binary path.
 """
 
 _LINUX_INSTRUCTIONS = """\
@@ -297,6 +306,8 @@ def log_solver_status() -> dict:
     exists = solver_binary_exists(resolved) if resolved else False
     executable = solver_binary_executable(resolved) if resolved else False
 
+    docker_ok = docker_solver_available()
+
     status = {
         "platform": plat,
         "os": platform.system(),
@@ -306,6 +317,7 @@ def log_solver_status() -> dict:
         "resolved_path": resolved or "(not found)",
         "binary_exists": exists,
         "binary_executable": executable,
+        "docker_available": docker_ok,
     }
 
     logger.info("=" * 60)
@@ -316,12 +328,15 @@ def log_solver_status() -> dict:
     logger.info("  Resolved path:     %s", resolved or "(not found)")
     logger.info("  Binary exists:     %s", exists)
     logger.info("  Binary executable: %s", executable)
+    logger.info("  Docker fallback:   %s", docker_ok)
 
-    if not exists:
-        logger.warning("[SolverPath] Solver binary NOT available — solves will fail.")
-        logger.info("[SolverPath] Run GET /api/solver/health/deep for install instructions.")
+    if exists:
+        logger.info("[SolverPath] Solver binary ready (native).")
+    elif docker_ok:
+        logger.info("[SolverPath] No native binary — Docker fallback available (texassolver:local).")
     else:
-        logger.info("[SolverPath] Solver binary ready.")
+        logger.warning("[SolverPath] Solver NOT available — no native binary, no Docker image.")
+        logger.info("[SolverPath] Run GET /api/solver/health/deep for install instructions.")
 
     logger.info("=" * 60)
 

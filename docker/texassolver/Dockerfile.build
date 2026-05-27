@@ -1,0 +1,56 @@
+# TexasSolver builder — with GCC11 patches for reliable compilation.
+#
+# Usage:
+#   docker build -f docker/texassolver/Dockerfile.build -t texassolver:local .
+#   (run from repo root so COPY can access vendor/texassolver/)
+
+FROM ubuntu:22.04 AS builder
+
+ENV DEBIAN_FRONTEND=noninteractive
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential g++ qtbase5-dev qt5-qmake libgomp1 \
+    git ca-certificates dos2unix file \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+RUN git clone --depth 1 --branch v0.2.0 \
+    https://github.com/bupticybee/TexasSolver.git .
+
+# Copy and apply GCC11 compatibility patches
+COPY backend/vendor/texassolver/patch-gcc11.sh /scripts/patch-gcc11.sh
+RUN dos2unix /scripts/patch-gcc11.sh && chmod +x /scripts/patch-gcc11.sh
+RUN bash /scripts/patch-gcc11.sh
+
+# Build console solver only
+RUN qmake TexasSolverGui.pro && make -j$(nproc)
+
+# Verify binary was produced
+RUN test -f console_solver && file console_solver && echo "BUILD OK"
+
+# ── Runtime stage ─────────────────────────────────────────────────────────
+FROM ubuntu:22.04
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgomp1 \
+    libqt5core5a \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/texassolver
+
+COPY --from=builder /build/console_solver /opt/texassolver/bin/console_solver
+COPY --from=builder /build/resources/compairer /opt/texassolver/resources/compairer
+COPY --from=builder /build/resources/yamls /opt/texassolver/resources/yamls
+
+RUN mkdir -p /work /opt/texassolver/input /opt/texassolver/output \
+    && chmod +x /opt/texassolver/bin/console_solver
+
+ENV PATH="/opt/texassolver/bin:${PATH}"
+ENV TEXASSOLVER_RESOURCE_DIR="/opt/texassolver/resources"
+
+# Default working directory for solve I/O
+WORKDIR /work
+
+ENTRYPOINT ["console_solver"]

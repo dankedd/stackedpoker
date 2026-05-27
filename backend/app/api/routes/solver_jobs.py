@@ -294,8 +294,8 @@ async def solver_health_deep() -> dict:
         resolve_solver_path,
         solver_binary_exists,
         solver_binary_executable,
+        docker_solver_available,
         get_install_instructions,
-        log_solver_status,
     )
 
     checks: dict[str, bool] = {}
@@ -323,6 +323,16 @@ async def solver_health_deep() -> dict:
     checks["binary_configured"] = bool(env_bin or resolved)
     checks["binary_exists"] = solver_binary_exists(resolved)
     checks["binary_executable"] = solver_binary_executable(resolved)
+
+    # 3b. Docker fallback
+    docker_ok = docker_solver_available()
+    checks["docker_fallback"] = docker_ok
+    details["docker_image"] = "texassolver:local"
+    details["solver_mode"] = (
+        "native" if checks["binary_exists"]
+        else "docker" if docker_ok
+        else "unavailable"
+    )
 
     # 4. Resources
     settings = _get_settings()
@@ -357,8 +367,15 @@ async def solver_health_deep() -> dict:
         checks["redis_connected"] = False
         details["redis_error"] = "Redis unavailable"
 
-    # 7. Overall health
-    all_ok = all(checks.values())
+    # 7. Overall health — solver is available if native binary OR Docker works
+    solver_available = checks["binary_exists"] or checks["docker_fallback"]
+    # Don't count binary_exists/binary_executable/binary_configured as failures
+    # if Docker fallback is available
+    health_checks = {k: v for k, v in checks.items() if k not in (
+        "binary_exists", "binary_executable", "binary_configured",
+    )}
+    health_checks["solver_available"] = solver_available
+    all_ok = all(health_checks.values())
 
     result = {
         "healthy": all_ok,
@@ -370,8 +387,8 @@ async def solver_health_deep() -> dict:
         ),
     }
 
-    # 8. Include install instructions if binary is missing
-    if not checks["binary_exists"]:
+    # 8. Include install instructions if solver is completely unavailable
+    if not solver_available:
         result["install_instructions"] = get_install_instructions()
 
     return result
