@@ -36,7 +36,18 @@ try:
     _db_port = _sa_url.port or 5432
     _db_user = _sa_url.username or "unknown"
     _db_name = _sa_url.database or "unknown"
-    print(f"[DB EARLY] parsed: user={_db_user} host={_db_host}:{_db_port} db={_db_name} password={'YES' if _sa_url.password else 'NO'}")
+    _db_pass = _sa_url.password
+    print(f"[DB EARLY] parsed: user={_db_user} host={_db_host}:{_db_port} db={_db_name} password={'YES' if _db_pass else 'NO'}")
+
+    # If username is missing from URL, try PGUSER env var, then default to 'postgres'
+    if _db_user == "unknown" or not _sa_url.username:
+        _fallback_user = os.environ.get("PGUSER", "postgres")
+        print(f"[DB EARLY] username missing from URL — injecting '{_fallback_user}'")
+        _sa_url = _sa_url.set(username=_fallback_user)
+        _db_user = _fallback_user
+        _settings_url = str(_sa_url)
+        print(f"[DB EARLY] fixed URL scheme: {_settings_url.split('://')[0]}")
+
 except Exception as exc:
     _db_host = "unknown"
     _db_user = "unknown"
