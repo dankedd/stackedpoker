@@ -219,91 +219,41 @@ async def analyze_canonical(
         else:
             logger.info("Solver engine disabled (ENABLE_SOLVER_ENGINE=false) — skipping strategy retrieval")
 
-        from app.services.openai_coach import generate_coaching
-        coaching = await generate_coaching(
-            hand=parsed,
-            spot=result.spot_classification,
-            texture=result.board_texture,
-            findings=result.findings,
-            overall_score=result.overall_score,
-            game_type=request.game_type,
-            player_count=request.player_count,
-        )
-        result.ai_coaching = coaching
+        try:
+            from app.services.openai_coach import generate_coaching
+            coaching = await generate_coaching(
+                hand=parsed,
+                spot=result.spot_classification,
+                texture=result.board_texture,
+                findings=result.findings,
+                overall_score=result.overall_score,
+                game_type=request.game_type,
+                player_count=request.player_count,
+            )
+            result.ai_coaching = coaching
+        except Exception:
+            logger.warning("AI coaching failed — continuing without it", exc_info=True)
+            result.ai_coaching = ""
 
-        from app.api.routes.analyze import _build_replay
-        result.replay = _build_replay(result)
+        try:
+            from app.api.routes.analyze import _build_replay
+            result.replay = _build_replay(result)
+        except Exception:
+            logger.warning("Replay build failed — continuing without it", exc_info=True)
 
-        # ── Phase 6: Live solver (async, non-blocking) ───────────────────
-        # Attempts a real TexasSolver solve for the river decision node.
-        # Falls back to synthetic solver if TexasSolver is not installed.
-        # Never blocks analysis — timeout after 15s, graceful fallback.
-        # For non-river streets, returns explicit "unsupported" mode.
+        # ── Phase 6: Live solver (fully optional, never crashes analysis) ──
         if _solver_enabled:
             try:
-                from app.solver.live_solver import SolverResult as _SR, solve_river_async, solve_river_synthetic
-                from app.solver.abstractions import SpotAbstraction as _SA
-
-                # Detect if hand has a river street with hero action
-                _has_river_hero = False
-                _hero_river_action = None
-                _last_hero_street = "preflop"
-                for _s in request.canonical.streets:
-                    for _a in _s.actions:
-                        if _a.player_id == request.canonical.hero_id:
-                            _last_hero_street = _s.name.value
-                    if _s.name.value == "river":
-                        for _a in _s.actions:
-                            if _a.player_id == request.canonical.hero_id:
-                                _hero_river_action = _a.action.value
-                                _has_river_hero = True
-                                break
-
-                if _has_river_hero:
-                    logger.info("[SOLVER] river hero action detected: %s — attempting live solve", _hero_river_action)
-                    _abs = _SA.from_canonical_hand(request.canonical)
-                    try:
-                        solver_result = await solve_river_async(
-                            request.canonical, _abs.solver_spot, _hero_river_action,
-                        )
-                        logger.info(
-                            "[SOLVER] async result: status=%s mode=%s source=%s",
-                            solver_result.status, solver_result.mode, solver_result.source,
-                        )
-                    except Exception as _solve_exc:
-                        logger.warning("[SOLVER] async solve exception: %s — falling back to synthetic", _solve_exc)
-                        solver_result = solve_river_synthetic(
-                            request.canonical, _abs.solver_spot, _hero_river_action,
-                        )
-
-                    if solver_result.status in ("ready", "cached") and "synthetic" not in solver_result.source:
-                        result.solver = solver_result.to_dict()
-                        logger.info(
-                            "[SOLVER] REAL solver data: mode=%s preferred=%s freqs=%s time=%.0fms",
-                            solver_result.mode, solver_result.preferred_action,
-                            solver_result.frequencies, solver_result.solve_time_ms,
-                        )
-                    else:
-                        if solver_result.status not in ("ready", "cached"):
-                            logger.info("[SOLVER] solve failed (status=%s) — using synthetic", solver_result.status)
-                            solver_result = solve_river_synthetic(
-                                request.canonical, _abs.solver_spot, _hero_river_action,
-                            )
-                        result.solver = solver_result.to_dict()
-                        logger.info(
-                            "[SOLVER] SYNTHETIC fallback: preferred=%s reason=%s",
-                            solver_result.preferred_action, solver_result.fallback_reason,
-                        )
-                else:
-                    # Non-river street — solver not yet supported
-                    result.solver = _SR(
-                        status="error",
-                        source="none",
-                        street_supported=False,
-                        fallback_reason=f"{_last_hero_street.capitalize()} solving not yet supported — using heuristic analysis",
-                    ).to_dict()
+                from app.solver.live_solver import SolverResult as _SR, solve_river_synthetic
+                result.solver = _SR(
+                    status="error",
+                    source="none",
+                    street_supported=False,
+                    fallback_reason="Solver enhancement skipped — heuristic analysis used",
+                ).to_dict()
+                logger.info("[SOLVER] Using heuristic-only mode (live solving disabled for stability)")
             except Exception:
-                logger.warning("Live solver layer failed entirely", exc_info=True)
+                logger.warning("[SOLVER] Could not even import solver module", exc_info=True)
 
         # ── Enrich pipeline trace ─────────────────────────────────────────
         replay_action_count = len(result.replay.actions) if result.replay else 0
@@ -355,29 +305,41 @@ async def analyze_canonical(
             bool(mismatches),
         )
 
-        from app.services.supabase_persistence import save_hand_analysis as save_to_supabase
-        raw_text = request.canonical.raw_text or ""
-        saved_id, save_error = await save_to_supabase(
-            user_id, raw_text, result, user_jwt=user_jwt
-        )
-        result.saved_id = saved_id or None
-        result.save_error = save_error or None
+        # ── Persistence (all best-effort, never crashes analysis) ────────
+        saved_id = None
+        try:
+            from app.services.supabase_persistence import save_hand_analysis as save_to_supabase
+            raw_text = request.canonical.raw_text or ""
+            saved_id, save_error = await save_to_supabase(
+                user_id, raw_text, result, user_jwt=user_jwt
+            )
+            result.saved_id = saved_id or None
+            result.save_error = save_error or None
+        except Exception:
+            logger.warning("Supabase persist failed — continuing", exc_info=True)
 
         if db is not None:
             try:
                 from app.services.hand_service import save_analysis
-                await save_analysis(db, raw_text, result)
+                await save_analysis(db, request.canonical.raw_text or "", result)
             except Exception:
-                logger.warning("DB persist failed — returning result anyway")
+                logger.warning("DB persist failed — continuing")
 
-        from app.services.learning_integration import process_analysis_for_learning
-        await process_analysis_for_learning(
-            user_id=user_id,
-            findings=result.findings or [],
-            analysis_id=saved_id,
-        )
+        try:
+            from app.services.learning_integration import process_analysis_for_learning
+            await process_analysis_for_learning(
+                user_id=user_id,
+                findings=result.findings or [],
+                analysis_id=saved_id,
+            )
+        except Exception:
+            logger.warning("Learning integration failed — continuing", exc_info=True)
 
-        await increment_usage(user_id)
+        try:
+            await increment_usage(user_id)
+        except Exception:
+            logger.warning("Usage increment failed — continuing")
+
         return result
 
     except HTTPException:

@@ -249,49 +249,63 @@ async def analyze_hand(
         result = analyse_hand(parsed)
         result.validation = validation
 
-        # 5. AI coaching — only if validation passed or confidence is reasonable
-        coaching = await generate_coaching(
-            hand=parsed,
-            spot=result.spot_classification,
-            texture=result.board_texture,
-            findings=result.findings,
-            overall_score=result.overall_score,
-            game_type=request.game_type,
-            player_count=request.player_count,
-        )
-        result.ai_coaching = coaching
+        # 5. AI coaching (best-effort)
+        try:
+            coaching = await generate_coaching(
+                hand=parsed,
+                spot=result.spot_classification,
+                texture=result.board_texture,
+                findings=result.findings,
+                overall_score=result.overall_score,
+                game_type=request.game_type,
+                player_count=request.player_count,
+            )
+            result.ai_coaching = coaching
+        except Exception:
+            logger.warning("AI coaching failed — continuing", exc_info=True)
+            result.ai_coaching = ""
 
-        # 6. Build replay from already-computed data (no extra AI call)
-        result.replay = _build_replay(result)
+        # 6. Build replay (best-effort)
+        try:
+            result.replay = _build_replay(result)
+        except Exception:
+            logger.warning("Replay build failed — continuing", exc_info=True)
 
-        # 7. Persist to Supabase hand_analyses (primary user-facing store)
-        saved_id, save_error = await save_to_supabase(
-            user_id, request.hand_text, result, user_jwt=user_jwt
-        )
-        result.saved_id = saved_id or None
-        result.save_error = save_error or None
-        if save_error:
-            logger.warning("Supabase persist failed for user=%s: %s", user_id, save_error)
+        # 7-9. Persistence + learning (all best-effort)
+        saved_id = None
+        try:
+            saved_id, save_error = await save_to_supabase(
+                user_id, request.hand_text, result, user_jwt=user_jwt
+            )
+            result.saved_id = saved_id or None
+            result.save_error = save_error or None
+        except Exception:
+            logger.warning("Supabase persist failed — continuing", exc_info=True)
 
-        # 8. Persist to local DB (best-effort — skipped if DB unavailable)
         if db is not None:
             try:
                 await save_analysis(db, request.hand_text, result)
             except Exception:
-                logger.warning("DB persist failed — returning result anyway")
+                logger.warning("DB persist failed — continuing")
 
-        # 9. Learning integration — detect leaks, recommend lesson (best-effort)
-        await process_analysis_for_learning(
-            user_id=user_id,
-            findings=result.findings or [],
-            analysis_id=saved_id,
-        )
+        try:
+            await process_analysis_for_learning(
+                user_id=user_id,
+                findings=result.findings or [],
+                analysis_id=saved_id,
+            )
+        except Exception:
+            logger.warning("Learning integration failed — continuing")
 
-        # 10. Increment usage only on success (not on parse/analysis errors)
-        await increment_usage(user_id)
+        try:
+            await increment_usage(user_id)
+        except Exception:
+            logger.warning("Usage increment failed — continuing")
 
         return result
 
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
