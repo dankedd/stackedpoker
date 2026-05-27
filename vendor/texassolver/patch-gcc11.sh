@@ -3,142 +3,103 @@ set -Eeuo pipefail
 trap 'echo "[PATCH FAILED] line=$LINENO cmd=$BASH_COMMAND exit=$?" >&2' ERR
 
 PATCHED=0
-SCANNED=0
 
-add_include_if_missing() {
+add_include() {
     local file="$1"
     local header="$2"
-
-    if [ ! -f "$file" ]; then
-        return 0
-    fi
-    if grep -q "#include <${header}>" "$file"; then
-        return 0
-    fi
-
-    # Find the first line number containing #include
-    local first_inc
-    first_inc=$(grep -n '#include' "$file" | head -1 | cut -d: -f1)
-
-    if [ -n "$first_inc" ]; then
-        sed -i "${first_inc}i\\#include <${header}>" "$file"
+    if [ ! -f "$file" ]; then return 0; fi
+    if grep -q "#include <${header}>" "$file"; then return 0; fi
+    local linenum
+    linenum="$(grep -n '#include' "$file" | head -1 | cut -d: -f1)"
+    if [ -n "$linenum" ]; then
+        sed -i "${linenum}i\#include <${header}>" "$file"
     else
-        sed -i "1i\\#include <${header}>" "$file"
+        sed -i "1i\#include <${header}>" "$file"
     fi
-
     echo "  + $file  <--  #include <${header}>"
     PATCHED=$((PATCHED + 1))
 }
 
-guard_qt_include() {
+guard_qt() {
     local file="$1"
-    local qt_header="$2"
-
-    if [ ! -f "$file" ]; then
-        return 0
-    fi
-    if ! grep -q "^#include <${qt_header}>" "$file"; then
-        return 0
-    fi
-
-    sed -i "s|^#include <${qt_header}>|#ifdef QT_CORE_LIB\n#include <${qt_header}>\n#endif|" "$file"
-    echo "  ~ $file  (guarded ${qt_header})"
+    local hdr="$2"
+    if [ ! -f "$file" ]; then return 0; fi
+    if ! grep -q "^#include <${hdr}>" "$file"; then return 0; fi
+    sed -i "s|^#include <${hdr}>|#ifdef QT_CORE_LIB\n#include <${hdr}>\n#endif|" "$file"
+    echo "  ~ $file  (guarded ${hdr})"
     PATCHED=$((PATCHED + 1))
 }
 
 echo "========================================================"
-echo "  TexasSolver GCC 11+ Systematic Modernization"
+echo "  TexasSolver GCC 11+ Modernization"
 echo "========================================================"
+
 echo ""
+echo "--- Phase 1: Add missing includes (recursive scan) ---"
 
-# ── Phase 1: Recursive scan for missing STL includes ─────────────────────
-echo "--- Phase 1: Scanning include/ and src/ for missing includes ---"
-
-find include/ src/ -type f -name '*.h' -o -name '*.cpp' -o -name '*.hpp' | sort | while IFS= read -r file; do
-    SCANNED=$((SCANNED + 1))
-
-    if grep -qE 'shared_ptr|weak_ptr|unique_ptr|make_shared|make_unique' "$file"; then
-        add_include_if_missing "$file" "memory"
+find include src -type f \( -name '*.h' -o -name '*.cpp' -o -name '*.hpp' \) | sort | while IFS= read -r f; do
+    if grep -qE 'shared_ptr|weak_ptr|unique_ptr|make_shared|make_unique' "$f"; then
+        add_include "$f" "memory"
     fi
-
-    if grep -qE 'mutex|lock_guard|unique_lock|scoped_lock' "$file"; then
-        add_include_if_missing "$file" "mutex"
+    if grep -qE 'mutex|lock_guard|unique_lock' "$f"; then
+        add_include "$f" "mutex"
     fi
-
-    if grep -qE 'std::thread|this_thread' "$file"; then
-        add_include_if_missing "$file" "thread"
+    if grep -qE 'std::thread|this_thread' "$f"; then
+        add_include "$f" "thread"
     fi
-
-    if grep -qE 'std::sort|std::min|std::max|std::find|std::copy' "$file"; then
-        add_include_if_missing "$file" "algorithm"
+    if grep -qE 'std::sort|std::min|std::max|std::find' "$f"; then
+        add_include "$f" "algorithm"
     fi
-
-    if grep -qE 'std::function|std::bind' "$file"; then
-        add_include_if_missing "$file" "functional"
-    fi
-
-    if grep -qE 'memcpy|memset' "$file"; then
-        add_include_if_missing "$file" "cstring"
+    if grep -qE 'memcpy|memset' "$f"; then
+        add_include "$f" "cstring"
     fi
 done
 
 echo ""
-echo "  Phase 1 complete (patched: ${PATCHED})"
-echo ""
+echo "--- Phase 2: Top-level sources ---"
 
-# ── Phase 2: Top-level source files ──────────────────────────────────────
-echo "--- Phase 2: Scanning top-level .h/.cpp files ---"
-
-find . -maxdepth 1 -type f -name '*.h' -o -name '*.cpp' | sort | while IFS= read -r file; do
-    if grep -qE 'shared_ptr|weak_ptr|unique_ptr' "$file"; then
-        add_include_if_missing "$file" "memory"
+find . -maxdepth 1 -type f \( -name '*.h' -o -name '*.cpp' \) | sort | while IFS= read -r f; do
+    if grep -qE 'shared_ptr|weak_ptr|unique_ptr' "$f"; then
+        add_include "$f" "memory"
     fi
-    if grep -qE 'mutex|lock_guard' "$file"; then
-        add_include_if_missing "$file" "mutex"
+    if grep -qE 'mutex|lock_guard' "$f"; then
+        add_include "$f" "mutex"
     fi
 done
 
 echo ""
+echo "--- Phase 3: Guard Qt includes ---"
 
-# ── Phase 3: Guard Qt includes for headless/console builds ───────────────
-echo "--- Phase 3: Guarding Qt includes for console build ---"
-
-find include/ src/ -type f -name '*.h' -o -name '*.cpp' | sort | while IFS= read -r file; do
-    guard_qt_include "$file" "QDebug"
-    guard_qt_include "$file" "QFile"
-    guard_qt_include "$file" "QString"
+find include src -type f \( -name '*.h' -o -name '*.cpp' \) | sort | while IFS= read -r f; do
+    guard_qt "$f" "QDebug"
+    guard_qt "$f" "QFile"
+    guard_qt "$f" "QString"
 done
 
 echo ""
-
-# ── Phase 4: Build system ────────────────────────────────────────────────
-echo "--- Phase 4: Build system patches ---"
+echo "--- Phase 4: Build system ---"
 
 if [ -f "TexasSolverGui.pro" ]; then
     if ! grep -q 'CONFIG += c++17' "TexasSolverGui.pro"; then
-        echo 'CONFIG += c++17' >> "TexasSolverGui.pro"
-        echo "  ~ TexasSolverGui.pro  (added CONFIG += c++17)"
+        printf '\nCONFIG += c++17\n' >> "TexasSolverGui.pro"
+        echo "  ~ TexasSolverGui.pro  (added c++17)"
         PATCHED=$((PATCHED + 1))
     fi
 fi
 
 echo ""
+echo "--- Phase 5: Validation ---"
 
-# ── Phase 5: Validation ──────────────────────────────────────────────────
-echo "--- Phase 5: Validation scan ---"
-
-WARN_COUNT=0
-find include/ src/ -type f -name '*.h' -o -name '*.cpp' | sort | while IFS= read -r file; do
-    if grep -qE 'shared_ptr|weak_ptr|unique_ptr' "$file"; then
-        if ! grep -q '#include <memory>' "$file"; then
-            echo "  WARN: $file uses smart pointers without #include <memory>"
-            WARN_COUNT=$((WARN_COUNT + 1))
+WARN=0
+find include src -type f \( -name '*.h' -o -name '*.cpp' \) | sort | while IFS= read -r f; do
+    if grep -qE 'shared_ptr|weak_ptr|unique_ptr' "$f"; then
+        if ! grep -q '#include <memory>' "$f"; then
+            echo "  WARN: $f missing #include <memory>"
         fi
     fi
 done
 
 echo ""
 echo "========================================================"
-echo "  Modernization complete: ${PATCHED} patches applied"
-echo "  Build: qmake TexasSolverGui.pro && make -j\$(nproc)"
+echo "  Done: ${PATCHED} patches applied"
 echo "========================================================"

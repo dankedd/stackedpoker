@@ -3,9 +3,6 @@
 # Multi-stage build:
 #   Stage 1: Compile TexasSolver from source with GCC 11+ patches
 #   Stage 2: Python runtime with solver binary + resources
-#
-# The GCC 11+ patch fixes missing #include <memory> in upstream v0.2.0
-# which breaks on Ubuntu 22.04 / GCC 11+.
 
 # ── Stage 1: Build TexasSolver ────────────────────────────────────────────
 FROM ubuntu:22.04 AS solver-builder
@@ -13,7 +10,7 @@ FROM ubuntu:22.04 AS solver-builder
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
-    build-essential g++ qtbase5-dev qt5-qmake libgomp1 git \
+    build-essential g++ qtbase5-dev qt5-qmake libgomp1 git dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
@@ -22,18 +19,22 @@ WORKDIR /build
 RUN git clone --depth 1 --branch v0.2.0 \
     https://github.com/bupticybee/TexasSolver.git .
 
-# Apply GCC 11+ compatibility patches (fixes missing #include <memory> etc.)
+# Copy patch script and force LF line endings (dos2unix),
+# then syntax-check before execution.
 COPY vendor/texassolver/patch-gcc11.sh /patches/patch-gcc11.sh
-RUN chmod +x /patches/patch-gcc11.sh \
+RUN dos2unix /patches/patch-gcc11.sh \
+    && chmod +x /patches/patch-gcc11.sh \
     && bash -n /patches/patch-gcc11.sh \
+    && echo "=== Patch script syntax OK ===" \
     && bash /patches/patch-gcc11.sh
 
 # Compile
 RUN qmake TexasSolverGui.pro && make -j$(nproc)
 
 # Verify binary was produced and is executable
-RUN test -f console_solver && chmod +x console_solver \
-    && echo "=== TexasSolver binary built successfully ===" \
+RUN test -f console_solver \
+    && chmod +x console_solver \
+    && echo "=== TexasSolver binary built ===" \
     && ls -la console_solver \
     && file console_solver \
     && ldd console_solver
@@ -54,12 +55,12 @@ COPY --from=solver-builder /build/resources/compairer /opt/texassolver/resources
 COPY --from=solver-builder /build/resources/yamls /opt/texassolver/resources/yamls
 RUN chmod +x /opt/texassolver/bin/console_solver
 
-# Verify binary works in runtime image (fail build immediately if not)
+# Verify binary runs in runtime image
 RUN echo "=== Runtime binary verification ===" \
     && ls -la /opt/texassolver/bin/console_solver \
     && file /opt/texassolver/bin/console_solver \
     && ldd /opt/texassolver/bin/console_solver \
-    && echo "=== Binary verification passed ==="
+    && echo "=== Verification passed ==="
 
 WORKDIR /app
 
