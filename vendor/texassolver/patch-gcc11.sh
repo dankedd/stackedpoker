@@ -47,11 +47,40 @@ done
 
 echo "=== Phase 4: Build system ==="
 if [ -f "TexasSolverGui.pro" ]; then
+  # Add C++17 flag
   if ! grep -q 'CONFIG += c++17' "TexasSolverGui.pro"; then
     printf '\nCONFIG += c++17\n' >> "TexasSolverGui.pro"
     echo "  ~ added c++17 flag"
     PATCHED=$((PATCHED + 1))
   fi
+
+  # Force console-only build: remove GUI source files that cause
+  # compilation failures (strategyexplorer, mainwindow, Qt widgets).
+  # The console_solver target only needs src/console.cpp + solver libs.
+  echo "  Stripping GUI targets from .pro file..."
+
+  # Remove GUI-only source files from SOURCES
+  sed -i '/mainwindow\.cpp/d' "TexasSolverGui.pro"
+  sed -i '/strategyexplorer/d' "TexasSolverGui.pro"
+  sed -i '/boardwidget/d' "TexasSolverGui.pro"
+  sed -i '/rangewidget/d' "TexasSolverGui.pro"
+  sed -i '/resultwidget/d' "TexasSolverGui.pro"
+  sed -i '/settingwidget/d' "TexasSolverGui.pro"
+
+  # Remove GUI-only header files from HEADERS
+  sed -i '/mainwindow\.h/d' "TexasSolverGui.pro"
+
+  # Remove FORMS (Qt .ui files)
+  sed -i '/\.ui/d' "TexasSolverGui.pro"
+
+  # Force console application (no Qt GUI module needed)
+  if ! grep -q 'CONFIG += console' "TexasSolverGui.pro"; then
+    printf '\nCONFIG += console\nCONFIG -= app_bundle\nQT -= gui widgets\n' >> "TexasSolverGui.pro"
+    echo "  ~ forced console-only build"
+  fi
+
+  PATCHED=$((PATCHED + 1))
+  echo "  ~ .pro file stripped of GUI targets"
 fi
 
 echo "=== Phase 5: Validate ==="

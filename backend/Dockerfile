@@ -41,10 +41,16 @@ RUN bash /scripts/diagnose-env.sh
 # Apply GCC 11+ compatibility patches
 RUN bash /scripts/patch-gcc11.sh
 
-# Compile
+# Show available resources before compile
+RUN echo "=== Build resources ===" \
+    && echo "CPUs: $(nproc)" \
+    && free -m 2>/dev/null || echo "(free not available)" \
+    && echo "Using make -j2 for Railway memory safety"
+
+# Compile (console target only, -j2 to avoid OOM on Railway)
 RUN qmake TexasSolverGui.pro
 
-RUN make -j"$(nproc)"
+RUN make -j2
 
 # Verify binary
 RUN bash /scripts/verify-build.sh
