@@ -69,7 +69,24 @@ class Settings(BaseSettings):
 
         Railway (and most PaaS providers) supply DATABASE_URL without the
         asyncpg driver specifier. SQLAlchemy's async engine requires it.
+
+        Also builds URL from individual PGXXX vars if DATABASE_URL is missing
+        or uses the local default.
         """
+        import os
+
+        # If Railway provides individual PG vars, build URL from them
+        # (more reliable than DATABASE_URL which may have encoding issues)
+        pg_host = os.environ.get("PGHOST", "")
+        pg_user = os.environ.get("PGUSER", "")
+        pg_pass = os.environ.get("PGPASSWORD", "")
+        pg_db = os.environ.get("PGDATABASE", "")
+        pg_port = os.environ.get("PGPORT", "5432")
+
+        if pg_host and pg_user and pg_pass and pg_db:
+            built = f"postgresql+asyncpg://{pg_user}:{pg_pass}@{pg_host}:{pg_port}/{pg_db}"
+            return built
+
         if not isinstance(v, str):
             return v
         if v.startswith("postgres://"):
