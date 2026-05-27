@@ -221,6 +221,34 @@ class SolveWorker:
             from app.texassolver.runner import run_texassolver, SolveResult
             from app.texassolver.adapter import import_texassolver_solve
 
+            # Check solver availability and log execution mode
+            from app.solver_worker.solver_path import (
+                resolve_solver_path, docker_solver_available,
+            )
+            native_bin = resolve_solver_path(
+                explicit_path=self._settings.solver_binary,
+            )
+            if native_bin:
+                logger.info(
+                    "[Worker %s] job %s — execution mode: NATIVE (%s)",
+                    self._worker_id, job_id, native_bin,
+                )
+            elif docker_solver_available():
+                logger.info(
+                    "[Worker %s] job %s — execution mode: DOCKER (texassolver:local)",
+                    self._worker_id, job_id,
+                )
+            else:
+                error_msg = (
+                    "No solver available: native binary not found, "
+                    "Docker image texassolver:local not found. "
+                    "Run: docker build -f docker/texassolver/Dockerfile.build "
+                    "-t texassolver:local ."
+                )
+                logger.error("[Worker %s] job %s — %s", self._worker_id, job_id, error_msg)
+                await self._queue.fail(job_id, error_msg)
+                return
+
             # Build SolverConfig from job config
             solver_config = SolverConfig(
                 spot_type=config.spot_type,
