@@ -16,7 +16,7 @@ from app.api.routes import pipeline as pipeline_routes
 # ── Immutable build identity ──────────────────────────────────────────────
 # Change BUILD_ID on every deploy-critical push so we can verify
 # the running container matches the latest code.
-BUILD_ID = "solver-runtime-v36-boot-trace"
+BUILD_ID = "solver-runtime-v37-no-middleware"
 BUILD_TIMESTAMP = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 settings = get_settings()
@@ -135,51 +135,18 @@ app = FastAPI(
     redoc_url="/redoc" if settings.docs_enabled else None,
 )
 
-# ── Rate limiting ─────────────────────────────────────────────────────────────
-# Applied before CORS so abusive IPs are dropped without wasting preflight work.
-app.add_middleware(RateLimitMiddleware)
-
-# ── CORS ─────────────────────────────────────────────────────────────────────
-# Explicitly enumerate allowed methods and headers — never use wildcards with
-# allow_credentials=True, which would expose cookies/auth tokens to any origin.
+# ── CORS (required for frontend) ─────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
+    allow_origins=["*"],  # Permissive for debugging — tighten later
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-
-# ── Security headers middleware ───────────────────────────────────────────────
-@app.middleware("http")
-async def add_security_headers(request: Request, call_next) -> Response:
-    response = await call_next(request)
-    try:
-        # Prevent MIME-type sniffing
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        # Prevent clickjacking
-        response.headers["X-Frame-Options"] = "DENY"
-        # Strict XSS protection (legacy browsers)
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        # Only send Referer to same origin
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        # Disable powerful features not needed by the API
-        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
-        # HSTS — only meaningful in production behind HTTPS
-        if not settings.debug:
-            response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
-        # Remove server fingerprint — MutableHeaders has no .pop(); use del with guard
-        if "server" in response.headers:
-            del response.headers["server"]
-    except Exception:
-        # Middleware MUST NOT crash the pipeline — a successful analysis response
-        # must always reach the client even if header mutation fails.
-        logger.warning(
-            "Security header middleware failed on %s %s — response sent without security headers",
-            request.method, request.url.path, exc_info=True,
-        )
-    return response
+# Rate limiting and security headers DISABLED for debugging.
+# Re-enable after confirming routes respond.
+# app.add_middleware(RateLimitMiddleware)
 
 
 print("[BOOT] Registering core routes...")
