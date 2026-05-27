@@ -69,14 +69,20 @@ if [ -f "TexasSolverGui.pro" ]; then
     echo "  ~ renamed main_backup -> main in console.cpp"
   fi
 
-  # Discover ALL .cpp files in src/ (exclude pybind and ui)
+  # Discover ALL .cpp files in src/ (exclude pybind, ui, and Qt-GUI-only files)
   echo "  Discovering source files..."
   FOUND_SOURCES=""
   while IFS= read -r cpp; do
     FOUND_SOURCES="${FOUND_SOURCES}    ${cpp} \\
 "
     echo "    src: $cpp"
-  done < <(find src -name '*.cpp' | grep -v 'pybind' | grep -v 'src/ui/' | sort)
+  done < <(find src -name '*.cpp' \
+    | grep -v 'pybind' \
+    | grep -v 'src/ui/' \
+    | grep -v 'qsolverjob' \
+    | grep -v 'qstextedit' \
+    | grep -v 'qstreeview' \
+    | sort)
 
   # Write a clean console-only .pro file with ALL discovered sources
   cat > TexasSolverGui.pro << PROEOF

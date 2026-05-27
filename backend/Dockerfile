@@ -50,7 +50,7 @@ RUN echo "=== Build resources ===" \
 # Compile (console target only, -j2 to avoid OOM on Railway)
 RUN qmake TexasSolverGui.pro
 
-RUN make -j1 2>&1 || (echo "=== BUILD FAILED — last 30 lines ===" && tail -30 /dev/stderr && exit 1)
+RUN make -j1
 
 # Verify binary
 RUN bash /scripts/verify-build.sh
