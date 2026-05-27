@@ -62,11 +62,17 @@ export function useSolver(): UseSolverReturn {
       try {
         const data = await getSolverStrategy(id, token);
         if (data.status === "ready") {
+          console.log("[Solver] Strategy received:", {
+            actions: Object.keys(data.frequencies),
+            frequencies: data.frequencies,
+            combos: Object.values(data.strategies ?? {}).map(s => s.combo_count),
+            mode: data.mode,
+          });
           setStrategy(data);
           setState("completed");
           stopPolling();
         } else if (data.status === "solving") {
-          // Still running, keep polling
+          console.log("[Solver] Still solving...");
         }
       } catch {
         // Strategy not ready yet — keep polling
@@ -92,10 +98,10 @@ export function useSolver(): UseSolverReturn {
 
         try {
           const status = await getSolverJobStatus(id, token);
+          console.log("[Solver] Poll #%d: status=%s", attemptRef.current, status.status);
           if (status.status === "completed") {
-            setState("completed");
             await fetchStrategy(id);
-            stopPolling();
+            // fetchStrategy sets state to "completed" on success
           } else if (status.status === "failed" || status.status === "cancelled") {
             setState("failed");
             setError(status.error || "Solve failed");
@@ -133,6 +139,7 @@ export function useSolver(): UseSolverReturn {
           setError(resp.message || "Failed to submit job");
           return;
         }
+        console.log("[Solver] Job submitted:", resp.job_id, "board:", config.board);
         setJobId(resp.job_id);
         setState("queued");
         startPolling(resp.job_id);

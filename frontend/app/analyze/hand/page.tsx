@@ -497,7 +497,27 @@ export default function AnalyzePage() {
                       }}
                       engineVersion={pipeline.result.engine_version}
                       correctionsApplied={pipeline.result.corrections_applied}
-                      solver={pipeline.result.solver}
+                      solver={
+                        // When async solver completes, inject real data into HandReplay
+                        solver.strategy
+                          ? {
+                              status: "ready" as const,
+                              mode: "live" as const,
+                              source: solver.strategy.source ?? "texassolver",
+                              frequencies: solver.strategy.frequencies ?? {},
+                              ev: solver.strategy.ev ?? {},
+                              preferred_action: solver.strategy.preferred_action ?? "",
+                              hero_action_ev_loss: solver.strategy.hero_action_ev_loss ?? 0,
+                              iterations: solver.strategy.iterations ?? 0,
+                              exploitability: solver.strategy.exploitability ?? 0,
+                              solve_time_ms: solver.strategy.solve_time_ms ?? 0,
+                              cache_hit: false,
+                              node_key: solver.strategy.node_description ?? "",
+                              node_description: solver.strategy.node_description ?? "",
+                              street_supported: true,
+                            }
+                          : pipeline.result.solver
+                      }
                       trace={pipeline.result.trace}
                     />
                   ) : (
