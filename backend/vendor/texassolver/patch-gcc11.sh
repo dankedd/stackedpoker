@@ -10,6 +10,7 @@
 #   bash /patches/patch-gcc11.sh
 #
 set -euo pipefail
+trap 'echo "PATCH SCRIPT FAILED at line $LINENO (exit $?)" >&2' ERR
 
 PATCHED=0
 SCANNED=0
@@ -97,7 +98,8 @@ echo ""
 # ── Phase 2: Also patch any top-level .h files (not in include/) ─────────
 echo "--- Phase 2: Scanning top-level headers ---"
 
-for file in *.h *.cpp 2>/dev/null; do
+TOP_FILES=$(find . -maxdepth 1 \( -name '*.h' -o -name '*.cpp' \) 2>/dev/null || true)
+for file in $TOP_FILES; do
     if [ ! -f "$file" ]; then continue; fi
     SCANNED=$((SCANNED + 1))
     if grep -qE '\bshared_ptr\b|\bweak_ptr\b|\bunique_ptr\b' "$file"; then

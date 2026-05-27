@@ -24,7 +24,9 @@ RUN git clone --depth 1 --branch v0.2.0 \
 
 # Apply GCC 11+ compatibility patches (fixes missing #include <memory> etc.)
 COPY vendor/texassolver/patch-gcc11.sh /patches/patch-gcc11.sh
-RUN chmod +x /patches/patch-gcc11.sh && bash /patches/patch-gcc11.sh
+RUN chmod +x /patches/patch-gcc11.sh \
+    && bash -n /patches/patch-gcc11.sh \
+    && bash /patches/patch-gcc11.sh
 
 # Compile
 RUN qmake TexasSolverGui.pro && make -j$(nproc)
