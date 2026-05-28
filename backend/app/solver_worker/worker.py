@@ -304,6 +304,66 @@ class SolveWorker:
                 dry_run=False,
             )
 
+            # Parse strategy data for cross-container retrieval via Redis.
+            # The API container can't read the worker's local filesystem,
+            # so we serialize the parsed strategy into the job result.
+            strategy_data = None
+            if solve_result.output_path:
+                try:
+                    from app.texassolver.parser import parse_texassolver_output
+                    nodes = parse_texassolver_output(solve_result.output_path, solver_config)
+                    strategies = {}
+                    for node in nodes:
+                        player = "ip" if "ip" in node.node_id else "oop"
+                        freq_dict = {a.action_name: round(a.frequency, 4) for a in node.actions}
+                        preferred = max(node.actions, key=lambda a: a.frequency).action_name if node.actions else ""
+                        combos = []
+                        for combo in node.combos[:200]:
+                            combos.append({
+                                "hand": combo.combo,
+                                "actions": {a.action_name: round(a.frequency, 4) for a in combo.actions},
+                            })
+                        strategies[player] = {
+                            "position": node.position,
+                            "actions": [a.action_name for a in node.actions],
+                            "frequencies": freq_dict,
+                            "preferred_action": preferred,
+                            "combo_count": len(node.combos),
+                            "combos": combos,
+                        }
+                    primary = strategies.get("oop", strategies.get("ip", {}))
+                    strategy_data = {
+                        "status": "ready",
+                        "mode": "live",
+                        "source": "texassolver",
+                        "frequencies": primary.get("frequencies", {}),
+                        "ev": {},
+                        "preferred_action": primary.get("preferred_action", ""),
+                        "hero_action_ev_loss": 0.0,
+                        "iterations": config.max_iterations,
+                        "exploitability": 0.0,
+                        "solve_time_ms": round(elapsed * 1000, 1),
+                        "cache_hit": False,
+                        "node_key": f"{solver_config.spot_type}::{solver_config.positions}::{solver_config.stack_depth}bb",
+                        "node_description": (
+                            f"{solver_config.ip_position()} vs {solver_config.oop_position()} | "
+                            f"{'Flop' if len(solver_config.board) == 3 else 'Turn' if len(solver_config.board) == 4 else 'River'} "
+                            f"[{' '.join(solver_config.board)}] | "
+                            f"Pot {solver_config.pot_size_bb():.0f}bb"
+                        ),
+                        "street_supported": True,
+                        "strategies": strategies,
+                        "board": solver_config.board,
+                        "spot_type": solver_config.spot_type,
+                        "positions": solver_config.positions,
+                    }
+                    logger.info(
+                        "[Worker %s] strategy_data serialized: %d strategies, primary=%s",
+                        self._worker_id, len(strategies), list(primary.get("frequencies", {}).keys()),
+                    )
+                except Exception as exc:
+                    logger.warning("[Worker %s] strategy serialization failed: %s", self._worker_id, exc)
+
             # Compress and archive raw output
             compressed_path = None
             if solve_result.output_path and self._settings.compress_output:
@@ -327,7 +387,8 @@ class SolveWorker:
                 import_errors=[
                     f"{nid}: {err}" for nid, err in import_result.errors
                 ],
-                node_keys=[],  # Populated by import pipeline
+                node_keys=[],
+                strategy_data=strategy_data,
                 stdout_tail=(solve_result.stdout or "")[-500:],
                 stderr_tail=(solve_result.stderr or "")[-500:],
             )

@@ -75,8 +75,16 @@ export function useSolver(): UseSolverReturn {
         } else if (data.status === "solving") {
           console.log("[Solver] Still solving...");
         }
-      } catch {
-        // Strategy not ready yet — keep polling
+      } catch (err: unknown) {
+        // 404/409 = strategy not available — stop polling permanently
+        const msg = err instanceof Error ? err.message : "";
+        if (msg.includes("404") || msg.includes("409") || msg.includes("not available")) {
+          console.warn("[Solver] Strategy endpoint returned error, stopping:", msg);
+          setState("failed");
+          setError(msg || "Strategy data not available");
+          stopPolling();
+        }
+        // Other errors (network) — keep polling
       }
     },
     [session, stopPolling],

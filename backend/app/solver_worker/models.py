@@ -195,6 +195,12 @@ class SolveJobResult(BaseModel):
     # ── Node keys produced ────────────────────────────────────────────────
     node_keys: list[str] = Field(default_factory=list)
 
+    # ── Parsed strategy (serialized for cross-container retrieval) ──────
+    # Populated by the worker after parsing. The API reads this from Redis
+    # instead of re-reading the output file (which lives on the worker's
+    # local filesystem and isn't accessible from the API container).
+    strategy_data: dict | None = None
+
     # ── Solver stdout/stderr (truncated for debugging) ────────────────────
     stdout_tail: str = ""
     stderr_tail: str = ""
