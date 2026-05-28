@@ -16,13 +16,16 @@ export default function SolverReplayPage() {
 
   const jobId = params.jobId;
 
+  // Validate jobId is a real UUID, not a literal placeholder
+  const isValidJobId = jobId && /^[0-9a-f-]{8,}/i.test(jobId) && !jobId.includes("{");
+
   // Load tree on mount
   useEffect(() => {
-    if (jobId && !replay.currentNode && !replay.loading) {
+    if (isValidJobId && !replay.currentNode && !replay.loading) {
       replay.openTree(jobId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jobId]);
+  }, [jobId, isValidJobId]);
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "#0B0518" }}>
@@ -54,8 +57,21 @@ export default function SolverReplayPage() {
           )}
         </div>
 
+        {/* Invalid job ID guard */}
+        {jobId && !isValidJobId && (
+          <div
+            className="rounded-xl px-6 py-5 mb-6"
+            style={{ background: "rgba(248,113,113,0.06)", border: "1px solid rgba(248,113,113,0.2)" }}
+          >
+            <p className="text-[12px] font-bold text-red-400 mb-1">Invalid Job ID</p>
+            <p className="text-[11px]" style={{ color: "rgba(248,113,113,0.7)" }}>
+              &quot;{jobId}&quot; is not a valid solver job ID. Enter a UUID from a completed solve.
+            </p>
+          </div>
+        )}
+
         {/* Replay UI */}
-        <SolverReplay replay={replay} />
+        {isValidJobId && <SolverReplay replay={replay} />}
       </main>
 
       <Footer />

@@ -338,12 +338,26 @@ export interface SolverChildrenResponse {
   children: SolverNodeResponse[];
 }
 
+// UUID-like pattern guard — prevents fetches with literal "{jobId}" or empty IDs
+const _UUID_LIKE = /^[0-9a-f-]{8,}/i;
+
+function _assertId(name: string, value: string): void {
+  if (!value || value.includes("{") || value.includes("}") || !_UUID_LIKE.test(value)) {
+    throw new Error(
+      `Invalid solver ${name}: "${value}" — expected a UUID, got a placeholder or empty string`,
+    );
+  }
+}
+
 /** Get tree metadata for a completed solve job. */
 export async function getSolverTree(
   jobId: string,
   token: string,
 ): Promise<SolverTreeMeta> {
-  return apiFetch<SolverTreeMeta>(`/api/solver/jobs/${jobId}/tree`, token);
+  _assertId("jobId", jobId);
+  const url = `/api/solver/jobs/${jobId}/tree`;
+  if (typeof window !== "undefined") console.log("[SolverTree] GET", url);
+  return apiFetch<SolverTreeMeta>(url, token);
 }
 
 /** Fetch a single solver tree node. */
@@ -352,7 +366,11 @@ export async function getSolverNode(
   nodeId: string,
   token: string,
 ): Promise<SolverNodeResponse> {
-  return apiFetch<SolverNodeResponse>(`/api/solver/jobs/${jobId}/node/${nodeId}`, token);
+  _assertId("jobId", jobId);
+  _assertId("nodeId", nodeId);
+  const url = `/api/solver/jobs/${jobId}/node/${nodeId}`;
+  if (typeof window !== "undefined") console.log("[SolverTree] GET", url);
+  return apiFetch<SolverNodeResponse>(url, token);
 }
 
 /** Fetch all children of a solver tree node. */
@@ -361,7 +379,11 @@ export async function getSolverChildren(
   nodeId: string,
   token: string,
 ): Promise<SolverChildrenResponse> {
-  return apiFetch<SolverChildrenResponse>(`/api/solver/jobs/${jobId}/node/${nodeId}/children`, token);
+  _assertId("jobId", jobId);
+  _assertId("nodeId", nodeId);
+  const url = `/api/solver/jobs/${jobId}/node/${nodeId}/children`;
+  if (typeof window !== "undefined") console.log("[SolverTree] GET", url);
+  return apiFetch<SolverChildrenResponse>(url, token);
 }
 
 // ── Stripe Billing ─────────────────────────────────────────────────────────
