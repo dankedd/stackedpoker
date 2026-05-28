@@ -364,6 +364,53 @@ class SolveWorker:
                 except Exception as exc:
                     logger.warning("[Worker %s] strategy serialization failed: %s", self._worker_id, exc)
 
+            # Import full game tree into persistent per-node storage
+            tree_node_count = 0
+            if solve_result.output_path:
+                try:
+                    import json as _json
+                    from app.solver_tree.importer import import_solve_tree
+                    from app.solver_tree.store import SolveTreeStore
+
+                    with open(solve_result.output_path, "r", encoding="utf-8") as _f:
+                        raw_tree = _json.load(_f)
+
+                    tree_result = import_solve_tree(
+                        data=raw_tree,
+                        solve_id=job_id,
+                        board=config.board,
+                        pot_size=solver_config.pot_size_bb(),
+                    )
+                    tree_node_count = tree_result.total
+
+                    # Persist to Redis (cross-container) if queue has redis
+                    tree_store = SolveTreeStore(redis=self._queue.redis)
+                    await tree_store.save_tree(
+                        solve_id=job_id,
+                        nodes=tree_result.nodes,
+                        root_id=tree_result.root_id,
+                        meta={
+                            "board": config.board,
+                            "spot_type": config.spot_type,
+                            "positions": config.positions,
+                            "stack_depth": config.stack_depth,
+                            "iterations": config.max_iterations,
+                            "solve_time_seconds": elapsed,
+                            "action_nodes": tree_result.action_nodes,
+                            "chance_nodes": tree_result.chance_nodes,
+                            "max_depth": tree_result.max_depth,
+                        },
+                    )
+                    logger.info(
+                        "[Worker %s] tree imported: %s",
+                        self._worker_id, tree_result.summary(),
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        "[Worker %s] tree import failed (non-fatal): %s",
+                        self._worker_id, exc,
+                    )
+
             # Compress and archive raw output
             compressed_path = None
             if solve_result.output_path and self._settings.compress_output:
@@ -397,10 +444,10 @@ class SolveWorker:
 
             logger.info(
                 "[Worker %s] job %s completed in %.1fs "
-                "(parsed=%d, imported=%d, errors=%d)",
+                "(parsed=%d, imported=%d, tree_nodes=%d, errors=%d)",
                 self._worker_id, job_id, elapsed,
                 result.nodes_parsed, result.nodes_imported,
-                len(result.import_errors),
+                tree_node_count, len(result.import_errors),
             )
 
         except asyncio.TimeoutError:
