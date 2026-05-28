@@ -102,8 +102,9 @@ except Exception as e:
 # ── Phase 2-8 routes (optional, non-fatal) ───────────────────────────────
 print("[BOOT] Importing Phase 2-8 routes...")
 try:
-    from app.api.routes import solver_jobs, abstraction, coaching, ai_coach, social, realtime
+    from app.api.routes import solver_jobs, solver_tree, abstraction, coaching, ai_coach, social, realtime
     app.include_router(solver_jobs.router, prefix="/api")
+    app.include_router(solver_tree.router, prefix="/api")
     app.include_router(abstraction.router, prefix="/api")
     app.include_router(coaching.router, prefix="/api")
     app.include_router(ai_coach.router, prefix="/api")

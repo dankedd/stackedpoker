@@ -295,6 +295,75 @@ export async function getSolverStrategy(
   return apiFetch<SolverStrategy>(`/api/solver/jobs/${jobId}/strategy`, token);
 }
 
+// ── Solver Tree Navigation ────────────────────────────────────────────────
+
+export interface SolverTreeMeta {
+  root_node_id: string;
+  total_nodes: number;
+  streets: string[];
+  created_at: string;
+}
+
+export interface SolverActionDetail {
+  token: string;
+  label: string;
+  frequency: number | null;
+}
+
+export interface SolverNodeResponse {
+  id: string;
+  parent_id: string | null;
+  children_ids: string[];
+  street: string;
+  board: string[];
+  action_history: string[];
+  action_path: string;
+  depth: number;
+  actor: "ip" | "oop" | null;
+  available_actions: SolverActionDetail[];
+  strategy: Record<string, number[]>;
+  evs: Record<string, number>;
+  metadata: {
+    human_path: string;
+    pot_size: number;
+    combo_count: number;
+    node_type: string;
+    is_terminal: boolean;
+    solve_id: string;
+  };
+}
+
+export interface SolverChildrenResponse {
+  parent_id: string;
+  children: SolverNodeResponse[];
+}
+
+/** Get tree metadata for a completed solve job. */
+export async function getSolverTree(
+  jobId: string,
+  token: string,
+): Promise<SolverTreeMeta> {
+  return apiFetch<SolverTreeMeta>(`/api/solver/jobs/${jobId}/tree`, token);
+}
+
+/** Fetch a single solver tree node. */
+export async function getSolverNode(
+  jobId: string,
+  nodeId: string,
+  token: string,
+): Promise<SolverNodeResponse> {
+  return apiFetch<SolverNodeResponse>(`/api/solver/jobs/${jobId}/node/${nodeId}`, token);
+}
+
+/** Fetch all children of a solver tree node. */
+export async function getSolverChildren(
+  jobId: string,
+  nodeId: string,
+  token: string,
+): Promise<SolverChildrenResponse> {
+  return apiFetch<SolverChildrenResponse>(`/api/solver/jobs/${jobId}/node/${nodeId}/children`, token);
+}
+
 // ── Stripe Billing ─────────────────────────────────────────────────────────
 
 /** Create a Stripe Checkout Session and return the redirect URL. */

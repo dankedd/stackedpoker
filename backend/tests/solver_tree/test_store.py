@@ -155,3 +155,145 @@ class TestFilesystemStore:
         for f in files:
             data = json.loads(f.read_text())
             assert isinstance(data, dict)
+
+    def test_get_node_count(self, tmp_path):
+        store = SolveTreeStore(base_dir=tmp_path)
+        nodes = _make_nodes()
+        _run(store.save_tree("solve-1", nodes, "root000000000000"))
+        assert _run(store.get_node_count("solve-1")) == 3
+
+    def test_get_node_count_nonexistent(self, tmp_path):
+        store = SolveTreeStore(base_dir=tmp_path)
+        assert _run(store.get_node_count("nope")) == 0
+
+    def test_get_all_node_ids(self, tmp_path):
+        store = SolveTreeStore(base_dir=tmp_path)
+        nodes = _make_nodes()
+        _run(store.save_tree("solve-1", nodes, "root000000000000"))
+        ids = _run(store.get_all_node_ids("solve-1"))
+        assert set(ids) == {"root000000000000", "child10000000000", "child20000000000"}
+
+    def test_get_all_node_ids_empty(self, tmp_path):
+        store = SolveTreeStore(base_dir=tmp_path)
+        assert _run(store.get_all_node_ids("nope")) == []
+
+    def test_node_exists(self, tmp_path):
+        store = SolveTreeStore(base_dir=tmp_path)
+        nodes = _make_nodes()
+        _run(store.save_tree("solve-1", nodes, "root000000000000"))
+        assert _run(store.node_exists("solve-1", "root000000000000"))
+        assert not _run(store.node_exists("solve-1", "nonexistent"))
+
+    def test_save_node_individual(self, tmp_path):
+        store = SolveTreeStore(base_dir=tmp_path)
+        node = _make_nodes()[0]
+        written = _run(store.save_node("solve-2", node))
+        assert written is True
+        # Retrieve it
+        fetched = _run(store.get_node("solve-2", node.id))
+        assert fetched is not None
+        assert fetched.id == node.id
+
+    def test_save_node_duplicate_rejected(self, tmp_path):
+        store = SolveTreeStore(base_dir=tmp_path)
+        node = _make_nodes()[0]
+        assert _run(store.save_node("solve-2", node)) is True
+        assert _run(store.save_node("solve-2", node)) is False
+
+
+class TestIntegrationImporterToStore:
+    """End-to-end: import tree → persist → retrieve."""
+
+    def test_import_persist_retrieve(self, tmp_path):
+        from app.solver_tree.importer import import_solve_tree
+
+        tree_data = {
+            "node_type": "action_node",
+            "player": 1,
+            "actions": ["CHECK", "BET 50.000000"],
+            "strategy": {
+                "actions": ["CHECK", "BET 50.000000"],
+                "strategy": {"AhKs": [0.6, 0.4], "QdQc": [0.8, 0.2]},
+            },
+            "childrens": {
+                "CHECK": {
+                    "node_type": "action_node",
+                    "player": 0,
+                    "actions": ["CHECK"],
+                    "strategy": {"actions": ["CHECK"], "strategy": {"AhKs": [1.0]}},
+                    "childrens": {
+                        "CHECK": {"node_type": "chance_node", "deal_number": 0},
+                    },
+                },
+                "BET 50.000000": {
+                    "node_type": "action_node",
+                    "player": 0,
+                    "actions": ["CALL", "FOLD"],
+                    "strategy": {
+                        "actions": ["CALL", "FOLD"],
+                        "strategy": {"AhKs": [0.7, 0.3]},
+                    },
+                    "childrens": {
+                        "CALL": {"node_type": "chance_node", "deal_number": 0},
+                        "FOLD": {},
+                    },
+                },
+            },
+        }
+
+        # Import
+        result = import_solve_tree(
+            tree_data, "e2e-solve", ["Ah", "7d", "2c"], pot_size=6.5,
+        )
+        assert result.total >= 6
+
+        # Persist
+        store = SolveTreeStore(base_dir=tmp_path)
+        count = _run(store.save_tree(
+            "e2e-solve", result.nodes, result.root_id,
+            meta={"board": ["Ah", "7d", "2c"]},
+        ))
+        assert count == result.total
+
+        # Retrieve root
+        root = _run(store.get_root("e2e-solve"))
+        assert root is not None
+        assert root.actor == "oop"
+        assert root.depth == 0
+
+        # Retrieve children
+        children = _run(store.get_children("e2e-solve", root.id))
+        assert len(children) == 2
+
+        # Verify parent/child consistency after persistence roundtrip
+        for child in children:
+            assert child.parent_id == root.id
+
+        # Verify no duplicates in persisted tree
+        all_ids = _run(store.get_all_node_ids("e2e-solve"))
+        assert len(all_ids) == len(set(all_ids))
+        assert len(all_ids) == result.total
+
+    def test_duplicate_tree_import_idempotent(self, tmp_path):
+        """Importing the same tree twice should produce identical results."""
+        from app.solver_tree.importer import import_solve_tree
+
+        data = {
+            "node_type": "action_node",
+            "player": 1,
+            "actions": ["CHECK"],
+            "strategy": {"actions": ["CHECK"], "strategy": {"AhKs": [1.0]}},
+            "childrens": {"CHECK": {"node_type": "chance_node"}},
+        }
+
+        r1 = import_solve_tree(data, "idem-1", ["Ah", "7d", "2c"])
+        r2 = import_solve_tree(data, "idem-1", ["Ah", "7d", "2c"])
+
+        assert r1.total == r2.total
+        assert [n.id for n in r1.nodes] == [n.id for n in r2.nodes]
+
+        # Persist both — second save_node calls should return False
+        store = SolveTreeStore(base_dir=tmp_path)
+        _run(store.save_tree("idem-1", r1.nodes, r1.root_id))
+        for node in r2.nodes:
+            assert _run(store.save_node("idem-1", node)) is False

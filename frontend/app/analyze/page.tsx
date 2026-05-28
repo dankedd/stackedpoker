@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Spade, BarChart2, Trophy, Puzzle, ArrowRight, Lock } from "lucide-react";
+import { Spade, BarChart2, Trophy, Puzzle, TreePine, ArrowRight, Lock } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 
@@ -40,6 +40,16 @@ const TOOLS = [
     title: "Puzzles",
     description: "Train with interactive poker scenarios, multi-street decisions, and live AI coaching.",
     cta: "Train now",
+    accent: "violet",
+    featured: false,
+    locked: false,
+  },
+  {
+    href: "/solver",
+    icon: TreePine,
+    title: "Solver Explorer",
+    description: "Navigate solver game trees node-by-node. Explore GTO strategies, frequencies, and combos.",
+    cta: "Explore trees",
     accent: "violet",
     featured: false,
     locked: false,
