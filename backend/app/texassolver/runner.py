@@ -75,20 +75,43 @@ def _config_hash(config: SolverConfig) -> str:
     return hashlib.md5(key.encode()).hexdigest()[:12]
 
 
+def _bet_size_lines(bet_sizes: list[float], raise_sizes: list[float]) -> list[str]:
+    """
+    Generate set_bet_sizes commands for TexasSolver v0.2.0.
+
+    Format: set_bet_sizes <player>,<round>,<type>,<size1>,<size2>,...
+    Sizes are percentages of pot (e.g. 33 = 33% pot).
+
+    Both IP and OOP get the same sizes for flop. The solver's default
+    (check/all-in only) produces degenerate ~100% check solutions,
+    so explicit sizing is critical for meaningful output.
+    """
+    lines = []
+    # Convert float fractions to integer percentages
+    bet_pcts = ",".join(str(int(round(s * 100))) for s in bet_sizes) if bet_sizes else "33"
+    raise_pcts = ",".join(str(int(round(s * 100))) for s in raise_sizes) if raise_sizes else "60"
+
+    for player in ("oop", "ip"):
+        lines.append(f"set_bet_sizes {player},flop,bet,{bet_pcts}")
+        lines.append(f"set_bet_sizes {player},flop,raise,{raise_pcts}")
+
+    return lines
+
+
 def _generate_input_file(config: SolverConfig, work_dir: Path, output_path: str) -> Path:
     """
     Generate a TexasSolver v0.2.0 input file from the config.
 
-    TexasSolver v0.2.0 command reference (extracted from binary):
+    TexasSolver v0.2.0 command reference (from source CommandLineTool.cpp):
       set_pot, set_effective_stack, set_board (comma-separated),
       set_accuracy, set_max_iteration, set_allin_threshold,
-      set_bet_sizes (single global setting), set_thread_num,
-      set_range_ip, set_range_oop, set_use_isomorphism,
+      set_bet_sizes <player>,<round>,<type>,<sizes...>
+      set_thread_num, set_range_ip, set_range_oop, set_use_isomorphism,
       build_tree, start_solve, dump_result <path>
 
-    NOTE: v0.2.0 uses `set_range_ip`/`set_range_oop` (not set_ip_range),
-    `set_bet_sizes` (global, not per-street), and board cards are
-    comma-separated (not space-separated).
+    CRITICAL: set_bet_sizes must be specified. Without it, the solver
+    defaults to check/all-in only, producing degenerate ~100% check
+    solutions with no meaningful mixed strategies.
     """
     input_path = work_dir / "solve_input.txt"
 
@@ -107,6 +130,7 @@ def _generate_input_file(config: SolverConfig, work_dir: Path, output_path: str)
         "set_allin_threshold 0.67",
         "set_thread_num 2",
         "set_use_isomorphism 1",
+        *_bet_size_lines(config.bet_sizes, config.raise_sizes),
         # Ranges — full preflop ranges for SRP BTN vs BB
         "set_range_ip AA,KK,QQ,JJ,TT,99,88,77,66,55,44,33,22,"
         "AKs,AQs,AJs,ATs,A9s,A8s,A7s,A6s,A5s,A4s,A3s,A2s,"

@@ -53,6 +53,28 @@ class TestGenerateInputFile:
         assert "set_pot" in content
         assert "set_effective_stack" in content
 
+    def test_contains_bet_sizes(self, tmp_path):
+        """set_bet_sizes commands must be present to avoid degenerate check-only solutions."""
+        config = SolverConfig(bet_sizes=[0.33, 0.75], raise_sizes=[0.6])
+        output_path = str(tmp_path / "solve_output.json")
+        path = _generate_input_file(config, tmp_path, output_path)
+        content = path.read_text()
+        assert "set_bet_sizes oop,flop,bet,33,75" in content
+        assert "set_bet_sizes ip,flop,bet,33,75" in content
+        assert "set_bet_sizes oop,flop,raise,60" in content
+        assert "set_bet_sizes ip,flop,raise,60" in content
+
+    def test_default_bet_sizes_present(self, tmp_path):
+        """Even with default config, bet sizes must be emitted."""
+        config = SolverConfig()
+        output_path = str(tmp_path / "solve_output.json")
+        path = _generate_input_file(config, tmp_path, output_path)
+        content = path.read_text()
+        assert "set_bet_sizes" in content
+        # Default bet_sizes are [0.33, 0.5, 0.75, 1.0]
+        assert "set_bet_sizes oop,flop,bet,33,50,75,100" in content
+        assert "set_bet_sizes ip,flop,bet,33,50,75,100" in content
+
     def test_contains_iterations(self, tmp_path):
         config = SolverConfig(iterations=500)
         output_path = str(tmp_path / "solve_output.json")
@@ -118,6 +140,17 @@ class TestGenerateInputFile:
         raw = path.read_bytes()
         assert b"\r\n" not in raw
         assert b"\n" in raw
+
+    def test_no_check_only_default(self, tmp_path):
+        """Regression: without set_bet_sizes, solver defaults to check/all-in
+        producing degenerate ~100% check solutions. This must never happen."""
+        config = SolverConfig()
+        output_path = str(tmp_path / "solve_output.json")
+        path = _generate_input_file(config, tmp_path, output_path)
+        content = path.read_text()
+        # Count set_bet_sizes lines — must have at least 4 (oop bet, oop raise, ip bet, ip raise)
+        bet_lines = [l for l in content.split("\n") if l.startswith("set_bet_sizes")]
+        assert len(bet_lines) >= 4, f"Expected >=4 set_bet_sizes lines, got {len(bet_lines)}: {bet_lines}"
 
 
 class TestRunTexasSolver:
