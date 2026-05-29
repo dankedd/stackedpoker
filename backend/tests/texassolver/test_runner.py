@@ -71,9 +71,9 @@ class TestGenerateInputFile:
         path = _generate_input_file(config, tmp_path, output_path)
         content = path.read_text()
         assert "set_bet_sizes" in content
-        # Default bet_sizes are [0.33, 0.5, 0.75, 1.0]
-        assert "set_bet_sizes oop,flop,bet,33,50,75,100" in content
-        assert "set_bet_sizes ip,flop,bet,33,50,75,100" in content
+        # Default: 1 bet size (33% pot) for performance
+        assert "set_bet_sizes oop,flop,bet,33" in content
+        assert "set_bet_sizes ip,flop,bet,33" in content
 
     def test_contains_iterations(self, tmp_path):
         config = SolverConfig(iterations=500)

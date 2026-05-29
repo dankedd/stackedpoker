@@ -37,8 +37,11 @@ class SolverConfig:
     stack_depth: int = 100
     board: list[str] = field(default_factory=lambda: ["Ah", "7d", "2c"])
 
-    bet_sizes: list[float] = field(default_factory=lambda: [0.33, 0.5, 0.75, 1.0])
-    raise_sizes: list[float] = field(default_factory=lambda: [0.5, 0.75, 1.0])
+    # Default to 1 bet size for performance. Each additional size ~4x the tree.
+    # 33% pot is the standard c-bet size in most GTO solutions.
+    # Full-range solves: 1 size ≈ 3 min, 2 sizes ≈ 12 min, 4 sizes ≈ hours.
+    bet_sizes: list[float] = field(default_factory=lambda: [0.33])
+    raise_sizes: list[float] = field(default_factory=lambda: [0.6])
     rake: Optional[float] = None
 
     iterations: int = 1000

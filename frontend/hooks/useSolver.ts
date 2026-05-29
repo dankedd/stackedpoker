@@ -33,8 +33,8 @@ interface UseSolverReturn {
   reset: () => void;
 }
 
-const POLL_INTERVAL_MS = 2000;
-const MAX_POLL_ATTEMPTS = 150; // 5 minutes at 2s intervals
+const POLL_INTERVAL_MS = 3000;
+const MAX_POLL_ATTEMPTS = 200; // 10 minutes at 3s intervals
 
 export function useSolver(): UseSolverReturn {
   const { session } = useAuth();
