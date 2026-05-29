@@ -380,6 +380,7 @@ class SolveWorker:
                         solve_id=job_id,
                         board=config.board,
                         pot_size=solver_config.pot_size_bb(),
+                        effective_stack=solver_config.effective_stack_chips(),
                     )
                     tree_node_count = tree_result.total
 

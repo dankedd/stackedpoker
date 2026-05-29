@@ -85,7 +85,11 @@ def _player_to_actor(player: int | None) -> str | None:
     return None
 
 
-def _extract_strategy(raw_node: dict) -> tuple[dict[str, list[float]], list[str], int]:
+def _extract_strategy(
+    raw_node: dict,
+    pot_size: float = 0.0,
+    effective_stack: float = 0.0,
+) -> tuple[dict[str, list[float]], list[str], int]:
     """
     Extract per-combo strategy and action list from a v0.2.0 node.
 
@@ -93,7 +97,7 @@ def _extract_strategy(raw_node: dict) -> tuple[dict[str, list[float]], list[str]
       (strategy_dict, action_names, combo_count)
 
     strategy_dict: {combo_str: [freq_a0, freq_a1, ...]}
-    action_names:  ["x", "b96"] (encoded)
+    action_names:  ["x", "b33"] (encoded with pot-relative labels)
     combo_count:   number of combos
     """
     strat_block = raw_node.get("strategy")
@@ -106,7 +110,7 @@ def _extract_strategy(raw_node: dict) -> tuple[dict[str, list[float]], list[str]
     if not raw_actions or not isinstance(combo_data, dict):
         return {}, [], 0
 
-    encoded_actions = [encode_action(a) for a in raw_actions]
+    encoded_actions = [encode_action(a, pot_size, effective_stack) for a in raw_actions]
 
     strategy: dict[str, list[float]] = {}
     for combo_str, freq_list in combo_data.items():
@@ -144,6 +148,7 @@ def import_solve_tree(
     solve_id: str,
     board: list[str],
     pot_size: float = 0.0,
+    effective_stack: float = 0.0,
     *,
     max_depth: int = MAX_TREE_DEPTH,
     max_nodes: int = MAX_NODES,
@@ -224,14 +229,16 @@ def import_solve_tree(
         # ── Extract strategy data ────────────────────────────────────────
         strategy, encoded_actions, combo_count = ({}, [], 0)
         if is_action:
-            strategy, encoded_actions, combo_count = _extract_strategy(raw_node)
+            strategy, encoded_actions, combo_count = _extract_strategy(
+                raw_node, pot_size, effective_stack,
+            )
 
         aggregate = _compute_aggregate(strategy, encoded_actions)
 
         # ── Determine available actions from childrens ───────────────────
         childrens = raw_node.get("childrens", {})
         if is_action:
-            available_actions = [encode_action(a) for a in childrens.keys()]
+            available_actions = [encode_action(a, pot_size, effective_stack) for a in childrens.keys()]
         elif is_chance:
             # Chance node children are keyed by dealt card
             available_actions = list(childrens.keys())
@@ -277,7 +284,7 @@ def import_solve_tree(
         else:
             child_items = list(childrens.items())
             for action_name, child_data in reversed(child_items):
-                child_tokens = action_tokens + [encode_action(action_name)]
+                child_tokens = action_tokens + [encode_action(action_name, pot_size, effective_stack)]
                 stack.append((child_data, node_id, child_tokens, cur_board, cur_street))
 
     # ── Second pass: wire children_ids ───────────────────────────────────

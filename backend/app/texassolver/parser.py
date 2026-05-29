@@ -28,17 +28,21 @@ from .config import SolverConfig
 logger = logging.getLogger(__name__)
 
 
-def _normalize_action_name(raw_action: str) -> str:
+def _normalize_action_name(
+    raw_action: str,
+    pot_size: float = 0.0,
+    effective_stack: float = 0.0,
+) -> str:
     """
-    Normalize TexasSolver action names to match existing pipeline format.
+    Normalize TexasSolver action names to human-readable format.
 
-    TexasSolver v0.2.0 uses:
-      "CHECK"              → "check"
-      "CALL"               → "call"
-      "FOLD"               → "fold"
-      "BET 96.000000"      → "bet_allin" (or "bet_Xpct" for sized bets)
-      "RAISE 192.000000"   → "raise_allin" (or "raise_Xpct")
-      "ALLIN"              → "bet_allin"
+    TexasSolver v0.2.0 outputs bet/raise sizes in CHIPS (BB), not pot %.
+    We convert to pot-relative percentages for display:
+      "BET 2.000000" with pot=6.5 → bet is 2/6.5 = 31% pot → "bet_33pct"
+      "BET 96.000000" with stack=96.8 → near all-in → "bet_allin"
+      "RAISE 8.000000" with pot=6.5 → raise to 8 BB → "raise_Xpct"
+
+    When pot_size is not available, falls back to raw chip labels.
     """
     raw = raw_action.strip().upper()
 
@@ -54,23 +58,31 @@ def _normalize_action_name(raw_action: str) -> str:
     if raw.startswith("BET "):
         size_str = raw.split(" ", 1)[1].strip()
         try:
-            size = float(size_str)
-            # Round to integer percentage for display
-            pct = int(round(size))
-            return f"bet_{pct}pct"
+            chips = float(size_str)
+            # Detect all-in: if bet >= 90% of effective stack
+            if effective_stack > 0 and chips >= effective_stack * 0.90:
+                return "bet_allin"
+            # Convert to pot percentage
+            if pot_size > 0:
+                pct = int(round(chips / pot_size * 100))
+                return f"bet_{pct}pct"
+            return f"bet_{int(round(chips))}bb"
         except ValueError:
-            return f"bet_{size_str}pct"
+            return f"bet_{size_str}"
 
     if raw.startswith("RAISE "):
         size_str = raw.split(" ", 1)[1].strip()
         try:
-            size = float(size_str)
-            pct = int(round(size))
-            return f"raise_{pct}pct"
+            chips = float(size_str)
+            if effective_stack > 0 and chips >= effective_stack * 0.90:
+                return "raise_allin"
+            if pot_size > 0:
+                pct = int(round(chips / pot_size * 100))
+                return f"raise_{pct}pct"
+            return f"raise_{int(round(chips))}bb"
         except ValueError:
-            return f"raise_{size_str}pct"
+            return f"raise_{size_str}"
 
-    # Fallback: lowercase
     return raw.lower().replace(" ", "_")
 
 
@@ -141,7 +153,7 @@ def _extract_node_from_v020(
         combo_actions = []
         for i, name in enumerate(action_names):
             combo_actions.append(RawAction(
-                action_name=_normalize_action_name(name),
+                action_name=_normalize_action_name(name, pot_chips, stack_chips),
                 frequency=float(freq_list[i]),
             ))
 
@@ -162,7 +174,7 @@ def _extract_node_from_v020(
     actions: list[RawAction] = []
     for name, freq in zip(action_names, avg_freqs):
         actions.append(RawAction(
-            action_name=_normalize_action_name(name),
+            action_name=_normalize_action_name(name, pot_chips, stack_chips),
             frequency=freq,
             ev_chips=None,
         ))
@@ -404,7 +416,7 @@ def _extract_legacy_node(
     if isinstance(strategy, list):
         for name, freq in zip(action_names, strategy):
             actions.append(RawAction(
-                action_name=_normalize_action_name(name),
+                action_name=_normalize_action_name(name, pot_chips, stack_chips),
                 frequency=float(freq),
             ))
     elif isinstance(strategy, dict):
@@ -425,7 +437,7 @@ def _extract_legacy_node(
             combo_actions = []
             for name, freq in zip(action_names, combo_info.get("actions", [])):
                 combo_actions.append(RawAction(
-                    action_name=_normalize_action_name(name),
+                    action_name=_normalize_action_name(name, pot_chips, stack_chips),
                     frequency=float(freq),
                 ))
             combos.append(RawComboEntry(

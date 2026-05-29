@@ -25,34 +25,35 @@ class TestActionNormalization:
     def test_allin(self):
         assert _normalize_action_name("ALLIN") == "bet_allin"
 
-    def test_bet_33(self):
-        assert _normalize_action_name("BET 33") == "bet_33pct"
+    def test_bet_no_context_uses_bb(self):
+        """Without pot context, labels show raw BB amounts."""
+        assert _normalize_action_name("BET 33") == "bet_33bb"
+        assert _normalize_action_name("BET 50") == "bet_50bb"
 
-    def test_bet_50(self):
-        assert _normalize_action_name("BET 50") == "bet_50pct"
+    def test_bet_with_pot_context(self):
+        """With pot context, labels show pot-relative percentages."""
+        # 2 BB bet into 6.5 BB pot = 31% ≈ 31pct
+        assert _normalize_action_name("BET 2.000000", pot_size=6.5, effective_stack=96.8) == "bet_31pct"
+        # 5 BB bet into 6.5 BB pot = 77% ≈ 77pct
+        assert _normalize_action_name("BET 5.000000", pot_size=6.5, effective_stack=96.8) == "bet_77pct"
 
-    def test_bet_75(self):
-        assert _normalize_action_name("BET 75") == "bet_75pct"
+    def test_bet_allin_detection(self):
+        """Bets >= 90% of effective stack are labeled all-in."""
+        assert _normalize_action_name("BET 96.000000", pot_size=6.5, effective_stack=96.8) == "bet_allin"
+        assert _normalize_action_name("BET 90.000000", pot_size=6.5, effective_stack=96.8) == "bet_allin"
 
-    def test_bet_100(self):
-        assert _normalize_action_name("BET 100") == "bet_100pct"
-
-    def test_raise_50(self):
-        assert _normalize_action_name("RAISE 50") == "raise_50pct"
+    def test_raise_with_pot_context(self):
+        assert _normalize_action_name("RAISE 8.000000", pot_size=6.5, effective_stack=96.8) == "raise_123pct"
 
     def test_case_insensitive(self):
         assert _normalize_action_name("check") == "check"
         assert _normalize_action_name("Check") == "check"
 
     def test_whitespace_handling(self):
-        assert _normalize_action_name("  BET 33  ") == "bet_33pct"
-
-    def test_bet_with_decimal(self):
-        """v0.2.0 uses decimal bet sizes like BET 96.000000."""
-        assert _normalize_action_name("BET 96.000000") == "bet_96pct"
+        assert _normalize_action_name("  BET 2.0  ", pot_size=6.5) == "bet_31pct"
 
     def test_bet_with_small_decimal(self):
-        assert _normalize_action_name("BET 3.250000") == "bet_3pct"
+        assert _normalize_action_name("BET 3.250000", pot_size=6.5) == "bet_50pct"
 
 
 # ── v0.2.0 game tree format tests ────────────────────────────────────────
@@ -153,7 +154,7 @@ class TestParseV020GameTree:
         assert len(ip.combos) == 3
         action_names = [a.action_name for a in ip.actions]
         assert "check" in action_names
-        assert "bet_96pct" in action_names
+        assert "bet_allin" in action_names
 
     def test_aggregate_frequencies_computed(self, v020_output, config):
         """Aggregate frequencies are averages across all combos."""
@@ -187,7 +188,7 @@ class TestParseV020GameTree:
         assert len(ak.actions) == 2
         assert ak.actions[0].action_name == "check"
         assert ak.actions[0].frequency == 0.8
-        assert ak.actions[1].action_name == "bet_96pct"
+        assert ak.actions[1].action_name == "bet_allin"
         assert ak.actions[1].frequency == 0.2
 
 
@@ -208,13 +209,15 @@ class TestParseLegacyFormat:
 
     @pytest.fixture
     def valid_output(self, tmp_path):
+        # Legacy format uses chip amounts — use realistic values for pot=6.5
+        # 2.15 BB = 33% pot, 4.88 BB = 75% pot
         data = {
             "ip_strategy": {
-                "actions": ["CHECK", "BET 33", "BET 75"],
+                "actions": ["CHECK", "BET 2.15", "BET 4.88"],
                 "strategy": [0.30, 0.45, 0.25],
             },
             "oop_strategy": {
-                "actions": ["CHECK", "BET 33"],
+                "actions": ["CHECK", "BET 2.15"],
                 "strategy": [0.60, 0.40],
             },
         }
@@ -245,6 +248,7 @@ class TestParseLegacyFormat:
         ip_node = [n for n in nodes if n.position == "BTN"][0]
         action_names = [a.action_name for a in ip_node.actions]
         assert "check" in action_names
+        # 2.15 BB / 6.5 pot = 33%, 4.88 BB / 6.5 pot = 75%
         assert "bet_33pct" in action_names
         assert "bet_75pct" in action_names
 

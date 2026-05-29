@@ -26,8 +26,14 @@ from typing import Literal
 # Compact action abbreviations for path strings.
 # "CHECK" → "x", "BET 96.000000" → "b96", "CALL" → "c", "FOLD" → "f", "RAISE 192" → "r192"
 
-def encode_action(raw: str) -> str:
-    """Encode a raw TexasSolver action name into a compact path token."""
+def encode_action(raw: str, pot_size: float = 0.0, effective_stack: float = 0.0) -> str:
+    """
+    Encode a raw TexasSolver action name into a compact path token.
+
+    TexasSolver outputs bet/raise sizes in CHIPS (BB).
+    With pot context, we convert to pot-relative: "BET 2.0" → "b33" (33% pot).
+    Without pot context, we use raw chip amounts: "BET 2.0" → "b2".
+    """
     upper = raw.strip().upper()
     if upper == "CHECK":
         return "x"
@@ -38,13 +44,25 @@ def encode_action(raw: str) -> str:
     if upper.startswith("BET "):
         size = upper.split(" ", 1)[1].strip()
         try:
-            return f"b{int(round(float(size)))}"
+            chips = float(size)
+            if effective_stack > 0 and chips >= effective_stack * 0.90:
+                return "ai"
+            if pot_size > 0:
+                pct = int(round(chips / pot_size * 100))
+                return f"b{pct}"
+            return f"b{int(round(chips))}"
         except ValueError:
             return f"b{size}"
     if upper.startswith("RAISE "):
         size = upper.split(" ", 1)[1].strip()
         try:
-            return f"r{int(round(float(size)))}"
+            chips = float(size)
+            if effective_stack > 0 and chips >= effective_stack * 0.90:
+                return "rai"
+            if pot_size > 0:
+                pct = int(round(chips / pot_size * 100))
+                return f"r{pct}"
+            return f"r{int(round(chips))}"
         except ValueError:
             return f"r{size}"
     if upper == "ALLIN":

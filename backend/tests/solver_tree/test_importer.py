@@ -12,11 +12,11 @@ def _make_v020_tree():
         ├─ CHECK → IP (player=0): CHECK / BET 96
         │   ├─ CHECK → chance_node (x-x)         [end of street]
         │   └─ BET 96 → OOP (player=1): CALL / FOLD
-        │       ├─ CALL → chance_node (x-b96-c)  [end of street]
-        │       └─ FOLD → terminal (x-b96-f)
+        │       ├─ CALL → chance_node (x-ai-c)  [end of street]
+        │       └─ FOLD → terminal (x-ai-f)
         └─ BET 96 → IP (player=0): CALL / FOLD
-            ├─ CALL → chance_node (b96-c)         [end of street]
-            └─ FOLD → terminal (b96-f)
+            ├─ CALL → chance_node (ai-c)         [end of street]
+            └─ FOLD → terminal (ai-f)
 
     Total: 4 action + 3 chance + 2 terminal = 9 nodes
     """
@@ -85,7 +85,7 @@ def _make_v020_tree():
 class TestImportSolveTree:
     def test_imports_all_nodes(self):
         data = _make_v020_tree()
-        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5)
+        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5, effective_stack=96.8)
         # 4 action + 3 chance + 2 terminal = 9 nodes
         assert result.total == 9
         assert result.action_nodes == 4
@@ -94,7 +94,7 @@ class TestImportSolveTree:
 
     def test_root_has_no_parent(self):
         data = _make_v020_tree()
-        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"])
+        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5, effective_stack=96.8)
         root = result.nodes[0]
         assert root.parent_id is None
         assert root.depth == 0
@@ -102,14 +102,14 @@ class TestImportSolveTree:
 
     def test_root_is_oop(self):
         data = _make_v020_tree()
-        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"])
+        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5, effective_stack=96.8)
         root = result.nodes[0]
         assert root.actor == "oop"
         assert root.raw_player == 1
 
     def test_children_wired(self):
         data = _make_v020_tree()
-        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"])
+        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5, effective_stack=96.8)
         root = result.nodes[0]
         # Root should have 2 children (CHECK and BET)
         assert len(root.children_ids) == 2
@@ -117,7 +117,7 @@ class TestImportSolveTree:
     def test_parent_child_consistency(self):
         """Every child references its parent and vice versa."""
         data = _make_v020_tree()
-        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"])
+        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5, effective_stack=96.8)
         id_map = {n.id: n for n in result.nodes}
         for node in result.nodes:
             if node.parent_id:
@@ -133,8 +133,8 @@ class TestImportSolveTree:
 
     def test_deterministic_ids(self):
         data = _make_v020_tree()
-        r1 = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"])
-        r2 = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"])
+        r1 = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5, effective_stack=96.8)
+        r2 = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5, effective_stack=96.8)
         ids1 = [n.id for n in r1.nodes]
         ids2 = [n.id for n in r2.nodes]
         assert ids1 == ids2
@@ -149,41 +149,41 @@ class TestImportSolveTree:
 
     def test_no_duplicate_ids(self):
         data = _make_v020_tree()
-        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"])
+        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5, effective_stack=96.8)
         ids = [n.id for n in result.nodes]
         assert len(ids) == len(set(ids))
 
     def test_action_paths_correct(self):
         data = _make_v020_tree()
-        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"])
+        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5, effective_stack=96.8)
         paths = {n.action_path for n in result.nodes}
         assert "" in paths       # root
         assert "x" in paths      # CHECK
-        assert "b96" in paths    # BET 96
+        assert "ai" in paths    # BET 96
         assert "x-x" in paths   # CHECK→CHECK (chance)
-        assert "x-b96" in paths  # CHECK→BET
-        assert "x-b96-c" in paths  # CHECK→BET→CALL (chance)
-        assert "x-b96-f" in paths  # CHECK→BET→FOLD (terminal)
-        assert "b96-c" in paths  # BET→CALL (chance)
-        assert "b96-f" in paths  # BET→FOLD (terminal)
+        assert "x-ai" in paths  # CHECK→BET
+        assert "x-ai-c" in paths  # CHECK→BET→CALL (chance)
+        assert "x-ai-f" in paths  # CHECK→BET→FOLD (terminal)
+        assert "ai-c" in paths  # BET→CALL (chance)
+        assert "ai-f" in paths  # BET→FOLD (terminal)
 
     def test_action_history_matches_path(self):
         data = _make_v020_tree()
-        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"])
+        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5, effective_stack=96.8)
         for node in result.nodes:
             expected_path = "-".join(node.action_history) if node.action_history else ""
             assert node.action_path == expected_path
 
     def test_depth_correct(self):
         data = _make_v020_tree()
-        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"])
+        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5, effective_stack=96.8)
         for node in result.nodes:
             assert node.depth == len(node.action_history)
 
     def test_chance_nodes_not_terminal(self):
         """Chance nodes are NOT terminal — they deal the next card."""
         data = _make_v020_tree()
-        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"])
+        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5, effective_stack=96.8)
         chance = [n for n in result.nodes if n.node_type == "chance"]
         assert len(chance) == 3
         for c in chance:
@@ -193,16 +193,16 @@ class TestImportSolveTree:
     def test_terminal_nodes_identified(self):
         """Nodes without node_type (FOLD endpoints) are terminal."""
         data = _make_v020_tree()
-        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"])
+        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5, effective_stack=96.8)
         terminals = [n for n in result.nodes if n.is_terminal]
         assert len(terminals) == 2
         terminal_paths = {n.action_path for n in terminals}
-        assert "x-b96-f" in terminal_paths
-        assert "b96-f" in terminal_paths
+        assert "x-ai-f" in terminal_paths
+        assert "ai-f" in terminal_paths
 
     def test_strategy_data_preserved(self):
         data = _make_v020_tree()
-        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"])
+        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5, effective_stack=96.8)
         root = result.nodes[0]
         assert root.combo_count == 3
         assert "AhKs" in root.strategy
@@ -210,38 +210,38 @@ class TestImportSolveTree:
 
     def test_aggregate_freqs_computed(self):
         data = _make_v020_tree()
-        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"])
+        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5, effective_stack=96.8)
         root = result.nodes[0]
         assert "x" in root.aggregate_freqs
-        assert "b96" in root.aggregate_freqs
+        assert "ai" in root.aggregate_freqs
         total = sum(root.aggregate_freqs.values())
         assert abs(total - 1.0) < 0.01
 
     def test_board_on_all_flop_nodes(self):
         data = _make_v020_tree()
-        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"])
+        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5, effective_stack=96.8)
         for node in result.nodes:
             assert node.board[:3] == ["Jh", "9c", "4d"]
             assert node.street == "flop"
 
     def test_human_paths_readable(self):
         data = _make_v020_tree()
-        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"])
+        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5, effective_stack=96.8)
         root = result.nodes[0]
         assert root.human_path == "root:flop:Jh9c4d"
         paths = {n.human_path for n in result.nodes}
         assert "root:flop:Jh9c4d:x" in paths
-        assert "root:flop:Jh9c4d:b96" in paths
+        assert "root:flop:Jh9c4d:ai" in paths
 
     def test_pot_size_propagated(self):
         data = _make_v020_tree()
-        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5)
+        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5, effective_stack=96.8)
         for node in result.nodes:
             assert node.pot_size == 6.5
 
     def test_summary_string(self):
         data = _make_v020_tree()
-        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"])
+        result = import_solve_tree(data, "test-1", ["Jh", "9c", "4d"], pot_size=6.5, effective_stack=96.8)
         s = result.summary()
         assert "9 nodes" in s
         assert "action=4" in s

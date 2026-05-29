@@ -31,6 +31,14 @@ class TestEncodeAction:
     def test_allin(self):
         assert encode_action("ALLIN") == "ai"
 
+    def test_bet_with_pot_context(self):
+        """With pot context, BET 2.0 into 6.5 pot = 31% pot → b31."""
+        assert encode_action("BET 2.000000", pot_size=6.5, effective_stack=96.8) == "b31"
+
+    def test_bet_allin_with_context(self):
+        """BET 96 with 96.8 effective stack = 99% of stack → ai."""
+        assert encode_action("BET 96.000000", pot_size=6.5, effective_stack=96.8) == "ai"
+
     def test_case_insensitive(self):
         assert encode_action("check") == "x"
         assert encode_action("Check") == "x"
