@@ -64,8 +64,10 @@ class SolveJobConfig(BaseModel):
     range_oop: str = ""
 
     # ── Sizing options ────────────────────────────────────────────────────
-    bet_sizes: list[float] = Field(default_factory=lambda: [0.33, 0.75])
-    raise_sizes: list[float] = Field(default_factory=lambda: [0.5, 1.0])
+    # 1 bet size for performance: full-range solve ≈ 3 min.
+    # Each additional size ≈ 4x tree → 2 sizes ≈ 12 min, 4 sizes ≈ hours.
+    bet_sizes: list[float] = Field(default_factory=lambda: [0.33])
+    raise_sizes: list[float] = Field(default_factory=lambda: [0.6])
     donk_sizes: list[float] = Field(default_factory=list)
     rake: float | None = None
 
