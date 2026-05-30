@@ -585,3 +585,78 @@ async def get_job_strategy(
         "Strategy data not available — job was completed before strategy "
         "serialization was implemented. Submit a new solve job.",
     )
+
+
+# ── Diagnostics endpoint ─────────────────────────────────────────────────────
+
+@router.get("/jobs/{job_id}/diagnostics", response_model=dict)
+async def get_job_diagnostics(
+    job_id: str,
+    queue: SolveQueue = Depends(_require_queue),
+) -> dict:
+    """
+    Pipeline diagnostic snapshot for a solve job.
+
+    Returns all import counts, tree node counts, config sizing, and
+    post-solve validation checks in one place. Use this to verify that
+    a solve produced a valid non-degenerate tree.
+    """
+    job = await queue.get_job(job_id)
+    if job is None:
+        raise HTTPException(404, f"Job {job_id} not found")
+
+    diag: dict = {
+        "job_id": job_id,
+        "status": job.status.value,
+        "attempt": job.attempt,
+        "duration_seconds": job.duration_seconds(),
+        "error": job.error,
+        "error_history": job.error_history,
+        "config": {
+            "board": job.config.board,
+            "positions": job.config.positions,
+            "spot_type": job.config.spot_type,
+            "stack_depth": job.config.stack_depth,
+            "max_iterations": job.config.max_iterations,
+            "accuracy_target": job.config.accuracy_target,
+            "bet_sizes": {
+                "flop_bet": job.config.bet_sizes,
+                "flop_raise": job.config.raise_sizes,
+                "turn_bet": job.config.turn_bet_sizes,
+                "turn_raise": job.config.turn_raise_sizes,
+                "river_bet": job.config.river_bet_sizes,
+                "river_raise": job.config.river_raise_sizes,
+            },
+        },
+    }
+
+    if job.result:
+        r = job.result
+        diag["pipeline"] = {
+            "solve_time_seconds": r.solve_time_seconds,
+            "nodes_parsed": r.nodes_parsed,
+            "nodes_imported": r.nodes_imported,
+            "nodes_skipped": r.nodes_skipped,
+            "tree_nodes_imported": r.tree_nodes_imported,
+            "import_errors": r.import_errors,
+            "solve_output_path": r.solve_output_path,
+            "compressed_output_path": r.compressed_output_path,
+            "strategy_data_present": r.strategy_data is not None,
+            "stdout_tail": r.stdout_tail,
+            "stderr_tail": r.stderr_tail,
+        }
+        diag["validation"] = {
+            "tree_node_count_ok": r.tree_nodes_imported > 2,
+            "strategy_imported": r.nodes_imported > 0,
+            "no_import_errors": len(r.import_errors) == 0,
+            "has_strategy_data": r.strategy_data is not None,
+            "flop_bet_sizes_present": len(job.config.bet_sizes) > 0,
+            "turn_bet_sizes_present": len(job.config.turn_bet_sizes) > 0,
+            "river_bet_sizes_present": len(job.config.river_bet_sizes) > 0,
+        }
+        diag["validation"]["pipeline_ok"] = all(diag["validation"].values())
+    else:
+        diag["pipeline"] = None
+        diag["validation"] = None
+
+    return diag

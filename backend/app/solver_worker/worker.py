@@ -75,7 +75,18 @@ class SolveWorker:
     async def start(self) -> None:
         """Start the worker loop. Blocks until shutdown signal."""
         from .solver_path import log_solver_status, solver_binary_exists
+        import subprocess as _sp
 
+        try:
+            _commit = _sp.check_output(
+                ["git", "rev-parse", "--short", "HEAD"],
+                stderr=_sp.DEVNULL,
+                text=True,
+            ).strip()
+        except Exception:
+            _commit = "unknown"
+
+        logger.info("[Worker %s] commit=%s", self._worker_id, _commit)
         logger.info(
             "[Worker %s] starting (concurrency=%d, threads/solve=%d, timeout=%ds)",
             self._worker_id,
@@ -447,12 +458,35 @@ class SolveWorker:
                     f"{nid}: {err}" for nid, err in import_result.errors
                 ],
                 node_keys=[],
+                tree_nodes_imported=tree_node_count,
                 strategy_data=strategy_data,
                 stdout_tail=(solve_result.stdout or "")[-500:],
                 stderr_tail=(solve_result.stderr or "")[-500:],
             )
 
             await self._queue.complete(job_id, result)
+
+            # Post-solve pipeline validation — loud warnings if something is wrong
+            validation_failures = []
+            if tree_node_count <= 2:
+                validation_failures.append(
+                    f"tree_nodes={tree_node_count} (expected >2 — likely missing set_bet_sizes)"
+                )
+            if result.nodes_imported == 0:
+                validation_failures.append("nodes_imported=0 (strategy DB empty)")
+            if result.import_errors:
+                validation_failures.append(
+                    f"{len(result.import_errors)} import error(s): {result.import_errors[0]}"
+                )
+            if result.strategy_data is None:
+                validation_failures.append("strategy_data=None (serialization failed)")
+            if not config.bet_sizes:
+                validation_failures.append("bet_sizes=[] (config missing flop sizes)")
+            if validation_failures:
+                logger.warning(
+                    "[Worker %s] job %s PIPELINE VALIDATION FAILED: %s",
+                    self._worker_id, job_id, "; ".join(validation_failures),
+                )
 
             logger.info(
                 "[Worker %s] job %s completed in %.1fs "

@@ -111,6 +111,10 @@ class SolveJobConfig(BaseModel):
             "board": self.board,
             "bet_sizes": self.bet_sizes,
             "raise_sizes": self.raise_sizes,
+            "turn_bet_sizes": self.turn_bet_sizes,
+            "turn_raise_sizes": self.turn_raise_sizes,
+            "river_bet_sizes": self.river_bet_sizes,
+            "river_raise_sizes": self.river_raise_sizes,
             "rake": self.rake,
             "iterations": self.max_iterations,
             "accuracy_target": self.accuracy_target,
@@ -193,10 +197,11 @@ class SolveJobResult(BaseModel):
     compressed_output_path: str | None = None  # gzip'd JSON
 
     # ── Import results ────────────────────────────────────────────────────
-    nodes_parsed: int = 0
-    nodes_imported: int = 0
+    nodes_parsed: int = 0          # RawSolverNodes extracted by strategy parser
+    nodes_imported: int = 0        # StrategyNodes written to strategy DB
     nodes_skipped: int = 0
     import_errors: list[str] = Field(default_factory=list)
+    tree_nodes_imported: int = 0   # Game-tree nodes imported into SolveTreeStore
 
     # ── Node keys produced ────────────────────────────────────────────────
     node_keys: list[str] = Field(default_factory=list)
