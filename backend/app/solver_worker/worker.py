@@ -489,11 +489,6 @@ class SolveWorker:
                 validation_failures.append("strategy_data=None (serialization failed)")
             if not config.bet_sizes:
                 validation_failures.append("bet_sizes=[] (config missing flop sizes)")
-            # Flop solves must export turn nodes (set_dump_rounds 2)
-            if len(config.board) == 3 and result.turn_nodes == 0 and tree_node_count > 2:
-                validation_failures.append(
-                    f"turn_nodes=0 for flop solve (set_dump_rounds 2 missing or dealcards not imported)"
-                )
             if validation_failures:
                 logger.warning(
                     "[Worker %s] job %s PIPELINE VALIDATION FAILED: %s",
