@@ -50,6 +50,12 @@ class ParseDiagnostics(BaseModel):
     errors: list[str] = Field(default_factory=list)
     is_partial: bool = False
 
+    # ── Position diagnostics ──────────────────────────────────────────────
+    button_found: bool = True
+    button_seat_occupied: bool = True
+    hero_found: bool = True
+    position_validation_passed: bool = True
+
 
 class ParsedHand(BaseModel):
     site: Literal["GGPoker", "PokerStars", "Unknown"]

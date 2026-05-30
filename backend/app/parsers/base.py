@@ -251,14 +251,41 @@ class BaseParser(ABC):
         seats = [int(m.group(1)) for m in re.finditer(r"Seat (\d+):", text)]
         return max(seats) if seats else 6
 
+    def _resolve_button_seat(
+        self,
+        raw_button: int | None,
+        seats: list[dict],
+        warnings: list[str] | None = None,
+    ) -> tuple[int, bool]:
+        """Resolve a possibly-None button seat to a concrete seat number.
+
+        Returns (button_seat, button_found).
+        If raw_button is None, infers from seat 1 and records a warning/error.
+        """
+        if raw_button is not None:
+            return raw_button, True
+
+        # Fallback: use lowest occupied seat
+        fallback = seats[0]["seat"] if seats else 1
+        msg = (
+            f"Button seat not found in hand history — "
+            f"defaulting to seat {fallback} (positions may be incorrect)"
+        )
+        _log.warning(msg)
+        if warnings is not None:
+            warnings.append(msg)
+        return fallback, False
+
     def _assign_positions(
-        self, seats: list[dict], button_seat: int, table_max_seats: int
+        self, seats: list[dict], button_seat: int, table_max_seats: int,
+        warnings: list[str] | None = None,
     ) -> list[PlayerInfo]:
         if not seats:
             return []
         occupied = [s["seat"] for s in seats]
         # If button_seat isn't occupied, snap to nearest clockwise occupied seat
         if button_seat not in occupied and occupied:
+            original_btn = button_seat
             all_seats = list(range(1, table_max_seats + 1))
             btn_idx = all_seats.index(button_seat) if button_seat in all_seats else 0
             for offset in range(len(all_seats)):
@@ -266,6 +293,13 @@ class BaseParser(ABC):
                 if candidate in occupied:
                     button_seat = candidate
                     break
+            msg = (
+                f"Button seat {original_btn} not occupied — "
+                f"snapped to nearest occupied seat {button_seat}"
+            )
+            _log.warning(msg)
+            if warnings is not None:
+                warnings.append(msg)
         pos_map = derive_positions(occupied, button_seat, table_max_seats)
         return [
             PlayerInfo(
@@ -276,6 +310,77 @@ class BaseParser(ABC):
             )
             for s in seats
         ]
+
+    def _resolve_hero_position(
+        self,
+        players: list[PlayerInfo],
+        hero_name: str,
+        warnings: list[str] | None = None,
+    ) -> str:
+        """Find hero's position from the player list.
+
+        If hero name is not found, returns "UNKNOWN" and records a warning.
+        Never silently assumes BTN.
+        """
+        for p in players:
+            if p.name == hero_name:
+                return p.position
+        msg = f"Hero '{hero_name}' not found in seat map — position unknown"
+        _log.warning(msg)
+        if warnings is not None:
+            warnings.append(msg)
+        return "UNKNOWN"
+
+    def _validate_blind_positions(
+        self,
+        text: str,
+        players: list[PlayerInfo],
+        warnings: list[str] | None = None,
+    ) -> bool:
+        """Validate that assigned SB/BB positions match actual blind postings.
+
+        Returns True if validation passes (or cannot be performed).
+        """
+        sb_player = next((p for p in players if p.position == "SB"), None)
+        bb_player = next((p for p in players if p.position == "BB"), None)
+
+        # Extract actual blind posters from text
+        sb_poster_m = re.search(
+            r"(\S+)\s*:\s*posts\s+(?:the\s+)?small\s+blind",
+            text, re.IGNORECASE,
+        )
+        bb_poster_m = re.search(
+            r"(\S+)\s*:\s*posts\s+(?:the\s+)?big\s+blind",
+            text, re.IGNORECASE,
+        )
+
+        passed = True
+
+        if sb_poster_m and sb_player:
+            actual_sb = sb_poster_m.group(1)
+            if actual_sb != sb_player.name:
+                msg = (
+                    f"SB position mismatch: assigned SB={sb_player.name} (seat {sb_player.seat}), "
+                    f"but '{actual_sb}' posted small blind"
+                )
+                _log.warning(msg)
+                if warnings is not None:
+                    warnings.append(msg)
+                passed = False
+
+        if bb_poster_m and bb_player:
+            actual_bb = bb_poster_m.group(1)
+            if actual_bb != bb_player.name:
+                msg = (
+                    f"BB position mismatch: assigned BB={bb_player.name} (seat {bb_player.seat}), "
+                    f"but '{actual_bb}' posted big blind"
+                )
+                _log.warning(msg)
+                if warnings is not None:
+                    warnings.append(msg)
+                passed = False
+
+        return passed
 
     def _parse_hero_cards(self, text: str) -> tuple[str, list[str]]:
         """Parse 'Dealt to PlayerName [Xh Yc]' line. Supports 2-card and 4-card hands."""
@@ -385,6 +490,12 @@ class BaseParser(ABC):
         board: BoardCards,
         hero_cards: list[str],
         recovered_actions: int = 0,
+        *,
+        extra_warnings: list[str] | None = None,
+        button_found: bool = True,
+        button_seat_occupied: bool = True,
+        hero_found: bool = True,
+        position_validation_passed: bool = True,
     ) -> ParseDiagnostics:
         """Build a ParseDiagnostics describing what was and wasn't found."""
         SECTION_NAMES = ["HOLE CARDS", "FLOP", "TURN", "RIVER", "SHOWDOWN", "SUMMARY"]
@@ -397,7 +508,7 @@ class BaseParser(ABC):
                 missing.append(name)
 
         board_cards_parsed = len(board.flop) + len(board.turn) + len(board.river)
-        warnings: list[str] = []
+        warnings: list[str] = list(extra_warnings) if extra_warnings else []
         errors: list[str] = []
 
         if not actions:
@@ -416,6 +527,10 @@ class BaseParser(ABC):
             warnings.append(
                 f"Recovery parser used: {recovered_actions} action(s) recovered from raw text"
             )
+        if not button_found:
+            errors.append("Button seat not found in hand history — positions may be incorrect")
+        if not hero_found:
+            errors.append("Hero player not found in seat map — hero position unknown")
 
         return ParseDiagnostics(
             sections_found=found,
@@ -427,4 +542,8 @@ class BaseParser(ABC):
             warnings=warnings,
             errors=errors,
             is_partial=bool(errors) or recovered_actions > 0,
+            button_found=button_found,
+            button_seat_occupied=button_seat_occupied,
+            hero_found=hero_found,
+            position_validation_passed=position_validation_passed,
         )

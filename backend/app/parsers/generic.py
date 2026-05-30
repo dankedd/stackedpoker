@@ -37,15 +37,22 @@ class GenericParser(BaseParser):
         stakes, sb, bb = self._parse_stakes_generic(text)
         game_type = "NLHE"
 
+        pos_warnings: list[str] = []
+
         table_max_seats = self._parse_table_max_seats(text)
         players_raw = self._parse_seats_generic(text, bb)
-        button_seat = self._parse_button_seat_generic(text)
-        players = self._assign_positions(players_raw, button_seat, table_max_seats) if players_raw else []
+        raw_button = self._parse_button_seat_generic(text)
+        button_seat, button_found = self._resolve_button_seat(
+            raw_button, players_raw, pos_warnings,
+        )
+        btn_occupied = button_seat in [s["seat"] for s in players_raw] if players_raw else False
+        players = self._assign_positions(
+            players_raw, button_seat, table_max_seats, pos_warnings,
+        ) if players_raw else []
 
         hero_name, hero_cards = self._parse_hero_cards_generic(text)
-        hero_position = next(
-            (p.position for p in players if p.name == hero_name), "BTN"
-        )
+        hero_position = self._resolve_hero_position(players, hero_name, pos_warnings)
+        hero_found = hero_position != "UNKNOWN"
 
         board = self._parse_board_generic(text)
         actions = self._recover_actions_from_text(text, hero_name, bb)
@@ -62,8 +69,15 @@ class GenericParser(BaseParser):
             sb_player=sb_name, bb_player=bb_name,
         )
 
+        pos_valid = self._validate_blind_positions(text, players, pos_warnings)
+
         diagnostics = self._build_diagnostics(
-            text, actions, board, hero_cards, len(actions)
+            text, actions, board, hero_cards, len(actions),
+            extra_warnings=pos_warnings,
+            button_found=button_found,
+            button_seat_occupied=btn_occupied,
+            hero_found=hero_found,
+            position_validation_passed=pos_valid,
         )
 
         return ParsedHand(
@@ -127,7 +141,7 @@ class GenericParser(BaseParser):
         _log.debug("GenericParser: all stake patterns failed")
         return "0.5/1", 0.5, 1.0
 
-    def _parse_button_seat_generic(self, text: str) -> int:
+    def _parse_button_seat_generic(self, text: str) -> int | None:
         for pattern in [
             r"[Ss]eat\s*#?(\d+)\s+is\s+the\s+[Bb]utton",
             r"[Ss]eat\s*#?(\d+)\s+[Bb]utton",
@@ -136,7 +150,7 @@ class GenericParser(BaseParser):
             m = re.search(pattern, text)
             if m:
                 return int(m.group(1))
-        return 1
+        return None
 
     def _parse_seats_generic(self, text: str, bb: float) -> list[dict]:
         """Try to parse seat lines in various formats."""

@@ -29,15 +29,22 @@ class PokerStarsParser(BaseParser):
         game_type = "NLHE"
         site = "PokerStars"
 
+        pos_warnings: list[str] = []
+
         table_max_seats = self._parse_table_max_seats(text)
         players_raw = self._parse_seats(text, bb)
-        button_seat = self._parse_button_seat(text)
-        players = self._assign_positions(players_raw, button_seat, table_max_seats)
+        raw_button = self._parse_button_seat(text)
+        button_seat, button_found = self._resolve_button_seat(
+            raw_button, players_raw, pos_warnings,
+        )
+        btn_occupied = button_seat in [s["seat"] for s in players_raw]
+        players = self._assign_positions(
+            players_raw, button_seat, table_max_seats, pos_warnings,
+        )
 
         hero_name, hero_cards = self._parse_hero_cards(text)
-        hero_position = next(
-            (p.position for p in players if p.name == hero_name), "BTN"
-        )
+        hero_position = self._resolve_hero_position(players, hero_name, pos_warnings)
+        hero_found = hero_position != "UNKNOWN"
 
         board = self._parse_board(text)
         actions = self._parse_actions(text, hero_name, bb)
@@ -64,7 +71,16 @@ class PokerStarsParser(BaseParser):
             sb_player=sb_name, bb_player=bb_name,
         )
 
-        diagnostics = self._build_diagnostics(text, actions, board, hero_cards, recovered)
+        pos_valid = self._validate_blind_positions(text, players, pos_warnings)
+
+        diagnostics = self._build_diagnostics(
+            text, actions, board, hero_cards, recovered,
+            extra_warnings=pos_warnings,
+            button_found=button_found,
+            button_seat_occupied=btn_occupied,
+            hero_found=hero_found,
+            position_validation_passed=pos_valid,
+        )
         _log.debug(
             "PS %s diagnostics: found=%s missing=%s actions=%d board=%d recovered=%d",
             hand_id,
@@ -137,6 +153,6 @@ class PokerStarsParser(BaseParser):
         _log.warning("PS stakes: all patterns failed for: %r", text[:120])
         return "0.5/1", 0.5, 1.0
 
-    def _parse_button_seat(self, text: str) -> int:
+    def _parse_button_seat(self, text: str) -> int | None:
         m = re.search(r"Seat #(\d+) is the Button", text, re.IGNORECASE)
-        return int(m.group(1)) if m else 1
+        return int(m.group(1)) if m else None

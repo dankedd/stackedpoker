@@ -43,15 +43,22 @@ class PartyPokerParser(BaseParser):
         game_type = "NLHE"
         site = "PartyPoker"
 
+        pos_warnings: list[str] = []
+
         table_max_seats = self._parse_table_max_seats(text)
         players_raw = self._parse_seats_pp(text, bb)
-        button_seat = self._parse_button_seat(text)
-        players = self._assign_positions(players_raw, button_seat, table_max_seats)
+        raw_button = self._parse_button_seat(text)
+        button_seat, button_found = self._resolve_button_seat(
+            raw_button, players_raw, pos_warnings,
+        )
+        btn_occupied = button_seat in [s["seat"] for s in players_raw]
+        players = self._assign_positions(
+            players_raw, button_seat, table_max_seats, pos_warnings,
+        )
 
         hero_name, hero_cards = self._parse_hero_cards_pp(text)
-        hero_position = next(
-            (p.position for p in players if p.name == hero_name), "BTN"
-        )
+        hero_position = self._resolve_hero_position(players, hero_name, pos_warnings)
+        hero_found = hero_position != "UNKNOWN"
 
         board = _parse_partypoker_board(text)
         actions = self._parse_actions_pp(text, hero_name, bb)
@@ -71,7 +78,16 @@ class PartyPokerParser(BaseParser):
             sb_player=sb_name, bb_player=bb_name,
         )
 
-        diagnostics = self._build_diagnostics(text, actions, board, hero_cards, recovered)
+        pos_valid = self._validate_blind_positions(text, players, pos_warnings)
+
+        diagnostics = self._build_diagnostics(
+            text, actions, board, hero_cards, recovered,
+            extra_warnings=pos_warnings,
+            button_found=button_found,
+            button_seat_occupied=btn_occupied,
+            hero_found=hero_found,
+            position_validation_passed=pos_valid,
+        )
 
         return ParsedHand(
             site=site,
@@ -113,7 +129,7 @@ class PartyPokerParser(BaseParser):
             return f"{sb}/{bb}", sb, bb
         return "0.5/1", 0.5, 1.0
 
-    def _parse_button_seat(self, text: str) -> int:
+    def _parse_button_seat(self, text: str) -> int | None:
         # "PlayerName has the button" — find their seat
         m = re.search(r"(\S+)\s+has the button", text, re.IGNORECASE)
         if m:
@@ -121,7 +137,7 @@ class PartyPokerParser(BaseParser):
             m2 = re.search(rf"Seat (\d+):\s+{re.escape(btn_player)}", text)
             if m2:
                 return int(m2.group(1))
-        return 1
+        return None
 
     def _parse_seats_pp(self, text: str, bb: float) -> list[dict]:
         """PartyPoker seat format: 'Seat N: PlayerName ( $X.XX USD )'"""
