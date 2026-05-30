@@ -86,9 +86,10 @@ ENV TEXASSOLVER_BIN="/opt/texassolver/bin/console_solver"
 ENV TEXASSOLVER_RESOURCE_DIR="/opt/texassolver/resources"
 ENV ENABLE_SOLVER_ENGINE="true"
 ENV PYTHONUNBUFFERED="1"
-# Default to 2 solver threads — safe for Railway's memory constraints.
+# Default to 1 solver thread — minimises peak memory on Railway.
+# A 3-street GTO tree needs ~1-2 GB; 1 thread reduces working set.
 # Override with SOLVER_THREADS env var in Railway service settings.
-ENV SOLVER_THREADS="2"
+ENV SOLVER_THREADS="1"
 
 EXPOSE 8080
 
