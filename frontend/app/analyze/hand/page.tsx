@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft, RotateCcw, FileText, ImageIcon,
-  Zap, AlertTriangle, BookmarkCheck, ShieldCheck, TreePine,
+  Zap, AlertTriangle, ShieldCheck, TreePine, BookmarkCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
@@ -17,6 +17,7 @@ import type { AnalysisSetupValue } from "@/components/poker/AnalysisSetup";
 import { UsageWidget } from "@/components/poker/UsageWidget";
 import { UpgradePrompt, LoginCTA } from "@/components/poker/UpgradePrompt";
 import { GGPokerImportGuide } from "@/components/onboarding/GGPokerImportGuide";
+import CanonicalHandTimeline from "@/components/replay/CanonicalHandTimeline";
 import { HandReplay } from "@/components/replay/HandReplay";
 import { HandConfirmation } from "@/components/replay/HandConfirmation";
 import { HandRepairUI } from "@/components/poker/HandRepairUI";
@@ -31,7 +32,7 @@ import { useUsage } from "@/hooks/useUsage";
 import { useAuth } from "@/contexts/AuthContext";
 import SolverPanel from "@/components/solver/SolverPanel";
 import { cn } from "@/lib/utils";
-import type { PipelineResult } from "@/lib/hand-schema";
+import type { PipelineResult, CanonicalHand } from "@/lib/hand-schema";
 
 type Tab = "text" | "image";
 
@@ -42,14 +43,40 @@ const SETUP_KEY     = "poker_analysis_setup";
 const HAND_KEY      = "poker_session_hand_prefill";
 const SES_SETUP_KEY = "poker_session_hand_setup";
 
-const PIPELINE_STAGES = [
-  "Parsing hand history…",
-  "Normalizing entities…",
-  "Validating structure…",
-  "Checking pot math…",
-  "Evaluating decisions…",
-  "Generating coaching…",
-];
+// ── Derive solver spot from canonical hand (no AI analysis needed) ────────────
+
+function deriveSpotFromCanonical(canonical: CanonicalHand): {
+  spot_type: string;
+  positions: string;
+  board: string[];
+} {
+  const flopStreet = canonical.streets.find(s => s.name === "flop");
+  const preflopStreet = canonical.streets.find(s => s.name === "preflop");
+
+  const board = flopStreet?.board_cards.map(c => c.notation) ?? [];
+
+  // Spot type: count preflop raises (1=SRP, 2=3BP, 3+=4BP)
+  const raises = preflopStreet?.actions.filter(a => a.action === "raise").length ?? 0;
+  const spot_type = raises >= 3 ? "4BP" : raises === 2 ? "3BP" : "SRP";
+
+  // Positions: first two unique flop actors (OOP acts first, IP acts second)
+  const flopActorIds: string[] = [];
+  for (const a of flopStreet?.actions ?? []) {
+    if (!a.action.startsWith("post_") && !flopActorIds.includes(a.player_id)) {
+      flopActorIds.push(a.player_id);
+      if (flopActorIds.length === 2) break;
+    }
+  }
+  const playerById = Object.fromEntries(canonical.players.map(p => [p.id, p]));
+  let positions = "BTN_vs_BB";
+  if (flopActorIds.length >= 2) {
+    const oopPos = playerById[flopActorIds[0]]?.position ?? "BB";
+    const ipPos  = playerById[flopActorIds[1]]?.position ?? "BTN";
+    positions = `${ipPos}_vs_${oopPos}`;
+  }
+
+  return { spot_type, positions, board };
+}
 
 export default function AnalyzePage() {
   const [fromSession] = useState<boolean>(() => {
@@ -80,54 +107,66 @@ export default function AnalyzePage() {
   const { usage, loading: usageLoading, refetch: refetchUsage } = useUsage();
 
   // ── Hooks ────────────────────────────────────────────────────────────────
-  const pipeline    = usePipeline();
+  const pipeline    = usePipeline({ skipAnalyze: true });
   const image       = useImageAnalysis();
   const solver      = useSolver();
   const walkthrough = useHandSolverWalkthrough();
 
-  const [stageIdx, setStageIdx] = useState(0);
   const resultRef        = useRef<HTMLDivElement>(null);
   const autoAnalyzed     = useRef(false);
   const autoSolvedRef    = useRef(false);
   const autoWalkthroughRef = useRef(false);
 
-  // ── Hero side: derived from canonical hand + position matchup ─────────────
+  // ── Hero side: derived from canonical hand (first flop actor = OOP) ─────────
   const heroSide = useMemo<"ip" | "oop">(() => {
     const canonical = pipeline.pipeline?.canonical;
-    const spot = pipeline.result?.spot_classification;
-    if (!canonical || !spot) return "oop";
+    if (!canonical) return "oop";
     const hero = canonical.players.find(p => p.is_hero);
     if (!hero) return "oop";
-    const ipPos = (spot.position_matchup ?? "BTN_vs_BB").split("_vs_")[0];
-    return hero.position === ipPos ? "ip" : "oop";
-  }, [pipeline.pipeline?.canonical, pipeline.result?.spot_classification]);
+    const flopStreet = canonical.streets.find(s => s.name === "flop");
+    const flopActorIds: string[] = [];
+    for (const a of flopStreet?.actions ?? []) {
+      if (!a.action.startsWith("post_") && !flopActorIds.includes(a.player_id)) {
+        flopActorIds.push(a.player_id);
+        if (flopActorIds.length === 2) break;
+      }
+    }
+    if (flopActorIds.length >= 2) {
+      return flopActorIds[0] === hero.id ? "oop" : "ip";
+    }
+    return hero.position === "BB" ? "oop" : "ip";
+  }, [pipeline.pipeline?.canonical]);
 
-  // ── Reset auto-flags when pipeline resets ────────────────────────────────
+  // ── Reset auto-flags + solver when pipeline resets ───────────────────────
   useEffect(() => {
     if (pipeline.stage === "idle") {
       autoSolvedRef.current = false;
       autoWalkthroughRef.current = false;
+      solver.reset();
+      walkthrough.reset();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pipeline.stage]);
 
   // ── Auto-trigger solver once parse succeeds ───────────────────────────────
   useEffect(() => {
     if (pipeline.stage !== "success" || autoSolvedRef.current) return;
     const canonical = pipeline.pipeline?.canonical;
-    const spot = pipeline.result?.spot_classification;
-    const flopCards = pipeline.result?.parsed_hand?.board?.flop ?? [];
-    if (!canonical || !spot || flopCards.length < 3) return;
+    if (!canonical) return;
+
+    const { spot_type, positions, board } = deriveSpotFromCanonical(canonical);
+    if (board.length < 3) return;
 
     autoSolvedRef.current = true;
     solver.solve({
-      spot_type: spot.pot_type ?? "SRP",
-      positions: spot.position_matchup ?? "BTN_vs_BB",
+      spot_type,
+      positions,
       stack_depth: canonical.effective_stack_bb ?? 100,
-      board: flopCards,
+      board,
       // Use SolveJobConfig server default (500 iter, 0.3% accuracy)
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pipeline.stage, pipeline.result, pipeline.pipeline?.canonical]);
+  }, [pipeline.stage, pipeline.pipeline?.canonical]);
 
   // ── Auto-run walkthrough once solver completes ────────────────────────────
   useEffect(() => {
@@ -189,17 +228,16 @@ export default function AnalyzePage() {
     setActiveTab(tab);
     pipeline.reset();
     image.reset();
+    solver.reset();
+    walkthrough.reset();
   };
 
-  // Loading stage animation
-  const isTextLoading = pipeline.stage === "preparing" || pipeline.stage === "analyzing";
+  // Loading: covers parse phase + all solver states until completion
+  const solverBusy = solver.state === "submitting" || solver.state === "queued" || solver.state === "running";
+  const isTextLoading =
+    pipeline.stage === "preparing" ||
+    (pipeline.stage === "success" && (solverBusy || walkthrough.state.loading));
   const isLoading = activeTab === "text" ? isTextLoading : (image.isExtracting || image.isAnalyzing);
-
-  useEffect(() => {
-    if (!isLoading) { setStageIdx(0); return; }
-    const t = setInterval(() => setStageIdx(i => (i + 1) % PIPELINE_STAGES.length), 2000);
-    return () => clearInterval(t);
-  }, [isLoading]);
 
   // ── Derived state ────────────────────────────────────────────────────────
   const imgBusy       = image.isExtracting || image.isAnalyzing;
@@ -207,8 +245,9 @@ export default function AnalyzePage() {
   const imgSuccess    = activeTab === "image" && image.isSuccess;
 
   const textRepairing = activeTab === "text" && pipeline.stage === "repairing";
-  const textSuccess   = activeTab === "text" && pipeline.stage === "success";
-  const textError     = activeTab === "text" && pipeline.stage === "error";
+  // Gate results display on solver completing — nothing shown until tree is done
+  const textSuccess   = activeTab === "text" && solver.state === "completed";
+  const textError     = activeTab === "text" && (pipeline.stage === "error" || solver.state === "error" || solver.state === "failed");
   const imgError      = activeTab === "image" && image.isError && !image.extraction;
 
   const hasError  = textError || imgError;
@@ -366,41 +405,42 @@ export default function AnalyzePage() {
               </div>
 
               <div className="text-center space-y-3">
-                <p className="font-medium text-foreground animate-fade-in" key={stageIdx}>
+                <p className="font-medium text-foreground animate-fade-in" key={solver.state + pipeline.stage}>
                   {image.isExtracting ? "Extracting poker state…" :
                    image.isAnalyzing  ? "Generating AI coaching…" :
-                   pipeline.stage === "preparing" ? PIPELINE_STAGES[Math.min(stageIdx, 3)] :
-                   PIPELINE_STAGES[Math.max(stageIdx, 4)]}
+                   pipeline.stage === "preparing"  ? "Parsing hand history…" :
+                   solver.state === "submitting"   ? "Submitting to solver…" :
+                   solver.state === "queued"        ? "Queued — waiting for worker…" :
+                   solver.state === "running"       ? "Solving game tree…" :
+                   walkthrough.state.loading        ? "Tracing decisions through tree…" :
+                   "Almost ready…"}
                 </p>
 
-                {/* Stage dots */}
+                {/* Step indicators (parse → solve → trace) */}
                 {!image.isExtracting && !image.isAnalyzing && (
-                  <div className="flex items-center justify-center gap-1.5">
-                    {PIPELINE_STAGES.map((_, i) => (
-                      <div
-                        key={i}
-                        className="rounded-full transition-all duration-300"
-                        style={{
-                          background: i < stageIdx
-                            ? "rgba(124, 92, 255, 0.5)"
-                            : i === stageIdx
-                            ? "rgba(124, 92, 255, 0.9)"
-                            : "rgba(255,255,255,0.1)",
-                          width: i === stageIdx ? "16px" : "4px",
-                          height: "4px",
-                        }}
-                      />
+                  <div className="flex items-center justify-center gap-2 text-[9px] font-bold tracking-wider uppercase">
+                    {[
+                      { label: "Parse",  done: pipeline.stage === "success", active: pipeline.stage === "preparing" },
+                      { label: "Solve",  done: solver.state === "completed", active: solverBusy },
+                      { label: "Trace",  done: !walkthrough.state.loading && walkthrough.state.decisions.length > 0, active: walkthrough.state.loading },
+                    ].map((step, i, arr) => (
+                      <span key={step.label} className="flex items-center gap-2">
+                        <span style={{
+                          color: step.done
+                            ? "rgba(52,211,153,0.9)"
+                            : step.active
+                            ? "rgba(124,92,255,0.9)"
+                            : "rgba(255,255,255,0.2)",
+                        }}>
+                          {step.done ? "✓ " : ""}{step.label}
+                        </span>
+                        {i < arr.length - 1 && (
+                          <span style={{ color: "rgba(255,255,255,0.1)" }}>›</span>
+                        )}
+                      </span>
                     ))}
                   </div>
                 )}
-
-                <p className="text-xs text-muted-foreground/60">
-                  {pipeline.stage === "preparing"
-                    ? "Parse → normalize → validate (deterministic, no AI)"
-                    : pipeline.stage === "analyzing"
-                    ? "GTO analysis in progress"
-                    : "Processing…"}
-                </p>
               </div>
             </div>
           )}
@@ -412,7 +452,9 @@ export default function AnalyzePage() {
               <div className="flex-1 space-y-3">
                 <p className="text-sm font-medium text-destructive">Analysis failed</p>
                 <p className="text-sm text-destructive/80">
-                  {activeTab === "text" ? pipeline.error : image.error}
+                  {activeTab === "text"
+                    ? (pipeline.error ?? solver.error ?? "Unknown error")
+                    : image.error}
                 </p>
                 <div className="flex items-center gap-3">
                   {image.extraction && (
@@ -494,92 +536,35 @@ export default function AnalyzePage() {
           {/* ── Results ──────────────────────────────────────────────────── */}
           {hasResult && (
             <div ref={resultRef}>
-              {activeTab === "text" && pipeline.result && (
+              {activeTab === "text" && pipeline.pipeline?.canonical && (
                 <>
                   <div className="mb-4">
                     <h2 className="text-xl font-bold">
-                      Analysis Results
+                      Hand Analysis
                       <span className="ml-2 text-sm text-muted-foreground font-normal">
-                        {pipeline.result.parsed_hand.site} · ${pipeline.result.parsed_hand.stakes}
+                        {pipeline.pipeline.canonical.site} · {pipeline.pipeline.canonical.stakes.display}
                       </span>
                     </h2>
                   </div>
 
                   {/* Validation summary chip */}
-                  {pipeline.pipeline && (
-                    <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-500/15 bg-emerald-500/6 px-3 py-2">
-                      <ShieldCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                      <span className="text-xs text-emerald-400">
-                        Validated · {(pipeline.pipeline.validation.confidence * 100).toFixed(0)}% confidence
-                        {pipeline.pipeline.validation.warnings.length > 0 && (
-                          <span className="ml-2 text-amber-400/70">
-                            {pipeline.pipeline.validation.warnings.length} warning{pipeline.pipeline.validation.warnings.length > 1 ? "s" : ""}
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  )}
+                  <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-500/15 bg-emerald-500/6 px-3 py-2">
+                    <ShieldCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                    <span className="text-xs text-emerald-400">
+                      Validated · {(pipeline.pipeline.validation.confidence * 100).toFixed(0)}% confidence
+                      {pipeline.pipeline.validation.warnings.length > 0 && (
+                        <span className="ml-2 text-amber-400/70">
+                          {pipeline.pipeline.validation.warnings.length} warning{pipeline.pipeline.validation.warnings.length > 1 ? "s" : ""}
+                        </span>
+                      )}
+                    </span>
+                  </div>
 
-                  {user && pipeline.result.saved_id && (
-                    <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/8 px-3 py-2">
-                      <BookmarkCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                      <span className="text-xs text-emerald-400">Saved to your account</span>
-                      <Link href="/history" className="ml-auto text-xs text-emerald-400/70 hover:text-emerald-400 underline underline-offset-2 transition-colors">
-                        View History →
-                      </Link>
-                    </div>
-                  )}
-
-                  {user && !pipeline.result.saved_id && pipeline.result.save_error && (
-                    <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/8 px-3 py-2">
-                      <AlertTriangle className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-                      <span className="text-xs text-amber-400">
-                        Analysis complete — history save failed
-                        <span className="ml-1 opacity-70">({pipeline.result.save_error})</span>
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Hand replay — visual street-by-street action timeline */}
-                  {pipeline.result.replay && (
-                    <HandReplay
-                      analysis={pipeline.result.replay}
-                      filename={pipeline.result.parsed_hand.hand_id}
-                      validation={{
-                        confidence: pipeline.pipeline?.validation.confidence ?? 1.0,
-                        hero_detected_by: pipeline.pipeline?.validation.hero_detected_by ?? "hand_history",
-                        warnings: (pipeline.pipeline?.validation.warnings ?? []).map(w => w.message),
-                        errors: [],
-                        is_valid: true,
-                      }}
-                      engineVersion={pipeline.result.engine_version}
-                      correctionsApplied={pipeline.result.corrections_applied}
-                      solver={
-                        solver.strategy
-                          ? {
-                              status: "ready" as const,
-                              mode: "live" as const,
-                              source: solver.strategy.source ?? "texassolver",
-                              frequencies: solver.strategy.frequencies ?? {},
-                              ev: solver.strategy.ev ?? {},
-                              preferred_action: solver.strategy.preferred_action ?? "",
-                              hero_action_ev_loss: solver.strategy.hero_action_ev_loss ?? 0,
-                              iterations: solver.strategy.iterations ?? 0,
-                              exploitability: solver.strategy.exploitability ?? 0,
-                              solve_time_ms: solver.strategy.solve_time_ms ?? 0,
-                              cache_hit: false,
-                              node_key: solver.strategy.node_description ?? "",
-                              node_description: solver.strategy.node_description ?? "",
-                              street_supported: true,
-                            }
-                          : pipeline.result.solver
-                      }
-                      trace={pipeline.result.trace}
-                    />
-                  )}
+                  {/* Hand timeline — canonical action-by-action replay */}
+                  <CanonicalHandTimeline hand={pipeline.pipeline.canonical} />
 
                   {/* Decision review — solver verdict on every hero action */}
-                  {(walkthrough.state.loading || walkthrough.state.decisions.length > 0 || walkthrough.state.error) && (
+                  {(walkthrough.state.decisions.length > 0 || walkthrough.state.error) && (
                     <div className="mt-4">
                       <HandSolverWalkthrough walkthroughState={walkthrough.state} />
                     </div>
@@ -596,7 +581,7 @@ export default function AnalyzePage() {
                   </div>
 
                   {/* Explore full tree link */}
-                  {solver.jobId && solver.state === "completed" && (
+                  {solver.jobId && (
                     <div className="mt-3 flex justify-end">
                       <Link
                         href={`/solver/${solver.jobId}`}
@@ -610,7 +595,7 @@ export default function AnalyzePage() {
                   )}
 
                   {/* Debug panel (dev only) */}
-                  {IS_DEV && pipeline.pipeline && (
+                  {IS_DEV && (
                     <PipelineDebugPanel
                       pipeline={pipeline.pipeline}
                       className="mt-6"

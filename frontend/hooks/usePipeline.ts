@@ -41,10 +41,14 @@ export interface UsePipelineReturn {
  *         ↓ after repair
  *   analyze → success | error
  *
- * The component using this hook decides when to show the repair UI
- * by checking: stage === "repairing"
+ * Pass { skipAnalyze: true } to skip the heuristic analyze step entirely.
+ * In that mode, prepare() advances to "success" with result=null as soon as
+ * the canonical hand is validated. The caller is responsible for driving the
+ * next step (e.g. launching the solver). analyze() becomes a no-op that only
+ * sets stage="success", so repair-UI callers work unchanged.
  */
-export function usePipeline(): UsePipelineReturn {
+export function usePipeline(options?: { skipAnalyze?: boolean }): UsePipelineReturn {
+  const skipAnalyze = options?.skipAnalyze ?? false;
   const [stage, setStage]       = useState<PipelineStage>("idle");
   const [pipeline, setPipeline] = useState<PipelineResult | null>(null);
   const [result, setResult]     = useState<AnalysisResponse | null>(null);
@@ -94,14 +98,20 @@ export function usePipeline(): UsePipelineReturn {
 
       const { validation } = pipelineResult;
 
-      // Decide: auto-analyze or show repair UI
+      // Decide: auto-analyze, skip to success, or show repair UI
       if (
         validation.can_analyze &&
         validation.confidence >= MIN_AUTO_ANALYZE_CONFIDENCE
       ) {
-        // High-quality hand → auto-proceed to analyze (reuse same token)
-        setStage("analyzing");
-        await _runAnalysis(pipelineResult, token, undefined, setResult, setStage, setError);
+        if (skipAnalyze) {
+          // Solver-first mode: skip heuristic analysis, jump straight to success.
+          // The caller's useEffect watches stage === "success" and fires the solver.
+          setStage("success");
+        } else {
+          // High-quality hand → auto-proceed to analyze (reuse same token)
+          setStage("analyzing");
+          await _runAnalysis(pipelineResult, token, undefined, setResult, setStage, setError);
+        }
       } else {
         // Needs user review
         setStage("repairing");
@@ -128,6 +138,14 @@ export function usePipeline(): UsePipelineReturn {
       return;
     }
 
+    // Solver-first mode: repair UI calls analyze() to confirm the hand.
+    // Skip the backend call — just advance to success so the solver can start.
+    if (skipAnalyze) {
+      setError(null);
+      setStage("success");
+      return;
+    }
+
     setStage("analyzing");
     setError(null);
 
@@ -140,7 +158,7 @@ export function usePipeline(): UsePipelineReturn {
     }
 
     await _runAnalysis(pipelineResult, session.access_token, setup, setResult, setStage, setError);
-  }, []);
+  }, [skipAnalyze]);
 
   // ── Accept a repair from the UI ───────────────────────────────────────────
   const acceptRepair = useCallback((repaired: PipelineResult) => {
