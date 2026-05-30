@@ -646,15 +646,20 @@ async def get_job_diagnostics(
             "stderr_tail": r.stderr_tail,
         }
         diag["validation"] = {
+            # Primary checks — these determine pipeline_ok
             "tree_node_count_ok": r.tree_nodes_imported > 2,
-            "strategy_imported": r.nodes_imported > 0,
-            "no_import_errors": len(r.import_errors) == 0,
             "has_strategy_data": r.strategy_data is not None,
+            "no_import_errors": len(r.import_errors) == 0,
             "flop_bet_sizes_present": len(job.config.bet_sizes) > 0,
             "turn_bet_sizes_present": len(job.config.turn_bet_sizes) > 0,
             "river_bet_sizes_present": len(job.config.river_bet_sizes) > 0,
+            # Informational — legacy strategy DB path (not required for solver-first)
+            "strategy_db_imported": r.nodes_imported > 0,
         }
-        diag["validation"]["pipeline_ok"] = all(diag["validation"].values())
+        # pipeline_ok excludes the legacy strategy_db_imported check
+        primary_checks = {k: v for k, v in diag["validation"].items()
+                          if k != "strategy_db_imported"}
+        diag["validation"]["pipeline_ok"] = all(primary_checks.values())
     else:
         diag["pipeline"] = None
         diag["validation"] = None
