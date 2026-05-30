@@ -37,11 +37,15 @@ class SolverConfig:
     stack_depth: int = 100
     board: list[str] = field(default_factory=lambda: ["Ah", "7d", "2c"])
 
-    # Default to 1 bet size for performance. Each additional size ~4x the tree.
-    # 33% pot is the standard c-bet size in most GTO solutions.
-    # Full-range solves: 1 size ≈ 3 min, 2 sizes ≈ 12 min, 4 sizes ≈ hours.
+    # Default to 1 bet size per street for performance.
+    # Each additional size ~4x the tree: 1 size ≈ 3 min, 2 sizes ≈ 12 min, 4 sizes ≈ hours.
+    # Turn/river default to 75% pot — larger bets are GTO-standard on later streets.
     bet_sizes: list[float] = field(default_factory=lambda: [0.33])
     raise_sizes: list[float] = field(default_factory=lambda: [0.6])
+    turn_bet_sizes: list[float] = field(default_factory=lambda: [0.75])
+    turn_raise_sizes: list[float] = field(default_factory=lambda: [0.6])
+    river_bet_sizes: list[float] = field(default_factory=lambda: [0.75])
+    river_raise_sizes: list[float] = field(default_factory=lambda: [0.6])
     rake: Optional[float] = None
 
     iterations: int = 1000

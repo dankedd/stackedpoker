@@ -76,25 +76,37 @@ def _config_hash(config: SolverConfig) -> str:
     return hashlib.md5(key.encode()).hexdigest()[:12]
 
 
-def _bet_size_lines(bet_sizes: list[float], raise_sizes: list[float]) -> list[str]:
+def _bet_size_lines(
+    bet_sizes: list[float],
+    raise_sizes: list[float],
+    turn_bet_sizes: list[float],
+    turn_raise_sizes: list[float],
+    river_bet_sizes: list[float],
+    river_raise_sizes: list[float],
+) -> list[str]:
     """
-    Generate set_bet_sizes commands for TexasSolver v0.2.0.
+    Generate set_bet_sizes commands for TexasSolver v0.2.0 for all streets.
 
     Format: set_bet_sizes <player>,<round>,<type>,<size1>,<size2>,...
     Sizes are percentages of pot (e.g. 33 = 33% pot).
 
-    Both IP and OOP get the same sizes for flop. The solver's default
-    (check/all-in only) produces degenerate ~100% check solutions,
-    so explicit sizing is critical for meaningful output.
+    Without explicit sizing, the solver defaults to check/all-in only, producing
+    degenerate ~100% check solutions. Sizing must be set for every street solved.
     """
-    lines = []
-    # Convert float fractions to integer percentages
-    bet_pcts = ",".join(str(int(round(s * 100))) for s in bet_sizes) if bet_sizes else "33"
-    raise_pcts = ",".join(str(int(round(s * 100))) for s in raise_sizes) if raise_sizes else "60"
+    def pct_str(sizes: list[float], fallback: str) -> str:
+        return ",".join(str(int(round(s * 100))) for s in sizes) if sizes else fallback
 
+    street_configs = [
+        ("flop",  pct_str(bet_sizes,       "33"), pct_str(raise_sizes,       "60")),
+        ("turn",  pct_str(turn_bet_sizes,  "75"), pct_str(turn_raise_sizes,  "60")),
+        ("river", pct_str(river_bet_sizes, "75"), pct_str(river_raise_sizes, "60")),
+    ]
+
+    lines = []
     for player in ("oop", "ip"):
-        lines.append(f"set_bet_sizes {player},flop,bet,{bet_pcts}")
-        lines.append(f"set_bet_sizes {player},flop,raise,{raise_pcts}")
+        for street, bet_pcts, raise_pcts in street_configs:
+            lines.append(f"set_bet_sizes {player},{street},bet,{bet_pcts}")
+            lines.append(f"set_bet_sizes {player},{street},raise,{raise_pcts}")
 
     return lines
 
@@ -131,7 +143,11 @@ def _generate_input_file(config: SolverConfig, work_dir: Path, output_path: str)
         "set_allin_threshold 0.67",
         f"set_thread_num {config.threads}",
         "set_use_isomorphism 1",
-        *_bet_size_lines(config.bet_sizes, config.raise_sizes),
+        *_bet_size_lines(
+            config.bet_sizes, config.raise_sizes,
+            config.turn_bet_sizes, config.turn_raise_sizes,
+            config.river_bet_sizes, config.river_raise_sizes,
+        ),
         # Ranges — full preflop ranges for SRP BTN vs BB
         "set_range_ip AA,KK,QQ,JJ,TT,99,88,77,66,55,44,33,22,"
         "AKs,AQs,AJs,ATs,A9s,A8s,A7s,A6s,A5s,A4s,A3s,A2s,"

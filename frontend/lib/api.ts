@@ -211,6 +211,10 @@ export interface SolverJobSubmission {
     board: string[];
     bet_sizes?: number[];
     raise_sizes?: number[];
+    turn_bet_sizes?: number[];
+    turn_raise_sizes?: number[];
+    river_bet_sizes?: number[];
+    river_raise_sizes?: number[];
     max_iterations?: number;
     accuracy_target?: number;
   };

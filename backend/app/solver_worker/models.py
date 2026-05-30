@@ -64,10 +64,14 @@ class SolveJobConfig(BaseModel):
     range_oop: str = ""
 
     # ── Sizing options ────────────────────────────────────────────────────
-    # 1 bet size for performance: full-range solve ≈ 3 min.
-    # Each additional size ≈ 4x tree → 2 sizes ≈ 12 min, 4 sizes ≈ hours.
+    # 1 bet size per street for performance: 1 size ≈ 3 min, 2 sizes ≈ 12 min.
+    # Turn/river default to 75% — larger bets are GTO-standard on later streets.
     bet_sizes: list[float] = Field(default_factory=lambda: [0.33])
     raise_sizes: list[float] = Field(default_factory=lambda: [0.6])
+    turn_bet_sizes: list[float] = Field(default_factory=lambda: [0.75])
+    turn_raise_sizes: list[float] = Field(default_factory=lambda: [0.6])
+    river_bet_sizes: list[float] = Field(default_factory=lambda: [0.75])
+    river_raise_sizes: list[float] = Field(default_factory=lambda: [0.6])
     donk_sizes: list[float] = Field(default_factory=list)
     rake: float | None = None
 

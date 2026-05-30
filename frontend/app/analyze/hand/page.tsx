@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft, RotateCcw, FileText, ImageIcon,
-  Zap, AlertTriangle, BookmarkCheck, ShieldCheck,
+  Zap, AlertTriangle, BookmarkCheck, ShieldCheck, TreePine,
 } from "lucide-react";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { HandInput } from "@/components/poker/HandInput";
 import { ImageUpload } from "@/components/poker/ImageUpload";
-import { AnalysisResult } from "@/components/poker/AnalysisResult";
+import HandSolverWalkthrough from "@/components/solver/HandSolverWalkthrough";
+import { useHandSolverWalkthrough } from "@/hooks/useHandSolverWalkthrough";
 import { AnalysisSetup, ANALYSIS_SETUP_DEFAULT } from "@/components/poker/AnalysisSetup";
 import type { AnalysisSetupValue } from "@/components/poker/AnalysisSetup";
 import { UsageWidget } from "@/components/poker/UsageWidget";
@@ -79,13 +80,68 @@ export default function AnalyzePage() {
   const { usage, loading: usageLoading, refetch: refetchUsage } = useUsage();
 
   // ── Hooks ────────────────────────────────────────────────────────────────
-  const pipeline = usePipeline();
-  const image    = useImageAnalysis();
-  const solver   = useSolver();
+  const pipeline    = usePipeline();
+  const image       = useImageAnalysis();
+  const solver      = useSolver();
+  const walkthrough = useHandSolverWalkthrough();
 
   const [stageIdx, setStageIdx] = useState(0);
-  const resultRef    = useRef<HTMLDivElement>(null);
-  const autoAnalyzed = useRef(false);
+  const resultRef        = useRef<HTMLDivElement>(null);
+  const autoAnalyzed     = useRef(false);
+  const autoSolvedRef    = useRef(false);
+  const autoWalkthroughRef = useRef(false);
+
+  // ── Hero side: derived from canonical hand + position matchup ─────────────
+  const heroSide = useMemo<"ip" | "oop">(() => {
+    const canonical = pipeline.pipeline?.canonical;
+    const spot = pipeline.result?.spot_classification;
+    if (!canonical || !spot) return "oop";
+    const hero = canonical.players.find(p => p.is_hero);
+    if (!hero) return "oop";
+    const ipPos = (spot.position_matchup ?? "BTN_vs_BB").split("_vs_")[0];
+    return hero.position === ipPos ? "ip" : "oop";
+  }, [pipeline.pipeline?.canonical, pipeline.result?.spot_classification]);
+
+  // ── Reset auto-flags when pipeline resets ────────────────────────────────
+  useEffect(() => {
+    if (pipeline.stage === "idle") {
+      autoSolvedRef.current = false;
+      autoWalkthroughRef.current = false;
+    }
+  }, [pipeline.stage]);
+
+  // ── Auto-trigger solver once parse succeeds ───────────────────────────────
+  useEffect(() => {
+    if (pipeline.stage !== "success" || autoSolvedRef.current) return;
+    const canonical = pipeline.pipeline?.canonical;
+    const spot = pipeline.result?.spot_classification;
+    const flopCards = pipeline.result?.parsed_hand?.board?.flop ?? [];
+    if (!canonical || !spot || flopCards.length < 3) return;
+
+    autoSolvedRef.current = true;
+    solver.solve({
+      spot_type: spot.pot_type ?? "SRP",
+      positions: spot.position_matchup ?? "BTN_vs_BB",
+      stack_depth: canonical.effective_stack_bb ?? 100,
+      board: flopCards,
+      // Use SolveJobConfig server default (500 iter, 0.3% accuracy)
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pipeline.stage, pipeline.result, pipeline.pipeline?.canonical]);
+
+  // ── Auto-run walkthrough once solver completes ────────────────────────────
+  useEffect(() => {
+    if (
+      solver.state === "completed" &&
+      solver.jobId &&
+      pipeline.pipeline?.canonical &&
+      !autoWalkthroughRef.current
+    ) {
+      autoWalkthroughRef.current = true;
+      walkthrough.run(solver.jobId, pipeline.pipeline.canonical);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [solver.state, solver.jobId, pipeline.pipeline?.canonical]);
 
   const scrollToResult = () =>
     setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
@@ -484,7 +540,8 @@ export default function AnalyzePage() {
                     </div>
                   )}
 
-                  {pipeline.result.replay ? (
+                  {/* Hand replay — visual street-by-street action timeline */}
+                  {pipeline.result.replay && (
                     <HandReplay
                       analysis={pipeline.result.replay}
                       filename={pipeline.result.parsed_hand.hand_id}
@@ -498,7 +555,6 @@ export default function AnalyzePage() {
                       engineVersion={pipeline.result.engine_version}
                       correctionsApplied={pipeline.result.corrections_applied}
                       solver={
-                        // When async solver completes, inject real data into HandReplay
                         solver.strategy
                           ? {
                               status: "ready" as const,
@@ -520,33 +576,38 @@ export default function AnalyzePage() {
                       }
                       trace={pipeline.result.trace}
                     />
-                  ) : (
-                    <AnalysisResult result={pipeline.result} />
                   )}
 
-                  {/* Solver Panel — detailed GTO strategy with combo breakdowns */}
+                  {/* Decision review — solver verdict on every hero action */}
+                  {(walkthrough.state.loading || walkthrough.state.decisions.length > 0 || walkthrough.state.error) && (
+                    <div className="mt-4">
+                      <HandSolverWalkthrough walkthroughState={walkthrough.state} />
+                    </div>
+                  )}
+
+                  {/* Solver panel — root node frequencies + combo grid */}
                   <div className="mt-4">
                     <SolverPanel
                       state={solver.state}
                       strategy={solver.strategy}
                       error={solver.error}
-                      onSolve={() => {
-                        const board = pipeline.result?.parsed_hand?.board;
-                        const spot = pipeline.result?.spot_classification;
-                        if (!board || !spot) return;
-                        const flopCards = board.flop ?? [];
-                        if (flopCards.length < 3) return;
-                        solver.solve({
-                          spot_type: spot.pot_type ?? "SRP",
-                          positions: spot.position_matchup ?? "BTN_vs_BB",
-                          stack_depth: pipeline.result?.parsed_hand?.effective_stack_bb ?? 100,
-                          board: flopCards,
-                          max_iterations: 100,
-                          accuracy_target: 0.5,
-                        });
-                      }}
+                      heroSide={heroSide}
                     />
                   </div>
+
+                  {/* Explore full tree link */}
+                  {solver.jobId && solver.state === "completed" && (
+                    <div className="mt-3 flex justify-end">
+                      <Link
+                        href={`/solver/${solver.jobId}`}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-bold transition-colors"
+                        style={{ color: "rgba(167,139,250,0.6)" }}
+                      >
+                        <TreePine className="h-3 w-3" />
+                        Explore Full Tree
+                      </Link>
+                    </div>
+                  )}
 
                   {/* Debug panel (dev only) */}
                   {IS_DEV && pipeline.pipeline && (

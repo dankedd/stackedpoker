@@ -200,10 +200,12 @@ interface SolverPanelProps {
   strategy: SolverStrategy | null;
   error: string | null;
   onSolve?: () => void;
+  /** Which side the hero is on — auto-selects the correct player tab. */
+  heroSide?: "ip" | "oop";
 }
 
-export default function SolverPanel({ state, strategy, error, onSolve }: SolverPanelProps) {
-  const [activePlayer, setActivePlayer] = useState<"oop" | "ip">("oop");
+export default function SolverPanel({ state, strategy, error, onSolve, heroSide }: SolverPanelProps) {
+  const [activePlayer, setActivePlayer] = useState<"oop" | "ip">(heroSide ?? "oop");
   const [showCombos, setShowCombos] = useState(false);
 
   // Loading states
