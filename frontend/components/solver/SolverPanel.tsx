@@ -16,7 +16,9 @@ const ACTION_COLORS: Record<string, string> = {
 };
 
 function actionColor(name: string): string {
-  const base = name.replace(/_\d+pct$/, "").replace(/bet_allin/, "allin");
+  if (name === "all-in" || name === "bet_allin") return ACTION_COLORS["allin"] ?? "#FBBF24";
+  // "bet 33" (tree API) or "bet_33pct" (legacy parser) → base = "bet"
+  const base = name.split(" ")[0].replace(/_.*$/, "");
   return ACTION_COLORS[base] ?? "#7C5CFF";
 }
 
@@ -24,7 +26,17 @@ function actionLabel(name: string): string {
   if (name === "check") return "Check";
   if (name === "call") return "Call";
   if (name === "fold") return "Fold";
-  if (name === "bet_allin") return "All-in";
+  if (name === "all-in" || name === "bet_allin") return "All-in";
+  // Tree API format: "bet 33" → "Bet 33%", "raise 150" → "Raise 150%"
+  const spaceIdx = name.indexOf(" ");
+  if (spaceIdx !== -1) {
+    const verb = name.slice(0, spaceIdx);
+    const size = name.slice(spaceIdx + 1);
+    if (verb === "bet" || verb === "raise") {
+      return `${verb[0].toUpperCase()}${verb.slice(1)} ${size}%`;
+    }
+  }
+  // Legacy parser format: "bet_33pct" → "Bet 33%"
   if (name.startsWith("bet_")) return `Bet ${name.replace("bet_", "").replace("pct", "%")}`;
   if (name.startsWith("raise_")) return `Raise ${name.replace("raise_", "").replace("pct", "%")}`;
   return name;
