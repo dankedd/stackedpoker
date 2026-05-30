@@ -260,7 +260,14 @@ class SolveWorker:
                 rake=config.rake,
                 iterations=config.max_iterations,
                 accuracy_target=config.accuracy_target,
+                threads=self._settings.max_worker_threads,
                 solver_path=self._settings.solver_binary,
+            )
+            logger.info(
+                "[Worker %s] job %s — threads=%d concurrent_limit=%d",
+                self._worker_id, job_id,
+                self._settings.max_worker_threads,
+                self._settings.max_concurrent_solves,
             )
 
             # Validate config before execution

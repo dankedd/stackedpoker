@@ -46,7 +46,7 @@ class WorkerSettings:
     max_memory_mb: int = 4096             # 4 GB OOM threshold
 
     # ── Worker concurrency ────────────────────────────────────────────────
-    max_concurrent_solves: int = 2        # per worker container
+    max_concurrent_solves: int = 1        # per worker container — 1 solve gets full CPU
     max_worker_threads: int = 4           # threads per solve (OpenMP)
 
     # ── Retry policy ──────────────────────────────────────────────────────

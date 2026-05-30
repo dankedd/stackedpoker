@@ -25,6 +25,7 @@ import logging
 import os
 import subprocess
 import tempfile
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -128,7 +129,7 @@ def _generate_input_file(config: SolverConfig, work_dir: Path, output_path: str)
         f"set_accuracy {config.accuracy_target}",
         f"set_max_iteration {config.iterations}",
         "set_allin_threshold 0.67",
-        "set_thread_num 2",
+        f"set_thread_num {config.threads}",
         "set_use_isomorphism 1",
         *_bet_size_lines(config.bet_sizes, config.raise_sizes),
         # Ranges — full preflop ranges for SRP BTN vs BB
@@ -400,6 +401,13 @@ def run_texassolver(
             return result
 
         # Execute solver
+        logger.info(
+            "[TexasSolver] solve START board=%s threads=%d iter=%d timeout=%ds mode=%s",
+            config.board_string(), config.threads, config.iterations, timeout,
+            "docker" if use_docker else "native",
+        )
+        solve_start = time.monotonic()
+
         if use_docker:
             exit_code, stdout, stderr = _run_via_docker(
                 input_path, wdir, timeout,
@@ -409,6 +417,7 @@ def run_texassolver(
                 solver_exe, input_path, wdir, timeout,
             )
 
+        elapsed = time.monotonic() - solve_start
         result.exit_code = exit_code
         result.stdout = stdout
         result.stderr = stderr
@@ -416,12 +425,12 @@ def run_texassolver(
         if exit_code is None:
             # Timeout
             result.error = f"Solver timed out after {timeout}s"
-            logger.error("[TexasSolver] %s", result.error)
+            logger.error("[TexasSolver] solve TIMEOUT after %.1fs", elapsed)
             return result
 
         if exit_code != 0:
             result.error = f"Solver exited with code {exit_code}: {stderr[:500]}"
-            logger.error("[TexasSolver] %s", result.error)
+            logger.error("[TexasSolver] solve FAILED (exit=%d) after %.1fs", exit_code, elapsed)
             return result
 
         # Check for output file
@@ -430,7 +439,10 @@ def run_texassolver(
             result.output_path = str(output_path)
             result.success = True
             size_kb = output_path.stat().st_size / 1024
-            logger.info("[TexasSolver] solve completed: %s (%.1f KB)", output_path, size_kb)
+            logger.info(
+                "[TexasSolver] solve DONE in %.1fs (%.1f KB, threads=%d)",
+                elapsed, size_kb, config.threads,
+            )
         else:
             result.error = "Solver completed but output file not found"
             logger.error("[TexasSolver] %s", result.error)

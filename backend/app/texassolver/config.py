@@ -47,6 +47,10 @@ class SolverConfig:
     iterations: int = 1000
     accuracy_target: float = 0.5
 
+    # Thread count passed to TexasSolver's set_thread_num command.
+    # Defaults to 2 (safe minimum); worker overrides with max_worker_threads.
+    threads: int = 2
+
     solver_path: Optional[str] = None
 
     def pot_size_bb(self) -> float:
