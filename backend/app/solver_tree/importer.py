@@ -44,6 +44,9 @@ class TreeImportResult:
     terminal_nodes: int = 0
     max_depth: int = 0
     duplicates_skipped: int = 0
+    flop_nodes: int = 0
+    turn_nodes: int = 0
+    river_nodes: int = 0
 
     @property
     def total(self) -> int:
@@ -54,6 +57,7 @@ class TreeImportResult:
             f"TreeImport: {self.total} nodes "
             f"(action={self.action_nodes} chance={self.chance_nodes} "
             f"terminal={self.terminal_nodes}) "
+            f"streets(flop={self.flop_nodes} turn={self.turn_nodes} river={self.river_nodes}) "
             f"depth={self.max_depth} dupes={self.duplicates_skipped}"
         )
 
@@ -173,7 +177,8 @@ def import_solve_tree(
 
     nodes: list[SolverNode] = []
     seen_ids: set[str] = set()
-    stats = {"action": 0, "chance": 0, "terminal": 0, "max_depth": 0, "dupes": 0}
+    stats = {"action": 0, "chance": 0, "terminal": 0, "max_depth": 0, "dupes": 0,
+             "flop": 0, "turn": 0, "river": 0}
 
     # ── Iterative DFS stack ──────────────────────────────────────────────
     stack: list[_StackEntry] = [
@@ -212,6 +217,13 @@ def import_solve_tree(
         else:
             stats["terminal"] += 1
 
+        if cur_street == "flop":
+            stats["flop"] += 1
+        elif cur_street == "turn":
+            stats["turn"] += 1
+        elif cur_street == "river":
+            stats["river"] += 1
+
         # ── Build action path ────────────────────────────────────────────
         action_path = "-".join(action_tokens) if action_tokens else ""
 
@@ -235,13 +247,16 @@ def import_solve_tree(
 
         aggregate = _compute_aggregate(strategy, encoded_actions)
 
-        # ── Determine available actions from childrens ───────────────────
+        # ── Determine available actions ──────────────────────────────────
+        # Action nodes: children are in "childrens" dict keyed by action name.
+        # Chance nodes: children are in "dealcards" dict keyed by card string
+        #   (e.g. "2h", "Kd") — TexasSolver uses a separate key for card deals.
         childrens = raw_node.get("childrens", {})
+        dealcards = raw_node.get("dealcards", {})
         if is_action:
             available_actions = [encode_action(a, pot_size, effective_stack) for a in childrens.keys()]
         elif is_chance:
-            # Chance node children are keyed by dealt card
-            available_actions = list(childrens.keys())
+            available_actions = list(dealcards.keys())
         else:
             available_actions = []
 
@@ -274,16 +289,15 @@ def import_solve_tree(
 
         # ── Push children onto stack (reversed for correct DFS order) ────
         if is_chance:
-            # Chance node children represent dealt cards → advance street
+            # Chance node children are under "dealcards" keyed by card string.
+            # Each card key advances the board and transitions to the next street.
             child_street = _next_street(cur_street)
-            child_items = list(childrens.items())
-            for card_key, child_data in reversed(child_items):
+            for card_key, child_data in reversed(list(dealcards.items())):
                 child_board = cur_board + [card_key]
                 child_tokens = action_tokens + [card_key.lower()]
                 stack.append((child_data, node_id, child_tokens, child_board, child_street))
         else:
-            child_items = list(childrens.items())
-            for action_name, child_data in reversed(child_items):
+            for action_name, child_data in reversed(list(childrens.items())):
                 child_tokens = action_tokens + [encode_action(action_name, pot_size, effective_stack)]
                 stack.append((child_data, node_id, child_tokens, cur_board, cur_street))
 
@@ -305,6 +319,9 @@ def import_solve_tree(
         terminal_nodes=stats["terminal"],
         max_depth=stats["max_depth"],
         duplicates_skipped=stats["dupes"],
+        flop_nodes=stats["flop"],
+        turn_nodes=stats["turn"],
+        river_nodes=stats["river"],
     )
 
     logger.info("[TreeImporter] %s (solve=%s, board=%s)", result.summary(), solve_id, board_str)

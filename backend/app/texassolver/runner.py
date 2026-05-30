@@ -190,6 +190,7 @@ def _generate_input_file(config: SolverConfig, work_dir: Path, output_path: str)
         "76o,"
         "65o,"
         "54o",
+        "set_dump_rounds 2",  # export flop + turn trees (river excluded — ~1GB)
         "build_tree",
         "start_solve",
         f"dump_result {output_path}",

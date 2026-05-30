@@ -274,8 +274,8 @@ class TestChanceNodeStreetTransitions:
                     "childrens": {
                         "CHECK": {
                             "node_type": "chance_node",
-                            "deal_number": 0,
-                            "childrens": {
+                            "deal_number": 2,
+                            "dealcards": {
                                 "5s": {
                                     "node_type": "action_node",
                                     "player": 1,

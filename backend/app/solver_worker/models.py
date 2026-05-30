@@ -202,6 +202,9 @@ class SolveJobResult(BaseModel):
     nodes_skipped: int = 0
     import_errors: list[str] = Field(default_factory=list)
     tree_nodes_imported: int = 0   # Game-tree nodes imported into SolveTreeStore
+    flop_nodes: int = 0            # Nodes on flop street
+    turn_nodes: int = 0            # Nodes on turn street (0 if dump_rounds < 2)
+    river_nodes: int = 0           # Nodes on river street (0 if dump_rounds < 3)
 
     # ── Node keys produced ────────────────────────────────────────────────
     node_keys: list[str] = Field(default_factory=list)

@@ -632,12 +632,16 @@ async def get_job_diagnostics(
 
     if job.result:
         r = job.result
+        is_flop_solve = len(job.config.board) == 3
         diag["pipeline"] = {
             "solve_time_seconds": r.solve_time_seconds,
             "nodes_parsed": r.nodes_parsed,
             "nodes_imported": r.nodes_imported,
             "nodes_skipped": r.nodes_skipped,
             "tree_nodes_imported": r.tree_nodes_imported,
+            "flop_nodes": r.flop_nodes,
+            "turn_nodes": r.turn_nodes,
+            "river_nodes": r.river_nodes,
             "import_errors": r.import_errors,
             "solve_output_path": r.solve_output_path,
             "compressed_output_path": r.compressed_output_path,
@@ -653,10 +657,12 @@ async def get_job_diagnostics(
             "flop_bet_sizes_present": len(job.config.bet_sizes) > 0,
             "turn_bet_sizes_present": len(job.config.turn_bet_sizes) > 0,
             "river_bet_sizes_present": len(job.config.river_bet_sizes) > 0,
+            # Turn nodes required for flop solves (set_dump_rounds 2)
+            "turn_nodes_ok": (r.turn_nodes > 0) if is_flop_solve else True,
             # Informational — legacy strategy DB path (not required for solver-first)
             "strategy_db_imported": r.nodes_imported > 0,
         }
-        # pipeline_ok excludes the legacy strategy_db_imported check
+        # pipeline_ok excludes informational checks
         primary_checks = {k: v for k, v in diag["validation"].items()
                           if k != "strategy_db_imported"}
         diag["validation"]["pipeline_ok"] = all(primary_checks.values())

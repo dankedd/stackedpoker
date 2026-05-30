@@ -388,6 +388,7 @@ class SolveWorker:
 
             # Import full game tree into persistent per-node storage
             tree_node_count = 0
+            tree_result = None
             if solve_result.output_path:
                 try:
                     import json as _json
@@ -422,6 +423,9 @@ class SolveWorker:
                             "action_nodes": tree_result.action_nodes,
                             "chance_nodes": tree_result.chance_nodes,
                             "max_depth": tree_result.max_depth,
+                            "flop_nodes": tree_result.flop_nodes,
+                            "turn_nodes": tree_result.turn_nodes,
+                            "river_nodes": tree_result.river_nodes,
                         },
                     )
                     logger.info(
@@ -459,6 +463,9 @@ class SolveWorker:
                 ],
                 node_keys=[],
                 tree_nodes_imported=tree_node_count,
+                flop_nodes=tree_result.flop_nodes if tree_result else 0,
+                turn_nodes=tree_result.turn_nodes if tree_result else 0,
+                river_nodes=tree_result.river_nodes if tree_result else 0,
                 strategy_data=strategy_data,
                 stdout_tail=(solve_result.stdout or "")[-500:],
                 stderr_tail=(solve_result.stderr or "")[-500:],
@@ -482,6 +489,11 @@ class SolveWorker:
                 validation_failures.append("strategy_data=None (serialization failed)")
             if not config.bet_sizes:
                 validation_failures.append("bet_sizes=[] (config missing flop sizes)")
+            # Flop solves must export turn nodes (set_dump_rounds 2)
+            if len(config.board) == 3 and result.turn_nodes == 0 and tree_node_count > 2:
+                validation_failures.append(
+                    f"turn_nodes=0 for flop solve (set_dump_rounds 2 missing or dealcards not imported)"
+                )
             if validation_failures:
                 logger.warning(
                     "[Worker %s] job %s PIPELINE VALIDATION FAILED: %s",
