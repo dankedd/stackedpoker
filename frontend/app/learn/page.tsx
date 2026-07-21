@@ -235,15 +235,21 @@ export default function LearnPage() {
                 </div>
                 <h2 className="text-xl font-bold text-foreground mb-2">Start your poker education</h2>
                 <p className="text-muted-foreground text-sm mb-6 max-w-sm mx-auto leading-relaxed">
-                  Free account gives you access to the Foundations path, XP tracking, and personalized AI coaching.
+                  The Foundations path is free to start right now — no account needed. Create one anytime to save your XP and unlock personalized AI coaching.
                 </p>
-                <div className="flex gap-3 justify-center">
+                <div className="flex flex-wrap gap-3 justify-center">
                   <Link
-                    href="/signup"
+                    href="/learn/path/beginner"
                     className="group relative overflow-hidden inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-sm font-semibold shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 hover:-translate-y-0.5 transition-all duration-200"
                   >
                     <div aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-                    Get started free
+                    Start free — no sign-in required
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="px-5 py-2.5 rounded-xl border border-border/50 bg-card/40 text-foreground text-sm font-medium hover:bg-card/60 transition-colors"
+                  >
+                    Create account
                   </Link>
                   <Link
                     href="/login"
