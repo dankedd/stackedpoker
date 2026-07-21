@@ -41,6 +41,7 @@ interface EvalCore {
   feedback: string
   ev_loss_bb: number
   concept_triggered?: string
+  concept_explanation?: string
 }
 
 // ── Option-based steps ────────────────────────────────────────────────────────
@@ -113,6 +114,74 @@ function evalNumeric(opts: {
     score: QUALITY_SCORES.mistake,
     feedback: `${wrongFeedback} The correct answer is ${actual}${unit}.`,
     ev_loss_bb: 0,
+  }
+}
+
+// ── Equity predict (hand vs range) ────────────────────────────────────────────
+// Scored like evalNumeric, but always echoes the learner's own estimate next to
+// the actual value, and surfaces a range-specific WHY explanation separately
+// (rendered in its own box by StepFeedback) rather than folding it into the
+// tier-based encouragement line.
+
+function evalEquityPredict(step: LessonStep, response: unknown): EvalCore {
+  const actual = step.equity_actual ?? 0
+  const tolerance = step.equity_tolerance ?? 5
+  const value = Number(response)
+
+  const concept_triggered = 'Hand vs Range'
+  const concept_explanation = step.equity_explanation
+
+  if (isNaN(value)) {
+    return {
+      quality: 'punt',
+      score: QUALITY_SCORES.punt,
+      feedback: step.wrong_feedback ?? `Actual equity here is ${actual}%.`,
+      ev_loss_bb: 0,
+      concept_triggered,
+      concept_explanation,
+    }
+  }
+
+  const delta = Math.abs(value - actual)
+  const header = `Your estimate: ${value}%. Actual equity: ${actual}%.`
+
+  if (delta <= tolerance) {
+    return {
+      quality: 'perfect',
+      score: 100,
+      feedback: `${header} ${step.correct_feedback ?? 'Right in range.'}`,
+      ev_loss_bb: 0,
+      concept_triggered,
+      concept_explanation,
+    }
+  }
+  if (delta <= tolerance * 2) {
+    return {
+      quality: 'good',
+      score: QUALITY_SCORES.good,
+      feedback: `${header} ${step.correct_feedback ?? 'Close — a reasonable estimate.'}`,
+      ev_loss_bb: 0,
+      concept_triggered,
+      concept_explanation,
+    }
+  }
+  if (delta <= tolerance * 3.5) {
+    return {
+      quality: 'acceptable',
+      score: QUALITY_SCORES.acceptable,
+      feedback: `${header} ${step.wrong_feedback ?? 'A bit off — see the breakdown below.'}`,
+      ev_loss_bb: 0,
+      concept_triggered,
+      concept_explanation,
+    }
+  }
+  return {
+    quality: 'mistake',
+    score: QUALITY_SCORES.mistake,
+    feedback: `${header} ${step.wrong_feedback ?? 'Well off — see the breakdown below.'}`,
+    ev_loss_bb: 0,
+    concept_triggered,
+    concept_explanation,
   }
 }
 
@@ -248,16 +317,7 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
 
     // Numeric steps
     case 'equity_predict':
-      return evalNumeric({
-        actual:         step.equity_actual  ?? 0,
-        tolerance:      step.equity_tolerance ?? 5,
-        response,
-        correctFeedback: step.correct_feedback
-          ?? `Correct — the required equity is ${step.equity_actual}%.`,
-        wrongFeedback:   step.wrong_feedback
-          ?? `Use call ÷ (pot + call) to find required equity. Answer: ${step.equity_actual}%.`,
-        unit: '%',
-      })
+      return evalEquityPredict(step, response)
 
     case 'mdf_slider':
       return evalNumeric({
@@ -375,6 +435,7 @@ export function evaluateStepLocally(
     ev_loss_bb:     core.ev_loss_bb,
     feedback:       core.feedback,
     concept_triggered: core.concept_triggered,
+    concept_explanation: core.concept_explanation,
     xp_earned,
     level_before,
     level_after,

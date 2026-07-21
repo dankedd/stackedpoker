@@ -87,9 +87,13 @@ export interface LessonStep {
   range_heatmap_data?: Record<string, number>
   /** For range_heatmap: which hands are in the "target" range to identify */
   range_heatmap_target?: string[]
-  // Equity predict
+  // Equity predict (hand vs range)
   equity_actual?: number
   equity_tolerance?: number
+  /** Villain's range shown as a 13x13 grid — hand notations e.g. ['88', 'KQs', 'JJ']. Required for a deterministic hand-vs-range target. */
+  equity_villain_range?: string[]
+  /** Explanation of WHY equity_actual has that value, tied to the exact hero hand / board / villain range. Shown after the learner answers. */
+  equity_explanation?: string
   // Concept reveal content
   concept_content?: string
   concept_title?: string

@@ -3,11 +3,25 @@
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
+import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
+import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 
 interface EquityPredictProps {
   step: LessonStep
   onAnswer: (equity: number, timeMs: number) => void
   disabled?: boolean
+}
+
+const SUIT_SYMBOL: Record<string, string> = { h: '♥', d: '♦', c: '♣', s: '♠' }
+
+function formatHandLabel(cards: string[]): string {
+  return cards
+    .map((c) => {
+      const rank = c[0]?.toUpperCase() === 'T' ? 'T' : c[0]?.toUpperCase()
+      const suit = SUIT_SYMBOL[c[1]?.toLowerCase()] ?? ''
+      return `${rank}${suit}`
+    })
+    .join(' ')
 }
 
 export function EquityPredict({ step, onAnswer, disabled = false }: EquityPredictProps) {
@@ -38,12 +52,67 @@ export function EquityPredict({ step, onAnswer, disabled = false }: EquityPredic
 
   const trackFill = `${equity}%`
 
+  const heroHand = step.hero_hand ?? []
+  const board = step.board ?? []
+  const villainRange = step.equity_villain_range ?? []
+  const handLabel = heroHand.length > 0 ? formatHandLabel(heroHand) : "Hero's hand"
+
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      {/* Narrative */}
+      {/* Narrative — what equity means */}
       {step.narrative && (
         <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-4">
           <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>
+        </div>
+      )}
+
+      {/* Hand vs range distinction */}
+      {villainRange.length > 0 && (
+        <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3">
+          <p className="text-sm text-violet-200/90 leading-relaxed">
+            Here, you are not comparing {handLabel} against one specific hand. You are comparing it
+            against every hand in Villain&apos;s range.
+          </p>
+        </div>
+      )}
+
+      {/* Scenario context: hero hand, board, villain range */}
+      {(heroHand.length > 0 || board.length > 0 || villainRange.length > 0) && (
+        <div className="space-y-4 rounded-2xl border border-border/30 bg-secondary/10 p-4">
+          {heroHand.length > 0 && (
+            <div className="flex items-center gap-3">
+              <span className="w-24 shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/40">
+                Hero
+              </span>
+              <div className="flex gap-1.5">
+                {heroHand.map((card, i) => (
+                  <PlayingCardMini key={i} card={card} size="md" />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {board.length > 0 && (
+            <div className="flex items-center gap-3">
+              <span className="w-24 shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/40">
+                Board
+              </span>
+              <div className="flex gap-1.5">
+                {board.map((card, i) => (
+                  <PlayingCardMini key={i} card={card} size="md" />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {villainRange.length > 0 && (
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/40">
+                Villain&apos;s range
+              </span>
+              <PokerRangeGrid range={villainRange} />
+            </div>
+          )}
         </div>
       )}
 
@@ -53,7 +122,7 @@ export function EquityPredict({ step, onAnswer, disabled = false }: EquityPredic
           Equity estimate
         </p>
         <p className="text-base font-semibold text-foreground">
-          What is your equity against villain&apos;s range?
+          What percentage equity does {handLabel} have against Villain&apos;s entire range?
         </p>
       </div>
 

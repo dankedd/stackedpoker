@@ -845,14 +845,26 @@ export const LESSONS: Lesson[] = [
       {
         id: 'c7-s39',
         type: 'equity_predict',
-        concept_ids: ['draws_equity', 'equity'],
+        concept_ids: ['draws_equity', 'equity', 'hand_vs_range'],
         narrative:
-          'Equity is your share of the pot — how often a hand or range would win or tie if the remaining cards were simply dealt out with no more betting. It is a probability-based share, not a guaranteed outcome.',
-        pot_bb: 100,
-        equity_actual: 70,
+          'Equity is your share of the pot based on how often your hand would win or tie if the remaining cards were dealt with no more betting.',
+        hero_hand: ['As', 'Ks'],
+        board: ['Kd', '8c', '4h'],
+        // Villain's continuing range on this K84 flop: two sets (strong made hands),
+        // three worse-kicker top pairs, three pocket pairs that missed, and two
+        // fully-missed suited broadways — a deliberate mix for a hand-vs-range read.
+        equity_villain_range: [
+          '88', '44',
+          'KQs', 'KQo', 'KJs', 'KJo', 'KTs', 'KTo',
+          'JJ', 'TT', '99',
+          'QJs', 'JTs',
+        ],
+        equity_actual: 80,
         equity_tolerance: 5,
-        correct_feedback: 'Right around there — equity is a probability-based share of the pot, not guaranteed winnings.',
-        wrong_feedback: 'Equity is a probability-based share of the pot, not guaranteed winnings.',
+        correct_feedback: 'Right in the zone — Hero dominates most of this range.',
+        wrong_feedback: 'Not quite — see the breakdown below.',
+        equity_explanation:
+          "A♠K♠ is top pair with the best possible kicker, so it's ahead of every other top pair in Villain's range — KQ, KJ, and KT all have a worse kicker than Hero's ace. It's also ahead of every pocket pair that missed the board (JJ, TT, 99) and the fully whiffed suited broadways (QJ, JT). The only hands that beat Hero are the two sets, 88 and 44 — a small slice of combos, which is why Hero's equity is high but well short of 100%.",
         xp: 6,
       },
       {
