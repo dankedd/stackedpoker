@@ -7,7 +7,6 @@ import {
 import { cn } from '@/lib/utils'
 import type { Lesson, LessonStep, StepResult } from '@/lib/learn/types'
 import { evaluateStepLocally } from '@/lib/learn/evaluator'
-import { logStepResult } from '@/lib/learn/api'
 import { PokerContextBar } from '@/components/learn/PokerContextBar'
 import { StepFeedback } from '@/components/learn/StepFeedback'
 import { ConceptReveal } from '@/components/learn/steps/ConceptReveal'
@@ -24,6 +23,12 @@ import { ComboVisualizer } from '@/components/learn/steps/ComboVisualizer'
 import { ActionSequence } from '@/components/learn/steps/ActionSequence'
 import { SprVisualizer } from '@/components/learn/steps/SprVisualizer'
 import { RangeMorphology } from '@/components/learn/steps/RangeMorphology'
+import { PotOddsExplorer } from '@/components/learn/steps/PotOddsExplorer'
+import { EquityBalance } from '@/components/learn/steps/EquityBalance'
+import { OutsDeckVisualizer } from '@/components/learn/steps/OutsDeckVisualizer'
+import { RangeCompare } from '@/components/learn/steps/RangeCompare'
+import { EVDecisionTree } from '@/components/learn/steps/EVDecisionTree'
+import { BluffBreakEvenVisualizer } from '@/components/learn/steps/BluffBreakEvenVisualizer'
 import type { ActionQuality } from '@/lib/learn/types'
 import { LevelUpOverlay } from '@/components/learn/LevelUpOverlay'
 import { ConceptTagRow } from '@/components/learn/ConceptPopover'
@@ -103,24 +108,18 @@ function ChapterProgress({
 function StepRenderer({
   step,
   currentXP,
-  lessonId,
-  token,
   onResult,
   onConceptComplete,
 }: {
   step: LessonStep
   currentXP: number
-  lessonId: string
-  token: string
-  onResult: (result: StepResult) => void
+  onResult: (result: StepResult, userResponse: unknown, timeMs: number) => void
   onConceptComplete: (result: StepResult) => void
 }) {
   // Evaluate locally — instant, deterministic, no network dependency
   function evaluate(userResponse: unknown, timeMs: number) {
     const result = evaluateStepLocally(step, userResponse, currentXP)
-    // Fire-and-forget analytics log; never blocks the user
-    logStepResult(lessonId, step.id, userResponse, timeMs, result, token)
-    onResult(result)
+    onResult(result, userResponse, timeMs)
   }
 
   if (step.type === 'concept_reveal') {
@@ -185,6 +184,30 @@ function StepRenderer({
 
   if (step.type === 'range_morphology') {
     return <RangeMorphology step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
+  }
+
+  if (step.type === 'pot_odds_explorer') {
+    return <PotOddsExplorer step={step} onAnswer={(response, ms) => evaluate(response, ms)} />
+  }
+
+  if (step.type === 'equity_balance') {
+    return <EquityBalance step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
+  }
+
+  if (step.type === 'outs_deck') {
+    return <OutsDeckVisualizer step={step} onAnswer={(response, ms) => evaluate(response, ms)} />
+  }
+
+  if (step.type === 'range_compare') {
+    return <RangeCompare step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
+  }
+
+  if (step.type === 'ev_tree') {
+    return <EVDecisionTree step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
+  }
+
+  if (step.type === 'bluff_breakeven') {
+    return <BluffBreakEvenVisualizer step={step} onAnswer={(response, ms) => evaluate(response, ms)} />
   }
 
   // Classify-family: board_classify, nut_advantage, blocker_id, range_identify, bluff_pick, reflection_prompt
@@ -256,15 +279,32 @@ function IntroScreen({ lesson, onStart }: { lesson: Lesson; onStart: () => void 
 
 interface LessonPlayerProps {
   lesson: Lesson
-  token: string
   /** User's total XP before starting this lesson — used for accurate level-up detection */
   userXP?: number
+  /** Step index to resume at (0 = start from the beginning) */
+  initialStepIndex?: number
   onComplete: (score: number, xpEarned: number) => void
+  /** Fired once per answered/viewed step, for the caller to persist via LearnProgressContext */
+  onStepResult?: (
+    step: LessonStep,
+    stepIndex: number,
+    result: StepResult,
+    userResponse: unknown,
+    timeMs: number,
+  ) => void
 }
 
-export function LessonPlayer({ lesson, token, userXP = 0, onComplete }: LessonPlayerProps) {
+export function LessonPlayer({
+  lesson,
+  userXP = 0,
+  initialStepIndex = 0,
+  onComplete,
+  onStepResult,
+}: LessonPlayerProps) {
   const [phase, setPhase] = useState<Phase>('intro')
-  const [currentStepIndex, setCurrentStepIndex] = useState(0)
+  const [currentStepIndex, setCurrentStepIndex] = useState(
+    Math.min(Math.max(initialStepIndex, 0), Math.max(lesson.steps.length - 1, 0)),
+  )
   const [results, setResults] = useState<StepResult[]>([])
   const [latestResult, setLatestResult] = useState<StepResult | null>(null)
   const [totalXP, setTotalXP] = useState(0)
@@ -285,22 +325,29 @@ export function LessonPlayer({ lesson, token, userXP = 0, onComplete }: LessonPl
     setPhase('step')
   }, [])
 
-  const handleResult = useCallback((result: StepResult) => {
+  const handleResult = useCallback((result: StepResult, userResponse: unknown, timeMs: number) => {
     setLatestResult(result)
     setResults((prev) => [...prev, result])
     setTotalXP((prev) => prev + result.xp_earned)
     setPhase('feedback')
+
+    if (currentStep) {
+      onStepResult?.(currentStep, currentStepIndex, result, userResponse, timeMs)
+    }
 
     // Trigger level-up overlay
     if (result.leveled_up && result.level_after) {
       setLevelUpData({ level: result.level_after, xp: result.xp_earned })
       setShowLevelUp(true)
     }
-  }, [])
+  }, [currentStep, currentStepIndex, onStepResult])
 
   const handleConceptComplete = useCallback((result: StepResult) => {
     setResults((prev) => [...prev, result])
     setTotalXP((prev) => prev + result.xp_earned)
+    if (currentStep) {
+      onStepResult?.(currentStep, currentStepIndex, result, null, 0)
+    }
     if (isLastStep) {
       setPhase('summary')
     } else {
@@ -308,7 +355,7 @@ export function LessonPlayer({ lesson, token, userXP = 0, onComplete }: LessonPl
       setLatestResult(null)
       setPhase('step')
     }
-  }, [isLastStep])
+  }, [isLastStep, currentStep, currentStepIndex, onStepResult])
 
   const handleRetry = useCallback(() => {
     // Go back to the step so the user can re-answer (failed evaluation, no penalty)
@@ -407,8 +454,11 @@ export function LessonPlayer({ lesson, token, userXP = 0, onComplete }: LessonPl
         />
       )}
 
-      {/* Concept tags — appear above interactive step */}
-      {currentStep.concept_ids && currentStep.concept_ids.length > 0 && phase === 'step' && (
+      {/* Concept tags — appear above interactive step.
+          Skipped for range_morphology: its concept_ids (e.g. "polarized_range")
+          name the very answer the step is quizzing, so showing them here would
+          give away the question. The tag still drives mastery tracking via evaluate(). */}
+      {currentStep.concept_ids && currentStep.concept_ids.length > 0 && phase === 'step' && currentStep.type !== 'range_morphology' && (
         <ConceptTagRow conceptIds={currentStep.concept_ids} />
       )}
 
@@ -418,8 +468,6 @@ export function LessonPlayer({ lesson, token, userXP = 0, onComplete }: LessonPl
           <StepRenderer
             step={currentStep}
             currentXP={runningXP}
-            lessonId={lesson.id}
-            token={token}
             onResult={handleResult}
             onConceptComplete={handleConceptComplete}
           />

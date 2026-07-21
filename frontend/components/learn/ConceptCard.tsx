@@ -20,6 +20,7 @@ const CONCEPT_DATA: Record<string, {
       beginner: 'Pot odds tell you how much you need to win vs how much you need to call. If the pot is $100 and you need to call $25, your pot odds are 4:1, meaning you only need to win 20% of the time to break even.',
       intermediate: 'Express pot odds as a percentage: call / (pot + call). Compare this to your equity. If your equity exceeds this break-even %, calling is profitable. Implied odds extend this by factoring future street value.',
       advanced: 'In multiway pots, pot odds scale with each additional caller. Realize equity adjustments must account for reverse implied odds, fold equity, and SPR constraints when deciding between a call and a semi-bluff raise.',
+      elite: 'Solver output shows pot-odds thresholds shift dynamically with mixed strategies — the true indifference point accounts for the caller\'s own bluffing frequency downstream, not just the immediate price.',
     },
   },
   continuation_bet: {
@@ -30,6 +31,7 @@ const CONCEPT_DATA: Record<string, {
       beginner: 'A c-bet is when you raised before the flop and then bet on the flop regardless of whether you hit. It pressures opponents who missed and represents strength.',
       intermediate: 'C-bet frequency and sizing depend on board texture and position. Bet larger on dry boards where you can polarize, smaller on wet boards to balance range and control SPR.',
       advanced: 'GTO c-bet strategies require a mixed approach: betting with value hands and selected bluffs, checking back hands that perform well as bluff-catchers. Board coverage analysis determines which combos benefit most from protection vs deception.',
+      elite: 'Solver-derived c-bet frequencies vary node-by-node with stack depth and rake — treat any fixed "always c-bet 70%" heuristic as a starting point to be overridden by the actual tree, not a rule.',
     },
   },
   position: {
@@ -40,6 +42,7 @@ const CONCEPT_DATA: Record<string, {
       beginner: 'Position means where you sit relative to the dealer. Acting last (in position) is a major advantage because you see what others do before making your choice.',
       intermediate: 'In-position players can bluff more effectively, control pot size, and extract more value. OOP players must tighten ranges and defend more carefully to compensate for the information disadvantage.',
       advanced: 'Positional equity impacts range construction on every street. IP players realize more of their theoretical equity due to better bluff efficiency and the ability to deny equity cheaply. Factor position into MDF calculations and nash equilibrium approximations.',
+      elite: 'Positional value compounds across streets multiplicatively, not additively — a small IP edge on the flop can dictate the entire turn/river betting tree, which is why solvers assign OOP checking ranges disproportionately more mixed strategies.',
     },
   },
   range_advantage: {
@@ -50,6 +53,7 @@ const CONCEPT_DATA: Record<string, {
       beginner: 'Range advantage means you have more strong hands on a given board than your opponent. This lets you bet more often and with larger sizes.',
       intermediate: 'Measure range advantage by counting nut combos and equity distribution. The aggressor typically has more nut hands on boards that favor their opening range.',
       advanced: 'Range advantage is quantified through range-vs-range equity analysis. A player with both nut and equity advantage can construct highly polarized bets. Symmetrical ranges on connected boards shift toward merged, protective sizing strategies.',
+      elite: 'Range advantage and nut advantage frequently diverge — a range can hold more total equity while owning fewer combos at the very top, which changes optimal sizing from a pure polarization strategy toward a merged one.',
     },
   },
   bluff_to_value: {
@@ -60,6 +64,7 @@ const CONCEPT_DATA: Record<string, {
       beginner: 'For every value hand you bet, you should also bet some bluffs. This stops opponents from always folding to your bets or always calling.',
       intermediate: 'The ideal bluff-to-value ratio depends on pot odds offered. If you bet half-pot (33% pot odds), opponents break even calling with 33% equity, so your range needs ~2 value combos for each bluff combo.',
       advanced: 'Optimal bluff frequency derives from the indifference principle. At equilibrium, the bluff/value ratio matches the pot odds offered: ratio = call/(pot+call). Deviating creates exploitative counter-strategies, so ranges must be balanced near this theoretical target.',
+      elite: 'The indifference ratio only holds when the opponent\'s calling range is itself at equilibrium — against a population that over- or under-calls, the exploitative bluff frequency departs sharply from the theoretical target in the direction that punishes their tendency.',
     },
   },
 }
@@ -68,6 +73,7 @@ const DIFFICULTY_STYLES: Record<Difficulty, string> = {
   beginner: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
   intermediate: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
   advanced: 'bg-red-500/10 text-red-400 border-red-500/20',
+  elite: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
 }
 
 interface ConceptCardProps {

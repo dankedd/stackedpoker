@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -15,10 +15,9 @@ import {
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { useAuth } from "@/hooks/useAuth";
+import { useLearnProgress } from "@/contexts/LearnProgressContext";
 import {
   LEARNING_PATHS,
-  LEARNING_MODULES,
   MODULES_BY_PATH,
   LESSONS_BY_MODULE,
 } from "@/lib/learn/curriculum";
@@ -75,12 +74,24 @@ const STATUS_STYLE: Record<
 
 export default function PathPage() {
   const { pathId } = useParams<{ pathId: string }>();
-  const { session } = useAuth();
-  const [completedIds] = useState<Set<string>>(new Set());
-  const [loading] = useState(false);
+  const { progress } = useLearnProgress();
+  const loading = progress.loading;
 
   const path = LEARNING_PATHS.find((p) => p.id === pathId);
   const modules = MODULES_BY_PATH[pathId] ?? [];
+
+  // A module is complete once every one of its lessons is marked completed
+  // in the real, persisted progress (previously this was always an empty Set).
+  const completedIds = useMemo(() => {
+    const set = new Set<string>();
+    for (const mod of modules) {
+      const lessons = LESSONS_BY_MODULE[mod.id] ?? [];
+      if (lessons.length > 0 && lessons.every((l) => progress.lessons[l.id]?.status === "completed")) {
+        set.add(mod.id);
+      }
+    }
+    return set;
+  }, [modules, progress.lessons]);
 
   if (!path) {
     return (

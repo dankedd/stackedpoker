@@ -22,10 +22,18 @@ export type StepType =
   | 'action_sequence'   // animated action-line notation trainer
   | 'spr_visualizer'    // stack-to-pot proportional visualization
   | 'range_morphology'  // linear / polarized / condensed range-shape selector
+  // ── Foundations Module 2 (Math Behind Every Decision) ──
+  | 'pot_odds_explorer' // risk/reward chip visualization + bet-size slider for pot odds
+  | 'equity_balance'    // required-equity vs actual-equity balance scale + call/fold decision
+  | 'outs_deck'         // 47-card deck visualization for outs counting / drawing probability
+  | 'ev_tree'           // EV decision tree: branches with probability × payoff → total EV
+  | 'bluff_breakeven'   // fold-equity break-even visualizer for a bluff/semi-bluff bet
+  | 'equity_realization' // equity-realization meters / position / spectrum / card-compare / calculator
+  | 'range_compare'     // two 13×13 range grids rendered side-by-side for comparison
 
 export type ActionQuality = 'perfect' | 'good' | 'acceptable' | 'mistake' | 'punt'
 export type LessonType = 'micro' | 'range_trainer' | 'puzzle_drill' | 'concept_reveal' | 'simulation'
-export type Difficulty = 'beginner' | 'intermediate' | 'advanced'
+export type Difficulty = 'beginner' | 'intermediate' | 'advanced' | 'elite'
 export type MasteryLevel = 0 | 1 | 2 | 3 | 4 | 5
 
 // ── Step option (for decision_spot, bet_size_choose, bluff_pick) ──────────────
@@ -143,6 +151,74 @@ export interface LessonStep {
   spr_visualizer_tolerance?: number
   // Range morphology (linear / polarized / condensed / capped-uncapped)
   range_morphology_prompt?: string
+  // ── Foundations Module 2 (Math Behind Every Decision) ──────────────────────
+  // Pot odds explorer — chip/pot visualization + optional bet-size slider
+  /** 'fixed' = single scenario, tap RISK/REWARD to reveal. 'slider' = bet-size slider explorer (unscored).
+   *  'build' = animated chip build-up then a question. 'challenge' = numeric required-equity question. */
+  pot_odds_explorer_mode?: 'fixed' | 'slider' | 'build' | 'challenge'
+  /** Starting pot before villain's bet. Falls back to `pot_bb`. */
+  pot_odds_pot?: number
+  /** Villain's bet size (same unit as pot). */
+  pot_odds_bet?: number
+  /** Preset bet sizes to step through in 'slider' mode. */
+  pot_odds_slider_sizes?: number[]
+  /** Question shown for 'challenge' mode. */
+  pot_odds_prompt?: string
+  /** Target required-equity % answer for 'challenge' mode. */
+  pot_odds_correct?: number
+  pot_odds_tolerance?: number
+  // Equity balance — required-equity vs actual-equity scale, then CALL/FOLD (uses `options`)
+  equity_balance_required?: number
+  equity_balance_actual?: number
+  equity_balance_prompt?: string
+  // Outs deck — 47-card deck visualization for outs / drawing probability
+  /** Which screen this deck renders; drives which fields below are read. */
+  outs_deck_mode?: 'count_outs' | 'next_card' | 'turn_river' | 'quick_estimate' | 'clean_dirty' | 'backdoor' | 'speed_round'
+  /** Known cards (hero hand + board) removed from the deck. Falls back to `hero_hand` + `board`. */
+  outs_deck_known_cards?: string[]
+  /** The specific cards that count as outs, e.g. the remaining hearts. */
+  outs_deck_out_cards?: string[]
+  /** Subset of `outs_deck_out_cards` that are actually "dirty" (counted nominally but excluded when clean). */
+  outs_deck_dead_out_cards?: string[]
+  /** Nominal out count when no explicit card list is given (e.g. speed-round text scenarios). */
+  outs_deck_outs_count?: number
+  /** Unseen-card count for the probability calc. Defaults to 47 (2 hole + 3 flop known). */
+  outs_deck_unseen_count?: number
+  outs_deck_question?: string
+  /** Numeric target for quiz sub-modes (a percentage, or a clean-out count). */
+  outs_deck_correct?: number
+  outs_deck_tolerance?: number
+  // EV decision tree — root action with weighted branches
+  ev_tree_root_label?: string
+  ev_tree_branches?: { label: string; probability: number; payoff: number }[]
+  ev_tree_prompt?: string
+  // Bluff break-even visualizer
+  /** 'derive' = build-up to the 50% formula. 'slider' = bet-size slider explorer (unscored).
+   *  'predict_compare' = which of two bets needs more folds. 'challenge' = numeric required-fold-% question. */
+  bluff_breakeven_mode?: 'derive' | 'slider' | 'predict_compare' | 'challenge'
+  bluff_breakeven_pot?: number
+  bluff_breakeven_bet?: number
+  bluff_breakeven_slider_sizes?: number[]
+  /** 'predict_compare' mode: the two bets being compared. */
+  bluff_breakeven_compare?: { label: string; pot: number; bet: number }[]
+  bluff_breakeven_prompt?: string
+  bluff_breakeven_correct?: number
+  bluff_breakeven_tolerance?: number
+  // Equity realization
+  equity_realization_mode?: 'meters' | 'position' | 'spectrum' | 'card_compare' | 'spr_slider' | 'calculator'
+  /** 'meters' / 'calculator': raw equity vs actual pot capture. */
+  equity_realization_raw?: number
+  equity_realization_captured?: number
+  /** 'card_compare': two hands (each a 2-card array) shown side-by-side. */
+  equity_realization_hands?: { label: string; cards: string[] }[]
+  equity_realization_prompt?: string
+  /** 'calculator' numeric question target (e.g. resulting capture %). */
+  equity_realization_correct?: number
+  equity_realization_tolerance?: number
+  // Range compare — two 13x13 grids side-by-side (uses `options` for the follow-up question)
+  range_compare_a?: { label: string; range: string[] }
+  range_compare_b?: { label: string; range: string[] }
+  range_compare_prompt?: string
   // Visual
   visual?: 'table' | 'range_grid' | 'equity_bar' | 'heatmap' | 'pressure_chart'
   // XP
@@ -177,6 +253,27 @@ export interface Lesson {
   next_lesson_teaser?: string
 }
 
+// ── Poker Journey roadmap (13 stages, 28 modules — linear academy) ───────────
+
+/** 'complete' = module is live/playable today. 'placeholder' / 'planned' = roadmap-only, not yet built. */
+export type ModuleContentStatus = 'complete' | 'placeholder' | 'planned'
+export type ModuleAccess = 'free' | 'premium'
+
+/** A lightweight, non-interactive lesson descriptor for roadmap/"Coming Soon" display — never a playable Lesson. */
+export interface PlannedLesson {
+  title: string
+  description?: string
+}
+
+/** One of the 13 stages that group the 28 modules into the linear Poker Journey. */
+export interface JourneyStage {
+  id: string
+  order: number
+  title: string
+  subtitle?: string
+  moduleIds: string[]
+}
+
 // ── A learning module (group of lessons) ─────────────────────────────────────
 
 export interface LearningModule {
@@ -190,6 +287,21 @@ export interface LearningModule {
   sort_order: number
   xp_reward: number
   lessons?: Lesson[]
+  // ── Poker Journey roadmap metadata (optional — populated as modules are designed) ──
+  subtitle?: string
+  learningObjectives?: string[]
+  difficulty?: Difficulty
+  estimatedLessons?: number
+  /** Preferred over `unlock_after` for the linear journey — the single module that must be completed first. */
+  prerequisiteModuleId?: string
+  contentStatus?: ModuleContentStatus
+  access?: ModuleAccess
+  /** JourneyStage id this module belongs to. */
+  stageId?: string
+  /** Global 1–28 position in the Poker Journey. */
+  order?: number
+  /** Roadmap-only lesson titles shown on a "Coming Soon" module page — not playable Lesson objects. */
+  plannedLessons?: PlannedLesson[]
 }
 
 // ── A learning path (Beginner / Intermediate / Advanced) ─────────────────────
@@ -618,5 +730,66 @@ export const ACHIEVEMENTS: Achievement[] = [
     condition: 'Reach Level 20',
     xp_bonus: 1000,
     tier: 'platinum',
+  },
+  // Math Behind Every Decision (Module 2)
+  {
+    id: 'price_is_right',
+    title: 'Price Is Right',
+    description: 'Completed the Pot Odds lesson with high accuracy',
+    icon: '🎯',
+    category: 'learning',
+    condition: 'Score 90%+ on "The Price of a Call"',
+    xp_bonus: 50,
+    tier: 'bronze',
+  },
+  {
+    id: 'clean_outs',
+    title: 'Clean Outs',
+    description: 'Perfect score on the clean vs. dead outs challenge',
+    icon: '🃏',
+    category: 'performance',
+    condition: 'Perfect score on the clean/dead outs challenge in "Count Your Ways to Win"',
+    xp_bonus: 50,
+    tier: 'silver',
+  },
+  {
+    id: 'long_term_thinker',
+    title: 'Long-Term Thinker',
+    description: 'Completed the Expected Value lesson',
+    icon: '📈',
+    category: 'learning',
+    condition: 'Complete "Think in Expected Value"',
+    xp_bonus: 75,
+    tier: 'bronze',
+  },
+  {
+    id: 'no_showdown_needed',
+    title: 'No Showdown Needed',
+    description: 'Mastered fold equity',
+    icon: '🃏',
+    category: 'mastery',
+    condition: 'Complete "Winning Without Showdown" with high accuracy',
+    xp_bonus: 75,
+    tier: 'silver',
+  },
+  {
+    id: 'realize_your_potential',
+    title: 'Realize Your Potential',
+    description: 'Completed the Equity Realization lesson',
+    icon: '💡',
+    category: 'learning',
+    condition: 'Complete "Equity Isn\'t Everything"',
+    xp_bonus: 75,
+    tier: 'bronze',
+  },
+  {
+    id: 'decision_scientist',
+    title: 'Decision Scientist',
+    description: 'Completed the Module 2 Decision Lab',
+    icon: '🔬',
+    category: 'mastery',
+    condition: 'Complete the "Decision Lab" capstone',
+    xp_bonus: 150,
+    tier: 'gold',
   },
 ]

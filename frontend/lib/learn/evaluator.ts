@@ -394,6 +394,89 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
     case 'range_morphology':
       return evalOptionBased(step, response)
 
+    // ── Foundations Module 2 ────────────────────────────────────────────────
+
+    // Pot odds explorer — 'challenge' mode is a numeric required-equity question;
+    // 'fixed'/'slider'/'build' are unscored exploration unless options are present
+    case 'pot_odds_explorer':
+      if (step.pot_odds_correct != null) {
+        return evalNumeric({
+          actual:         step.pot_odds_correct,
+          tolerance:      step.pot_odds_tolerance ?? 2,
+          response,
+          correctFeedback: step.correct_feedback
+            ?? `Correct — the required equity is ${step.pot_odds_correct}%.`,
+          wrongFeedback:   step.wrong_feedback
+            ?? `Required equity = call ÷ final pot. Answer: ${step.pot_odds_correct}%.`,
+          unit: '%',
+        })
+      }
+      if (step.options?.length) return evalOptionBased(step, response)
+      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+
+    // Equity balance — required vs actual equity, then a CALL/FOLD (or similar) decision
+    case 'equity_balance':
+      return evalOptionBased(step, response)
+
+    // Outs deck — numeric quiz when a target is defined, else option-based, else unscored
+    case 'outs_deck':
+      if (step.outs_deck_correct != null) {
+        return evalNumeric({
+          actual:         step.outs_deck_correct,
+          tolerance:      step.outs_deck_tolerance ?? 2,
+          response,
+          correctFeedback: step.correct_feedback
+            ?? `Correct — ${step.outs_deck_correct}${step.outs_deck_mode === 'clean_dirty' ? ' clean outs' : '%'}.`,
+          wrongFeedback:   step.wrong_feedback
+            ?? `The correct answer is ${step.outs_deck_correct}${step.outs_deck_mode === 'clean_dirty' ? ' clean outs' : '%'}.`,
+          unit: step.outs_deck_mode === 'clean_dirty' ? '' : '%',
+        })
+      }
+      if (step.options?.length) return evalOptionBased(step, response)
+      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+
+    // EV decision tree — a classification/choice question over the displayed tree, or unscored
+    case 'ev_tree':
+      if (step.options?.length) return evalOptionBased(step, response)
+      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+
+    // Bluff break-even visualizer — numeric required-fold-% question, else option-based, else unscored
+    case 'bluff_breakeven':
+      if (step.bluff_breakeven_correct != null) {
+        return evalNumeric({
+          actual:         step.bluff_breakeven_correct,
+          tolerance:      step.bluff_breakeven_tolerance ?? 3,
+          response,
+          correctFeedback: step.correct_feedback
+            ?? `Correct — this bluff needs to work ${step.bluff_breakeven_correct}% of the time.`,
+          wrongFeedback:   step.wrong_feedback
+            ?? `Required fold % = bet ÷ (bet + pot). Answer: ${step.bluff_breakeven_correct}%.`,
+          unit: '%',
+        })
+      }
+      if (step.options?.length) return evalOptionBased(step, response)
+      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+
+    // Equity realization — numeric calculator question, else option-based, else unscored
+    case 'equity_realization':
+      if (step.equity_realization_correct != null) {
+        return evalNumeric({
+          actual:         step.equity_realization_correct,
+          tolerance:      step.equity_realization_tolerance ?? 3,
+          response,
+          correctFeedback: step.correct_feedback ?? `Correct — ${step.equity_realization_correct}%.`,
+          wrongFeedback:   step.wrong_feedback ?? `The correct answer is ${step.equity_realization_correct}%.`,
+          unit: '%',
+        })
+      }
+      if (step.options?.length) return evalOptionBased(step, response)
+      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+
+    // Range compare — a decision question over two displayed ranges, or unscored
+    case 'range_compare':
+      if (step.options?.length) return evalOptionBased(step, response)
+      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+
     default:
       // Unknown step type — attempt option-based, fall back to punt
       if (step.options?.length) return evalOptionBased(step, response)

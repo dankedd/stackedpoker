@@ -1,31 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Brain,
   Flame,
   Lock,
+  CheckCircle,
+  Circle,
+  Clock as ClockIcon,
   ChevronRight,
+  ChevronDown,
   AlertTriangle,
   BookOpen,
   Zap,
-  Star,
-  TrendingUp,
   Trophy,
   Target,
-  Crown,
+  Sparkles,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { StreakBadge } from "@/components/learn/StreakBadge";
 import { AchievementsPanel } from "@/components/learn/AchievementBadge";
 import { useAuth } from "@/hooks/useAuth";
-import { fetchLearningDashboard } from "@/lib/learn/api";
-import { LEARNING_PATHS } from "@/lib/learn/curriculum";
+import { useLearnProgress } from "@/contexts/LearnProgressContext";
+import { LESSONS_BY_SLUG, LEARNING_MODULES, LESSONS, LEARNING_PATHS } from "@/lib/learn/curriculum";
 import { ACHIEVEMENTS } from "@/lib/learn/types";
-import type { PersonalizedDashboard } from "@/lib/learn/types";
 import { xpToNextLevel } from "@/lib/learn/types";
+import type { ModuleDisplayStatus } from "@/lib/learn/journey";
+import {
+  JOURNEY_STAGES,
+  getCompletedModuleIds,
+  getModuleDisplayStatus,
+  getStageStatus,
+  getNextLessonTarget,
+  getNextPlannedModule,
+  getJourneyOverview,
+} from "@/lib/learn/journey";
 import { cn } from "@/lib/utils";
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
@@ -52,68 +63,43 @@ function LoadingSkeleton() {
   );
 }
 
-// ── Path config ───────────────────────────────────────────────────────────────
+// ── Journey status styling ───────────────────────────────────────────────────
 
-const TIER_BADGE: Record<string, string> = {
-  free:    "bg-emerald-500/10 border-emerald-500/25 text-emerald-400",
-  pro:     "bg-blue-500/10 border-blue-500/25 text-blue-400",
-  premium: "bg-violet-500/10 border-violet-500/25 text-violet-400",
+const MODULE_STATUS_ICON: Record<ModuleDisplayStatus, typeof Circle> = {
+  complete: CheckCircle,
+  available: Circle,
+  locked: Lock,
+  coming_soon: ClockIcon,
 };
 
-const PATH_ICONS: Record<string, typeof BookOpen> = {
-  beginner:     BookOpen,
-  intermediate: TrendingUp,
-  advanced:     Star,
-  pro:          Crown,
+const MODULE_STATUS_STYLE: Record<ModuleDisplayStatus, { badge: string; icon: string; row: string }> = {
+  complete: {
+    badge: "bg-emerald-500/10 border-emerald-500/25 text-emerald-400",
+    icon: "text-emerald-400",
+    row: "border-emerald-500/20 bg-emerald-500/[0.03] hover:border-emerald-500/35",
+  },
+  available: {
+    badge: "bg-violet-500/10 border-violet-500/25 text-violet-400",
+    icon: "text-violet-400",
+    row: "border-violet-500/25 bg-violet-500/[0.03] hover:border-violet-500/40",
+  },
+  locked: {
+    badge: "bg-secondary/30 border-border/30 text-muted-foreground/40",
+    icon: "text-muted-foreground/40",
+    row: "border-border/25 bg-card/30 opacity-60",
+  },
+  coming_soon: {
+    badge: "bg-secondary/20 border-border/20 text-muted-foreground/50",
+    icon: "text-muted-foreground/30",
+    row: "border-border/20 bg-card/20 opacity-50",
+  },
 };
 
-const PATH_CARD_BG: Record<string, string> = {
-  beginner:     "bg-gradient-to-br from-emerald-950/60 via-card/80 to-card/50 border-emerald-900/40",
-  intermediate: "bg-gradient-to-br from-blue-950/60 via-card/80 to-card/50 border-blue-900/40",
-  advanced:     "bg-gradient-to-br from-violet-950/60 via-card/80 to-card/50 border-violet-900/40",
-  pro:          "bg-gradient-to-br from-amber-950/50 via-card/80 to-card/50 border-amber-900/30",
-};
-
-const PATH_HOVER: Record<string, string> = {
-  beginner:     "hover:border-emerald-500/40 hover:shadow-emerald-900/20",
-  intermediate: "hover:border-blue-500/40 hover:shadow-blue-900/20",
-  advanced:     "hover:border-violet-500/40 hover:shadow-violet-900/20",
-  pro:          "hover:border-amber-500/40 hover:shadow-amber-900/20",
-};
-
-const PATH_GLOW_TOP: Record<string, string> = {
-  beginner:     "bg-emerald-500/8",
-  intermediate: "bg-blue-500/8",
-  advanced:     "bg-violet-500/10",
-  pro:          "bg-amber-500/8",
-};
-
-const PATH_ICON_BG: Record<string, string> = {
-  beginner:     "bg-emerald-500/15 border-emerald-500/25 text-emerald-400",
-  intermediate: "bg-blue-500/15 border-blue-500/25 text-blue-400",
-  advanced:     "bg-violet-500/15 border-violet-500/25 text-violet-400",
-  pro:          "bg-amber-500/15 border-amber-500/25 text-amber-400",
-};
-
-const PATH_ARROW: Record<string, string> = {
-  beginner:     "text-emerald-400",
-  intermediate: "text-blue-400",
-  advanced:     "text-violet-400",
-  pro:          "text-amber-400",
-};
-
-const PATH_XP_TOTAL: Record<string, number> = {
-  beginner: 700,
-  intermediate: 1150,
-  advanced: 1400,
-  pro: 950,
-};
-
-const MODULE_COUNTS: Record<string, number> = {
-  beginner: 5,
-  intermediate: 5,
-  advanced: 5,
-  pro: 4,
+const MODULE_STATUS_LABEL: Record<ModuleDisplayStatus, string> = {
+  complete: "Complete",
+  available: "Available",
+  locked: "Locked",
+  coming_soon: "Coming soon",
 };
 
 // ── Severity badge ────────────────────────────────────────────────────────────
@@ -153,31 +139,53 @@ function LevelRing({ level, pct }: { level: number; pct: number }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function LearnPage() {
-  const { user, session } = useAuth();
-  const [dashboard, setDashboard] = useState<PersonalizedDashboard | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { progress } = useLearnProgress();
   const [showAchievements, setShowAchievements] = useState(false);
+  const [expandedStageId, setExpandedStageId] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!session?.access_token) {
-      setLoading(false);
-      return;
-    }
-    fetchLearningDashboard(session.access_token)
-      .then(setDashboard)
-      .catch((e) => setError(e.message ?? "Failed to load dashboard"))
-      .finally(() => setLoading(false));
-  }, [session]);
+  const loading = progress.loading;
+  const error = progress.error;
 
-  const xpInfo = dashboard ? xpToNextLevel(dashboard.skill_progress.total_xp) : null;
+  const xpInfo = xpToNextLevel(progress.skill.total_xp);
   const dailyXP = 50;
-  const todayXP = Math.min(dailyXP, (dashboard?.skill_progress.total_xp ?? 0) % dailyXP);
+  const todayXP = Math.min(dailyXP, progress.skill.total_xp % dailyXP);
   const dailyPct = Math.round((todayXP / dailyXP) * 100);
 
-  const unlockedIds = new Set<string>(
-    dashboard?.skill_progress.achievements ?? []
+  const unlockedIds = progress.achievementIds;
+
+  const reviewsDueCount = Object.values(progress.concepts).filter(
+    (c) => !c.next_review || new Date(c.next_review) <= new Date()
+  ).length;
+
+  const continueLesson = progress.continueTarget
+    ? LESSONS_BY_SLUG[progress.continueTarget.lesson_id]
+    : undefined;
+
+  // ── Poker Journey derived state ──────────────────────────────────────────
+  const completedModuleIds = useMemo(
+    () => getCompletedModuleIds(progress.lessons),
+    [progress.lessons]
   );
+  const journeyOverview = useMemo(
+    () => getJourneyOverview(progress.lessons),
+    [progress.lessons]
+  );
+  const nextLessonTarget = useMemo(
+    () => getNextLessonTarget(progress.lessons),
+    [progress.lessons]
+  );
+  const nextPlannedModule = useMemo(
+    () => getNextPlannedModule(completedModuleIds),
+    [completedModuleIds]
+  );
+  const currentStageId = useMemo(() => {
+    const current = JOURNEY_STAGES.find(
+      (s) => getStageStatus(s, completedModuleIds) === "current"
+    );
+    return current?.id ?? JOURNEY_STAGES[0].id;
+  }, [completedModuleIds]);
+  const activeStageId = expandedStageId ?? currentStageId;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -210,10 +218,10 @@ export default function LearnPage() {
               {/* Stats strip */}
               <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
                 {[
-                  { icon: BookOpen, value: "18+", label: "lessons" },
-                  { icon: Brain,    value: "22",  label: "concepts" },
-                  { icon: Target,   value: "3",   label: "learning paths" },
-                  { icon: Zap,      value: "4,200+", label: "XP available" },
+                  { icon: BookOpen, value: String(LESSONS.length), label: "lessons live" },
+                  { icon: Sparkles, value: `${journeyOverview.availableModules}`, label: "modules available" },
+                  { icon: Target,   value: "28",  label: "modules planned" },
+                  { icon: Zap,      value: "13",  label: "stages" },
                 ].map(({ icon: Icon, value, label }) => (
                   <div key={label} className="flex items-center gap-1.5 text-muted-foreground">
                     <Icon className="h-3.5 w-3.5 text-violet-400/50" />
@@ -269,34 +277,35 @@ export default function LearnPage() {
               {error && (
                 <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-amber-400/80 text-xs mb-6 flex items-center gap-2">
                   <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                  Personalised data unavailable — run the database migration to enable progress tracking.
+                  Couldn&apos;t reach your saved progress right now — showing your last known state. It will
+                  retry automatically.
                 </div>
               )}
 
               {/* ── Stats row: Level ring + daily XP + streak ── */}
-              {dashboard && (
+              {user && (
                 <div className="flex flex-col sm:flex-row gap-4 mb-8">
 
                   {/* Level + XP */}
                   <div className="flex-1 rounded-2xl border border-border/50 bg-card/60 p-5">
                     <div className="flex items-center gap-4">
                       <LevelRing
-                        level={dashboard.skill_progress.level}
-                        pct={xpInfo?.pct ?? 0}
+                        level={progress.skill.level}
+                        pct={xpInfo.pct}
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-semibold text-foreground">
-                            Level {dashboard.skill_progress.level}
+                            Level {progress.skill.level}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            {dashboard.skill_progress.total_xp.toLocaleString()} XP
+                            {progress.skill.total_xp.toLocaleString()} XP
                           </span>
                         </div>
                         <div className="h-2 rounded-full bg-white/[0.05] overflow-hidden">
                           <div
                             className="h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-400 transition-all duration-700"
-                            style={{ width: `${xpInfo?.pct ?? 0}%` }}
+                            style={{ width: `${xpInfo.pct}%` }}
                           />
                         </div>
                         <div className="flex items-center justify-between mt-2">
@@ -304,7 +313,7 @@ export default function LearnPage() {
                             Daily goal
                           </span>
                           <span className="text-[10px] text-muted-foreground">
-                            {(xpInfo?.needed ?? 0) - (xpInfo?.current ?? 0)} XP to next level
+                            {xpInfo.needed - xpInfo.current} XP to next level
                           </span>
                         </div>
                       </div>
@@ -330,12 +339,7 @@ export default function LearnPage() {
 
                   {/* Streak */}
                   <div className="sm:w-52 rounded-2xl border border-border/50 bg-card/60 p-5 flex flex-col items-center justify-center gap-2">
-                    <StreakBadge days={dashboard.streak_status.days} />
-                    {dashboard.streak_status.bonus_xp > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        +{dashboard.streak_status.bonus_xp} XP streak bonus
-                      </p>
-                    )}
+                    <StreakBadge days={progress.skill.streak_days} />
                   </div>
 
                   {/* Quick stats */}
@@ -348,24 +352,25 @@ export default function LearnPage() {
                     <div className="flex items-center gap-2 text-sm">
                       <Target className="h-4 w-4 text-orange-400/70" />
                       <span className="text-muted-foreground">Leaks</span>
-                      <span className="ml-auto font-bold text-foreground">{dashboard.active_leaks.length}</span>
+                      <span className="ml-auto font-bold text-foreground">{progress.leaks.length}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <Flame className="h-4 w-4 text-violet-400/70" />
                       <span className="text-muted-foreground">Reviews due</span>
-                      <span className="ml-auto font-bold text-foreground">{dashboard.review_concepts.length}</span>
+                      <span className="ml-auto font-bold text-foreground">{reviewsDueCount}</span>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* ── Continue / Recommended Lesson ── */}
-              {dashboard?.recommended_lesson && (
-                <div className="mb-10">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-3">
-                    Continue learning
-                  </p>
-                  <Link href={`/learn/lesson/${dashboard.recommended_lesson.slug}`} className="group block">
+              {/* ── Continue Learning ── */}
+              <div className="mb-10">
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-3">
+                  Continue learning
+                </p>
+
+                {continueLesson && progress.continueTarget ? (
+                  <Link href={`/learn/lesson/${continueLesson.slug}`} className="group block">
                     <div className="rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-900/30 via-card/80 to-blue-900/20 p-6 hover:border-violet-500/50 hover:shadow-lg hover:shadow-violet-900/20 hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden">
                       <div aria-hidden className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full bg-violet-500/15 blur-3xl" />
                       <div aria-hidden className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/30 to-transparent" />
@@ -376,14 +381,14 @@ export default function LearnPage() {
                           </div>
                           <div className="min-w-0">
                             <p className="text-[10px] font-bold uppercase tracking-widest text-violet-400/60 mb-0.5">
-                              Recommended for you
+                              Pick up where you left off
                             </p>
                             <h3 className="text-base font-bold text-foreground truncate">
-                              {dashboard.recommended_lesson.title}
+                              {continueLesson.title}
                             </h3>
-                            {dashboard.recommended_lesson.reason && (
+                            {progress.continueTarget.total_steps && (
                               <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                                {dashboard.recommended_lesson.reason}
+                                Step {progress.continueTarget.step_index + 1} of {progress.continueTarget.total_steps}
                               </p>
                             )}
                           </div>
@@ -395,94 +400,190 @@ export default function LearnPage() {
                       </div>
                     </div>
                   </Link>
-                </div>
-              )}
-
-              {/* ── Learning Paths Grid (4 paths) ── */}
-              <div className="mb-10">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-4">Learning paths</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {LEARNING_PATHS.map((path) => {
-                    const Icon = PATH_ICONS[path.id] ?? BookOpen;
-                    const isLocked = path.tier_required !== "free" && !user;
-                    const moduleCount = MODULE_COUNTS[path.id] ?? 0;
-                    return (
-                      <Link
-                        key={path.id}
-                        href={isLocked ? "/pricing" : `/learn/path/${path.id}`}
-                        className="group block"
-                      >
-                        <div
-                          className={cn(
-                            "h-full rounded-2xl border p-5 transition-all duration-200 relative overflow-hidden hover:shadow-lg hover:-translate-y-0.5",
-                            isLocked
-                              ? "border-border/25 bg-card/40 opacity-60 cursor-default hover:translate-y-0 hover:shadow-none"
-                              : cn(PATH_CARD_BG[path.id], PATH_HOVER[path.id]),
-                          )}
-                        >
-                          {/* Card ambient glow top-right */}
-                          {!isLocked && (
-                            <div
-                              aria-hidden
-                              className={cn(
-                                "pointer-events-none absolute -top-6 -right-6 h-24 w-24 rounded-full blur-2xl opacity-60",
-                                PATH_GLOW_TOP[path.id],
-                              )}
-                            />
-                          )}
-
-                          <div className="relative flex items-start justify-between mb-4">
-                            <div
-                              className={cn(
-                                "flex h-10 w-10 items-center justify-center rounded-xl border shrink-0",
-                                isLocked ? "bg-secondary/30 border-border/30 text-muted-foreground/30" : PATH_ICON_BG[path.id],
-                              )}
-                            >
-                              <Icon className="h-4.5 w-4.5" />
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={cn(
-                                  "text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize",
-                                  isLocked ? "bg-secondary/20 border-border/20 text-muted-foreground/30" : TIER_BADGE[path.tier_required],
-                                )}
-                              >
-                                {path.tier_required}
-                              </span>
-                              {isLocked && <Lock className="h-3.5 w-3.5 text-muted-foreground/30" />}
-                            </div>
+                ) : nextLessonTarget ? (
+                  <Link href={`/learn/lesson/${nextLessonTarget.lesson.slug}`} className="group block">
+                    <div className="rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-900/30 via-card/80 to-blue-900/20 p-6 hover:border-violet-500/50 hover:shadow-lg hover:shadow-violet-900/20 hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden">
+                      <div aria-hidden className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full bg-violet-500/15 blur-3xl" />
+                      <div className="relative flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4 min-w-0">
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-blue-500 shadow-lg shadow-violet-500/30">
+                            <Sparkles className="h-5.5 w-5.5 text-white" />
                           </div>
-
-                          <h3 className="relative font-bold text-foreground mb-1.5 text-[15px]">{path.title}</h3>
-                          <p className="relative text-xs text-muted-foreground leading-relaxed mb-5">
-                            {path.description}
-                          </p>
-
-                          {/* Module + XP row */}
-                          <div className="relative flex items-center justify-between text-[10px] text-muted-foreground/50 mb-3">
-                            <span>{moduleCount} modules</span>
-                            <span className="flex items-center gap-1 text-amber-400/60">
-                              <Zap className="h-2.5 w-2.5" />
-                              {PATH_XP_TOTAL[path.id]?.toLocaleString() ?? "—"} XP
-                            </span>
-                          </div>
-
-                          {/* Progress bar */}
-                          <div className="relative h-1.5 rounded-full bg-white/[0.05] overflow-hidden mb-4">
-                            <div className={cn("h-full rounded-full w-0", isLocked ? "" : "bg-gradient-to-r from-current opacity-40")} style={{ color: PATH_ARROW[path.id] }} />
-                          </div>
-
-                          <div
-                            className={cn(
-                              "relative flex items-center gap-1.5 text-xs font-semibold group-hover:translate-x-0.5 transition-transform",
-                              isLocked ? "text-muted-foreground/30" : PATH_ARROW[path.id],
-                            )}
-                          >
-                            {isLocked ? "Unlock path" : "Explore path"}
-                            <ChevronRight className="h-3.5 w-3.5" />
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-violet-400/60 mb-0.5">
+                              {nextLessonTarget.module.title}
+                            </p>
+                            <h3 className="text-base font-bold text-foreground truncate">
+                              {nextLessonTarget.lesson.title}
+                            </h3>
                           </div>
                         </div>
-                      </Link>
+                        <div className="shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-sm font-semibold shadow-lg shadow-violet-500/30 group-hover:shadow-violet-500/50 group-hover:opacity-95 transition-all">
+                          Start
+                          <ChevronRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ) : (
+                  <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.03] p-6">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 border border-emerald-500/25">
+                        <CheckCircle className="h-5.5 w-5.5 text-emerald-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-base font-bold text-foreground">You&apos;re caught up!</h3>
+                        {nextPlannedModule ? (
+                          <p className="text-sm text-muted-foreground mt-0.5">
+                            Next: <span className="text-foreground/80 font-medium">{nextPlannedModule.title}</span>{" "}
+                            <span className="text-muted-foreground/50">· Coming soon</span>
+                          </p>
+                        ) : (
+                          <p className="text-sm text-muted-foreground mt-0.5">
+                            You&apos;ve completed everything available in the Poker Journey so far.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ── Poker Journey (stage-grouped roadmap) ── */}
+              <div className="mb-10">
+                <div className="flex items-end justify-between mb-4">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-1">
+                      Poker Journey
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {journeyOverview.availableCompleted} of {journeyOverview.availableModules} available modules
+                      complete · {journeyOverview.totalRoadmapModules} planned in total
+                    </p>
+                  </div>
+                  <Link
+                    href="/learn/journey"
+                    className="text-xs text-violet-400/70 hover:text-violet-300 transition-colors whitespace-nowrap"
+                  >
+                    Full roadmap →
+                  </Link>
+                </div>
+
+                {/* Overall progress bar (based only on released content) */}
+                <div className="h-1.5 rounded-full bg-white/[0.05] overflow-hidden mb-6">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-blue-400 transition-all duration-700"
+                    style={{
+                      width: `${
+                        journeyOverview.availableModules
+                          ? Math.round((journeyOverview.availableCompleted / journeyOverview.availableModules) * 100)
+                          : 0
+                      }%`,
+                    }}
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  {JOURNEY_STAGES.map((stage) => {
+                    const stageModules = LEARNING_MODULES.filter((m) => stage.moduleIds.includes(m.id)).sort(
+                      (a, b) => (a.order ?? 0) - (b.order ?? 0)
+                    );
+                    const stageStatus = getStageStatus(stage, completedModuleIds);
+                    const isOpen = activeStageId === stage.id;
+
+                    return (
+                      <div
+                        key={stage.id}
+                        className={cn(
+                          "rounded-2xl border transition-all duration-200 overflow-hidden",
+                          stageStatus === "current"
+                            ? "border-violet-500/30 bg-violet-500/[0.03]"
+                            : "border-border/40 bg-card/50"
+                        )}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setExpandedStageId(isOpen ? "" : stage.id)}
+                          className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span
+                              className={cn(
+                                "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold",
+                                stageStatus === "complete"
+                                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
+                                  : stageStatus === "current"
+                                  ? "border-violet-500/40 bg-violet-500/10 text-violet-400"
+                                  : "border-border/30 bg-secondary/20 text-muted-foreground/40"
+                              )}
+                            >
+                              {stage.order}
+                            </span>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-foreground truncate">{stage.title}</p>
+                              {stage.subtitle && (
+                                <p className="text-xs text-muted-foreground/70 truncate">{stage.subtitle}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <span className="text-[10px] text-muted-foreground/50 hidden sm:inline">
+                              {stageModules.length} module{stageModules.length !== 1 ? "s" : ""}
+                            </span>
+                            <ChevronDown
+                              className={cn(
+                                "h-4 w-4 text-muted-foreground/40 transition-transform",
+                                isOpen && "rotate-180"
+                              )}
+                            />
+                          </div>
+                        </button>
+
+                        {isOpen && (
+                          <div className="px-5 pb-4 space-y-2">
+                            {stageModules.map((mod) => {
+                              const status = getModuleDisplayStatus(mod, completedModuleIds);
+                              const styles = MODULE_STATUS_STYLE[status];
+                              const StatusIcon = MODULE_STATUS_ICON[status];
+                              const clickable = status !== "coming_soon" && status !== "locked";
+
+                              const row = (
+                                <div
+                                  className={cn(
+                                    "flex items-center gap-3 rounded-xl border px-4 py-3 transition-all duration-150",
+                                    styles.row,
+                                    clickable && "cursor-pointer hover:-translate-y-0.5"
+                                  )}
+                                >
+                                  <StatusIcon className={cn("h-4 w-4 shrink-0", styles.icon)} />
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-medium text-foreground truncate">{mod.title}</p>
+                                    {mod.subtitle && (
+                                      <p className="text-xs text-muted-foreground/60 truncate">{mod.subtitle}</p>
+                                    )}
+                                  </div>
+                                  <span
+                                    className={cn(
+                                      "text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0",
+                                      styles.badge
+                                    )}
+                                  >
+                                    {MODULE_STATUS_LABEL[status]}
+                                  </span>
+                                </div>
+                              );
+
+                              return clickable ? (
+                                <Link key={mod.id} href={`/learn/module/${mod.slug}`} className="block">
+                                  {row}
+                                </Link>
+                              ) : (
+                                <div key={mod.id}>{row}</div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
@@ -567,11 +668,11 @@ export default function LearnPage() {
               </div>
 
               {/* ── Weak Spots Panel ── */}
-              {dashboard && dashboard.active_leaks.length > 0 && (
+              {user && progress.leaks.length > 0 && (
                 <div className="mb-8">
                   <h2 className="text-base font-semibold text-foreground mb-4">Your weak spots</h2>
                   <div className="rounded-2xl border border-border/50 bg-card/60 divide-y divide-border/30">
-                    {dashboard.active_leaks.slice(0, 3).map((leak) => (
+                    {progress.leaks.slice(0, 3).map((leak) => (
                       <div
                         key={leak.id}
                         className="flex items-center justify-between gap-4 px-5 py-4"
@@ -610,7 +711,7 @@ export default function LearnPage() {
               )}
 
               {/* Empty state for leaks */}
-              {dashboard && dashboard.active_leaks.length === 0 && (
+              {user && progress.leaks.length === 0 && (
                 <div className="rounded-2xl border border-border/50 bg-card/60 p-8 text-center mb-8">
                   <Flame className="h-8 w-8 text-emerald-400 mx-auto mb-3" />
                   <p className="font-semibold text-foreground mb-1">No active leaks detected</p>

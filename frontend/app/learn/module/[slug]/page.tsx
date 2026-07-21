@@ -7,17 +7,22 @@ import {
   ChevronRight,
   CheckCircle,
   Clock,
+  Sparkles,
+  Lock,
   Zap,
   BookOpen,
   Layers,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { useLearnProgress } from "@/contexts/LearnProgressContext";
 import {
   MODULES_BY_SLUG,
   LEARNING_PATHS,
+  LEARNING_MODULES,
   LESSONS_BY_MODULE,
 } from "@/lib/learn/curriculum";
+import { getCompletedModuleIds, isModuleUnlocked, getStageForModule } from "@/lib/learn/journey";
 import type { Lesson } from "@/lib/learn/types";
 import { cn } from "@/lib/utils";
 
@@ -109,6 +114,7 @@ function LessonCard({
 
 export default function ModulePage() {
   const { slug } = useParams<{ slug: string }>();
+  const { progress } = useLearnProgress();
 
   const module = MODULES_BY_SLUG[slug];
 
@@ -133,9 +139,135 @@ export default function ModulePage() {
   const lessons = (LESSONS_BY_MODULE[module.id] ?? []).sort(
     (a, b) => a.sort_order - b.sort_order
   );
-  // Simulated: no completions yet
-  const completedLessonIds = new Set<string>();
+  const completedLessonIds = new Set<string>(
+    lessons.filter((l) => progress.lessons[l.id]?.status === "completed").map((l) => l.id)
+  );
   const firstIncomplete = lessons.find((l) => !completedLessonIds.has(l.id));
+
+  // ── Poker Journey roadmap states ─────────────────────────────────────────
+  const isComingSoon = !!module.contentStatus && module.contentStatus !== "complete";
+  const completedModuleIds = getCompletedModuleIds(progress.lessons);
+  const isUnlocked = isModuleUnlocked(module, completedModuleIds);
+  const stage = getStageForModule(module.id);
+
+  if (isComingSoon) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Navbar variant="static" />
+        <main className="flex-1 py-10 sm:py-14">
+          <div className="mx-auto max-w-3xl px-4 sm:px-6">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
+              <Link href="/learn" className="hover:text-foreground transition-colors">Learn</Link>
+              <ChevronRight className="h-3.5 w-3.5 opacity-40" />
+              <Link href="/learn/journey" className="hover:text-foreground transition-colors">Poker Journey</Link>
+              <ChevronRight className="h-3.5 w-3.5 opacity-40" />
+              <span className="text-foreground">{module.title}</span>
+            </div>
+
+            <div className="relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card/80 via-card/60 to-card/40 px-6 py-8 sm:px-8">
+              <div aria-hidden className="pointer-events-none absolute -top-12 -right-12 h-48 w-48 rounded-full bg-violet-500/8 blur-3xl" />
+              <div className="relative">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary/40 border border-border/40">
+                    <Clock className="h-5 w-5 text-muted-foreground/60" />
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] px-2.5 py-1 rounded-full border border-border/30 bg-secondary/30 text-muted-foreground/60">
+                    Coming soon
+                  </span>
+                </div>
+
+                {stage && (
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-1.5">
+                    {stage.title} · Module {module.order}
+                  </p>
+                )}
+                <h1 className="text-2xl font-bold text-foreground mb-1.5">{module.title}</h1>
+                {module.subtitle && (
+                  <p className="text-muted-foreground text-sm leading-relaxed mb-5">{module.subtitle}</p>
+                )}
+                <p className="text-sm text-foreground/70 leading-relaxed mb-6">{module.description}</p>
+
+                {module.learningObjectives && module.learningObjectives.length > 0 && (
+                  <div className="mb-6">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/40 mb-2.5">
+                      What you&apos;ll learn
+                    </p>
+                    <ul className="space-y-1.5">
+                      {module.learningObjectives.map((obj) => (
+                        <li key={obj} className="flex items-start gap-2 text-sm text-foreground/80">
+                          <Sparkles className="h-3.5 w-3.5 text-violet-400/60 shrink-0 mt-0.5" />
+                          {obj}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {module.plannedLessons && module.plannedLessons.length > 0 && (
+                  <div className="mb-2">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/40 mb-2.5">
+                      Planned lessons ({module.plannedLessons.length})
+                    </p>
+                    <ol className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+                      {module.plannedLessons.map((pl, i) => (
+                        <li key={pl.title} className="text-xs text-muted-foreground/70 flex gap-2">
+                          <span className="text-muted-foreground/40 tabular-nums">{i + 1}.</span>
+                          {pl.title}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <Link
+              href="/learn/journey"
+              className="mt-6 inline-flex items-center gap-1.5 text-sm text-violet-400 hover:text-violet-300 transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Back to the full journey
+            </Link>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!isUnlocked) {
+    const prereq = module.prerequisiteModuleId
+      ? LEARNING_MODULES.find((m) => m.id === module.prerequisiteModuleId)
+      : LEARNING_MODULES.find((m) => m.id === module.unlock_after[0]);
+
+    return (
+      <div className="flex min-h-screen flex-col">
+        <Navbar variant="static" />
+        <main className="flex-1 py-14 flex items-center justify-center">
+          <div className="text-center max-w-sm px-6">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary/40 border border-border/40 mx-auto mb-4">
+              <Lock className="h-5 w-5 text-muted-foreground/60" />
+            </div>
+            <p className="text-lg font-semibold text-foreground mb-1.5">{module.title} is locked</p>
+            <p className="text-sm text-muted-foreground mb-6">
+              {prereq
+                ? <>Finish <span className="text-foreground/80 font-medium">{prereq.title}</span> first to unlock this module.</>
+                : "Complete the prerequisite module first to unlock this one."}
+            </p>
+            {prereq && (
+              <Link
+                href={`/learn/module/${prereq.slug}`}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+              >
+                Go to {prereq.title} <ChevronRight className="h-4 w-4" />
+              </Link>
+            )}
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col">

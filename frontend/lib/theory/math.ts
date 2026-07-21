@@ -155,6 +155,66 @@ export function outsToEquityTurn(outs: number): number {
 export const BACKDOOR_EQUITY = 0.0426;
 
 /**
+ * Required equity to call, as a percentage (0-100). Thin, readably-named
+ * wrapper around potOddsPercent for pot-odds screens.
+ */
+export function requiredEquityFromPot(potBeforeCall: number, callAmount: number): number {
+  return potOddsPercent(potBeforeCall, callAmount) * 100;
+}
+
+/**
+ * Exact probability (0-1) of hitting at least one out on the very next card.
+ */
+export function drawProbabilityNextCard(outs: number, unseen: number = 47): number {
+  if (unseen <= 0) return 0;
+  return Math.min(outs / unseen, 1);
+}
+
+/**
+ * Exact probability (0-1) of hitting at least one out across two remaining
+ * cards (e.g. turn + river), via the complement of missing both.
+ * missTurn = (unseen - outs) / unseen
+ * missRiver = (unseen - outs - 1) / (unseen - 1)   [one fewer unseen card, one fewer out]
+ */
+export function drawProbabilityByRiver(outs: number, unseenAfterFlop: number = 47): number {
+  if (unseenAfterFlop <= 1) return 0;
+  const missTurn = (unseenAfterFlop - outs) / unseenAfterFlop;
+  const missRiver = (unseenAfterFlop - outs - 1) / (unseenAfterFlop - 1);
+  return Math.min(1 - missTurn * missRiver, 1);
+}
+
+/**
+ * Weighted expected value of a two-outcome decision (win/lose).
+ * winAmount/loseAmount are signed from Hero's perspective (loseAmount is
+ * typically negative, e.g. the amount risked).
+ */
+export function calculateCallEV(
+  winProb: number,
+  winAmount: number,
+  loseProb: number,
+  loseAmount: number
+): number {
+  return winProb * winAmount + loseProb * loseAmount;
+}
+
+/**
+ * Required fold frequency for a bluff to break even — alias of alpha(),
+ * named for fold-equity screens.
+ */
+export function bluffBreakEvenFrequency(betSize: number, potSize: number): number {
+  return alpha(betSize, potSize);
+}
+
+/**
+ * Equity realization: the fraction of raw showdown equity a hand actually
+ * converts into pot share. >1 = over-realization, <1 = under-realization.
+ */
+export function calculateSimpleEqR(rawEquity: number, actualCapture: number): number {
+  if (rawEquity <= 0) return 0;
+  return actualCapture / rawEquity;
+}
+
+/**
  * Reference alpha/MDF table for common bet sizes.
  */
 export const ALPHA_TABLE: Record<BetSizeLabel, AlphaMdfResult> = {

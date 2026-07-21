@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -13,12 +13,14 @@ import {
 import { LessonPlayer } from "@/components/learn/LessonPlayer";
 import { XPGain } from "@/components/learn/XPGain";
 import { useAuth } from "@/hooks/useAuth";
+import { useLearnProgress } from "@/contexts/LearnProgressContext";
 import {
   LESSONS_BY_SLUG,
   MODULES_BY_SLUG,
   LESSONS_BY_MODULE,
+  MODULES_BY_PATH,
 } from "@/lib/learn/curriculum";
-import { completeLesson } from "@/lib/learn/api";
+import type { LessonStep, StepResult } from "@/lib/learn/types";
 import { cn } from "@/lib/utils";
 
 // ── Score ring ────────────────────────────────────────────────────────────────
@@ -82,6 +84,7 @@ function HeaderDots({ total, current }: { total: number; current: number }) {
 export default function LessonPage() {
   const { slug } = useParams<{ slug: string }>();
   const { session } = useAuth();
+  const { progress, recordStepResult, recordLessonComplete } = useLearnProgress();
 
   const lesson = LESSONS_BY_SLUG[slug];
   const [completionData, setCompletionData] = useState<{
@@ -90,7 +93,31 @@ export default function LessonPage() {
     leveledUp: boolean;
     newLevel?: number;
   } | null>(null);
-  const [currentStep, setCurrentStep] = useState(0);
+
+  const module = lesson ? MODULES_BY_SLUG[lesson.module_id] : undefined;
+  const pathId = module?.path_id;
+
+  // Every lesson id across every module in this lesson's path — sent to the
+  // server so it can *verify* (never just trust) path-completion achievements.
+  const pathLessonIds = useMemo(() => {
+    if (!module) return [] as string[];
+    const modules = MODULES_BY_PATH[module.path_id] ?? [];
+    return modules.flatMap((m) => (LESSONS_BY_MODULE[m.id] ?? []).map((l) => l.id));
+  }, [module]);
+
+  const lessonProgress = lesson ? progress.lessons[lesson.id] : undefined;
+  const resumeStepIndex =
+    lessonProgress?.status === "in_progress" ? lessonProgress.current_step_index ?? 0 : 0;
+
+  const [currentStep, setCurrentStep] = useState(resumeStepIndex);
+
+  // resumeStepIndex is 0 on the very first render (progress is still loading),
+  // then becomes accurate once fetched — useState's initial value only applies
+  // once, so re-sync the header's step-dot display when loading finishes.
+  useEffect(() => {
+    if (!progress.loading) setCurrentStep(resumeStepIndex);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progress.loading, lesson?.id]);
 
   if (!lesson) {
     return (
@@ -112,27 +139,47 @@ export default function LessonPage() {
     );
   }
 
-  const module = MODULES_BY_SLUG[lesson.module_id];
+  // Don't mount the player (and bake in a stale initialStepIndex) until real
+  // resume position has actually loaded for a signed-in user.
+  if (session?.access_token && progress.loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="h-8 w-8 rounded-full border-2 border-violet-500/30 border-t-violet-500 animate-spin" />
+      </div>
+    );
+  }
+
   const allLessons = (LESSONS_BY_MODULE[lesson.module_id] ?? []).sort(
     (a, b) => a.sort_order - b.sort_order
   );
   const lessonIdx = allLessons.findIndex((l) => l.id === lesson.id);
   const nextLesson = allLessons[lessonIdx + 1] ?? null;
 
+  const handleStepResult = (
+    step: LessonStep,
+    stepIndex: number,
+    result: StepResult,
+    userResponse: unknown,
+    timeMs: number,
+  ) => {
+    setCurrentStep(stepIndex);
+    recordStepResult(lesson.id, step.id, result, userResponse, step.concept_ids ?? [], timeMs, {
+      moduleId: module?.id,
+      pathId,
+      stepIndex,
+      totalSteps: lesson.steps.length,
+    });
+  };
+
   const handleComplete = async (score: number, xpEarned: number) => {
-    let leveledUp = false;
-    let newLevel: number | undefined;
+    const { bonusXp, leveledUp, newLevel } = await recordLessonComplete(lesson.id, score, 0, {
+      moduleId: module?.id,
+      pathId,
+      lessonXpReward: lesson.xp_reward,
+      pathLessonIds,
+    });
 
-    if (session?.access_token) {
-      try {
-        const result = await completeLesson(lesson.id, score, session.access_token);
-        leveledUp = result.leveled_up;
-      } catch {
-        // Non-blocking — show completion UI regardless
-      }
-    }
-
-    setCompletionData({ score, xpEarned, leveledUp, newLevel });
+    setCompletionData({ score, xpEarned: xpEarned + bonusXp, leveledUp, newLevel });
   };
 
   // ── Completion screen ──────────────────────────────────────────────────────
@@ -257,7 +304,8 @@ export default function LessonPage() {
           {session?.access_token ? (
             <LessonPlayer
               lesson={lesson}
-              token={session.access_token}
+              initialStepIndex={resumeStepIndex}
+              onStepResult={handleStepResult}
               onComplete={handleComplete}
             />
           ) : (
@@ -266,7 +314,7 @@ export default function LessonPage() {
               <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3 flex items-center justify-between gap-3">
                 <p className="text-xs text-violet-300/70">
                   <span className="font-semibold text-violet-300">Guest preview.</span>{" "}
-                  Sign in to save XP and track progress.
+                  Progress is saved on this device — sign in to sync it and never lose it.
                 </p>
                 <Link
                   href="/signup"
@@ -277,8 +325,9 @@ export default function LessonPage() {
               </div>
               <LessonPlayer
                 lesson={lesson}
-                token=""
-                onComplete={(score, xp) => setCompletionData({ score, xpEarned: xp, leveledUp: false })}
+                initialStepIndex={resumeStepIndex}
+                onStepResult={handleStepResult}
+                onComplete={handleComplete}
               />
             </div>
           )}

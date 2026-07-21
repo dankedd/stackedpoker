@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import {
   Trophy,
@@ -15,20 +15,8 @@ import { Footer } from '@/components/layout/Footer'
 import { MasteryRing } from '@/components/learn/MasteryRing'
 import { StreakBadge } from '@/components/learn/StreakBadge'
 import { useAuth } from '@/hooks/useAuth'
-import {
-  fetchUserProgress,
-  fetchConceptMasteries,
-  fetchUserLeaks,
-  fetchLearningDashboard,
-  resolveLeak,
-} from '@/lib/learn/api'
-import type {
-  UserSkillProgress,
-  UserConceptMastery,
-  UserLeak,
-  PersonalizedDashboard,
-  MasteryLevel,
-} from '@/lib/learn/types'
+import { useLearnProgress } from '@/contexts/LearnProgressContext'
+import type { MasteryLevel } from '@/lib/learn/types'
 import { xpToNextLevel } from '@/lib/learn/types'
 import { cn } from '@/lib/utils'
 
@@ -144,58 +132,23 @@ function LoadingSkeleton() {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function ProgressPage() {
-  const { user, session } = useAuth()
-  const token = session?.access_token ?? ''
-
-  const [progress, setProgress] = useState<UserSkillProgress | null>(null)
-  const [masteries, setMasteries] = useState<UserConceptMastery[]>([])
-  const [leaks, setLeaks] = useState<UserLeak[]>([])
-  const [dashboard, setDashboard] = useState<PersonalizedDashboard | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
+  const { progress, resolveLeak } = useLearnProgress()
   const [resolvingId, setResolvingId] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!token) {
-      setLoading(false)
-      return
-    }
-    Promise.all([
-      fetchUserProgress(token),
-      fetchConceptMasteries(token),
-      fetchUserLeaks(token),
-      fetchLearningDashboard(token),
-    ])
-      .then(([p, m, l, d]) => {
-        setProgress(p)
-        setMasteries(m)
-        setLeaks(l.filter((lk) => !lk.resolved))
-        setDashboard(d)
-      })
-      .catch(() => null)
-      .finally(() => setLoading(false))
-  }, [token])
-
-  const xpInfo = progress ? xpToNextLevel(progress.total_xp) : null
+  const loading = progress.loading
+  const xpInfo = xpToNextLevel(progress.skill.total_xp)
 
   const handleResolve = async (leakId: string) => {
-    if (!token || resolvingId) return
+    if (resolvingId) return
     setResolvingId(leakId)
-    try {
-      await resolveLeak(leakId, token)
-      setLeaks((prev) => prev.filter((l) => l.id !== leakId))
-    } catch {
-      // non-fatal
-    } finally {
-      setResolvingId(null)
-    }
+    resolveLeak(leakId)
+    setResolvingId(null)
   }
 
-  const masteryMap: Record<string, UserConceptMastery> = {}
-  masteries.forEach((m) => {
-    masteryMap[m.concept_id] = m
-  })
-
-  const earnedSet = new Set<string>(dashboard?.skill_progress.achievements ?? [])
+  const masteryMap = progress.concepts
+  const leaks = progress.leaks
+  const earnedSet = progress.achievementIds
 
   if (!user && !loading) {
     return (
@@ -267,10 +220,10 @@ export default function ProgressPage() {
                   {/* Big level number */}
                   <div className="shrink-0 text-center sm:text-left">
                     <div className="text-6xl font-black text-violet-400 leading-none">
-                      {progress?.level ?? 1}
+                      {progress.skill.level}
                     </div>
                     <div className="text-sm font-semibold text-muted-foreground mt-1.5">
-                      Level {progress?.level ?? 1}
+                      Level {progress.skill.level}
                     </div>
                   </div>
 
@@ -279,34 +232,34 @@ export default function ProgressPage() {
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>XP to next level</span>
-                        <span>{xpInfo?.current ?? 0} / {xpInfo?.needed ?? 100}</span>
+                        <span>{xpInfo.current} / {xpInfo.needed}</span>
                       </div>
                       <div className="h-3 rounded-full bg-white/[0.06] overflow-hidden">
                         <div
                           className="h-full rounded-full bg-gradient-to-r from-violet-600 to-blue-500 transition-all duration-700"
-                          style={{ width: `${xpInfo?.pct ?? 0}%` }}
+                          style={{ width: `${xpInfo.pct}%` }}
                         />
                       </div>
                       <p className="text-xs text-muted-foreground text-right">
-                        {xpInfo ? xpInfo.needed - xpInfo.current : '—'} XP to Level {(progress?.level ?? 1) + 1}
+                        {xpInfo.needed - xpInfo.current} XP to Level {progress.skill.level + 1}
                       </p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
                       <div className="text-sm">
                         <span className="font-bold text-amber-400">
-                          {(progress?.total_xp ?? 0).toLocaleString()}
+                          {progress.skill.total_xp.toLocaleString()}
                         </span>{' '}
                         <span className="text-muted-foreground">Total XP</span>
                       </div>
                       <div className="flex items-center gap-1.5 text-sm">
                         <Flame className="h-4 w-4 text-orange-400" />
                         <span className="font-bold text-orange-400">
-                          {progress?.streak_days ?? 0}
+                          {progress.skill.streak_days}
                         </span>{' '}
                         <span className="text-muted-foreground">day streak</span>
                       </div>
-                      <StreakBadge days={progress?.streak_days ?? 0} />
+                      <StreakBadge days={progress.skill.streak_days} />
                     </div>
                   </div>
                 </div>
