@@ -19,6 +19,11 @@ import { BetSizeSlider } from '@/components/learn/steps/BetSizeSlider'
 import { MdfSlider } from '@/components/learn/steps/MdfSlider'
 import { ScenarioTree } from '@/components/learn/steps/ScenarioTree'
 import { RangeHeatmap } from '@/components/learn/steps/RangeHeatmap'
+import { PositionTable } from '@/components/learn/steps/PositionTable'
+import { ComboVisualizer } from '@/components/learn/steps/ComboVisualizer'
+import { ActionSequence } from '@/components/learn/steps/ActionSequence'
+import { SprVisualizer } from '@/components/learn/steps/SprVisualizer'
+import { RangeMorphology } from '@/components/learn/steps/RangeMorphology'
 import type { ActionQuality } from '@/lib/learn/types'
 import { LevelUpOverlay } from '@/components/learn/LevelUpOverlay'
 import { ConceptTagRow } from '@/components/learn/ConceptPopover'
@@ -53,6 +58,41 @@ function ProgressBar({
           className="h-full rounded-full bg-gradient-to-r from-violet-500 to-blue-500 transition-all duration-500"
           style={{ width: `${pct}%` }}
         />
+      </div>
+    </div>
+  )
+}
+
+// ── Chapter progress ──────────────────────────────────────────────────────────
+
+function ChapterProgress({
+  chapters,
+  currentStepId,
+}: {
+  chapters: NonNullable<Lesson['chapters']>
+  currentStepId: string
+}) {
+  const currentIndex = chapters.findIndex((c) => c.step_ids.includes(currentStepId))
+  if (currentIndex < 0) return null
+
+  return (
+    <div className="flex items-center justify-between gap-2 sm:gap-3 min-w-0">
+      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-violet-400/70 shrink-0">
+        Ch. {currentIndex + 1}/{chapters.length}
+      </span>
+      <span className="hidden sm:block flex-1 min-w-0 text-[10px] font-semibold text-muted-foreground/40 truncate">
+        {chapters[currentIndex].title}
+      </span>
+      <div className="flex items-center gap-1 shrink-0 min-w-0 overflow-hidden">
+        {chapters.map((c, i) => (
+          <div
+            key={c.title}
+            className={cn(
+              'h-1.5 rounded-full transition-all duration-300 shrink-0',
+              i < currentIndex ? 'w-1.5 bg-violet-500/70' : i === currentIndex ? 'w-4 bg-violet-400' : 'w-1.5 bg-white/10',
+            )}
+          />
+        ))}
       </div>
     </div>
   )
@@ -125,6 +165,26 @@ function StepRenderer({
         }
       />
     )
+  }
+
+  if (step.type === 'position_table') {
+    return <PositionTable step={step} onAnswer={(response, ms) => evaluate(response, ms)} />
+  }
+
+  if (step.type === 'combo_visualizer') {
+    return <ComboVisualizer step={step} onAnswer={(response, ms) => evaluate(response, ms)} />
+  }
+
+  if (step.type === 'action_sequence') {
+    return <ActionSequence step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
+  }
+
+  if (step.type === 'spr_visualizer') {
+    return <SprVisualizer step={step} onAnswer={(response, ms) => evaluate(response, ms)} />
+  }
+
+  if (step.type === 'range_morphology') {
+    return <RangeMorphology step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
   }
 
   // Classify-family: board_classify, nut_advantage, blocker_id, range_identify, bluff_pick, reflection_prompt
@@ -326,6 +386,11 @@ export function LessonPlayer({ lesson, token, userXP = 0, onComplete }: LessonPl
 
   return (
     <div className="flex flex-col gap-5">
+      {/* Chapter progress */}
+      {lesson.chapters && lesson.chapters.length > 0 && (
+        <ChapterProgress chapters={lesson.chapters} currentStepId={currentStep.id} />
+      )}
+
       {/* Progress */}
       <ProgressBar current={currentStepIndex} total={steps.length} />
 

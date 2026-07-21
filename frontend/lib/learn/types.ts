@@ -16,6 +16,12 @@ export type StepType =
   | 'mdf_slider'       // adjustable bet-size slider; live MDF/alpha feedback
   | 'scenario_tree'    // multi-branch postflop decision tree simulation
   | 'range_heatmap'    // 13×13 grid with equity-density overlay for identification
+  // ── Foundations (Lesson 1) ──
+  | 'position_table'    // interactive 9-handed seat map — explore or quiz
+  | 'combo_visualizer'  // card-combinatorics / card-removal visualization
+  | 'action_sequence'   // animated action-line notation trainer
+  | 'spr_visualizer'    // stack-to-pot proportional visualization
+  | 'range_morphology'  // linear / polarized / condensed range-shape selector
 
 export type ActionQuality = 'perfect' | 'good' | 'acceptable' | 'mistake' | 'punt'
 export type LessonType = 'micro' | 'range_trainer' | 'puzzle_drill' | 'concept_reveal' | 'simulation'
@@ -99,10 +105,51 @@ export interface LessonStep {
   // Scenario tree
   scenario_root?: string
   scenario_nodes?: ScenarioNode[]
+  // Position table (explore / quiz)
+  /** 'explore' = tap-to-learn, unscored. 'quiz' = tap the correct seat(s), scored via `options`. */
+  position_table_mode?: 'explore' | 'quiz'
+  /** Seat id → short definition shown when tapped in explore mode. Falls back to a built-in map. */
+  position_table_definitions?: Record<string, string>
+  /** Quiz mode: which seats are tappable answer choices. */
+  position_table_highlight?: string[]
+  /** Quiz mode: the question shown above the table. */
+  position_table_prompt?: string
+  // Combo visualizer (combinatorics / card removal)
+  /** 'reveal' = informational visualization, unscored. 'quiz' = numeric combo-count question. */
+  combo_visualizer_mode?: 'reveal' | 'quiz'
+  /** Which visual to render: a pocket-pair fan, an unpaired suited/offsuit split, or a removal/blocker board. */
+  combo_visualizer_kind?: 'pair' | 'unpaired' | 'removal'
+  /** Cards already known (hero hand + board) that remove combos from the deck. */
+  combo_visualizer_known_cards?: string[]
+  /** Rank or hand notation the visual/question is about, e.g. 'A' or 'AK'. */
+  combo_visualizer_subject?: string
+  combo_visualizer_correct?: number
+  combo_visualizer_correct_feedback?: string
+  combo_visualizer_wrong_feedback?: string
+  // Action sequence (action-line notation trainer)
+  /** Lines animated in sequence before the question, e.g. ["UTG raises to 2.5bb", "CO calls"]. */
+  action_sequence_display?: string[]
+  action_sequence_prompt?: string
+  // SPR visualizer
+  /** 'scenario' = numeric SPR question from stack/pot bars. 'worlds' = browse Low/Med/High SPR categories, unscored. */
+  spr_visualizer_mode?: 'scenario' | 'worlds'
+  spr_visualizer_pot_bb?: number
+  spr_visualizer_stack_bb?: number
+  spr_visualizer_correct?: number
+  spr_visualizer_tolerance?: number
+  // Range morphology (linear / polarized / condensed / capped-uncapped)
+  range_morphology_prompt?: string
   // Visual
   visual?: 'table' | 'range_grid' | 'equity_bar' | 'heatmap' | 'pressure_chart'
   // XP
   xp?: number
+}
+
+// ── Chapter grouping (optional; groups a lesson's flat step array) ───────────
+
+export interface LessonChapter {
+  title: string
+  step_ids: string[]
 }
 
 // ── A complete lesson ─────────────────────────────────────────────────────────
@@ -112,12 +159,18 @@ export interface Lesson {
   module_id: string
   slug: string
   title: string
+  /** Short line shown under the title on the intro screen. */
+  subtitle?: string
   lesson_type: LessonType
   concept_ids: string[]
   steps: LessonStep[]
+  /** Optional grouping of `steps` into chapters, shown as "Chapter X of N" progress. */
+  chapters?: LessonChapter[]
   estimated_min: number
   xp_reward: number
   sort_order: number
+  /** Teaser title for the next lesson in the journey, shown on completion even before that lesson exists. */
+  next_lesson_teaser?: string
 }
 
 // ── A learning module (group of lessons) ─────────────────────────────────────

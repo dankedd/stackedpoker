@@ -291,6 +291,49 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
     case 'concept_reveal':
       return { quality: 'perfect', score: 100, feedback: 'Concept reviewed.', ev_loss_bb: 0 }
 
+    // Position table — quiz mode is option-based; explore mode is unscored
+    case 'position_table':
+      if (step.options?.length) return evalOptionBased(step, response)
+      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+
+    // Combo visualizer — quiz mode is a numeric combo-count question; reveal is unscored
+    case 'combo_visualizer':
+      if (step.combo_visualizer_mode === 'quiz') {
+        return evalNumeric({
+          actual:         step.combo_visualizer_correct ?? 0,
+          tolerance:      0.5,
+          response,
+          correctFeedback: step.combo_visualizer_correct_feedback
+            ?? `Correct — ${step.combo_visualizer_correct} combinations.`,
+          wrongFeedback:   step.combo_visualizer_wrong_feedback
+            ?? `The correct count is ${step.combo_visualizer_correct}.`,
+        })
+      }
+      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+
+    // Action sequence — notation translation / classification, option-based
+    case 'action_sequence':
+      return evalOptionBased(step, response)
+
+    // SPR visualizer — scenario mode is a numeric SPR question; worlds mode is unscored
+    case 'spr_visualizer':
+      if (step.spr_visualizer_mode === 'worlds') {
+        return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+      }
+      return evalNumeric({
+        actual:         step.spr_visualizer_correct ?? 0,
+        tolerance:      step.spr_visualizer_tolerance ?? 0.5,
+        response,
+        correctFeedback: step.correct_feedback
+          ?? `Correct — SPR is ${step.spr_visualizer_correct}.`,
+        wrongFeedback:   step.wrong_feedback
+          ?? `SPR = effective stack ÷ pot. Correct answer: ${step.spr_visualizer_correct}.`,
+      })
+
+    // Range morphology — shape/capped-uncapped selection, option-based
+    case 'range_morphology':
+      return evalOptionBased(step, response)
+
     default:
       // Unknown step type — attempt option-based, fall back to punt
       if (step.options?.length) return evalOptionBased(step, response)

@@ -195,6 +195,14 @@ export default function LessonPage() {
                   <ChevronRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               )}
+              {!nextLesson && lesson.next_lesson_teaser && (
+                <div className="w-full px-5 py-3.5 rounded-xl border border-violet-500/20 bg-violet-500/5 text-left">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-1">
+                    Next lesson
+                  </p>
+                  <p className="text-sm font-semibold text-foreground/80">{lesson.next_lesson_teaser}</p>
+                </div>
+              )}
               <Link
                 href={module ? `/learn/module/${module.slug}` : "/learn"}
                 className="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-xl border border-border/50 bg-card/40 text-foreground text-sm font-medium hover:bg-card/60 transition-colors"

@@ -45,13 +45,24 @@ export const LEARNING_PATHS: LearningPath[] = [
 export const LEARNING_MODULES: LearningModule[] = [
   // ── Beginner path ────────────────────────────────────────────────────
   {
+    id: 'poker-fundamentals-module',
+    path_id: 'beginner',
+    slug: 'poker-fundamentals-module',
+    title: 'Poker Fundamentals',
+    description: 'The language, structure, and building blocks behind every poker decision — the true entry point into the curriculum.',
+    concept_ids: ['table_position', 'range_thinking', 'poker_terminology', 'combinatorics', 'draws_equity', 'spr', 'range_morphology'],
+    unlock_after: [],
+    sort_order: 0,
+    xp_reward: 300,
+  },
+  {
     id: 'positions-module',
     path_id: 'beginner',
     slug: 'positions-module',
     title: 'Positions & Positional Advantage',
     description: 'Master the 6-max seat map, IP vs OOP dynamics, and how acting order determines preflop ranges and postflop leverage.',
     concept_ids: ['position_value', 'ip_advantage'],
-    unlock_after: [],
+    unlock_after: ['poker-fundamentals-module'],
     sort_order: 1,
     xp_reward: 200,
   },
@@ -264,2720 +275,874 @@ export const LEARNING_MODULES: LearningModule[] = [
 // ── Lessons ───────────────────────────────────────────────────────────────────
 
 export const LESSONS: Lesson[] = [
-
-  // ── Positions & Positional Advantage (positions-module) ──────────────────
-
-  // Lesson 1 — The 6-Max Seat Map
   {
-    id: 'position-seat-map',
-    module_id: 'positions-module',
-    slug: 'position-seat-map',
-    title: 'The 6-Max Seat Map',
+    id: 'think-like-a-poker-player',
+    module_id: 'poker-fundamentals-module',
+    slug: 'think-like-a-poker-player',
+    title: 'Think Like a Poker Player',
+    subtitle: 'The language, structure, and building blocks behind every poker decision.',
     lesson_type: 'micro',
-    concept_ids: ['position_value'],
-    estimated_min: 4,
-    xp_reward: 35,
+    concept_ids: ['table_position', 'range_thinking', 'poker_terminology', 'combinatorics', 'draws_equity', 'spr', 'range_morphology'],
+    estimated_min: 35,
+    xp_reward: 300,
     sort_order: 1,
-    steps: [
+    next_lesson_teaser: 'The Math Behind Every Decision',
+    chapters: [
+      { title: 'Your Seat Changes Everything', step_ids: ['c1-s1', 'c1-s2', 'c1-s3', 'c1-s4', 'c1-s5a', 'c1-s5b', 'c1-s5c'] },
+      { title: 'Speak the Language', step_ids: ['c2-s6', 'c2-s7', 'c2-s8', 'c2-s9', 'c2-s10', 'c2-s11', 'c2-s12', 'c2-s13', 'c2-s13b', 'c2-s14'] },
+      { title: 'Actions & Hand Histories', step_ids: ['c3-s14', 'c3-s15a', 'c3-s15b', 'c3-s15c', 'c3-s16', 'c3-s17', 'c3-s18', 'c3-s19', 'c3-s20', 'c3-s20b'] },
+      { title: 'Stop Thinking in One Hand', step_ids: ['c4-s21', 'c4-s22', 'c4-s23'] },
+      { title: 'The 13×13 Range Map', step_ids: ['c5-s24', 'c5-s25', 'c5-s26'] },
+      { title: 'Combinations & Card Removal', step_ids: ['c6-s27', 'c6-s27b', 'c6-s28', 'c6-s29', 'c6-s30', 'c6-s31', 'c6-s31b'] },
+      { title: 'Draws, Outs & Equity', step_ids: ['c7-s32', 'c7-s33', 'c7-s34', 'c7-s35', 'c7-s36', 'c7-s37', 'c7-s38', 'c7-s39', 'c7-s40', 'c7-s41', 'c7-s42'] },
+      { title: 'Stacks Change Hand Value', step_ids: ['c8-s43', 'c8-s44', 'c8-s45', 'c8-s46'] },
       {
-        id: 'psm-s1',
+        title: 'The Shape of a Range',
+        step_ids: [
+          'c9-s47', 'c9-s48', 'c9-s49', 'c9-s50', 'c9-s51', 'c9-s52', 'c9-s53', 'c9-s54', 'c9-s55',
+          'c9-fc1', 'c9-fc2', 'c9-fc3', 'c9-fc4', 'c9-fc5', 'c9-fc6', 'c9-fc7', 'c9-fc8', 'c9-fc9', 'c9-fc10',
+        ],
+      },
+    ],
+    steps: [
+      // ══════════════════════════════════════════════════════════════════════
+      // CHAPTER 1 — Your Seat Changes Everything
+      // ══════════════════════════════════════════════════════════════════════
+      {
+        id: 'c1-s1',
         type: 'concept_reveal',
-        concept_ids: ['position_value'],
-        concept_title: 'Preflop and Postflop Acting Order',
+        concept_ids: ['table_position'],
+        concept_title: 'Before Your Cards Matter, Your Seat Matters',
         concept_content:
-          'In 6-max cash, preflop action starts with UTG and moves clockwise: UTG → HJ → CO → BTN → SB → BB. UTG is first to act — it has no information about anyone else\'s intentions. BTN is last preflop and last postflop, which is maximum leverage. The blinds (SB and BB) act last preflop but first on every postflop street, making them the most structurally costly seats over time.',
+          "Every poker decision happens from a position at the table. Your position determines when you act, how much information you have, and which opponents are still waiting behind you.",
         visual: 'table',
-        xp: 5,
+        xp: 2,
       },
       {
-        id: 'psm-s2',
-        type: 'decision_spot',
-        street: 'preflop',
-        hero_position: 'UTG',
-        hero_hand: ['8s', '7s'],
-        pot_bb: 1.5,
-        effective_stack_bb: 100,
-        narrative: 'Six-max, 100bb effective. Action starts on you in UTG with 8♠7♠. Five players remain behind.',
-        options: [
-          {
-            id: 'open',
-            label: 'Open raise to 2.5bb',
-            quality: 'mistake',
-            ev_loss_bb: 1.3,
-            feedback:
-              '87s is a playable hand, but UTG is the worst position in 6-max — five players act behind you. Against 3-bets you are OOP the rest of the hand. GTO UTG ranges include JTs and T9s, but 87s is below the threshold at 100bb.',
-          },
-          {
-            id: 'fold',
-            label: 'Fold',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              'Correct. 87s does not clear the profitability bar from UTG in 6-max. Positional leverage matters — this hand is a standard open from HJ, CO, or BTN, not from first position.',
-          },
-          {
-            id: 'limp',
-            label: 'Limp to 1bb',
-            quality: 'punt',
-            ev_loss_bb: 2.2,
-            feedback:
-              'Limping in 6-max cash is a major structural leak. You cede initiative, invite isolation raises behind you, and enter the pot without fold equity.',
-          },
-        ],
-        xp: 12,
-      },
-      {
-        id: 'psm-s3',
-        type: 'decision_spot',
-        street: 'preflop',
-        hero_position: 'BTN',
-        hero_hand: ['Kh', '9d'],
-        pot_bb: 1.5,
-        effective_stack_bb: 100,
-        narrative: 'UTG, HJ, and CO fold. Action is on you in the BTN with K♥9♦. Only SB and BB remain.',
-        options: [
-          {
-            id: 'open',
-            label: 'Open raise to 2.5bb',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              'K9o is a standard BTN open. Acting last postflop against both blinds gives you a large structural edge. BTN RFI ranges run roughly 40–45% in equilibrium solutions — K9o is comfortably inside that.',
-          },
-          {
-            id: 'fold',
-            label: 'Fold',
-            quality: 'mistake',
-            ev_loss_bb: 1.1,
-            feedback:
-              'Too tight. You have the best position at the table and only two opponents left. K9o realizes its equity well from the BTN and shows a clear long-run profit here.',
-          },
-        ],
-        xp: 12,
-      },
-    ],
-  },
-
-  // Lesson 2 — IP vs OOP: Postflop Acting Order
-  {
-    id: 'ip-oop-postflop',
-    module_id: 'positions-module',
-    slug: 'ip-oop-postflop',
-    title: 'IP vs OOP: Postflop Acting Order',
-    lesson_type: 'micro',
-    concept_ids: ['ip_advantage', 'position_value'],
-    estimated_min: 4,
-    xp_reward: 35,
-    sort_order: 2,
-    steps: [
-      {
-        id: 'iop-s1',
-        type: 'concept_reveal',
-        concept_ids: ['ip_advantage'],
-        concept_title: 'The Information Asymmetry of Position',
-        concept_content:
-          'On every postflop street the OOP player must act first — they declare a check or bet before seeing what the IP player will do. The IP player always reacts with full information: they see the check (signalling weakness) or bet (giving price information) before choosing their action. This structural information edge is worth roughly 8–12% more equity realization for the IP player across all hand types, independent of hand strength.',
-        xp: 5,
-      },
-      {
-        id: 'iop-s2',
-        type: 'decision_spot',
-        street: 'flop',
-        hero_position: 'BB',
-        villain_position: 'BTN',
-        board: ['Ks', '7c', '2d'],
-        pot_bb: 5.5,
-        effective_stack_bb: 97,
-        narrative: 'BTN opened 2.5bb, you defended BB. Flop K♠7♣2♦. Pot 5.5bb. You are OOP. Action is on you.',
-        options: [
-          {
-            id: 'check',
-            label: 'Check',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              'Correct. K♠7♣2♦ is a board that heavily favors BTN\'s opening range — BTN has many Kx combos while BB\'s calling range connects less frequently. OOP against a range advantage, checking and responding to BTN\'s action is the highest-EV line.',
-          },
-          {
-            id: 'donk',
-            label: 'Lead bet 3bb',
-            quality: 'mistake',
-            ev_loss_bb: 1.8,
-            feedback:
-              'Donk-betting OOP into the preflop raiser on a board that strongly favors their range is a structural error. You lose information about their hand strength, surrender your check-raise option, and bet into their range advantage.',
-          },
-        ],
-        xp: 12,
-      },
-      {
-        id: 'iop-s3',
-        type: 'decision_spot',
-        street: 'flop',
-        hero_position: 'BTN',
-        villain_position: 'BB',
-        board: ['Ks', '7c', '2d'],
-        pot_bb: 5.5,
-        effective_stack_bb: 97,
-        narrative: 'You opened BTN 2.5bb, BB called. Flop K♠7♣2♦. Pot 5.5bb. BB checks to you.',
-        options: [
-          {
-            id: 'bet',
-            label: 'Bet 1.8bb (1/3 pot)',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              'Correct. IP with a range advantage on a dry board, a small c-bet forces BB to defend or fold — and BB folds a large portion of their range here. You generate immediate fold equity while risking very little relative to the pot.',
-          },
-          {
-            id: 'check',
-            label: 'Check back',
-            quality: 'acceptable',
-            ev_loss_bb: 0.5,
-            feedback:
-              'Checking back is not a catastrophic error but misses EV on a board you dominate. You are giving BB a free card and surrendering the initiative that your positional and range advantage warrant.',
-          },
-        ],
-        xp: 12,
-      },
-    ],
-  },
-
-  // Lesson 3 — Opening Ranges Scale with Position
-  {
-    id: 'opening-by-position',
-    module_id: 'positions-module',
-    slug: 'opening-by-position',
-    title: 'Opening Ranges Scale with Position',
-    lesson_type: 'micro',
-    concept_ids: ['position_value', 'rfi_theory'],
-    estimated_min: 4,
-    xp_reward: 35,
-    sort_order: 3,
-    steps: [
-      {
-        id: 'obp-s1',
-        type: 'concept_reveal',
-        concept_ids: ['rfi_theory'],
-        concept_title: 'RFI Frequency by Position',
-        concept_content:
-          'RFI (Raise First In) frequency in 6-max equilibrium solutions scales directly with positional advantage. Approximate ranges at 100bb: UTG ~14%, HJ ~20%, CO ~27%, BTN ~44%, SB ~35% (heads-up vs BB), BB closes preflop action and does not RFI. Each position\'s range is a strict subset of the previous position — the BTN opens hands that UTG would never touch. The underlying principle: more position means more postflop leverage, which makes weaker hands profitable to open.',
-        xp: 5,
-      },
-      {
-        id: 'obp-s2',
-        type: 'decision_spot',
-        street: 'preflop',
-        hero_position: 'CO',
-        hero_hand: ['Qc', 'Jd'],
-        pot_bb: 1.5,
-        effective_stack_bb: 100,
-        narrative: 'UTG and HJ fold. Action is on you in the CO with Q♣J♦.',
-        options: [
-          {
-            id: 'open',
-            label: 'Open raise to 2.5bb',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              'QJo is a standard CO open. CO\'s ~27% RFI range includes QJo — it has reasonable equity, playability postflop, and only three players remain behind. Opening here is straightforward.',
-          },
-          {
-            id: 'fold',
-            label: 'Fold',
-            quality: 'mistake',
-            ev_loss_bb: 0.9,
-            feedback:
-              'Too tight for CO. QJo clears the profitability threshold here. You have decent equity, three remaining opponents rather than five, and enough positional leverage to profit.',
-          },
-        ],
-        xp: 12,
-      },
-      {
-        id: 'obp-s3',
-        type: 'decision_spot',
-        street: 'preflop',
-        hero_position: 'UTG',
-        hero_hand: ['Jc', '7c'],
-        pot_bb: 1.5,
-        effective_stack_bb: 100,
-        narrative: 'Action starts on you in UTG with J♣7♣. You are first to act.',
-        options: [
-          {
-            id: 'open',
-            label: 'Open raise to 2.5bb',
-            quality: 'mistake',
-            ev_loss_bb: 1.4,
-            feedback:
-              'J7s does not clear the UTG opening threshold. UTG opens the tightest range in 6-max — roughly 14%. J7s lacks the strength and connectivity to profit from first position against five opponents, most of whom will have position on you.',
-          },
-          {
-            id: 'fold',
-            label: 'Fold',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              'Correct. J7s is not in UTG\'s opening range at 100bb. The hand is too speculative for a position where you will play most of the hand first-to-act against several opponents.',
-          },
-        ],
-        xp: 12,
-      },
-    ],
-  },
-
-  // Lesson 4 — Leveraging IP Postflop
-  {
-    id: 'leveraging-position-postflop',
-    module_id: 'positions-module',
-    slug: 'leveraging-position-postflop',
-    title: 'Leveraging IP Postflop',
-    lesson_type: 'micro',
-    concept_ids: ['ip_advantage', 'equity_realization'],
-    estimated_min: 5,
-    xp_reward: 40,
-    sort_order: 4,
-    steps: [
-      {
-        id: 'lpp-s1',
-        type: 'concept_reveal',
-        concept_ids: ['ip_advantage'],
-        concept_title: 'Four Ways IP Generates Value',
-        concept_content:
-          'IP translates into concrete EV through four mechanisms. (1) Free cards: when IP checks back, they see the next card at no cost while OOP cannot take the same action profitably. (2) Pot control: IP can check back weak holdings on any street to prevent the pot from growing. (3) Bluff efficiency: OOP must fold or raise blind to IP bets — check-raising as a bluff is expensive and infrequent. (4) River decisions: IP sees OOP\'s river action (check or bet, and bet sizing) before committing chips — dramatically reducing decision error.',
-        xp: 5,
-      },
-      {
-        id: 'lpp-s2',
-        type: 'decision_spot',
-        street: 'flop',
-        hero_position: 'BTN',
-        villain_position: 'BB',
-        board: ['As', '6c', '2h'],
-        pot_bb: 5.5,
-        effective_stack_bb: 97,
-        narrative: 'BTN vs BB single-raised pot. Flop A♠6♣2♥. Pot 5.5bb. BB checks to you.',
-        options: [
-          {
-            id: 'bet',
-            label: 'Bet 1.8bb (1/3 pot)',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              'Correct. A♠6♣2♥ is a dry board that heavily favors BTN\'s opening range (many Ax combos) over BB\'s defending range. A small frequent c-bet extracts value from BB\'s weak holdings and forces folds from hands with live equity like 87 or KQ.',
-          },
-          {
-            id: 'check',
-            label: 'Check back',
-            quality: 'acceptable',
-            ev_loss_bb: 0.6,
-            feedback:
-              'Checking back is not catastrophic — you preserve your range\'s balance and can extract value on later streets. But it concedes a free card on a board where you have a clear range advantage, giving up meaningful EV.',
-          },
-        ],
-        xp: 12,
-      },
-      {
-        id: 'lpp-s3',
-        type: 'decision_spot',
-        street: 'flop',
-        hero_position: 'BB',
-        villain_position: 'BTN',
-        board: ['As', '6c', '2h'],
-        hero_hand: ['9h', '8h'],
-        pot_bb: 5.5,
-        effective_stack_bb: 97,
-        narrative: 'BB vs BTN single-raised pot. Flop A♠6♣2♥. Pot 5.5bb. You hold 9♥8♥. Action is on you OOP.',
-        options: [
-          {
-            id: 'check',
-            label: 'Check',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              'Check is correct. You are OOP on a board that strongly favors BTN\'s range. 9♥8♥ has limited equity here — no pair, backdoor flush only. Checking puts the action on BTN and lets you respond to their sizing before investing chips.',
-          },
-          {
-            id: 'donk',
-            label: 'Lead bet 3bb',
-            quality: 'mistake',
-            ev_loss_bb: 2.1,
-            feedback:
-              'Leading OOP with a weak draw on an ace-high dry board is a large error. You are betting into BTN\'s range advantage, losing your check-raise option, and investing chips without the initiative or equity to justify the bet.',
-          },
-        ],
-        xp: 12,
-      },
-    ],
-  },
-
-  // Lesson 5 — The Blind Tax
-  {
-    id: 'blind-positions',
-    module_id: 'positions-module',
-    slug: 'blind-positions',
-    title: 'The Blind Tax',
-    lesson_type: 'micro',
-    concept_ids: ['position_value', 'bb_defense'],
-    estimated_min: 5,
-    xp_reward: 40,
-    sort_order: 5,
-    steps: [
-      {
-        id: 'bp-s1',
-        type: 'concept_reveal',
-        concept_ids: ['bb_defense'],
-        concept_title: 'Why the Blinds Lose Money Structurally',
-        concept_content:
-          'SB and BB are the only seats forced to invest chips before seeing cards. Worse, both act first on every postflop street — paying money to play OOP. The BB defends most widely because it already has 1bb invested: facing a 2.5bb open it only needs to call 1.5bb more into a pot of roughly 4bb, requiring just 27% equity to break even (1.5 ÷ 5.5). Despite this favourable price, BB still loses money per hand over time due to OOP disadvantage. SB is the worst seat overall — it pays 0.5bb, plays even shorter stacked relative to the pot, and is always OOP postflop.',
-        xp: 5,
-      },
-      {
-        id: 'bp-s2',
-        type: 'decision_spot',
-        street: 'preflop',
-        hero_position: 'BB',
-        villain_position: 'BTN',
-        hero_hand: ['Ts', '8s'],
-        pot_bb: 3.5,
-        effective_stack_bb: 98.5,
-        narrative: 'BTN opens 2.5bb. Folds to you in the BB. Pot is 3.5bb (BTN 2.5 + SB dead 0.5 + BB 0.5). Call costs 1.5bb.',
-        options: [
-          {
-            id: 'call',
-            label: 'Call 1.5bb',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              'Correct. T♠8♠ is a clear BB defend. Pot odds require only 27% equity (1.5 ÷ 5.5) and T8s has roughly 38% equity vs BTN\'s wide opening range. The hand plays well multiway, has straight and flush potential, and the price is correct.',
-          },
-          {
-            id: 'fold',
-            label: 'Fold',
-            quality: 'mistake',
-            ev_loss_bb: 0.8,
-            feedback:
-              'Folding T8s from the BB vs a BTN open is too tight. You are getting 3.7:1 pot odds, the hand is suited with strong connectivity, and your equity far exceeds the 27% required to call. Over-folding from BB is one of the most common population leaks.',
-          },
-        ],
-        xp: 12,
-      },
-      {
-        id: 'bp-s3',
-        type: 'decision_spot',
-        street: 'preflop',
-        hero_position: 'SB',
-        villain_position: 'UTG',
-        hero_hand: ['Qc', 'Jd'],
-        pot_bb: 3.0,
-        effective_stack_bb: 99,
-        narrative: 'UTG opens 2.5bb. HJ, CO, BTN all fold. Action is on you in the SB with Q♣J♦.',
-        options: [
-          {
-            id: '3bet',
-            label: '3-bet to 8bb',
-            quality: 'good',
-            ev_loss_bb: 0,
-            feedback:
-              'A 3-bet is the preferred line with QJo from SB vs UTG. Calling is dangerous: you play the hand OOP in a single-raised pot against UTG\'s tight range. 3-betting forces UTG to fold many hands and, when called, you retain initiative despite being OOP.',
-          },
-          {
-            id: 'fold',
-            label: 'Fold',
-            quality: 'acceptable',
-            ev_loss_bb: 0.4,
-            feedback:
-              'Folding QJo vs UTG is defensible — UTG has a tight range that dominates QJo frequently (AQ, KQ, JJ+). If you are not 3-betting here, folding is preferable to calling OOP with a dominated hand.',
-          },
-          {
-            id: 'call',
-            label: 'Call 2bb',
-            quality: 'mistake',
-            ev_loss_bb: 1.5,
-            feedback:
-              'Flat-calling QJo from SB vs UTG open is the weakest option. You enter a pot OOP with a hand that is often dominated by UTG\'s range (AQ, KQ, QQ+), without initiative, and with no ability to profit from fold equity. Either 3-bet or fold.',
-          },
-        ],
-        xp: 12,
-      },
-    ],
-  },
-
-  // ── 2. Pot Odds Intuition ─────────────────────────────────────────────────
-  {
-    id: 'pot-odds-intuition',
-    module_id: 'pot-odds-module',
-    slug: 'pot-odds-intuition',
-    title: 'Pot Odds Intuition',
-    lesson_type: 'micro',
-    concept_ids: ['pot_odds'],
-    estimated_min: 5,
-    xp_reward: 40,
-    sort_order: 1,
-    steps: [
-      {
-        id: 'po-s1',
-        type: 'concept_reveal',
-        concept_ids: ['pot_odds'],
-        concept_title: 'Pot Odds: Risk vs Reward',
-        concept_content:
-          "Pot odds = the price you're getting to call. Formula: equity_needed = call / (pot + call). If villain bets half pot (e.g. 10bb into 20bb), you need call/(pot+call) = 10/(20+10) = 33% equity to break even. If your hand has more equity than the required amount, the call is profitable.",
-        visual: 'equity_bar',
-        xp: 5,
-      },
-      {
-        id: 'po-s2',
-        type: 'equity_predict',
-        street: 'flop',
-        pot_bb: 20,
-        narrative: 'Pot is 20bb. Villain bets 10bb (50% pot). What minimum equity % do you need to call profitably?',
-        equity_actual: 33,
-        equity_tolerance: 5,
-        correct_feedback: 'Exactly right. Call / (Pot + Call) = 10 / 30 = 33%. Any draw or hand with more than 33% equity is a profitable call.',
-        wrong_feedback: 'Use the formula: call ÷ (pot + call) = 10 ÷ 30 = 33%. You need at least 33% equity.',
-        xp: 10,
-      },
-      {
-        id: 'po-s3',
-        type: 'decision_spot',
-        street: 'flop',
-        hero_position: 'BB',
-        villain_position: 'BTN',
-        board: ['Qh', '8h', '3d'],
-        hero_hand: ['Jh', '9h'],
-        pot_bb: 30,
-        effective_stack_bb: 85,
-        narrative: 'Pot 30bb. Villain bets pot (30bb). You hold J♥9♥ — a flush draw with two overcards (~36% raw equity).',
-        options: [
-          {
-            id: 'call',
-            label: 'Call 30bb',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              'Correct. Facing a pot bet you need 50% raw equity to break even on the call alone, but implied odds (winning more when the flush hits) push this well into profitable territory. JT of hearts with 36% equity + position = clear call.',
-          },
-          {
-            id: 'fold',
-            label: 'Fold',
-            quality: 'mistake',
-            ev_loss_bb: 3.5,
-            feedback:
-              'Folding a flush draw with two overcards is too tight. Even facing a pot-sized bet, implied odds on future streets make this a profitable continue.',
-          },
-          {
-            id: 'raise',
-            label: 'Raise to 75bb',
-            quality: 'acceptable',
-            ev_loss_bb: 1.5,
-            feedback:
-              'Semi-raising with a flush draw is valid — you can win by fold equity or by hitting. However, it leaves you pot-committed on bad runouts, and calling preserves more flexibility.',
-          },
-        ],
-        xp: 10,
-      },
-      {
-        id: 'po-s4',
-        type: 'equity_predict',
-        street: 'turn',
-        pot_bb: 50,
-        narrative: 'Pot is 50bb. Villain bets 25bb (50% pot) on the turn. What minimum equity % do you need?',
-        equity_actual: 33,
-        equity_tolerance: 5,
-        correct_feedback: '25 / (50+25) = 25/75 = 33%. Same answer as before — a half-pot bet always requires 33% equity.',
-        wrong_feedback: 'Use call ÷ (pot + call) = 25 ÷ 75 = 33%. A half-pot bet always requires 33% equity regardless of absolute amounts.',
-        xp: 10,
-      },
-    ],
-  },
-
-  // ── 3. Value Betting Basics ───────────────────────────────────────────────
-  {
-    id: 'value-betting-basics',
-    module_id: 'value-betting-module',
-    slug: 'value-betting-basics',
-    title: 'Value Betting Basics',
-    lesson_type: 'micro',
-    concept_ids: ['value_betting'],
-    estimated_min: 6,
-    xp_reward: 50,
-    sort_order: 1,
-    steps: [
-      {
-        id: 'vb-s1',
-        type: 'concept_reveal',
-        concept_ids: ['value_betting'],
-        concept_title: 'Value Betting: Getting Paid by Worse',
-        concept_content:
-          'A value bet is a bet made when you expect to be called by worse hands more often than better hands. Betting is only profitable if: (% called by worse) × (amount won) > (% called by better) × (amount lost). On the river, thin value becomes the highest-skill decision — novices check hands that should bet for value.',
-        xp: 5,
-      },
-      {
-        id: 'vb-s2',
-        type: 'decision_spot',
-        street: 'river',
-        hero_position: 'BB',
-        villain_position: 'BTN',
-        board: ['As', 'Kh', '7d', '2c', 'Js'],
-        hero_hand: ['Ad', 'Qc'],
-        pot_bb: 40,
-        effective_stack_bb: 60,
-        narrative: 'River A♠K♥7♦2♣J♠. Pot 40bb. Villain checks to you. You hold A♦Q♣ (top pair top kicker + nut kicker).',
-        options: [
-          {
-            id: 'bet75',
-            label: 'Bet 30bb (75% pot)',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              "Perfect value bet. Villain's range includes Ax, KQ, KJ, and bluff catchers that call 75%. You extract maximum value from a wide portion of their range.",
-          },
-          {
-            id: 'check',
-            label: 'Check back',
-            quality: 'mistake',
-            ev_loss_bb: 6,
-            feedback:
-              'Checking TPTK on the river as the last aggressor misses significant value. The board is relatively static; villain is not jamming over a check with worse. You must bet.',
-          },
-          {
-            id: 'bet200',
-            label: 'Bet 80bb (200% pot overbet)',
-            quality: 'acceptable',
-            ev_loss_bb: 2,
-            feedback:
-              'Overbetting is theoretically correct on certain runouts with the right hand. AQ here is value but not strong enough to overbet on a board that contains J (straights possible). A 75% sizing extracts more from medium-strength calls.',
-          },
-        ],
-        xp: 10,
-      },
-      {
-        id: 'vb-s3',
-        type: 'bet_size_choose',
-        street: 'flop',
-        hero_position: 'BTN',
-        villain_position: 'BB',
-        board: ['7h', '7c', '2s'],
-        hero_hand: ['7d', '6d'],
-        pot_bb: 20,
-        effective_stack_bb: 90,
-        narrative: "Flop 7♥7♣2♠. You flopped top set. Villain's range is capped — no pocket 7s. Pot 20bb.",
-        options: [
-          {
-            id: 'size33',
-            label: '33% pot (6.5bb)',
-            quality: 'mistake',
-            ev_loss_bb: 3,
-            feedback:
-              "Too small. With top set on a paired board, villain has no set above yours. Build the pot aggressively — small bets let them see cheap cards without compensating for runout risk.",
-          },
-          {
-            id: 'size67',
-            label: '67% pot (13bb)',
-            quality: 'good',
-            ev_loss_bb: 1,
-            feedback:
-              "A solid choice. 67% builds the pot while keeping villain's bluff-catchers and weak pairs in. Slightly below ideal but very reasonable.",
-          },
-          {
-            id: 'size100',
-            label: '100% pot (20bb)',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              "Pot-size bet with top set on a capped board is correct. You want to build the pot maximally — villain's range has Ax, Kx, and pairs that may hero-call. Charge them for the turn.",
-          },
-          {
-            id: 'size150',
-            label: '150% pot (30bb) overbet',
-            quality: 'acceptable',
-            ev_loss_bb: 2,
-            feedback:
-              'An overbet can work on this board but risks folding out exactly the hands you want to stack. Pot-size is more reliable for value.',
-          },
-        ],
-        xp: 10,
-      },
-      {
-        id: 'vb-s4',
-        type: 'decision_spot',
-        street: 'river',
-        hero_position: 'BB',
-        villain_position: 'BTN',
-        board: ['Ks', '9d', '4h', '2c', 'Jh'],
-        hero_hand: ['Qh', 'Th'],
-        pot_bb: 50,
-        effective_stack_bb: 50,
-        narrative: 'River K♠9♦4♥2♣J♥. Pot 50bb. Villain bets 37bb (75% pot). You hold Q♥T♥ — Queen-high, a bluff catcher that beats only pure bluffs but loses to all made hands.',
-        options: [
-          {
-            id: 'call',
-            label: 'Call 37bb',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              "Correct. You hold a bluff-catcher — it beats all of villain's missed draws. Villain's range has enough bluffs that calling is correct per MDF: facing a 75% pot bet you must call ~43% of your range, and QT is in that zone.",
-          },
-          {
-            id: 'fold',
-            label: 'Fold',
-            quality: 'mistake',
-            ev_loss_bb: 5,
-            feedback:
-              'Folding too frequently vs river bets is one of the most common leaks. If villain bluffs at even 30% frequency, folding QT (which beats all bluffs) is a large mistake.',
-          },
-          {
-            id: 'raise',
-            label: 'Raise all-in to 100bb',
-            quality: 'punt',
-            ev_loss_bb: 15,
-            feedback:
-              'Raising a bluff-catcher on the river turns it into a pure bluff. Villain simply folds worse and calls with value. This is a major punt.',
-          },
-        ],
-        xp: 10,
-      },
-    ],
-  },
-
-  // ── 4. Bluff Fundamentals ─────────────────────────────────────────────────
-  {
-    id: 'bluff-fundamentals',
-    module_id: 'bluff-basics-module',
-    slug: 'bluff-fundamentals',
-    title: 'Bluff Fundamentals',
-    lesson_type: 'micro',
-    concept_ids: ['alpha', 'bluff_basics'],
-    estimated_min: 6,
-    xp_reward: 50,
-    sort_order: 1,
-    steps: [
-      {
-        id: 'bl-s1',
-        type: 'concept_reveal',
-        concept_ids: ['bluff_basics'],
-        concept_title: 'Bluffing: Fold Equity, Not Gambling',
-        concept_content:
-          "A bluff is not a random gamble — it is a bet designed to make villain fold a better hand. Bluffs are profitable when villain folds more than alpha% of the time. Alpha = bet / (pot + bet). Choose bluffs with: (1) fold equity (villain's range is capped or scared), (2) good card removal (your hand blocks villain's strong calls), (3) semi-equity (draws that also win at showdown).",
-        xp: 5,
-      },
-      {
-        id: 'bl-s2',
-        type: 'equity_predict',
-        street: 'river',
-        pot_bb: 30,
-        narrative: 'You bet 15bb (50% pot) as a bluff on the river. How often must villain fold for the bluff to break even? (Enter as a whole number %.)',
-        equity_actual: 33,
-        equity_tolerance: 5,
-        correct_feedback: 'Correct. Alpha = bet / (pot + bet) = 15 / (30+15) = 15/45 = 33%. Villain must fold more than 33% of the time.',
-        wrong_feedback: 'Alpha = bet ÷ (pot + bet) = 15 ÷ 45 = 33%. If villain folds more than 33%, the bluff profits.',
-        xp: 10,
-      },
-      {
-        id: 'bl-s3',
-        type: 'decision_spot',
-        street: 'river',
-        hero_position: 'BTN',
-        villain_position: 'BB',
-        board: ['Jd', '8c', '4s', '2h', 'Kh'],
-        hero_hand: ['Ac', 'Qd'],
-        pot_bb: 40,
-        effective_stack_bb: 60,
-        narrative: 'River J♦8♣4♠2♥K♥. Pot 40bb. You have 60bb behind. Villain checked. You missed your gutshot but hold Ace-high.',
-        options: [
-          {
-            id: 'bluff30',
-            label: 'Bluff 30bb (75% pot)',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              "Well-sized river bluff. 75% pot requires villain to fold 43% of the time — reasonable here where many of villain's floats (55, 66, 77, 99) have no showdown value. The Ace in your hand blocks AK (villain's top pair top kicker calls).",
-          },
-          {
-            id: 'check',
-            label: 'Check back',
-            quality: 'good',
-            ev_loss_bb: 1,
-            feedback:
-              "Checking is fine — Ace-high will occasionally win at showdown, and protecting your checking range with some showdown equity hands is good balance. Bluffing is slightly better in spots where villain is folding a lot.",
-          },
-          {
-            id: 'jam',
-            label: 'Shove 60bb (150% pot)',
-            quality: 'acceptable',
-            ev_loss_bb: 3,
-            feedback:
-              'Overbetting as a bluff is a move for strong players with very strong blockers. Here you block AK (villain\'s strongest call) with your Ace — so the overbet has merit, but 75% is a cleaner size that villain folds more often to.',
-          },
-        ],
-        xp: 10,
-      },
-      {
-        id: 'bl-s4',
-        type: 'decision_spot',
-        street: 'turn',
-        hero_position: 'BB',
-        villain_position: 'CO',
-        board: ['Ac', 'Kd', '7h', '3s'],
-        hero_hand: ['5d', '4d'],
-        pot_bb: 25,
-        effective_stack_bb: 75,
-        narrative: 'Turn A♣K♦7♥3♠. CO opened, you called from BB. CO c-bet small on flop and checked the turn. You hold 54o — no equity, no draw.',
-        options: [
-          {
-            id: 'bluff',
-            label: 'Bet 18bb (bluff)',
-            quality: 'acceptable',
-            ev_loss_bb: 2,
-            feedback:
-              "CO's check on a double-broadway board shows weakness — many players give up here. A bet has fold equity, but 54o has near-zero equity if called and the board is not great for your perceived range. Workable, not ideal.",
-          },
-          {
-            id: 'call',
-            label: 'Call (no — villain checked)',
-            quality: 'punt',
-            ev_loss_bb: 0,
-            feedback:
-              'This option does not apply — villain checked. The choice is bet or check.',
-          },
-          {
-            id: 'check',
-            label: 'Check (give up)',
-            quality: 'good',
-            ev_loss_bb: 0,
-            feedback:
-              'With no equity and no draw, checking is the correct default. Pick better bluffing spots — hands with some equity (backdoor draws, blockers to nuts) make much better bluffs than 54o on AK73.',
-          },
-        ],
-        xp: 10,
-      },
-    ],
-  },
-
-  // ── 5. Preflop Opening Ranges ─────────────────────────────────────────────
-  {
-    id: 'preflop-opening-ranges',
-    module_id: 'preflop-module',
-    slug: 'preflop-opening-ranges',
-    title: 'Preflop Opening Ranges',
-    lesson_type: 'range_trainer',
-    concept_ids: ['hand_ranges'],
-    estimated_min: 8,
-    xp_reward: 60,
-    sort_order: 1,
-    steps: [
-      {
-        id: 'pf-s1',
-        type: 'concept_reveal',
-        concept_ids: ['hand_ranges'],
-        concept_title: 'Opening Ranges by Position',
-        concept_content:
-          'Preflop ranges are not fixed lists — they are calculated based on fold equity, equity vs calling ranges, and postflop playability. Key principles: EP opens ~13–15% (only premium hands + strong suited connectors), BTN opens ~40–45% (very wide, any playable hand), CO opens ~25–30%, HJ ~18–20%. Suited hands play 2–4% better than offsuit equivalents.',
-        visual: 'range_grid',
-        xp: 5,
-      },
-      {
-        id: 'pf-s2',
-        type: 'range_build',
-        street: 'preflop',
-        hero_position: 'BTN',
-        narrative: 'Build the BTN opening range (6-max, 100bb cash, unopened pot).',
-        range_target: 'BTN_open_100bb',
-        range_hint: 'BTN opens ~40–45% of hands. Include all pocket pairs, broadways, most suited hands, and strong offsuit combinations.',
-        range_tolerance: 5,
-        visual: 'range_grid',
-        xp: 15,
-      },
-      {
-        id: 'pf-s3',
-        type: 'range_build',
-        street: 'preflop',
-        hero_position: 'UTG',
-        narrative: 'Build the UTG opening range (6-max, 100bb cash, unopened pot). Tighten up — five players act behind you.',
-        range_target: 'UTG_open_100bb',
-        range_hint: 'UTG opens ~13–15%: premium pairs (TT+), top broadways (AK, AQs, AJs, KQs), best suited connectors (JTs).',
-        range_tolerance: 4,
-        visual: 'range_grid',
-        xp: 15,
-      },
-      {
-        id: 'pf-s4',
-        type: 'decision_spot',
-        street: 'preflop',
-        hero_position: 'BTN',
-        villain_position: 'UTG',
-        hero_hand: ['Ah', 'Jo'],
-        pot_bb: 8.5,
-        effective_stack_bb: 100,
-        narrative: 'UTG opens to 2.5bb, CO calls. Action on BTN with AJo. Three players in pot if you call.',
-        options: [
-          {
-            id: '3bet',
-            label: '3-bet to 10bb',
-            quality: 'good',
-            ev_loss_bb: 0.5,
-            feedback:
-              "AJo is a standard 3-bet from BTN vs UTG+CO. You isolate and leverage position. However, facing UTG open + CO cold-caller, AJo is slightly ahead of equilibrium — UTG's range is strong and you may be dominated by AQ, AK.",
-          },
-          {
-            id: 'call',
-            label: 'Call 2.5bb (3-way)',
-            quality: 'acceptable',
-            ev_loss_bb: 1,
-            feedback:
-              'Calling is acceptable in position, but AJo is tricky multi-way — you dominate fewer hands and face reverse implied odds (losing a big pot to AQ). 3-betting is preferred.',
-          },
-          {
-            id: 'fold',
-            label: 'Fold',
-            quality: 'acceptable',
-            ev_loss_bb: 1,
-            feedback:
-              "Folding AJo on BTN vs UTG + caller is slightly tight but defensible. UTG's range contains AK, AQ that dominate AJ frequently. A reasonable choice if you prefer to avoid marginal spots.",
-          },
-        ],
-        xp: 12,
-      },
-    ],
-  },
-
-  // ── 6. Board Texture Classification ──────────────────────────────────────
-  {
-    id: 'board-texture-classification',
-    module_id: 'board-texture-module',
-    slug: 'board-texture-classification',
-    title: 'Board Texture Classification',
-    lesson_type: 'micro',
-    concept_ids: ['board_texture'],
-    estimated_min: 5,
-    xp_reward: 40,
-    sort_order: 1,
-    steps: [
-      {
-        id: 'bt-s1',
-        type: 'concept_reveal',
-        concept_ids: ['board_texture'],
-        concept_title: 'Dry vs Wet Boards',
-        concept_content:
-          'Board texture determines how much both ranges connect to the flop and how volatile equity distributions are. Dry boards: high cards, rainbow, no straight draws (A♠7♦2♣). Wet boards: connected ranks (3-gap or less), two or more of same suit (J♥T♥9♦). Wet boards favour larger bets with value hands and more checking with marginal hands; dry boards allow small, frequent bets.',
-        visual: 'table',
-        xp: 5,
-      },
-      {
-        id: 'bt-s2',
-        type: 'board_classify',
-        board: ['As', '7d', '2c'],
-        narrative: 'Classify this flop: A♠7♦2♣. Is it dry or wet?',
-        correct_answer: 'dry',
-        correct_feedback:
-          'Correct — rainbow, no connected ranks, high card anchors the board. Dry boards slow down equity run-outs and favour the preflop aggressor betting small.',
-        wrong_feedback:
-          'A♠7♦2♣ is dry: three different suits (rainbow), no straight draws possible (A-7 is 5 apart; 7-2 is 5 apart), and a dominant top card. This is the canonical dry flop.',
-        options: [
-          { id: 'dry', label: 'Dry', quality: 'perfect', feedback: 'Correct — A72 rainbow is the textbook dry board.' },
-          { id: 'wet', label: 'Wet', quality: 'mistake', feedback: 'No — A72 rainbow has no flush draws and no straight draws. It is dry.' },
-        ],
-        xp: 8,
-      },
-      {
-        id: 'bt-s3',
-        type: 'board_classify',
-        board: ['Jh', 'Th', '9d'],
-        narrative: 'Classify this flop: J♥T♥9♦. Dry or wet?',
-        correct_answer: 'wet',
-        correct_feedback:
-          'Correct — JT9 has a flush draw (two hearts) and is extremely connected (every card completes straights). This is a very wet board; equity runs off fast.',
-        wrong_feedback:
-          'J♥T♥9♦ is highly wet: two hearts create a flush draw, and JT9 is the most connected sequence possible (8, Q, K all make straights). Both players\' ranges intersect heavily here.',
-        options: [
-          { id: 'dry', label: 'Dry', quality: 'mistake', feedback: 'No — JT9 with two hearts is extremely wet. Flush and straight possibilities everywhere.' },
-          { id: 'wet', label: 'Wet', quality: 'perfect', feedback: 'Correct — JT9 two-tone is the textbook wet board.' },
-        ],
-        xp: 8,
-      },
-      {
-        id: 'bt-s4',
-        type: 'board_classify',
-        board: ['Ks', 'Qh', 'Jd'],
-        narrative: 'Classify this flop: K♠Q♥J♦. Dry or wet?',
-        correct_answer: 'wet',
-        correct_feedback:
-          'Correct — KQJ is a highly connected broadway board. Anyone with AT makes a straight. Even rainbow, this board is wet in terms of straight draws saturating both ranges.',
-        wrong_feedback:
-          'K♠Q♥J♦ is wet (structurally connected) despite being rainbow — it creates immediate open-ended and gutshot straight draws for a huge portion of both ranges.',
-        options: [
-          { id: 'dry', label: 'Dry', quality: 'mistake', feedback: 'No — KQJ is a broadway wet board. AT completes the nuts immediately; T, A, 9 give multiple draw outs.' },
-          { id: 'wet', label: 'Wet', quality: 'perfect', feedback: 'Correct — KQJ is structurally connected and creates heavy draw texture.' },
-        ],
-        xp: 8,
-      },
-      {
-        id: 'bt-s5',
-        type: 'concept_reveal',
-        concept_ids: ['board_texture'],
-        concept_title: 'Texture Changes Strategy',
-        concept_content:
-          'On dry boards (A72r): bet small (25–33%) in position with your entire range — low risk of draws getting there, polarize later. On wet boards (JT9hh): bet larger with value (66–100%) to deny equity to draws; check more of your medium-strength hands to control pot size. OOP on wet boards, prefer a check-raise trap strategy over donk-betting.',
-        xp: 5,
-      },
-    ],
-  },
-
-  // ── 7. C-Bet Fundamentals ─────────────────────────────────────────────────
-  {
-    id: 'cbet-fundamentals',
-    module_id: 'cbet-module',
-    slug: 'cbet-fundamentals',
-    title: 'C-Bet Fundamentals',
-    lesson_type: 'micro',
-    concept_ids: ['cbet_theory'],
-    estimated_min: 6,
-    xp_reward: 50,
-    sort_order: 1,
-    steps: [
-      {
-        id: 'cb-s1',
-        type: 'concept_reveal',
-        concept_ids: ['cbet_theory'],
-        concept_title: 'Continuation Betting: Initiative + Range Advantage',
-        concept_content:
-          "A c-bet (continuation bet) is a flop bet made by the preflop aggressor. C-betting works because: (1) you have initiative — villain expects you to have a strong range, (2) you often have a range advantage on boards that hit your opening range better than villain's defending range. C-bet size and frequency depend on board texture and who benefits more from the flop.",
-        xp: 5,
-      },
-      {
-        id: 'cb-s2',
-        type: 'decision_spot',
-        street: 'flop',
-        hero_position: 'BTN',
-        villain_position: 'BB',
-        board: ['As', '7d', '2c'],
-        pot_bb: 11,
-        effective_stack_bb: 90,
-        narrative: "BTN opens, BB calls. Flop A♠7♦2♣. BB checks. Your range has far more Ax hands than BB's defending range.",
-        options: [
-          {
-            id: 'cbet33',
-            label: 'C-bet 33% (3.5bb)',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              'Perfect. A72 rainbow is the ideal small c-bet board. Your range has a massive advantage (lots of Ax, AA, 77, 22). A small bet forces BB to continue only strong hands while extracting value and denying cheap cards.',
-          },
-          {
-            id: 'cbet75',
-            label: 'C-bet 75% (8bb)',
-            quality: 'good',
-            ev_loss_bb: 1,
-            feedback:
-              'A larger c-bet works but is suboptimal on this static board. You fold out hands you could extract from across multiple streets. Smaller sizes are more efficient here.',
-          },
-          {
-            id: 'check',
-            label: 'Check (give free card)',
-            quality: 'mistake',
-            ev_loss_bb: 2.5,
-            feedback:
-              'Checking A72r as BTN surrenders your entire range advantage. No significant draws exist on this board. Betting here is near-automatic profit.',
-          },
-        ],
-        xp: 10,
-      },
-      {
-        id: 'cb-s3',
-        type: 'decision_spot',
-        street: 'flop',
-        hero_position: 'BTN',
-        villain_position: 'BB',
-        board: ['8h', '7h', '6d'],
-        pot_bb: 11,
-        effective_stack_bb: 90,
-        narrative: "BTN opens, BB calls. Flop 8♥7♥6♦. BB checks. BB's defending range has far more 87, 76, 65, 98 type hands than BTN's opening range.",
-        options: [
-          {
-            id: 'cbet50',
-            label: 'C-bet 50% (5.5bb)',
-            quality: 'acceptable',
-            ev_loss_bb: 1.5,
-            feedback:
-              "C-betting here is not terrible, but you're betting into a board where BB has range advantage. You face more check-raises, and your bluffs succeed less. Use a small size if you do bet.",
-          },
-          {
-            id: 'check',
-            label: 'Check back',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              'Correct. On 876 two-tone, BB has the range advantage — they defend more low suited connectors. Checking controls pot size, keeps your bluff-catchers in a good spot, and avoids c-betting into a check-raise trap.',
-          },
-          {
-            id: 'cbet-pot',
-            label: 'C-bet pot (11bb)',
-            quality: 'mistake',
-            ev_loss_bb: 4,
-            feedback:
-              "Pot-betting into BB's range advantage on a wet connected board is a significant mistake. You're likely to face a check-raise, and many of your range hands cannot continue profitably.",
-          },
-        ],
-        xp: 10,
-      },
-      {
-        id: 'cb-s4',
-        type: 'bet_size_choose',
-        street: 'flop',
-        hero_position: 'BTN',
-        villain_position: 'BB',
-        board: ['Ad', '7c', '2s'],
-        pot_bb: 11,
-        effective_stack_bb: 90,
-        narrative: 'Dry board A♦7♣2♠. BTN has range advantage. Best c-bet sizing?',
-        options: [
-          {
-            id: 's1',
-            label: '25–33% pot (2.5–3.5bb)',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback: 'Correct. Small c-bets on dry boards extract value from the whole range efficiently. No draws to deny, so small bets generate high fold equity at low risk.',
-          },
-          {
-            id: 's2',
-            label: '50–66% pot (5.5–7bb)',
-            quality: 'good',
-            ev_loss_bb: 1,
-            feedback: "Medium sizing works but is less efficient. On a board this static, you're paying too much for fold equity you get cheaply with 33%.",
-          },
-          {
-            id: 's3',
-            label: '100% pot (11bb)',
-            quality: 'mistake',
-            ev_loss_bb: 3,
-            feedback: 'Pot-sizing on a dry board folds out the weaker hands you want to keep in for future streets. Reserve pot-bets for wet boards where equity denial matters.',
-          },
-        ],
-        xp: 10,
-      },
-      {
-        id: 'cb-s5',
-        type: 'concept_reveal',
-        concept_ids: ['cbet_theory'],
-        concept_title: 'C-Bet Sizing Summary',
-        concept_content:
-          'Rule of thumb: Dry boards (A72r, K83r) → bet small (25–33%) with high frequency. Wet boards (JT9hh, 876ss) when you have value → bet large (67–100%) to deny equity. When out of position on a wet board or facing a range disadvantage → prefer check. The size of your c-bet sends a signal — use it deliberately.',
-        xp: 5,
-      },
-    ],
-  },
-
-  // ── 8. MDF Defense Drill ──────────────────────────────────────────────────
-  {
-    id: 'mdf-defense-drill',
-    module_id: 'mdf-module',
-    slug: 'mdf-defense-drill',
-    title: 'MDF & Defense Frequencies',
-    lesson_type: 'micro',
-    concept_ids: ['mdf', 'alpha'],
-    estimated_min: 6,
-    xp_reward: 50,
-    sort_order: 1,
-    steps: [
-      {
-        id: 'mdf-s1',
-        type: 'concept_reveal',
-        concept_ids: ['mdf'],
-        concept_title: 'Minimum Defense Frequency',
-        concept_content:
-          "MDF = the minimum % of your range you must continue (call or raise) to prevent villain from profitably bluffing any two cards. Formula: MDF = pot / (pot + bet). If villain bets 50% pot: MDF = 20/(20+10) for a 10bb bet into 20bb pot = 67%. Fold more than 33% → villain can bluff any two cards for free profit. MDF is a floor, not an exact call frequency.",
-        visual: 'pressure_chart',
-        xp: 5,
-      },
-      {
-        id: 'mdf-s2',
-        type: 'equity_predict',
-        street: 'flop',
-        pot_bb: 20,
-        narrative: 'Villain bets 10bb (50% pot) into a 20bb pot. What is the MDF — the minimum % of your range you must continue?',
-        equity_actual: 67,
-        equity_tolerance: 5,
-        correct_feedback: 'Correct! MDF = pot/(pot+bet) = 20/30 = 67%. You can fold at most 33% of your range.',
-        wrong_feedback: 'MDF = pot ÷ (pot + bet) = 20 ÷ 30 = 67%. Fold no more than 33% of your range.',
-        xp: 10,
-      },
-      {
-        id: 'mdf-s3',
-        type: 'equity_predict',
-        street: 'river',
-        pot_bb: 50,
-        narrative: 'Villain bets pot (50bb) on the river. What is the MDF?',
-        equity_actual: 50,
-        equity_tolerance: 5,
-        correct_feedback: "Correct! MDF = pot/(pot+bet) = 50/100 = 50%. Villain's pot-bet forces you to call at least 50% of your range.",
-        wrong_feedback: 'MDF = pot ÷ (pot + bet) = 50 ÷ 100 = 50%. A pot-sized bet always gives MDF = 50%.',
-        xp: 10,
-      },
-      {
-        id: 'mdf-s4',
-        type: 'decision_spot',
-        street: 'river',
-        hero_position: 'BB',
-        villain_position: 'BTN',
-        board: ['Ks', '9h', '4d', '2c', '7s'],
-        pot_bb: 50,
-        effective_stack_bb: 50,
-        narrative: 'River K♠9♥4♦2♣7♠. Villain bets pot (50bb). You have a range of bluff catchers and value hands. MDF = 50% means you can fold at most half your range.',
-        options: [
-          {
-            id: 'fold50pct',
-            label: 'Fold only 50% (call strong half of range)',
-            quality: 'good',
-            ev_loss_bb: 0,
-            feedback:
-              'Correct application of MDF. Facing a pot-bet, you fold your worst 50% and call your best 50%. This prevents profitable any-two-cards bluffs.',
-          },
-          {
-            id: 'fold70pct',
-            label: 'Yes — fold 70% to protect your value hands (over-fold)',
-            quality: 'punt',
-            ev_loss_bb: 8,
-            feedback:
-              'Folding 70% vs a pot-bet is a major leak. MDF = 50%, so folding 70% gives villain 70% fold equity — any bluff is immediately profitable. You are being exploited.',
-          },
-          {
-            id: 'fold-bluffcatchers',
-            label: 'Fold all bluff catchers, call only top pair+',
-            quality: 'mistake',
-            ev_loss_bb: 6,
-            feedback:
-              'This is over-folding. If you only call top pair+, villain can bluff profitably with any two cards. Bluff catchers exist specifically to defend against bluffs — call them at the right frequency.',
-          },
-        ],
-        xp: 10,
-      },
-    ],
-  },
-
-  // ── 9. Range Advantage Intro ──────────────────────────────────────────────
-  {
-    id: 'range-advantage-intro',
-    module_id: 'range-construction-module',
-    slug: 'range-advantage-intro',
-    title: 'Range Advantage Introduction',
-    lesson_type: 'micro',
-    concept_ids: ['range_advantage'],
-    estimated_min: 6,
-    xp_reward: 50,
-    sort_order: 1,
-    steps: [
-      {
-        id: 'ra-s1',
-        type: 'concept_reveal',
-        concept_ids: ['range_advantage'],
-        concept_title: "Range Advantage: Who Owns This Board?",
-        concept_content:
-          "Range advantage means one player's overall range connects better to the board than the other's. This affects: who should bet frequently, who can use large bet sizes, and who is forced to check. Nut advantage specifically means who holds more of the strongest possible hands (sets, two pair, straights, flushes).",
-        xp: 5,
-      },
-      {
-        id: 'ra-s2',
-        type: 'nut_advantage',
-        street: 'flop',
-        board: ['As', 'Kd', '7c'],
-        hero_position: 'BTN',
-        villain_position: 'BB',
-        narrative: 'Board A♠K♦7♣. BTN opened, BB called. Who has range advantage?',
-        correct_answer: 'BTN',
-        correct_feedback:
-          "BTN has the range advantage on AK7. BTN's opening range includes AA, KK, AK, A7s, K7s at much higher frequency than BB's wide defending range. BTN can use large bets and high c-bet frequency.",
-        wrong_feedback:
-          "BTN has range advantage here. BTN opens with AK, AA, KK frequently; BB defends with a wide range that hits AK7 less often. The raiser almost always has range advantage on A-high boards.",
-        options: [
-          { id: 'BTN', label: 'BTN (opener)', quality: 'perfect', feedback: 'Correct. BTN\'s opening range dominates AK7 — more AA, KK, AK combos.' },
-          { id: 'BB', label: 'BB (defender)', quality: 'mistake', feedback: "No — BB's wide defend range does not connect as well to AK7 as BTN's tight opening range." },
-        ],
-        xp: 10,
-      },
-      {
-        id: 'ra-s3',
-        type: 'nut_advantage',
-        street: 'flop',
-        board: ['7h', '6h', '5d'],
-        hero_position: 'CO',
-        villain_position: 'BTN',
-        narrative: 'Board 7♥6♥5♦. CO opened, BTN called. Who has the nut advantage?',
-        correct_answer: 'BTN',
-        correct_feedback:
-          "BTN (caller) has nut advantage on 765. BTN's calling range includes 98, 87, 54, 44, 55, 66, 77 in higher proportion than CO's opening range. BTN makes more sets and straights here.",
-        wrong_feedback:
-          "BTN has nut advantage. The caller's range typically contains more suited connectors and small pairs (98s, 87s, 55, 66, 77) that smash low connected boards. CO opened tighter and connects less well.",
-        options: [
-          { id: 'CO', label: 'CO (opener)', quality: 'mistake', feedback: "No — CO opens tighter and has fewer small connectors/pairs than BTN's calling range." },
-          { id: 'BTN', label: 'BTN (caller)', quality: 'perfect', feedback: 'Correct. BTN defends with more 98, 87, 55, 66, 77 — hands that dominate 765.' },
-        ],
-        xp: 10,
-      },
-      {
-        id: 'ra-s4',
-        type: 'decision_spot',
-        street: 'flop',
-        hero_position: 'BB',
-        villain_position: 'BTN',
-        board: ['9s', '8d', '3c'],
-        hero_hand: ['8h', '7h'],
-        pot_bb: 11,
-        effective_stack_bb: 90,
-        narrative: 'BTN opens, BB calls. Flop 9♠8♦3♣. BTN c-bets 33% (3.5bb). You hold 8♥7♥ — second pair + a gutshot straight draw.',
-        options: [
-          {
-            id: 'raise',
-            label: 'Check-raise to 12bb',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              "Excellent. 87s has middle pair + a gutshot, and decent fold equity vs BTN's wide c-bet range. Check-raising denies equity to hands like 77, 66 and builds a pot in a spot where you have strong equity.",
-          },
-          {
-            id: 'call',
-            label: 'Call 3.5bb',
-            quality: 'good',
-            ev_loss_bb: 1,
-            feedback:
-              'Calling is reasonable — you have middle pair + gutshot. The downside is OOP you give up initiative and must face two more bets without knowing your equity advantage. Check-raise is slightly superior.',
-          },
-          {
-            id: 'fold',
-            label: 'Fold',
-            quality: 'punt',
-            ev_loss_bb: 8,
-            feedback:
-              'Folding second pair + gutshot vs a small c-bet is a massive punt. You have substantial equity and are getting 3:1 to call. Never fold this hand to a 33% bet.',
-          },
-        ],
-        xp: 10,
-      },
-      {
-        id: 'ra-s5',
-        type: 'concept_reveal',
-        concept_ids: ['range_advantage'],
-        concept_title: 'Using Range Advantage',
-        concept_content:
-          'When you have range advantage: bet wider, bet larger, apply pressure. When villain has range advantage: check more, pot control, trap with strong hands. The player with nut advantage can profitably overbet (2x pot+) because villain\'s range cannot contain enough strong hands to make calling correct. Identifying range advantage is the first decision to make on every flop.',
-        xp: 5,
-      },
-    ],
-  },
-
-  // ── 10. SPR & Commitment Thresholds ──────────────────────────────────────
-  {
-    id: 'spr-commitment-thresholds',
-    module_id: 'equity-real-module',
-    slug: 'spr-commitment-thresholds',
-    title: 'SPR & Commitment Thresholds',
-    lesson_type: 'micro',
-    concept_ids: ['spr_theory'],
-    estimated_min: 5,
-    xp_reward: 45,
-    sort_order: 1,
-    steps: [
-      {
-        id: 'spr-s1',
-        type: 'concept_reveal',
-        concept_ids: ['spr_theory'],
-        concept_title: 'Stack-to-Pot Ratio',
-        concept_content:
-          'SPR = effective stack / pot on the flop. SPR tells you how committed you are. Low SPR (≤ 3): you are committed with top pair or better — stacks go in. Medium SPR (4–12): need two pair+ to stack off comfortably; draws and TPTK play as calls. High SPR (13+): need strong hands only for major confrontations; implied odds dominate decision making.',
-        xp: 5,
-      },
-      {
-        id: 'spr-s2',
-        type: 'equity_predict',
-        street: 'flop',
-        pot_bb: 20,
-        effective_stack_bb: 100,
-        narrative: 'Pot is 20bb on the flop. Effective stack is 100bb. What is the SPR?',
-        equity_actual: 5,
-        equity_tolerance: 1,
-        correct_feedback: 'Correct. SPR = stack / pot = 100 / 20 = 5. Medium SPR — top pair is usually a call, two pair+ is a stack-off candidate.',
-        wrong_feedback: 'SPR = effective stack ÷ pot = 100 ÷ 20 = 5. This is a medium SPR situation.',
-        xp: 10,
-      },
-      {
-        id: 'spr-s3',
-        type: 'decision_spot',
-        street: 'flop',
-        hero_position: 'BTN',
-        villain_position: 'BB',
-        board: ['Ah', 'Jd', '3c'],
-        hero_hand: ['As', 'Ks'],
-        pot_bb: 30,
-        effective_stack_bb: 60,
-        narrative: 'Flop A♥J♦3♣. SPR = 2 (60bb behind, 30bb pot). BB jams for 60bb. You hold A♠K♠ (TPTK).',
-        options: [
-          {
-            id: 'call',
-            label: 'Call 60bb',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              "With SPR = 2, you are committed with TPTK. Villain's jamming range is wide at this SPR — AJ, AQ, sets, air. Your hand is too strong to fold when you're already 2/3 in at call.",
-          },
-          {
-            id: 'fold',
-            label: 'Fold (avoid a coinflip)',
-            quality: 'mistake',
-            ev_loss_bb: 12,
-            feedback:
-              'Folding TPTK with SPR = 2 is a clear mistake. At this depth you are committed — the pot is already too large relative to stack for folding to be correct. You are risking 60 to win 90.',
-          },
-          {
-            id: 'jam',
-            label: 'Re-raise (already all-in effectively)',
-            quality: 'good',
-            ev_loss_bb: 0,
-            feedback: "You're already all-in if you call — calling and re-raising are equivalent here. Snap-call.",
-          },
-        ],
-        xp: 10,
-      },
-      {
-        id: 'spr-s4',
-        type: 'decision_spot',
-        street: 'flop',
-        hero_position: 'BB',
-        villain_position: 'CO',
-        board: ['Kd', '8h', '3s'],
-        hero_hand: ['9c', '8d'],
-        pot_bb: 15,
-        effective_stack_bb: 220,
-        narrative: 'Flop K♦8♥3♠. SPR ≈ 15 (220bb behind, 15bb pot). CO bets pot (15bb). You have middle pair.',
-        options: [
-          {
-            id: 'call',
-            label: 'Call 15bb',
-            quality: 'acceptable',
-            ev_loss_bb: 2,
-            feedback:
-              "Calling with middle pair is marginal at high SPR. You'll face multiple large bets if CO has a strong hand. With implied odds you may hit two pair, but the K is dangerous. Calling one street is defensible.",
-          },
-          {
-            id: 'fold',
-            label: 'Fold',
-            quality: 'good',
-            ev_loss_bb: 0,
-            feedback:
-              "At high SPR, middle pair is rarely strong enough to commit large sums. Folding to a pot-bet with SPR = 15 is the disciplined choice — you'll face two more streets of pressure. 98 doesn't improve on most turns.",
-          },
-          {
-            id: 'raise',
-            label: 'Raise to 45bb',
-            quality: 'mistake',
-            ev_loss_bb: 7,
-            feedback:
-              "Raising middle pair into a large SPR with a king on board is a mistake. You're turning a marginal hand into a bluff against a range that likely contains Kx. At high SPR, don't bloat the pot with weak hands.",
-          },
-        ],
-        xp: 10,
-      },
-    ],
-  },
-
-  // ── 11. Equity Realization Basics ─────────────────────────────────────────
-  {
-    id: 'equity-realization-basics',
-    module_id: 'equity-real-module',
-    slug: 'equity-realization-basics',
-    title: 'Equity Realization',
-    lesson_type: 'micro',
-    concept_ids: ['equity_real'],
-    estimated_min: 5,
-    xp_reward: 45,
-    sort_order: 2,
-    steps: [
-      {
-        id: 'er-s1',
-        type: 'concept_reveal',
-        concept_ids: ['equity_real'],
-        concept_title: "Equity Realization: Capturing What You're Owed",
-        concept_content:
-          'Equity realization is the % of your raw equity you actually capture in practice. Position is the biggest factor: IP players realize ~105–115% of their equity; OOP players realize ~85–95%. Reasons: IP players see one more decision free (check behind or call), OOP players face bets on every street. Draws realize more equity in position too — OOP draws fold more often to pressure.',
-        xp: 5,
-      },
-      {
-        id: 'er-s2',
-        type: 'decision_spot',
-        street: 'flop',
-        hero_position: 'BB',
-        villain_position: 'BTN',
-        board: ['As', 'Kh', '2d'],
-        hero_hand: ['8s', '7s'],
-        pot_bb: 11,
-        effective_stack_bb: 90,
-        narrative: "You called BTN's open from BB. Flop A♠K♥2♦. BTN c-bets 33% (3.5bb). You hold 8♠7♠ — gutshot + backdoor flush draw, roughly 22% equity.",
-        options: [
-          {
-            id: 'call',
-            label: 'Call 3.5bb',
-            quality: 'good',
-            ev_loss_bb: 0.5,
-            feedback:
-              'Calling is reasonable. You have ~22% equity (backdoor draws + gutshot), and your pot odds are excellent vs a 33% c-bet (call 3.5 into 14.5 → need 24% equity). OOP your equity realization is lower, but the price is too good to fold.',
-          },
-          {
-            id: 'fold',
-            label: 'Fold',
-            quality: 'acceptable',
-            ev_loss_bb: 1,
-            feedback:
-              "Folding is not terrible — OOP with backdoor draws only on AK2, you'll rarely realize full equity. But the price (3.5bb call, pot odds 4:1) makes this slightly too tight.",
-          },
-          {
-            id: 'xr',
-            label: 'Check-raise to 12bb',
-            quality: 'mistake',
-            ev_loss_bb: 4,
-            feedback:
-              "Check-raising a gutshot + backdoor draws OOP on AK2 into a wide range is a mistake. You don't have enough equity to build the pot, and BTN will 3-bet jam with sets, AK, bluffs.",
-          },
-        ],
-        xp: 10,
-      },
-      {
-        id: 'er-s3',
-        type: 'decision_spot',
-        street: 'flop',
-        hero_position: 'BTN',
-        villain_position: 'CO',
-        board: ['Qs', '9d', '4c'],
-        hero_hand: ['Jh', 'Th'],
-        pot_bb: 20,
-        effective_stack_bb: 80,
-        narrative: "You called CO's 3-bet from BTN. Flop Q♠9♦4♣. CO checks. You hold J♥T♥ — open-ended straight draw, ~32% equity.",
-        options: [
-          {
-            id: 'bet50',
-            label: 'Bet 50% pot (10bb)',
-            quality: 'good',
-            ev_loss_bb: 0.5,
-            feedback:
-              "Good play. IP with an OESD you should realize equity aggressively. Betting charges draws (if any), builds pot for when you hit, and can take it down vs CO's checking range (lots of marginal hands).",
-          },
-          {
-            id: 'check',
-            label: 'Check back',
-            quality: 'acceptable',
-            ev_loss_bb: 1.5,
-            feedback:
-              'Checking is acceptable — you see a free card, preserve pot size, and see how CO reacts on the turn. But IP you should be realizing your equity, not giving it away. Betting is slightly superior.',
-          },
-          {
-            id: 'bet-pot',
-            label: 'Bet pot (20bb)',
-            quality: 'mistake',
-            ev_loss_bb: 3,
-            feedback:
-              'Pot-sizing with a draw (not a made hand) overcommits the pot prematurely. You still need to improve — a smaller bet achieves the same goals (fold equity + pot building) with less risk.',
-          },
-        ],
-        xp: 10,
-      },
-      {
-        id: 'er-s4',
-        type: 'concept_reveal',
-        concept_ids: ['equity_real'],
-        concept_title: 'Position Adds ~10% Realized Equity',
-        concept_content:
-          'A rule of thumb: being IP is worth approximately 10% more in realized equity than the same hand OOP. Example: 87s with 40% raw equity realizes ~44% IP but only ~36% OOP. This is why position-adjusted EV calculations matter, and why playing OOP requires a tighter range — your hands need more raw equity to compensate for what position takes away.',
-        xp: 5,
-      },
-    ],
-  },
-
-  // ── 12. Polarized vs Merged ───────────────────────────────────────────────
-  {
-    id: 'polarized-vs-merged',
-    module_id: 'polarized-module',
-    slug: 'polarized-vs-merged',
-    title: 'Polarized vs Merged Ranges',
-    lesson_type: 'micro',
-    concept_ids: ['polarized'],
-    estimated_min: 7,
-    xp_reward: 55,
-    sort_order: 1,
-    steps: [
-      {
-        id: 'pm-s1',
-        type: 'concept_reveal',
-        concept_ids: ['polarized'],
-        concept_title: 'Polarized vs Merged: Two Ways to Bet',
-        concept_content:
-          'Polarized = your betting range contains only the nuts and bluffs — no medium-strength hands. Used on the river when medium hands lose to value and beat bluffs. Merged = betting a wide range including thin value hands, where all your betting hands are ahead of villain\'s calling range. Used on earlier streets, smaller sizes. Misidentifying your range structure leads to wrong bet sizes.',
-        xp: 5,
-      },
-      {
-        id: 'pm-s2',
-        type: 'decision_spot',
-        street: 'river',
-        hero_position: 'BTN',
-        villain_position: 'BB',
-        board: ['As', 'Kd', '7c', '2h', 'Js'],
-        hero_hand: ['Qd', 'Qh'],
-        pot_bb: 80,
-        effective_stack_bb: 120,
-        narrative: 'River A♠K♦7♣2♥J♠. Pot 80bb. 120bb behind. You hold Q♥Q♦ — an overpair below the board, effectively third pair.',
-        options: [
-          {
-            id: 'small-merged',
-            label: 'Bet 30bb small merged (38% pot)',
-            quality: 'good',
-            ev_loss_bb: 1,
-            feedback:
-              "A small merged bet could work if villain can call with worse. QQ beats random bluff catchers but loses to any Ax, Kx, JJ, 77. It's marginal — getting called by better frequently at this size.",
-          },
-          {
-            id: 'big-polar',
-            label: 'Bet 100bb polarized overbet',
-            quality: 'mistake',
-            ev_loss_bb: 8,
-            feedback:
-              'Overbetting a medium-strength hand (QQ = effectively 3rd pair) as if it\'s polarized is a mistake. Polarized bets should be the nuts or bluffs — not medium value. Villain calls with AK, KQ, JJ and you are crushed.',
-          },
-          {
-            id: 'check-call',
-            label: 'Check (bluff-catch if villain bets)',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              "Correct. QQ on AKJ72 is a bluff-catcher — it beats all of villain's missed draws. Checking and calling villain's bluffs is the highest-EV play. You cannot extract value; you can only trap bluffs.",
-          },
-        ],
-        xp: 12,
-      },
-      {
-        id: 'pm-s3',
-        type: 'bluff_pick',
-        street: 'river',
-        hero_position: 'BTN',
-        villain_position: 'BB',
-        board: ['As', 'Kd', '7c', '2h', 'Js'],
-        narrative: "You're betting river polarized (large) with the nuts. Which hand makes the best bluff?",
-        options: [
-          {
-            id: 'bluff-a',
-            label: '7♦6♦ (missed flush draw, blocks little of importance)',
-            quality: 'acceptable',
-            ev_loss_bb: 2,
-            feedback:
-              "76s missed its flush but it's a reasonable bluff — it has a credible line. However, it doesn't block villain's main calling hands (Ax, Kx).",
-          },
-          {
-            id: 'bluff-b',
-            label: 'A♥2♥ (blocks villain\'s Ax calls and 22 full house)',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              "Best bluff. A♥2♥ holds two critical blockers: the Ace reduces Ax combinations villain uses to call, and the 2 removes 22 (full house, a call). Bluffing with blockers to villain's calling range is maximally effective.",
-          },
-          {
-            id: 'bluff-c',
-            label: 'K♥Q♥ (blocks some Kx top pair calls)',
-            quality: 'good',
-            ev_loss_bb: 1,
-            feedback:
-              'Good choice. K♥Q♥ blocks KQ and KJ. A strong bluffing candidate, but A2 is superior because the Ace blocks more calls (Ax is villain\'s most common continue).',
-          },
-        ],
-        xp: 12,
-      },
-      {
-        id: 'pm-s4',
-        type: 'concept_reveal',
-        concept_ids: ['polarized'],
-        concept_title: 'Blockers Amplify Polarized Bluffs',
-        concept_content:
-          "When betting polarized on the river, choose bluffs that block villain's calling range. If villain calls with Ax, your bluff with Ax removes those combos — fewer of their hands call. Never bluff with hands that unblock villain's folds (they already would fold) — bluff with hands that reduce their calls. This is why A♥2♥ beats 76s as a bluff on AK72J.",
-        xp: 5,
-      },
-    ],
-  },
-
-  // ── 13. Blocker Effects Intro ─────────────────────────────────────────────
-  {
-    id: 'blocker-effects-intro',
-    module_id: 'blockers-module',
-    slug: 'blocker-effects-intro',
-    title: 'Blocker Effects Introduction',
-    lesson_type: 'micro',
-    concept_ids: ['blockers'],
-    estimated_min: 7,
-    xp_reward: 60,
-    sort_order: 1,
-    steps: [
-      {
-        id: 'bk-s1',
-        type: 'concept_reveal',
-        concept_ids: ['blockers'],
-        concept_title: "Blockers: Reducing Villain's Combos",
-        concept_content:
-          "A blocker is a card in your hand that reduces the number of combinations villain can hold. Example: holding A♣ means villain can only hold 3 remaining Aces instead of 4 — reducing all AA, AK, AQ, AJ combos by 25%. For bluffing: hold cards that block villain's calling range. For value: hold cards that block villain's folding range (so they call more).",
-        xp: 5,
-      },
-      {
-        id: 'bk-s2',
-        type: 'blocker_id',
-        street: 'river',
-        board: ['As', 'Kd', '7c', '2h', 'Js'],
-        narrative: 'River A♠K♦7♣2♥J♠. You want to run a big river bluff. Which hand has the best blockers?',
-        options: [
-          {
-            id: 'qj',
-            label: 'Q♣J♦ (blocks some JJ combinations)',
-            quality: 'good',
-            ev_loss_bb: 1,
-            feedback:
-              "J♦ blocks JJ (trips) — a likely call. Reasonable blocker candidate, but QJ does not block the most common calls (Ax, KK, AK).",
-          },
-          {
-            id: 'aq',
-            label: 'A♣Q♣ (blocks Ax calls — villain\'s most common continue)',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              "A♣Q♣ is the best bluffing hand here. The Ace blocks all Ax combinations (the dominant calling range on this board). Villain has 25% fewer Ax combos, making the bluff more profitable.",
-          },
-          {
-            id: '87',
-            label: '8♦7♦ (blocks 77 sets — but 77 is rare on the river here)',
-            quality: 'acceptable',
-            ev_loss_bb: 2.5,
-            feedback:
-              "7♦ does block 77, but sets of 7s are only a small portion of villain's calling range on AKJ board. This blocker effect is minor compared to blocking Ax.",
-          },
-        ],
-        xp: 12,
-      },
-      {
-        id: 'bk-s3',
-        type: 'blocker_id',
-        street: 'river',
-        board: ['Qh', 'Jh', 'Ts', '2h', '8d'],
-        narrative: 'River Q♥J♥T♠2♥8♦. You missed your flush draw. Which bluffing hand has the best blockers against villain\'s nut-flush call?',
-        options: [
-          {
-            id: 'akh',
-            label: 'A♥K♥ (holds the two highest flush cards)',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              'A♥K♥ is the best bluff. The nut flush (A♥ high) is completely in your hand — villain cannot have it. You block the #1 and #2 flush cards, dramatically reducing villain\'s nut-flush and king-high flush combos.',
-          },
-          {
-            id: '98h',
-            label: '9♥8♥ (missed straight-flush draw)',
-            quality: 'good',
-            ev_loss_bb: 1.5,
-            feedback:
-              "9♥8♥ blocks some flush combos (9-high flush) and straight draws. Solid candidate, but the lower flush cards are less likely to be in villain's calling range than A♥K♥.",
-          },
-          {
-            id: 'kq',
-            label: 'K♠Q♠ (blocks top pair QQ/KQ — reduces some calls)',
-            quality: 'acceptable',
-            ev_loss_bb: 3,
-            feedback:
-              "K♠Q♠ blocks some pair combos but not the flush — villain's primary strong hand on a 4-heart board. Blocking top pair is less impactful than blocking the made flush.",
-          },
-        ],
-        xp: 12,
-      },
-    ],
-  },
-
-  // ── 14. Geometric Sizing Drill ────────────────────────────────────────────
-  {
-    id: 'geometric-sizing-drill',
-    module_id: 'geometric-module',
-    slug: 'geometric-sizing-drill',
-    title: 'Geometric Sizing',
-    lesson_type: 'micro',
-    concept_ids: ['geometric_sizing'],
-    estimated_min: 6,
-    xp_reward: 55,
-    sort_order: 1,
-    steps: [
-      {
-        id: 'gs-s1',
-        type: 'concept_reveal',
-        concept_ids: ['geometric_sizing'],
-        concept_title: 'Geometric Sizing: Perfectly Using Stacks',
-        concept_content:
-          'Geometric sizing = using the same fraction of pot each street so you go all-in on the exact last betting street. Formula for 2 streets: each bet = sqrt(stack/pot) × pot. For 3 streets: each bet = cbrt(stack/pot) × pot as a fraction. This maximizes pressure across the game tree — villain faces equal pressure every street with no escape on cheaper streets.',
-        visual: 'pressure_chart',
-        xp: 5,
-      },
-      {
-        id: 'gs-s2',
-        type: 'equity_predict',
-        street: 'flop',
-        pot_bb: 10,
-        effective_stack_bb: 90,
-        narrative: 'Pot 10bb, effective stack 90bb. You want to go all-in by the river across 3 streets. Approximately what % of pot should you bet each street (geometric)?',
-        equity_actual: 30,
-        equity_tolerance: 10,
-        correct_feedback:
-          'In the right range. With a 9x ratio (90/10), the geometric multiplier over 3 streets is cube_root(9) ≈ 2.08 per street. In practice this means betting ~75–100% pot each street, with each bet being ~30bb into a growing pot.',
-        wrong_feedback:
-          'With pot 10bb and 90bb stacks (9x ratio), geometric sizing over 3 streets means betting ~75–100% pot each street. The first bet is roughly 7.5–10bb. Aim for the 30% answer as a % of remaining stack.',
-        xp: 12,
-      },
-      {
-        id: 'gs-s3',
-        type: 'bet_size_choose',
-        street: 'flop',
-        hero_position: 'BTN',
-        villain_position: 'BB',
-        board: ['Kh', '7d', '2c'],
-        pot_bb: 20,
-        effective_stack_bb: 100,
-        narrative: 'Pot 20bb, 100bb stacks, 2 streets to go (turn + river). You want to jam by river geometrically.',
-        options: [
-          {
-            id: 'gs-33',
-            label: '33% pot (6.5bb) — too small',
-            quality: 'mistake',
-            ev_loss_bb: 4,
-            feedback: "Too small — at 33% each street you won't be all-in by river. With 100bb and 2 streets, you need to bet ~70% of pot each street to be geometric.",
-          },
-          {
-            id: 'gs-50',
-            label: '50% pot (10bb) — under-geometric',
-            quality: 'acceptable',
-            ev_loss_bb: 2,
-            feedback: "Better but still slightly small. 50% each street over 2 streets: 10bb bet into 40bb pot → 20bb bet into 60bb pot → you're not all-in. Needed ~70%.",
-          },
-          {
-            id: 'gs-70',
-            label: '70% pot (14bb) — approximately geometric',
-            quality: 'good',
-            ev_loss_bb: 0.5,
-            feedback: 'Close. 70% each of 2 streets gets you near all-in by river. Mathematical answer is sqrt(100/20) = sqrt(5) ≈ 2.24 → bet ~120% flop, but 70% is a practical approximation.',
-          },
-          {
-            id: 'gs-pot',
-            label: 'Pot (20bb) — slightly over-geometric but clean',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              'Pot-betting on the flop (20bb) and a large turn bet will naturally put stacks in by river. A pot-bet first street is conservative geometric sizing — applies maximum pressure early. For a 2-street jam, pot-first is the cleaner practical choice.',
-          },
-        ],
-        xp: 12,
-      },
-      {
-        id: 'gs-s4',
-        type: 'concept_reveal',
-        concept_ids: ['geometric_sizing'],
-        concept_title: 'Why Geometric Sizing Works',
-        concept_content:
-          "Geometric sizing makes villain indifferent across all streets because the price ratio stays constant. If villain must call 30% of pot each street, they cannot 'wait for a cheaper street' — all streets are equally expensive. It also maximizes fold equity: villain must fold or face the same pressure each street with no relief. Used most effectively with strong made hands and combo draws where you want all stacks in.",
-        xp: 5,
-      },
-    ],
-  },
-
-  // ── 15. Nut Advantage Reads ───────────────────────────────────────────────
-  {
-    id: 'nut-advantage-reads',
-    module_id: 'range-construction-module',
-    slug: 'nut-advantage-reads',
-    title: 'Nut Advantage Reads',
-    lesson_type: 'micro',
-    concept_ids: ['range_advantage'],
-    estimated_min: 5,
-    xp_reward: 45,
-    sort_order: 2,
-    steps: [
-      {
-        id: 'na-s1',
-        type: 'concept_reveal',
-        concept_ids: ['range_advantage'],
-        concept_title: 'Nut Advantage: The Top of Each Range',
-        concept_content:
-          'Nut advantage = which player has more combinations of the strongest possible hands (nuts, near-nuts). Nut advantage enables large bet sizes and overbets because villain\'s calling range cannot contain enough strong hands to justify calling. Even if overall range advantage is split, nut advantage often goes to one player clearly.',
-        xp: 5,
-      },
-      {
-        id: 'na-s2',
-        type: 'nut_advantage',
-        street: 'flop',
-        board: ['2s', '2d', '2c'],
-        hero_position: 'BTN',
-        villain_position: 'BB',
-        narrative: 'Flop 2♠2♦2♣ (trip deuces on board). BTN opened, BB called. Who has more trips or full houses?',
-        correct_answer: 'BTN',
-        correct_feedback:
-          "BTN has more nut hands here. BTN's opening range includes AA, KK, QQ (make top boats) at much higher frequency than BB's wide defense. BB also cannot have 22 — it's on the board. BTN's strong pairs dominate this board.",
-        wrong_feedback:
-          "BTN has nut advantage. On 222, the nuts are A2 (quads), AA (full house), KK, QQ etc. BTN's tight opening range has more premium pairs. BB's wide defense range has more marginal hands that miss 222.",
-        options: [
-          { id: 'BTN', label: 'BTN (opener)', quality: 'perfect', feedback: 'Correct. BTN\'s range has more premium pairs making top full houses on 222.' },
-          { id: 'BB', label: 'BB (defender)', quality: 'mistake', feedback: "No — BTN's tighter opening range has more AA, KK, QQ (strong full houses) on 222." },
-        ],
-        xp: 10,
-      },
-      {
-        id: 'na-s3',
-        type: 'nut_advantage',
-        street: 'flop',
-        board: ['Jh', 'Td', '9s'],
-        hero_position: 'SB',
-        villain_position: 'BTN',
-        narrative: 'Flop J♥T♦9♠. SB vs BTN. Who has more straights and sets on this board?',
-        correct_answer: 'BB',
-        correct_feedback:
-          "The SB/BB defending range has more suited connectors (87s, 98s, 76s) and small pairs (JJ, TT, 99) than BTN's opening range. On JT9, defenders' wider range hits the connected middle cards more. Counterintuitively, the caller often has nut advantage on low-to-mid connected boards.",
-        wrong_feedback:
-          "On JT9, the defending player (BB/SB) actually has nut advantage. Their wider range contains more 87s, 98s, JTs making straights, and small pairs making sets. BTN opens a tighter range that misses JT9 connectivity.",
-        options: [
-          { id: 'BTN', label: 'BTN (opener)', quality: 'mistake', feedback: "No — BTN's opening range is tighter and hits JT9 connected boards less than the defender's wide range." },
-          { id: 'BB', label: 'BB/SB (defender)', quality: 'perfect', feedback: "Correct. Defenders' wide ranges contain more suited connectors and small-pair sets on JT9." },
-        ],
-        xp: 10,
-      },
-      {
-        id: 'na-s4',
-        type: 'decision_spot',
-        street: 'flop',
-        hero_position: 'BTN',
-        villain_position: 'BB',
-        board: ['Jh', 'Td', '9s'],
-        hero_hand: ['Ah', '8h'],
-        pot_bb: 11,
-        effective_stack_bb: 90,
-        narrative: "BTN opened, BB called. Flop J♥T♦9♠. BB check-raises your 33% c-bet. You hold A♥8♥ — a gutshot straight draw (8 gives 8-9-T-J) and backdoor flush draw.",
-        options: [
-          {
-            id: 'call',
-            label: 'Call the check-raise',
-            quality: 'good',
-            ev_loss_bb: 1,
-            feedback:
-              "Calling preserves your implied odds on the A8 gutshot and backdoor. BB has nut advantage but their check-raise range still has bluffs. You can navigate turn/river profitably with enough equity.",
-          },
-          {
-            id: '3bet',
-            label: '3-bet the check-raise',
-            quality: 'mistake',
-            ev_loss_bb: 6,
-            feedback:
-              "Re-raising into BB's check-raise range on JT9 is dangerous — BB has many straights and sets here. Your A8 is a gutshot, not a combo draw. 3-betting is a major mistake against BB's strong range advantage here.",
-          },
-          {
-            id: 'fold',
-            label: 'Fold (give up)',
-            quality: 'acceptable',
-            ev_loss_bb: 2,
-            feedback:
-              "Folding is not unreasonable. BB has nut advantage on JT9 and their check-raise is value-heavy. A8 on JT9 has limited equity. However, at these pot odds, calling one street is typically better than folding outright.",
-          },
-        ],
-        xp: 10,
-      },
-    ],
-  },
-
-  // ── 16. Bluff Frequency Basics ────────────────────────────────────────────
-  {
-    id: 'bluff-frequency-basics',
-    module_id: 'bluff-basics-module',
-    slug: 'bluff-frequency-basics',
-    title: 'Bluff Frequency & Alpha',
-    lesson_type: 'micro',
-    concept_ids: ['alpha'],
-    estimated_min: 5,
-    xp_reward: 40,
-    sort_order: 2,
-    steps: [
-      {
-        id: 'bf-s1',
-        type: 'concept_reveal',
-        concept_ids: ['alpha'],
-        concept_title: 'Alpha: Break-Even Fold Frequency',
-        concept_content:
-          "Alpha = the % of the time your bluff needs to work to break even. Formula: alpha = bet / (pot + bet). If you bet 75% pot: alpha = 75/(100+75) = 75/175 = 43%. If villain folds >43% of the time, the bluff is immediately profitable (before considering the times you get lucky and win at showdown).",
-        visual: 'equity_bar',
-        xp: 5,
-      },
-      {
-        id: 'bf-s2',
-        type: 'equity_predict',
-        street: 'river',
-        pot_bb: 40,
-        narrative: 'You bet 30bb (75% pot) as a river bluff. What % of the time must villain fold for the bluff to break even? (This is alpha.)',
-        equity_actual: 43,
-        equity_tolerance: 5,
-        correct_feedback: 'Correct! Alpha = 30 / (40+30) = 30/70 = 43%. Villain must fold more than 43% for the bluff to profit.',
-        wrong_feedback: "Alpha = bet ÷ (pot + bet) = 30 ÷ 70 = 43%. That's the break-even fold frequency for a 75% pot bluff.",
-        xp: 10,
-      },
-      {
-        id: 'bf-s3',
-        type: 'decision_spot',
-        street: 'river',
-        hero_position: 'BTN',
-        villain_position: 'BB',
-        board: ['Kh', '9c', '4d', '2s', '8h'],
-        hero_hand: ['Jc', 'Td'],
-        pot_bb: 30,
-        effective_stack_bb: 70,
-        narrative: 'River K♥9♣4♦2♠8♥. You bet 15bb (50% pot) as a bluff. Villain appears to fold roughly 30% of the time to your river bets.',
-        options: [
-          {
-            id: 'no-not-enough',
-            label: 'No — you need at least 33% folds, 30% is not enough',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              'Correct analysis. Alpha for a 50% pot bluff = 15/(30+15) = 33%. At 30% fold frequency, the bluff loses money: (30% × 30bb won) + (70% × -15bb lost) = 9 - 10.5 = -1.5bb EV. The bluff is slightly unprofitable.',
-          },
-          {
-            id: 'yes-enough',
-            label: 'Yes — 30% folds is enough to profit',
-            quality: 'mistake',
-            ev_loss_bb: 4,
-            feedback:
-              'Incorrect. Alpha = 15/(30+15) = 33%. 30% < 33% means the bluff loses money in expectation. You need villain to fold MORE than 33% for this bet size to be profitable.',
-          },
-          {
-            id: 'depends',
-            label: 'Depends on hand strength',
-            quality: 'acceptable',
-            ev_loss_bb: 1,
-            feedback:
-              "Partially correct — hand strength matters for total EV (equity when called). But the pure bluff break-even is determined by alpha alone. JT has minimal showdown value on K9428, so the bluff needs to work 33%+ to show profit.",
-          },
-        ],
-        xp: 10,
-      },
-    ],
-  },
-
-  // ── 17. Reading Villain's Range ───────────────────────────────────────────
-  {
-    id: 'villain-range-identification',
-    module_id: 'range-construction-module',
-    slug: 'villain-range-identification',
-    title: "Reading Villain's Range",
-    lesson_type: 'micro',
-    concept_ids: ['hand_ranges', 'range_advantage'],
-    estimated_min: 6,
-    xp_reward: 50,
-    sort_order: 3,
-    steps: [
-      {
-        id: 'vr-s1',
-        type: 'concept_reveal',
-        concept_ids: ['hand_ranges'],
-        concept_title: "Narrowing Villain's Range",
-        concept_content:
-          "Every action villain takes narrows their range. Preflop: raise from UTG → tight range (AA–TT, AK, AQ, AJs, KQs). Check on flop: removes most nut hands (sets, top two pair rarely check). Bet turn after check-raise on flop: strengthens to value + strong draws. Use Bayesian updating — multiply their starting range by the probability of each action given each holding.",
-        xp: 5,
-      },
-      {
-        id: 'vr-s2',
-        type: 'range_identify',
-        street: 'flop',
-        hero_position: 'BB',
-        villain_position: 'BTN',
-        board: ['Ac', 'Kh', '7d'],
-        narrative: 'BTN opened UTG (tight range). Flop Ac Kh 7d. UTG c-bets small (33%). What is their most likely betting range structure?',
-        correct_answer: 'value_and_air',
-        correct_feedback:
-          'Correct. A small c-bet on AK7 is a range betting strategy — UTG has AK, AA, KK, A7 for value, and hands like QJ, JT, 89s as bluffs. Medium hands (AQ, AJ, KQ) often check behind for pot control.',
-        wrong_feedback:
-          "On AK7, a 33% c-bet from UTG represents a wide range — both strong hands (AK, AA, KK) and air (bluffs). It's rarely just value because small sizing accommodates many bluffs.",
-        options: [
-          { id: 'value_only', label: 'Only value hands (AK, AA, KK)', quality: 'mistake', feedback: 'No — small c-bets include many bluffs. A 33% bet is used with the whole range, not just value.' },
-          { id: 'value_and_air', label: 'Value hands + bluffs (polarized or range bet)', quality: 'perfect', feedback: 'Correct — a small c-bet can be a range bet (entire range) or polarized value + air on this texture.' },
-          { id: 'medium_hands', label: 'Medium hands checking behind (AQ, AJ)', quality: 'acceptable', feedback: 'Partially right — medium hands DO often check AK7, but the c-bet range contains value AND bluffs, not just medium hands.' },
-        ],
-        xp: 10,
-      },
-      {
-        id: 'vr-s3',
-        type: 'range_identify',
-        street: 'river',
-        hero_position: 'BB',
-        villain_position: 'BTN',
-        board: ['As', 'Kd', '7c', '2h', 'Js'],
-        narrative: 'River AKJ72. BTN bet flop, bet turn (70% pot), and now bets 80% of pot on river. What is their range structure?',
-        correct_answer: 'polarized',
-        correct_feedback:
-          'Correct — three-street aggression at increasing sizing = polarized range. BTN has the nuts (AK, AA, KK, AJ) or pure bluffs (missed draws, air). No medium hand triple-barrels 80% river — that would be spewing.',
-        wrong_feedback:
-          "Three-street increasing barrel = polarized river range. Medium-strength hands (AQ, QJ, etc.) do not bet three streets at large sizing. BTN is representing the nuts or bluffing.",
-        options: [
-          { id: 'polarized', label: 'Polarized — nuts or bluffs', quality: 'perfect', feedback: 'Correct. Three large barrels = polarized range on the river.' },
-          { id: 'merged', label: 'Merged — thin value including medium hands', quality: 'mistake', feedback: "No — medium hands don't bet three streets large. The range is polarized." },
-          { id: 'value_only', label: 'Pure value — no bluffs', quality: 'mistake', feedback: "No — never assume no bluffs. At 80% sizing, bluffs must exist for the bet to be balanced." },
-        ],
-        xp: 10,
-      },
-      {
-        id: 'vr-s4',
-        type: 'decision_spot',
-        street: 'river',
-        hero_position: 'BB',
-        villain_position: 'BTN',
-        board: ['As', 'Kd', '7c', '2h', 'Js'],
-        hero_hand: ['Kh', 'Qd'],
-        pot_bb: 80,
-        effective_stack_bb: 65,
-        narrative: 'River AKJ72. You hold K♥Q♦ (second pair). BTN fires 80% pot (65bb). Given their polarized range, do you call or fold?',
-        options: [
-          {
-            id: 'call',
-            label: 'Call 65bb',
-            quality: 'good',
-            ev_loss_bb: 2,
-            feedback:
-              "KQ is a borderline bluff-catcher — it beats bluffs (missed draws) but loses to all value (AK, AA, KK, AJ). Given BTN's polarized range, you need to call enough to prevent profitable bluffs. Call if villain bluffs frequently enough.",
-          },
-          {
-            id: 'fold',
-            label: 'Fold 65bb',
-            quality: 'acceptable',
-            ev_loss_bb: 3,
-            feedback:
-              'Folding is defensible — KQ loses to a huge portion of BTN\'s value range (AK dominates). However, if BTN has enough bluffs in their polarized range, folding KQ gives up too much. It depends on villain\'s actual bluffing frequency.',
-          },
-          {
-            id: 'raise',
-            label: 'Raise all-in',
-            quality: 'punt',
-            ev_loss_bb: 15,
-            feedback:
-              'Raising a bluff-catcher on the river vs a polarized range is a massive punt. BTN calls with the nuts (they never fold sets and two pair) and folds bluffs. Pure negative EV move.',
-          },
-        ],
-        xp: 10,
-      },
-    ],
-  },
-
-  // ── 18. Preflop 3-Bet Spots ───────────────────────────────────────────────
-  {
-    id: 'preflop-3bet-spots',
-    module_id: 'preflop-module',
-    slug: 'preflop-3bet-spots',
-    title: 'Preflop 3-Bet Spots',
-    lesson_type: 'micro',
-    concept_ids: ['hand_ranges'],
-    estimated_min: 6,
-    xp_reward: 50,
-    sort_order: 2,
-    steps: [
-      {
-        id: 'p3-s1',
-        type: 'concept_reveal',
-        concept_ids: ['hand_ranges'],
-        concept_title: '3-Betting: Value and Bluff',
-        concept_content:
-          'A balanced 3-bet range contains: (1) Value hands that want to build a big pot (AA, KK, QQ, JJ, AK, AQs), (2) Bluff hands with good blockers + playability (A5s, A4s block AA combos; suited connectors have postflop equity if called). Never 3-bet too tight (only AA/KK) — predictable and exploitable. 3-bet sizing: IP → 3x open, OOP → 3.5–4x open.',
-        xp: 5,
-      },
-      {
-        id: 'p3-s2',
-        type: 'decision_spot',
-        street: 'preflop',
-        hero_position: 'CO',
-        villain_position: 'BTN',
-        hero_hand: ['As', '5s'],
-        pot_bb: 5,
-        effective_stack_bb: 100,
-        narrative: 'BTN opens to 2.5bb. Action on CO with A♠5♠.',
-        options: [
-          {
-            id: '3bet',
-            label: '3-bet to 8bb',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              "A5s is an excellent 3-bet bluff from CO. The Ace blocks AA, AK, AQ (reducing BTN's 4-bet value hands). Suited means postflop playability if called. This is the canonical 3-bet bluff hand.",
-          },
-          {
-            id: 'call',
-            label: 'Call 2.5bb',
-            quality: 'acceptable',
-            ev_loss_bb: 1.5,
-            feedback:
-              'Calling A5s in position is fine — you have good playability. But 3-betting is higher EV: you can win the pot preflop, you have blocker effects vs BTN\'s continuing range, and you play in position postflop as the 3-bettor.',
-          },
-          {
-            id: 'fold',
-            label: 'Fold',
-            quality: 'mistake',
-            ev_loss_bb: 2,
-            feedback:
-              'Folding A5s OTB vs a BTN open is too tight. This hand has strong 3-bet bluff value and enough postflop playability to call. Never fold this hand facing one raiser in position.',
-          },
-        ],
-        xp: 10,
-      },
-      {
-        id: 'p3-s3',
-        type: 'decision_spot',
-        street: 'preflop',
-        hero_position: 'BTN',
-        villain_position: 'UTG',
-        hero_hand: ['Qh', 'Jh'],
-        pot_bb: 3.5,
-        effective_stack_bb: 100,
-        narrative: 'UTG opens to 2.5bb (tight range: TT+, AK, AQs, KQs). Action on BTN with Q♥J♥.',
-        options: [
-          {
-            id: '3bet',
-            label: '3-bet to 8bb',
-            quality: 'mistake',
-            ev_loss_bb: 3,
-            feedback:
-              "QJh 3-betting vs UTG is a mistake. UTG's range is very strong — QJ is dominated by AQ, AJ, KQ, KJ frequently. Your 3-bet gets dominated when called, and UTG folds only pure air.",
-          },
-          {
-            id: 'call',
-            label: 'Call 2.5bb',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              'Correct. QJh in position vs UTG is a clear call. You have excellent implied odds (straight/flush potential), you are IP, and the hand plays well in a single raised pot. Avoid 3-betting dominated hands vs tight UTG ranges.',
-          },
-          {
-            id: 'fold',
-            label: 'Fold',
-            quality: 'acceptable',
-            ev_loss_bb: 1.5,
-            feedback:
-              "Folding QJh vs UTG is reasonable at very tight tables — UTG's range has more KK, AA than you might think. However, in 6-max where UTG opens 13–15%, QJh has enough equity and playability to call profitably.",
-          },
-        ],
-        xp: 10,
-      },
-      {
-        id: 'p3-s4',
-        type: 'range_build',
-        street: 'preflop',
-        hero_position: 'BTN',
-        narrative: "Build BTN's 3-bet range vs CO open (6-max, 100bb). Include value hands and balanced bluffs.",
-        range_target: 'BTN_3bet_vs_CO',
-        range_hint: 'Value: QQ+, AK, AQs. Bluffs: A5s–A2s (blocker), suited connectors (JTs, T9s), select offsuit combos. Total ~6–8% of hands.',
-        range_tolerance: 3,
-        visual: 'range_grid',
-        xp: 12,
-      },
-    ],
-  },
-
-  // ── 19. MDF Interactive Lab ───────────────────────────────────────────────
-  // Showcases the new mdf_slider step type
-  {
-    id: 'mdf-interactive-lab',
-    module_id: 'mdf-module',
-    slug: 'mdf-interactive-lab',
-    title: 'MDF Interactive Lab',
-    lesson_type: 'simulation',
-    concept_ids: ['mdf', 'alpha'],
-    estimated_min: 6,
-    xp_reward: 55,
-    sort_order: 2,
-    steps: [
-      {
-        id: 'mdf-lab-s1',
-        type: 'concept_reveal',
-        concept_ids: ['mdf', 'alpha'],
-        concept_title: 'How Bet Size Controls the Price',
-        concept_content:
-          'Every bet size creates a specific MDF and alpha. A pot-sized bet requires you to defend 50% of your range (MDF = 50%) and villain\'s bluff needs you to fold 50% (alpha = 50%). A half-pot bet requires 67% defense. As the bet size grows: alpha grows, MDF shrinks — making it harder to defend without over-folding.',
-        xp: 5,
-      },
-      {
-        id: 'mdf-lab-s2',
-        type: 'mdf_slider',
-        concept_ids: ['mdf'],
-        narrative: 'Villain bets various sizes on the river. Use the slider to explore how the required MDF and alpha change as bet size changes. When you\'re confident you understand the relationship, click "Lock In My Answer".',
-        mdf_slider_question: 'At what bet size (% of pot) does MDF drop below 50%?',
-        mdf_slider_initial_bet_pct: 50,
-        mdf_slider_target: 50,
-        mdf_slider_tolerance: 5,
-        xp: 15,
-      },
-      {
-        id: 'mdf-lab-s3',
-        type: 'equity_predict',
-        street: 'river',
-        pot_bb: 30,
-        narrative: 'Villain fires a 2× pot overbet (200% pot) on the river. What is your MDF? (How often must you continue as a whole number %.)',
-        equity_actual: 33,
-        equity_tolerance: 4,
-        correct_feedback:
-          'Correct. MDF = pot/(pot + bet) = 30/(30+60) = 33%. With a 2× overbet you only need to defend 1 in 3 hands. But those hands had better be your strongest ones.',
-        wrong_feedback:
-          'MDF = pot / (pot + bet) = 30 / 90 = 33%. Big overbets demand very tight defense — you fold 67% but protect the 33% with strong hands.',
-        xp: 15,
-      },
-      {
-        id: 'mdf-lab-s4',
-        type: 'concept_reveal',
-        concept_ids: ['mdf'],
-        concept_title: 'MDF in Practice: Constructing a Defense',
-        concept_content:
-          'MDF is the floor, not a prescription. Your actual defense frequency considers hand quality: fold trash, mix medium-strength hands, always continue strong hands. A common error is defending exactly MDF but with weak hands — villain\'s value hands still profit. Defend MDF with your strongest available hands, not random ones.',
-        xp: 5,
-      },
-    ],
-  },
-
-  // ── 20. Exploit Simulation ────────────────────────────────────────────────
-  // Showcases the scenario_tree step type
-  {
-    id: 'exploit-simulation',
-    module_id: 'exploit-module',
-    slug: 'exploit-simulation',
-    title: 'Exploit Simulation: Reading a Leak',
-    lesson_type: 'simulation',
-    concept_ids: ['exploit'],
-    estimated_min: 7,
-    xp_reward: 60,
-    sort_order: 1,
-    steps: [
-      {
-        id: 'exp-s1',
-        type: 'concept_reveal',
-        concept_ids: ['exploit'],
-        concept_title: 'Exploitative Play: Punishing Leaks',
-        concept_content:
-          'GTO is unexploitable but does not maximise EV against imperfect opponents. Against a player who folds too much on the river, bluffing more is +EV. Against a player who calls too wide, value betting thinner is +EV. The art is identifying the leak and adjusting precisely — overbetting exploits often create counter-exploits if the opponent adjusts.',
-        xp: 5,
-      },
-      {
-        id: 'exp-s2',
-        type: 'scenario_tree',
-        concept_ids: ['exploit'],
+        id: 'c1-s2',
+        type: 'position_table',
+        concept_ids: ['table_position'],
+        position_table_mode: 'explore',
         narrative:
-          'You\'ve noticed villain folds to river bets 70% of the time (MDF requires only 50% defense). Navigate this decision tree to extract maximum EV from this exploit.',
-        scenario_root: 'root',
-        scenario_nodes: [
-          {
-            id: 'root',
-            label: 'River: You hold a missed draw. Villain checked. Pot is 40bb.',
-            description: 'Villain\'s river fold frequency is 70% — well above the 50% required by MDF for a pot-size bet. How do you exploit this?',
-            children: [
-              { option_label: 'Check behind (give up)', node_id: 'check_behind' },
-              { option_label: 'Bet 20bb (50% pot)', node_id: 'bet_half' },
-              { option_label: 'Bet 40bb (pot-sized)', node_id: 'bet_pot' },
-              { option_label: 'Shove 80bb (2× pot overbet)', node_id: 'overbet' },
-            ],
-          },
-          {
-            id: 'check_behind',
-            label: 'You check behind.',
-            outcome: {
-              ev_bb: 0,
-              label: 'Missed value',
-              quality: 'mistake',
-              explanation:
-                'Against a player folding 70% of the time to river bets, checking behind leaves enormous money on the table. Your missed draw has zero showdown value — any bet profits when villain folds this often.',
-            },
-          },
-          {
-            id: 'bet_half',
-            label: 'You bet 20bb (half pot).',
-            description: 'Villain faces a half-pot bet. Alpha = 20/60 = 33%. Villain folds 70% — well above needed 33%.',
-            children: [
-              { option_label: 'This size works — villain folds enough', node_id: 'half_works', is_optimal: false },
-              { option_label: 'This size is correct but not maximizing the exploit', node_id: 'half_suboptimal', is_optimal: false },
-            ],
-          },
-          {
-            id: 'half_works',
-            label: 'Half-pot bet wins the pot.',
-            outcome: {
-              ev_bb: 13.4,
-              label: 'Profitable but sub-optimal',
-              quality: 'good',
-              explanation:
-                'EV = (0.70 × 40) − (0.30 × 20) = 28 − 6 = +22bb... wait, actually EV of a half-pot bluff when villain folds 70%: 0.70 × 40bb (win pot) − 0.30 × 20bb (lose bet) = 28 − 6 = +22bb. This works, but you left money on the table by not sizing up into a bigger fold frequency.',
-            },
-          },
-          {
-            id: 'half_suboptimal',
-            label: 'Correct insight — but half-pot is still the right answer here.',
-            outcome: {
-              ev_bb: 22,
-              label: 'Good exploitative thinking',
-              quality: 'good',
-              explanation:
-                'A half-pot bluff EV = 0.70×40 − 0.30×20 = 22bb profit. You\'re right that the pot-size bet also wins but for a larger amount. Both sizes profit here — a bet is always correct when villain folds more than alpha.',
-            },
-          },
-          {
-            id: 'bet_pot',
-            label: 'You bet 40bb (pot-sized).',
-            description: 'Villain faces a pot bet. Alpha = 40/80 = 50%. Villain folds 70% — 20% above the break-even threshold.',
-            children: [
-              { option_label: 'Calculate the EV of this bluff', node_id: 'pot_ev', is_optimal: true },
-              { option_label: 'This might be too big — villain could adjust', node_id: 'pot_fear' },
-            ],
-          },
-          {
-            id: 'pot_ev',
-            label: 'Pot-bet EV calculation',
-            outcome: {
-              ev_bb: 28,
-              label: 'Optimal exploit',
-              quality: 'perfect',
-              explanation:
-                'EV = (0.70 × 40bb) − (0.30 × 40bb) = 28 − 12 = +16bb per bluff. Actually even better: you win the whole pot 70% and lose your bet 30%. Pot-sized is the sweet spot — maximises the fold advantage without leaving exploit EV on the table like the overbet might.',
-            },
-          },
-          {
-            id: 'pot_fear',
-            label: 'You hesitate at pot-sizing.',
-            outcome: {
-              ev_bb: 0,
-              label: 'Exploitative thinking blocked by fear',
-              quality: 'acceptable',
-              explanation:
-                'Against a known over-folder, the pot-size bet is the correct exploitative choice. Worrying about villain adjusting is GTO-thinking — in exploitative play, you lean into the opponent\'s current tendencies until they show evidence of adjusting.',
-            },
-          },
-          {
-            id: 'overbet',
-            label: 'You shove 80bb (2× pot overbet).',
-            description: 'Alpha = 80/120 = 67%. Villain folds 70% — barely above break-even.',
-            children: [
-              { option_label: 'The bigger bet wins more when it works', node_id: 'overbet_thinking' },
-              { option_label: 'This size is too risky at 70% fold rate', node_id: 'overbet_correct' },
-            ],
-          },
-          {
-            id: 'overbet_thinking',
-            label: 'Overbet thinking',
-            outcome: {
-              ev_bb: 8,
-              label: 'Technically profitable but not optimal',
-              quality: 'acceptable',
-              explanation:
-                'EV = (0.70 × 40bb) − (0.30 × 80bb) = 28 − 24 = +4bb. This is profitable but barely — you\'re right at the edge. The pot-size bet (+16bb EV) is much more efficient. Overbets require very high fold rates to justify.',
-            },
-          },
-          {
-            id: 'overbet_correct',
-            label: 'You size down to pot-bet.',
-            outcome: {
-              ev_bb: 16,
-              label: 'Optimal exploit found',
-              quality: 'perfect',
-              explanation:
-                'Exactly right. The pot-sized bet (+16bb EV) dominates the overbet (+4bb EV). When someone folds 70%, the pot-bet captures the maximum risk-adjusted value. Save overbets for players who fold 80%+.',
-            },
-          },
+          "Nine-handed poker has three broad zones — early, middle, and late position — plus the two blinds. Tap every seat to learn what it means.",
+        xp: 5,
+      },
+      {
+        id: 'c1-s3',
+        type: 'position_table',
+        concept_ids: ['table_position', 'relative_position'],
+        position_table_mode: 'quiz',
+        position_table_highlight: ['HJ', 'BTN', 'BB'],
+        position_table_prompt: 'Which player will act last after the flop?',
+        options: [
+          { id: 'HJ', label: 'HJ', quality: 'mistake', feedback: 'HJ acts early postflop against BTN and BB — not last.' },
+          { id: 'BTN', label: 'BTN', quality: 'perfect', feedback: 'Correct. Acting later gives you information before you make your decision.' },
+          { id: 'BB', label: 'BB', quality: 'mistake', feedback: 'BB is usually first to act postflop against non-blind positions, not last.' },
         ],
-        xp: 20,
-      },
-      {
-        id: 'exp-s3',
-        type: 'concept_reveal',
-        concept_ids: ['exploit'],
-        concept_title: 'Exploit vs Counter-Exploit',
-        concept_content:
-          'Every exploit creates vulnerability to a counter-exploit. If you bluff too much against an over-folder and they notice, they start calling wide — now you\'re value-thin with bad hands. Exploitative play is a game of ongoing adjustment: identify a leak, exploit it, watch for adjustment, re-adjust. The best exploitative players track adjustments in real time.',
         xp: 5,
       },
-    ],
-  },
+      {
+        id: 'c1-s4',
+        type: 'concept_reveal',
+        concept_ids: ['ip_oop', 'relative_position'],
+        concept_title: 'In Position vs Out of Position',
+        concept_content:
+          "IN POSITION (IP): you act after your opponent. OUT OF POSITION (OOP): you act before them. Position is relative — BTN is IP against every other seat, since BTN acts last of all. The player acting second gets to see the first player's action before deciding. Position is information.",
+        visual: 'table',
+        xp: 2,
+      },
+      {
+        id: 'c1-s5a',
+        type: 'action_sequence',
+        concept_ids: ['ip_oop'],
+        narrative: 'BTN vs BB.',
+        action_sequence_prompt: 'Who is IP (in position)?',
+        options: [
+          { id: 'btn', label: 'BTN', quality: 'perfect', feedback: 'Correct — BTN acts last on every postflop street.' },
+          { id: 'bb', label: 'BB', quality: 'mistake', feedback: 'BB acts first postflop here — BTN has position.' },
+        ],
+        xp: 3,
+      },
+      {
+        id: 'c1-s5b',
+        type: 'action_sequence',
+        concept_ids: ['ip_oop'],
+        narrative: 'CO vs BTN.',
+        action_sequence_prompt: 'Who is IP?',
+        options: [
+          { id: 'btn', label: 'BTN', quality: 'perfect', feedback: 'Correct — BTN is in position against every other seat at the table.' },
+          { id: 'co', label: 'CO', quality: 'mistake', feedback: 'CO acts before BTN postflop, so CO is out of position here.' },
+        ],
+        xp: 3,
+      },
+      {
+        id: 'c1-s5c',
+        type: 'action_sequence',
+        concept_ids: ['ip_oop'],
+        narrative: 'SB vs BB, blind-vs-blind pot.',
+        action_sequence_prompt: 'Who acts first postflop?',
+        options: [
+          { id: 'sb', label: 'SB', quality: 'perfect', feedback: 'Correct — in blind-vs-blind pots, SB is out of position and acts first after the flop.' },
+          { id: 'bb', label: 'BB', quality: 'mistake', feedback: 'BB actually acts last postflop in a blind-vs-blind pot — SB acts first.' },
+        ],
+        xp: 6,
+      },
 
-  // ── 21. Equity Heatmap Lab ────────────────────────────────────────────────
-  // Showcases the range_heatmap step type
-  {
-    id: 'equity-heatmap-lab',
-    module_id: 'range-construction-module',
-    slug: 'equity-heatmap-lab',
-    title: 'Equity Heatmap Lab',
-    lesson_type: 'range_trainer',
-    concept_ids: ['equity_buckets', 'hand_ranges'],
-    estimated_min: 7,
-    xp_reward: 55,
-    sort_order: 3,
-    steps: [
+      // ══════════════════════════════════════════════════════════════════════
+      // CHAPTER 2 — Speak the Language
+      // ══════════════════════════════════════════════════════════════════════
       {
-        id: 'eq-heat-s1',
+        id: 'c2-s6',
         type: 'concept_reveal',
-        concept_ids: ['equity_buckets'],
-        concept_title: 'Equity Buckets: Classifying Hand Strength',
+        concept_ids: ['poker_terminology'],
+        concept_title: 'Hero & Villain',
         concept_content:
-          'Equity buckets organise your range into tiers: Strong (≥75% equity) — sets, top two pair, straights/flushes. Good (50–74%) — top pair strong kicker, overpairs. Weak (33–49%) — middle pair, bottom pair, strong draws. Trash (<33%) — air, weak backdoors. Understanding which bucket a hand falls into guides betting frequency and sizing.',
-        xp: 5,
+          "Hero is the player whose decision we're studying — that's you in every lesson. Villain is an opponent; there can be multiple villains in a hand. Active players are everyone still involved. You'll see these terms constantly from here on.",
+        xp: 2,
       },
       {
-        id: 'eq-heat-s2',
+        id: 'c2-s7',
+        type: 'concept_reveal',
+        concept_ids: ['poker_terminology'],
+        concept_title: 'Preflop and Postflop',
+        concept_content:
+          "A hand moves through streets: PREFLOP → FLOP → TURN → RIVER. Preflop covers all action before any community cards appear. Postflop is everything after the flop is dealt — flop, turn, and river together.",
+        visual: 'table',
+        xp: 2,
+      },
+      {
+        id: 'c2-s8',
+        type: 'action_sequence',
+        concept_ids: ['poker_terminology'],
+        narrative:
+          'UTG folds. HJ folds. CO folds. Action reaches BTN — nobody before BTN has voluntarily entered the pot, so BTN is "first in."',
+        action_sequence_display: ['UTG folds', 'HJ folds', 'CO folds', 'Action on BTN'],
+        action_sequence_prompt: 'If CO had already called instead of folding, would BTN still be first in?',
+        options: [
+          { id: 'no', label: 'No', quality: 'perfect', feedback: 'Correct — once CO calls, BTN is no longer first in; BTN would be acting over an open pot.' },
+          { id: 'yes', label: 'Yes', quality: 'mistake', feedback: 'Once any player voluntarily enters the pot, everyone after them is no longer first in.' },
+        ],
+        xp: 4,
+      },
+      {
+        id: 'c2-s9',
+        type: 'action_sequence',
+        concept_ids: ['stack_depth'],
+        narrative: 'Player has 4,000 chips. Big blind = 100.',
+        action_sequence_prompt: 'How deep is this stack, expressed in big blinds?',
+        options: [
+          { id: '4bb', label: '4bb', quality: 'mistake', feedback: 'That would be 400 chips, not 4,000.' },
+          { id: '20bb', label: '20bb', quality: 'mistake', feedback: '20bb would be 2,000 chips.' },
+          { id: '40bb', label: '40bb', quality: 'perfect', feedback: 'Correct — 4,000 ÷ 100 = 40bb. Stack depth is normally expressed in big blinds, not raw chip counts.' },
+          { id: '400bb', label: '400bb', quality: 'mistake', feedback: 'That would be 400,000 chips.' },
+        ],
+        xp: 4,
+      },
+      {
+        id: 'c2-s10',
+        type: 'action_sequence',
+        concept_ids: ['effective_stack'],
+        narrative: 'Hero: 100bb. Villain: 42bb.',
+        action_sequence_prompt: 'How many big blinds can Hero actually lose to this Villain?',
+        options: [
+          { id: '100', label: '100bb', quality: 'mistake', feedback: "That's Hero's own stack, but Villain can't put in more than they have." },
+          { id: '42', label: '42bb', quality: 'perfect', feedback: 'Correct — the effective stack is the smaller of the two stacks. It caps how much can actually go into the pot between them.' },
+          { id: '58', label: '58bb', quality: 'mistake', feedback: "That's the difference between the stacks, not the effective stack." },
+        ],
+        xp: 4,
+      },
+      {
+        id: 'c2-s11',
+        type: 'concept_reveal',
+        concept_ids: ['effective_stack'],
+        concept_title: 'Another Example',
+        concept_content: 'Hero: 30bb. Villain: 80bb. Effective stack = 30bb — always the smaller of the two.',
+        xp: 2,
+      },
+      {
+        id: 'c2-s12',
+        type: 'concept_reveal',
+        concept_ids: ['bet_size_notation'],
+        concept_title: 'Bet-Size Notation',
+        concept_content:
+          'Bets are described two ways: in big blinds ("BTN raises to 2.5bb") or as a fraction of the pot ("Hero bets 50% pot"). On a 100-chip pot: 25 chips is 25% pot, 50 is half pot, 75 is 75% pot, 100 is pot-sized, and 150 is a 150% pot overbet.',
+        xp: 2,
+      },
+      {
+        id: 'c2-s13',
+        type: 'concept_reveal',
+        concept_ids: ['nuts'],
+        board: ['9h', '8h', '7d'],
+        hero_hand: ['Jc', 'Tc'],
+        concept_title: 'The Nuts',
+        concept_content:
+          'On this board, JT makes the nut straight — the strongest hand currently possible. But if a later card changes what the best possible hand is, JT may no longer be the nuts.',
+        xp: 2,
+      },
+      {
+        id: 'c2-s13b',
+        type: 'action_sequence',
+        concept_ids: ['nuts'],
+        board: ['9h', '8h', '7d', '9s'],
+        hero_hand: ['Jc', 'Tc'],
+        narrative: 'The turn brings the 9♠.',
+        action_sequence_prompt: 'Is J-T still the nuts?',
+        options: [
+          { id: 'no', label: 'No', quality: 'perfect', feedback: 'Correct — 9♠ pairs the board, and a set of nines now beats the straight. The nuts changed.' },
+          { id: 'yes', label: 'Yes', quality: 'mistake', feedback: 'The board pairing means a set of nines now beats the straight — JT is no longer the nuts.' },
+        ],
+        xp: 4,
+      },
+      {
+        id: 'c2-s14',
+        type: 'concept_reveal',
+        concept_ids: ['nuts'],
+        concept_title: 'Effective Nuts',
+        concept_content:
+          "Sometimes a hand isn't literally the strongest possible hand, but it's so strong relative to realistic ranges that it plays like the nuts. Absolute hand ranking and strategic hand strength aren't always the same thing.",
+        xp: 2,
+      },
+
+      // ══════════════════════════════════════════════════════════════════════
+      // CHAPTER 3 — Actions & Hand Histories
+      // ══════════════════════════════════════════════════════════════════════
+      {
+        id: 'c3-s14',
+        type: 'concept_reveal',
+        concept_ids: ['poker_terminology'],
+        concept_title: 'Basic Actions',
+        concept_content:
+          'CHECK: pass the action without adding chips, when no bet must be matched. CALL: match the current wager. BET/RAISE: increase the current wager. FOLD: give up the hand. LIMP: enter preflop by calling the big blind instead of raising.',
+        xp: 2,
+      },
+      {
+        id: 'c3-s15a',
+        type: 'concept_reveal',
+        concept_ids: ['rfi'],
+        concept_title: 'VPIP & RFI',
+        concept_content:
+          'VPIP (Voluntarily Put money In Pot): calling or raising counts; posting forced blinds does not. RFI (Raise First In), also called an "open": raising when action reaches you with nobody voluntarily in the pot yet.',
+        xp: 2,
+      },
+      {
+        id: 'c3-s15b',
+        type: 'action_sequence',
+        concept_ids: ['rfi'],
+        narrative: 'BTN raises after everyone folds.',
+        action_sequence_prompt: 'What is this action called?',
+        options: [
+          { id: 'rfi', label: 'RFI (open raise)', quality: 'perfect', feedback: 'Correct — nobody had voluntarily entered before BTN raised.' },
+          { id: 'vpip_only', label: 'VPIP, but not RFI', quality: 'mistake', feedback: "This IS an RFI — it's also VPIP, but the more specific term applies here." },
+        ],
+        xp: 4,
+      },
+      {
+        id: 'c3-s15c',
+        type: 'action_sequence',
+        concept_ids: ['rfi'],
+        narrative: "CO calls UTG's raise.",
+        action_sequence_prompt: 'What is this action called?',
+        options: [
+          { id: 'vpip', label: 'VPIP, but not RFI', quality: 'perfect', feedback: 'Correct — CO voluntarily put money in, but UTG already opened, so this is not an RFI.' },
+          { id: 'rfi', label: 'RFI', quality: 'mistake', feedback: 'UTG already raised first — CO is just calling, not opening.' },
+        ],
+        xp: 4,
+      },
+      {
+        id: 'c3-s16',
+        type: 'concept_reveal',
+        concept_ids: ['poker_terminology', 'three_bet'],
+        concept_title: 'The Betting Ladder',
+        concept_content:
+          'Big blind = the first forced bet. First raise = 2-bet. Re-raise = 3-bet. Next raise = 4-bet, then 5-bet. In conversation, players usually say "open," "3-bet," "4-bet" — rarely "2-bet."',
+        xp: 2,
+      },
+      {
+        id: 'c3-s17',
+        type: 'concept_reveal',
+        concept_ids: ['poker_terminology', 'three_bet', 'squeeze'],
+        concept_title: 'Preflop Vocabulary',
+        concept_content:
+          'STEAL: an RFI from CO/BTN/SB to win the blinds. ISOLATE: raise after a limper, aiming to play heads-up. MIN-RAISE: the minimum legal raise. 3-BET: re-raise after a raise. RESTEAL: a 3-bet against a steal. ALL-IN/PUSH: bet all remaining chips. COLD CALL: call a raise without previously entering the pot. SQUEEZE: 3-bet after a raise and at least one call.',
+        xp: 3,
+      },
+      {
+        id: 'c3-s18',
+        type: 'action_sequence',
+        concept_ids: ['squeeze'],
+        narrative: 'UTG raises to 2.5bb. CO calls. BTN raises to 11bb.',
+        action_sequence_display: ['UTG raises to 2.5bb', 'CO calls', 'BTN raises to 11bb'],
+        action_sequence_prompt: "What is BTN's action called?",
+        options: [
+          { id: 'steal', label: 'Steal', quality: 'mistake', feedback: 'A steal is an RFI into folded action — here two players already voluntarily entered.' },
+          { id: 'squeeze', label: 'Squeeze', quality: 'perfect', feedback: 'Correct — BTN 3-bet after a raise and a call. That combination is a squeeze.' },
+          { id: 'cold_call', label: 'Cold call', quality: 'mistake', feedback: 'BTN raised, not called.' },
+          { id: 'open_shove', label: 'Open shove', quality: 'mistake', feedback: "This isn't an all-in, and action wasn't folded to BTN." },
+        ],
+        xp: 6,
+      },
+      {
+        id: 'c3-s19',
+        type: 'concept_reveal',
+        concept_ids: ['poker_terminology'],
+        concept_title: 'Postflop Language',
+        concept_content:
+          'C-BET: a postflop bet by whoever was the aggressor on the previous street. DONK BET (LEAD): an out-of-position player bets into the previous aggressor before they can c-bet. SLOW PLAY (TRAP): playing a very strong hand passively to induce future bets.',
+        xp: 2,
+      },
+      {
+        id: 'c3-s20',
+        type: 'action_sequence',
+        concept_ids: ['action_lines'],
+        narrative:
+          'x = check, b = bet, c = call, r = raise, f = fold. Sequences chain across streets: x/f = check-fold, x/c = check-call, x/r = check-raise, b/b = bet flop then bet turn.',
+        action_sequence_prompt: 'Translate "x/r".',
+        options: [
+          { id: 'check_raise', label: 'Check-raise', quality: 'perfect', feedback: 'Correct — check, then raise when facing a bet.' },
+          { id: 'bet_raise', label: 'Bet then raise', quality: 'mistake', feedback: '"x" always means check, not bet.' },
+          { id: 'check_call', label: 'Check-call', quality: 'mistake', feedback: '"r" means raise, not call.' },
+        ],
+        xp: 4,
+      },
+      {
+        id: 'c3-s20b',
+        type: 'action_sequence',
+        concept_ids: ['action_lines'],
+        action_sequence_prompt: 'Translate "bet flop, bet turn, bet river" into notation.',
+        options: [
+          { id: 'bbb', label: 'b/b/b', quality: 'perfect', feedback: 'Correct — three streets, three bets.' },
+          { id: 'bbc', label: 'b/b/c', quality: 'mistake', feedback: 'All three streets were bets, not a call.' },
+          { id: 'xbb', label: 'x/b/b', quality: 'mistake', feedback: 'The flop was a bet, not a check.' },
+        ],
+        xp: 6,
+      },
+
+      // ══════════════════════════════════════════════════════════════════════
+      // CHAPTER 4 — Stop Thinking in One Hand
+      // ══════════════════════════════════════════════════════════════════════
+      {
+        id: 'c4-s21',
+        type: 'concept_reveal',
+        concept_ids: ['range_thinking'],
+        concept_title: 'The Beginner Trap',
+        concept_content:
+          'When a beginner sees a raise, they think: "He probably has AK." A strong player asks instead: "What hands can take this action?" Strong players rarely guess one exact holding — they assign a RANGE of plausible hands, and every action changes that range.',
+        xp: 2,
+      },
+      {
+        id: 'c4-s22',
+        type: 'concept_reveal',
+        concept_ids: ['range_thinking'],
+        board: ['As', 'Jh', '4d'],
+        concept_title: 'Every Action Gives Information',
+        concept_content:
+          'Opponent raises from early position — their range narrows to strong hands. Flop A♠J♥4♦, opponent bets — the range shifts again, not just shrinking but changing composition. Every action reshapes what they can have, not just narrows it.',
+        xp: 2,
+      },
+      {
+        id: 'c4-s23',
+        type: 'concept_reveal',
+        concept_ids: ['range_thinking'],
+        concept_title: 'Your Range Matters Too',
+        concept_content:
+          'Range thinking has two sides: "What can Villain have?" AND "What can I have?" Later strategy depends on how your range and their range interact. Poker strategy is range versus range.',
+        xp: 4,
+      },
+
+      // ══════════════════════════════════════════════════════════════════════
+      // CHAPTER 5 — The 13×13 Range Map
+      // ══════════════════════════════════════════════════════════════════════
+      {
+        id: 'c5-s24',
+        type: 'concept_reveal',
+        concept_ids: ['range_thinking'],
+        concept_title: 'The 13×13 Range Map',
+        concept_content:
+          'There are 169 strategically distinct starting-hand classes, arranged in a grid. The diagonal is pocket pairs (AA, 77, 22). Above the diagonal is suited hands (AKs, T9s). Below the diagonal is offsuit hands (AKo, QJo).',
+        visual: 'range_grid',
+        xp: 2,
+      },
+      {
+        id: 'c5-s25',
         type: 'range_heatmap',
-        concept_ids: ['equity_buckets', 'hand_ranges'],
-        street: 'flop',
-        board: ['As', 'Kd', '7c'],
-        hero_position: 'BTN',
-        villain_position: 'BB',
-        narrative:
-          'Board A♠K♦7♣. BTN opened, BB called. The heatmap below shows BTN\'s equity vs BB\'s range. Identify which hand categories are in the "Strong" bucket (≥75% equity — shown in green) by clicking on them.',
-        range_hint:
-          'Strong hands on AK7: sets (AA, KK, 77), top two pair (AK), and straights (65, is there one?). Look for the darkest green cells.',
-        range_heatmap_data: {
-          'AA': 95, 'AKs': 88, 'AKo': 87, 'AQs': 72, 'AQo': 71, 'AJs': 69, 'AJo': 68,
-          'ATs': 67, 'ATo': 66, 'A9s': 64, 'A9o': 63, 'A8s': 62, 'A8o': 61, 'A7s': 82,
-          'A7o': 80, 'A6s': 59, 'A6o': 58, 'A5s': 58, 'A5o': 57, 'A4s': 57, 'A4o': 56,
-          'A3s': 56, 'A3o': 55, 'A2s': 55, 'A2o': 54,
-          'KK': 91, 'KQs': 65, 'KQo': 64, 'KJs': 63, 'KJo': 62, 'KTs': 61, 'KTo': 60,
-          'K9s': 59, 'K9o': 58, 'K8s': 57, 'K8o': 56, 'K7s': 74, 'K7o': 72,
-          'QQ': 65, 'QJs': 40, 'QJo': 39, 'QTs': 38, 'QTo': 37,
-          'JJ': 62, 'JTs': 38, 'JTo': 37,
-          'TT': 60, 'T9s': 36, 'T9o': 35,
-          '99': 55, '98s': 34, '98o': 33,
-          '88': 53, '87s': 33, '87o': 32,
-          '77': 92, '76s': 32, '76o': 31,
-          '66': 40, '65s': 31, '65o': 30,
-          '55': 38, '54s': 29, '54o': 28,
-          '44': 36, '33': 34, '22': 33,
-        },
-        range_heatmap_target: ['AA', 'KK', '77', 'AKs', 'AKo', 'A7s', 'A7o', 'K7s', 'K7o'],
-        xp: 18,
+        concept_ids: ['range_thinking'],
+        narrative: 'Tap these three hands on the grid: AKs, 88, and QJo.',
+        range_heatmap_target: ['AKs', '88', 'QJo'],
+        range_hint: 'Suited hands sit above the diagonal; offsuit hands sit below it; pairs run down the diagonal.',
+        xp: 6,
       },
       {
-        id: 'eq-heat-s3',
-        type: 'board_classify',
-        board: ['As', 'Kd', '7c'],
-        narrative: 'On A♠K♦7♣, which player\'s range has more "Strong bucket" (≥75%) hands?',
-        correct_answer: 'BTN',
-        correct_feedback:
-          'Correct — BTN opened and has more AK, AA, KK, 77 combinations. This means BTN has the range advantage AND the nut advantage, justifying high-frequency, well-sized c-bets.',
-        wrong_feedback:
-          'BTN has more strong-bucket hands on AK7. As the preflop raiser, BTN holds AA/KK/AK at higher frequency. BB\'s wide calling range misses this board more often.',
+        id: 'c5-s26',
+        type: 'concept_reveal',
+        concept_ids: ['combinatorics'],
+        concept_title: "Why 169 Isn't the Whole Story",
+        concept_content:
+          '169 hand classes, but 1,326 exact two-card combinations. AKs is one strategic class, but it can appear in four exact suited combinations. AKo has twelve. AA has six. This is the idea of COMBOS.',
+        xp: 4,
+      },
+
+      // ══════════════════════════════════════════════════════════════════════
+      // CHAPTER 6 — Combinations & Card Removal
+      // ══════════════════════════════════════════════════════════════════════
+      {
+        id: 'c6-s27',
+        type: 'combo_visualizer',
+        concept_ids: ['combinatorics'],
+        narrative: 'Four aces. How many ways can you choose two of them?',
+        combo_visualizer_mode: 'reveal',
+        combo_visualizer_kind: 'pair',
+        combo_visualizer_subject: 'A',
+        xp: 2,
+      },
+      {
+        id: 'c6-s27b',
+        type: 'combo_visualizer',
+        concept_ids: ['combinatorics'],
+        narrative: 'How many combinations of KK exist preflop?',
+        combo_visualizer_mode: 'quiz',
+        combo_visualizer_kind: 'pair',
+        combo_visualizer_subject: 'K',
+        combo_visualizer_correct: 6,
+        combo_visualizer_correct_feedback: 'Correct — any pocket pair has 6 combinations before any cards are removed.',
+        combo_visualizer_wrong_feedback: 'Any pocket pair has 6 combinations before removal: choose 2 of 4 suits.',
+        xp: 5,
+      },
+      {
+        id: 'c6-s28',
+        type: 'combo_visualizer',
+        concept_ids: ['combinatorics'],
+        narrative: '4 Aces × 4 Kings = 16 AK combinations, split into 4 suited and 12 offsuit.',
+        combo_visualizer_mode: 'reveal',
+        combo_visualizer_kind: 'unpaired',
+        combo_visualizer_subject: 'AK',
+        xp: 4,
+      },
+      {
+        id: 'c6-s29',
+        type: 'concept_reveal',
+        concept_ids: ['combinatorics'],
+        concept_title: 'The Full Deck Count',
+        concept_content:
+          "Pocket pairs: 13 × 6 = 78. Suited hands: 78 × 4 = 312. Offsuit hands: 78 × 12 = 936. Total: 1,326 combinations. You don't need to memorize all three totals — just remember: pair = 6, suited = 4, offsuit = 12, unpaired both = 16.",
+        xp: 2,
+      },
+      {
+        id: 'c6-s30',
+        type: 'combo_visualizer',
+        concept_ids: ['card_removal', 'blockers_intro'],
+        hero_hand: ['Ad', 'Kc'],
+        narrative:
+          "Hero holds A♦K♣. Can Villain have A♦K♦? No — Villain can't, because Hero already holds the A♦. Known cards remove combinations from what opponents can hold. This is card removal, and a card that blocks combos this way is called a BLOCKER.",
+        combo_visualizer_mode: 'reveal',
+        combo_visualizer_kind: 'removal',
+        combo_visualizer_subject: 'A',
+        combo_visualizer_known_cards: ['Ad'],
+        xp: 4,
+      },
+      {
+        id: 'c6-s31',
+        type: 'combo_visualizer',
+        concept_ids: ['card_removal'],
+        board: ['Ac', '7d', '2s'],
+        narrative: 'Board: A♣7♦2♠. How many combinations of AA can Villain still hold?',
+        combo_visualizer_mode: 'quiz',
+        combo_visualizer_kind: 'removal',
+        combo_visualizer_subject: 'A',
+        combo_visualizer_known_cards: ['Ac'],
+        combo_visualizer_correct: 3,
+        xp: 6,
+      },
+      {
+        id: 'c6-s31b',
+        type: 'combo_visualizer',
+        concept_ids: ['card_removal'],
+        board: ['Ac', '7d', '2s'],
+        hero_hand: ['Ad', 'Kh'],
+        narrative: 'Hero also holds A♦. How many AA combinations remain for Villain now?',
+        combo_visualizer_mode: 'quiz',
+        combo_visualizer_kind: 'removal',
+        combo_visualizer_subject: 'A',
+        combo_visualizer_known_cards: ['Ac', 'Ad'],
+        combo_visualizer_correct: 1,
+        xp: 8,
+      },
+
+      // ══════════════════════════════════════════════════════════════════════
+      // CHAPTER 7 — Draws, Outs & Equity
+      // ══════════════════════════════════════════════════════════════════════
+      {
+        id: 'c7-s32',
+        type: 'concept_reveal',
+        concept_ids: ['draws_equity', 'draws'],
+        hero_hand: ['8s', '7s'],
+        board: ['6d', '5c', 'Kh'],
+        concept_title: 'What Is an Out?',
+        concept_content:
+          "An out is a remaining card that improves your hand to the hand you're drawing toward. Here, any 9 or 4 completes the straight — 4 nines + 4 fours = 8 potential outs. But potential outs aren't always live outs.",
+        xp: 2,
+      },
+      {
+        id: 'c7-s33',
+        type: 'concept_reveal',
+        concept_ids: ['draws_equity', 'backdoor_draws'],
+        concept_title: 'Backdoor Draws',
+        concept_content:
+          "A backdoor draw needs BOTH the turn and river to cooperate — a backdoor flush needs running cards of one suit; a backdoor straight needs two specific future cards. It's weak on its own, but a live backdoor draw adds real value — roughly comparable to one extra clean out spread across two streets.",
+        xp: 2,
+      },
+      {
+        id: 'c7-s34',
+        type: 'action_sequence',
+        concept_ids: ['draws_equity', 'dead_outs'],
+        narrative:
+          "Hero has an open-ended straight draw — normally 8 outs. But some of those straight cards also complete Villain's flush, improving Hero's hand while still leaving Hero behind. Those are DEAD OUTS.",
+        action_sequence_prompt: 'Should every card that completes your straight automatically count as a clean out?',
         options: [
-          { id: 'BTN', label: 'BTN (preflop raiser)', quality: 'perfect', feedback: 'Correct — BTN\'s opening range dominates AK7 with more sets and top-two-pair.' },
-          { id: 'BB', label: 'BB (preflop caller)', quality: 'mistake', feedback: 'No — BB\'s wide defense range has fewer AA, KK, AK combinations than BTN\'s opening range.' },
+          { id: 'no', label: 'No', quality: 'perfect', feedback: 'Correct — a card that improves your hand but still leaves you behind is a dead out, not a clean one.' },
+          { id: 'yes', label: 'Yes', quality: 'mistake', feedback: 'Cards that complete a bigger hand for Villain at the same time are dead outs, not clean ones.' },
+        ],
+        xp: 5,
+      },
+      {
+        id: 'c7-s35',
+        type: 'action_sequence',
+        concept_ids: ['draws_equity', 'dead_outs'],
+        narrative: 'DRAWING DEAD means no remaining card can produce a winning hand — even if your hand improves.',
+        action_sequence_prompt: 'Can Hero still improve their hand and remain drawing dead?',
+        options: [
+          { id: 'yes', label: 'Yes', quality: 'perfect', feedback: 'Correct — improving is not the same as becoming the best hand. You can hit your card and still lose.' },
+          { id: 'no', label: 'No', quality: 'mistake', feedback: 'Improving your hand does not guarantee it becomes the best hand — you can still be drawing dead after improving.' },
+        ],
+        xp: 5,
+      },
+      {
+        id: 'c7-s36',
+        type: 'concept_reveal',
+        concept_ids: ['draws_equity', 'implied_odds_intro'],
+        concept_title: 'Implied Odds',
+        concept_content:
+          'Sometimes calling a draw is more attractive because you may win additional chips on later streets when you complete it — current pot plus possible future chips, not just the pot in front of you right now.',
+        xp: 2,
+      },
+      {
+        id: 'c7-s37',
+        type: 'concept_reveal',
+        concept_ids: ['draws_equity', 'reverse_implied_odds_intro'],
+        concept_title: 'Reverse Implied Odds',
+        concept_content:
+          'Sometimes making your apparent draw costs you more — you make a small flush, but Villain makes or already holds a bigger one. Not every improvement is equally valuable.',
+        xp: 2,
+      },
+      {
+        id: 'c7-s38',
+        type: 'concept_reveal',
+        concept_ids: ['draws_equity', 'pot_commitment'],
+        concept_title: 'Pot Committed',
+        concept_content:
+          "A player becomes pot committed when so much of the effective stack is already invested that the price to continue is favorable relative to what's left and their chance of winning — folding stops being reasonable. Money already invested is not, by itself, a reason to continue. It's about the current price and remaining stack, not attachment to past chips.",
+        xp: 2,
+      },
+      {
+        id: 'c7-s39',
+        type: 'equity_predict',
+        concept_ids: ['draws_equity', 'equity'],
+        narrative:
+          'Equity is your share of the pot — how often a hand or range would win or tie if the remaining cards were simply dealt out with no more betting. It is a probability-based share, not a guaranteed outcome.',
+        pot_bb: 100,
+        equity_actual: 70,
+        equity_tolerance: 5,
+        correct_feedback: 'Right around there — equity is a probability-based share of the pot, not guaranteed winnings.',
+        wrong_feedback: 'Equity is a probability-based share of the pot, not guaranteed winnings.',
+        xp: 6,
+      },
+      {
+        id: 'c7-s40',
+        type: 'action_sequence',
+        concept_ids: ['draws_equity', 'equity'],
+        narrative: 'AKo vs JTs. Then 22 vs AKo. Then JTs vs 22.',
+        action_sequence_prompt: "Can poker hands always be ranked independently of the opponent's hand?",
+        options: [
+          { id: 'no', label: 'No', quality: 'perfect', feedback: 'Correct — hand strength is relational. A hand can perform well against one holding and worse against another, like rock-paper-scissors.' },
+          { id: 'yes', label: 'Yes', quality: 'mistake', feedback: 'Hand strength is relational — context determines strength, not a fixed independent ranking.' },
+        ],
+        xp: 5,
+      },
+      {
+        id: 'c7-s41',
+        type: 'concept_reveal',
+        concept_ids: ['draws_equity', 'hand_vs_range'],
+        hero_hand: ['Qc', 'Ts'],
+        concept_title: 'Hand vs Range',
+        concept_content:
+          'Hand-vs-range equity asks: "How does this exact hand perform against every hand Villain can realistically hold?" Each possible Villain hand contributes according to how likely it is — no heavy calculation required yet, just the idea.',
+        xp: 2,
+      },
+      {
+        id: 'c7-s42',
+        type: 'concept_reveal',
+        concept_ids: ['draws_equity', 'range_vs_range'],
+        board: ['8h', '7h', '6s'],
+        concept_title: 'Range vs Range',
+        concept_content:
+          "Range-vs-range equity compares two entire ranges against each other — CO's opening range against BB's calling range, for example. Community cards don't affect every range equally: a flop can favor one player's collection of hands far more than the other's. This idea becomes fundamental later.",
+        xp: 4,
+      },
+
+      // ══════════════════════════════════════════════════════════════════════
+      // CHAPTER 8 — Stacks Change Hand Value
+      // ══════════════════════════════════════════════════════════════════════
+      {
+        id: 'c8-s43',
+        type: 'spr_visualizer',
+        concept_ids: ['spr'],
+        narrative: 'SPR = Stack-to-Pot Ratio = effective stack ÷ pot.',
+        spr_visualizer_mode: 'scenario',
+        spr_visualizer_pot_bb: 10,
+        spr_visualizer_stack_bb: 80,
+        spr_visualizer_correct: 8,
+        spr_visualizer_tolerance: 0.5,
+        xp: 4,
+      },
+      {
+        id: 'c8-s44',
+        type: 'spr_visualizer',
+        concept_ids: ['spr'],
+        narrative: 'Effective stack 30bb, pot 10bb.',
+        spr_visualizer_mode: 'scenario',
+        spr_visualizer_pot_bb: 10,
+        spr_visualizer_stack_bb: 30,
+        spr_visualizer_correct: 3,
+        spr_visualizer_tolerance: 0.5,
+        xp: 5,
+      },
+      {
+        id: 'c8-s45',
+        type: 'spr_visualizer',
+        concept_ids: ['spr'],
+        narrative: 'The same hand behaves differently depending on SPR. Browse the three broad zones below.',
+        spr_visualizer_mode: 'worlds',
+        xp: 3,
+      },
+      {
+        id: 'c8-s46',
+        type: 'action_sequence',
+        concept_ids: ['spr'],
+        narrative: 'AA, 76s, 22, AKo.',
+        action_sequence_prompt: 'Which hand type gains RELATIVE value as stacks become very deep?',
+        options: [
+          { id: 'speculative', label: '76s / 22 — hands that can make disguised, nutted holdings', quality: 'perfect', feedback: 'Correct. Premium pairs stay powerful, but deeper stacks increase the value of hands capable of making very strong hidden hands.' },
+          { id: 'aa', label: 'AA — it never loses value', quality: 'mistake', feedback: "AA remains strong, but it doesn't gain RELATIVE value the way speculative hands do as stacks get deeper." },
+          { id: 'ako', label: 'AKo — top pair plays best deep', quality: 'mistake', feedback: 'One-pair hands actually become harder to play for very large pots as stacks get deeper.' },
+        ],
+        xp: 8,
+      },
+
+      // ══════════════════════════════════════════════════════════════════════
+      // CHAPTER 9 — The Shape of a Range
+      // ══════════════════════════════════════════════════════════════════════
+      {
+        id: 'c9-s47',
+        type: 'concept_reveal',
+        concept_ids: ['range_morphology'],
+        concept_title: 'The Shape of a Range',
+        concept_content:
+          'Ranges have shapes — how the equity inside them is distributed. Three major shapes: LINEAR, POLARIZED, CONDENSED. Think of hand strength as a vertical spectrum from strongest to weakest.',
+        xp: 2,
+      },
+      {
+        id: 'c9-s48',
+        type: 'concept_reveal',
+        concept_ids: ['range_morphology', 'linear_range'],
+        concept_title: 'Linear Range',
+        concept_content: '"Best hands first." A linear range starts with the strongest hands and continues downward without deliberately skipping the medium-strength region.',
+        xp: 2,
+      },
+      {
+        id: 'c9-s49',
+        type: 'concept_reveal',
+        concept_ids: ['range_morphology', 'polarized_range'],
+        concept_title: 'Polarized Range',
+        concept_content: 'A polarized range contains very strong hands PLUS weak hands/bluffs, while many medium-strength hands are absent. Extreme version: nuts + bluffs.',
+        xp: 2,
+      },
+      {
+        id: 'c9-s50',
+        type: 'concept_reveal',
+        concept_ids: ['range_morphology', 'condensed_range'],
+        concept_title: 'Condensed Range',
+        concept_content: '"Lots of playable middle, fewer extremes." A condensed (depolarized) range is concentrated around medium-strength hands — its strongest and weakest holdings are reduced or absent.',
+        xp: 2,
+      },
+      {
+        id: 'c9-s51',
+        type: 'range_morphology',
+        concept_ids: ['range_morphology', 'polarized_range'],
+        narrative: 'Which diagram represents a polarized range?',
+        options: [
+          { id: 'linear', label: 'Linear', quality: 'mistake', feedback: 'Linear ranges start strongest and continue down without a gap — not this one.' },
+          { id: 'polarized', label: 'Polarized', quality: 'perfect', feedback: 'Correct — nuts plus bluffs, with the middle missing.' },
+          { id: 'condensed', label: 'Condensed', quality: 'mistake', feedback: 'Condensed ranges cluster around the middle — not this one.' },
+        ],
+        xp: 6,
+      },
+      {
+        id: 'c9-s52',
+        type: 'concept_reveal',
+        concept_ids: ['range_morphology', 'capped_range'],
+        concept_title: 'Capped vs Uncapped',
+        concept_content:
+          "CAPPED: the action taken has removed or heavily reduced the strongest possible holdings from a player's range. UNCAPPED: the player can still credibly hold the strongest hands. A condensed range is often capped — but capped and condensed aren't identical. A range can hold many middle hands yet still keep some very strong ones on certain boards.",
+        xp: 2,
+      },
+      {
+        id: 'c9-s53',
+        type: 'range_morphology',
+        concept_ids: ['range_morphology', 'capped_range'],
+        narrative: '"Player can still have all sets and straights on this board."',
+        options: [
+          { id: 'uncapped', label: 'Uncapped', quality: 'perfect', feedback: 'Correct — the range can still reach the very top of possible hands.' },
+          { id: 'capped', label: 'Capped', quality: 'mistake', feedback: "A capped range has lost access to the strongest holdings — here it clearly hasn't." },
+        ],
+        xp: 6,
+      },
+      {
+        id: 'c9-s54',
+        type: 'concept_reveal',
+        concept_ids: ['range_morphology'],
+        concept_title: 'Models, Not Absolutes',
+        concept_content:
+          'Real ranges often combine characteristics — mostly linear with a polarized edge, or condensed with a few nutted combos still live. These labels are models that help us understand structure, not rigid boxes every range fits perfectly.',
+        xp: 2,
+      },
+      {
+        id: 'c9-s55',
+        type: 'concept_reveal',
+        concept_ids: ['table_position', 'range_thinking', 'spr', 'range_morphology'],
+        board: ['As', '8d', '3c'],
+        concept_title: 'Putting It All Together',
+        concept_content:
+          "CO raises, BB calls. Flop: A♠8♦3♣. Before any action, a strong player is already asking: Who has POSITION? What's the EFFECTIVE STACK? How deep is the POT/SPR? What RANGES can each player have? How does the BOARD interact with those ranges? What EQUITY does each side own? Is either RANGE SHAPE linear, polarized, condensed, capped, or uncapped? We aren't solving this hand yet — the goal is knowing what a strong player starts thinking about.",
+        xp: 6,
+      },
+
+      // ── Final Challenge — 10 mixed-review questions ─────────────────────
+      {
+        id: 'c9-fc1',
+        type: 'position_table',
+        concept_ids: ['table_position'],
+        position_table_mode: 'quiz',
+        position_table_highlight: ['CO', 'BTN', 'SB'],
+        position_table_prompt: 'Which seat sits immediately before the Button?',
+        options: [
+          { id: 'CO', label: 'CO', quality: 'perfect', feedback: 'Correct — CO is the seat directly before BTN.' },
+          { id: 'BTN', label: 'BTN', quality: 'mistake', feedback: 'BTN is the button itself, not the seat before it.' },
+          { id: 'SB', label: 'SB', quality: 'mistake', feedback: 'SB is after the button, not before it.' },
         ],
         xp: 10,
       },
-    ],
-  },
-
-  // ── 22. ICM Fundamentals ──────────────────────────────────────────────────
-  {
-    id: 'icm-fundamentals',
-    module_id: 'icm-module',
-    slug: 'icm-fundamentals',
-    title: 'ICM: Stack Value vs Chip Value',
-    lesson_type: 'micro',
-    concept_ids: ['icm'],
-    estimated_min: 7,
-    xp_reward: 60,
-    sort_order: 1,
-    steps: [
       {
-        id: 'icm-s1',
-        type: 'concept_reveal',
-        concept_ids: ['icm'],
-        concept_title: 'ICM: Chips Are Not Cash',
-        concept_content:
-          'In a tournament, doubling your chips does NOT double your equity in the prize pool. If you have 50% of chips 3-handed, you don\'t have 50% of the prize money — you might have 40% because other stacks have elimination value. The Independent Chip Model converts stacks to real-money equity, revealing that: (1) doubling up gains less EV than losing costs, (2) the chip leader pays a premium to gamble, (3) near bubbles, folding equity has massive value.',
-        xp: 8,
-      },
-      {
-        id: 'icm-s2',
-        type: 'decision_spot',
-        street: 'preflop',
-        hero_position: 'BTN',
-        villain_position: 'BB',
-        hero_hand: ['Ah', 'Kd'],
-        pot_bb: 1.5,
-        effective_stack_bb: 15,
-        narrative:
-          'Tournament final table, 3 players left. Payouts: 1st $10,000 / 2nd $6,000 / 3rd $4,000. Stacks: Hero (BTN) 15bb, Villain (BB) 30bb, CO 55bb. BTN shoves 15bb. BB calls with 99. You have AK. Is this a clear chip-EV call for villain?',
+        id: 'c9-fc2',
+        type: 'action_sequence',
+        concept_ids: ['ip_oop'],
+        narrative: 'HJ vs CO, postflop.',
+        action_sequence_prompt: 'Who is in position?',
         options: [
-          {
-            id: 'yes_call',
-            label: 'Yes — AK vs 99 is ~50/50, village should call',
-            quality: 'mistake',
-            ev_loss_bb: 0,
-            feedback:
-              'In pure chip EV, yes. But in ICM, villain loses far more EV when they bust you out incorrectly. Busting out costs villain position equity in the prize pool. ICM calls require stronger hands than chip-EV suggests — especially for big stacks risking a key portion of their stack.',
-          },
-          {
-            id: 'no_icm',
-            label: 'No — ICM makes this marginal/incorrect for villain',
-            quality: 'perfect',
-            ev_loss_bb: 0,
-            feedback:
-              'Correct. Villain (30bb big stack) calling 15bb more with 99 vs perceived strong hand range risks significant ICM equity. If villain loses, they drop to 15bb with short stack pressure. ICM analysis typically requires a significant chip-EV edge to justify marginal calls.',
-          },
-          {
-            id: 'depends',
-            label: 'Depends on exact stack distributions',
-            quality: 'good',
-            ev_loss_bb: 0,
-            feedback:
-              'Partially right — stack sizes matter enormously in ICM. But the core insight is that ICM makes big-stack calls tighter near the money. Against a shove with a likely strong range, 99 is often a fold in this configuration.',
-          },
+          { id: 'co', label: 'CO', quality: 'perfect', feedback: 'Correct — CO acts after HJ on every postflop street.' },
+          { id: 'hj', label: 'HJ', quality: 'mistake', feedback: 'HJ acts before CO postflop — HJ is out of position here.' },
         ],
-        xp: 15,
+        xp: 10,
       },
       {
-        id: 'icm-s3',
-        type: 'concept_reveal',
-        concept_ids: ['icm'],
-        concept_title: 'Bubble Play: Fold Equity is Massive',
-        concept_content:
-          'Near the bubble, everyone wants to survive. Short stacks can shove very wide because big stacks are ICM-terrified of calling. Medium stacks have the most pressure — they risk busting before the money but can also bully shorter stacks. The bubble creates asymmetric fold equity: a 10bb shove on the bubble might force a fold from a 40bb stack with 77 because the 77 holder doesn\'t want to risk their tournament life on a coin-flip.',
-        xp: 8,
-      },
-    ],
-  },
-
-  // ── 23. Multi-Street Geometric Planning ──────────────────────────────────
-  {
-    id: 'multistreet-geometric-planning',
-    module_id: 'multistreet-planning-module',
-    slug: 'multistreet-geometric-planning',
-    title: 'Multi-Street Geometric Planning',
-    lesson_type: 'simulation',
-    concept_ids: ['geometric_sizing', 'equity_real'],
-    estimated_min: 8,
-    xp_reward: 70,
-    sort_order: 1,
-    steps: [
-      {
-        id: 'ms-s1',
-        type: 'concept_reveal',
-        concept_ids: ['geometric_sizing'],
-        concept_title: 'Planning Streets in Advance',
-        concept_content:
-          'Elite players plan their multi-street lines before they bet street 1. Questions to answer: Which streets am I betting? What is my target on the river (jam? 75%?)? Does my hand have enough equity to barrel? Is villain\'s range capped (can they fold when I want)? Geometric sizing answers the "how much" question; hand equity and range analysis answer the "should I bet at all" question.',
-        xp: 8,
-      },
-      {
-        id: 'ms-s2',
-        type: 'scenario_tree',
-        concept_ids: ['geometric_sizing'],
-        narrative:
-          'You have top two pair on a wet board. Pot is 20bb, stacks are 100bb. Plan your 3-street line to maximise value.',
-        scenario_root: 'ms_root',
-        scenario_nodes: [
-          {
-            id: 'ms_root',
-            label: 'Flop: A♥K♦9♥. Pot 20bb. Stacks 100bb.',
-            description: 'You hold AK (top two pair). Villain checks. Board is moderately wet (flush draw present). What is your flop strategy?',
-            children: [
-              { option_label: 'Bet small (33% pot = 6.5bb)', node_id: 'small_flop' },
-              { option_label: 'Bet large (75% pot = 15bb)', node_id: 'large_flop', is_optimal: true },
-              { option_label: 'Check (slowplay)', node_id: 'check_flop' },
-            ],
-          },
-          {
-            id: 'small_flop',
-            label: 'Flop: Bet 6.5bb. Villain calls. Pot 33bb. Stacks 93.5bb.',
-            description: 'Turn: 2♣. Board is now A♥K♦9♥2♣. Villain checks. You need to set up a river jam.',
-            children: [
-              { option_label: 'Bet 25bb (75% pot)', node_id: 'small_flop_large_turn', is_optimal: true },
-              { option_label: 'Bet 10bb (small again)', node_id: 'small_flop_small_turn' },
-            ],
-          },
-          {
-            id: 'small_flop_large_turn',
-            label: 'Turn: Bet 25bb. Villain calls. Pot 83bb. Stacks 68.5bb.',
-            outcome: {
-              ev_bb: 55,
-              label: 'Good line — recovered with large turn',
-              quality: 'good',
-              explanation:
-                'You recovered by betting large on the turn. With 68.5bb behind into 83bb pot, the river shove is geometrically correct. However, starting with a larger flop bet would have allowed a more balanced 3-street line — villain would face equal pressure every street.',
-            },
-          },
-          {
-            id: 'small_flop_small_turn',
-            label: 'Turn: Bet 10bb. Villain calls. Pot 53bb. Stacks 83.5bb.',
-            outcome: {
-              ev_bb: 30,
-              label: 'Under-sizing cost value',
-              quality: 'mistake',
-              explanation:
-                'Two small bets in a row means your river jam (83.5bb into 53bb) becomes a 157% overbet that villain can easily fold against. You needed to size up earlier to create a natural geometric shove.',
-            },
-          },
-          {
-            id: 'large_flop',
-            label: 'Flop: Bet 15bb. Villain calls. Pot 50bb. Stacks 85bb.',
-            description: 'Turn: 2♣. A♥K♦9♥2♣. Villain checks. Pot 50bb, 85bb behind.',
-            children: [
-              { option_label: 'Bet 37.5bb (75% pot) — set up river shove', node_id: 'large_flop_correct_turn', is_optimal: true },
-              { option_label: 'Check behind (control the pot)', node_id: 'large_flop_check_turn' },
-            ],
-          },
-          {
-            id: 'large_flop_correct_turn',
-            label: 'Turn: Bet 37.5bb. Villain calls. Pot 125bb. Stacks 47.5bb.',
-            outcome: {
-              ev_bb: 75,
-              label: 'Geometric line — maximum value extracted',
-              quality: 'perfect',
-              explanation:
-                'Perfect geometric line. Flop: 75% pot (15bb). Turn: 75% pot (37.5bb). River: shove ~47.5bb into ~125bb (38% pot). Villain faced equal pressure every street and had no "cheap street" to exploit. Top two pair value maximised.',
-            },
-          },
-          {
-            id: 'large_flop_check_turn',
-            label: 'Turn: You check. River: 5♠. Villain bets 30bb.',
-            outcome: {
-              ev_bb: 20,
-              label: 'Slowplay cost significant value',
-              quality: 'mistake',
-              explanation:
-                'Checking top two pair on a wet board with a flush draw present is a mistake. You gave villain a free card to improve, and now face a bet with no control over the pot size. The large flop bet was right — don\'t stop the geometric pressure mid-hand.',
-            },
-          },
-          {
-            id: 'check_flop',
-            label: 'Flop: Check. Villain bets 12bb. Pot 44bb.',
-            description: 'Villain bet into you. What now?',
-            children: [
-              { option_label: 'Check-raise to 35bb', node_id: 'checkraise', is_optimal: true },
-              { option_label: 'Call 12bb and play reactively', node_id: 'slowcall' },
-            ],
-          },
-          {
-            id: 'checkraise',
-            label: 'Check-raise to 35bb. Villain calls.',
-            outcome: {
-              ev_bb: 50,
-              label: 'Good recovery — check-raise worked',
-              quality: 'good',
-              explanation:
-                'Check-raising is a reasonable play that builds the pot aggressively, but it allows villain to set the first bet size. Against certain villain types, leading is better with top two pair on a wet board — you don\'t want to give free flush-draw cards.',
-            },
-          },
-          {
-            id: 'slowcall',
-            label: 'Call 12bb. Pot 44bb. Turn: 8♥ (flush completes).',
-            outcome: {
-              ev_bb: 15,
-              label: 'Flush card arrived — value lost',
-              quality: 'mistake',
-              explanation:
-                'Calling and letting the flush draw complete loses significant EV. Top two pair on a wet board must charge draws. By check-calling, you gave villain a cheap card to hit the flush and now face a difficult turn decision.',
-            },
-          },
+        id: 'c9-fc3',
+        type: 'action_sequence',
+        concept_ids: ['effective_stack'],
+        narrative: 'Hero: 60bb. Villain: 95bb.',
+        action_sequence_prompt: 'What is the effective stack?',
+        options: [
+          { id: '60', label: '60bb', quality: 'perfect', feedback: 'Correct — the effective stack is always the smaller of the two.' },
+          { id: '95', label: '95bb', quality: 'mistake', feedback: "That's Villain's stack, but Villain can't extract more than Hero has." },
+          { id: '35', label: '35bb', quality: 'mistake', feedback: "That's the difference between the stacks, not the effective stack." },
         ],
-        xp: 25,
+        xp: 10,
       },
       {
-        id: 'ms-s3',
-        type: 'concept_reveal',
-        concept_ids: ['geometric_sizing'],
-        concept_title: 'The Rule: Size For Your Last Street',
-        concept_content:
-          'When planning a multi-street hand, start from the end: what do you want the river action to be? Then work backwards. If you want to jam 100bb on the river into a 100bb pot, you need to build 100bb across three streets. Geometric sizing achieves this by keeping each bet as a constant fraction of the current pot. Oversimplified rule: with 100bb stacks, "pot-size flop, pot-size turn" leaves a natural pot-size jam on the river.',
-        xp: 8,
+        id: 'c9-fc4',
+        type: 'action_sequence',
+        concept_ids: ['rfi'],
+        narrative: 'Folded to CO, who raises.',
+        action_sequence_prompt: 'What is this action called?',
+        options: [
+          { id: 'rfi', label: 'RFI / open raise', quality: 'perfect', feedback: 'Correct.' },
+          { id: 'squeeze', label: 'Squeeze', quality: 'mistake', feedback: 'A squeeze requires a prior raise AND a call — nothing has happened yet here.' },
+        ],
+        xp: 10,
+      },
+      {
+        id: 'c9-fc5',
+        type: 'action_sequence',
+        concept_ids: ['squeeze'],
+        narrative: 'HJ raises. BTN calls. SB 3-bets.',
+        action_sequence_display: ['HJ raises', 'BTN calls', 'SB 3-bets'],
+        action_sequence_prompt: "What is SB's action called?",
+        options: [
+          { id: 'squeeze', label: 'Squeeze', quality: 'perfect', feedback: 'Correct — a 3-bet after a raise and a call.' },
+          { id: 'resteal', label: 'Resteal', quality: 'mistake', feedback: 'A resteal is a 3-bet specifically against a steal attempt, not this pattern.' },
+        ],
+        xp: 10,
+      },
+      {
+        id: 'c9-fc6',
+        type: 'action_sequence',
+        concept_ids: ['action_lines'],
+        action_sequence_prompt: 'Translate "b/b" across two streets.',
+        options: [
+          { id: 'bet_bet', label: 'Bet flop, bet turn', quality: 'perfect', feedback: 'Correct.' },
+          { id: 'bet_call', label: 'Bet flop, call turn', quality: 'mistake', feedback: 'Both letters are "b" — bet on both streets.' },
+        ],
+        xp: 10,
+      },
+      {
+        id: 'c9-fc7',
+        type: 'range_heatmap',
+        concept_ids: ['range_thinking', 'combinatorics'],
+        narrative: 'Tap AA, KQs, and 76o on the grid.',
+        range_heatmap_target: ['AA', 'KQs', '76o'],
+        xp: 10,
+      },
+      {
+        id: 'c9-fc8',
+        type: 'combo_visualizer',
+        concept_ids: ['combinatorics'],
+        narrative: 'How many combinations of QQ exist, before any removal?',
+        combo_visualizer_mode: 'quiz',
+        combo_visualizer_kind: 'pair',
+        combo_visualizer_subject: 'Q',
+        combo_visualizer_correct: 6,
+        xp: 10,
+      },
+      {
+        id: 'c9-fc9',
+        type: 'spr_visualizer',
+        concept_ids: ['spr'],
+        narrative: 'Pot 20bb, effective stack 60bb.',
+        spr_visualizer_mode: 'scenario',
+        spr_visualizer_pot_bb: 20,
+        spr_visualizer_stack_bb: 60,
+        spr_visualizer_correct: 3,
+        spr_visualizer_tolerance: 0.5,
+        xp: 10,
+      },
+      {
+        id: 'c9-fc10',
+        type: 'range_morphology',
+        concept_ids: ['range_morphology', 'capped_range'],
+        narrative: '"This range has folded out its strongest value hands after check-calling twice."',
+        options: [
+          { id: 'capped', label: 'Capped', quality: 'perfect', feedback: 'Correct — the strongest holdings are gone from this line, so the range is capped.' },
+          { id: 'uncapped', label: 'Uncapped', quality: 'mistake', feedback: 'This range has lost its strongest hands through the action — that makes it capped, not uncapped.' },
+          { id: 'polarized', label: 'Polarized (unrelated axis)', quality: 'acceptable', feedback: 'Capped/uncapped is a separate axis from polarized/linear/condensed — this scenario is specifically about capping.' },
+        ],
+        xp: 12,
       },
     ],
   },
