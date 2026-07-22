@@ -64,7 +64,7 @@ export const LEARNING_MODULES: LearningModule[] = [
       'Use combinatorics, card removal, and SPR to reason about a hand',
     ],
     difficulty: 'beginner',
-    estimatedLessons: 1,
+    estimatedLessons: 10,
     stageId: 'foundations',
     order: 1,
     contentStatus: 'complete',
@@ -102,39 +102,22 @@ export const LEARNING_MODULES: LearningModule[] = [
 // ── Lessons ───────────────────────────────────────────────────────────────────
 
 export const LESSONS: Lesson[] = [
+  // ══════════════════════════════════════════════════════════════════════════
+  // MODULE 1 — Think Like a Poker Player (9 lessons + Foundation Lab)
+  // ══════════════════════════════════════════════════════════════════════════
+
   {
-    id: 'think-like-a-poker-player',
+    id: 'your-seat-changes-everything',
     module_id: 'poker-fundamentals-module',
-    slug: 'think-like-a-poker-player',
-    title: 'Think Like a Poker Player',
-    subtitle: 'The language, structure, and building blocks behind every poker decision.',
+    slug: 'your-seat-changes-everything',
+    title: 'Your Seat Changes Everything',
+    subtitle: 'Learn why your position at the table changes every decision.',
     lesson_type: 'micro',
-    concept_ids: ['table_position', 'range_thinking', 'poker_terminology', 'combinatorics', 'draws_equity', 'spr', 'range_morphology'],
-    estimated_min: 35,
-    xp_reward: 300,
+    concept_ids: ['table_position', 'relative_position', 'ip_oop'],
+    estimated_min: 6,
+    xp_reward: 90,
     sort_order: 1,
-    next_lesson_teaser: 'The Math Behind Every Decision',
-    chapters: [
-      { title: 'Your Seat Changes Everything', step_ids: ['c1-s1', 'c1-s2', 'c1-s3', 'c1-s4', 'c1-s5a', 'c1-s5b', 'c1-s5c'] },
-      { title: 'Speak the Language', step_ids: ['c2-s6', 'c2-s7', 'c2-s8', 'c2-s9', 'c2-s10', 'c2-s11', 'c2-s12', 'c2-s13', 'c2-s13b', 'c2-s14'] },
-      { title: 'Actions & Hand Histories', step_ids: ['c3-s14', 'c3-s15a', 'c3-s15b', 'c3-s15c', 'c3-s16', 'c3-s17', 'c3-s18', 'c3-s19', 'c3-s20', 'c3-s20b'] },
-      { title: 'Stop Thinking in One Hand', step_ids: ['c4-s21', 'c4-s22', 'c4-s23'] },
-      { title: 'The 13×13 Range Map', step_ids: ['c5-s24', 'c5-s25', 'c5-s26'] },
-      { title: 'Combinations & Card Removal', step_ids: ['c6-s27', 'c6-s27b', 'c6-s28', 'c6-s29', 'c6-s30', 'c6-s31', 'c6-s31b'] },
-      { title: 'Draws, Outs & Equity', step_ids: ['c7-s32', 'c7-s33', 'c7-s34', 'c7-s35', 'c7-s36', 'c7-s37', 'c7-s38', 'c7-s39', 'c7-s40', 'c7-s41', 'c7-s42'] },
-      { title: 'Stacks Change Hand Value', step_ids: ['c8-s43', 'c8-s44', 'c8-s45', 'c8-s46'] },
-      {
-        title: 'The Shape of a Range',
-        step_ids: [
-          'c9-s47', 'c9-s48', 'c9-s49', 'c9-s50', 'c9-s51', 'c9-s52', 'c9-s53', 'c9-s54', 'c9-s55',
-          'c9-fc1', 'c9-fc2', 'c9-fc3', 'c9-fc4', 'c9-fc5', 'c9-fc6', 'c9-fc7', 'c9-fc8', 'c9-fc9', 'c9-fc10',
-        ],
-      },
-    ],
     steps: [
-      // ══════════════════════════════════════════════════════════════════════
-      // CHAPTER 1 — Your Seat Changes Everything
-      // ══════════════════════════════════════════════════════════════════════
       {
         id: 'c1-s1',
         type: 'concept_reveal',
@@ -214,10 +197,21 @@ export const LESSONS: Lesson[] = [
         ],
         xp: 6,
       },
+    ],
+  },
 
-      // ══════════════════════════════════════════════════════════════════════
-      // CHAPTER 2 — Speak the Language
-      // ══════════════════════════════════════════════════════════════════════
+  {
+    id: 'speak-the-language',
+    module_id: 'poker-fundamentals-module',
+    slug: 'speak-the-language',
+    title: 'Speak the Language',
+    subtitle: 'Master the vocabulary used to describe every poker situation.',
+    lesson_type: 'micro',
+    concept_ids: ['poker_terminology', 'stack_depth', 'effective_stack', 'bet_size_notation', 'nuts'],
+    estimated_min: 8,
+    xp_reward: 120,
+    sort_order: 2,
+    steps: [
       {
         id: 'c2-s6',
         type: 'concept_reveal',
@@ -329,10 +323,21 @@ export const LESSONS: Lesson[] = [
           "Sometimes a hand isn't literally the strongest possible hand, but it's so strong relative to realistic ranges that it plays like the nuts. Absolute hand ranking and strategic hand strength aren't always the same thing.",
         xp: 2,
       },
+    ],
+  },
 
-      // ══════════════════════════════════════════════════════════════════════
-      // CHAPTER 3 — Actions & Hand Histories
-      // ══════════════════════════════════════════════════════════════════════
+  {
+    id: 'actions-tell-a-story',
+    module_id: 'poker-fundamentals-module',
+    slug: 'actions-tell-a-story',
+    title: 'Actions Tell a Story',
+    subtitle: 'Learn how betting actions describe what happened in a hand.',
+    lesson_type: 'micro',
+    concept_ids: ['poker_terminology', 'rfi', 'three_bet', 'squeeze', 'action_lines'],
+    estimated_min: 8,
+    xp_reward: 120,
+    sort_order: 3,
+    steps: [
       {
         id: 'c3-s14',
         type: 'concept_reveal',
@@ -443,10 +448,21 @@ export const LESSONS: Lesson[] = [
         ],
         xp: 6,
       },
+    ],
+  },
 
-      // ══════════════════════════════════════════════════════════════════════
-      // CHAPTER 4 — Stop Thinking in One Hand
-      // ══════════════════════════════════════════════════════════════════════
+  {
+    id: 'start-thinking-in-ranges',
+    module_id: 'poker-fundamentals-module',
+    slug: 'start-thinking-in-ranges',
+    title: 'Start Thinking in Ranges',
+    subtitle: 'Stop guessing one hand and start thinking in possibilities.',
+    lesson_type: 'micro',
+    concept_ids: ['range_thinking'],
+    estimated_min: 4,
+    xp_reward: 60,
+    sort_order: 4,
+    steps: [
       {
         id: 'c4-s21',
         type: 'concept_reveal',
@@ -475,10 +491,21 @@ export const LESSONS: Lesson[] = [
           'Range thinking has two sides: "What can Villain have?" AND "What can I have?" Later strategy depends on how your range and their range interact. Poker strategy is range versus range.',
         xp: 4,
       },
+    ],
+  },
 
-      // ══════════════════════════════════════════════════════════════════════
-      // CHAPTER 5 — The 13×13 Range Map
-      // ══════════════════════════════════════════════════════════════════════
+  {
+    id: 'the-13x13-range-map',
+    module_id: 'poker-fundamentals-module',
+    slug: 'the-13x13-range-map',
+    title: 'The 13×13 Range Map',
+    subtitle: 'Learn the visual language used to represent starting-hand ranges.',
+    lesson_type: 'micro',
+    concept_ids: ['range_thinking', 'combinatorics'],
+    estimated_min: 4,
+    xp_reward: 60,
+    sort_order: 5,
+    steps: [
       {
         id: 'c5-s24',
         type: 'concept_reveal',
@@ -507,10 +534,21 @@ export const LESSONS: Lesson[] = [
           '169 hand classes, but 1,326 exact two-card combinations. AKs is one strategic class, but it can appear in four exact suited combinations. AKo has twelve. AA has six. This is the idea of COMBOS.',
         xp: 4,
       },
+    ],
+  },
 
-      // ══════════════════════════════════════════════════════════════════════
-      // CHAPTER 6 — Combinations & Card Removal
-      // ══════════════════════════════════════════════════════════════════════
+  {
+    id: 'cards-change-possibilities',
+    module_id: 'poker-fundamentals-module',
+    slug: 'cards-change-possibilities',
+    title: 'Cards Change Possibilities',
+    subtitle: 'Learn how combinations and known cards reshape a range.',
+    lesson_type: 'micro',
+    concept_ids: ['combinatorics', 'card_removal', 'blockers_intro'],
+    estimated_min: 6,
+    xp_reward: 90,
+    sort_order: 6,
+    steps: [
       {
         id: 'c6-s27',
         type: 'combo_visualizer',
@@ -593,10 +631,24 @@ export const LESSONS: Lesson[] = [
         combo_visualizer_correct: 1,
         xp: 8,
       },
+    ],
+  },
 
-      // ══════════════════════════════════════════════════════════════════════
-      // CHAPTER 7 — Draws, Outs & Equity
-      // ══════════════════════════════════════════════════════════════════════
+  {
+    id: 'draws-and-equity',
+    module_id: 'poker-fundamentals-module',
+    slug: 'draws-and-equity',
+    title: 'Draws & Equity',
+    subtitle: 'Understand how hands improve and how poker measures their chance to win.',
+    lesson_type: 'micro',
+    concept_ids: [
+      'draws_equity', 'draws', 'backdoor_draws', 'dead_outs', 'implied_odds_intro',
+      'reverse_implied_odds_intro', 'pot_commitment', 'equity', 'hand_vs_range', 'range_vs_range',
+    ],
+    estimated_min: 9,
+    xp_reward: 130,
+    sort_order: 7,
+    steps: [
       {
         id: 'c7-s32',
         type: 'concept_reveal',
@@ -726,10 +778,21 @@ export const LESSONS: Lesson[] = [
           "Range-vs-range equity compares two entire ranges against each other — CO's opening range against BB's calling range, for example. Community cards don't affect every range equally: a flop can favor one player's collection of hands far more than the other's. This idea becomes fundamental later.",
         xp: 4,
       },
+    ],
+  },
 
-      // ══════════════════════════════════════════════════════════════════════
-      // CHAPTER 8 — Stacks Change Hand Value
-      // ══════════════════════════════════════════════════════════════════════
+  {
+    id: 'stacks-change-strategy',
+    module_id: 'poker-fundamentals-module',
+    slug: 'stacks-change-strategy',
+    title: 'Stacks Change Strategy',
+    subtitle: 'Learn why the relationship between the pot and remaining stacks changes hand value.',
+    lesson_type: 'micro',
+    concept_ids: ['spr'],
+    estimated_min: 4,
+    xp_reward: 70,
+    sort_order: 8,
+    steps: [
       {
         id: 'c8-s43',
         type: 'spr_visualizer',
@@ -775,10 +838,21 @@ export const LESSONS: Lesson[] = [
         ],
         xp: 8,
       },
+    ],
+  },
 
-      // ══════════════════════════════════════════════════════════════════════
-      // CHAPTER 9 — The Shape of a Range
-      // ══════════════════════════════════════════════════════════════════════
+  {
+    id: 'the-shape-of-a-range',
+    module_id: 'poker-fundamentals-module',
+    slug: 'the-shape-of-a-range',
+    title: 'The Shape of a Range',
+    subtitle: 'Learn how different strategies create different range structures.',
+    lesson_type: 'micro',
+    concept_ids: ['range_morphology', 'linear_range', 'polarized_range', 'condensed_range', 'capped_range'],
+    estimated_min: 7,
+    xp_reward: 110,
+    sort_order: 9,
+    steps: [
       {
         id: 'c9-s47',
         type: 'concept_reveal',
@@ -863,8 +937,22 @@ export const LESSONS: Lesson[] = [
           "CO raises, BB calls. Flop: A♠8♦3♣. Before any action, a strong player is already asking: Who has POSITION? What's the EFFECTIVE STACK? How deep is the POT/SPR? What RANGES can each player have? How does the BOARD interact with those ranges? What EQUITY does each side own? Is either RANGE SHAPE linear, polarized, condensed, capped, or uncapped? We aren't solving this hand yet — the goal is knowing what a strong player starts thinking about.",
         xp: 6,
       },
+    ],
+  },
 
-      // ── Final Challenge — 10 mixed-review questions ─────────────────────
+  {
+    id: 'foundation-lab',
+    module_id: 'poker-fundamentals-module',
+    slug: 'foundation-lab',
+    title: 'Foundation Lab',
+    subtitle: 'Put the building blocks together.',
+    lesson_type: 'puzzle_drill',
+    concept_ids: ['table_position', 'range_thinking', 'poker_terminology', 'combinatorics', 'draws_equity', 'spr', 'range_morphology'],
+    estimated_min: 10,
+    xp_reward: 300,
+    sort_order: 10,
+    next_lesson_teaser: 'The Math Behind Every Decision',
+    steps: [
       {
         id: 'c9-fc1',
         type: 'position_table',
@@ -981,6 +1069,40 @@ export const LESSONS: Lesson[] = [
           { id: 'uncapped', label: 'Uncapped', quality: 'mistake', feedback: 'This range has lost its strongest hands through the action — that makes it capped, not uncapped.' },
           { id: 'polarized', label: 'Polarized (unrelated axis)', quality: 'acceptable', feedback: 'Capped/uncapped is a separate axis from polarized/linear/condensed — this scenario is specifically about capping.' },
         ],
+        xp: 12,
+      },
+      {
+        id: 'c9-fc11',
+        type: 'outs_deck',
+        concept_ids: ['draws_equity', 'dead_outs'],
+        narrative: "Hero has an open-ended straight draw, but the board already carries two hearts — some of Hero's outs would also complete a flush for a Villain holding two hearts.",
+        hero_hand: ['9s', '8s'],
+        board: ['7h', '6h', '2c'],
+        outs_deck_mode: 'clean_dirty',
+        outs_deck_out_cards: ['5c', '5d', '5h', '5s', 'Tc', 'Td', 'Th', 'Ts'],
+        outs_deck_dead_out_cards: ['5h', 'Th'],
+        outs_deck_question: "Of these 8 outs, how many are actually CLEAN — meaning they don't also complete a flush for Villain?",
+        outs_deck_correct: 6,
+        outs_deck_tolerance: 0,
+        xp: 12,
+      },
+      {
+        id: 'c9-fc12',
+        type: 'equity_predict',
+        concept_ids: ['equity', 'hand_vs_range'],
+        narrative: "Hero has top pair with a strong kicker. Estimate Hero's equity against Villain's realistic continuing range.",
+        hero_hand: ['As', 'Js'],
+        board: ['Ad', 'Td', '5c'],
+        equity_villain_range: [
+          'TT', '55',
+          'A9s', 'A9o', 'A8s', 'A8o',
+          'KK', 'QQ', 'JJ',
+          'KQs', 'KQo', 'QJs',
+        ],
+        equity_actual: 78,
+        equity_tolerance: 6,
+        equity_explanation:
+          "Ace-Jack is top pair with a solid kicker, so it's ahead of every underpair below the board (KK, QQ, JJ), every weaker-kicker ace (A9, A8), and the missed broadways (KQ, QJ). Only the two sets — TT and 55 — beat Hero here. That narrow band of combos is why Hero's equity is high but comfortably short of 100%.",
         xp: 12,
       },
     ],
