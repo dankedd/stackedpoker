@@ -6,7 +6,7 @@ import Link from "next/link";
 import {
   ChevronLeft,
   CheckCircle,
-  Lock,
+  Clock as ClockIcon,
   Circle,
   ChevronRight,
   BookOpen,
@@ -16,12 +16,12 @@ import {
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { useLearnProgress } from "@/contexts/LearnProgressContext";
+import { LEARNING_PATHS, MODULES_BY_PATH, LESSONS_BY_MODULE } from "@/lib/learn/curriculum";
 import {
-  LEARNING_PATHS,
-  MODULES_BY_PATH,
-  LESSONS_BY_MODULE,
-} from "@/lib/learn/curriculum";
-import type { LearningModule } from "@/lib/learn/types";
+  getCompletedModuleIds,
+  getModuleDisplayStatus,
+  type ModuleDisplayStatus,
+} from "@/lib/learn/journey";
 import { cn } from "@/lib/utils";
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
@@ -30,27 +30,20 @@ function Skeleton({ className }: { className?: string }) {
   return <div className={cn("animate-pulse rounded-xl bg-white/[0.04]", className)} />;
 }
 
-// ── Status helpers ────────────────────────────────────────────────────────────
+// ── Status styling ────────────────────────────────────────────────────────────
+//
+// Same accessibility model as the rest of the Poker Journey (lib/learn/journey.ts):
+// every implemented module is open to everyone — "coming_soon" only means the
+// module has no playable content yet, never that progress is blocking access.
 
-type ModuleStatus = "locked" | "available" | "complete";
-
-function getModuleStatus(
-  module: LearningModule,
-  completedModuleIds: Set<string>
-): ModuleStatus {
-  if (completedModuleIds.has(module.id)) return "complete";
-  const prereqsMet = module.unlock_after.every((dep) => completedModuleIds.has(dep));
-  return prereqsMet ? "available" : "locked";
-}
-
-const STATUS_ICON: Record<ModuleStatus, typeof Circle> = {
+const STATUS_ICON: Record<ModuleDisplayStatus, typeof Circle> = {
   complete: CheckCircle,
   available: Circle,
-  locked: Lock,
+  coming_soon: ClockIcon,
 };
 
 const STATUS_STYLE: Record<
-  ModuleStatus,
+  ModuleDisplayStatus,
   { card: string; icon: string; badge: string }
 > = {
   complete: {
@@ -63,11 +56,17 @@ const STATUS_STYLE: Record<
     icon: "text-violet-400",
     badge: "bg-violet-500/10 border-violet-500/25 text-violet-400",
   },
-  locked: {
+  coming_soon: {
     card: "border-border/30 bg-card/30 opacity-60",
     icon: "text-muted-foreground/40",
     badge: "bg-secondary/30 border-border/30 text-muted-foreground/40",
   },
+};
+
+const STATUS_LABEL: Record<ModuleDisplayStatus, string> = {
+  complete: "Completed",
+  available: "Available",
+  coming_soon: "Coming Soon",
 };
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -80,18 +79,10 @@ export default function PathPage() {
   const path = LEARNING_PATHS.find((p) => p.id === pathId);
   const modules = MODULES_BY_PATH[pathId] ?? [];
 
-  // A module is complete once every one of its lessons is marked completed
-  // in the real, persisted progress (previously this was always an empty Set).
-  const completedIds = useMemo(() => {
-    const set = new Set<string>();
-    for (const mod of modules) {
-      const lessons = LESSONS_BY_MODULE[mod.id] ?? [];
-      if (lessons.length > 0 && lessons.every((l) => progress.lessons[l.id]?.status === "completed")) {
-        set.add(mod.id);
-      }
-    }
-    return set;
-  }, [modules, progress.lessons]);
+  const completedIds = useMemo(
+    () => getCompletedModuleIds(progress.lessons),
+    [progress.lessons]
+  );
 
   if (!path) {
     return (
@@ -176,11 +167,11 @@ export default function PathPage() {
 
               <div className="space-y-4">
                 {modules.map((mod, idx) => {
-                  const status = getModuleStatus(mod, completedIds);
+                  const status = getModuleDisplayStatus(mod, completedIds);
                   const styles = STATUS_STYLE[status];
                   const Icon = STATUS_ICON[status];
                   const lessonCount = LESSONS_BY_MODULE[mod.id]?.length ?? 0;
-                  const isClickable = status !== "locked";
+                  const isClickable = status !== "coming_soon";
 
                   const card = (
                     <div
@@ -221,7 +212,7 @@ export default function PathPage() {
                                     styles.badge
                                   )}
                                 >
-                                  {status}
+                                  {STATUS_LABEL[status]}
                                 </span>
                                 <span className="text-[10px] text-muted-foreground">
                                   Module {idx + 1}

@@ -8,8 +8,6 @@ import {
   CheckCircle,
   Clock,
   Sparkles,
-  Lock,
-  FlaskConical,
   Zap,
   BookOpen,
   Layers,
@@ -20,15 +18,9 @@ import { useLearnProgress } from "@/contexts/LearnProgressContext";
 import {
   MODULES_BY_SLUG,
   LEARNING_PATHS,
-  LEARNING_MODULES,
   LESSONS_BY_MODULE,
 } from "@/lib/learn/curriculum";
-import {
-  getCompletedModuleIds,
-  isModuleUnlocked,
-  getModuleDisplayStatus,
-  getStageForModule,
-} from "@/lib/learn/journey";
+import { getStageForModule } from "@/lib/learn/journey";
 import type { Lesson } from "@/lib/learn/types";
 import { cn } from "@/lib/utils";
 
@@ -151,10 +143,10 @@ export default function ModulePage() {
   const firstIncomplete = lessons.find((l) => !completedLessonIds.has(l.id));
 
   // ── Poker Journey roadmap states ─────────────────────────────────────────
+  // Every implemented module is open to every user — see lib/learn/journey.ts.
+  // The only thing that can keep a module unreachable is not having any
+  // playable content yet, handled by the Coming Soon branch below.
   const isComingSoon = !!module.contentStatus && module.contentStatus !== "complete";
-  const completedModuleIds = getCompletedModuleIds(progress.lessons);
-  const isUnlocked = isModuleUnlocked(module, completedModuleIds);
-  const isTestUnlocked = getModuleDisplayStatus(module, completedModuleIds) === "test_unlocked";
   const stage = getStageForModule(module.id);
 
   if (isComingSoon) {
@@ -242,40 +234,6 @@ export default function ModulePage() {
     );
   }
 
-  if (!isUnlocked) {
-    const prereq = module.prerequisiteModuleId
-      ? LEARNING_MODULES.find((m) => m.id === module.prerequisiteModuleId)
-      : LEARNING_MODULES.find((m) => m.id === module.unlock_after[0]);
-
-    return (
-      <div className="flex min-h-screen flex-col">
-        <Navbar variant="static" />
-        <main className="flex-1 py-14 flex items-center justify-center">
-          <div className="text-center max-w-sm px-6">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary/40 border border-border/40 mx-auto mb-4">
-              <Lock className="h-5 w-5 text-muted-foreground/60" />
-            </div>
-            <p className="text-lg font-semibold text-foreground mb-1.5">{module.title} is locked</p>
-            <p className="text-sm text-muted-foreground mb-6">
-              {prereq
-                ? <>Finish <span className="text-foreground/80 font-medium">{prereq.title}</span> first to unlock this module.</>
-                : "Complete the prerequisite module first to unlock this one."}
-            </p>
-            {prereq && (
-              <Link
-                href={`/learn/module/${prereq.slug}`}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-sm font-semibold hover:opacity-90 transition-opacity"
-              >
-                Go to {prereq.title} <ChevronRight className="h-4 w-4" />
-              </Link>
-            )}
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
   return (
     <div className="flex min-h-screen flex-col">
       <Navbar variant="static" />
@@ -302,16 +260,6 @@ export default function ModulePage() {
             )}
             <span className="text-foreground">{module.title}</span>
           </div>
-
-          {isTestUnlocked && (
-            <div className="mb-6 flex items-center gap-2 rounded-xl border border-amber-500/25 bg-amber-500/[0.05] px-4 py-2.5">
-              <FlaskConical className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-              <p className="text-xs text-amber-300/80">
-                <span className="font-semibold text-amber-300">Developer testing mode</span> — this module&apos;s
-                prerequisites aren&apos;t completed yet; it&apos;s only open because you&apos;re running locally.
-              </p>
-            </div>
-          )}
 
           {/* Module hero */}
           <div className="relative mb-8 overflow-hidden rounded-2xl border border-violet-500/15 bg-gradient-to-br from-violet-950/40 via-card/80 to-blue-950/20 px-6 py-7 sm:px-8">

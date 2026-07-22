@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   Brain,
   Flame,
-  Lock,
   CheckCircle,
   Circle,
   Clock as ClockIcon,
@@ -17,7 +16,6 @@ import {
   Trophy,
   Target,
   Sparkles,
-  FlaskConical,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -31,7 +29,6 @@ import { xpToNextLevel } from "@/lib/learn/types";
 import type { ModuleDisplayStatus } from "@/lib/learn/journey";
 import {
   JOURNEY_STAGES,
-  DEV_TESTING_MODE,
   getCompletedModuleIds,
   getModuleDisplayStatus,
   getStageStatus,
@@ -70,8 +67,6 @@ function LoadingSkeleton() {
 const MODULE_STATUS_ICON: Record<ModuleDisplayStatus, typeof Circle> = {
   complete: CheckCircle,
   available: Circle,
-  test_unlocked: FlaskConical,
-  locked: Lock,
   coming_soon: ClockIcon,
 };
 
@@ -86,16 +81,6 @@ const MODULE_STATUS_STYLE: Record<ModuleDisplayStatus, { badge: string; icon: st
     icon: "text-violet-400",
     row: "border-violet-500/25 bg-violet-500/[0.03] hover:border-violet-500/40",
   },
-  test_unlocked: {
-    badge: "bg-amber-500/10 border-amber-500/25 text-amber-400",
-    icon: "text-amber-400",
-    row: "border-amber-500/25 bg-amber-500/[0.03] hover:border-amber-500/40",
-  },
-  locked: {
-    badge: "bg-secondary/30 border-border/30 text-muted-foreground/40",
-    icon: "text-muted-foreground/40",
-    row: "border-border/25 bg-card/30 opacity-60",
-  },
   coming_soon: {
     badge: "bg-secondary/20 border-border/20 text-muted-foreground/50",
     icon: "text-muted-foreground/30",
@@ -104,11 +89,9 @@ const MODULE_STATUS_STYLE: Record<ModuleDisplayStatus, { badge: string; icon: st
 };
 
 const MODULE_STATUS_LABEL: Record<ModuleDisplayStatus, string> = {
-  complete: "Complete",
+  complete: "Completed",
   available: "Available",
-  test_unlocked: "Test",
-  locked: "Locked",
-  coming_soon: "Coming soon",
+  coming_soon: "Coming Soon",
 };
 
 // ── Severity badge ────────────────────────────────────────────────────────────
@@ -184,10 +167,7 @@ export default function LearnPage() {
     () => getNextLessonTarget(progress.lessons),
     [progress.lessons]
   );
-  const nextPlannedModule = useMemo(
-    () => getNextPlannedModule(completedModuleIds),
-    [completedModuleIds]
-  );
+  const nextPlannedModule = useMemo(() => getNextPlannedModule(), []);
   const currentStageId = useMemo(() => {
     const current = JOURNEY_STAGES.find(
       (s) => getStageStatus(s, completedModuleIds) === "current"
@@ -460,15 +440,6 @@ export default function LearnPage() {
 
               {/* ── Poker Journey (stage-grouped roadmap) ── */}
               <div className="mb-10">
-                {DEV_TESTING_MODE && (
-                  <div className="mb-4 flex items-center gap-2 rounded-xl border border-amber-500/25 bg-amber-500/[0.05] px-4 py-2.5">
-                    <FlaskConical className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-                    <p className="text-xs text-amber-300/80">
-                      <span className="font-semibold text-amber-300">Developer testing mode</span> — every
-                      implemented module is open regardless of prerequisites. Real progress is unaffected.
-                    </p>
-                  </div>
-                )}
                 <div className="flex items-end justify-between mb-4">
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-1">
@@ -563,7 +534,7 @@ export default function LearnPage() {
                               const status = getModuleDisplayStatus(mod, completedModuleIds);
                               const styles = MODULE_STATUS_STYLE[status];
                               const StatusIcon = MODULE_STATUS_ICON[status];
-                              const clickable = status !== "coming_soon" && status !== "locked";
+                              const clickable = status !== "coming_soon";
 
                               const row = (
                                 <div
