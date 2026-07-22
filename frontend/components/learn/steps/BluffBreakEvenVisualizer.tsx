@@ -4,12 +4,15 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { bluffBreakEvenFrequency } from '@/lib/theory/math'
+import { getNeutralSliderStart } from '@/lib/learn/interactionSafety'
 import { PotDisplay } from '@/components/learn/steps/PotDisplay'
 
 interface BluffBreakEvenVisualizerProps {
   step: LessonStep
   onAnswer: (response: unknown, timeMs: number) => void
   disabled?: boolean
+  /** True when reopening an already-completed step to review it — reveals the solution immediately. */
+  reviewMode?: boolean
 }
 
 function StatTile({ label, value, color }: { label: string; value: string; color: 'slate' | 'amber' | 'violet' }) {
@@ -26,7 +29,7 @@ function StatTile({ label, value, color }: { label: string; value: string; color
   )
 }
 
-export function BluffBreakEvenVisualizer({ step, onAnswer, disabled = false }: BluffBreakEvenVisualizerProps) {
+export function BluffBreakEvenVisualizer({ step, onAnswer, disabled = false, reviewMode = false }: BluffBreakEvenVisualizerProps) {
   const mountTime = useRef(Date.now())
   const [submitted, setSubmitted] = useState(false)
 
@@ -37,14 +40,14 @@ export function BluffBreakEvenVisualizer({ step, onAnswer, disabled = false }: B
   const options = step.options ?? []
 
   const [betOverride, setBetOverride] = useState<number>(step.bluff_breakeven_bet ?? sliderSizes[Math.floor(sliderSizes.length / 2)])
-  const [answer, setAnswer] = useState(50)
+  const [answer, setAnswer] = useState(() => getNeutralSliderStart(step.bluff_breakeven_correct ?? 50, 0, 100))
   const [selectedCompare, setSelectedCompare] = useState<string | null>(null)
 
   useEffect(() => {
     mountTime.current = Date.now()
     setSubmitted(false)
     setBetOverride(step.bluff_breakeven_bet ?? sliderSizes[Math.floor(sliderSizes.length / 2)])
-    setAnswer(50)
+    setAnswer(getNeutralSliderStart(step.bluff_breakeven_correct ?? 50, 0, 100))
     setSelectedCompare(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step.id])
@@ -53,6 +56,8 @@ export function BluffBreakEvenVisualizer({ step, onAnswer, disabled = false }: B
   const requiredFold = useMemo(() => bluffBreakEvenFrequency(bet, pot) * 100, [bet, pot])
 
   const isChallenge = step.bluff_breakeven_correct != null
+  const showSolution = submitted || reviewMode
+  const showRequiredFold = !isChallenge || showSolution
 
   function submitReveal() {
     if (disabled || submitted) return
@@ -118,7 +123,7 @@ export function BluffBreakEvenVisualizer({ step, onAnswer, disabled = false }: B
           <div className="flex items-center gap-2.5 pt-1">
             <StatTile label="Risk" value={String(bet)} color="violet" />
             <StatTile label="Reward" value={String(pot)} color="slate" />
-            <StatTile label="Required fold %" value={`${requiredFold.toFixed(1)}%`} color="amber" />
+            <StatTile label="Required fold %" value={showRequiredFold ? `${requiredFold.toFixed(1)}%` : '?'} color="amber" />
           </div>
 
           {mode === 'slider' && (

@@ -30,19 +30,32 @@ import { RangeCompare } from '@/components/learn/steps/RangeCompare'
 import { EVDecisionTree } from '@/components/learn/steps/EVDecisionTree'
 import { BluffBreakEvenVisualizer } from '@/components/learn/steps/BluffBreakEvenVisualizer'
 import { EquityRealizationVisualizer } from '@/components/learn/steps/EquityRealizationVisualizer'
+import { PlayersBehindVisualizer } from '@/components/learn/steps/PlayersBehindVisualizer'
+import { HandDNA } from '@/components/learn/steps/HandDNA'
+import { StackDepthRangeMorph } from '@/components/learn/steps/StackDepthRangeMorph'
+import { DeadMoneyRangeVisualizer } from '@/components/learn/steps/DeadMoneyRangeVisualizer'
+import { PreflopOpenSizeExplorer } from '@/components/learn/steps/PreflopOpenSizeExplorer'
+import { StrategyComplexityMeter } from '@/components/learn/steps/StrategyComplexityMeter'
+import { RangeDiffOverlay } from '@/components/learn/steps/RangeDiffOverlay'
+import { RangeBucketSort } from '@/components/learn/steps/RangeBucketSort'
+import { MorphologyBuilder } from '@/components/learn/steps/MorphologyBuilder'
+import { BlockerLab } from '@/components/learn/steps/BlockerLab'
+import { ReraiseSizingSlider } from '@/components/learn/steps/ReraiseSizingSlider'
 import type { ActionQuality } from '@/lib/learn/types'
 import { LevelUpOverlay } from '@/components/learn/LevelUpOverlay'
 import { ConceptTagRow } from '@/components/learn/ConceptPopover'
 import { LessonCompletionScreen } from '@/components/learn/LessonCompletionScreen'
+import { ConfidencePrompt } from '@/components/learn/ConfidencePrompt'
+import { recordConceptResult, pickInjectedStep } from '@/lib/learn/adaptiveEngine'
 
 // ── Phase type ────────────────────────────────────────────────────────────────
 
-type Phase = 'intro' | 'step' | 'feedback' | 'summary'
+type Phase = 'intro' | 'confidence' | 'step' | 'feedback' | 'summary'
 
 /** Concept ids that name the exact answer to a step quizzing that same concept
  *  (e.g. a step classifying "+EV / 0EV / -EV" tagged with concept_id "positive_ev"
  *  would spoil itself if the tag were shown before answering). */
-const SPOILER_CONCEPT_TAGS = new Set(['positive_ev', 'zero_ev', 'negative_ev'])
+const SPOILER_CONCEPT_TAGS = new Set(['positive_ev', 'zero_ev', 'negative_ev', 'first_in'])
 
 // ── Progress bar ──────────────────────────────────────────────────────────────
 
@@ -220,6 +233,50 @@ function StepRenderer({
     return <EquityRealizationVisualizer step={step} onAnswer={(response, ms) => evaluate(response, ms)} />
   }
 
+  if (step.type === 'players_behind') {
+    return <PlayersBehindVisualizer step={step} onAnswer={(response, ms) => evaluate(response, ms)} />
+  }
+
+  if (step.type === 'hand_dna') {
+    return <HandDNA step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
+  }
+
+  if (step.type === 'stack_depth_morph') {
+    return <StackDepthRangeMorph step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
+  }
+
+  if (step.type === 'dead_money_visualizer') {
+    return <DeadMoneyRangeVisualizer step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
+  }
+
+  if (step.type === 'open_size_explorer') {
+    return <PreflopOpenSizeExplorer step={step} onAnswer={(response, ms) => evaluate(response, ms)} />
+  }
+
+  if (step.type === 'strategy_complexity') {
+    return <StrategyComplexityMeter step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
+  }
+
+  if (step.type === 'range_diff') {
+    return <RangeDiffOverlay step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
+  }
+
+  if (step.type === 'range_bucket') {
+    return <RangeBucketSort step={step} onAnswer={(assignments, ms) => evaluate(assignments, ms)} />
+  }
+
+  if (step.type === 'morphology_builder') {
+    return <MorphologyBuilder step={step} onAnswer={(response, ms) => evaluate(response, ms)} />
+  }
+
+  if (step.type === 'blocker_lab') {
+    return <BlockerLab step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
+  }
+
+  if (step.type === 'sizing_slider') {
+    return <ReraiseSizingSlider step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
+  }
+
   // Classify-family: board_classify, nut_advantage, blocker_id, range_identify, bluff_pick, reflection_prompt
   return <ClassifyStep step={step} onAnswer={(answer, ms) => evaluate(answer, ms)} />
 }
@@ -318,6 +375,11 @@ export function LessonPlayer({
   const [results, setResults] = useState<StepResult[]>([])
   const [latestResult, setLatestResult] = useState<StepResult | null>(null)
   const [totalXP, setTotalXP] = useState(0)
+  // Dynamic step queue — starts as the authored lesson.steps, but a wrong answer on a step
+  // with a `remediation_ladder` (or a low-confidence correct answer with a `reinforcement_step`)
+  // splices an extra step in right after the current index.
+  const [dynamicSteps, setDynamicSteps] = useState<LessonStep[]>(lesson.steps)
+  const [pendingConfidence, setPendingConfidence] = useState<'low' | 'medium' | 'high' | null>(null)
 
   // Running XP = user's pre-lesson total + XP earned so far in this lesson
   // Used by the local evaluator for accurate level tracking
@@ -327,30 +389,41 @@ export function LessonPlayer({
   const [showLevelUp, setShowLevelUp] = useState(false)
   const [levelUpData, setLevelUpData] = useState<{ level: number; xp: number } | null>(null)
 
-  const steps = lesson.steps
+  const steps = dynamicSteps
   const currentStep: LessonStep | undefined = steps[currentStepIndex]
   const isLastStep = currentStepIndex === steps.length - 1
 
   const handleStart = useCallback(() => {
+    setPhase(currentStep?.ask_confidence ? 'confidence' : 'step')
+  }, [currentStep])
+
+  const handleConfidenceSelect = useCallback((level: 'low' | 'medium' | 'high') => {
+    setPendingConfidence(level)
     setPhase('step')
   }, [])
 
   const handleResult = useCallback((result: StepResult, userResponse: unknown, timeMs: number) => {
-    setLatestResult(result)
-    setResults((prev) => [...prev, result])
-    setTotalXP((prev) => prev + result.xp_earned)
+    // Merge in the learner's self-reported confidence, if this step asked for one
+    const enriched: StepResult = pendingConfidence
+      ? { ...result, learner_confidence: pendingConfidence }
+      : result
+
+    setLatestResult(enriched)
+    setResults((prev) => [...prev, enriched])
+    setTotalXP((prev) => prev + enriched.xp_earned)
     setPhase('feedback')
 
     if (currentStep) {
-      onStepResult?.(currentStep, currentStepIndex, result, userResponse, timeMs)
+      onStepResult?.(currentStep, currentStepIndex, enriched, userResponse, timeMs)
+      recordConceptResult(currentStep.concept_ids?.[0], enriched.quality)
     }
 
     // Trigger level-up overlay
-    if (result.leveled_up && result.level_after) {
-      setLevelUpData({ level: result.level_after, xp: result.xp_earned })
+    if (enriched.leveled_up && enriched.level_after) {
+      setLevelUpData({ level: enriched.level_after, xp: enriched.xp_earned })
       setShowLevelUp(true)
     }
-  }, [currentStep, currentStepIndex, onStepResult])
+  }, [currentStep, currentStepIndex, onStepResult, pendingConfidence])
 
   const handleConceptComplete = useCallback((result: StepResult) => {
     setResults((prev) => [...prev, result])
@@ -361,11 +434,13 @@ export function LessonPlayer({
     if (isLastStep) {
       setPhase('summary')
     } else {
+      const next = steps[currentStepIndex + 1]
       setCurrentStepIndex((i) => i + 1)
       setLatestResult(null)
-      setPhase('step')
+      setPendingConfidence(null)
+      setPhase(next?.ask_confidence ? 'confidence' : 'step')
     }
-  }, [isLastStep, currentStep, currentStepIndex, onStepResult])
+  }, [isLastStep, currentStep, currentStepIndex, onStepResult, steps])
 
   const handleRetry = useCallback(() => {
     // Go back to the step so the user can re-answer (failed evaluation, no penalty)
@@ -375,14 +450,31 @@ export function LessonPlayer({
   }, [])
 
   const handleContinue = useCallback(() => {
+    const injected = currentStep && latestResult ? pickInjectedStep(currentStep, latestResult) : null
+
+    if (injected) {
+      setDynamicSteps((prev) => {
+        const next = [...prev]
+        next.splice(currentStepIndex + 1, 0, injected)
+        return next
+      })
+      setCurrentStepIndex((i) => i + 1)
+      setLatestResult(null)
+      setPendingConfidence(null)
+      setPhase(injected.ask_confidence ? 'confidence' : 'step')
+      return
+    }
+
     if (isLastStep) {
       setPhase('summary')
     } else {
+      const next = steps[currentStepIndex + 1]
       setCurrentStepIndex((i) => i + 1)
       setLatestResult(null)
-      setPhase('step')
+      setPendingConfidence(null)
+      setPhase(next?.ask_confidence ? 'confidence' : 'step')
     }
-  }, [isLastStep])
+  }, [isLastStep, currentStep, currentStepIndex, latestResult, steps])
 
   const handleSummaryDone = useCallback(() => {
     const valid = results.filter((r) => r.evaluation_valid !== false)
@@ -423,8 +515,10 @@ export function LessonPlayer({
         onRetry={() => {
           setResults([])
           setTotalXP(0)
+          setDynamicSteps(lesson.steps)
           setCurrentStepIndex(0)
           setLatestResult(null)
+          setPendingConfidence(null)
           setPhase('intro')
         }}
         onCoachReview={() => { window.location.href = '/coach' }}
@@ -448,8 +542,13 @@ export function LessonPlayer({
         <ChapterProgress chapters={lesson.chapters} currentStepId={currentStep.id} />
       )}
 
-      {/* Progress */}
-      <ProgressBar current={currentStepIndex} total={steps.length} />
+      {/* Progress — measured against the lesson's authored step count, not the dynamically
+          extended one, so an injected remediation/reinforcement step doesn't make the bar
+          jump backward in perceived percentage. */}
+      <ProgressBar
+        current={Math.min(currentStepIndex, Math.max(lesson.steps.length - 1, 0))}
+        total={lesson.steps.length}
+      />
 
       {/* Context bar */}
       {hasContext && (
@@ -477,6 +576,10 @@ export function LessonPlayer({
 
       {/* Step card */}
       <div className="rounded-2xl border border-border/50 bg-card/60 p-6">
+        {phase === 'confidence' && (
+          <ConfidencePrompt onSelect={handleConfidenceSelect} />
+        )}
+
         {phase === 'step' && (
           <StepRenderer
             step={currentStep}

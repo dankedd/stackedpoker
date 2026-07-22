@@ -30,6 +30,19 @@ export type StepType =
   | 'bluff_breakeven'   // fold-equity break-even visualizer for a bluff/semi-bluff bet
   | 'equity_realization' // equity-realization meters / position / spectrum / card-compare / calculator
   | 'range_compare'     // two 13×13 range grids rendered side-by-side for comparison
+  // ── Preflop Foundation (Module 3) ──
+  | 'players_behind'     // slider showing opponents still left to act + resistance-risk model
+  | 'hand_dna'           // qualitative hand-property breakdown (high-card/suited/connected/nut/blocker/playability)
+  | 'stack_depth_morph'  // shallow/medium/deep stack slider morphing a range grid
+  | 'dead_money_visualizer' // ante on/off toggle + pot/incentive visualization
+  | 'open_size_explorer' // opening bet-size slider with break-even-fold-% feedback
+  | 'strategy_complexity' // simple-vs-complex strategy trade-off comparison
+  | 'range_diff'         // canned-example three-color diff overlay (correct / missed / too-wide) vs a baseline
+  // ── Preflop Aggression (Module 4) ──
+  | 'range_bucket'       // assign a pool of hands into named buckets (value/bluff/call/fold, etc.)
+  | 'morphology_builder' // construct a linear/polarized range from a pool, or classify a shown range's shape
+  | 'blocker_lab'        // card-removal comparison: swap Hero's holding and see villain combos blocked
+  | 'sizing_slider'      // reraise (3-bet/squeeze) sizing slider with live risk/pot/call-cost/SPR feedback
 
 export type ActionQuality = 'perfect' | 'good' | 'acceptable' | 'mistake' | 'punt'
 export type LessonType = 'micro' | 'range_trainer' | 'puzzle_drill' | 'concept_reveal' | 'simulation'
@@ -80,6 +93,16 @@ export interface LessonStep {
   pot_bb?: number
   effective_stack_bb?: number
   street?: 'preflop' | 'flop' | 'turn' | 'river'
+  /** Table size (e.g. 6 for 6-max, 9 for full ring) — preflop context. */
+  table_size?: number
+  /** Ante size in bb, when the environment has one. Omit/0 for no-ante. */
+  ante_bb?: number
+  /** Rake as a fraction (e.g. 0.05 = 5%), when relevant to the exercise. */
+  rake_pct?: number
+  /** Number of players still left to act behind Hero (preflop RFI context). */
+  players_behind?: number
+  /** Action already taken before Hero, in order, e.g. ["UTG folds", "HJ folds"]. */
+  action_before_hero?: string[]
   // Content
   narrative?: string
   options?: StepOption[]
@@ -91,10 +114,15 @@ export interface LessonStep {
   range_combos?: string[]
   range_tolerance?: number
   range_hint?: string
+  /** range_build: after submitting, show an inline three-color diff (correct/missed/too-wide)
+   *  against the target range before advancing to the generic score feedback. */
+  range_build_show_diff?: boolean
   /** For range_heatmap: equity value per hand (0–100) keyed by hand notation */
   range_heatmap_data?: Record<string, number>
   /** For range_heatmap: which hands are in the "target" range to identify */
   range_heatmap_target?: string[]
+  /** For range_heatmap: renders a 3-4 color action-map grid instead of the numeric equity gradient. */
+  range_heatmap_action_map?: Record<string, 'raise' | 'limp' | 'shove' | 'fold'>
   // Equity predict (hand vs range)
   equity_actual?: number
   equity_tolerance?: number
@@ -219,8 +247,92 @@ export interface LessonStep {
   range_compare_a?: { label: string; range: string[] }
   range_compare_b?: { label: string; range: string[] }
   range_compare_prompt?: string
+  // ── Preflop Foundation (Module 3) ──────────────────────────────────────────
+  // Players behind — slider over opponents still left to act
+  /** Preset player counts to step through (default 1..8). */
+  players_behind_range?: number[]
+  players_behind_prompt?: string
+  /** Numeric challenge target (e.g. a resistance-risk % from the labelled model), if scored. */
+  players_behind_correct?: number
+  players_behind_tolerance?: number
+  // Hand DNA — qualitative hand-property breakdown
+  /** The hand to classify, e.g. 'A5s'. */
+  hand_dna_subject?: string
+  hand_dna_prompt?: string
+  // Stack depth range morph
+  /** Which position's baseline to morph (must exist in preflopBaselines.ts). */
+  stack_depth_morph_position?: string
+  /** Whether to color shallow-depth cells by action (raise/shove/fold) instead of plain membership. */
+  stack_depth_morph_show_actions?: boolean
+  stack_depth_morph_prompt?: string
+  /** Which baseline dataset to morph. Defaults to 'rfi' (opening ranges, preflopBaselines.ts).
+   *  'threebet_defense' reads threebetBaselines.ts instead, keyed by `stack_depth_morph_key`. */
+  stack_depth_morph_dataset?: 'rfi' | 'threebet_defense'
+  /** threebet_defense dataset lookup key, e.g. 'BB_vs_BTN'. Ignored for the 'rfi' dataset. */
+  stack_depth_morph_key?: string
+  // Dead money visualizer — ante on/off
+  dead_money_pot?: number
+  dead_money_ante_bb?: number
+  dead_money_prompt?: string
+  // Open size explorer — sizing slider with break-even-fold feedback
+  open_size_pot?: number
+  /** Preset open sizes in bb to step through, e.g. [2, 2.25, 2.5, 3]. */
+  open_size_slider_sizes?: number[]
+  open_size_prompt?: string
+  /** Numeric challenge target (required immediate-fold %), if scored. */
+  open_size_correct?: number
+  open_size_tolerance?: number
+  // Strategy complexity meter — simple vs complex trade-off (uses `options` for its question)
+  strategy_complexity_prompt?: string
+  // Range diff — canned-example three-color overlay vs a baseline (uses `options` for the follow-up question)
+  range_diff_baseline?: string[]
+  /** The illustrative example range being compared against the baseline (not the learner's own answer). */
+  range_diff_example?: string[]
+  range_diff_prompt?: string
+  // ── Preflop Aggression (Module 4) ──────────────────────────────────────────
+  // Range bucket — assign a hand pool into named buckets
+  /** Hands the learner must sort. */
+  range_bucket_pool?: string[]
+  /** The buckets available, in display order. */
+  range_bucket_categories?: { id: string; label: string }[]
+  /** Best-category id per hand — the primary scoring target. */
+  range_bucket_correct?: Record<string, string>
+  /** Optional secondary acceptable categories per hand (full credit, not just partial). */
+  range_bucket_acceptable?: Record<string, string[]>
+  range_bucket_prompt?: string
+  // Morphology builder — construct linear/polarized ranges, or classify a shown range's shape
+  /** 'build' = construct ranges from a pool. 'classify' = label a single shown range. */
+  morphology_builder_mode?: 'build' | 'classify'
+  /** 'build' mode: the shared hand pool to split into a linear and a polarized range. */
+  morphology_builder_pool?: string[]
+  /** 'classify' mode: the range being shown for labeling. */
+  morphology_builder_range?: string[]
+  morphology_builder_prompt?: string
+  // Blocker lab — card-removal comparison across candidate holdings
+  /** Villain's illustrative continuing range (hand notations) whose combos get reduced. */
+  blocker_lab_villain_range?: string[]
+  /** Candidate Hero holdings to compare, e.g. ['A5s', 'K5s', '76s', 'QJo']. */
+  blocker_lab_candidates?: string[]
+  blocker_lab_prompt?: string
+  // Sizing slider — reraise (3-bet/squeeze) sizing with live risk/pot/SPR feedback
+  /** Pot size before Hero's reraise (open size + any dead money/callers already in). */
+  sizing_slider_pot?: number
+  /** Preset reraise sizes (in bb) to step through. */
+  sizing_slider_sizes?: number[]
+  /** The original opener's bet already in the pot (their call cost if Hero's reraise is called). */
+  sizing_slider_open_size?: number
+  /** A caller already in the pot ahead of Hero's reraise (squeeze reuse), if any. */
+  sizing_slider_caller_in?: number
+  sizing_slider_prompt?: string
   // Visual
   visual?: 'table' | 'range_grid' | 'equity_bar' | 'heatmap' | 'pressure_chart'
+  // ── Adaptive system (confidence + remediation) ─────────────────────────────
+  /** Show a LOW/MEDIUM/HIGH confidence prompt before this step is answered. Author opt-in — not every step. */
+  ask_confidence?: boolean
+  /** Ordered alternate representations of this step's concept, injected one at a time on repeated misses. */
+  remediation_ladder?: LessonStep[]
+  /** A single short follow-up shown after a correct-but-low-confidence answer. */
+  reinforcement_step?: LessonStep
   // XP
   xp?: number
 }
@@ -392,6 +504,9 @@ export interface StepResult {
   evaluation_valid: boolean
   fallback_used: boolean
   error_type?: string
+  /** Learner's self-reported confidence, captured before answering — only present on steps with `ask_confidence`.
+   *  Distinct from `confidence` above, which is the evaluation pipeline's own confidence in the result. */
+  learner_confidence?: 'low' | 'medium' | 'high'
 }
 
 // ── Sentinel: explicit failed result (no fake scores/XP) ─────────────────────
@@ -790,6 +905,137 @@ export const ACHIEVEMENTS: Achievement[] = [
     category: 'mastery',
     condition: 'Complete the "Decision Lab" capstone',
     xp_bonus: 150,
+    tier: 'gold',
+  },
+  // Building Your Preflop Foundation (Module 3)
+  {
+    id: 'first_in',
+    title: 'First In',
+    description: 'Completed the "First In" lesson',
+    icon: '🚩',
+    category: 'learning',
+    condition: 'Complete "First In"',
+    xp_bonus: 50,
+    tier: 'bronze',
+  },
+  {
+    id: 'range_architect',
+    title: 'Range Architect',
+    description: 'Built a strong opening range from scratch',
+    icon: '🏛️',
+    category: 'performance',
+    condition: 'Score well on a range-building exercise in Module 3',
+    xp_bonus: 75,
+    tier: 'silver',
+  },
+  {
+    id: 'position_pays',
+    title: 'Position Pays',
+    description: 'Mastered position-based RFI strategy',
+    icon: '🪑',
+    category: 'mastery',
+    condition: 'Complete "The Players Behind You"',
+    xp_bonus: 75,
+    tier: 'bronze',
+  },
+  {
+    id: 'stack_aware',
+    title: 'Stack Aware',
+    description: 'Completed stack-depth preflop training',
+    icon: '📏',
+    category: 'learning',
+    condition: 'Complete "Stacks Change the Range"',
+    xp_bonus: 75,
+    tier: 'bronze',
+  },
+  {
+    id: 'blind_specialist',
+    title: 'Blind Specialist',
+    description: 'Completed the Small Blind lesson',
+    icon: '👁️',
+    category: 'mastery',
+    condition: 'Complete "The Small Blind Is Different"',
+    xp_bonus: 75,
+    tier: 'silver',
+  },
+  {
+    id: 'preflop_foundation',
+    title: 'Preflop Foundation',
+    description: 'Completed Module 3: Building Your Preflop Foundation',
+    icon: '🧱',
+    category: 'mastery',
+    condition: 'Complete the "Preflop Foundation Lab" capstone',
+    xp_bonus: 150,
+    tier: 'gold',
+  },
+  {
+    id: 'first_three_bet',
+    title: 'First Three-Bet',
+    description: 'Completed "The 3-Bet"',
+    icon: '⚡',
+    category: 'learning',
+    condition: 'Complete "The 3-Bet"',
+    xp_bonus: 50,
+    tier: 'bronze',
+  },
+  {
+    id: 'range_architect_ii',
+    title: 'Range Architect II',
+    description: 'Built a well-shaped 3-betting range from scratch',
+    icon: '🏛️',
+    category: 'performance',
+    condition: 'Score well on a 3-bet range-construction exercise in Module 4',
+    xp_bonus: 75,
+    tier: 'silver',
+  },
+  {
+    id: 'polarity_reader',
+    title: 'Polarity Reader',
+    description: 'Correctly distinguished linear from polarized ranges',
+    icon: '🧲',
+    category: 'mastery',
+    condition: 'Complete "Shape of Aggression"',
+    xp_bonus: 75,
+    tier: 'silver',
+  },
+  {
+    id: 'blocker_master',
+    title: 'Blocker Master',
+    description: 'Used card removal to sharpen a bluff selection',
+    icon: '🃏',
+    category: 'mastery',
+    condition: 'Complete "Block the Continue"',
+    xp_bonus: 75,
+    tier: 'silver',
+  },
+  {
+    id: 'squeeze_specialist',
+    title: 'Squeeze Specialist',
+    description: 'Mastered squeeze construction and sizing',
+    icon: '🤏',
+    category: 'mastery',
+    condition: 'Complete "The Squeeze"',
+    xp_bonus: 75,
+    tier: 'silver',
+  },
+  {
+    id: 'resistance_tested',
+    title: 'Resistance Tested',
+    description: 'Learned to survive re-raises after opening',
+    icon: '🛡️',
+    category: 'mastery',
+    condition: 'Complete "They Raised Back"',
+    xp_bonus: 75,
+    tier: 'silver',
+  },
+  {
+    id: 'preflop_aggression_capstone',
+    title: 'Preflop Aggressor',
+    description: 'Completed Module 4: Preflop Aggression',
+    icon: '🔺',
+    category: 'mastery',
+    condition: 'Complete the "Preflop Aggression Lab" capstone',
+    xp_bonus: 200,
     tier: 'gold',
   },
 ]

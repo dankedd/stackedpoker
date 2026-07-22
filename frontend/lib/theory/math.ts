@@ -215,6 +215,39 @@ export function calculateSimpleEqR(rawEquity: number, actualCapture: number): nu
 }
 
 /**
+ * Hero's additional chips risked when reraising to `raiseTo` (bb), on top of
+ * whatever Hero already has in this street (0 preflop unless Hero is in the blinds).
+ */
+export function calculateRaiseRisk(raiseTo: number, heroAlreadyIn: number = 0): number {
+  return Math.max(0, raiseTo - heroAlreadyIn);
+}
+
+/**
+ * A villain's cost to call a reraise to `raiseTo` (bb), given what they
+ * already have in this street (their open size, or their earlier call).
+ */
+export function calculateCallCost(raiseTo: number, villainAlreadyIn: number): number {
+  return Math.max(0, raiseTo - villainAlreadyIn);
+}
+
+/**
+ * Resulting pot if a reraise to `raiseTo` gets called. `potBeforeRaise` is the
+ * pot immediately before Hero acts (already includes blinds, the opener's bet,
+ * and any dead money from callers) — this only adds the *new* money entering:
+ * Hero's incremental raise plus each continuing villain's incremental call.
+ */
+export function calculatePotAfterCall(
+  potBeforeRaise: number,
+  raiseTo: number,
+  heroAlreadyIn: number = 0,
+  villainsAlreadyIn: number[] = [],
+): number {
+  const heroRisk = calculateRaiseRisk(raiseTo, heroAlreadyIn);
+  const callCosts = villainsAlreadyIn.reduce((sum, alreadyIn) => sum + calculateCallCost(raiseTo, alreadyIn), 0);
+  return potBeforeRaise + heroRisk + callCosts;
+}
+
+/**
  * Reference alpha/MDF table for common bet sizes.
  */
 export const ALPHA_TABLE: Record<BetSizeLabel, AlphaMdfResult> = {

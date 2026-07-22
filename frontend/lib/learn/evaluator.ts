@@ -89,15 +89,20 @@ function evalNumeric(opts: {
   }
 
   const delta = Math.abs(value - actual)
+  // Every numeric slider/challenge step (pot odds, outs, bluff break-even,
+  // equity realization, MDF, SPR, combo counts...) shares this evaluator, so
+  // echoing the learner's own answer here is the one reliable place the
+  // "your answer vs correct answer" reveal reaches every one of them.
+  const yourAnswer = `You answered ${value}${unit}.`
 
   if (delta <= tolerance) {
-    return { quality: 'perfect', score: 100, feedback: correctFeedback, ev_loss_bb: 0 }
+    return { quality: 'perfect', score: 100, feedback: `${yourAnswer} ${correctFeedback}`, ev_loss_bb: 0 }
   }
   if (delta <= tolerance * 2) {
     return {
       quality: 'good',
       score: QUALITY_SCORES.good,
-      feedback: `${correctFeedback} (close — exact answer is ${actual}${unit})`,
+      feedback: `${yourAnswer} ${correctFeedback} (close — exact answer is ${actual}${unit})`,
       ev_loss_bb: 0,
     }
   }
@@ -105,14 +110,14 @@ function evalNumeric(opts: {
     return {
       quality: 'acceptable',
       score: QUALITY_SCORES.acceptable,
-      feedback: `${wrongFeedback} The exact value is ${actual}${unit}.`,
+      feedback: `${yourAnswer} ${wrongFeedback} The exact value is ${actual}${unit}.`,
       ev_loss_bb: 0,
     }
   }
   return {
     quality: 'mistake',
     score: QUALITY_SCORES.mistake,
-    feedback: `${wrongFeedback} The correct answer is ${actual}${unit}.`,
+    feedback: `${yourAnswer} ${wrongFeedback} The correct answer is ${actual}${unit}.`,
     ev_loss_bb: 0,
   }
 }
@@ -257,6 +262,136 @@ function evalRange(
     quality: 'mistake',
     score: Math.max(20, rawScore),
     feedback: `Range has significant errors${detail ? ` (${detail})` : ''}. Study the correct ranges for this position.`,
+    ev_loss_bb: 0,
+  }
+}
+
+// ── Range bucket steps (Module 4) ─────────────────────────────────────────────
+// Assign a pool of hands into named buckets (VALUE 3-BET / BLUFF 3-BET / CALL / FOLD, etc.)
+// Scored combo-weighted, like evalRange, against a best-category map with optional
+// secondary-acceptable categories per hand.
+
+function evalRangeBucket(step: LessonStep, response: unknown): EvalCore {
+  const pool = step.range_bucket_pool ?? []
+  const correct = step.range_bucket_correct ?? {}
+  const acceptable = step.range_bucket_acceptable ?? {}
+  const assignments = response && typeof response === 'object' ? (response as Record<string, string>) : {}
+
+  if (pool.length === 0) {
+    return { quality: 'good', score: 80, feedback: 'Sort recorded.', ev_loss_bb: 0 }
+  }
+
+  let totalCombos = 0
+  let correctCombos = 0
+  const misplaced: string[] = []
+
+  for (const hand of pool) {
+    const c = handCombos(hand)
+    totalCombos += c
+    const assigned = assignments[hand]
+    const best = correct[hand]
+    const accepted = acceptable[hand] ?? []
+    if (assigned && (assigned === best || accepted.includes(assigned))) {
+      correctCombos += c
+    } else {
+      misplaced.push(hand)
+    }
+  }
+
+  const accuracy = totalCombos > 0 ? correctCombos / totalCombos : 0
+  const pct = Math.round(accuracy * 100)
+  const detail =
+    misplaced.length > 0
+      ? `${misplaced.length} hand${misplaced.length === 1 ? '' : 's'} in the wrong bucket (${misplaced.slice(0, 4).join(', ')}${misplaced.length > 4 ? '…' : ''})`
+      : ''
+
+  if (accuracy >= 0.95) {
+    return { quality: 'perfect', score: 100, feedback: 'Excellent sort — every hand landed in a sound bucket.', ev_loss_bb: 0 }
+  }
+  if (accuracy >= 0.8) {
+    return {
+      quality: 'good',
+      score: Math.max(QUALITY_SCORES.good, pct),
+      feedback: `Good sort${detail ? ` — ${detail}` : ''}.`,
+      ev_loss_bb: 0,
+    }
+  }
+  if (accuracy >= 0.6) {
+    return {
+      quality: 'acceptable',
+      score: Math.max(QUALITY_SCORES.acceptable, pct),
+      feedback: `Roughly right, but has leaks${detail ? ` — ${detail}` : ''}.`,
+      ev_loss_bb: 0,
+    }
+  }
+  return {
+    quality: 'mistake',
+    score: Math.max(20, pct),
+    feedback: `Several hands are in the wrong bucket${detail ? ` — ${detail}` : ''}. Review the reasoning for each category.`,
+    ev_loss_bb: 0,
+  }
+}
+
+// ── Morphology builder — build mode (Module 4) ────────────────────────────────
+// The learner constructs a linear range (Range A) and a polarized range (Range B)
+// from the same strength-ordered pool. This checks *shape*, not exact solver
+// membership: linear should be a contiguous top-down prefix of the pool; polarized
+// should combine top-third and bottom-third hands while skipping some of the middle.
+
+function evalMorphologyBuild(step: LessonStep, response: unknown): EvalCore {
+  const pool = step.morphology_builder_pool ?? []
+  const resp =
+    response && typeof response === 'object' ? (response as { linear?: string[]; polarized?: string[] }) : {}
+  const linear = resp.linear ?? []
+  const polarized = resp.polarized ?? []
+
+  if (pool.length === 0 || linear.length === 0 || polarized.length === 0) {
+    return {
+      quality: 'mistake',
+      score: 30,
+      feedback: 'Build both a linear range (Range A) and a polarized range (Range B) before submitting.',
+      ev_loss_bb: 0,
+    }
+  }
+
+  const indexOf = (h: string) => pool.indexOf(h)
+
+  const linearIdx = linear.map(indexOf).filter((i) => i >= 0).sort((a, b) => a - b)
+  const expectedPrefix = Array.from({ length: linearIdx.length }, (_, i) => i)
+  const linearHasGaps = linearIdx.some((v, i) => v !== expectedPrefix[i])
+  const linearOk = linearIdx.length > 0 && !linearHasGaps
+
+  const n = pool.length
+  const topCut = Math.ceil(n / 3)
+  const bottomCut = n - Math.ceil(n / 3)
+  const polarIdx = polarized.map(indexOf).filter((i) => i >= 0)
+  const hasTop = polarIdx.some((i) => i < topCut)
+  const hasBottom = polarIdx.some((i) => i >= bottomCut)
+  const middleIndices = Array.from({ length: n }, (_, i) => i).filter((i) => i >= topCut && i < bottomCut)
+  const hasGap = middleIndices.some((i) => !polarIdx.includes(i))
+  const polarOk = hasTop && hasBottom && hasGap
+
+  if (linearOk && polarOk) {
+    return {
+      quality: 'perfect',
+      score: 100,
+      feedback: 'Both ranges are well-shaped: Range A runs top-down with no gaps, and Range B keeps a clear top-and-bottom split.',
+      ev_loss_bb: 0,
+    }
+  }
+  if (linearOk || polarOk) {
+    const which = linearOk ? 'polarized (Range B)' : 'linear (Range A)'
+    return {
+      quality: 'acceptable',
+      score: 60,
+      feedback: `One range is well-shaped, but the ${which} range has a structural issue — review its shape.`,
+      ev_loss_bb: 0,
+    }
+  }
+  return {
+    quality: 'mistake',
+    score: 30,
+    feedback: 'Neither range has the right shape yet. Range A should run top-down with no gaps; Range B should combine top hands with some lower hands while skipping the middle.',
     ev_loss_bb: 0,
   }
 }
@@ -474,6 +609,85 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
 
     // Range compare — a decision question over two displayed ranges, or unscored
     case 'range_compare':
+      if (step.options?.length) return evalOptionBased(step, response)
+      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+
+    // ── Preflop Foundation (Module 3) ───────────────────────────────────────
+
+    // Players behind — numeric resistance-risk question, else option-based, else unscored
+    case 'players_behind':
+      if (step.players_behind_correct != null) {
+        return evalNumeric({
+          actual:         step.players_behind_correct,
+          tolerance:      step.players_behind_tolerance ?? 5,
+          response,
+          correctFeedback: step.correct_feedback ?? `Correct — approximately ${step.players_behind_correct}%.`,
+          wrongFeedback:   step.wrong_feedback ?? `The illustrative model gives approximately ${step.players_behind_correct}%.`,
+          unit: '%',
+        })
+      }
+      if (step.options?.length) return evalOptionBased(step, response)
+      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+
+    // Hand DNA — a classification/reasoning question over the displayed breakdown, or unscored
+    case 'hand_dna':
+      if (step.options?.length) return evalOptionBased(step, response)
+      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+
+    // Stack depth morph — a reasoning question over the morphing range, or unscored
+    case 'stack_depth_morph':
+      if (step.options?.length) return evalOptionBased(step, response)
+      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+
+    // Dead money visualizer — a reasoning question over the ante toggle, or unscored
+    case 'dead_money_visualizer':
+      if (step.options?.length) return evalOptionBased(step, response)
+      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+
+    // Open size explorer — numeric break-even-fold question, else option-based, else unscored
+    case 'open_size_explorer':
+      if (step.open_size_correct != null) {
+        return evalNumeric({
+          actual:         step.open_size_correct,
+          tolerance:      step.open_size_tolerance ?? 3,
+          response,
+          correctFeedback: step.correct_feedback ?? `Correct — ${step.open_size_correct}%.`,
+          wrongFeedback:   step.wrong_feedback ?? `The correct answer is ${step.open_size_correct}%.`,
+          unit: '%',
+        })
+      }
+      if (step.options?.length) return evalOptionBased(step, response)
+      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+
+    // Strategy complexity meter — a trade-off question, or unscored
+    case 'strategy_complexity':
+      if (step.options?.length) return evalOptionBased(step, response)
+      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+
+    // Range diff — a decision question over a canned baseline-vs-example overlay, or unscored
+    case 'range_diff':
+      if (step.options?.length) return evalOptionBased(step, response)
+      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+
+    // ── Preflop Aggression (Module 4) ───────────────────────────────────────
+
+    // Range bucket — sort a hand pool into named buckets, combo-weighted scoring
+    case 'range_bucket':
+      return evalRangeBucket(step, response)
+
+    // Morphology builder — 'build' scores range shape; 'classify' is a plain option choice
+    case 'morphology_builder':
+      if (step.morphology_builder_mode === 'build') return evalMorphologyBuild(step, response)
+      if (step.options?.length) return evalOptionBased(step, response)
+      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+
+    // Blocker lab — a reasoning question over the card-removal comparison, or unscored
+    case 'blocker_lab':
+      if (step.options?.length) return evalOptionBased(step, response)
+      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+
+    // Sizing slider — a decision question over the live risk/pot/SPR feedback, or unscored
+    case 'sizing_slider':
       if (step.options?.length) return evalOptionBased(step, response)
       return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
 

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
+import { getNeutralSliderStart } from '@/lib/learn/interactionSafety'
 import {
   drawProbabilityNextCard,
   drawProbabilityByRiver,
@@ -77,9 +78,11 @@ interface OutsDeckVisualizerProps {
   step: LessonStep
   onAnswer: (response: unknown, timeMs: number) => void
   disabled?: boolean
+  /** True when reopening an already-completed step to review it — reveals the solution immediately. */
+  reviewMode?: boolean
 }
 
-export function OutsDeckVisualizer({ step, onAnswer, disabled = false }: OutsDeckVisualizerProps) {
+export function OutsDeckVisualizer({ step, onAnswer, disabled = false, reviewMode = false }: OutsDeckVisualizerProps) {
   const mountTime = useRef(Date.now())
   const [submitted, setSubmitted] = useState(false)
 
@@ -96,14 +99,21 @@ export function OutsDeckVisualizer({ step, onAnswer, disabled = false }: OutsDec
 
   const isChallenge = step.outs_deck_correct != null
   const maxAnswer = mode === 'clean_dirty' ? Math.max(nominalOuts, 1) : 100
-  const [answer, setAnswer] = useState(mode === 'clean_dirty' ? Math.round(maxAnswer / 2) : 25)
+  const neutralDefault = () => getNeutralSliderStart(step.outs_deck_correct ?? maxAnswer / 2, 0, maxAnswer)
+  const [answer, setAnswer] = useState(neutralDefault)
 
   useEffect(() => {
     mountTime.current = Date.now()
     setSubmitted(false)
-    setAnswer(mode === 'clean_dirty' ? Math.round(maxAnswer / 2) : 25)
+    setAnswer(getNeutralSliderStart(step.outs_deck_correct ?? maxAnswer / 2, 0, maxAnswer))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step.id])
+
+  // A challenge step's derived numbers (percentages, clean/dirty split) stay
+  // hidden until the learner submits — they're the answer, not a given. Raw
+  // outs/unseen counts and non-challenge (pure reveal) steps stay visible.
+  const showSolution = submitted || reviewMode
+  const revealDerived = !isChallenge || showSolution
 
   const deck = useMemo(
     () => (knownCards.length > 0 ? buildUnseenDeck(knownCards) : []),
@@ -159,7 +169,10 @@ export function OutsDeckVisualizer({ step, onAnswer, disabled = false }: OutsDec
           <div className="grid grid-cols-8 sm:grid-cols-10 gap-1.5">
             {deck.map((card, i) => {
               const isOut = outSet.has(card)
-              const isDead = isOut && mode === 'clean_dirty' && deadSet.has(card)
+              // Which outs are "dirty" (dead) is the exact thing clean_dirty
+              // challenges test — the deck must show a uniform "out" state for
+              // all of them pre-submission, not visually split them in advance.
+              const isDead = isOut && mode === 'clean_dirty' && revealDerived && deadSet.has(card)
               return (
                 <div key={card} style={{ animationDelay: `${Math.min(i * 12, 400)}ms` }}>
                   <DeckTile card={card} state={isDead ? 'dead' : isOut ? 'out' : 'neutral'} />
@@ -174,12 +187,14 @@ export function OutsDeckVisualizer({ step, onAnswer, disabled = false }: OutsDec
         </div>
       )}
 
-      {/* Mode-specific stat panels */}
+      {/* Mode-specific stat panels — derived numbers (percentages, clean/dirty
+          split) are the answer for a challenge step, so they stay masked
+          behind revealDerived; raw given counts (outs, unseen) stay visible. */}
       {mode === 'count_outs' && nominalOuts > 0 && (
         <div className="flex items-center gap-2.5">
           <StatTile label="Suit total" value="13" />
           <StatTile label="Already seen" value={String(13 - nominalOuts)} />
-          <StatTile label="Remaining outs" value={String(nominalOuts)} color="emerald" />
+          <StatTile label="Remaining outs" value={revealDerived ? String(nominalOuts) : '?'} color="emerald" />
         </div>
       )}
 
@@ -187,19 +202,22 @@ export function OutsDeckVisualizer({ step, onAnswer, disabled = false }: OutsDec
         <div className="flex items-center gap-2.5">
           <StatTile label="Outs" value={String(nominalOuts)} color="emerald" />
           <StatTile label="Unseen" value={String(unseen)} />
-          <StatTile label="Next-card %" value={`${nextCardPct.toFixed(1)}%`} color="violet" />
+          <StatTile label="Next-card %" value={revealDerived ? `${nextCardPct.toFixed(1)}%` : '?'} color="violet" />
         </div>
       )}
 
       {mode === 'turn_river' && (
         <div className="space-y-2.5">
           <div className="flex items-center gap-2.5">
-            <StatTile label="Miss turn" value={`${(100 - nextCardPct).toFixed(1)}%`} />
-            <StatTile label="× Miss river" value={`${(100 - drawProbabilityNextCard(nominalOuts, unseen - 1) * 100).toFixed(1)}%`} />
+            <StatTile label="Miss turn" value={revealDerived ? `${(100 - nextCardPct).toFixed(1)}%` : '?'} />
+            <StatTile
+              label="× Miss river"
+              value={revealDerived ? `${(100 - drawProbabilityNextCard(nominalOuts, unseen - 1) * 100).toFixed(1)}%` : '?'}
+            />
           </div>
           <div className="flex items-center gap-2.5">
-            <StatTile label="Hit by river (exact)" value={`${riverPct.toFixed(1)}%`} color="emerald" />
-            <StatTile label="Next card alone" value={`${nextCardPct.toFixed(1)}%`} color="slate" />
+            <StatTile label="Hit by river (exact)" value={revealDerived ? `${riverPct.toFixed(1)}%` : '?'} color="emerald" />
+            <StatTile label="Next card alone" value={revealDerived ? `${nextCardPct.toFixed(1)}%` : '?'} color="slate" />
           </div>
         </div>
       )}
@@ -207,12 +225,12 @@ export function OutsDeckVisualizer({ step, onAnswer, disabled = false }: OutsDec
       {mode === 'quick_estimate' && (
         <div className="space-y-2.5">
           <div className="flex items-center gap-2.5">
-            <StatTile label="Exact (1 card)" value={`${nextCardPct.toFixed(1)}%`} />
-            <StatTile label="Quick est. ×2" value={`${quickTurn.toFixed(0)}%`} color="amber" />
+            <StatTile label="Exact (1 card)" value={revealDerived ? `${nextCardPct.toFixed(1)}%` : '?'} />
+            <StatTile label="Quick est. ×2" value={revealDerived ? `${quickTurn.toFixed(0)}%` : '?'} color="amber" />
           </div>
           <div className="flex items-center gap-2.5">
-            <StatTile label="Exact (2 cards)" value={`${riverPct.toFixed(1)}%`} />
-            <StatTile label="Quick est. ×4" value={`${quickFlop.toFixed(0)}%`} color="amber" />
+            <StatTile label="Exact (2 cards)" value={revealDerived ? `${riverPct.toFixed(1)}%` : '?'} />
+            <StatTile label="Quick est. ×4" value={revealDerived ? `${quickFlop.toFixed(0)}%` : '?'} color="amber" />
           </div>
           <p className="text-center text-[10px] text-muted-foreground/40">
             Quick Table Estimate — a fast approximation, not the exact probability.
@@ -223,8 +241,8 @@ export function OutsDeckVisualizer({ step, onAnswer, disabled = false }: OutsDec
       {mode === 'clean_dirty' && (
         <div className="flex items-center gap-2.5">
           <StatTile label="Nominal outs" value={String(nominalOuts)} />
-          <StatTile label="Dirty" value={String(deadOutCards.length)} color="amber" />
-          <StatTile label="Clean outs" value={String(cleanOuts)} color="emerald" />
+          <StatTile label="Dirty" value={revealDerived ? String(deadOutCards.length) : '?'} color="amber" />
+          <StatTile label="Clean outs" value={revealDerived ? String(cleanOuts) : '?'} color="emerald" />
         </div>
       )}
 
@@ -232,7 +250,7 @@ export function OutsDeckVisualizer({ step, onAnswer, disabled = false }: OutsDec
         <div className="flex items-center gap-2.5">
           <StatTile label="Turn cooperates" value="AND" color="slate" />
           <StatTile label="River cooperates" value="→" color="slate" />
-          <StatTile label="Backdoor equity" value={`~${(BACKDOOR_EQUITY * 100).toFixed(1)}%`} color="violet" />
+          <StatTile label="Backdoor equity" value={revealDerived ? `~${(BACKDOOR_EQUITY * 100).toFixed(1)}%` : '?'} color="violet" />
         </div>
       )}
 

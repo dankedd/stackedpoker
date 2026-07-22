@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
+import { RANGE_TARGETS } from '@/lib/learn/ranges'
+import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 
 // 13 ranks in descending order
 const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']
@@ -48,11 +50,13 @@ export function RangeBuild({ step, onAnswer, disabled = false }: RangeBuildProps
   const [submitted, setSubmitted] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [dragMode, setDragMode] = useState<'add' | 'remove'>('add')
+  const [reviewingDiff, setReviewingDiff] = useState(false)
 
   useEffect(() => {
     mountTime.current = Date.now()
     setSelected(new Set())
     setSubmitted(false)
+    setReviewingDiff(false)
   }, [step.id])
 
   const toggleHand = useCallback(
@@ -86,11 +90,45 @@ export function RangeBuild({ step, onAnswer, disabled = false }: RangeBuildProps
     setIsDragging(false)
   }
 
+  const finalCombos = Array.from(selected)
+
   function handleSubmit() {
     if (disabled || submitted) return
-    setSubmitted(true)
     const elapsed = Date.now() - mountTime.current
-    onAnswer(Array.from(selected), elapsed)
+    if (step.range_build_show_diff && !reviewingDiff) {
+      // Show the inline diff before advancing to the generic score feedback.
+      setReviewingDiff(true)
+      return
+    }
+    setSubmitted(true)
+    onAnswer(finalCombos, elapsed)
+  }
+
+  function handleContinueFromDiff() {
+    if (disabled || submitted) return
+    setSubmitted(true)
+    onAnswer(finalCombos, Date.now() - mountTime.current)
+  }
+
+  if (reviewingDiff) {
+    const targetCombos = step.range_combos ?? RANGE_TARGETS[step.range_target ?? ''] ?? []
+    return (
+      <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-4">
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Here&apos;s how your range compares to the baseline.
+          </p>
+        </div>
+        <PokerRangeGrid range={targetCombos} mode="diff" comparisonRange={finalCombos} />
+        <button
+          type="button"
+          onClick={handleContinueFromDiff}
+          className="group relative w-full inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden bg-gradient-to-r from-violet-600 to-blue-500"
+        >
+          Continue
+        </button>
+      </div>
+    )
   }
 
   function handleClear() {

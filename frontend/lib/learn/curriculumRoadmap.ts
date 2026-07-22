@@ -124,66 +124,9 @@ const ROADMAP_DEFAULTS = {
 
 export const ROADMAP_MODULES: LearningModule[] = [
   // ── Stage 2 — Preflop Strategy ──────────────────────────────────────────────
-  {
-    ...ROADMAP_DEFAULTS,
-    id: 'preflop-foundation-module',
-    path_id: 'beginner',
-    slug: 'preflop-foundation-module',
-    title: 'Building Your Preflop Foundation',
-    subtitle: 'Learn why position, ranges and stack depth determine which hands enter the pot.',
-    description: 'Move from knowing what a range is to understanding how real preflop strategy is constructed.',
-    learningObjectives: [
-      'Understand how position shapes which hands are profitable to play',
-      'Build opening (RFI) and calling ranges from every seat',
-      'See how stack depth and 3-betting basics start to reshape preflop ranges',
-    ],
-    difficulty: 'beginner',
-    stageId: 'preflop-strategy',
-    order: 3,
-    prerequisiteModuleId: 'math-foundations-module',
-    plannedLessons: [
-      { title: 'Why Position Changes Everything' },
-      { title: 'Opening Ranges / RFI' },
-      { title: 'Early vs Middle vs Late Position' },
-      { title: 'Calling an Open' },
-      { title: 'Introduction to 3-Betting' },
-      { title: 'Value 3-Bets vs Bluff 3-Bets' },
-      { title: 'Defending the Big Blind' },
-      { title: 'Small Blind Strategy' },
-      { title: 'Stack Depth and Preflop Ranges' },
-      { title: 'Preflop Range Construction Lab' },
-    ],
-  },
-  {
-    ...ROADMAP_DEFAULTS,
-    id: 'preflop-aggression-module',
-    path_id: 'beginner',
-    slug: 'preflop-aggression-module',
-    title: 'Preflop Aggression',
-    subtitle: 'Understand 3-bets, 4-bets, squeezes and the battle for initiative.',
-    description: 'Develop deeper preflop strategy after basic opening/calling ranges are understood.',
-    learningObjectives: [
-      'Distinguish linear from polarized 3-betting ranges',
-      'Handle 4-bet and squeeze spots from both sides of the aggression',
-      'Use blockers to sharpen preflop bluffing and value decisions',
-    ],
-    difficulty: 'beginner',
-    stageId: 'preflop-strategy',
-    order: 4,
-    prerequisiteModuleId: 'preflop-foundation-module',
-    plannedLessons: [
-      { title: 'Why We 3-Bet' },
-      { title: 'Linear vs Polarized 3-Betting' },
-      { title: '3-Betting In Position' },
-      { title: '3-Betting Out of Position' },
-      { title: 'Facing a 3-Bet' },
-      { title: '4-Bet Strategy' },
-      { title: '4-Bet Bluffing' },
-      { title: 'Squeeze Strategy' },
-      { title: 'Blockers in Preflop Aggression' },
-      { title: 'Preflop Decision Lab' },
-    ],
-  },
+  // preflop-foundation-module and preflop-aggression-module have both been
+  // promoted to real content — see `LEARNING_MODULES` in ./curriculum.ts
+  // (same pattern Modules 1/2 went through).
 
   // ── Stage 3 — Postflop Foundations ──────────────────────────────────────────
   {

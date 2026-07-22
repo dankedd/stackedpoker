@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
+import { shuffleBySeed } from '@/lib/learn/interactionSafety'
 
 interface DecisionSpotProps {
   step: LessonStep
@@ -27,7 +28,14 @@ export function DecisionSpot({ step, onAnswer, disabled = false }: DecisionSpotP
     onAnswer(optionId, elapsed)
   }
 
-  const options = step.options ?? []
+  const rawOptions = step.options ?? []
+  // bet_size_choose options are a natural small-to-large spectrum — shuffling
+  // that ordering would hurt usability without closing any real leak, so only
+  // shuffle the free-form decision_spot choices where order carries no meaning.
+  const options = useMemo(
+    () => (step.type === 'bet_size_choose' ? rawOptions : shuffleBySeed(rawOptions, step.id)),
+    [rawOptions, step.id, step.type],
+  )
   const gridCols =
     options.length === 2
       ? 'grid-cols-2'

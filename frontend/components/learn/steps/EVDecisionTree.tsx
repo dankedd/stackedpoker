@@ -1,17 +1,20 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
+import { shuffleBySeed } from '@/lib/learn/interactionSafety'
 
 interface EVDecisionTreeProps {
   step: LessonStep
   onAnswer: (optionId: string, timeMs: number) => void
   disabled?: boolean
+  /** True when reopening an already-completed step to review it — reveals the solution immediately. */
+  reviewMode?: boolean
 }
 
 /** Generic EV decision tree: a root action, weighted branches, and the total EV. */
-export function EVDecisionTree({ step, onAnswer, disabled = false }: EVDecisionTreeProps) {
+export function EVDecisionTree({ step, onAnswer, disabled = false, reviewMode = false }: EVDecisionTreeProps) {
   const mountTime = useRef(Date.now())
   const [selected, setSelected] = useState<string | null>(null)
 
@@ -34,8 +37,15 @@ export function EVDecisionTree({ step, onAnswer, disabled = false }: EVDecisionT
 
   const branches = step.ev_tree_branches ?? []
   const total = branches.reduce((sum, b) => sum + b.probability * b.payoff, 0)
-  const options = step.options ?? []
+  const rawOptions = step.options ?? []
+  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
   const rootLabel = step.ev_tree_root_label ?? 'ACTION'
+  // A step with `options` is asking the learner to classify the EV — showing
+  // the pre-computed contributions/total here would hand them the answer.
+  // A step with no options is a pure worked-example reveal, so show freely.
+  const isClassificationQuiz = rawOptions.length > 0
+  const showSolution = selected !== null || reviewMode
+  const revealMath = !isClassificationQuiz || showSolution
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -71,9 +81,13 @@ export function EVDecisionTree({ step, onAnswer, disabled = false }: EVDecisionT
                   {b.payoff >= 0 ? '+' : ''}{b.payoff}
                 </span>
                 <span className="flex-1 text-right text-xs font-bold tabular-nums">
-                  <span className={positive ? 'text-emerald-300' : 'text-red-300'}>
-                    {contribution >= 0 ? '+' : ''}{contribution.toFixed(1)}
-                  </span>
+                  {revealMath ? (
+                    <span className={positive ? 'text-emerald-300' : 'text-red-300'}>
+                      {contribution >= 0 ? '+' : ''}{contribution.toFixed(1)}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground/30">?</span>
+                  )}
                 </span>
               </div>
             )
@@ -84,14 +98,18 @@ export function EVDecisionTree({ step, onAnswer, disabled = false }: EVDecisionT
           <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/40">
             Total EV
           </span>
-          <span
-            className={cn(
-              'text-2xl font-black tabular-nums',
-              total > 0.01 ? 'text-emerald-300' : total < -0.01 ? 'text-red-300' : 'text-amber-300',
-            )}
-          >
-            {total >= 0 ? '+' : ''}{total.toFixed(1)}
-          </span>
+          {revealMath ? (
+            <span
+              className={cn(
+                'text-2xl font-black tabular-nums',
+                total > 0.01 ? 'text-emerald-300' : total < -0.01 ? 'text-red-300' : 'text-amber-300',
+              )}
+            >
+              {total >= 0 ? '+' : ''}{total.toFixed(1)}
+            </span>
+          ) : (
+            <span className="text-2xl font-black tabular-nums text-muted-foreground/30">?</span>
+          )}
         </div>
       </div>
 

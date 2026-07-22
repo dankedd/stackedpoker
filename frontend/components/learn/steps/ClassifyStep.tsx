@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { CheckCircle2, XCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LessonStep, StepType } from '@/lib/learn/types'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
+import { shuffleBySeed } from '@/lib/learn/interactionSafety'
 
 const STEP_PROMPTS: Partial<Record<StepType, string>> = {
   board_classify:  'How would you classify this board?',
@@ -36,7 +37,8 @@ export function ClassifyStep({ step, onAnswer, disabled = false }: ClassifyStepP
     onAnswer(optionId, elapsed)
   }
 
-  const options  = step.options ?? []
+  const rawOptions = step.options ?? []
+  const options  = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
   const prompt   = STEP_PROMPTS[step.type] ?? 'What is your assessment?'
   const hasSelected = selected !== null
 

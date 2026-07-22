@@ -28,6 +28,76 @@ function comboCount(hand: string): number {
 
 const TOTAL_COMBOS = 1326
 
+type PreflopAction = 'raise' | 'limp' | 'shove' | 'fold'
+
+const ACTION_COLOR: Record<PreflopAction, string> = {
+  raise: 'bg-violet-500 text-white',
+  shove: 'bg-red-500/80 text-white',
+  limp: 'bg-sky-500/70 text-white',
+  fold: 'bg-secondary/40 text-muted-foreground/30',
+}
+
+const ACTION_LABEL: Record<PreflopAction, string> = {
+  raise: 'Raise',
+  shove: 'Shove',
+  limp: 'Limp',
+  fold: 'Fold',
+}
+
+/** Read-only 3-4 color action-map grid — an alternative to the numeric equity gradient below,
+ *  used whenever `step.range_heatmap_action_map` is set (e.g. the SB raise/limp/fold split). */
+function ActionMapGrid({ actionMap }: { actionMap: Record<string, PreflopAction> }) {
+  const usedActions = (['raise', 'limp', 'shove', 'fold'] as PreflopAction[]).filter((a) =>
+    Object.values(actionMap).includes(a),
+  )
+
+  return (
+    <div className="space-y-3">
+      <div className="overflow-x-auto">
+        <div className="inline-block min-w-full">
+          <div className="flex ml-7 mb-0.5">
+            {RANKS.map((r) => (
+              <div key={r} className="flex-1 min-w-0 text-center text-[9px] font-bold text-muted-foreground/40 leading-none">
+                {r}
+              </div>
+            ))}
+          </div>
+          {HAND_GRID.map((row, rowIdx) => (
+            <div key={rowIdx} className="flex items-center">
+              <div className="w-7 text-[9px] font-bold text-muted-foreground/40 text-center shrink-0">
+                {RANKS[rowIdx]}
+              </div>
+              {row.map((hand, colIdx) => {
+                const action = actionMap[hand]
+                return (
+                  <div
+                    key={colIdx}
+                    className={cn(
+                      'flex-1 min-w-0 aspect-square flex items-center justify-center',
+                      'm-px rounded-[3px] select-none text-[8px] font-bold leading-none',
+                      action ? ACTION_COLOR[action] : 'bg-secondary/30 text-muted-foreground/15',
+                    )}
+                  >
+                    <span className="truncate px-0.5">{hand}</span>
+                  </div>
+                )
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex items-center justify-center gap-3 text-[10px] text-muted-foreground/40">
+        {usedActions.map((a) => (
+          <div key={a} className="flex items-center gap-1.5">
+            <div className={cn('h-2.5 w-2.5 rounded-[2px]', ACTION_COLOR[a])} />
+            <span>{ACTION_LABEL[a]}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Colour scale: equity → hue (0 = red, 120 = green) ────────────────────────
 
 function equityToColor(equity: number): string {
@@ -89,6 +159,39 @@ export function RangeHeatmap({ step, onAnswer, disabled = false }: RangeHeatmapP
   const heatmapData = step.range_heatmap_data ?? {}
   const targetHands = new Set(step.range_heatmap_target ?? [])
   const isIdentifyMode = targetHands.size > 0
+  const actionMap = step.range_heatmap_action_map
+
+  function handleActionMapContinue() {
+    if (disabled || submitted) return
+    setSubmitted(true)
+    onAnswer([], Date.now() - mountTime.current)
+  }
+
+  if (actionMap) {
+    return (
+      <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        {step.narrative && (
+          <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-4">
+            <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>
+          </div>
+        )}
+        <ActionMapGrid actionMap={actionMap} />
+        <button
+          type="button"
+          disabled={disabled || submitted}
+          onClick={handleActionMapContinue}
+          className={cn(
+            'group relative w-full inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold transition-all duration-200 overflow-hidden',
+            submitted || disabled
+              ? 'opacity-50 cursor-default bg-secondary/40 border border-border/30 text-muted-foreground'
+              : 'bg-gradient-to-r from-violet-600 to-blue-500 text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5',
+          )}
+        >
+          Continue
+        </button>
+      </div>
+    )
+  }
 
   const toggleHand = useCallback(
     (hand: string, mode?: 'add' | 'remove') => {

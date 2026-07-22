@@ -273,6 +273,57 @@ const CONCEPT_DATA: Record<string, ConceptEntry> = {
     summary: 'A 3-bet made after one player has raised and at least one other player has called.',
     related: ['three_bet', 'rfi'],
   },
+
+  // ── Module 4: Preflop Aggression ──────────────────────────────────────────
+  three_bet_motives: {
+    id: 'three_bet_motives',
+    title: 'Why 3-Bet?',
+    domain: 'strategy',
+    summary: 'A 3-bet can build a pot with value, generate fold equity, deny equity, isolate the opener, shrink the SPR, and punish a wide range — often several at once, not just "I have a premium."',
+    related: ['three_bet', 'alpha'],
+  },
+  range_vs_range: {
+    id: 'range_vs_range',
+    title: 'Range vs Range',
+    domain: 'ranges',
+    summary: 'A hand is never evaluated alone — it is judged by how it performs against the specific range the opener represents.',
+    related: ['hand_ranges', 'opener_range_strength'],
+  },
+  opener_range_strength: {
+    id: 'opener_range_strength',
+    title: 'Opener Range Strength',
+    domain: 'ranges',
+    summary: 'Earlier-position opens represent stronger, narrower ranges; later opens are wider and more marginal — the stronger the opener\'s range, the stronger your 3-bet candidates generally need to be.',
+    related: ['range_vs_range', 'table_position'],
+  },
+  three_bet_range_construction: {
+    id: 'three_bet_range_construction',
+    title: 'Building a 3-Bet Range',
+    domain: 'ranges',
+    summary: 'A sound 3-betting range is built from value hands (win when called) and bluffs (blockers, playability, fold equity) chosen relative to the opener — not a list of favorite hands.',
+    related: ['range_vs_range', 'linear_range', 'polarized'],
+  },
+  linear_range: {
+    id: 'linear_range',
+    title: 'Linear Range',
+    domain: 'ranges',
+    summary: 'A range built top-down by hand strength — strongest hands first, then the next strongest, with no gap in the middle.',
+    related: ['polarized', 'three_bet_range_construction'],
+  },
+  calling_range_effect: {
+    id: 'calling_range_effect',
+    title: 'Calling Range ↔ 3-Bet Shape',
+    domain: 'ranges',
+    summary: 'When a meaningful flatting range exists, the 3-bet range can polarize (medium-strength hands stay as calls). When a strategy is mostly 3-bet-or-fold, the 3-bet range tends toward linear.',
+    related: ['linear_range', 'polarized'],
+  },
+  players_behind_aggression: {
+    id: 'players_behind_aggression',
+    title: 'Players Behind',
+    domain: 'strategy',
+    summary: 'Aggression is never purely heads-up against the opener — every player still left to act can call, 3-bet, or wake up with a premium.',
+    related: ['three_bet_motives', 'table_position'],
+  },
   action_lines: {
     id: 'action_lines',
     title: 'Action-Line Notation',

@@ -1,16 +1,19 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
+import { shuffleBySeed } from '@/lib/learn/interactionSafety'
 
 interface EquityBalanceProps {
   step: LessonStep
   onAnswer: (optionId: string, timeMs: number) => void
   disabled?: boolean
+  /** True when reopening an already-completed step to review it — reveals the solution immediately. */
+  reviewMode?: boolean
 }
 
-export function EquityBalance({ step, onAnswer, disabled = false }: EquityBalanceProps) {
+export function EquityBalance({ step, onAnswer, disabled = false, reviewMode = false }: EquityBalanceProps) {
   const mountTime = useRef(Date.now())
   const [selected, setSelected] = useState<string | null>(null)
 
@@ -28,7 +31,12 @@ export function EquityBalance({ step, onAnswer, disabled = false }: EquityBalanc
   const required = step.equity_balance_required ?? 0
   const actual = step.equity_balance_actual ?? 0
   const ahead = actual > required
-  const options = step.options ?? []
+  // required/actual equity are the GIVENS for this decision — comparing them
+  // is the whole exercise, so the verdict (who's ahead) must stay hidden
+  // until the learner has actually chosen, not be color-coded for them.
+  const showSolution = selected !== null || reviewMode
+  const rawOptions = step.options ?? []
+  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
   const maxVal = Math.max(required, actual, 1)
 
   return (
@@ -57,25 +65,35 @@ export function EquityBalance({ step, onAnswer, disabled = false }: EquityBalanc
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/40">
               Hero&apos;s equity
             </p>
-            <p className={cn('text-2xl font-black tabular-nums', ahead ? 'text-emerald-300' : 'text-red-300')}>
+            <p
+              className={cn(
+                'text-2xl font-black tabular-nums',
+                showSolution ? (ahead ? 'text-emerald-300' : 'text-red-300') : 'text-violet-300',
+              )}
+            >
               {actual}%
             </p>
             <div className="h-24 w-full flex items-end rounded-lg bg-secondary/20 overflow-hidden">
               <div
-                className={cn('w-full transition-all duration-500', ahead ? 'bg-emerald-500/60' : 'bg-red-500/60')}
+                className={cn(
+                  'w-full transition-all duration-500',
+                  showSolution ? (ahead ? 'bg-emerald-500/60' : 'bg-red-500/60') : 'bg-violet-500/50',
+                )}
                 style={{ height: `${(actual / maxVal) * 100}%` }}
               />
             </div>
           </div>
         </div>
 
-        <p className={cn('text-center text-xs font-semibold', ahead ? 'text-emerald-300/80' : 'text-red-300/80')}>
-          {ahead
-            ? `Hero clears the break-even line by ${(actual - required).toFixed(1)} points.`
-            : actual === required
-            ? 'Hero is exactly at break-even.'
-            : `Hero falls short of break-even by ${(required - actual).toFixed(1)} points.`}
-        </p>
+        {showSolution && (
+          <p className={cn('text-center text-xs font-semibold', ahead ? 'text-emerald-300/80' : 'text-red-300/80')}>
+            {ahead
+              ? `Hero clears the break-even line by ${(actual - required).toFixed(1)} points.`
+              : actual === required
+              ? 'Hero is exactly at break-even.'
+              : `Hero falls short of break-even by ${(required - actual).toFixed(1)} points.`}
+          </p>
+        )}
       </div>
 
       {step.equity_balance_prompt && (

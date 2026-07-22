@@ -1,0 +1,79 @@
+/**
+ * Answer-leakage safeguards for interactive lesson steps.
+ *
+ * Shared by every numeric-slider / multiple-choice step component so that no
+ * UI default or display order can hint at — or hand the learner — the
+ * correct answer before they submit. See the Module 2 answer-leakage audit
+ * for the class of bug this exists to prevent.
+ */
+
+// ── Deterministic seeded RNG ──────────────────────────────────────────────────
+// Never Math.random(): these values must be stable across server render and
+// client hydration (and reproducible in tests), or they'd cause hydration
+// mismatches / flaky assertions.
+
+function hashSeed(seed: string): number {
+  let h = 2166136261
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return h >>> 0
+}
+
+function mulberry32(seed: number): () => number {
+  let a = seed
+  return function next() {
+    a |= 0
+    a = (a + 0x6d2b79f5) | 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+// ── Slider defaults ────────────────────────────────────────────────────────────
+
+/**
+ * A neutral slider starting point guaranteed not to equal — or sit
+ * suspiciously close to — `correctAnswer`. Deterministic: the same
+ * (correctAnswer, min, max) always returns the same value, so it never
+ * causes a hydration mismatch and stays reproducible in tests.
+ *
+ * Defaults to the midpoint of the range, which reveals nothing about
+ * whether the true answer is above or below it. Only nudges away from the
+ * midpoint (by a small, fixed offset) when the correct answer itself sits
+ * too close to the midpoint to use as-is.
+ */
+export function getNeutralSliderStart(correctAnswer: number, min = 0, max = 100): number {
+  const range = max - min
+  if (range <= 0) return min
+  const mid = min + range / 2
+  const minGap = range * 0.08
+
+  if (Math.abs(mid - correctAnswer) >= minGap) {
+    return mid
+  }
+
+  const offset = minGap * 1.5
+  const candidate = correctAnswer <= mid ? mid + offset : mid - offset
+  return Math.min(max, Math.max(min, candidate))
+}
+
+// ── Option ordering ───────────────────────────────────────────────────────────
+
+/**
+ * Deterministically shuffles `items` using `seed` (typically a step id) so a
+ * given step always renders its options in the same order on every load —
+ * but no particular option (e.g. the correct one) is systematically favoured
+ * into a fixed visual position across different steps.
+ */
+export function shuffleBySeed<T>(items: readonly T[], seed: string): T[] {
+  const rng = mulberry32(hashSeed(seed))
+  const arr = items.slice()
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}

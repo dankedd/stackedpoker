@@ -3,18 +3,28 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
-import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
-import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 import { shuffleBySeed } from '@/lib/learn/interactionSafety'
 
-interface RangeCompareProps {
+interface StrategyComplexityMeterProps {
   step: LessonStep
   onAnswer: (optionId: string, timeMs: number) => void
   disabled?: boolean
 }
 
-/** Two 13x13 range grids rendered side-by-side, for range-weight and range-vs-range comparisons. */
-export function RangeCompare({ step, onAnswer, disabled = false }: RangeCompareProps) {
+const PANELS = [
+  {
+    title: 'Simple',
+    subtitle: 'Raise / Fold',
+    bullets: ['Two decisions to remember', 'Easy to execute consistently under pressure', 'Lower theoretical ceiling'],
+  },
+  {
+    title: 'Complex',
+    subtitle: 'Limp / Raise / Shove / Fold, mixed frequencies',
+    bullets: ['More available options and higher theoretical EV', 'Easy to misremember or misapply live', 'Mistakes here can cost more than the simpler plan gains'],
+  },
+]
+
+export function StrategyComplexityMeter({ step, onAnswer, disabled = false }: StrategyComplexityMeterProps) {
   const mountTime = useRef(Date.now())
   const [selected, setSelected] = useState<string | null>(null)
 
@@ -29,12 +39,8 @@ export function RangeCompare({ step, onAnswer, disabled = false }: RangeCompareP
     onAnswer(optionId, Date.now() - mountTime.current)
   }
 
-  const a = step.range_compare_a
-  const b = step.range_compare_b
   const rawOptions = step.options ?? []
   const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
-  const heroHand = step.hero_hand ?? []
-  const board = step.board ?? []
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -44,50 +50,33 @@ export function RangeCompare({ step, onAnswer, disabled = false }: RangeCompareP
         </div>
       )}
 
-      {(heroHand.length > 0 || board.length > 0) && (
-        <div className="flex flex-wrap items-center justify-center gap-4">
-          {heroHand.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/40">Hero</span>
-              <div className="flex gap-1">{heroHand.map((c, i) => <PlayingCardMini key={i} card={c} size="md" />)}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {PANELS.map((p) => (
+          <div key={p.title} className="rounded-2xl border border-border/40 bg-card/60 p-4 space-y-2">
+            <div>
+              <p className="text-sm font-bold text-violet-300">{p.title}</p>
+              <p className="text-[11px] text-muted-foreground/50">{p.subtitle}</p>
             </div>
-          )}
-          {board.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/40">Board</span>
-              <div className="flex gap-1">{board.map((c, i) => <PlayingCardMini key={i} card={c} size="md" />)}</div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {a && (
-        <div className={cn('grid gap-4', b ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 max-w-sm mx-auto')}>
-          <div className="space-y-1.5">
-            <p className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-violet-400/70">
-              {a.label}
-            </p>
-            <PokerRangeGrid range={a.range} />
+            <ul className="space-y-1">
+              {p.bullets.map((b) => (
+                <li key={b} className="text-[11px] text-muted-foreground/70 leading-relaxed flex gap-1.5">
+                  <span className="text-violet-400/60">·</span>
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-          {b && (
-            <div className="space-y-1.5">
-              <p className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-blue-400/70">
-                {b.label}
-              </p>
-              <PokerRangeGrid range={b.range} />
-            </div>
-          )}
-        </div>
-      )}
+        ))}
+      </div>
 
-      {step.range_compare_prompt && (
+      {step.strategy_complexity_prompt && (
         <div className="text-center">
-          <p className="text-base font-semibold text-foreground">{step.range_compare_prompt}</p>
+          <p className="text-base font-semibold text-foreground">{step.strategy_complexity_prompt}</p>
         </div>
       )}
 
       {options.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {options.map((opt) => {
             const isSelected = selected === opt.id
             const hasSelected = selected !== null
@@ -98,7 +87,7 @@ export function RangeCompare({ step, onAnswer, disabled = false }: RangeCompareP
                 disabled={disabled || (hasSelected && !isSelected)}
                 onClick={() => handleSelect(opt.id)}
                 className={cn(
-                  'relative rounded-xl px-4 py-3.5 text-sm font-semibold transition-all duration-150 active:scale-[0.97] border text-left overflow-hidden',
+                  'relative rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-150 active:scale-[0.97] border text-left overflow-hidden',
                   isSelected
                     ? 'border-violet-500/50 bg-violet-500/15 text-violet-200 shadow-lg shadow-violet-900/20'
                     : hasSelected

@@ -34,6 +34,17 @@ FINDING_TO_LEAK: dict[str, tuple[str, str]] = {
     "connectedness_realization": ("equity_realization",   "ignore_connectedness"),
     "range_advantage_realization": ("equity_realization", "ignore_range_advantage"),
     "spr_realization":           ("equity_realization",   "ignore_spr"),
+    # Building Your Preflop Foundation (Module 3)
+    "position_rfi":              ("position_rfi",         "position_discipline"),
+    "players_behind":            ("players_behind",        "resistance_awareness"),
+    "preflop_hand_selection":     ("preflop_hand_selection", "preflop_playability_leak"),
+    "pocket_pair_value":          ("pocket_pair_value",    "pocket_pair_selection"),
+    "stack_depth_preflop":        ("stack_depth_preflop",  "stack_depth_awareness"),
+    "preflop_sizing":             ("preflop_sizing",       "preflop_sizing_leak"),
+    "sb_first_in":                ("sb_first_in",          "sb_strategy_leak"),
+    "limping":                    ("limping",              "open_limping_leak"),
+    "rake_adjustment":            ("rake_adjustment",      "rake_awareness"),
+    "preflop_planning":           ("preflop_planning",     "no_plan_vs_jams"),
 }
 
 @dataclass

@@ -29,6 +29,22 @@ CONCEPT_TO_LESSON: dict[str, str] = {
     "expected_value":      "think-in-expected-value",
     "fold_equity":         "winning-without-showdown",
     "equity_realization":  "equity-isnt-everything",
+    # Building Your Preflop Foundation (Module 3)
+    "first_in":               "first-in",
+    "rfi":                    "first-in",
+    "position_rfi":           "the-players-behind-you",
+    "players_behind":         "the-players-behind-you",
+    "preflop_hand_selection":  "more-than-two-cards",
+    "pocket_pair_value":       "more-than-two-cards",
+    "stack_depth_preflop":     "stacks-change-the-range",
+    "open_shove":              "stacks-change-the-range",
+    "preflop_sizing":          "the-price-of-entering",
+    "antes":                   "the-price-of-entering",
+    "rake_adjustment":         "the-price-of-entering",
+    "limping":                 "to-limp-or-to-raise",
+    "sb_first_in":             "the-small-blind-is-different",
+    "range_construction":      "build-the-opening-strategy",
+    "preflop_planning":        "build-the-opening-strategy",
 }
 
 @dataclass
