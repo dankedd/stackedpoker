@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, CheckCircle, Circle, Lock, Clock as ClockIcon, Map } from "lucide-react";
+import { ChevronLeft, CheckCircle, Circle, Lock, Clock as ClockIcon, FlaskConical, Map } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { useLearnProgress } from "@/contexts/LearnProgressContext";
 import { LEARNING_MODULES } from "@/lib/learn/curriculum";
 import {
   JOURNEY_STAGES,
+  DEV_TESTING_MODE,
   getCompletedModuleIds,
   getModuleDisplayStatus,
   getStageStatus,
@@ -18,6 +19,7 @@ import { cn } from "@/lib/utils";
 const DOT_ICON: Record<ModuleDisplayStatus, typeof Circle> = {
   complete: CheckCircle,
   available: Circle,
+  test_unlocked: FlaskConical,
   locked: Lock,
   coming_soon: ClockIcon,
 };
@@ -25,6 +27,7 @@ const DOT_ICON: Record<ModuleDisplayStatus, typeof Circle> = {
 const DOT_STYLE: Record<ModuleDisplayStatus, string> = {
   complete: "border-emerald-500/50 bg-emerald-500/10 text-emerald-400",
   available: "border-violet-500/50 bg-violet-500/10 text-violet-400",
+  test_unlocked: "border-amber-500/50 bg-amber-500/10 text-amber-400",
   locked: "border-border/30 bg-secondary/20 text-muted-foreground/30",
   coming_soon: "border-border/20 bg-card/30 text-muted-foreground/25",
 };
@@ -48,6 +51,16 @@ export default function JourneyPage() {
             <ChevronLeft className="h-4 w-4" />
             Learning Hub
           </Link>
+
+          {DEV_TESTING_MODE && (
+            <div className="mb-6 flex items-center gap-2 rounded-xl border border-amber-500/25 bg-amber-500/[0.05] px-4 py-2.5">
+              <FlaskConical className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+              <p className="text-xs text-amber-300/80">
+                <span className="font-semibold text-amber-300">Developer testing mode</span> — every implemented
+                module is open regardless of prerequisites. Real progress is unaffected.
+              </p>
+            </div>
+          )}
 
           <div className="mb-10">
             <div className="flex items-start gap-4 mb-3">
@@ -119,7 +132,8 @@ export default function JourneyPage() {
                         {stageModules.map((mod) => {
                           const modStatus = getModuleDisplayStatus(mod, completedModuleIds);
                           const Icon = DOT_ICON[modStatus];
-                          const clickable = modStatus === "complete" || modStatus === "available";
+                          const clickable =
+                            modStatus === "complete" || modStatus === "available" || modStatus === "test_unlocked";
 
                           const pill = (
                             <div

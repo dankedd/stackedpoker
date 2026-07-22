@@ -17,6 +17,7 @@ import {
   Trophy,
   Target,
   Sparkles,
+  FlaskConical,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -30,6 +31,7 @@ import { xpToNextLevel } from "@/lib/learn/types";
 import type { ModuleDisplayStatus } from "@/lib/learn/journey";
 import {
   JOURNEY_STAGES,
+  DEV_TESTING_MODE,
   getCompletedModuleIds,
   getModuleDisplayStatus,
   getStageStatus,
@@ -68,6 +70,7 @@ function LoadingSkeleton() {
 const MODULE_STATUS_ICON: Record<ModuleDisplayStatus, typeof Circle> = {
   complete: CheckCircle,
   available: Circle,
+  test_unlocked: FlaskConical,
   locked: Lock,
   coming_soon: ClockIcon,
 };
@@ -82,6 +85,11 @@ const MODULE_STATUS_STYLE: Record<ModuleDisplayStatus, { badge: string; icon: st
     badge: "bg-violet-500/10 border-violet-500/25 text-violet-400",
     icon: "text-violet-400",
     row: "border-violet-500/25 bg-violet-500/[0.03] hover:border-violet-500/40",
+  },
+  test_unlocked: {
+    badge: "bg-amber-500/10 border-amber-500/25 text-amber-400",
+    icon: "text-amber-400",
+    row: "border-amber-500/25 bg-amber-500/[0.03] hover:border-amber-500/40",
   },
   locked: {
     badge: "bg-secondary/30 border-border/30 text-muted-foreground/40",
@@ -98,6 +106,7 @@ const MODULE_STATUS_STYLE: Record<ModuleDisplayStatus, { badge: string; icon: st
 const MODULE_STATUS_LABEL: Record<ModuleDisplayStatus, string> = {
   complete: "Complete",
   available: "Available",
+  test_unlocked: "Test",
   locked: "Locked",
   coming_soon: "Coming soon",
 };
@@ -451,6 +460,15 @@ export default function LearnPage() {
 
               {/* ── Poker Journey (stage-grouped roadmap) ── */}
               <div className="mb-10">
+                {DEV_TESTING_MODE && (
+                  <div className="mb-4 flex items-center gap-2 rounded-xl border border-amber-500/25 bg-amber-500/[0.05] px-4 py-2.5">
+                    <FlaskConical className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+                    <p className="text-xs text-amber-300/80">
+                      <span className="font-semibold text-amber-300">Developer testing mode</span> — every
+                      implemented module is open regardless of prerequisites. Real progress is unaffected.
+                    </p>
+                  </div>
+                )}
                 <div className="flex items-end justify-between mb-4">
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-1">

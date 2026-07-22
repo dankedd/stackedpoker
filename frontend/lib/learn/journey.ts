@@ -10,7 +10,7 @@ import type { LessonProgressEntry } from './api'
 import { LEARNING_MODULES, LESSONS, LESSONS_BY_MODULE } from './curriculum'
 import { JOURNEY_STAGES } from './curriculumRoadmap'
 
-export type ModuleDisplayStatus = 'complete' | 'available' | 'locked' | 'coming_soon'
+export type ModuleDisplayStatus = 'complete' | 'available' | 'test_unlocked' | 'locked' | 'coming_soon'
 export type StageDisplayStatus = 'complete' | 'current' | 'upcoming'
 
 const MODULES_BY_ID: Record<string, LearningModule> = Object.fromEntries(
@@ -18,6 +18,31 @@ const MODULES_BY_ID: Record<string, LearningModule> = Object.fromEntries(
 )
 
 const ROADMAP_ORDERED = [...LEARNING_MODULES].sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
+
+// ── Developer testing mode ────────────────────────────────────────────────────
+//
+// Automatically on under `next dev`, automatically off for any production
+// build — the same `NODE_ENV === 'development'` pattern already used for
+// other dev-only UI elsewhere in the app (e.g. app/analyze/hand/page.tsx,
+// components/replay/PokerTable.tsx). No separate config/env flag needed.
+//
+// This ONLY affects the read-side accessibility checks below. It never
+// touches `progress.lessons`, XP, achievements, mastery, or leaks — so a
+// module being reachable for testing never fakes completion of anything.
+export const DEV_TESTING_MODE = process.env.NODE_ENV === 'development'
+
+/** A module is "implemented" once it's marked live AND actually has at least one playable lesson. */
+export function isModuleImplemented(module: LearningModule): boolean {
+  if (module.contentStatus && module.contentStatus !== 'complete') return false
+  return (LESSONS_BY_MODULE[module.id]?.length ?? 0) > 0
+}
+
+/** Real progression rule: prerequisite module (or legacy unlock_after list) must be completed. */
+function normalProgressionUnlock(module: LearningModule, completedModuleIds: Set<string>): boolean {
+  if (module.prerequisiteModuleId) return completedModuleIds.has(module.prerequisiteModuleId)
+  if (module.unlock_after.length > 0) return module.unlock_after.every((id) => completedModuleIds.has(id))
+  return true
+}
 
 // ── Module completion / lock status ──────────────────────────────────────────
 
@@ -33,10 +58,14 @@ export function getCompletedModuleIds(lessons: Record<string, LessonProgressEntr
   return set
 }
 
+/**
+ * Single source of truth for "can this module be opened right now" — every
+ * roadmap card, the module page, and the stage/continue-learning helpers
+ * below all resolve through this one function.
+ */
 export function isModuleUnlocked(module: LearningModule, completedModuleIds: Set<string>): boolean {
-  if (module.prerequisiteModuleId) return completedModuleIds.has(module.prerequisiteModuleId)
-  if (module.unlock_after.length > 0) return module.unlock_after.every((id) => completedModuleIds.has(id))
-  return true
+  if (DEV_TESTING_MODE && isModuleImplemented(module)) return true
+  return normalProgressionUnlock(module, completedModuleIds)
 }
 
 export function getModuleDisplayStatus(
@@ -45,7 +74,9 @@ export function getModuleDisplayStatus(
 ): ModuleDisplayStatus {
   if (module.contentStatus && module.contentStatus !== 'complete') return 'coming_soon'
   if (completedModuleIds.has(module.id)) return 'complete'
-  return isModuleUnlocked(module, completedModuleIds) ? 'available' : 'locked'
+  if (normalProgressionUnlock(module, completedModuleIds)) return 'available'
+  if (DEV_TESTING_MODE && isModuleImplemented(module)) return 'test_unlocked'
+  return 'locked'
 }
 
 // ── Stage status ──────────────────────────────────────────────────────────────
@@ -57,9 +88,10 @@ export function getStageForModule(moduleId: string): JourneyStage | undefined {
 export function getStageStatus(stage: JourneyStage, completedModuleIds: Set<string>): StageDisplayStatus {
   const modules = stage.moduleIds.map((id) => MODULES_BY_ID[id]).filter((m): m is LearningModule => !!m)
   if (modules.length > 0 && modules.every((m) => completedModuleIds.has(m.id))) return 'complete'
-  const hasActivity = modules.some(
-    (m) => getModuleDisplayStatus(m, completedModuleIds) === 'available' || completedModuleIds.has(m.id),
-  )
+  const hasActivity = modules.some((m) => {
+    const status = getModuleDisplayStatus(m, completedModuleIds)
+    return status === 'available' || status === 'test_unlocked' || completedModuleIds.has(m.id)
+  })
   return hasActivity ? 'current' : 'upcoming'
 }
 

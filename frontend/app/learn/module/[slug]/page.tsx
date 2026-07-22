@@ -9,6 +9,7 @@ import {
   Clock,
   Sparkles,
   Lock,
+  FlaskConical,
   Zap,
   BookOpen,
   Layers,
@@ -22,7 +23,12 @@ import {
   LEARNING_MODULES,
   LESSONS_BY_MODULE,
 } from "@/lib/learn/curriculum";
-import { getCompletedModuleIds, isModuleUnlocked, getStageForModule } from "@/lib/learn/journey";
+import {
+  getCompletedModuleIds,
+  isModuleUnlocked,
+  getModuleDisplayStatus,
+  getStageForModule,
+} from "@/lib/learn/journey";
 import type { Lesson } from "@/lib/learn/types";
 import { cn } from "@/lib/utils";
 
@@ -148,6 +154,7 @@ export default function ModulePage() {
   const isComingSoon = !!module.contentStatus && module.contentStatus !== "complete";
   const completedModuleIds = getCompletedModuleIds(progress.lessons);
   const isUnlocked = isModuleUnlocked(module, completedModuleIds);
+  const isTestUnlocked = getModuleDisplayStatus(module, completedModuleIds) === "test_unlocked";
   const stage = getStageForModule(module.id);
 
   if (isComingSoon) {
@@ -295,6 +302,16 @@ export default function ModulePage() {
             )}
             <span className="text-foreground">{module.title}</span>
           </div>
+
+          {isTestUnlocked && (
+            <div className="mb-6 flex items-center gap-2 rounded-xl border border-amber-500/25 bg-amber-500/[0.05] px-4 py-2.5">
+              <FlaskConical className="h-3.5 w-3.5 text-amber-400 shrink-0" />
+              <p className="text-xs text-amber-300/80">
+                <span className="font-semibold text-amber-300">Developer testing mode</span> — this module&apos;s
+                prerequisites aren&apos;t completed yet; it&apos;s only open because you&apos;re running locally.
+              </p>
+            </div>
+          )}
 
           {/* Module hero */}
           <div className="relative mb-8 overflow-hidden rounded-2xl border border-violet-500/15 bg-gradient-to-br from-violet-950/40 via-card/80 to-blue-950/20 px-6 py-7 sm:px-8">
