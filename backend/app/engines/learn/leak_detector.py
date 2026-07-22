@@ -20,6 +20,20 @@ FINDING_TO_LEAK: dict[str, tuple[str, str]] = {
     "blocker_effects":     ("blockers",       "ignore_blockers"),
     "polarized_betting":   ("polarized",      "range_construction"),
     "pot_odds":            ("pot_odds",       "pot_odds_error"),
+    # Foundations Module 2 — The Math Behind Every Decision
+    "drawing_probability":       ("drawing_probability", "drawing_math_error"),
+    "clean_outs":                ("clean_outs",           "drawing_math_error"),
+    "dead_outs":                 ("dead_outs",            "drawing_math_error"),
+    "decision_quality":          ("decision_quality",     "outcome_bias"),
+    "expected_value":            ("expected_value",       "ev_reasoning_error"),
+    "fold_equity":               ("fold_equity",           "underestimate_fold_equity"),
+    "semi_bluff":                ("fold_equity",           "underestimate_fold_equity"),
+    "equity_realization":        ("equity_realization",   "poor_equity_realization"),
+    "position_realization":      ("equity_realization",   "ignore_position_in_eqr"),
+    "suitedness_realization":    ("equity_realization",   "ignore_suitedness"),
+    "connectedness_realization": ("equity_realization",   "ignore_connectedness"),
+    "range_advantage_realization": ("equity_realization", "ignore_range_advantage"),
+    "spr_realization":           ("equity_realization",   "ignore_spr"),
 }
 
 @dataclass

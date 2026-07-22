@@ -16,13 +16,19 @@ CONCEPT_TO_LESSON: dict[str, str] = {
     "spr_theory":      "spr-commitment-thresholds",
     "blockers":        "blocker-effects-intro",
     "polarized":       "polarized-vs-merged",
-    "pot_odds":        "pot-odds-intuition",
+    "pot_odds":        "the-price-of-a-call",
     "board_texture":   "board-texture-classification",
     "position_value":  "position-fundamentals",
     "value_betting":   "value-betting-basics",
     "bluff_basics":    "bluff-fundamentals",
     "hand_ranges":     "range-construction-intro",
     "geometric_sizing":"geometric-sizing-drill",
+    # Foundations Module 2 — The Math Behind Every Decision
+    "outs_probability":    "count-your-ways-to-win",
+    "equity":              "your-share-of-the-pot",
+    "expected_value":      "think-in-expected-value",
+    "fold_equity":         "winning-without-showdown",
+    "equity_realization":  "equity-isnt-everything",
 }
 
 @dataclass

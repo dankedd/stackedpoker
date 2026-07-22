@@ -39,6 +39,11 @@ import { LessonCompletionScreen } from '@/components/learn/LessonCompletionScree
 
 type Phase = 'intro' | 'step' | 'feedback' | 'summary'
 
+/** Concept ids that name the exact answer to a step quizzing that same concept
+ *  (e.g. a step classifying "+EV / 0EV / -EV" tagged with concept_id "positive_ev"
+ *  would spoil itself if the tag were shown before answering). */
+const SPOILER_CONCEPT_TAGS = new Set(['positive_ev', 'zero_ev', 'negative_ev'])
+
 // ── Progress bar ──────────────────────────────────────────────────────────────
 
 function ProgressBar({
@@ -460,10 +465,13 @@ export function LessonPlayer({
       )}
 
       {/* Concept tags — appear above interactive step.
-          Skipped for range_morphology: its concept_ids (e.g. "polarized_range")
-          name the very answer the step is quizzing, so showing them here would
-          give away the question. The tag still drives mastery tracking via evaluate(). */}
-      {currentStep.concept_ids && currentStep.concept_ids.length > 0 && phase === 'step' && currentStep.type !== 'range_morphology' && (
+          Skipped for range_morphology and for steps tagged with a SPOILER_CONCEPT_TAG:
+          those concept_ids (e.g. "polarized_range", "positive_ev") name the very answer
+          the step is quizzing, so showing them here would give away the question. The
+          tag still drives mastery tracking via evaluate(). */}
+      {currentStep.concept_ids && currentStep.concept_ids.length > 0 && phase === 'step'
+        && currentStep.type !== 'range_morphology'
+        && !currentStep.concept_ids.some((c) => SPOILER_CONCEPT_TAGS.has(c)) && (
         <ConceptTagRow conceptIds={currentStep.concept_ids} />
       )}
 
