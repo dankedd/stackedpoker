@@ -29,6 +29,7 @@ import { OutsDeckVisualizer } from '@/components/learn/steps/OutsDeckVisualizer'
 import { RangeCompare } from '@/components/learn/steps/RangeCompare'
 import { EVDecisionTree } from '@/components/learn/steps/EVDecisionTree'
 import { BluffBreakEvenVisualizer } from '@/components/learn/steps/BluffBreakEvenVisualizer'
+import { EquityRealizationVisualizer } from '@/components/learn/steps/EquityRealizationVisualizer'
 import type { ActionQuality } from '@/lib/learn/types'
 import { LevelUpOverlay } from '@/components/learn/LevelUpOverlay'
 import { ConceptTagRow } from '@/components/learn/ConceptPopover'
@@ -208,6 +209,10 @@ function StepRenderer({
 
   if (step.type === 'bluff_breakeven') {
     return <BluffBreakEvenVisualizer step={step} onAnswer={(response, ms) => evaluate(response, ms)} />
+  }
+
+  if (step.type === 'equity_realization') {
+    return <EquityRealizationVisualizer step={step} onAnswer={(response, ms) => evaluate(response, ms)} />
   }
 
   // Classify-family: board_classify, nut_advantage, blocker_id, range_identify, bluff_pick, reflection_prompt
