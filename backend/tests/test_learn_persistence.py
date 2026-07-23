@@ -203,6 +203,7 @@ class FakeAsyncClient:
 class FakeSettings:
     supabase_url = "http://fake-supabase"
     supabase_service_role_key = "fake-key"
+    debug = False
 
 
 @pytest.fixture
@@ -628,3 +629,83 @@ def test_module_completion_survives_a_fresh_progress_fetch(fake_db):
 
     restored = run(learn_module.get_full_progress(user))
     assert "module-3" in restored["completed_modules"]
+
+
+# ── Reproduction of the EXACT reported bug: log in, complete a lesson, see it
+#    green, log out, log back into the SAME account, and it must STILL be
+#    complete. Also proves a different user never inherits it, and that
+#    logging user A back in a second time still works. No Python/React object
+#    is reused between "sessions" below — each phase only carries the user id
+#    forward, exactly like a real logout/login would.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def test_full_logout_login_lifecycle_reproduction(fake_db):
+    user_a = {"sub": "user-repro-a"}
+    user_b = {"sub": "user-repro-b"}
+    lesson_x = "lesson-repro-x"
+
+    # ── SESSION A: authenticate USER_A ──────────────────────────────────────
+    progress_a_before = run(learn_module.get_full_progress(user_a))
+    assert progress_a_before["lessons"].get(lesson_x) is None  # incomplete/unknown
+
+    # Complete LESSON_X.
+    complete_body = learn_module.LessonCompleteBody(
+        score=100, lesson_xp_reward=100, path_lesson_ids=[],
+    )
+    complete_result = run(learn_module.complete_lesson(lesson_x, complete_body, user_a))
+
+    # The endpoint's own response must prove what was stored (read-after-write),
+    # not just report HTTP success.
+    assert complete_result["status"] == "completed"
+    assert complete_result["completed_at"]
+
+    # Verify the actual persisted row directly (equivalent to "the DATABASE TEST").
+    row = fake_db.select(
+        "user_lesson_progress", f"user_id=eq.{user_a['sub']}&lesson_id=eq.{lesson_x}",
+    )[0]
+    assert row["user_id"] == user_a["sub"]
+    assert row["lesson_id"] == lesson_x
+    assert row["status"] == "completed"
+    assert row["completed_at"]
+
+    # GET progress again within the same "session" — must reflect it.
+    progress_a_after = run(learn_module.get_full_progress(user_a))
+    assert progress_a_after["lessons"][lesson_x]["status"] == "completed"
+
+    # ── DESTROY ALL CLIENT STATE — simulate logout. Nothing from Session A's
+    # Python objects is reused below except the user id string, exactly like
+    # a real browser would only carry a re-typed email/password forward. ────
+    del progress_a_before, progress_a_after, complete_result, row
+
+    # ── SESSION B: authenticate USER_A again, fetch progress from scratch ───
+    fresh_progress = run(learn_module.get_full_progress(user_a))
+    assert fresh_progress["lessons"][lesson_x]["status"] == "completed"
+    assert fresh_progress["lessons"][lesson_x]["completed_at"]
+
+    # ── A DIFFERENT user must NOT inherit USER_A's completion ───────────────
+    progress_b = run(learn_module.get_full_progress(user_b))
+    assert lesson_x not in progress_b["lessons"]
+
+    # ── USER_A logs back in a second time — still there ──────────────────────
+    progress_a_again = run(learn_module.get_full_progress(user_a))
+    assert progress_a_again["lessons"][lesson_x]["status"] == "completed"
+
+
+def test_replaying_completion_after_relogin_does_not_duplicate_xp(fake_db):
+    """Reopening an already-completed lesson after a fresh login must not
+    award the completion bonus (or achievements) a second time."""
+    user = {"sub": "user-repro-c"}
+    body = learn_module.LessonCompleteBody(score=100, lesson_xp_reward=200, path_lesson_ids=[])
+
+    first = run(learn_module.complete_lesson("lesson-repro-y", body, user))
+    total_after_first = first["new_total_xp"]
+
+    # Fresh "session" fetch — simulates the logout/login gap.
+    run(learn_module.get_full_progress(user))
+
+    # Reopening and "completing" the same lesson again post-login.
+    second = run(learn_module.complete_lesson("lesson-repro-y", body, user))
+    assert second["already_completed"] is True
+    assert second["bonus_xp_earned"] == 0
+    assert second["new_total_xp"] == total_after_first

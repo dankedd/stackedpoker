@@ -55,6 +55,16 @@ export interface LearnProgressState {
   /** Module ids whose completion bonus has already been awarded to this user —
    *  guards against re-awarding it on replay/reopen. Always empty for guests. */
   completedModules: Set<string>
+  /** Lesson ids with a lesson-completion write currently in flight to the
+   *  server (authenticated users only) — for a "Saving completion…" style
+   *  indicator. A lesson never shows as durably complete while it's in here;
+   *  see `recordLessonComplete`. */
+  pendingLessonCompletions: Set<string>
+  /** Lesson ids whose most recent completion write failed even after retry.
+   *  `lessons[id].status` is deliberately NOT flipped to 'completed' in this
+   *  case — this set exists purely so the UI can surface an honest "sync
+   *  failed" state instead of silently pretending the save succeeded. */
+  unsyncedLessonIds: Set<string>
   continueTarget: ContinueLearningTarget | null
 }
 
@@ -111,6 +121,8 @@ const EMPTY_STATE: LearnProgressState = {
   leaks: [],
   achievementIds: new Set(),
   completedModules: new Set(),
+  pendingLessonCompletions: new Set(),
+  unsyncedLessonIds: new Set(),
   continueTarget: null,
 }
 
@@ -143,6 +155,24 @@ export async function withRetry<T>(fn: () => Promise<T>, label: string): Promise
       return null
     }
   }
+}
+
+/**
+ * Decides whether a user-identity transition must force Learn progress to be
+ * re-hydrated from scratch (or reset to guest state) — the exact comparison
+ * responsible for correctly resetting `hydratedRef` across logout/login.
+ * Get this wrong and either (a) a background access-token refresh for the
+ * SAME user wrongly re-blocks an in-flight save, or (b) a genuine account
+ * switch/logout wrongly REUSES the previous user's already-hydrated state
+ * instead of fetching the new user's own progress from the server — which is
+ * exactly the class of bug "lesson shows complete, then isn't after
+ * logout/login" would look like if this ever regressed.
+ */
+export function isNewLearnerIdentity(
+  previousUserId: string | null,
+  currentUserId: string | null,
+): boolean {
+  return previousUserId !== currentUserId
 }
 
 function computeContinueTarget(lessons: Record<string, LessonProgressEntry>): ContinueLearningTarget | null {
@@ -208,6 +238,8 @@ export function LearnProgressProvider({ children }: { children: React.ReactNode 
       leaks: [],
       achievementIds: new Set(),
       completedModules: new Set(),
+      pendingLessonCompletions: new Set(),
+      unsyncedLessonIds: new Set(),
       continueTarget: computeContinueTarget(lessons),
     })
   }, [])
@@ -218,6 +250,19 @@ export function LearnProgressProvider({ children }: { children: React.ReactNode 
     try {
       const full = await fetchFullProgress(token)
       hydratedRef.current = true
+      if (process.env.NODE_ENV !== 'production') {
+        // Dev-only diagnostic for the exact "did GET /learn/progress actually
+        // return my completed lesson" question — safe to leave on since it
+        // only logs ids/statuses, never tokens or secrets.
+        const completedLessonIds = Object.entries(full.lessons)
+          .filter(([, l]) => l.status === 'completed')
+          .map(([id]) => id)
+        console.debug('[LearnProgress] hydrated from server', {
+          lessonCount: Object.keys(full.lessons).length,
+          completedLessonIds,
+          totalXp: full.skill.total_xp,
+        })
+      }
       setProgress({
         loading: false,
         error: null,
@@ -230,6 +275,8 @@ export function LearnProgressProvider({ children }: { children: React.ReactNode 
         leaks: full.leaks,
         achievementIds: new Set(full.achievements.map((a) => a.id)),
         completedModules: new Set(full.completed_modules),
+        pendingLessonCompletions: new Set(),
+        unsyncedLessonIds: new Set(),
         continueTarget: full.continue,
       })
     } catch (e) {
@@ -247,7 +294,9 @@ export function LearnProgressProvider({ children }: { children: React.ReactNode 
     if (authLoading) return
 
     if (!user) {
-      hydratedRef.current = false
+      if (isNewLearnerIdentity(hydratedForUserRef.current, null)) {
+        hydratedRef.current = false
+      }
       hydratedForUserRef.current = null
       loadGuestProgress()
       return
@@ -257,7 +306,7 @@ export function LearnProgressProvider({ children }: { children: React.ReactNode 
     // login or a different account) — a background access-token refresh for
     // the SAME already-hydrated user must not re-arm the guard and risk
     // dropping a save that's in flight.
-    if (hydratedForUserRef.current !== user.id) {
+    if (isNewLearnerIdentity(hydratedForUserRef.current, user.id)) {
       hydratedRef.current = false
     }
 
@@ -374,26 +423,72 @@ export function LearnProgressProvider({ children }: { children: React.ReactNode 
 
   const recordLessonComplete = useCallback(
     async (lessonId: string, score: number, timeSpentSec: number, ctx: LessonCompletionContext) => {
-      let bonusXp = 0
-      let optimisticNewTotalXp = 0
+      // ── Guests: localStorage IS the durable store, so there is no separate
+      // "confirmed by the server" step — the local write can be final immediately. ──
+      if (!user || !token) {
+        let bonusXp = 0
+        let optimisticNewTotalXp = 0
+        setProgress((prev) => {
+          const existingLesson = prev.lessons[lessonId]
+          const wasAlreadyCompleted = existingLesson?.status === 'completed'
+          bonusXp = wasAlreadyCompleted ? 0 : Math.round(ctx.lessonXpReward * (Math.max(0, Math.min(100, score)) / 100))
+          const newTotalXp = prev.skill.total_xp + bonusXp
+          optimisticNewTotalXp = newTotalXp
+          const nextLessons: Record<string, LessonProgressEntry> = {
+            ...prev.lessons,
+            [lessonId]: {
+              status: 'completed',
+              attempts: (existingLesson?.attempts ?? 0) + 1,
+              best_score: Math.max(existingLesson?.best_score ?? 0, score),
+              last_score: score,
+              current_step_index: existingLesson?.current_step_index ?? 0,
+              current_step_id: existingLesson?.current_step_id ?? null,
+              total_steps: existingLesson?.total_steps ?? null,
+              completed_at: existingLesson?.completed_at ?? new Date().toISOString(),
+              module_id: ctx.moduleId ?? existingLesson?.module_id ?? null,
+              path_id: ctx.pathId ?? existingLesson?.path_id ?? null,
+              updated_at: new Date().toISOString(),
+            },
+          }
+          return {
+            ...prev,
+            skill: { ...prev.skill, total_xp: newTotalXp, level: levelForXP(newTotalXp) },
+            lessons: nextLessons,
+            continueTarget: computeContinueTarget(nextLessons),
+          }
+        })
+        const totalSteps = getGuestLessonProgress(lessonId)?.total_steps ?? 0
+        recordGuestLessonComplete(lessonId, ctx.moduleId, ctx.pathId, score, totalSteps)
+        return { bonusXp, leveledUp: false, newLevel: levelForXP(optimisticNewTotalXp) }
+      }
+
+      // ── Authenticated: do NOT flip status to 'completed' yet. A lesson only
+      // renders as durably "✓ Completed" (module page, journey, Continue
+      // Learning — all derived from `lessons[id].status`) once the server has
+      // actually confirmed the write below. This is what prevents the exact
+      // reported bug: a save that silently failed (or never reached the
+      // backend at all) used to still show green for the rest of the
+      // session, only to "revert" on the next fresh hydration (logout/login)
+      // because the server never actually had it. Bump attempts/score now
+      // (cheap, harmless if the write fails) and mark it pending so callers
+      // can show a "Saving completion…" state if they want one. ──
+      if (!hydratedRef.current) {
+        console.warn(`[LearnProgress] lesson ${lessonId} completion saved before hydration completed`)
+      }
 
       setProgress((prev) => {
         const existingLesson = prev.lessons[lessonId]
-        const wasAlreadyCompleted = existingLesson?.status === 'completed'
-        bonusXp = wasAlreadyCompleted ? 0 : Math.round(ctx.lessonXpReward * (Math.max(0, Math.min(100, score)) / 100))
-        const newTotalXp = prev.skill.total_xp + bonusXp
-        optimisticNewTotalXp = newTotalXp
         const nextLessons: Record<string, LessonProgressEntry> = {
           ...prev.lessons,
           [lessonId]: {
-            status: 'completed',
+            status: existingLesson?.status === 'completed' ? 'completed' : 'in_progress',
             attempts: (existingLesson?.attempts ?? 0) + 1,
             best_score: Math.max(existingLesson?.best_score ?? 0, score),
             last_score: score,
             current_step_index: existingLesson?.current_step_index ?? 0,
             current_step_id: existingLesson?.current_step_id ?? null,
             total_steps: existingLesson?.total_steps ?? null,
-            completed_at: existingLesson?.completed_at ?? new Date().toISOString(),
+            completed_at: existingLesson?.completed_at ?? null,
             module_id: ctx.moduleId ?? existingLesson?.module_id ?? null,
             path_id: ctx.pathId ?? existingLesson?.path_id ?? null,
             updated_at: new Date().toISOString(),
@@ -401,20 +496,16 @@ export function LearnProgressProvider({ children }: { children: React.ReactNode 
         }
         return {
           ...prev,
-          skill: { ...prev.skill, total_xp: newTotalXp, level: levelForXP(newTotalXp) },
           lessons: nextLessons,
+          pendingLessonCompletions: new Set(prev.pendingLessonCompletions).add(lessonId),
           continueTarget: computeContinueTarget(nextLessons),
         }
       })
 
-      if (!user || !token) {
-        const totalSteps = getGuestLessonProgress(lessonId)?.total_steps ?? 0
-        recordGuestLessonComplete(lessonId, ctx.moduleId, ctx.pathId, score, totalSteps)
-        return { bonusXp, leveledUp: false, newLevel: levelForXP(optimisticNewTotalXp) }
-      }
-
-      if (!hydratedRef.current) {
-        console.warn(`[LearnProgress] lesson ${lessonId} completion saved before hydration completed`)
+      if (process.env.NODE_ENV !== 'production') {
+        console.debug('[LearnProgress] submitting lesson completion', {
+          userId: user.id, lessonId, moduleId: ctx.moduleId, score,
+        })
       }
 
       // Same queue as step saves — a completion must not be applied out of
@@ -424,18 +515,66 @@ export function LearnProgressProvider({ children }: { children: React.ReactNode 
           () => submitLessonComplete(lessonId, score, timeSpentSec, ctx, token),
           `lesson complete ${lessonId}`,
         )
-        if (!res) {
-          // Save failed twice — keep the optimistic completion state as-is;
-          // report the optimistic bonus back so the completion screen isn't broken.
-          return { bonusXp, leveledUp: false, newLevel: levelForXP(optimisticNewTotalXp) }
+        // A 200 response is NOT sufficient on its own — the backend reads the
+        // row back after writing it and reports what's actually in the
+        // database (see complete_lesson). Only `status === 'completed'` here
+        // counts as a confirmed, durable save.
+        if (!res || res.status !== 'completed') {
+          let currentLevel = 1
+          setProgress((prev) => {
+            currentLevel = prev.skill.level
+            const nextPending = new Set(prev.pendingLessonCompletions)
+            nextPending.delete(lessonId)
+            return {
+              ...prev,
+              pendingLessonCompletions: nextPending,
+              unsyncedLessonIds: new Set(prev.unsyncedLessonIds).add(lessonId),
+            }
+          })
+          console.error(
+            `[LearnProgress] lesson ${lessonId} completion did NOT persist — will not show as complete`,
+            res ? { serverReportedStatus: res.status } : { networkFailure: true },
+          )
+          return { bonusXp: 0, leveledUp: false, newLevel: currentLevel }
         }
-        setProgress((prev) => ({
-          ...prev,
-          skill: { ...prev.skill, total_xp: res.new_total_xp, level: res.new_level },
-          achievementIds: res.newly_unlocked_achievement_ids.length
-            ? new Set([...prev.achievementIds, ...res.newly_unlocked_achievement_ids])
-            : prev.achievementIds,
-        }))
+
+        // Confirmed — the response IS the authoritative record (server-computed
+        // XP/level), not just an HTTP 200. Only now is it safe to show green.
+        if (process.env.NODE_ENV !== 'production') {
+          console.debug('[LearnProgress] lesson completion confirmed by server', {
+            userId: user.id, lessonId, newTotalXp: res.new_total_xp,
+          })
+        }
+        setProgress((prev) => {
+          const existingLesson = prev.lessons[lessonId]
+          const nextLessons: Record<string, LessonProgressEntry> = {
+            ...prev.lessons,
+            [lessonId]: {
+              ...(existingLesson ?? {
+                status: 'completed', attempts: 1, best_score: score, last_score: score,
+                current_step_index: 0, current_step_id: null, total_steps: null,
+                module_id: ctx.moduleId ?? null, path_id: ctx.pathId ?? null,
+              }),
+              status: 'completed',
+              completed_at: existingLesson?.completed_at ?? new Date().toISOString(),
+            },
+          }
+          const nextPending = new Set(prev.pendingLessonCompletions)
+          nextPending.delete(lessonId)
+          const nextUnsynced = new Set(prev.unsyncedLessonIds)
+          nextUnsynced.delete(lessonId)
+          return {
+            ...prev,
+            skill: { ...prev.skill, total_xp: res.new_total_xp, level: res.new_level },
+            lessons: nextLessons,
+            pendingLessonCompletions: nextPending,
+            unsyncedLessonIds: nextUnsynced,
+            continueTarget: computeContinueTarget(nextLessons),
+            achievementIds: res.newly_unlocked_achievement_ids.length
+              ? new Set([...prev.achievementIds, ...res.newly_unlocked_achievement_ids])
+              : prev.achievementIds,
+          }
+        })
         return { bonusXp: res.bonus_xp_earned, leveledUp: res.leveled_up, newLevel: res.new_level }
       })
     },

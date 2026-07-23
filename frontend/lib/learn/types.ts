@@ -57,6 +57,10 @@ export type StepType =
   | 'board_autopsy'         // a board plus an intentionally-flawed classification; learner flags the wrong fields, graded against classifyFlop
   // ── Poker Fundamentals (Module 1) ──
   | 'hand_ranking_order'    // drag/tap-reorder all 10 standard hand categories from strongest to weakest
+  // ── C-Betting Fundamentals (Module 7) ──
+  | 'range_distribution'    // two-range (Hero vs Villain) Strong/Good/Weak/Trash stacked-bar comparison
+  | 'cbet_frequency_size'   // two-stage: aggregate betting-frequency bucket, then primary sizing bucket
+  | 'board_rank_sort'       // order 3-5 boards from bets-most to bets-least by tap-to-reorder
 
 export type ActionQuality = 'perfect' | 'good' | 'acceptable' | 'mistake' | 'punt'
 export type LessonType = 'micro' | 'range_trainer' | 'puzzle_drill' | 'concept_reveal' | 'simulation'
@@ -432,6 +436,27 @@ export interface LessonStep {
   // display copy deterministically via shuffleBySeed(items, step.id).
   hand_ranking_order_items?: { id: string; label: string; example: string[] }[]
   hand_ranking_order_prompt?: string
+  // ── C-Betting Fundamentals (Module 7) ───────────────────────────────────────
+  // Range distribution — two-range (Hero vs Villain) Strong/Good/Weak/Trash stacked-bar comparison.
+  /** Each entry sums to ~100 (strong+good+weak+trash). Labeled illustrative, not solver-exact, on-screen. */
+  range_distribution_hero?: { label: string; strong: number; good: number; weak: number; trash: number }
+  range_distribution_villain?: { label: string; strong: number; good: number; weak: number; trash: number }
+  range_distribution_prompt?: string
+  /** 'predict' shows draggable/tappable blocks first, learner guesses the shape before the reveal (Lesson 3's
+   *  "Build the Distribution"). 'reveal' shows both bars immediately, for spots where prediction isn't the point. */
+  range_distribution_mode?: 'predict' | 'reveal'
+  // C-bet frequency + size lab — two-stage: frequency bucket, then sizing bucket.
+  /** Which frequency buckets are selectable, in display order (scenario-scoped — not every scenario offers all 5). */
+  cbet_frequency_size_frequency_options?: { id: string; label: string }[]
+  /** Which sizing buckets are selectable, in display order (scenario-scoped, e.g. no BIG on a scenario that doesn't support it). */
+  cbet_frequency_size_sizing_options?: { id: string; label: string }[]
+  cbet_frequency_size_prompt?: string
+  /** Scored via `options`: the id is `${frequencyId}|${sizingId}`, so authors grade the COMBINATION, not each stage alone. */
+  // Board rank sort — order 3-5 boards from bets-most to bets-least.
+  board_rank_sort_boards?: { id: string; label: string; board: string[] }[]
+  /** Ground truth order, id list, most-bet first. Hand-authored — c-bet frequency ranking isn't a deterministic function of the board. */
+  board_rank_sort_target?: string[]
+  board_rank_sort_prompt?: string
   // Visual
   visual?: 'table' | 'range_grid' | 'equity_bar' | 'heatmap' | 'pressure_chart'
   // ── Adaptive system (confidence + remediation) ─────────────────────────────
@@ -1250,6 +1275,46 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: '🧪',
     category: 'mastery',
     condition: 'Complete the "Flop Laboratory" capstone',
+    xp_bonus: 200,
+    tier: 'gold',
+  },
+  {
+    id: 'range_reader',
+    title: 'Range Reader',
+    description: 'Correctly identified range distributions, not just raw equity',
+    icon: '📊',
+    category: 'performance',
+    condition: 'Score well on "Range Advantage Is Not Enough"',
+    xp_bonus: 75,
+    tier: 'silver',
+  },
+  {
+    id: 'pressure_point',
+    title: 'Pressure Point',
+    description: 'Mastered c-bet frequency decisions',
+    icon: '🎯',
+    category: 'mastery',
+    condition: 'Complete "High-Frequency C-Bets" and "When the C-Bet Slows Down"',
+    xp_bonus: 100,
+    tier: 'silver',
+  },
+  {
+    id: 'size_matters',
+    title: 'Size Matters',
+    description: 'Completed the bet-sizing lab',
+    icon: '📏',
+    category: 'performance',
+    condition: 'Complete "Small Bet or Big Bet?"',
+    xp_bonus: 100,
+    tier: 'silver',
+  },
+  {
+    id: 'cbet_architect',
+    title: 'C-Bet Architect',
+    description: 'Completed Module 7: C-Betting Fundamentals',
+    icon: '🏛️',
+    category: 'mastery',
+    condition: 'Complete "The C-Bet Decision Lab" capstone',
     xp_bonus: 200,
     tier: 'gold',
   },

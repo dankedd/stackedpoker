@@ -152,6 +152,17 @@ export default function LessonPage() {
   // instant the lesson is done, so the write is in flight even if the user
   // closes the tab on the celebration screen) and handleComplete's fallback.
   const runCompletion = async (score: number) => {
+    if (process.env.NODE_ENV !== "production") {
+      // Canonical-id trace for the exact "write ID vs read ID" mismatch class
+      // of bug — lesson.id is the ONE identifier persisted (never .slug).
+      console.debug("[LearnProgress] lesson completion starting", {
+        userId: session?.user?.id,
+        lessonId: lesson.id,
+        lessonSlug: lesson.slug,
+        moduleId: module?.id,
+        score,
+      });
+    }
     const { bonusXp, leveledUp, newLevel } = await recordLessonComplete(lesson.id, score, 0, {
       moduleId: module?.id,
       pathId,

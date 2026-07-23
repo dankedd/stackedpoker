@@ -35,7 +35,7 @@ export const JOURNEY_STAGES: JourneyStage[] = [
     order: 3,
     title: 'Postflop Foundations',
     subtitle: 'Learn how boards transform ranges.',
-    moduleIds: ['flop-fundamentals-module', 'betting-checking-module'],
+    moduleIds: ['flop-fundamentals-module', 'cbetting-fundamentals-module'],
   },
   {
     id: 'range-thinking',
@@ -129,38 +129,13 @@ export const ROADMAP_MODULES: LearningModule[] = [
   // `LEARNING_MODULES` in ./curriculum.ts (same pattern Modules 1/2 went through).
 
   // ── Stage 3 — Postflop Foundations ──────────────────────────────────────────
-  // flop-fundamentals-module has been promoted to real content — see
-  // `LEARNING_MODULES` in ./curriculum.ts (same pattern as Modules 1–5).
-  {
-    ...ROADMAP_DEFAULTS,
-    id: 'betting-checking-module',
-    path_id: 'intermediate',
-    slug: 'betting-checking-module',
-    title: 'Betting & Checking',
-    subtitle: 'Understand why strong strategies need both bets and checks.',
-    description: 'Teach the strategic purpose behind betting rather than treating betting as simply "I have a good hand."',
-    learningObjectives: [
-      'Separate the value, bluff, protection and equity-denial purposes of a bet',
-      'Understand why strong and medium hands sometimes check',
-      'Start building a checking range, not just a betting range',
-    ],
-    difficulty: 'intermediate',
-    stageId: 'postflop-foundations',
-    order: 7,
-    prerequisiteModuleId: 'flop-fundamentals-module',
-    plannedLessons: [
-      { title: 'Why Do We Bet?' },
-      { title: 'Betting for Value' },
-      { title: 'Bluffing' },
-      { title: 'Protection' },
-      { title: 'Denying Equity' },
-      { title: 'Checking Strong Hands' },
-      { title: 'Checking Medium-Strength Hands' },
-      { title: 'Betting Frequencies' },
-      { title: 'Building a Checking Range' },
-      { title: 'Bet or Check Decision Lab' },
-    ],
-  },
+  // flop-fundamentals-module and cbetting-fundamentals-module have both been
+  // promoted to real content — see `LEARNING_MODULES` in ./curriculum.ts (same
+  // pattern as Modules 1-6). cbetting-fundamentals-module supersedes the earlier
+  // "Betting & Checking" placeholder: c-betting (Acevedo Ch.12, applied) already
+  // covers value/bluff/protection/denying-equity/checking-range construction
+  // (Ch.10 general betting theory) through the more concrete, source-driven
+  // continuation-bet lens, so the two were not built as separate modules.
 
   // ── Stage 4 — Range Thinking ─────────────────────────────────────────────────
   {
@@ -179,7 +154,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     difficulty: 'intermediate',
     stageId: 'range-thinking',
     order: 8,
-    prerequisiteModuleId: 'betting-checking-module',
+    prerequisiteModuleId: 'cbetting-fundamentals-module',
     plannedLessons: [
       { title: 'Constructing a Range' },
       { title: 'Weighted Ranges' },

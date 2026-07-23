@@ -52,6 +52,9 @@ import { RangeBoardCollision } from '@/components/learn/steps/RangeBoardCollisio
 import { EquityBucket } from '@/components/learn/steps/EquityBucket'
 import { BoardAutopsy } from '@/components/learn/steps/BoardAutopsy'
 import { HandRankingOrder } from '@/components/learn/steps/HandRankingOrder'
+import { RangeDistributionBar } from '@/components/learn/steps/RangeDistributionBar'
+import { FrequencySizeLab } from '@/components/learn/steps/FrequencySizeLab'
+import { BoardRankSort } from '@/components/learn/steps/BoardRankSort'
 import type { ActionQuality } from '@/lib/learn/types'
 import { LevelUpOverlay } from '@/components/learn/LevelUpOverlay'
 import { ConceptTagRow } from '@/components/learn/ConceptPopover'
@@ -342,6 +345,18 @@ function StepRenderer({
 
   if (step.type === 'hand_ranking_order') {
     return <HandRankingOrder step={step} onAnswer={(order, ms) => evaluate(order, ms)} />
+  }
+
+  if (step.type === 'range_distribution') {
+    return <RangeDistributionBar step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
+  }
+
+  if (step.type === 'cbet_frequency_size') {
+    return <FrequencySizeLab step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
+  }
+
+  if (step.type === 'board_rank_sort') {
+    return <BoardRankSort step={step} onAnswer={(order, ms) => evaluate(order, ms)} />
   }
 
   // Classify-family: board_classify, nut_advantage, blocker_id, range_identify, bluff_pick, reflection_prompt

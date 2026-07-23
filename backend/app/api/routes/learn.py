@@ -342,6 +342,13 @@ async def get_full_progress(current_user: dict = Depends(get_current_user)) -> d
                 "total_steps": latest.get("total_steps"),
             }
 
+        if settings.debug:
+            completed_ids = [lid for lid, l in lessons.items() if l["status"] == "completed"]
+            logger.info(
+                "get_full_progress: user=%s lesson_rows=%d completed_lesson_ids=%s",
+                user_id, len(lesson_rows), completed_ids,
+            )
+
         return {
             "skill": {
                 "total_xp": skill.get("total_xp", 0),
@@ -571,6 +578,19 @@ async def complete_lesson(
             new_total_xp = refreshed.get("total_xp", new_total_xp)
             new_level = refreshed.get("level", new_level)
 
+        # Read the row back rather than trusting the patch/post call succeeded
+        # silently — the response is only allowed to claim "completed" if the
+        # database actually agrees. This is what the frontend checks before it
+        # will show a durable green checkmark (see recordLessonComplete).
+        persisted = await _get_lesson_row(user_id, lesson_id, settings)
+        persisted_status = persisted.get("status") if persisted else None
+        persisted_completed_at = persisted.get("completed_at") if persisted else None
+        if settings.debug:
+            logger.info(
+                "complete_lesson persisted: user=%s lesson=%s status=%s completed_at=%s",
+                user_id, lesson_id, persisted_status, persisted_completed_at,
+            )
+
         return {
             "lesson_id": lesson_id,
             "score": body.score,
@@ -580,6 +600,8 @@ async def complete_lesson(
             "leveled_up": leveled_up,
             "already_completed": already_completed,
             "newly_unlocked_achievement_ids": newly_unlocked,
+            "status": persisted_status,
+            "completed_at": persisted_completed_at,
         }
 
     except HTTPException:

@@ -104,6 +104,7 @@ export function isScoredStep(step: LessonStep): boolean {
     case 'range_diff':
     case 'blocker_lab':
     case 'sizing_slider':
+    case 'range_distribution':
       return !!step.options?.length
 
     case 'pot_odds_explorer':
@@ -762,6 +763,44 @@ function evalBoardAutopsy(step: LessonStep, response: unknown): EvalCore {
   })
 }
 
+// ── Board rank sort (Module 7) ────────────────────────────────────────────────
+// Order boards from bets-most to bets-least. Ground truth is a hand-authored
+// target order (`board_rank_sort_target`) — unlike Module 6's continuum_sort,
+// c-bet frequency ranking across board families isn't a deterministic function
+// of the board, so there is no live classifier to check against here.
+
+function evalBoardRankSort(step: LessonStep, response: unknown): EvalCore {
+  const target = step.board_rank_sort_target ?? []
+  const submitted = Array.isArray(response) ? (response as string[]) : []
+
+  if (target.length === 0 || submitted.length !== target.length) {
+    return { quality: 'punt', score: 0, feedback: 'No order submitted.', ev_loss_bb: 0 }
+  }
+
+  let inversions = 0
+  for (let i = 0; i < submitted.length; i++) {
+    for (let j = i + 1; j < submitted.length; j++) {
+      const a = target.indexOf(submitted[i])
+      const b = target.indexOf(submitted[j])
+      if (a > b) inversions++
+    }
+  }
+  const maxInversions = (submitted.length * (submitted.length - 1)) / 2
+  const accuracy = maxInversions > 0 ? 1 - inversions / maxInversions : 1
+  const pct = Math.round(accuracy * 100)
+
+  if (inversions === 0) {
+    return { quality: 'perfect', score: 100, feedback: 'That ordering matches — from bets most to bets least.', ev_loss_bb: 0 }
+  }
+  if (accuracy >= 0.75) {
+    return { quality: 'good', score: Math.max(QUALITY_SCORES.good, pct), feedback: 'Close — a couple of these boards are out of order.', ev_loss_bb: 0 }
+  }
+  if (accuracy >= 0.5) {
+    return { quality: 'acceptable', score: Math.max(QUALITY_SCORES.acceptable, pct), feedback: 'Roughly right, but several boards are out of order. Review what drives frequency on each.', ev_loss_bb: 0 }
+  }
+  return { quality: 'mistake', score: Math.max(15, pct), feedback: 'This ordering doesn\'t track the range-interaction story on these boards. Revisit which range each board favors and why.', ev_loss_bb: 0 }
+}
+
 // ── Hand ranking order (Module 1) ─────────────────────────────────────────────
 // Learner drags/taps all 10 standard hand categories into strongest-to-weakest
 // order. `step.hand_ranking_order_items` IS the correct order (index 0 =
@@ -1095,6 +1134,20 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
     // Hand ranking order — drag/tap-reorder all 10 categories strongest to weakest
     case 'hand_ranking_order':
       return evalHandRankingOrder(step, response)
+
+    // ── C-Betting Fundamentals (Module 7) ───────────────────────────────────
+
+    // Range distribution — a decision question over the Hero/Villain bucket comparison
+    case 'range_distribution':
+      return evalOptionBased(step, response)
+
+    // C-bet frequency + size lab — the combined frequency|sizing answer, hand-authored options
+    case 'cbet_frequency_size':
+      return evalOptionBased(step, response)
+
+    // Board rank sort — order boards by expected c-bet frequency, hand-authored target order
+    case 'board_rank_sort':
+      return evalBoardRankSort(step, response)
 
     default:
       // Unknown step type — attempt option-based, fall back to punt

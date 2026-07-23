@@ -193,6 +193,11 @@ export interface LessonCompleteResponse {
   leveled_up: boolean
   already_completed: boolean
   newly_unlocked_achievement_ids: string[]
+  /** Read back from the database AFTER the write, not just assumed from a
+   *  200 response — the caller must check this is exactly 'completed'
+   *  before treating the save as durably confirmed. */
+  status: string | null
+  completed_at: string | null
 }
 
 export async function submitLessonComplete(
