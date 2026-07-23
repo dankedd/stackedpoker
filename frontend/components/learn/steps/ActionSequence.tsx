@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { CheckCircle2, XCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
+import { shuffleBySeed } from '@/lib/learn/interactionSafety'
 
 interface ActionSequenceProps {
   step: LessonStep
@@ -35,7 +36,10 @@ export function ActionSequence({ step, onAnswer, disabled = false }: ActionSeque
     onAnswer(optionId, elapsed)
   }
 
-  const options = step.options ?? []
+  const rawOptions = step.options ?? []
+  // Deterministic per-step shuffle so the correct answer isn't systematically
+  // in a fixed position (e.g. always first) across the option set.
+  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
   const hasSelected = selected !== null
 
   return (
