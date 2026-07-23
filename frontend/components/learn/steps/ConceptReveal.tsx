@@ -120,14 +120,12 @@ function NutAdvantageVisual() {
 }
 
 // ── Visual type dispatch ──────────────────────────────────────────────────────
+// Returns the visual node for this step, or null if there's nothing to show —
+// callers must only render their wrapper card when this is non-null, or an
+// empty rounded box appears for visual types with no renderer (e.g. 'table',
+// 'range_grid', 'heatmap', 'pressure_chart').
 
-function VisualSection({
-  visualType,
-  conceptId,
-}: {
-  visualType?: string
-  conceptId?: string
-}) {
+function resolveVisual(visualType?: string, conceptId?: string) {
   if (visualType === 'equity_bar') return <EquityBarVisual conceptId={conceptId} />
   if (visualType === 'mdf_bar' || conceptId === 'mdf' || conceptId === 'alpha') return <MdfVisual />
   if (visualType === 'nut_advantage' || conceptId === 'nut_advantage') return <NutAdvantageVisual />
@@ -135,6 +133,18 @@ function VisualSection({
 }
 
 // ── Concept data lookup ───────────────────────────────────────────────────────
+
+/** Whether CONCEPT_DATA has any enrichment content for this concept — used to
+ *  gate both the "Show formula & example" button and the panel it reveals, so
+ *  the button never promises content the panel then fails to render. */
+function hasEnrichmentContent(conceptId?: string): boolean {
+  if (!conceptId) return false
+  const entry = CONCEPT_DATA[conceptId]
+  if (!entry) return false
+  const formula = (entry as typeof entry & { formula?: string }).formula
+  const example = (entry as typeof entry & { example?: string }).example
+  return !!formula || !!example || !!entry.related?.length
+}
 
 function ConceptEnrichment({ conceptId }: { conceptId: string }) {
   const entry = CONCEPT_DATA[conceptId]
@@ -202,6 +212,8 @@ interface ConceptRevealProps {
 export function ConceptReveal({ step, onComplete }: ConceptRevealProps) {
   const [enriched, setEnriched] = useState(false)
   const primaryConceptId = step.concept_ids?.[0]
+  const visualContent = resolveVisual(step.visual, primaryConceptId)
+  const showEnrichment = hasEnrichmentContent(primaryConceptId)
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -253,14 +265,14 @@ export function ConceptReveal({ step, onComplete }: ConceptRevealProps) {
         ) : null}
 
         {/* Interactive visual for this concept's visual type */}
-        {step.visual && (
+        {visualContent && (
           <div className="mb-5 rounded-xl border border-border/30 bg-secondary/20 p-4">
-            <VisualSection visualType={step.visual} conceptId={primaryConceptId} />
+            {visualContent}
           </div>
         )}
 
         {/* Formula / enrichment toggle */}
-        {primaryConceptId && CONCEPT_DATA[primaryConceptId] && (
+        {showEnrichment && primaryConceptId && (
           <>
             {!enriched ? (
               <button

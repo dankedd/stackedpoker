@@ -43,6 +43,8 @@ export type StepType =
   | 'morphology_builder' // construct a linear/polarized range from a pool, or classify a shown range's shape
   | 'blocker_lab'        // card-removal comparison: swap Hero's holding and see villain combos blocked
   | 'sizing_slider'      // reraise (3-bet/squeeze) sizing slider with live risk/pot/call-cost/SPR feedback
+  // ── Defending the Open (Module 5) ──
+  | 'defense_lens'       // six tappable factors (opener/price/position/players behind/stack/hand) — the module's reusable framework, unscored
 
 export type ActionQuality = 'perfect' | 'good' | 'acceptable' | 'mistake' | 'punt'
 export type LessonType = 'micro' | 'range_trainer' | 'puzzle_drill' | 'concept_reveal' | 'simulation'
@@ -266,9 +268,9 @@ export interface LessonStep {
   stack_depth_morph_show_actions?: boolean
   stack_depth_morph_prompt?: string
   /** Which baseline dataset to morph. Defaults to 'rfi' (opening ranges, preflopBaselines.ts).
-   *  'threebet_defense' reads threebetBaselines.ts instead, keyed by `stack_depth_morph_key`. */
-  stack_depth_morph_dataset?: 'rfi' | 'threebet_defense'
-  /** threebet_defense dataset lookup key, e.g. 'BB_vs_BTN'. Ignored for the 'rfi' dataset. */
+   *  'threebet_defense' reads threebetBaselines.ts; 'defend' reads defendBaselines.ts — both keyed by `stack_depth_morph_key`. */
+  stack_depth_morph_dataset?: 'rfi' | 'threebet_defense' | 'defend'
+  /** threebet_defense/defend dataset lookup key, e.g. 'BB_vs_BTN'. Ignored for the 'rfi' dataset. */
   stack_depth_morph_key?: string
   // Dead money visualizer — ante on/off
   dead_money_pot?: number
@@ -324,6 +326,16 @@ export interface LessonStep {
   /** A caller already in the pot ahead of Hero's reraise (squeeze reuse), if any. */
   sizing_slider_caller_in?: number
   sizing_slider_prompt?: string
+  // ── Defending the Open (Module 5) ──────────────────────────────────────────
+  // Defense lens — six tappable factors, each revealing one sentence. Unscored, reusable framework.
+  defense_lens_facts?: {
+    opener?: string
+    price?: string
+    position?: string
+    players_behind?: string
+    stack?: string
+    hand?: string
+  }
   // Visual
   visual?: 'table' | 'range_grid' | 'equity_bar' | 'heatmap' | 'pressure_chart'
   // ── Adaptive system (confidence + remediation) ─────────────────────────────
@@ -507,6 +519,11 @@ export interface StepResult {
   /** Learner's self-reported confidence, captured before answering — only present on steps with `ask_confidence`.
    *  Distinct from `confidence` above, which is the evaluation pipeline's own confidence in the result. */
   learner_confidence?: 'low' | 'medium' | 'high'
+  /** True for passive/informational steps (concept_reveal, exploration modes of the
+   *  various visualizer steps) that had nothing to grade. When true, `score`/`quality`
+   *  are meaningless placeholders and `xp_earned` is always 0 — the UI must never render
+   *  a graded result screen ("Perfect Play"/"Score: X/100") for these, only advance. */
+  unscored: boolean
 }
 
 // ── Sentinel: explicit failed result (no fake scores/XP) ─────────────────────
@@ -526,6 +543,7 @@ export function makeFailedResult(errorType = 'network_error'): StepResult {
     evaluation_valid: false,
     fallback_used: false,
     error_type: errorType,
+    unscored: false,
   }
 }
 
@@ -1035,6 +1053,66 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: '🔺',
     category: 'mastery',
     condition: 'Complete the "Preflop Aggression Lab" capstone',
+    xp_bonus: 200,
+    tier: 'gold',
+  },
+  {
+    id: 'hold_the_line',
+    title: 'Hold the Line',
+    description: 'Completed "Someone Opened"',
+    icon: '🚪',
+    category: 'learning',
+    condition: 'Complete "Someone Opened"',
+    xp_bonus: 50,
+    tier: 'bronze',
+  },
+  {
+    id: 'price_is_right',
+    title: 'Price Is Right',
+    description: 'Mastered calling-price exercises',
+    icon: '🏷️',
+    category: 'performance',
+    condition: 'Score well on "The Price"',
+    xp_bonus: 75,
+    tier: 'bronze',
+  },
+  {
+    id: 'blind_defender',
+    title: 'Blind Defender',
+    description: 'Completed the Big Blind and Small Blind defense lessons',
+    icon: '🛡️',
+    category: 'mastery',
+    condition: 'Complete "The Big Blind Discount" and "The Small Blind Problem"',
+    xp_bonus: 100,
+    tier: 'silver',
+  },
+  {
+    id: 'range_mechanic',
+    title: 'Range Mechanic',
+    description: 'Repaired a flawed defense range',
+    icon: '🔧',
+    category: 'performance',
+    condition: 'Successfully repair a leaking defense range in Module 5',
+    xp_bonus: 75,
+    tier: 'silver',
+  },
+  {
+    id: 'defense_architect',
+    title: 'Defense Architect',
+    description: 'Built a complete, sound defense range from scratch',
+    icon: '🏗️',
+    category: 'mastery',
+    condition: 'Complete "Range Architect: Defense"',
+    xp_bonus: 100,
+    tier: 'silver',
+  },
+  {
+    id: 'hold_your_ground',
+    title: 'Hold Your Ground',
+    description: 'Completed Module 5: Defending the Open',
+    icon: '⛰️',
+    category: 'mastery',
+    condition: 'Complete the "Defense Room" capstone',
     xp_bonus: 200,
     tier: 'gold',
   },

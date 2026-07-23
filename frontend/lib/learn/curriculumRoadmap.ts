@@ -28,7 +28,7 @@ export const JOURNEY_STAGES: JourneyStage[] = [
     order: 2,
     title: 'Preflop Strategy',
     subtitle: 'Learn how ranges begin.',
-    moduleIds: ['preflop-foundation-module', 'preflop-aggression-module'],
+    moduleIds: ['preflop-foundation-module', 'preflop-aggression-module', 'defending-the-open-module'],
   },
   {
     id: 'postflop-foundations',
@@ -124,9 +124,9 @@ const ROADMAP_DEFAULTS = {
 
 export const ROADMAP_MODULES: LearningModule[] = [
   // ── Stage 2 — Preflop Strategy ──────────────────────────────────────────────
-  // preflop-foundation-module and preflop-aggression-module have both been
-  // promoted to real content — see `LEARNING_MODULES` in ./curriculum.ts
-  // (same pattern Modules 1/2 went through).
+  // preflop-foundation-module, preflop-aggression-module and
+  // defending-the-open-module have all been promoted to real content — see
+  // `LEARNING_MODULES` in ./curriculum.ts (same pattern Modules 1/2 went through).
 
   // ── Stage 3 — Postflop Foundations ──────────────────────────────────────────
   {
@@ -144,8 +144,8 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'intermediate',
     stageId: 'postflop-foundations',
-    order: 5,
-    prerequisiteModuleId: 'preflop-aggression-module',
+    order: 6,
+    prerequisiteModuleId: 'defending-the-open-module',
     plannedLessons: [
       { title: 'Reading Board Texture' },
       { title: 'Dry vs Wet Boards' },
@@ -174,7 +174,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'intermediate',
     stageId: 'postflop-foundations',
-    order: 6,
+    order: 7,
     prerequisiteModuleId: 'flop-fundamentals-module',
     plannedLessons: [
       { title: 'Why Do We Bet?' },
@@ -206,7 +206,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'intermediate',
     stageId: 'range-thinking',
-    order: 7,
+    order: 8,
     prerequisiteModuleId: 'betting-checking-module',
     plannedLessons: [
       { title: 'Constructing a Range' },
@@ -236,7 +236,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'intermediate',
     stageId: 'range-thinking',
-    order: 8,
+    order: 9,
     prerequisiteModuleId: 'range-vs-range-module',
     plannedLessons: [
       { title: 'Card Removal Revisited' },
@@ -268,7 +268,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'intermediate',
     stageId: 'game-theory',
-    order: 9,
+    order: 10,
     prerequisiteModuleId: 'blockers-module',
     plannedLessons: [
       { title: 'What Is Game Theory?' },
@@ -298,7 +298,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'intermediate',
     stageId: 'game-theory',
-    order: 10,
+    order: 11,
     prerequisiteModuleId: 'game-theory-foundations-module',
     plannedLessons: [
       { title: 'Polarization Revisited' },
@@ -330,7 +330,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'intermediate',
     stageId: 'bet-sizing-defense',
-    order: 11,
+    order: 12,
     prerequisiteModuleId: 'polarized-module',
     plannedLessons: [
       { title: 'What Bet Size Accomplishes' },
@@ -360,7 +360,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'intermediate',
     stageId: 'bet-sizing-defense',
-    order: 12,
+    order: 13,
     prerequisiteModuleId: 'bet-sizing-language-module',
     plannedLessons: [
       { title: 'Facing Small Bets' },
@@ -392,7 +392,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'intermediate',
     stageId: 'street-mastery',
-    order: 13,
+    order: 14,
     prerequisiteModuleId: 'defending-bets-module',
     plannedLessons: [
       { title: 'IP C-Betting' },
@@ -422,7 +422,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'intermediate',
     stageId: 'street-mastery',
-    order: 14,
+    order: 15,
     prerequisiteModuleId: 'flop-strategy-module',
     plannedLessons: [
       { title: 'How Turns Change Equity' },
@@ -452,7 +452,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'intermediate',
     stageId: 'street-mastery',
-    order: 15,
+    order: 16,
     prerequisiteModuleId: 'turn-strategy-module',
     plannedLessons: [
       { title: 'River Fundamentals' },
@@ -484,7 +484,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'intermediate',
     stageId: 'multi-street-poker',
-    order: 16,
+    order: 17,
     prerequisiteModuleId: 'river-strategy-module',
     plannedLessons: [
       { title: 'Thinking One Street Ahead' },
@@ -516,7 +516,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'advanced',
     stageId: 'special-pot-types',
-    order: 17,
+    order: 18,
     prerequisiteModuleId: 'multistreet-planning-module',
     plannedLessons: [
       { title: 'Anatomy of a 3-Bet Pot' },
@@ -546,7 +546,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'advanced',
     stageId: 'special-pot-types',
-    order: 18,
+    order: 19,
     prerequisiteModuleId: 'three-bet-pots-module',
     plannedLessons: [
       { title: '4-Bet Pot Ranges' },
@@ -576,7 +576,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'advanced',
     stageId: 'special-pot-types',
-    order: 19,
+    order: 20,
     prerequisiteModuleId: 'four-bet-pots-module',
     plannedLessons: [
       { title: 'Why Blind vs Blind Is Different' },
@@ -608,7 +608,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'advanced',
     stageId: 'stack-depth',
-    order: 20,
+    order: 21,
     prerequisiteModuleId: 'blind-vs-blind-module',
     plannedLessons: [
       { title: 'Stack Depth Revisited' },
@@ -638,7 +638,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'advanced',
     stageId: 'stack-depth',
-    order: 21,
+    order: 22,
     prerequisiteModuleId: 'short-stack-strategy-module',
     plannedLessons: [
       { title: 'Deep Stack Fundamentals' },
@@ -670,7 +670,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'advanced',
     stageId: 'tournament-poker',
-    order: 22,
+    order: 23,
     prerequisiteModuleId: 'deep-stack-strategy-module',
     plannedLessons: [
       { title: 'Tournament Stack Dynamics' },
@@ -700,7 +700,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'advanced',
     stageId: 'tournament-poker',
-    order: 23,
+    order: 24,
     prerequisiteModuleId: 'tournament-foundations-module',
     plannedLessons: [
       { title: 'What Is ICM?' },
@@ -732,7 +732,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'advanced',
     stageId: 'exploitative-poker',
-    order: 24,
+    order: 25,
     prerequisiteModuleId: 'icm-module',
     plannedLessons: [
       { title: 'GTO Baseline vs Exploitation' },
@@ -762,7 +762,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'advanced',
     stageId: 'exploitative-poker',
-    order: 25,
+    order: 26,
     prerequisiteModuleId: 'population-exploits-module',
     plannedLessons: [
       { title: 'Identifying Reliable Leaks' },
@@ -795,7 +795,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'elite',
     stageId: 'elite-strategy',
-    order: 26,
+    order: 27,
     prerequisiteModuleId: 'player-exploitation-module',
     plannedLessons: [
       { title: 'What Solvers Actually Solve' },
@@ -825,7 +825,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'elite',
     stageId: 'elite-strategy',
-    order: 27,
+    order: 28,
     prerequisiteModuleId: 'think-like-solver-module',
     plannedLessons: [
       { title: 'Starting Range' },
@@ -856,7 +856,7 @@ export const ROADMAP_MODULES: LearningModule[] = [
     ],
     difficulty: 'elite',
     stageId: 'elite-strategy',
-    order: 28,
+    order: 29,
     prerequisiteModuleId: 'range-reconstruction-module',
     plannedLessons: [
       { title: 'What Are the Ranges?' },

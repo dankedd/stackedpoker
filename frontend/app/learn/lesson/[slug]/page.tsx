@@ -9,6 +9,7 @@ import {
   CheckCircle,
   Star,
   BookOpen,
+  Trophy,
 } from "lucide-react";
 import { LessonPlayer } from "@/components/learn/LessonPlayer";
 import { XPGain } from "@/components/learn/XPGain";
@@ -84,7 +85,7 @@ function HeaderDots({ total, current }: { total: number; current: number }) {
 export default function LessonPage() {
   const { slug } = useParams<{ slug: string }>();
   const { session } = useAuth();
-  const { progress, recordStepResult, recordLessonComplete } = useLearnProgress();
+  const { progress, recordStepResult, recordLessonComplete, recordModuleComplete } = useLearnProgress();
 
   const lesson = LESSONS_BY_SLUG[slug];
   const [completionData, setCompletionData] = useState<{
@@ -92,6 +93,9 @@ export default function LessonPage() {
     xpEarned: number;
     leveledUp: boolean;
     newLevel?: number;
+    /** Set only when finishing this lesson just completed every lesson in its
+     *  module for the first time — a reward distinct from lesson-completion XP. */
+    moduleComplete?: { xp: number };
   } | null>(null);
 
   const module = lesson ? MODULES_BY_SLUG[lesson.module_id] : undefined;
@@ -179,7 +183,29 @@ export default function LessonPage() {
       pathLessonIds,
     });
 
-    setCompletionData({ score, xpEarned: xpEarned + bonusXp, leveledUp, newLevel });
+    // Did finishing THIS lesson just complete every lesson in its module?
+    // `progress.lessons` may not yet reflect this lesson's completion (the
+    // context update above can still be in flight), so the just-finished
+    // lesson counts as done unconditionally here — every other lesson in the
+    // module is checked against already-settled progress state.
+    let moduleComplete: { xp: number } | undefined;
+    if (module) {
+      const moduleLessonIds = (LESSONS_BY_MODULE[module.id] ?? []).map((l) => l.id);
+      const isModuleNowComplete =
+        moduleLessonIds.length > 0 &&
+        moduleLessonIds.every((id) => id === lesson.id || progress.lessons[id]?.status === "completed");
+
+      if (isModuleNowComplete && !progress.completedModules.has(module.id)) {
+        const moduleResult = await recordModuleComplete(module.id, {
+          pathId,
+          moduleXpReward: module.xp_reward,
+          lessonIds: moduleLessonIds,
+        });
+        if (moduleResult.bonusXp > 0) moduleComplete = { xp: moduleResult.bonusXp };
+      }
+    }
+
+    setCompletionData({ score, xpEarned: xpEarned + bonusXp, leveledUp, newLevel, moduleComplete });
   };
 
   // ── Completion screen ──────────────────────────────────────────────────────
@@ -229,6 +255,29 @@ export default function LessonPage() {
                 new_level={completionData.newLevel}
               />
             </div>
+
+            {/* Module complete — distinct from lesson-completion XP above, only
+                shown the one time a module's final lesson is finished. */}
+            {completionData.moduleComplete && (
+              <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-card/70 to-amber-500/5 p-5 text-left shadow-lg shadow-amber-900/10 animate-in fade-in zoom-in-95 duration-500">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 border border-amber-500/30">
+                    <Trophy className="h-5 w-5 text-amber-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-400/70">
+                      Module Complete
+                    </p>
+                    <p className="text-sm font-semibold text-foreground/90 truncate">
+                      {module?.title ?? "Module"}
+                    </p>
+                  </div>
+                  <span className="ml-auto shrink-0 text-lg font-black text-amber-400 tabular-nums">
+                    +{completionData.moduleComplete.xp} XP
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex flex-col gap-3 pt-2">

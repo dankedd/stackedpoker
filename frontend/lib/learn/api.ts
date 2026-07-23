@@ -115,6 +115,7 @@ export interface FullLearnProgress {
   concepts: Record<string, ConceptMasteryEntry>
   leaks: UserLeak[]
   achievements: AchievementRecord[]
+  completed_modules: string[]
   continue: ContinueLearningTarget | null
 }
 
@@ -213,6 +214,46 @@ export async function submitLessonComplete(
         path_id: ctx.pathId,
         lesson_xp_reward: ctx.lessonXpReward,
         path_lesson_ids: ctx.pathLessonIds,
+      }),
+    },
+  )
+}
+
+// ── Module / theme completion ─────────────────────────────────────────────────
+
+export interface ModuleCompleteContext {
+  pathId?: string
+  /** module.xp_reward from curriculum.ts — the one-time module completion bonus */
+  moduleXpReward: number
+  /** every lesson id in this module (curriculum.ts) — used server-side to verify, not trust, module completion */
+  lessonIds: string[]
+}
+
+export interface ModuleCompleteResponse {
+  module_id: string
+  bonus_xp_earned: number
+  new_total_xp: number
+  new_level: number
+  leveled_up: boolean
+  already_completed: boolean
+  eligible: boolean
+  newly_unlocked_achievement_ids: string[]
+}
+
+export async function submitModuleComplete(
+  moduleId: string,
+  ctx: ModuleCompleteContext,
+  token: string,
+): Promise<ModuleCompleteResponse> {
+  return learnFetch<ModuleCompleteResponse>(
+    `/api/learn/modules/${encodeURIComponent(moduleId)}/complete`,
+    token,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        path_id: ctx.pathId,
+        module_xp_reward: ctx.moduleXpReward,
+        lesson_ids: ctx.lessonIds,
       }),
     },
   )

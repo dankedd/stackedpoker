@@ -8,6 +8,7 @@ import {
   entriesToHandList, entriesToFrequencyMap, type StackWorld, type RangeEntry,
 } from '@/lib/learn/preflopBaselines'
 import { THREEBET_DEEP, THREEBET_MEDIUM, THREEBET_SHALLOW, type ThreebetMatchup } from '@/lib/learn/threebetBaselines'
+import { DEFEND_DEEP, DEFEND_MEDIUM, DEFEND_SHALLOW, type DefendMatchup } from '@/lib/learn/defendBaselines'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 
 interface StackDepthRangeMorphProps {
@@ -50,18 +51,26 @@ export function StackDepthRangeMorph({ step, onAnswer, disabled = false }: Stack
 
   const showActions = dataset === 'rfi' && step.stack_depth_morph_show_actions && world === 'shallow' && RFI_SHALLOW_ACTIONS[position]
 
-  const key = step.stack_depth_morph_key as ThreebetMatchup | undefined
+  const threebetKey = step.stack_depth_morph_key as ThreebetMatchup | undefined
+  const defendKey = step.stack_depth_morph_key as DefendMatchup | undefined
 
   const entries: RangeEntry[] =
     dataset === 'threebet_defense'
-      ? (world === 'shallow' ? (key && THREEBET_SHALLOW[key]) ?? (key && THREEBET_MEDIUM[key]) ?? []
-        : world === 'medium' ? (key && THREEBET_MEDIUM[key]) ?? []
-        : (key && THREEBET_DEEP[key]) ?? [])
+      ? (world === 'shallow' ? (threebetKey && THREEBET_SHALLOW[threebetKey]) ?? (threebetKey && THREEBET_MEDIUM[threebetKey]) ?? []
+        : world === 'medium' ? (threebetKey && THREEBET_MEDIUM[threebetKey]) ?? []
+        : (threebetKey && THREEBET_DEEP[threebetKey]) ?? [])
+      : dataset === 'defend'
+      ? (world === 'shallow' ? (defendKey && DEFEND_SHALLOW[defendKey]) ?? (defendKey && DEFEND_MEDIUM[defendKey]) ?? []
+        : world === 'medium' ? (defendKey && DEFEND_MEDIUM[defendKey]) ?? []
+        : (defendKey && DEFEND_DEEP[defendKey]) ?? [])
       : (world === 'shallow' ? RFI_SHALLOW[position] ?? RFI_MEDIUM[position] ?? []
         : world === 'medium' ? RFI_MEDIUM[position] ?? []
         : RFI_DEEP[position] ?? [])
 
-  const headerLabel = dataset === 'threebet_defense' ? `${key ?? position} 3-bet range` : `${position} opening range`
+  const headerLabel =
+    dataset === 'threebet_defense' ? `${threebetKey ?? position} 3-bet range`
+    : dataset === 'defend' ? `${defendKey ?? position} defend range`
+    : `${position} opening range`
 
   const combos = entries.reduce((sum, e) => sum + (e.hand.length === 2 ? 6 : e.hand.endsWith('s') ? 4 : 12) * e.freq, 0)
   const pct = ((combos / 1326) * 100).toFixed(1)
@@ -107,7 +116,7 @@ export function StackDepthRangeMorph({ step, onAnswer, disabled = false }: Stack
           </div>
         </div>
         <p className="text-center text-[9px] text-muted-foreground/30">
-          Deep is ported from the app&apos;s baseline RFI data; medium/shallow are simplified, clearly pedagogical reductions — not solver output.
+          Deep is ported from the app&apos;s baseline range data; medium/shallow are simplified, clearly pedagogical reductions — not solver output.
         </p>
       </div>
 

@@ -328,11 +328,14 @@ export function LessonCompletionScreen({
   }, [])
 
   // ── Derived stats ──────────────────────────────────────────────────────────
-  const validResults = results.filter(r => r.evaluation_valid !== false)
+  // Passive/unscored steps (concept_reveal, exploration-mode visualizers) never
+  // had an answer to grade — excluded here so they don't drag a lesson's real
+  // score toward "perfect" or pollute the step breakdown below.
+  const validResults = results.filter(r => r.evaluation_valid !== false && !r.unscored)
   const avgScore =
     validResults.length > 0
       ? Math.round(validResults.reduce((s, r) => s + r.score, 0) / validResults.length)
-      : 0
+      : 100
 
   const grade = getGrade(avgScore)
   const cfg = GRADE[grade]
@@ -347,7 +350,7 @@ export function LessonCompletionScreen({
   if (validResults.length > 0) {
     let bestScore = -Infinity, worstScore = Infinity
     results.forEach((r, i) => {
-      if (r.evaluation_valid === false) return
+      if (r.evaluation_valid === false || r.unscored) return
       if (r.score > bestScore) { bestScore = r.score; bestIdx = i }
       if (r.score < worstScore) { worstScore = r.score; worstIdx = i }
     })
@@ -359,7 +362,7 @@ export function LessonCompletionScreen({
   lesson.concept_ids.forEach(id => { conceptScores[id] = [] })
   lesson.steps.forEach((step, i) => {
     const r = results[i]
-    if (!r || r.evaluation_valid === false) return
+    if (!r || r.evaluation_valid === false || r.unscored) return
     const ids = step.concept_ids?.length ? step.concept_ids : lesson.concept_ids
     ids.forEach(id => {
       if (id in conceptScores) conceptScores[id].push(r.score)
@@ -503,7 +506,9 @@ export function LessonCompletionScreen({
       </div>
 
       {/* ── STEP BREAKDOWN ── */}
-      {results.length > 0 && (
+      {/* Only scored steps appear here — passive/theory steps were never graded,
+          so there's no score to break down for them. */}
+      {validResults.length > 0 && (
         <div
           className={cn(
             'rounded-2xl border border-border/50 bg-card/60 p-5 transition-all duration-500',
@@ -515,15 +520,17 @@ export function LessonCompletionScreen({
           </p>
           <div className="space-y-2.5">
             {results.map((r, i) => (
-              <StepMiniBar
-                key={i}
-                label={lesson.steps[i]?.type?.replace(/_/g, ' ') ?? `step ${i + 1}`}
-                result={r}
-                isBest={i === bestIdx}
-                isWorst={i === worstIdx}
-                active={phase >= 3}
-                delay={80 + i * 70}
-              />
+              r.unscored ? null : (
+                <StepMiniBar
+                  key={i}
+                  label={lesson.steps[i]?.type?.replace(/_/g, ' ') ?? `step ${i + 1}`}
+                  result={r}
+                  isBest={i === bestIdx}
+                  isWorst={i === worstIdx}
+                  active={phase >= 3}
+                  delay={80 + i * 70}
+                />
+              )
             ))}
           </div>
 

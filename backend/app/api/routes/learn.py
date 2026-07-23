@@ -103,6 +103,15 @@ class LessonCompleteBody(BaseModel):
     path_lesson_ids: list[str] = []
 
 
+class ModuleCompleteBody(BaseModel):
+    path_id: str | None = None
+    # Known client-side from curriculum.ts — the value being awarded, and the
+    # full lesson-id list for this module used to *verify* (not trust) that
+    # every lesson is actually completed server-side.
+    module_xp_reward: int = 0
+    lesson_ids: list[str] = []
+
+
 class GuestStepEvent(BaseModel):
     step_id: str
     score: int
@@ -154,6 +163,15 @@ async def _get_lesson_row(user_id: str, lesson_id: str, settings) -> dict | None
     rows = await _supabase_get(
         "user_lesson_progress",
         f"user_id=eq.{user_id}&lesson_id=eq.{lesson_id}&select=*",
+        settings,
+    )
+    return rows[0] if rows else None
+
+
+async def _get_module_row(user_id: str, module_id: str, settings) -> dict | None:
+    rows = await _supabase_get(
+        "user_module_progress",
+        f"user_id=eq.{user_id}&module_id=eq.{module_id}&select=*",
         settings,
     )
     return rows[0] if rows else None
@@ -274,6 +292,9 @@ async def get_full_progress(current_user: dict = Depends(get_current_user)) -> d
         achievement_rows = await _supabase_get(
             "user_achievements", f"user_id=eq.{user_id}&select=achievement_id,earned_at", settings,
         )
+        module_rows = await _supabase_get(
+            "user_module_progress", f"user_id=eq.{user_id}&select=module_id", settings,
+        )
 
         lessons = {
             lr["lesson_id"]: {
@@ -333,6 +354,7 @@ async def get_full_progress(current_user: dict = Depends(get_current_user)) -> d
             "concepts": concepts,
             "leaks": leak_rows,
             "achievements": [{"id": a["achievement_id"], "earned_at": a["earned_at"]} for a in achievement_rows],
+            "completed_modules": [mr["module_id"] for mr in module_rows],
             "continue": continue_target,
         }
     except httpx.HTTPError as e:
@@ -416,20 +438,27 @@ async def submit_step_result(
 
         existing_lesson = await _get_lesson_row(user_id, lesson_id, settings)
         lesson_patch: dict = {
-            "current_step_index": body.step_index,
-            "current_step_id": step_id,
             "module_id": body.module_id,
             "path_id": body.path_id,
         }
         if body.total_steps is not None:
             lesson_patch["total_steps"] = body.total_steps
         if existing_lesson:
+            # Resume position must never move backward. Two rapid step saves can
+            # reach the server out of order (a slower earlier request completing
+            # after a faster later one) — without this guard, the later request's
+            # correct forward position would be regressed by the earlier one.
+            if body.step_index >= existing_lesson.get("current_step_index", 0):
+                lesson_patch["current_step_index"] = body.step_index
+                lesson_patch["current_step_id"] = step_id
             if existing_lesson.get("status") != "completed":
                 lesson_patch["status"] = "in_progress"
             await _supabase_patch(
                 "user_lesson_progress", f"user_id=eq.{user_id}&lesson_id=eq.{lesson_id}", lesson_patch, settings,
             )
         else:
+            lesson_patch["current_step_index"] = body.step_index
+            lesson_patch["current_step_id"] = step_id
             await _supabase_post(
                 "user_lesson_progress",
                 {
@@ -561,6 +590,88 @@ async def complete_lesson(
     except Exception:
         logger.exception("Lesson complete error lesson=%s user=%s", lesson_id, user_id)
         raise HTTPException(status_code=500, detail="Lesson completion failed.")
+
+
+# ── POST /learn/modules/{module_id}/complete ──────────────────────────────────
+
+@router.post("/learn/modules/{module_id}/complete")
+async def complete_module(
+    module_id: str,
+    body: ModuleCompleteBody,
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    """Award the one-time module/theme completion bonus once every lesson in
+    the module is verifiably completed server-side. `lesson_ids` is the
+    client-computed lesson-id list for this module (curriculum.ts) — used only
+    to VERIFY completion against real user_lesson_progress rows, never trusted
+    as a bare boolean. Replaying an already-awarded module is a no-op."""
+    settings = get_settings()
+    user_id: str = current_user.get("sub", "")
+
+    try:
+        existing = await _get_module_row(user_id, module_id, settings)
+        already_completed = existing is not None
+
+        eligible = already_completed
+        if not already_completed and body.lesson_ids:
+            id_list = ",".join(body.lesson_ids)
+            done_rows = await _supabase_get(
+                "user_lesson_progress",
+                f"user_id=eq.{user_id}&status=eq.completed&lesson_id=in.({id_list})&select=lesson_id",
+                settings,
+            )
+            eligible = len(done_rows) >= len(body.lesson_ids)
+
+        skill = await _get_skill_row(user_id, settings)
+        current_xp = skill.get("total_xp", 0)
+        new_total_xp, new_level, leveled_up = current_xp, skill.get("level", 1), False
+
+        bonus_xp = 0
+        if not already_completed and eligible:
+            bonus_xp = max(0, body.module_xp_reward)
+            new_total_xp, new_level, leveled_up = apply_xp_to_user(current_xp, bonus_xp)
+
+            await _supabase_post(
+                "user_module_progress",
+                {
+                    "user_id": user_id,
+                    "module_id": module_id,
+                    "path_id": body.path_id,
+                    "xp_awarded": bonus_xp,
+                },
+                settings,
+            )
+            if bonus_xp > 0:
+                await _supabase_patch(
+                    "user_skill_progress", f"user_id=eq.{user_id}",
+                    {"total_xp": new_total_xp, "level": new_level}, settings,
+                )
+
+        newly_unlocked = await check_and_award_achievements(user_id, settings)
+        if newly_unlocked:
+            refreshed = await _get_skill_row(user_id, settings)
+            new_total_xp = refreshed.get("total_xp", new_total_xp)
+            new_level = refreshed.get("level", new_level)
+
+        return {
+            "module_id": module_id,
+            "bonus_xp_earned": bonus_xp,
+            "new_total_xp": new_total_xp,
+            "new_level": new_level,
+            "leveled_up": leveled_up,
+            "already_completed": already_completed,
+            "eligible": eligible,
+            "newly_unlocked_achievement_ids": newly_unlocked,
+        }
+
+    except HTTPException:
+        raise
+    except httpx.HTTPError as e:
+        logger.error("Module complete DB error module=%s user=%s: %s", module_id, user_id, e)
+        raise HTTPException(status_code=502, detail="Could not record module completion.")
+    except Exception:
+        logger.exception("Module complete error module=%s user=%s", module_id, user_id)
+        raise HTTPException(status_code=500, detail="Module completion failed.")
 
 
 # ── POST /learn/leaks/{leak_id}/resolve ───────────────────────────────────────

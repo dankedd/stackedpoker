@@ -42,6 +42,78 @@ interface EvalCore {
   ev_loss_bb: number
   concept_triggered?: string
   concept_explanation?: string
+  /** True when this step had nothing to grade (passive/informational content or an
+   *  exploration-mode visualizer). See `isScoredStep` for the classification rule. */
+  unscored?: boolean
+}
+
+/** The single, shared "unscored" sentinel — same shape everywhere so the router
+ *  below never repeats a fabricated quality/score for a step nothing was graded on. */
+const UNSCORED_CORE: EvalCore = {
+  quality: 'perfect',
+  score: 0,
+  feedback: 'Reviewed.',
+  ev_loss_bb: 0,
+  unscored: true,
+}
+
+/**
+ * Classifies a step as scored (has an actual question/decision to grade) or
+ * passive/unscored (pure content, or an exploration-mode visualizer with no
+ * quiz attached) — WITHOUT needing a user response. This is the single source
+ * of truth `resolveCore` below consults, and is also exported so UI code can
+ * ask the same question before evaluation happens (e.g. to decide whether a
+ * step's "Continue" should skip straight to the next step).
+ */
+export function isScoredStep(step: LessonStep): boolean {
+  switch (step.type) {
+    case 'concept_reveal':
+    case 'defense_lens':
+      return false
+
+    // Mode-gated: scored only in their quiz/challenge/classify mode
+    case 'combo_visualizer':
+      return step.combo_visualizer_mode === 'quiz'
+    case 'spr_visualizer':
+      return step.spr_visualizer_mode !== 'worlds'
+    case 'morphology_builder':
+      return step.morphology_builder_mode === 'build' || !!step.options?.length
+
+    // Scored only when a numeric target or an option list is authored —
+    // otherwise these are pure exploration/visualization steps
+    case 'position_table':
+    case 'ev_tree':
+    case 'range_compare':
+    case 'hand_dna':
+    case 'stack_depth_morph':
+    case 'dead_money_visualizer':
+    case 'strategy_complexity':
+    case 'range_diff':
+    case 'blocker_lab':
+    case 'sizing_slider':
+      return !!step.options?.length
+
+    case 'pot_odds_explorer':
+      return step.pot_odds_correct != null || !!step.options?.length
+    case 'outs_deck':
+      return step.outs_deck_correct != null || !!step.options?.length
+    case 'bluff_breakeven':
+      return step.bluff_breakeven_correct != null || !!step.options?.length
+    case 'equity_realization':
+      return step.equity_realization_correct != null || !!step.options?.length
+    case 'players_behind':
+      return step.players_behind_correct != null || !!step.options?.length
+    case 'open_size_explorer':
+      return step.open_size_correct != null || !!step.options?.length
+
+    // Everything else (decision_spot, bet_size_choose, bluff_pick, board_classify,
+    // nut_advantage, blocker_id, range_identify, reflection_prompt, equity_predict,
+    // mdf_slider, range_build, range_heatmap, scenario_tree, action_sequence,
+    // range_morphology, equity_balance, range_bucket, and any unknown future type)
+    // always carries a real question/decision to grade.
+    default:
+      return true
+  }
 }
 
 // ── Option-based steps ────────────────────────────────────────────────────────
@@ -438,6 +510,12 @@ function evalScenarioTree(response: unknown): EvalCore {
 // ── Step-type router ──────────────────────────────────────────────────────────
 
 function resolveCore(step: LessonStep, response: unknown): EvalCore {
+  if (!isScoredStep(step)) {
+    return step.type === 'concept_reveal'
+      ? { ...UNSCORED_CORE, feedback: 'Concept reviewed.' }
+      : UNSCORED_CORE
+  }
+
   switch (step.type) {
     // Option-based steps
     case 'decision_spot':
@@ -482,39 +560,28 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
     case 'scenario_tree':
       return evalScenarioTree(response)
 
-    // Concept reveal — always awarded, no interaction to evaluate
-    case 'concept_reveal':
-      return { quality: 'perfect', score: 100, feedback: 'Concept reviewed.', ev_loss_bb: 0 }
-
-    // Position table — quiz mode is option-based; explore mode is unscored
+    // Position table — quiz mode is option-based (explore mode is filtered out above)
     case 'position_table':
-      if (step.options?.length) return evalOptionBased(step, response)
-      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+      return evalOptionBased(step, response)
 
-    // Combo visualizer — quiz mode is a numeric combo-count question; reveal is unscored
+    // Combo visualizer — quiz mode is a numeric combo-count question (reveal mode filtered out above)
     case 'combo_visualizer':
-      if (step.combo_visualizer_mode === 'quiz') {
-        return evalNumeric({
-          actual:         step.combo_visualizer_correct ?? 0,
-          tolerance:      0.5,
-          response,
-          correctFeedback: step.combo_visualizer_correct_feedback
-            ?? `Correct — ${step.combo_visualizer_correct} combinations.`,
-          wrongFeedback:   step.combo_visualizer_wrong_feedback
-            ?? `The correct count is ${step.combo_visualizer_correct}.`,
-        })
-      }
-      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+      return evalNumeric({
+        actual:         step.combo_visualizer_correct ?? 0,
+        tolerance:      0.5,
+        response,
+        correctFeedback: step.combo_visualizer_correct_feedback
+          ?? `Correct — ${step.combo_visualizer_correct} combinations.`,
+        wrongFeedback:   step.combo_visualizer_wrong_feedback
+          ?? `The correct count is ${step.combo_visualizer_correct}.`,
+      })
 
     // Action sequence — notation translation / classification, option-based
     case 'action_sequence':
       return evalOptionBased(step, response)
 
-    // SPR visualizer — scenario mode is a numeric SPR question; worlds mode is unscored
+    // SPR visualizer — scenario mode is a numeric SPR question (worlds mode filtered out above)
     case 'spr_visualizer':
-      if (step.spr_visualizer_mode === 'worlds') {
-        return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
-      }
       return evalNumeric({
         actual:         step.spr_visualizer_correct ?? 0,
         tolerance:      step.spr_visualizer_tolerance ?? 0.5,
@@ -532,7 +599,7 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
     // ── Foundations Module 2 ────────────────────────────────────────────────
 
     // Pot odds explorer — 'challenge' mode is a numeric required-equity question;
-    // 'fixed'/'slider'/'build' are unscored exploration unless options are present
+    // 'fixed'/'slider'/'build' with no options are filtered out above as unscored
     case 'pot_odds_explorer':
       if (step.pot_odds_correct != null) {
         return evalNumeric({
@@ -546,14 +613,13 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
           unit: '%',
         })
       }
-      if (step.options?.length) return evalOptionBased(step, response)
-      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+      return evalOptionBased(step, response)
 
     // Equity balance — required vs actual equity, then a CALL/FOLD (or similar) decision
     case 'equity_balance':
       return evalOptionBased(step, response)
 
-    // Outs deck — numeric quiz when a target is defined, else option-based, else unscored
+    // Outs deck — numeric quiz when a target is defined, else option-based
     case 'outs_deck':
       if (step.outs_deck_correct != null) {
         return evalNumeric({
@@ -567,15 +633,13 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
           unit: step.outs_deck_mode === 'clean_dirty' ? '' : '%',
         })
       }
-      if (step.options?.length) return evalOptionBased(step, response)
-      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+      return evalOptionBased(step, response)
 
-    // EV decision tree — a classification/choice question over the displayed tree, or unscored
+    // EV decision tree — a classification/choice question over the displayed tree
     case 'ev_tree':
-      if (step.options?.length) return evalOptionBased(step, response)
-      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+      return evalOptionBased(step, response)
 
-    // Bluff break-even visualizer — numeric required-fold-% question, else option-based, else unscored
+    // Bluff break-even visualizer — numeric required-fold-% question, else option-based
     case 'bluff_breakeven':
       if (step.bluff_breakeven_correct != null) {
         return evalNumeric({
@@ -589,10 +653,9 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
           unit: '%',
         })
       }
-      if (step.options?.length) return evalOptionBased(step, response)
-      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+      return evalOptionBased(step, response)
 
-    // Equity realization — numeric calculator question, else option-based, else unscored
+    // Equity realization — numeric calculator question, else option-based
     case 'equity_realization':
       if (step.equity_realization_correct != null) {
         return evalNumeric({
@@ -604,17 +667,15 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
           unit: '%',
         })
       }
-      if (step.options?.length) return evalOptionBased(step, response)
-      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+      return evalOptionBased(step, response)
 
-    // Range compare — a decision question over two displayed ranges, or unscored
+    // Range compare — a decision question over two displayed ranges
     case 'range_compare':
-      if (step.options?.length) return evalOptionBased(step, response)
-      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+      return evalOptionBased(step, response)
 
     // ── Preflop Foundation (Module 3) ───────────────────────────────────────
 
-    // Players behind — numeric resistance-risk question, else option-based, else unscored
+    // Players behind — numeric resistance-risk question, else option-based
     case 'players_behind':
       if (step.players_behind_correct != null) {
         return evalNumeric({
@@ -626,25 +687,21 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
           unit: '%',
         })
       }
-      if (step.options?.length) return evalOptionBased(step, response)
-      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+      return evalOptionBased(step, response)
 
-    // Hand DNA — a classification/reasoning question over the displayed breakdown, or unscored
+    // Hand DNA — a classification/reasoning question over the displayed breakdown
     case 'hand_dna':
-      if (step.options?.length) return evalOptionBased(step, response)
-      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+      return evalOptionBased(step, response)
 
-    // Stack depth morph — a reasoning question over the morphing range, or unscored
+    // Stack depth morph — a reasoning question over the morphing range
     case 'stack_depth_morph':
-      if (step.options?.length) return evalOptionBased(step, response)
-      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+      return evalOptionBased(step, response)
 
-    // Dead money visualizer — a reasoning question over the ante toggle, or unscored
+    // Dead money visualizer — a reasoning question over the ante toggle
     case 'dead_money_visualizer':
-      if (step.options?.length) return evalOptionBased(step, response)
-      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+      return evalOptionBased(step, response)
 
-    // Open size explorer — numeric break-even-fold question, else option-based, else unscored
+    // Open size explorer — numeric break-even-fold question, else option-based
     case 'open_size_explorer':
       if (step.open_size_correct != null) {
         return evalNumeric({
@@ -656,18 +713,15 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
           unit: '%',
         })
       }
-      if (step.options?.length) return evalOptionBased(step, response)
-      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+      return evalOptionBased(step, response)
 
-    // Strategy complexity meter — a trade-off question, or unscored
+    // Strategy complexity meter — a trade-off question
     case 'strategy_complexity':
-      if (step.options?.length) return evalOptionBased(step, response)
-      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+      return evalOptionBased(step, response)
 
-    // Range diff — a decision question over a canned baseline-vs-example overlay, or unscored
+    // Range diff — a decision question over a canned baseline-vs-example overlay
     case 'range_diff':
-      if (step.options?.length) return evalOptionBased(step, response)
-      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+      return evalOptionBased(step, response)
 
     // ── Preflop Aggression (Module 4) ───────────────────────────────────────
 
@@ -678,18 +732,15 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
     // Morphology builder — 'build' scores range shape; 'classify' is a plain option choice
     case 'morphology_builder':
       if (step.morphology_builder_mode === 'build') return evalMorphologyBuild(step, response)
-      if (step.options?.length) return evalOptionBased(step, response)
-      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+      return evalOptionBased(step, response)
 
-    // Blocker lab — a reasoning question over the card-removal comparison, or unscored
+    // Blocker lab — a reasoning question over the card-removal comparison
     case 'blocker_lab':
-      if (step.options?.length) return evalOptionBased(step, response)
-      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+      return evalOptionBased(step, response)
 
-    // Sizing slider — a decision question over the live risk/pot/SPR feedback, or unscored
+    // Sizing slider — a decision question over the live risk/pot/SPR feedback
     case 'sizing_slider':
-      if (step.options?.length) return evalOptionBased(step, response)
-      return { quality: 'perfect', score: 100, feedback: 'Reviewed.', ev_loss_bb: 0 }
+      return evalOptionBased(step, response)
 
     default:
       // Unknown step type — attempt option-based, fall back to punt
@@ -720,8 +771,10 @@ export function evaluateStepLocally(
 ): StepResult {
   const core = resolveCore(step, userResponse)
 
+  // Passive/unscored steps never earn XP, no matter what step.xp is authored as —
+  // reading content isn't a demonstration of knowledge. See isScoredStep().
   const baseXP    = step.xp ?? 10
-  const xp_earned = Math.round(baseXP * QUALITY_XP_MULT[core.quality])
+  const xp_earned = core.unscored ? 0 : Math.round(baseXP * QUALITY_XP_MULT[core.quality])
 
   const level_before = levelForXP(currentTotalXP)
   const level_after  = levelForXP(currentTotalXP + xp_earned)
@@ -742,5 +795,6 @@ export function evaluateStepLocally(
     confidence:         'high',
     evaluation_valid:   true,
     fallback_used:      false,
+    unscored:           !!core.unscored,
   }
 }

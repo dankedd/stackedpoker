@@ -41,6 +41,7 @@ import { RangeBucketSort } from '@/components/learn/steps/RangeBucketSort'
 import { MorphologyBuilder } from '@/components/learn/steps/MorphologyBuilder'
 import { BlockerLab } from '@/components/learn/steps/BlockerLab'
 import { ReraiseSizingSlider } from '@/components/learn/steps/ReraiseSizingSlider'
+import { DefenseLens } from '@/components/learn/steps/DefenseLens'
 import type { ActionQuality } from '@/lib/learn/types'
 import { LevelUpOverlay } from '@/components/learn/LevelUpOverlay'
 import { ConceptTagRow } from '@/components/learn/ConceptPopover'
@@ -128,12 +129,10 @@ function StepRenderer({
   step,
   currentXP,
   onResult,
-  onConceptComplete,
 }: {
   step: LessonStep
   currentXP: number
   onResult: (result: StepResult, userResponse: unknown, timeMs: number) => void
-  onConceptComplete: (result: StepResult) => void
 }) {
   // Evaluate locally — instant, deterministic, no network dependency
   function evaluate(userResponse: unknown, timeMs: number) {
@@ -142,12 +141,15 @@ function StepRenderer({
   }
 
   if (step.type === 'concept_reveal') {
-    return (
-      <ConceptReveal
-        step={step}
-        onComplete={() => onConceptComplete(evaluateStepLocally(step, null, currentXP))}
-      />
-    )
+    // Passive content — nothing to answer. evaluate() will produce an
+    // unscored result, which LessonPlayer's handleResult advances past
+    // instantly without a graded feedback screen.
+    return <ConceptReveal step={step} onComplete={() => evaluate(null, 0)} />
+  }
+
+  if (step.type === 'defense_lens') {
+    // Also unscored — the framework is explored, not quizzed.
+    return <DefenseLens step={step} onComplete={() => evaluate(null, 0)} />
   }
 
   if (step.type === 'bet_size_choose') {
@@ -402,35 +404,10 @@ export function LessonPlayer({
     setPhase('step')
   }, [])
 
-  const handleResult = useCallback((result: StepResult, userResponse: unknown, timeMs: number) => {
-    // Merge in the learner's self-reported confidence, if this step asked for one
-    const enriched: StepResult = pendingConfidence
-      ? { ...result, learner_confidence: pendingConfidence }
-      : result
-
-    setLatestResult(enriched)
-    setResults((prev) => [...prev, enriched])
-    setTotalXP((prev) => prev + enriched.xp_earned)
-    setPhase('feedback')
-
-    if (currentStep) {
-      onStepResult?.(currentStep, currentStepIndex, enriched, userResponse, timeMs)
-      recordConceptResult(currentStep.concept_ids?.[0], enriched.quality)
-    }
-
-    // Trigger level-up overlay
-    if (enriched.leveled_up && enriched.level_after) {
-      setLevelUpData({ level: enriched.level_after, xp: enriched.xp_earned })
-      setShowLevelUp(true)
-    }
-  }, [currentStep, currentStepIndex, onStepResult, pendingConfidence])
-
-  const handleConceptComplete = useCallback((result: StepResult) => {
-    setResults((prev) => [...prev, result])
-    setTotalXP((prev) => prev + result.xp_earned)
-    if (currentStep) {
-      onStepResult?.(currentStep, currentStepIndex, result, null, 0)
-    }
+  // Advance to the next step (or the lesson summary, if this was the last one).
+  // Shared by the unscored/passive path (skips feedback entirely) and the
+  // scored path's "Continue" button (after the feedback screen).
+  const advanceStep = useCallback(() => {
     if (isLastStep) {
       setPhase('summary')
     } else {
@@ -440,7 +417,38 @@ export function LessonPlayer({
       setPendingConfidence(null)
       setPhase(next?.ask_confidence ? 'confidence' : 'step')
     }
-  }, [isLastStep, currentStep, currentStepIndex, onStepResult, steps])
+  }, [isLastStep, currentStepIndex, steps])
+
+  const handleResult = useCallback((result: StepResult, userResponse: unknown, timeMs: number) => {
+    // Merge in the learner's self-reported confidence, if this step asked for one
+    const enriched: StepResult = pendingConfidence
+      ? { ...result, learner_confidence: pendingConfidence }
+      : result
+
+    setResults((prev) => [...prev, enriched])
+    setTotalXP((prev) => prev + enriched.xp_earned)
+
+    if (currentStep) {
+      onStepResult?.(currentStep, currentStepIndex, enriched, userResponse, timeMs)
+      recordConceptResult(currentStep.concept_ids?.[0], enriched.quality)
+    }
+
+    if (enriched.unscored) {
+      // Passive/informational step — nothing was graded, so there's no result
+      // to show. Skip the feedback screen and go straight to the next step.
+      advanceStep()
+      return
+    }
+
+    setLatestResult(enriched)
+    setPhase('feedback')
+
+    // Trigger level-up overlay
+    if (enriched.leveled_up && enriched.level_after) {
+      setLevelUpData({ level: enriched.level_after, xp: enriched.xp_earned })
+      setShowLevelUp(true)
+    }
+  }, [currentStep, currentStepIndex, onStepResult, pendingConfidence, advanceStep])
 
   const handleRetry = useCallback(() => {
     // Go back to the step so the user can re-answer (failed evaluation, no penalty)
@@ -465,23 +473,20 @@ export function LessonPlayer({
       return
     }
 
-    if (isLastStep) {
-      setPhase('summary')
-    } else {
-      const next = steps[currentStepIndex + 1]
-      setCurrentStepIndex((i) => i + 1)
-      setLatestResult(null)
-      setPendingConfidence(null)
-      setPhase(next?.ask_confidence ? 'confidence' : 'step')
-    }
-  }, [isLastStep, currentStep, currentStepIndex, latestResult, steps])
+    advanceStep()
+  }, [currentStep, currentStepIndex, latestResult, advanceStep])
 
   const handleSummaryDone = useCallback(() => {
-    const valid = results.filter((r) => r.evaluation_valid !== false)
+    // Passive/unscored steps never contributed a real answer, so they're excluded
+    // from the average — otherwise a lesson padded with theory steps would look
+    // like it scored higher than the learner's actual graded performance.
+    const scored = results.filter((r) => r.evaluation_valid !== false && !r.unscored)
     const avgScore =
-      valid.length > 0
-        ? Math.round(valid.reduce((s, r) => s + r.score, 0) / valid.length)
-        : 0
+      scored.length > 0
+        ? Math.round(scored.reduce((s, r) => s + r.score, 0) / scored.length)
+        // Nothing in this lesson was gradable (e.g. a pure-theory lesson) —
+        // full credit, since there was nothing to get wrong.
+        : 100
     onComplete(avgScore, totalXP)
   }, [results, totalXP, onComplete])
 
@@ -585,7 +590,6 @@ export function LessonPlayer({
             step={currentStep}
             currentXP={runningXP}
             onResult={handleResult}
-            onConceptComplete={handleConceptComplete}
           />
         )}
 

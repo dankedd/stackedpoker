@@ -11,11 +11,16 @@ from __future__ import annotations
 
 import asyncio
 import uuid
+from datetime import datetime, timezone
 
 import pytest
 
 from app.api.routes import learn as learn_module
 from app.engines.learn import achievements as achievements_module
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 # ── Fake Supabase REST layer ──────────────────────────────────────────────────
@@ -135,7 +140,12 @@ class FakeSupabase:
         ]
         if already:
             return False
-        self._table("user_achievements").append({"user_id": user_id, "achievement_id": achievement_id})
+        # Real Postgres sets earned_at via `DEFAULT NOW()` on INSERT even though
+        # the award_achievement() RPC's own INSERT doesn't name the column —
+        # mirror that here so get_full_progress's formatting matches production.
+        self._table("user_achievements").append({
+            "user_id": user_id, "achievement_id": achievement_id, "earned_at": _now_iso(),
+        })
         for row in self._table("user_skill_progress"):
             if row.get("user_id") == user_id:
                 row["total_xp"] = row.get("total_xp", 0) + catalog[achievement_id]["xp_bonus"]
@@ -388,3 +398,176 @@ def test_guest_merge_imports_when_guest_is_better(fake_db):
     assert len(steps) == 5  # s1 (pre-existing) + s2..s5 (imported)
     # xp only credited for the 4 newly-imported steps, not for the already-existing s1
     assert result["new_total_xp"] == 40
+
+
+# ── Reproduction of the reported bug: progress must survive a brand-new,
+#    stateless "session" — i.e. calling get_full_progress fresh, with zero
+#    dependency on any Python-side object left over from the writes. This is
+#    the closest a unit test can get to "close the browser and come back
+#    tomorrow": the only thing carried over is what's actually in the DB.
+# ──────────────────────────────────────────────────────────────────────────
+
+
+def test_progress_survives_a_fresh_session_fetch(fake_db):
+    user = {"sub": "user-8"}
+
+    # Session 1: user answers several steps and completes a lesson, earning XP.
+    for i in range(1, 4):
+        body = learn_module.StepResultBody(
+            score=100, quality="perfect", xp_earned=20, concept_ids=["pot_odds"],
+            step_index=i - 1, total_steps=4,
+        )
+        run(learn_module.submit_step_result("lesson-f", f"step-{i}", body, user))
+
+    complete_body = learn_module.LessonCompleteBody(score=100, lesson_xp_reward=150, path_lesson_ids=[])
+    run(learn_module.complete_lesson("lesson-f", complete_body, user))
+
+    # "Return the next day": nothing from session 1 is reused except the user id.
+    # get_full_progress is the exact endpoint the frontend calls on every fresh load.
+    restored = run(learn_module.get_full_progress(user))
+
+    assert restored["lessons"]["lesson-f"]["status"] == "completed"
+    assert set(restored["completed_steps"]["lesson-f"]) == {"step-1", "step-2", "step-3"}
+    # 3 steps * 20 xp + 150 lesson-completion bonus (100% score) = 210,
+    # plus the "first_lesson" (25) and "perfect_lesson" (50) achievements
+    # auto-unlocked by a 100%-score first completion.
+    assert restored["skill"]["total_xp"] == 210 + 25 + 50
+    assert "pot_odds" in restored["concepts"]
+
+    # Simulate logout → login as the SAME user: fetching again must return the
+    # identical state, not reset it.
+    restored_again = run(learn_module.get_full_progress(user))
+    assert restored_again["skill"]["total_xp"] == restored["skill"]["total_xp"]
+    assert restored_again["lessons"]["lesson-f"]["status"] == "completed"
+
+
+def test_user_b_cannot_see_user_a_progress(fake_db):
+    user_a = {"sub": "user-a"}
+    user_b = {"sub": "user-b"}
+
+    body = learn_module.StepResultBody(
+        score=100, quality="perfect", xp_earned=30, concept_ids=[], step_index=0, total_steps=1,
+    )
+    run(learn_module.submit_step_result("lesson-g", "step-1", body, user_a))
+
+    progress_a = run(learn_module.get_full_progress(user_a))
+    progress_b = run(learn_module.get_full_progress(user_b))
+
+    assert "lesson-g" in progress_a["lessons"]
+    assert progress_a["skill"]["total_xp"] == 30
+
+    # User B must start from a clean slate — none of A's rows, none of A's XP.
+    assert "lesson-g" not in progress_b["lessons"]
+    assert progress_b["skill"]["total_xp"] == 0
+    assert progress_b["completed_steps"] == {}
+
+
+def test_out_of_order_step_saves_do_not_regress_resume_position(fake_db):
+    """Reproduces: Step A's save starts first but finishes after Step B's.
+    The later (higher) step index must win regardless of arrival order."""
+    user = {"sub": "user-9"}
+
+    # Step B (index 4) is submitted/arrives FIRST at the server...
+    body_b = learn_module.StepResultBody(
+        score=90, quality="good", xp_earned=10, concept_ids=[], step_index=4, total_steps=10,
+    )
+    run(learn_module.submit_step_result("lesson-h", "step-5", body_b, user))
+
+    # ...then a slow, now-stale request for an EARLIER step (index 1) lands after it.
+    body_a = learn_module.StepResultBody(
+        score=80, quality="good", xp_earned=10, concept_ids=[], step_index=1, total_steps=10,
+    )
+    run(learn_module.submit_step_result("lesson-h", "step-2", body_a, user))
+
+    lesson_row = fake_db.select("user_lesson_progress", "user_id=eq.user-9&lesson_id=eq.lesson-h")[0]
+    # The stale, lower step index must NOT have overwritten the further-along position.
+    assert lesson_row["current_step_index"] == 4
+    assert lesson_row["current_step_id"] == "step-5"
+
+
+def test_partial_step_update_does_not_erase_other_lessons(fake_db):
+    """User has Lesson 1 + Lesson 2 complete, Lesson 3 in progress. Answering a
+    step in Lesson 3 must not touch — let alone erase — Lessons 1 and 2."""
+    user_id = "user-10"
+    user = {"sub": user_id}
+    fake_db.insert("user_lesson_progress", {
+        "user_id": user_id, "lesson_id": "lesson-1", "status": "completed", "best_score": 100,
+    })
+    fake_db.insert("user_lesson_progress", {
+        "user_id": user_id, "lesson_id": "lesson-2", "status": "completed", "best_score": 90,
+    })
+
+    body = learn_module.StepResultBody(
+        score=70, quality="acceptable", xp_earned=5, concept_ids=[], step_index=2, total_steps=5,
+    )
+    run(learn_module.submit_step_result("lesson-3", "step-3", body, user))
+
+    progress = run(learn_module.get_full_progress(user))
+    assert progress["lessons"]["lesson-1"]["status"] == "completed"
+    assert progress["lessons"]["lesson-2"]["status"] == "completed"
+    assert progress["lessons"]["lesson-3"]["status"] == "in_progress"
+
+
+# ── Module completion: server-verified, idempotent ────────────────────────────
+
+
+def test_module_complete_rejects_when_lessons_are_not_actually_done(fake_db):
+    """A client calling module-complete without every lesson server-verified as
+    completed must not be awarded the bonus — mirrors path-completion's
+    verify-don't-trust rule (test_path_completion_is_server_verified_not_trusted)."""
+    user_id = "user-11"
+    user = {"sub": user_id}
+    fake_db.insert("user_lesson_progress", {"user_id": user_id, "lesson_id": "m1-l1", "status": "completed"})
+    # m1-l2 is NOT completed server-side, even though the client claims the module is done
+
+    body = learn_module.ModuleCompleteBody(module_xp_reward=100, lesson_ids=["m1-l1", "m1-l2"])
+    result = run(learn_module.complete_module("module-1", body, user))
+
+    assert result["eligible"] is False
+    assert result["bonus_xp_earned"] == 0
+    assert result["already_completed"] is False
+
+    rows = fake_db.select("user_module_progress", f"user_id=eq.{user_id}&module_id=eq.module-1")
+    assert rows == []
+
+
+def test_module_complete_awards_bonus_once(fake_db):
+    user_id = "user-12"
+    user = {"sub": user_id}
+    fake_db.insert("user_lesson_progress", {"user_id": user_id, "lesson_id": "m2-l1", "status": "completed"})
+    fake_db.insert("user_lesson_progress", {"user_id": user_id, "lesson_id": "m2-l2", "status": "completed"})
+
+    body = learn_module.ModuleCompleteBody(path_id="beginner", module_xp_reward=100, lesson_ids=["m2-l1", "m2-l2"])
+
+    first = run(learn_module.complete_module("module-2", body, user))
+    assert first["eligible"] is True
+    assert first["already_completed"] is False
+    assert first["bonus_xp_earned"] == 100
+    # 100 module bonus + 25 for the "first_lesson" achievement (2 lessons were
+    # already completed server-side, auto-unlocked in this same request).
+    assert first["new_total_xp"] == 125
+
+    # Replay (refresh, reopening the module, clicking through again) must not
+    # re-award the bonus a second time.
+    second = run(learn_module.complete_module("module-2", body, user))
+    assert second["already_completed"] is True
+    assert second["bonus_xp_earned"] == 0
+    assert second["new_total_xp"] == 125
+
+    skill_rows = fake_db.select("user_skill_progress", f"user_id=eq.{user_id}")
+    assert skill_rows[0]["total_xp"] == 125
+
+    module_rows = fake_db.select("user_module_progress", f"user_id=eq.{user_id}&module_id=eq.module-2")
+    assert len(module_rows) == 1
+
+
+def test_module_completion_survives_a_fresh_progress_fetch(fake_db):
+    user_id = "user-13"
+    user = {"sub": user_id}
+    fake_db.insert("user_lesson_progress", {"user_id": user_id, "lesson_id": "m3-l1", "status": "completed"})
+
+    body = learn_module.ModuleCompleteBody(module_xp_reward=50, lesson_ids=["m3-l1"])
+    run(learn_module.complete_module("module-3", body, user))
+
+    restored = run(learn_module.get_full_progress(user))
+    assert "module-3" in restored["completed_modules"]
