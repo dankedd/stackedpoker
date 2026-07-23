@@ -6,13 +6,12 @@ import Link from "next/link";
 import {
   ChevronLeft,
   ChevronRight,
-  CheckCircle,
   Star,
   BookOpen,
   Trophy,
 } from "lucide-react";
 import { LessonPlayer } from "@/components/learn/LessonPlayer";
-import { XPGain } from "@/components/learn/XPGain";
+import { LessonCompletionCard } from "@/components/learn/LessonCompletionCard";
 import { useAuth } from "@/hooks/useAuth";
 import { useLearnProgress } from "@/contexts/LearnProgressContext";
 import {
@@ -23,44 +22,6 @@ import {
 } from "@/lib/learn/curriculum";
 import type { LessonStep, StepResult } from "@/lib/learn/types";
 import { cn } from "@/lib/utils";
-
-// ── Score ring ────────────────────────────────────────────────────────────────
-
-function ScoreRing({ score }: { score: number }) {
-  const r = 36;
-  const circ = 2 * Math.PI * r;
-  const dash = (score / 100) * circ;
-  const color =
-    score >= 90
-      ? "#10b981"
-      : score >= 70
-      ? "#3b82f6"
-      : score >= 50
-      ? "#f59e0b"
-      : "#ef4444";
-
-  return (
-    <div className="relative h-24 w-24">
-      <svg width={96} height={96} style={{ transform: "rotate(-90deg)" }}>
-        <circle cx={48} cy={48} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={8} />
-        <circle
-          cx={48}
-          cy={48}
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth={8}
-          strokeLinecap="round"
-          strokeDasharray={`${dash} ${circ}`}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-black" style={{ color }}>{score}%</span>
-        <span className="text-[10px] text-muted-foreground">score</span>
-      </div>
-    </div>
-  );
-}
 
 // ── Step progress dots (minimal header) ───────────────────────────────────────
 
@@ -268,80 +229,68 @@ export default function LessonPage() {
         </div>
 
         <div className="relative flex-1 flex items-center justify-center p-6">
-          <div className="w-full max-w-md space-y-6 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Success icon */}
-            <div className="flex justify-center">
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-500/15 border border-emerald-500/30 shadow-lg shadow-emerald-900/20">
-                <CheckCircle className="h-10 w-10 text-emerald-400" />
-              </div>
-            </div>
-
-            <div>
-              <h1 className="text-2xl font-bold text-foreground mb-1">Lesson complete!</h1>
-              <p className="text-muted-foreground text-sm">{lesson.title}</p>
-            </div>
-
-            {/* Score + XP */}
-            <div className="flex items-center justify-center gap-10">
-              <ScoreRing score={completionData.score} />
-              <XPGain
-                xp={completionData.xpEarned}
-                leveled_up={completionData.leveledUp}
-                new_level={completionData.newLevel}
-              />
-            </div>
-
-            {/* Module complete — distinct from lesson-completion XP above, only
-                shown the one time a module's final lesson is finished. */}
-            {completionData.moduleComplete && (
-              <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-card/70 to-amber-500/5 p-5 text-left shadow-lg shadow-amber-900/10 animate-in fade-in zoom-in-95 duration-500">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 border border-amber-500/30">
-                    <Trophy className="h-5 w-5 text-amber-400" />
+          <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <LessonCompletionCard
+              lessonTitle={lesson.title}
+              score={completionData.score}
+              xpEarned={completionData.xpEarned}
+              leveledUp={completionData.leveledUp}
+              newLevel={completionData.newLevel}
+            >
+              <div className="space-y-4">
+                {/* Module complete — distinct from lesson-completion XP above, only
+                    shown the one time a module's final lesson is finished. */}
+                {completionData.moduleComplete && (
+                  <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-card/70 to-amber-500/5 p-4 text-left shadow-lg shadow-amber-900/10">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 border border-amber-500/30">
+                        <Trophy className="h-5 w-5 text-amber-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-400/70">
+                          Module Complete
+                        </p>
+                        <p className="text-sm font-semibold text-foreground/90 truncate">
+                          {module?.title ?? "Module"}
+                        </p>
+                      </div>
+                      <span className="ml-auto shrink-0 text-lg font-black text-amber-400 tabular-nums">
+                        +{completionData.moduleComplete.xp} XP
+                      </span>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-amber-400/70">
-                      Module Complete
-                    </p>
-                    <p className="text-sm font-semibold text-foreground/90 truncate">
-                      {module?.title ?? "Module"}
-                    </p>
-                  </div>
-                  <span className="ml-auto shrink-0 text-lg font-black text-amber-400 tabular-nums">
-                    +{completionData.moduleComplete.xp} XP
-                  </span>
+                )}
+
+                {/* Actions */}
+                <div className="flex flex-col gap-3">
+                  {nextLesson && (
+                    <Link
+                      href={`/learn/lesson/${nextLesson.slug}`}
+                      className="group relative overflow-hidden flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white font-semibold shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 hover:-translate-y-0.5 transition-all duration-200"
+                    >
+                      <div aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                      <span className="truncate">Next: {nextLesson.title}</span>
+                      <ChevronRight className="h-4 w-4 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+                    </Link>
+                  )}
+                  {!nextLesson && lesson.next_lesson_teaser && (
+                    <div className="w-full px-5 py-3.5 rounded-xl border border-violet-500/20 bg-violet-500/5 text-left">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-1">
+                        Next lesson
+                      </p>
+                      <p className="text-sm font-semibold text-foreground/80">{lesson.next_lesson_teaser}</p>
+                    </div>
+                  )}
+                  <Link
+                    href={module ? `/learn/module/${module.slug}` : "/learn"}
+                    className="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-xl border border-border/50 bg-card/40 text-foreground text-sm font-medium hover:bg-card/60 transition-colors"
+                  >
+                    <BookOpen className="h-4 w-4 text-muted-foreground" />
+                    Back to module
+                  </Link>
                 </div>
               </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex flex-col gap-3 pt-2">
-              {nextLesson && (
-                <Link
-                  href={`/learn/lesson/${nextLesson.slug}`}
-                  className="group relative overflow-hidden flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white font-semibold shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 hover:-translate-y-0.5 transition-all duration-200"
-                >
-                  <div aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-                  Next: {nextLesson.title}
-                  <ChevronRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
-                </Link>
-              )}
-              {!nextLesson && lesson.next_lesson_teaser && (
-                <div className="w-full px-5 py-3.5 rounded-xl border border-violet-500/20 bg-violet-500/5 text-left">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-1">
-                    Next lesson
-                  </p>
-                  <p className="text-sm font-semibold text-foreground/80">{lesson.next_lesson_teaser}</p>
-                </div>
-              )}
-              <Link
-                href={module ? `/learn/module/${module.slug}` : "/learn"}
-                className="flex items-center justify-center gap-2 w-full px-6 py-3 rounded-xl border border-border/50 bg-card/40 text-foreground text-sm font-medium hover:bg-card/60 transition-colors"
-              >
-                <BookOpen className="h-4 w-4 text-muted-foreground" />
-                Back to module
-              </Link>
-            </div>
+            </LessonCompletionCard>
           </div>
         </div>
       </div>
