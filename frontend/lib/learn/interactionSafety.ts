@@ -77,3 +77,18 @@ export function shuffleBySeed<T>(items: readonly T[], seed: string): T[] {
   }
   return arr
 }
+
+// ── Question-heading alignment ────────────────────────────────────────────────
+// See LEARN_QUESTION_QA.md "QUESTION–INTERACTION ALIGNMENT": a generic
+// action-oriented heading ("What is your action?") is only honest when every
+// option IS a poker action (Fold/Check/Call/Bet/Raise/All-in, optionally with
+// a sizing suffix). It must never be shown above Yes/No, IP/OOP, classification,
+// or comparison-style options — those need their own authored question text.
+
+const POKER_ACTION_LABEL_RE =
+  /^(fold|check|call|bet|raise|all-?in|shove|jam|limp|check-raise|donk bet|min-?raise|[2-5]-?bet|3bet|squeeze)(\s*\(.*\))?(\s+(to|for)?\s*[~\d.]+%?(bb|x)?\.?)?$/i
+
+/** True only if every option label is (up to a sizing/annotation suffix) an actual poker action. */
+export function isPokerActionSet(labels: readonly string[]): boolean {
+  return labels.length > 0 && labels.every((l) => POKER_ACTION_LABEL_RE.test(l.trim()))
+}

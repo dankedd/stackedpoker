@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { shuffleBySeed, isPokerActionSet } from '@/lib/learn/interactionSafety'
 
 interface DecisionSpotProps {
   step: LessonStep
@@ -43,24 +43,45 @@ export function DecisionSpot({ step, onAnswer, disabled = false }: DecisionSpotP
       ? 'grid-cols-3'
       : 'grid-cols-2'
 
+  // The visible heading must describe the actual cognitive task, never a
+  // generic action label slapped over non-action answers. Precedence:
+  // 1. An explicit authored question always wins.
+  // 2. If `narrative` already ends in a question, it IS the question — don't
+  //    render a second, possibly-mismatched one underneath it.
+  // 3. Only fall back to an action-style heading when every option genuinely
+  //    is a poker action (Fold/Call/Raise/...).
+  // 4. Otherwise render nothing here rather than a misleading generic label.
+  // See LEARN_QUESTION_QA.md "QUESTION–INTERACTION ALIGNMENT".
+  const narrativeIsQuestion = !!step.narrative && /\?\s*$/.test(step.narrative.trim())
+  const questionHeading =
+    step.type === 'bet_size_choose'
+      ? 'Choose your bet size:'
+      : step.decision_spot_question
+      ? step.decision_spot_question
+      : narrativeIsQuestion
+      ? null
+      : isPokerActionSet(options.map((o) => o.label))
+      ? 'What is your action?'
+      : null
+
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      {/* Narrative */}
+      {/* Narrative / context */}
       {step.narrative && (
         <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-4">
           <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>
         </div>
       )}
 
-      {/* Decision prompt */}
-      <div className="text-center">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/40 mb-1">
-          Your decision
-        </p>
-        <p className="text-base font-semibold text-foreground">
-          {step.type === 'bet_size_choose' ? 'Choose your bet size:' : 'What is your action?'}
-        </p>
-      </div>
+      {/* Question */}
+      {questionHeading && (
+        <div className="text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/40 mb-1">
+            {step.type === 'bet_size_choose' ? 'Your decision' : 'Question'}
+          </p>
+          <p className="text-base font-semibold text-foreground">{questionHeading}</p>
+        </div>
+      )}
 
       {/* Action buttons */}
       {options.length > 0 ? (

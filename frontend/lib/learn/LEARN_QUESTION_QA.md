@@ -15,6 +15,7 @@ edit an existing one. It is not specific to Module 3 — every future module
 
 ```
 [ ] Question has one clear task
+[ ] Visible question heading matches the actual cognitive task (QUESTION–INTERACTION ALIGNMENT — see below)
 [ ] Necessary context is present
 [ ] No unnecessary context
 [ ] Answer is not visible
@@ -162,6 +163,59 @@ authored position.
 **Rule**: whenever you hand-author a "narrower" tier on top of a derived
 "wider" tier, verify the narrow tier is an actual subset. Add a test like
 `module3Audit.test.ts`'s "stack-depth tiers narrow monotonically" block.
+
+### 8. A generic renderer heading overrides the authored question
+
+`DecisionSpot.tsx` used to hardcode `"What is your action?"` beneath every
+`decision_spot` step's narrative, regardless of what the step actually asked
+— e.g. *"Hero looks at A♣T♦. Is this an opening hand?"* followed by a button
+row of **Yes, always / No, never / Not enough information**, with the
+misleading action heading glued on underneath. The bug wasn't in any one
+curriculum entry; it was that the shared component assumed every
+`decision_spot` represents a poker-action choice.
+
+**QUESTION–INTERACTION ALIGNMENT (permanent rule)**
+
+> The primary visible question must exactly match the cognitive task being
+> tested. Never display a generic action-oriented heading unless the learner
+> is actually selecting a poker action (Fold/Check/Call/Bet/Raise/All-in).
+
+Fails QA:
+```
+"What is your action?"  →  Yes / No
+"What is your action?"  →  IP / OOP
+"What is your action?"  →  Linear / Polarized
+```
+Passes QA:
+```
+"What should Hero do?"  →  Fold / Call / Raise
+```
+
+**How `DecisionSpot.tsx` enforces this today** (see
+`isPokerActionSet` in `interactionSafety.ts`):
+1. An explicit `step.decision_spot_question` always wins — set this whenever
+   the question isn't already embedded in `narrative` and the options aren't
+   themselves poker actions.
+2. Otherwise, if `narrative` already ends in `...?`, it IS the question —
+   render nothing extra underneath (no duplicate/mismatched heading).
+3. Otherwise, only fall back to `"What is your action?"` when *every* option
+   label is a real poker action (via `isPokerActionSet`).
+4. Otherwise render no generic heading at all — a missing label is a smaller
+   bug than a wrong one, and it's caught by the audit test below.
+
+**Rule**: when authoring a new `decision_spot` step whose options are
+Yes/No, a classification, a comparison, or anything else that isn't a poker
+action, either end `narrative` with the actual question, or set
+`decision_spot_question` explicitly. Never rely on the component's fallback
+to paper over a missing question.
+
+**Automated guard**: `questionHeadingAlignment.test.ts` walks every
+`decision_spot` step in `LESSONS` and fails the build if a step has no
+resolvable question (no `decision_spot_question`, no `narrative` ending in
+`?`, and options that aren't a poker-action set), or if a
+`decision_spot_question`/generic action phrase is used over non-action
+options. Extend that test's checks first if you find a new shape of this
+bug, rather than patching curriculum entries ad hoc.
 
 ## Data-authenticity rules (poker-specific)
 

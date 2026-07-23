@@ -107,6 +107,12 @@ export interface LessonStep {
   action_before_hero?: string[]
   // Content
   narrative?: string
+  /** decision_spot only: the exact question being tested, shown as the prominent
+   *  heading below `narrative` (context). Use whenever the question is NOT already
+   *  embedded as a trailing "...?" sentence inside `narrative`, and the options are
+   *  not themselves poker actions (Fold/Call/Raise/etc — those get a generic action
+   *  heading automatically). See LEARN_QUESTION_QA.md "QUESTION–INTERACTION ALIGNMENT". */
+  decision_spot_question?: string
   options?: StepOption[]
   correct_answer?: string
   correct_feedback?: string

@@ -1700,6 +1700,7 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['equity'],
         narrative: 'Hero has 40% raw equity in a hand that is still being played.',
+        decision_spot_question: 'Does 40% raw equity guarantee winning 40% of the pot?',
         options: [
           {
             id: 'no',
@@ -1831,6 +1832,7 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['decision_quality'],
         narrative: 'CALL: +5 EV. RAISE: +11 EV.',
+        decision_spot_question: 'Is calling here the best decision?',
         options: [
           { id: 'profitable_not_best', label: 'Calling is profitable, but not the best action', quality: 'perfect', feedback: 'Right on both counts — CALL is +EV, but +EV does not automatically mean optimal. RAISE is the better decision here.' },
           { id: 'profitable_and_best', label: 'Calling is profitable AND the best action', quality: 'mistake', feedback: 'CALL is indeed profitable, but RAISE has more than double the EV — profitable does not mean best.' },
@@ -2172,6 +2174,7 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['equity_realization'],
         narrative: 'Hero has 35% raw equity in a hand that is still being played out of position.',
+        decision_spot_question: 'Does 35% raw equity guarantee winning 35% of the pot?',
         options: [
           { id: 'no', label: 'No — Hero can own equity and still be forced to give it up', quality: 'perfect', feedback: 'Correct. If Hero checks OOP, faces a bet, and cannot continue, those future cards are never seen — the raw 35% never gets the chance to matter.' },
           { id: 'yes', label: 'Yes — Hero will capture exactly 35%', quality: 'mistake', feedback: 'Raw equity is a showdown-only number. Betting and folding can prevent Hero from ever reaching showdown at all.' },
@@ -2194,6 +2197,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['equity_realization'],
         narrative:
           'EqR < 100% is under-realization. EqR = 100% is full realization. EqR > 100% is over-realization.',
+        decision_spot_question: 'What does an EqR of 115% mean?',
         options: [
           { id: 'over', label: 'If EqR is 115%, Hero is capturing MORE than raw equity predicted', quality: 'perfect', feedback: 'Correct — over-realization is real. Future betting, position, folds, and range pressure can push actual capture above the raw showdown number.' },
           { id: 'impossible', label: "That's impossible — you can't capture more than your equity", quality: 'mistake', feedback: "It's not impossible — poker includes betting and folds, not just showdown, so actual capture can exceed raw equity." },
@@ -2308,6 +2312,7 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['equity_realization'],
         narrative: 'HAND A has higher raw equity but poor realization. HAND B has slightly lower raw equity but strong realization.',
+        decision_spot_question: 'Which hand wins more often at showdown?',
         options: [
           { id: 'depends', label: 'It depends on the full situation', quality: 'perfect', feedback: 'Correct — a hand that realizes a high fraction of a smaller number can out-earn a hand that realizes a small fraction of a bigger one. Neither number alone decides it.' },
           { id: 'a', label: 'HAND A — higher raw equity wins', quality: 'mistake', feedback: 'Higher raw equity alone does not decide profitability — realization matters just as much.' },
@@ -2334,6 +2339,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['equity_realization'],
         narrative:
           'Position, suitedness, connectedness, a strong range context, good nut potential, and the ability to see future cards all typically HELP equity realization.',
+        decision_spot_question: 'Which situation has the BEST equity realization?',
         options: [
           { id: 'oop_disconnected', label: 'Being out of position with a disconnected offsuit hand', quality: 'perfect', feedback: 'Correct — OOP plus a disconnected offsuit structure is one of the clearest combinations that HURTS realization: it is hard to see future cards and there are few ways to improve.' },
           { id: 'suited_connector_ip', label: 'A suited connector, in position', quality: 'mistake', feedback: 'That combination helps realization — it is the opposite of what hurts it.' },
@@ -2346,6 +2352,7 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['position_realization'],
         narrative: 'BTN with 76s vs. SB with 76s — same opponent range in both cases.',
+        decision_spot_question: 'Which seat realizes its equity better?',
         options: [
           { id: 'btn', label: 'BTN generally realizes more', quality: 'perfect', feedback: 'Correct — BTN has position on every postflop street, letting 76s see cheap or free cards far more often than from the SB.' },
           { id: 'sb', label: 'SB generally realizes more', quality: 'mistake', feedback: 'SB is out of position against the rest of the table — 76s realizes worse from there, not better.' },
@@ -2357,6 +2364,7 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['suitedness_realization'],
         narrative: 'A♠5♠ vs. A♠5♥ — same board, same range context in both cases.',
+        decision_spot_question: 'Which hand realizes its equity better?',
         options: [
           { id: 'a5s', label: 'A♠5♠ realizes better', quality: 'perfect', feedback: 'Correct — the extra flush and backdoor-flush possibilities give A5s more profitable ways to continue than A5o.' },
           { id: 'a5o', label: 'A♠5♥ realizes better', quality: 'mistake', feedback: 'The offsuit version has strictly fewer ways to improve than the suited one — it realizes worse, not better.' },
@@ -2368,6 +2376,7 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['spr_realization'],
         narrative: 'A high-card hand like AKo, all-in at a very low SPR — versus the same hand at a very high, deep-stacked SPR.',
+        decision_spot_question: 'At which SPR does raw equity matter most?',
         options: [
           { id: 'low_spr', label: 'Raw equity matters most at LOW SPR', quality: 'perfect', feedback: 'Correct — at low SPR, chips go in with cards still to come, so raw equity is what actually gets realized. At high SPR, playability, position, and nut potential take over instead.' },
           { id: 'high_spr', label: 'Raw equity matters most at HIGH SPR', quality: 'mistake', feedback: 'It is the opposite — deep stacks give more room for position, playability, and nuts to matter, which dilutes the importance of raw equity alone.' },
@@ -2379,6 +2388,7 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['range_advantage_realization'],
         narrative: 'The exact same hand and board — once with a strong range context, once with a weak one.',
+        decision_spot_question: 'Which range context leads to better equity realization?',
         options: [
           { id: 'strong_context', label: 'Realizes more with a strong range context', quality: 'perfect', feedback: "Correct — inside a strong range, Villain can't apply unlimited pressure, so even this hand gets to see more cards and realize more of its equity." },
           { id: 'weak_context', label: 'Realizes more with a weak range context', quality: 'mistake', feedback: 'A weak range context invites more pressure from Villain, which hurts realization rather than helping it.' },
@@ -2495,6 +2505,7 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['position_realization'],
         narrative: 'Hero is CO, Villain is BB, and the action is on the flop.',
+        decision_spot_question: 'Who is in position on the flop?',
         options: [
           { id: 'hero', label: 'Hero is in position', quality: 'perfect', feedback: 'Correct — CO acts after BB on every remaining postflop street.' },
           { id: 'villain', label: 'Villain is in position', quality: 'mistake', feedback: 'BB acts first here, not last — Hero (CO) has position.' },
@@ -3703,6 +3714,7 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['first_in'],
         narrative: 'Action: UTG folds, HJ folds, CO raises to 2.5bb. Hero is on the Button.',
+        decision_spot_question: 'Which preflop situation is Hero in?',
         action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.5bb'],
         hero_position: 'BTN',
         options: [
@@ -4123,6 +4135,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['opener_range_strength'],
         narrative:
           'Hero holds A♠5♠. Scenario A: UTG opens. Scenario B: BTN opens. Same Hero seat, same stack, same hand in both.',
+        decision_spot_question: "Should Hero's strategy with this hand be identical in both scenarios?",
         hero_hand: ['As', '5s'],
         effective_stack_bb: 100,
         table_size: 9,
@@ -4165,6 +4178,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['players_behind_aggression'],
         narrative:
           'HJ opens. Scenario A: Hero is in the CO. Scenario B: Hero is on the BTN. Same HJ open in both.',
+        decision_spot_question: 'Which seat has more players left to act behind Hero?',
         table_size: 9,
         villain_position: 'HJ',
         options: [
@@ -4655,6 +4669,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['position_three_bet'],
         narrative:
           'Hero holds K♠Q♠. Scenario A: Hero is on the BTN facing a CO open. Scenario B: Hero is in the SB facing a BTN open. Same hand both times.',
+        decision_spot_question: 'Does calling have the same value in both spots?',
         hero_hand: ['Ks', 'Qs'],
         effective_stack_bb: 100,
         table_size: 6,
@@ -5118,6 +5133,7 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['three_bet_sizing'],
         narrative: 'Cash game, 100bb effective. CO opens to 2.3bb. Hero 3-bets to just 3bb from the BB.',
+        decision_spot_question: 'What is wrong with this 3-bet sizing?',
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'CO',
@@ -5140,6 +5156,7 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['three_bet_sizing'],
         narrative: 'Cash game, 25bb effective. CO opens to 2.3bb. Hero 3-bets (non-all-in) to 20bb from the BB.',
+        decision_spot_question: "What does this 3-bet sizing effectively do to Hero's stack?",
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'CO',
@@ -5217,6 +5234,7 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['squeeze'],
         narrative: 'Cash game, 100bb effective. CO opens to 2.3bb. BTN calls. Action is on Hero in the SB.',
+        decision_spot_question: 'What type of raise would Hero be making here?',
         table_size: 6,
         hero_position: 'SB',
         villain_position: 'CO',
@@ -5781,6 +5799,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['cold_four_bet'],
         narrative:
           'Cash game, 100bb effective. HJ opens. CO 3-bets. Hero, on the BTN, has not yet entered this pot at all — and raises.',
+        decision_spot_question: 'What type of raise would Hero be making here?',
         table_size: 6,
         hero_position: 'BTN',
         villain_position: 'HJ',
@@ -6402,6 +6421,7 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['squeeze'],
         narrative: 'Cash game, 100bb effective. UTG opens (a genuinely tight range). HJ calls (looks like real strength). Hero is in the SB.',
+        decision_spot_question: "How should Hero adjust their squeezing range here?",
         table_size: 6,
         hero_position: 'SB',
         villain_position: 'UTG',
@@ -6418,6 +6438,7 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['squeeze'],
         narrative: 'Cash game, 100bb effective. CO opens (wide). BTN calls (also wide). Hero is in the SB.',
+        decision_spot_question: "How should Hero adjust their squeezing range here?",
         table_size: 6,
         hero_position: 'SB',
         villain_position: 'CO',
@@ -6434,6 +6455,7 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['squeeze'],
         narrative: 'Cash game. CO opens. BTN calls. Hero is in the SB — and the BB, still to act, has only 10bb left (well short of the 100bb effective everyone else is playing).',
+        decision_spot_question: "Does the short-stacked BB behind Hero change Hero's decision?",
         table_size: 6,
         hero_position: 'SB',
         villain_position: 'CO',
@@ -6728,6 +6750,7 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['defending_opens'],
         narrative: 'UTG folds. LJ folds. HJ raises to 2.2bb. Action is on Hero.',
+        decision_spot_question: 'Which preflop situation is Hero in?',
         table_size: 9,
         hero_position: 'BTN',
         villain_position: 'HJ',
