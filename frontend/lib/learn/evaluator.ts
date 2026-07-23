@@ -122,8 +122,8 @@ export function isScoredStep(step: LessonStep): boolean {
     // Everything else (decision_spot, bet_size_choose, bluff_pick, board_classify,
     // nut_advantage, blocker_id, range_identify, reflection_prompt, equity_predict,
     // mdf_slider, range_build, range_heatmap, scenario_tree, action_sequence,
-    // range_morphology, equity_balance, range_bucket, and any unknown future type)
-    // always carries a real question/decision to grade.
+    // range_morphology, equity_balance, range_bucket, hand_ranking_order, and any
+    // unknown future type) always carries a real question/decision to grade.
     default:
       return true
   }
@@ -762,6 +762,67 @@ function evalBoardAutopsy(step: LessonStep, response: unknown): EvalCore {
   })
 }
 
+// ── Hand ranking order (Module 1) ─────────────────────────────────────────────
+// Learner drags/taps all 10 standard hand categories into strongest-to-weakest
+// order. `step.hand_ranking_order_items` IS the correct order (index 0 =
+// strongest); `response` is the learner's submitted array of category ids in
+// the same strongest-to-weakest slot order.
+
+function evalHandRankingOrder(step: LessonStep, response: unknown): EvalCore {
+  const items = step.hand_ranking_order_items ?? []
+  const correctOrder = items.map((i) => i.id)
+  const submitted = Array.isArray(response) ? (response as string[]) : []
+
+  if (correctOrder.length === 0 || submitted.length !== correctOrder.length) {
+    return { quality: 'punt', score: 0, feedback: 'No order submitted.', ev_loss_bb: 0 }
+  }
+
+  const labelOf = (id: string) => items.find((i) => i.id === id)?.label ?? id
+  const correctRank = new Map(correctOrder.map((id, i) => [id, i]))
+
+  let correctPositions = 0
+  for (let i = 0; i < correctOrder.length; i++) {
+    if (submitted[i] === correctOrder[i]) correctPositions++
+  }
+  const accuracy = correctPositions / correctOrder.length
+
+  if (accuracy === 1) {
+    return {
+      quality: 'perfect',
+      score: 100,
+      feedback: 'Correct — every hand category is in the right order, strongest to weakest.',
+      ev_loss_bb: 0,
+    }
+  }
+
+  // Find a couple of concrete inversions (a weaker category placed above a
+  // stronger one) so the feedback explains WHICH ranking was missed, not just
+  // "wrong" — this is what powers the "explain the mistake" requirement.
+  const inversions: string[] = []
+  for (let i = 0; i < submitted.length && inversions.length < 2; i++) {
+    for (let j = i + 1; j < submitted.length && inversions.length < 2; j++) {
+      const a = submitted[i]
+      const b = submitted[j]
+      const rankA = correctRank.get(a)
+      const rankB = correctRank.get(b)
+      if (rankA != null && rankB != null && rankA > rankB) {
+        inversions.push(`${labelOf(b)} actually beats ${labelOf(a)}, but you placed ${labelOf(a)} higher.`)
+      }
+    }
+  }
+  const detail = inversions.length > 0 ? ` ${inversions.join(' ')}` : ''
+  const pct = Math.round(accuracy * 100)
+  const positionSummary = `${correctPositions} of ${correctOrder.length} in the right spot.`
+
+  if (accuracy >= 0.8) {
+    return { quality: 'good', score: Math.max(82, pct), feedback: `Close — ${positionSummary}${detail}`, ev_loss_bb: 0 }
+  }
+  if (accuracy >= 0.5) {
+    return { quality: 'acceptable', score: Math.max(62, pct), feedback: `Getting there — ${positionSummary}${detail}`, ev_loss_bb: 0 }
+  }
+  return { quality: 'mistake', score: Math.max(20, pct), feedback: `${positionSummary} Review the full hierarchy below.${detail}`, ev_loss_bb: 0 }
+}
+
 // ── Step-type router ──────────────────────────────────────────────────────────
 
 function resolveCore(step: LessonStep, response: unknown): EvalCore {
@@ -1030,6 +1091,10 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
     // Board autopsy — flag which fields of a flawed analysis are wrong, graded live against classifyFlop
     case 'board_autopsy':
       return evalBoardAutopsy(step, response)
+
+    // Hand ranking order — drag/tap-reorder all 10 categories strongest to weakest
+    case 'hand_ranking_order':
+      return evalHandRankingOrder(step, response)
 
     default:
       // Unknown step type — attempt option-based, fall back to punt

@@ -372,12 +372,23 @@ export const LESSONS: Lesson[] = [
       },
       {
         id: 'l1-s11',
-        type: 'concept_reveal',
+        type: 'hand_ranking_order',
         concept_ids: ['hand_rankings'],
-        concept_title: 'Basic Hand Rankings',
-        concept_content:
-          'From strongest to weakest: Royal Flush, Straight Flush, Four of a Kind, Full House, Flush, Straight, Three of a Kind, Two Pair, One Pair, High Card. You don’t need to memorize every detail today — just recognize the order when you see two hands compared.',
-        xp: 4,
+        narrative: 'These are the 10 standard hand categories in Texas Hold’em, in a random order.',
+        hand_ranking_order_prompt: 'Drag the hands into order from strongest to weakest.',
+        hand_ranking_order_items: [
+          { id: 'royal_flush', label: 'Royal Flush', example: ['As', 'Ks', 'Qs', 'Js', 'Ts'] },
+          { id: 'straight_flush', label: 'Straight Flush', example: ['9h', '8h', '7h', '6h', '5h'] },
+          { id: 'four_of_a_kind', label: 'Four of a Kind', example: ['9s', '9h', '9d', '9c', '2c'] },
+          { id: 'full_house', label: 'Full House', example: ['Ks', 'Kh', 'Kd', '4c', '4s'] },
+          { id: 'flush', label: 'Flush', example: ['Ac', 'Jc', '8c', '6c', '2c'] },
+          { id: 'straight', label: 'Straight', example: ['9s', '8h', '7d', '6c', '5s'] },
+          { id: 'three_of_a_kind', label: 'Three of a Kind', example: ['7s', '7h', '7d', 'Kc', '2s'] },
+          { id: 'two_pair', label: 'Two Pair', example: ['Js', 'Jh', '4d', '4c', '9s'] },
+          { id: 'one_pair', label: 'One Pair', example: ['As', 'Ah', 'Kd', '8c', '3s'] },
+          { id: 'high_card', label: 'High Card', example: ['As', 'Jh', '8d', '5c', '2s'] },
+        ],
+        xp: 10,
       },
       {
         id: 'l1-s12',

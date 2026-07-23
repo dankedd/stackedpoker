@@ -51,6 +51,7 @@ import { BoardVolatility } from '@/components/learn/steps/BoardVolatility'
 import { RangeBoardCollision } from '@/components/learn/steps/RangeBoardCollision'
 import { EquityBucket } from '@/components/learn/steps/EquityBucket'
 import { BoardAutopsy } from '@/components/learn/steps/BoardAutopsy'
+import { HandRankingOrder } from '@/components/learn/steps/HandRankingOrder'
 import type { ActionQuality } from '@/lib/learn/types'
 import { LevelUpOverlay } from '@/components/learn/LevelUpOverlay'
 import { ConceptTagRow } from '@/components/learn/ConceptPopover'
@@ -337,6 +338,10 @@ function StepRenderer({
 
   if (step.type === 'board_autopsy') {
     return <BoardAutopsy step={step} onAnswer={(keys, ms) => evaluate(keys, ms)} />
+  }
+
+  if (step.type === 'hand_ranking_order') {
+    return <HandRankingOrder step={step} onAnswer={(order, ms) => evaluate(order, ms)} />
   }
 
   // Classify-family: board_classify, nut_advantage, blocker_id, range_identify, bluff_pick, reflection_prompt

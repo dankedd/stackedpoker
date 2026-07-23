@@ -55,6 +55,8 @@ export type StepType =
   | 'range_board_collision' // two named ranges + a flop, card-removal-aware made/draw/miss visualization (uses `options` for its question)
   | 'equity_bucket'         // Strong/Good/Weak/Trash threshold, scenario, and distribution sub-modes
   | 'board_autopsy'         // a board plus an intentionally-flawed classification; learner flags the wrong fields, graded against classifyFlop
+  // ── Poker Fundamentals (Module 1) ──
+  | 'hand_ranking_order'    // drag/tap-reorder all 10 standard hand categories from strongest to weakest
 
 export type ActionQuality = 'perfect' | 'good' | 'acceptable' | 'mistake' | 'punt'
 export type LessonType = 'micro' | 'range_trainer' | 'puzzle_drill' | 'concept_reveal' | 'simulation'
@@ -425,6 +427,11 @@ export interface LessonStep {
   board_autopsy_board?: string[]
   board_autopsy_claimed?: Partial<Record<import('./flopClassifier').FlopDimensionKey, string>>
   board_autopsy_prompt?: string
+  // Hand ranking order — drag/tap-reorder all 10 standard categories from strongest to weakest.
+  // Array order IS the correct order (index 0 = strongest); the component shuffles a
+  // display copy deterministically via shuffleBySeed(items, step.id).
+  hand_ranking_order_items?: { id: string; label: string; example: string[] }[]
+  hand_ranking_order_prompt?: string
   // Visual
   visual?: 'table' | 'range_grid' | 'equity_bar' | 'heatmap' | 'pressure_chart'
   // ── Adaptive system (confidence + remediation) ─────────────────────────────
