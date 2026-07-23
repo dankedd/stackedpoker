@@ -288,6 +288,30 @@ def test_lesson_complete_scales_bonus_by_score(fake_db):
     assert result["bonus_xp_earned"] == 100  # 200 * 50%
 
 
+def test_lesson_complete_persists_completed_at(fake_db):
+    """The row itself — not just the response — must carry a real completed_at
+    timestamp, and it must never be cleared/moved by a later replay."""
+    user_id = "user-3b"
+    user = {"sub": user_id}
+    body = learn_module.LessonCompleteBody(score=100, lesson_xp_reward=100, path_lesson_ids=[])
+
+    run(learn_module.complete_lesson("lesson-cb", body, user))
+    row = fake_db.select("user_lesson_progress", f"user_id=eq.{user_id}&lesson_id=eq.lesson-cb")[0]
+    assert row["status"] == "completed"
+    first_completed_at = row["completed_at"]
+    assert first_completed_at  # populated, not None/empty
+
+    # Replaying completion (e.g. reopening an already-finished lesson) must not
+    # move completed_at forward — the original completion timestamp is durable.
+    run(learn_module.complete_lesson("lesson-cb", body, user))
+    row_after = fake_db.select("user_lesson_progress", f"user_id=eq.{user_id}&lesson_id=eq.lesson-cb")[0]
+    assert row_after["completed_at"] == first_completed_at
+
+    # And it survives a fresh get_full_progress fetch exactly as stored.
+    restored = run(learn_module.get_full_progress(user))
+    assert restored["lessons"]["lesson-cb"]["completed_at"] == first_completed_at
+
+
 # ── Achievement idempotency ───────────────────────────────────────────────────
 
 
@@ -483,6 +507,39 @@ def test_out_of_order_step_saves_do_not_regress_resume_position(fake_db):
     # The stale, lower step index must NOT have overwritten the further-along position.
     assert lesson_row["current_step_index"] == 4
     assert lesson_row["current_step_id"] == "step-5"
+
+
+def test_late_step_save_cannot_undo_completion(fake_db):
+    """Reproduces the exact race called out in the persistence bug report: the
+    final step's save and the lesson-complete call are both in flight, and the
+    step save (for whatever reason — retry, network jitter) lands AFTER the
+    lesson has already been marked completed. It must not flip status back to
+    in_progress, and completed_at must survive untouched."""
+    user_id = "user-9b"
+    user = {"sub": user_id}
+
+    step_body = learn_module.StepResultBody(
+        score=100, quality="perfect", xp_earned=10, concept_ids=[], step_index=9, total_steps=10,
+    )
+    run(learn_module.submit_step_result("lesson-hb", "step-10", step_body, user))
+
+    complete_body = learn_module.LessonCompleteBody(score=100, lesson_xp_reward=100, path_lesson_ids=[])
+    run(learn_module.complete_lesson("lesson-hb", complete_body, user))
+
+    row = fake_db.select("user_lesson_progress", f"user_id=eq.{user_id}&lesson_id=eq.lesson-hb")[0]
+    assert row["status"] == "completed"
+    completed_at = row["completed_at"]
+
+    # A stale/late duplicate of the SAME final step's save arrives after completion.
+    run(learn_module.submit_step_result("lesson-hb", "step-10", step_body, user))
+
+    row_after = fake_db.select("user_lesson_progress", f"user_id=eq.{user_id}&lesson_id=eq.lesson-hb")[0]
+    assert row_after["status"] == "completed"
+    assert row_after["completed_at"] == completed_at
+
+    # And a fresh session fetch must agree — the lesson is still, durably, complete.
+    restored = run(learn_module.get_full_progress(user))
+    assert restored["lessons"]["lesson-hb"]["status"] == "completed"
 
 
 def test_partial_step_update_does_not_erase_other_lessons(fake_db):

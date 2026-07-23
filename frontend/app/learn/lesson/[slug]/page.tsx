@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -98,6 +98,17 @@ export default function LessonPage() {
     moduleComplete?: { xp: number };
   } | null>(null);
 
+  // Holds the in-flight (or already-settled) durable-completion request once
+  // handleLessonFinished kicks it off — see runCompletion below. Reset to
+  // null whenever a fresh attempt at this lesson begins so a retry doesn't
+  // reuse a stale prior attempt's result.
+  const pendingCompletionRef = useRef<Promise<{
+    bonusXp: number;
+    leveledUp: boolean;
+    newLevel: number;
+    moduleComplete?: { xp: number };
+  }> | null>(null);
+
   const module = lesson ? MODULES_BY_SLUG[lesson.module_id] : undefined;
   const pathId = module?.path_id;
 
@@ -175,7 +186,11 @@ export default function LessonPage() {
     });
   };
 
-  const handleComplete = async (score: number, xpEarned: number) => {
+  // Runs the actual durable-persistence sequence (lesson complete, then a
+  // module-complete check/award). Shared by handleLessonFinished (fires the
+  // instant the lesson is done, so the write is in flight even if the user
+  // closes the tab on the celebration screen) and handleComplete's fallback.
+  const runCompletion = async (score: number) => {
     const { bonusXp, leveledUp, newLevel } = await recordLessonComplete(lesson.id, score, 0, {
       moduleId: module?.id,
       pathId,
@@ -205,6 +220,26 @@ export default function LessonPage() {
       }
     }
 
+    return { bonusXp, leveledUp, newLevel, moduleComplete };
+  };
+
+  // Fired the INSTANT LessonPlayer enters its completed state — i.e. before
+  // the user has clicked anything on the celebration screen. This is what
+  // guarantees completion survives "answer the last question, immediately
+  // close the tab": the network request is already in flight the moment the
+  // lesson is functionally done, not gated behind a later button click.
+  const handleLessonFinished = (score: number) => {
+    pendingCompletionRef.current = runCompletion(score);
+  };
+
+  // Fired when the user clicks "Continue Learning" on the celebration screen.
+  // Normally the completion write already started (and often finished) via
+  // handleLessonFinished above — this just awaits that same in-flight
+  // request rather than re-submitting it. The fallback exists only in case
+  // onLessonFinished never fired for some reason (defense in depth).
+  const handleComplete = async (score: number, xpEarned: number) => {
+    const promise = pendingCompletionRef.current ?? runCompletion(score);
+    const { bonusXp, leveledUp, newLevel, moduleComplete } = await promise;
     setCompletionData({ score, xpEarned: xpEarned + bonusXp, leveledUp, newLevel, moduleComplete });
   };
 
@@ -356,6 +391,7 @@ export default function LessonPage() {
               initialStepIndex={resumeStepIndex}
               onStepResult={handleStepResult}
               onComplete={handleComplete}
+              onLessonFinished={handleLessonFinished}
             />
           ) : (
             <div className="space-y-6">
@@ -377,6 +413,7 @@ export default function LessonPage() {
                 initialStepIndex={resumeStepIndex}
                 onStepResult={handleStepResult}
                 onComplete={handleComplete}
+                onLessonFinished={handleLessonFinished}
               />
             </div>
           )}

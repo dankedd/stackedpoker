@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import {
   CheckCircle2, Clock, Zap, ChevronRight, BookOpen,
 } from 'lucide-react'
@@ -353,6 +353,14 @@ interface LessonPlayerProps {
   /** Step index to resume at (0 = start from the beginning) */
   initialStepIndex?: number
   onComplete: (score: number, xpEarned: number) => void
+  /** Fired once, the INSTANT the lesson reaches its completed state (i.e. as
+   *  the summary screen is entered) — not when the user later clicks a button
+   *  on that screen. The caller should start the durable server-side
+   *  completion write here, so it is already in flight even if the learner
+   *  closes the tab while looking at the celebration screen. `onComplete`
+   *  (above) still fires on the "Continue Learning" click, for whatever
+   *  UI transition the caller wants to gate on that explicit action. */
+  onLessonFinished?: (score: number, xpEarned: number) => void
   /** Fired once per answered/viewed step, for the caller to persist via LearnProgressContext */
   onStepResult?: (
     step: LessonStep,
@@ -363,11 +371,21 @@ interface LessonPlayerProps {
   ) => void
 }
 
+/** Same "exclude passive/invalid steps" rule used by the completion screen —
+ *  kept in one place so the early (onLessonFinished) and late (onComplete)
+ *  score computations can never drift apart. */
+function computeAvgScore(results: StepResult[]): number {
+  const scored = results.filter((r) => r.evaluation_valid !== false && !r.unscored)
+  if (scored.length === 0) return 100
+  return Math.round(scored.reduce((s, r) => s + r.score, 0) / scored.length)
+}
+
 export function LessonPlayer({
   lesson,
   userXP = 0,
   initialStepIndex = 0,
   onComplete,
+  onLessonFinished,
   onStepResult,
 }: LessonPlayerProps) {
   const [phase, setPhase] = useState<Phase>('intro')
@@ -477,18 +495,28 @@ export function LessonPlayer({
   }, [currentStep, currentStepIndex, latestResult, advanceStep])
 
   const handleSummaryDone = useCallback(() => {
-    // Passive/unscored steps never contributed a real answer, so they're excluded
-    // from the average — otherwise a lesson padded with theory steps would look
-    // like it scored higher than the learner's actual graded performance.
-    const scored = results.filter((r) => r.evaluation_valid !== false && !r.unscored)
-    const avgScore =
-      scored.length > 0
-        ? Math.round(scored.reduce((s, r) => s + r.score, 0) / scored.length)
-        // Nothing in this lesson was gradable (e.g. a pure-theory lesson) —
-        // full credit, since there was nothing to get wrong.
-        : 100
-    onComplete(avgScore, totalXP)
+    onComplete(computeAvgScore(results), totalXP)
   }, [results, totalXP, onComplete])
+
+  // Fires the durable completion write the INSTANT the lesson reaches its
+  // completed state — i.e. as soon as `phase` becomes 'summary' — rather than
+  // waiting for the user to click "Continue Learning" on the celebration
+  // screen. A learner who answers the final question and immediately closes
+  // the tab must not lose that completion: the request needs to already be
+  // in flight before any button click could happen. Guarded by a ref (not
+  // state) so it fires exactly once per attempt and never re-fires on an
+  // unrelated re-render; `onRetry` below resets the guard for a genuine retry.
+  const lessonFinishedFiredRef = useRef(false)
+  useEffect(() => {
+    if (phase !== 'summary') return
+    if (lessonFinishedFiredRef.current) return
+    lessonFinishedFiredRef.current = true
+    onLessonFinished?.(computeAvgScore(results), totalXP)
+    // Intentionally NOT depending on `results`/`totalXP` beyond this one fire —
+    // they're stable by the time `phase` flips to 'summary' (see call sites of
+    // advanceStep), and re-running this effect on their identity is unwanted.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase])
 
   // ── Level-up overlay ───────────────────────────────────────────────────────
   if (showLevelUp && levelUpData) {
@@ -518,6 +546,7 @@ export function LessonPlayer({
         totalXP={totalXP}
         onContinue={handleSummaryDone}
         onRetry={() => {
+          lessonFinishedFiredRef.current = false
           setResults([])
           setTotalXP(0)
           setDynamicSteps(lesson.steps)

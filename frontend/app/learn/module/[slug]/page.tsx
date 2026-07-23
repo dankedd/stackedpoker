@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -44,21 +45,27 @@ const TYPE_LABEL: Record<string, string> = {
 
 // ── Lesson card ───────────────────────────────────────────────────────────────
 
+type LessonStatus = "not_started" | "in_progress" | "completed";
+
 function LessonCard({
   lesson,
   idx,
-  complete,
+  status,
 }: {
   lesson: Lesson;
   idx: number;
-  complete: boolean;
+  status: LessonStatus;
 }) {
+  const complete = status === "completed";
+  const inProgress = status === "in_progress";
   return (
     <Link href={`/learn/lesson/${lesson.slug}`} className="group block">
       <div className={cn(
         "flex items-center gap-4 rounded-2xl border px-5 py-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md",
         complete
           ? "border-emerald-500/20 bg-gradient-to-r from-emerald-950/25 via-card/70 to-card/60 hover:border-emerald-500/35 hover:shadow-emerald-900/15"
+          : inProgress
+          ? "border-violet-500/30 bg-gradient-to-r from-violet-950/20 via-card/70 to-card/60 hover:border-violet-500/45 hover:shadow-violet-900/15"
           : "border-border/40 bg-card/60 hover:border-violet-500/30 hover:bg-violet-500/[0.03] hover:shadow-violet-900/15"
       )}>
         {/* Step number / check */}
@@ -67,7 +74,9 @@ function LessonCard({
             "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 text-sm font-bold tabular-nums",
             complete
               ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400"
-              : "border-violet-500/25 bg-violet-500/5 text-violet-400/80"
+              : inProgress
+              ? "border-violet-500/40 bg-violet-500/10 text-violet-300"
+              : "border-border/25 bg-secondary/5 text-muted-foreground/50"
           )}
         >
           {complete ? (
@@ -88,6 +97,16 @@ function LessonCard({
             >
               {TYPE_LABEL[lesson.lesson_type] ?? lesson.lesson_type}
             </span>
+            {complete && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/25 bg-emerald-500/10 text-emerald-400">
+                ✓ Completed
+              </span>
+            )}
+            {inProgress && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-violet-500/25 bg-violet-500/10 text-violet-300">
+                In progress
+              </span>
+            )}
           </div>
           <p className="font-semibold text-foreground text-sm truncate">{lesson.title}</p>
           <div className="flex items-center gap-3 mt-1">
@@ -102,6 +121,14 @@ function LessonCard({
           </div>
         </div>
 
+        <span
+          className={cn(
+            "shrink-0 text-[11px] font-semibold hidden sm:inline",
+            complete ? "text-emerald-400/70" : inProgress ? "text-violet-300/70" : "text-muted-foreground/30"
+          )}
+        >
+          {complete ? "Review" : inProgress ? "Continue" : "Not started"}
+        </span>
         <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-violet-400 group-hover:translate-x-0.5 transition-all shrink-0" />
       </div>
     </Link>
@@ -112,9 +139,43 @@ function LessonCard({
 
 export default function ModulePage() {
   const { slug } = useParams<{ slug: string }>();
-  const { progress } = useLearnProgress();
+  const { progress, recordModuleComplete } = useLearnProgress();
 
   const module = MODULES_BY_SLUG[slug];
+
+  // Computed unconditionally (module may be undefined) so the effect below —
+  // a hook, which must run in the same order every render — can sit above
+  // the "module not found" early return.
+  const lessons = module
+    ? (LESSONS_BY_MODULE[module.id] ?? []).slice().sort((a, b) => a.sort_order - b.sort_order)
+    : [];
+  const completedLessonIds = new Set<string>(
+    lessons.filter((l) => progress.lessons[l.id]?.status === "completed").map((l) => l.id)
+  );
+
+  // Self-healing module-completion: normally the completion bonus fires the
+  // instant the triggering lesson finishes (see lesson/[slug]/page.tsx), but
+  // that client-side check only sees lessons already reflected in local
+  // state at that moment. Re-checking here means a module that's genuinely
+  // fully complete never permanently misses its one-time bonus just because
+  // the triggering completion happened before all its siblings had hydrated
+  // (e.g. lessons finished across different sessions/devices) — the display
+  // of "complete" itself never depended on this (see journey.ts), only the XP.
+  useEffect(() => {
+    if (!module || progress.loading || !progress.hydrated || progress.isGuest) return;
+    if (lessons.length === 0) return;
+    if (progress.completedModules.has(module.id)) return;
+    const allComplete = lessons.every((l) => completedLessonIds.has(l.id));
+    if (!allComplete) return;
+    recordModuleComplete(module.id, {
+      pathId: module.path_id,
+      moduleXpReward: module.xp_reward,
+      lessonIds: lessons.map((l) => l.id),
+    });
+    // completedLessonIds is a new Set every render; keyed off its content via
+    // progress.lessons instead so this doesn't re-fire needlessly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [module, lessons, progress.lessons, progress.loading, progress.hydrated, progress.isGuest, progress.completedModules, recordModuleComplete]);
 
   if (!module) {
     return (
@@ -134,12 +195,6 @@ export default function ModulePage() {
   }
 
   const path = LEARNING_PATHS.find((p) => p.id === module.path_id);
-  const lessons = (LESSONS_BY_MODULE[module.id] ?? []).sort(
-    (a, b) => a.sort_order - b.sort_order
-  );
-  const completedLessonIds = new Set<string>(
-    lessons.filter((l) => progress.lessons[l.id]?.status === "completed").map((l) => l.id)
-  );
   const firstIncomplete = lessons.find((l) => !completedLessonIds.has(l.id));
 
   // ── Poker Journey roadmap states ─────────────────────────────────────────
@@ -322,7 +377,13 @@ export default function ModulePage() {
                 key={lesson.id}
                 lesson={lesson}
                 idx={i}
-                complete={completedLessonIds.has(lesson.id)}
+                status={
+                  completedLessonIds.has(lesson.id)
+                    ? "completed"
+                    : progress.lessons[lesson.id]?.status === "in_progress"
+                    ? "in_progress"
+                    : "not_started"
+                }
               />
             ))}
 
