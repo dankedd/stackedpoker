@@ -1160,13 +1160,13 @@ export const LESSONS: Lesson[] = [
         id: 'l4-s4',
         type: 'decision_spot',
         concept_ids: ['hand_vs_draw', 'made_hand'],
-        narrative: 'Hero holds J♦T♦ on a A♥9♣4♦ board — an open-ended straight draw, needing an 8 or a King.',
+        narrative: 'Hero holds J♦T♦ on a 9♥8♣4♦ board — an open-ended straight draw. A Queen or Seven completes the straight.',
         decision_spot_question: 'Does Hero have a made hand right now?',
         hero_hand: ['Jd', 'Td'],
-        board: ['Ah', '9c', '4d'],
+        board: ['9h', '8c', '4d'],
         options: [
           {
-            id: 'no', label: 'No — it’s just an unpaired draw right now', quality: 'perfect',
+            id: 'no', label: 'No — Hero currently has J-high with an open-ended straight draw', quality: 'perfect',
             feedback: 'Correct. Hero’s Jack and Ten don’t match any board card, so there’s no pair, no made hand of any kind yet — only the straight draw itself has value here.',
           },
           {
