@@ -12,6 +12,10 @@
 import type { LessonStep, StepResult, ActionQuality } from './types'
 import { levelForXP } from './types'
 import { RANGE_TARGETS } from './ranges'
+import {
+  classifyFlop, dimensionValue, equityBucket, estimateVolatility, turnImpact,
+  type FlopClassification, type VolatilityLevel,
+} from './flopClassifier'
 
 // ── Scoring tables ────────────────────────────────────────────────────────────
 
@@ -69,7 +73,16 @@ export function isScoredStep(step: LessonStep): boolean {
   switch (step.type) {
     case 'concept_reveal':
     case 'defense_lens':
+    case 'flop_scanner':
       return false
+
+    // ── Understanding the Flop (Module 6) — mode-gated ──
+    case 'suit_isomorphism':
+      return step.suit_isomorphism_mode === 'sort'
+    case 'range_board_collision':
+      return !!step.options?.length
+    case 'equity_bucket':
+      return step.equity_bucket_mode !== 'distribution' || !!step.options?.length
 
     // Mode-gated: scored only in their quiz/challenge/classify mode
     case 'combo_visualizer':
@@ -507,6 +520,248 @@ function evalScenarioTree(response: unknown): EvalCore {
   }
 }
 
+// ── Understanding the Flop (Module 6) ─────────────────────────────────────────
+// Ground truth for every drill/autopsy/detective below is derived LIVE from
+// `classifyFlop`/`estimateVolatility` — never a hand-authored answer key — so a
+// content typo can't silently create a wrong-but-unenforced "correct" answer.
+
+/** Shared grading for "tap every item that belongs in the set" interactions
+ *  (straight detective, runout storm, board autopsy): score by how well the
+ *  selected id set matches the correct id set — no combo weighting, every
+ *  item counts equally. */
+function evalIdSetSelection(
+  correctIds: Set<string>,
+  selectedIds: Set<string>,
+  labels: { unit: string; correctFeedback: string; noneFeedback: string },
+): EvalCore {
+  if (correctIds.size === 0) {
+    return selectedIds.size === 0
+      ? { quality: 'perfect', score: 100, feedback: labels.noneFeedback, ev_loss_bb: 0 }
+      : { quality: 'mistake', score: QUALITY_SCORES.mistake, feedback: `${labels.noneFeedback} Nothing here should have been selected.`, ev_loss_bb: 0 }
+  }
+
+  let overlap = 0
+  for (const id of selectedIds) if (correctIds.has(id)) overlap++
+  const precision = selectedIds.size > 0 ? overlap / selectedIds.size : 0
+  const recall = overlap / correctIds.size
+  const f1 = precision + recall > 0 ? (2 * precision * recall) / (precision + recall) : 0
+
+  const missed = correctIds.size - overlap
+  const extra = selectedIds.size - overlap
+  const detail = [
+    missed > 0 && `missed ${missed} ${labels.unit}${missed === 1 ? '' : 's'}`,
+    extra > 0 && `flagged ${extra} extra ${labels.unit}${extra === 1 ? '' : 's'} that don't belong`,
+  ].filter(Boolean).join('; ')
+
+  if (f1 >= 0.999) {
+    return { quality: 'perfect', score: 100, feedback: labels.correctFeedback, ev_loss_bb: 0 }
+  }
+  if (f1 >= 0.75) {
+    return { quality: 'good', score: Math.max(QUALITY_SCORES.good, Math.round(f1 * 100)), feedback: `Close — ${detail}.`, ev_loss_bb: 0 }
+  }
+  if (f1 >= 0.4) {
+    return { quality: 'acceptable', score: Math.max(QUALITY_SCORES.acceptable, Math.round(f1 * 100)), feedback: `Partial credit — ${detail}.`, ev_loss_bb: 0 }
+  }
+  return { quality: 'mistake', score: Math.max(15, Math.round(f1 * 100)), feedback: `Review the board — ${detail}.`, ev_loss_bb: 0 }
+}
+
+function asBoard(cards: string[] | undefined, label: string): [string, string, string] {
+  if (!cards || cards.length !== 3) throw new Error(`${label}: expected exactly 3 cards, got ${cards?.length ?? 0}`)
+  return [cards[0], cards[1], cards[2]]
+}
+
+function evalFlopClassifyDrill(step: LessonStep, response: unknown): EvalCore {
+  const boards = step.flop_classify_drill_boards ?? []
+  const dimension = step.flop_classify_drill_dimension
+  const answers = Array.isArray(response) ? (response as string[]) : []
+
+  if (boards.length === 0 || !dimension) {
+    return { quality: 'good', score: 80, feedback: 'Drill recorded.', ev_loss_bb: 0 }
+  }
+
+  let correctCount = 0
+  const misses: number[] = []
+  boards.forEach((b, i) => {
+    const correct = dimensionValue(classifyFlop(asBoard(b, 'flop_classify_drill')), dimension)
+    if (answers[i] === correct) correctCount++
+    else misses.push(i + 1)
+  })
+
+  const pct = Math.round((correctCount / boards.length) * 100)
+  const detail = misses.length > 0 ? ` (missed board${misses.length > 1 ? 's' : ''} ${misses.join(', ')})` : ''
+
+  if (correctCount === boards.length) {
+    return { quality: 'perfect', score: 100, feedback: `Perfect — ${boards.length}/${boards.length} correct.`, ev_loss_bb: 0 }
+  }
+  if (pct >= 80) {
+    return { quality: 'good', score: pct, feedback: `${correctCount}/${boards.length} correct${detail}.`, ev_loss_bb: 0 }
+  }
+  if (pct >= 60) {
+    return { quality: 'acceptable', score: pct, feedback: `${correctCount}/${boards.length} correct${detail}. Review the ones you missed.`, ev_loss_bb: 0 }
+  }
+  return { quality: 'mistake', score: Math.max(15, pct), feedback: `${correctCount}/${boards.length} correct${detail}. Revisit this classification before continuing.`, ev_loss_bb: 0 }
+}
+
+const VOLATILITY_ORDER: Record<VolatilityLevel, number> = { low: 0, medium: 1, high: 2 }
+
+function evalFlopBuilder(step: LessonStep, response: unknown): EvalCore {
+  const submitted = Array.isArray(response) ? (response as string[]) : []
+  const target = step.flop_builder_target ?? {}
+
+  if (submitted.length !== 3) {
+    return { quality: 'mistake', score: 20, feedback: 'Build a complete 3-card flop before submitting.', ev_loss_bb: 0 }
+  }
+
+  // Structural guard: the interaction must not have changed what it wasn't allowed to.
+  if (step.flop_builder_mode === 'assign_suits' && step.flop_builder_fixed_ranks?.length === 3) {
+    const submittedRanks = submitted.map((c) => c[0].toUpperCase()).sort()
+    const fixedRanks = step.flop_builder_fixed_ranks.map((r) => r.toUpperCase()).sort()
+    if (JSON.stringify(submittedRanks) !== JSON.stringify(fixedRanks)) {
+      return { quality: 'mistake', score: 10, feedback: 'The ranks changed — only the suits are yours to assign here.', ev_loss_bb: 0 }
+    }
+  }
+  if (step.flop_builder_mode === 'swap_one_card' && step.flop_builder_base_board?.length === 3) {
+    const base = step.flop_builder_base_board
+    const changed = submitted.filter((c, i) => c.toLowerCase() !== base[i].toLowerCase()).length
+    if (changed !== 1) {
+      return { quality: 'mistake', score: 10, feedback: 'Exactly one card should change from the starting board.', ev_loss_bb: 0 }
+    }
+  }
+
+  let c: FlopClassification
+  try {
+    c = classifyFlop(asBoard(submitted, 'flop_builder'))
+  } catch {
+    return { quality: 'mistake', score: 10, feedback: 'That board is not valid — check for a duplicate card.', ev_loss_bb: 0 }
+  }
+
+  const misses: string[] = []
+  if (target.structure && c.structure !== target.structure) misses.push(`structure should be ${target.structure}, not ${c.structure}`)
+  if (target.texture && c.texture !== target.texture) misses.push(`texture should be ${target.texture}, not ${c.texture}`)
+  if (target.twoToneSubtype && c.twoToneSubtype !== target.twoToneSubtype) misses.push(`two-tone subtype should be ${target.twoToneSubtype}`)
+  if (target.minStraights != null && c.possibleFloppedStraights.count < target.minStraights) misses.push(`needs at least ${target.minStraights} possible straight${target.minStraights === 1 ? '' : 's'}`)
+  if (target.maxStraights != null && c.possibleFloppedStraights.count > target.maxStraights) misses.push(`needs at most ${target.maxStraights} possible straight${target.maxStraights === 1 ? '' : 's'}`)
+  if (target.volatilityAtLeast || target.volatilityAtMost) {
+    const level = estimateVolatility(asBoard(submitted, 'flop_builder')).level
+    if (target.volatilityAtLeast && VOLATILITY_ORDER[level] < VOLATILITY_ORDER[target.volatilityAtLeast]) misses.push(`needs to be at least ${target.volatilityAtLeast} volatility`)
+    if (target.volatilityAtMost && VOLATILITY_ORDER[level] > VOLATILITY_ORDER[target.volatilityAtMost]) misses.push(`needs to be at most ${target.volatilityAtMost} volatility`)
+  }
+
+  if (misses.length === 0) {
+    return { quality: 'perfect', score: 100, feedback: 'That board hits the target.', ev_loss_bb: 0 }
+  }
+  return { quality: 'mistake', score: Math.max(20, 60 - misses.length * 15), feedback: `Not quite — ${misses.join('; ')}.`, ev_loss_bb: 0 }
+}
+
+function evalStraightDetective(step: LessonStep, response: unknown): EvalCore {
+  const board = asBoard(step.straight_detective_board ?? step.board, 'straight_detective')
+  const correctCombos = classifyFlop(board).possibleFloppedStraights.combos
+  const correctIds = new Set(correctCombos.map((p) => p.join('')))
+  const selectedIds = new Set(Array.isArray(response) ? (response as string[]) : [])
+
+  return evalIdSetSelection(correctIds, selectedIds, {
+    unit: 'straight',
+    correctFeedback:
+      correctIds.size > 0
+        ? `Exactly right — ${correctCombos.map((p) => p.join('-')).join(', ')} complete${correctCombos.length === 1 ? 's' : ''} a straight here.`
+        : 'Correct — this board has no possible flopped straight.',
+    noneFeedback: 'Correct — this board has no possible flopped straight.',
+  })
+}
+
+function evalBoardVolatility(step: LessonStep, response: unknown): EvalCore {
+  if (step.board_volatility_mode === 'compare') {
+    return evalOptionBased(step, response)
+  }
+
+  if (step.board_volatility_mode === 'continuum_sort') {
+    const boards = step.board_volatility_continuum_boards ?? []
+    const order = Array.isArray(response) ? (response as string[]) : []
+    if (boards.length < 2 || order.length !== boards.length) {
+      return { quality: 'mistake', score: 20, feedback: 'Order every board before submitting.', ev_loss_bb: 0 }
+    }
+    const scoreById = new Map(boards.map((b) => [b.id, estimateVolatility(asBoard(b.board, 'board_volatility')).score]))
+    const correctOrder = [...boards].sort((a, b) => (scoreById.get(a.id) ?? 0) - (scoreById.get(b.id) ?? 0)).map((b) => b.id)
+
+    let inversions = 0
+    for (let i = 0; i < order.length; i++) {
+      for (let j = i + 1; j < order.length; j++) {
+        const a = correctOrder.indexOf(order[i])
+        const b = correctOrder.indexOf(order[j])
+        if (a > b) inversions++
+      }
+    }
+    const maxInversions = (order.length * (order.length - 1)) / 2
+    const accuracy = maxInversions > 0 ? 1 - inversions / maxInversions : 1
+    const pct = Math.round(accuracy * 100)
+
+    if (inversions === 0) return { quality: 'perfect', score: 100, feedback: 'That ordering matches — low to high volatility.', ev_loss_bb: 0 }
+    if (accuracy >= 0.75) return { quality: 'good', score: Math.max(QUALITY_SCORES.good, pct), feedback: 'Close — a couple of boards are out of order.', ev_loss_bb: 0 }
+    if (accuracy >= 0.5) return { quality: 'acceptable', score: Math.max(QUALITY_SCORES.acceptable, pct), feedback: 'Roughly right, but several boards are out of order.', ev_loss_bb: 0 }
+    return { quality: 'mistake', score: Math.max(15, pct), feedback: 'This ordering doesn\'t track static-to-dynamic. Review each board\'s texture and straight potential.', ev_loss_bb: 0 }
+  }
+
+  // runout_storm (default)
+  const board = asBoard(step.board_volatility_board ?? step.board, 'board_volatility')
+  const pool = step.board_volatility_storm_pool ?? []
+  const correctIds = new Set(pool.filter((card) => turnImpact(board, card).changesBoard))
+  const selectedIds = new Set(Array.isArray(response) ? (response as string[]) : [])
+
+  return evalIdSetSelection(correctIds, selectedIds, {
+    unit: 'card',
+    correctFeedback: 'Exactly right — those are the turn cards that meaningfully change this board.',
+    noneFeedback: 'Correct — none of these cards meaningfully change this board.',
+  })
+}
+
+function evalEquityBucket(step: LessonStep, response: unknown): EvalCore {
+  if (step.equity_bucket_mode === 'distribution') {
+    return evalOptionBased(step, response)
+  }
+
+  const actualPct = step.equity_bucket_mode === 'scenario' ? step.equity_bucket_scenario_actual ?? 0 : step.equity_bucket_value ?? 0
+  const correctBucket = equityBucket(actualPct)
+  const selected = String(response ?? '')
+  const explanation = step.equity_bucket_mode === 'scenario' ? step.equity_bucket_scenario_explanation : undefined
+  const BUCKET_LABEL: Record<string, string> = { strong: 'Strong (≥75%)', good: 'Good (50–75%)', weak: 'Weak (33–50%)', trash: 'Trash (<33%)' }
+
+  if (selected === correctBucket) {
+    return {
+      quality: 'perfect',
+      score: 100,
+      feedback: `Correct — ${actualPct}% equity is ${BUCKET_LABEL[correctBucket]}.${explanation ? ` ${explanation}` : ''}`,
+      ev_loss_bb: 0,
+      concept_explanation: explanation,
+    }
+  }
+  return {
+    quality: 'mistake',
+    score: QUALITY_SCORES.mistake,
+    feedback: `Not quite — ${actualPct}% equity is ${BUCKET_LABEL[correctBucket]}, not ${BUCKET_LABEL[selected] ?? selected}.${explanation ? ` ${explanation}` : ''}`,
+    ev_loss_bb: 0,
+    concept_explanation: explanation,
+  }
+}
+
+function evalBoardAutopsy(step: LessonStep, response: unknown): EvalCore {
+  const board = asBoard(step.board_autopsy_board ?? step.board, 'board_autopsy')
+  const claimed = step.board_autopsy_claimed ?? {}
+  const real = classifyFlop(board)
+
+  const correctIds = new Set(
+    Object.entries(claimed)
+      .filter(([key, value]) => dimensionValue(real, key as Parameters<typeof dimensionValue>[1]) !== value)
+      .map(([key]) => key),
+  )
+  const selectedIds = new Set(Array.isArray(response) ? (response as string[]) : [])
+
+  return evalIdSetSelection(correctIds, selectedIds, {
+    unit: 'error',
+    correctFeedback: correctIds.size > 0 ? 'Exactly right — you caught every mistake in this analysis.' : 'Correct — this analysis has no errors.',
+    noneFeedback: 'Correct — this analysis has no errors.',
+  })
+}
+
 // ── Step-type router ──────────────────────────────────────────────────────────
 
 function resolveCore(step: LessonStep, response: unknown): EvalCore {
@@ -741,6 +996,40 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
     // Sizing slider — a decision question over the live risk/pot/SPR feedback
     case 'sizing_slider':
       return evalOptionBased(step, response)
+
+    // ── Understanding the Flop (Module 6) ───────────────────────────────────
+
+    // Flop classify drill — rapid-fire classification, graded live against classifyFlop
+    case 'flop_classify_drill':
+      return evalFlopClassifyDrill(step, response)
+
+    // Suit isomorphism — only reached in 'sort' mode ('explain' is filtered out as unscored)
+    case 'suit_isomorphism':
+      return evalOptionBased(step, response)
+
+    // Flop builder — construct a board that hits a described classification/volatility target
+    case 'flop_builder':
+      return evalFlopBuilder(step, response)
+
+    // Straight detective — tap the hole-card rank pairs that complete a possible straight
+    case 'straight_detective':
+      return evalStraightDetective(step, response)
+
+    // Board volatility — Runout Storm / compare / continuum sort
+    case 'board_volatility':
+      return evalBoardVolatility(step, response)
+
+    // Range × board collision — a decision question over the card-removal-aware visualization
+    case 'range_board_collision':
+      return evalOptionBased(step, response)
+
+    // Equity bucket — threshold/scenario bucket judgment, or a distribution question
+    case 'equity_bucket':
+      return evalEquityBucket(step, response)
+
+    // Board autopsy — flag which fields of a flawed analysis are wrong, graded live against classifyFlop
+    case 'board_autopsy':
+      return evalBoardAutopsy(step, response)
 
     default:
       // Unknown step type — attempt option-based, fall back to punt

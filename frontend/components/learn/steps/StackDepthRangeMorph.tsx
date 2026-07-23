@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import {
@@ -10,6 +10,7 @@ import {
 import { THREEBET_DEEP, THREEBET_MEDIUM, THREEBET_SHALLOW, type ThreebetMatchup } from '@/lib/learn/threebetBaselines'
 import { DEFEND_DEEP, DEFEND_MEDIUM, DEFEND_SHALLOW, type DefendMatchup } from '@/lib/learn/defendBaselines'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
+import { shuffleBySeed } from '@/lib/learn/interactionSafety'
 
 interface StackDepthRangeMorphProps {
   step: LessonStep
@@ -37,7 +38,8 @@ export function StackDepthRangeMorph({ step, onAnswer, disabled = false }: Stack
   const position = step.stack_depth_morph_position ?? 'BTN'
   const dataset = step.stack_depth_morph_dataset ?? 'rfi'
   const world = WORLDS[worldIndex].world
-  const options = step.options ?? []
+  const rawOptions = step.options ?? []
+  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
 
   function handleSelect(optionId: string) {
     if (disabled || selected) return

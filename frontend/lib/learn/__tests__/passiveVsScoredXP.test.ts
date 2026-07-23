@@ -23,7 +23,7 @@ function findStep(id: string): LessonStep {
 }
 
 describe('concept_reveal: passive content never earns XP or a fake score', () => {
-  const step = findStep('c1-s1') // concept_reveal, visual: 'table', authored xp: 2
+  const step = findStep('l1-s1') // concept_reveal, authored xp: 2
 
   it('is classified as unscored', () => {
     expect(isScoredStep(step)).toBe(false)
@@ -49,9 +49,8 @@ describe('concept_reveal: passive content never earns XP or a fake score', () =>
 
 describe('exploration-mode visualizers: no XP merely for exploring', () => {
   it.each([
-    ['position_table explore mode', 'c1-s2'],
-    ['combo_visualizer reveal mode', 'c6-s27'],
-    ['spr_visualizer worlds mode', 'c8-s45'],
+    ['position_table explore mode', 'l2-s2'],
+    ['combo_visualizer reveal mode', 'l5-s7'],
   ])('%s (%s) is unscored and earns 0 XP', (_label, id) => {
     const step = findStep(id)
     expect(isScoredStep(step)).toBe(false)
@@ -62,8 +61,8 @@ describe('exploration-mode visualizers: no XP merely for exploring', () => {
 })
 
 describe('challenge-mode counterparts of the same components: XP awarded when solved correctly', () => {
-  it('position_table quiz mode (c1-s3) is scored, and a correct pick earns full XP', () => {
-    const step = findStep('c1-s3')
+  it('position_table quiz mode (l2-s6) is scored, and a correct pick earns full XP', () => {
+    const step = findStep('l2-s6')
     expect(isScoredStep(step)).toBe(true)
     const correctOptionId = step.options?.find((o) => o.quality === 'perfect')?.id
     expect(correctOptionId).toBeTruthy()
@@ -73,8 +72,8 @@ describe('challenge-mode counterparts of the same components: XP awarded when so
     expect(result.xp_earned).toBe(step.xp)
   })
 
-  it('combo_visualizer quiz mode (c6-s27b) is scored, and answering correctly earns full XP', () => {
-    const step = findStep('c6-s27b')
+  it('combo_visualizer quiz mode (l5-s8) is scored, and answering correctly earns full XP', () => {
+    const step = findStep('l5-s8')
     expect(isScoredStep(step)).toBe(true)
     expect(step.combo_visualizer_correct).toBe(6)
     const result = evaluateStepLocally(step, 6, 0)
@@ -83,11 +82,11 @@ describe('challenge-mode counterparts of the same components: XP awarded when so
     expect(result.xp_earned).toBe(step.xp)
   })
 
-  it('spr_visualizer scenario mode (c8-s43) is scored, and answering correctly earns full XP', () => {
-    const step = findStep('c8-s43')
+  it('spr_visualizer scenario mode (stp-s7) is scored, and answering correctly earns full XP', () => {
+    const step = findStep('stp-s7')
     expect(isScoredStep(step)).toBe(true)
-    expect(step.spr_visualizer_correct).toBe(8)
-    const result = evaluateStepLocally(step, 8, 0)
+    expect(step.spr_visualizer_correct).toBe(2.8)
+    const result = evaluateStepLocally(step, 2.8, 0)
     expect(result.unscored).toBe(false)
     expect(result.xp_earned).toBe(step.xp)
   })

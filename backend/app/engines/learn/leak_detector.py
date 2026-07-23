@@ -45,6 +45,21 @@ FINDING_TO_LEAK: dict[str, tuple[str, str]] = {
     "limping":                    ("limping",              "open_limping_leak"),
     "rake_adjustment":            ("rake_adjustment",      "rake_awareness"),
     "preflop_planning":           ("preflop_planning",     "no_plan_vs_jams"),
+    # Understanding the Flop (Module 6)
+    "flop_classification":       ("flop_classification",  "board_only_thinking"),
+    "flop_structure":            ("flop_structure",       "structure_texture_confusion"),
+    "flop_texture":              ("flop_texture",         "structure_texture_confusion"),
+    "two_tone_subtypes":         ("two_tone_subtypes",    "suit_blindness"),
+    "flop_rank":                 ("flop_rank",             "connectivity_blindness"),
+    "flop_families":             ("flop_families",         "connectivity_blindness"),
+    "flopped_straights":         ("flopped_straights",     "straight_overcounting"),
+    "suit_isomorphism":          ("suit_isomorphism",      "suit_blindness"),
+    "board_volatility":          ("board_volatility",      "dynamic_board_blindness"),
+    "static_dynamic":            ("static_dynamic",        "static_board_panic"),
+    "range_board_interaction":   ("range_board_interaction", "range_amnesia"),
+    "equity_buckets":            ("equity_buckets",        "absolute_hand_strength"),
+    "relative_hand_strength":    ("relative_hand_strength", "absolute_hand_strength"),
+    "runout_awareness":          ("runout_awareness",      "runout_blindness"),
 }
 
 @dataclass

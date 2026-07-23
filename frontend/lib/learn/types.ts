@@ -45,6 +45,16 @@ export type StepType =
   | 'sizing_slider'      // reraise (3-bet/squeeze) sizing slider with live risk/pot/call-cost/SPR feedback
   // ── Defending the Open (Module 5) ──
   | 'defense_lens'       // six tappable factors (opener/price/position/players behind/stack/hand) — the module's reusable framework, unscored
+  // ── Understanding the Flop (Module 6) ──
+  | 'flop_scanner'          // multi-dimension "BoardDNA" panel — config-driven, always unscored explore/reveal
+  | 'flop_classify_drill'   // rapid-fire tap classification over a list of boards, graded live against classifyFlop
+  | 'suit_isomorphism'      // 'explain' = 22,100→1,755 collapse animation (unscored); 'sort' = same-pattern-or-not judgment (options-based)
+  | 'flop_builder'          // assign suits / swap a card to hit a described target classification, validated against classifyFlop/estimateVolatility
+  | 'straight_detective'    // tap the hole-card rank pairs that complete a possible flopped straight
+  | 'board_volatility'      // Runout Storm / static-dynamic compare / continuum sort
+  | 'range_board_collision' // two named ranges + a flop, card-removal-aware made/draw/miss visualization (uses `options` for its question)
+  | 'equity_bucket'         // Strong/Good/Weak/Trash threshold, scenario, and distribution sub-modes
+  | 'board_autopsy'         // a board plus an intentionally-flawed classification; learner flags the wrong fields, graded against classifyFlop
 
 export type ActionQuality = 'perfect' | 'good' | 'acceptable' | 'mistake' | 'punt'
 export type LessonType = 'micro' | 'range_trainer' | 'puzzle_drill' | 'concept_reveal' | 'simulation'
@@ -342,6 +352,79 @@ export interface LessonStep {
     stack?: string
     hand?: string
   }
+  // ── Understanding the Flop (Module 6) ───────────────────────────────────────
+  // Flop scanner — multi-dimension BoardDNA panel. Always unscored; `board` supplies the cards.
+  /** Which classification panels are unlocked/shown, in display order. */
+  flop_scanner_dimensions?: ('structure' | 'texture' | 'two_tone_subtype' | 'highest_rank' | 'rank_family' | 'possible_straights' | 'volatility')[]
+  flop_scanner_prompt?: string
+  // Flop classify drill — one board at a time, tap the correct classification.
+  // Correctness is derived live from `classifyFlop`, never hand-authored.
+  flop_classify_drill_dimension?: import('./flopClassifier').FlopDimensionKey
+  flop_classify_drill_boards?: string[][]
+  flop_classify_drill_prompt?: string
+  // Suit isomorphism — 'explain' unscored animation; 'sort' is a same/different judgment (uses `options`)
+  suit_isomorphism_mode?: 'explain' | 'sort'
+  suit_isomorphism_board_a?: string[]
+  suit_isomorphism_board_b?: string[]
+  suit_isomorphism_prompt?: string
+  // Flop builder — assign suits (fixed ranks) or swap one card (fixed base board) to hit a target.
+  /** 'assign_suits': ranks are fixed, learner picks suits. 'swap_one_card': one card of `flop_builder_base_board` may change. */
+  flop_builder_mode?: 'assign_suits' | 'swap_one_card'
+  /** assign_suits mode: the three fixed ranks, e.g. ['A','K','6']. */
+  flop_builder_fixed_ranks?: string[]
+  /** swap_one_card mode: the starting board; exactly one card may differ in the submission. */
+  flop_builder_base_board?: string[]
+  flop_builder_prompt?: string
+  /** The target the constructed board must satisfy — checked live against `classifyFlop`/`estimateVolatility`. */
+  flop_builder_target?: {
+    structure?: import('./flopClassifier').FlopStructure
+    texture?: import('./flopClassifier').FlopTexture
+    twoToneSubtype?: import('./flopClassifier').TwoToneSubtype
+    minStraights?: number
+    maxStraights?: number
+    volatilityAtLeast?: import('./flopClassifier').VolatilityLevel
+    volatilityAtMost?: import('./flopClassifier').VolatilityLevel
+  }
+  // Straight detective — tap the hole-card rank pairs that complete a possible straight.
+  /** Falls back to `board`. */
+  straight_detective_board?: string[]
+  /** Extra non-answer rank pairs shown as tappable decoys (real misconceptions, not jokes). */
+  straight_detective_decoys?: [string, string][]
+  straight_detective_prompt?: string
+  // Board volatility — Runout Storm / static-dynamic compare / continuum sort.
+  board_volatility_mode?: 'runout_storm' | 'compare' | 'continuum_sort'
+  /** runout_storm mode: falls back to `board`. */
+  board_volatility_board?: string[]
+  /** runout_storm mode: representative turn cards shown as tappable "changes the picture?" options. */
+  board_volatility_storm_pool?: string[]
+  /** compare mode: the two boards being judged (uses `options` for the actual question). */
+  board_volatility_compare_a?: string[]
+  board_volatility_compare_b?: string[]
+  /** continuum_sort mode: boards to order from most static to most dynamic. */
+  board_volatility_continuum_boards?: { id: string; board: string[] }[]
+  board_volatility_prompt?: string
+  // Range × board collision — two named ranges against one flop (uses `options` for the follow-up question)
+  range_board_collision_a?: { label: string; range: string[] }
+  range_board_collision_b?: { label: string; range: string[] }
+  range_board_collision_prompt?: string
+  // Equity bucket — Strong>=75 / Good 50-75 / Weak 33-50 / Trash<33 (exact source thresholds)
+  equity_bucket_mode?: 'threshold' | 'scenario' | 'distribution'
+  /** threshold mode: an abstract equity % value to place into a bucket. */
+  equity_bucket_value?: number
+  /** scenario mode: a hand-derived (combo-counted), auditable equity % — never fabricated. */
+  equity_bucket_scenario_actual?: number
+  equity_bucket_scenario_hero_hand?: string[]
+  /** scenario mode: the combo-counting derivation, shown after the learner answers. */
+  equity_bucket_scenario_explanation?: string
+  /** distribution mode: a range and its precomputed per-hand equity vs a stated opponent range (uses `options` for the actual question). */
+  equity_bucket_distribution_range?: string[]
+  equity_bucket_distribution_data?: Record<string, number>
+  equity_bucket_prompt?: string
+  // Board autopsy — a board plus a flawed classification; learner flags which fields are wrong.
+  // Ground truth is derived live from `classifyFlop`, never hand-authored, by design.
+  board_autopsy_board?: string[]
+  board_autopsy_claimed?: Partial<Record<import('./flopClassifier').FlopDimensionKey, string>>
+  board_autopsy_prompt?: string
   // Visual
   visual?: 'table' | 'range_grid' | 'equity_bar' | 'heatmap' | 'pressure_chart'
   // ── Adaptive system (confidence + remediation) ─────────────────────────────
@@ -1119,6 +1202,47 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: '⛰️',
     category: 'mastery',
     condition: 'Complete the "Defense Room" capstone',
+    xp_bonus: 200,
+    tier: 'gold',
+  },
+  // Understanding the Flop (Module 6)
+  {
+    id: 'board_reader',
+    title: 'Board Reader',
+    description: 'Learned to classify a flop by structure, texture, and rank',
+    icon: '🔍',
+    category: 'learning',
+    condition: 'Complete "The Flop Has a Language" and "Board Structure"',
+    xp_bonus: 75,
+    tier: 'bronze',
+  },
+  {
+    id: 'straight_detective',
+    title: 'Straight Detective',
+    description: 'Correctly identified every possible flopped straight in a set of boards',
+    icon: '🕵️',
+    category: 'performance',
+    condition: 'Perfect score on a Straight Detective challenge',
+    xp_bonus: 75,
+    tier: 'silver',
+  },
+  {
+    id: 'storm_chaser',
+    title: 'Storm Chaser',
+    description: 'Mastered static vs. dynamic board reading',
+    icon: '🌩️',
+    category: 'mastery',
+    condition: 'Complete "Will This Board Stay the Same?"',
+    xp_bonus: 100,
+    tier: 'silver',
+  },
+  {
+    id: 'flop_analyst',
+    title: 'Flop Analyst',
+    description: 'Completed Module 6: Understanding the Flop',
+    icon: '🧪',
+    category: 'mastery',
+    condition: 'Complete the "Flop Laboratory" capstone',
     xp_bonus: 200,
     tier: 'gold',
   },

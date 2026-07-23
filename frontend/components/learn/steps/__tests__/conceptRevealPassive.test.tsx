@@ -26,7 +26,7 @@ function findStep(id: string): LessonStep {
 }
 
 describe('ConceptReveal never renders a graded result screen', () => {
-  const step = findStep('c1-s1')
+  const step = findStep('l1-s1')
 
   it('contains no "Perfect Play" / score / XP copy — only the concept content and a Got it CTA', () => {
     const html = renderToStaticMarkup(<ConceptReveal step={step} onComplete={() => {}} />)
@@ -49,7 +49,7 @@ describe('ConceptReveal never renders a graded result screen', () => {
 
 describe('Empty theory-bar bug: the visual wrapper only renders when there is real visual content', () => {
   it('does NOT render an empty rounded-box wrapper for visual types with no renderer (e.g. "table")', () => {
-    const step = findStep('c1-s1') // visual: 'table' — VisualSection/resolveVisual has no renderer for this
+    const step = findStep('fi-s2') // visual: 'table' — VisualSection/resolveVisual has no renderer for this
     expect(step.visual).toBe('table')
     const html = renderToStaticMarkup(<ConceptReveal step={step} onComplete={() => {}} />)
     // The empty-wrapper bug rendered this exact class combination unconditionally

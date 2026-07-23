@@ -45,6 +45,21 @@ CONCEPT_TO_LESSON: dict[str, str] = {
     "sb_first_in":             "the-small-blind-is-different",
     "range_construction":      "build-the-opening-strategy",
     "preflop_planning":        "build-the-opening-strategy",
+    # Understanding the Flop (Module 6)
+    "flop_classification":     "the-flop-has-a-language",
+    "suit_isomorphism":        "the-flop-has-a-language",
+    "flop_structure":          "board-structure",
+    "flop_texture":            "read-the-suits",
+    "two_tone_subtypes":       "read-the-suits",
+    "flop_rank":               "read-the-ranks",
+    "flop_families":           "read-the-ranks",
+    "flopped_straights":       "read-the-ranks",
+    "board_volatility":        "will-this-board-stay-the-same",
+    "static_dynamic":          "will-this-board-stay-the-same",
+    "runout_awareness":        "will-this-board-stay-the-same",
+    "range_board_interaction": "the-board-doesnt-play-alone",
+    "equity_buckets":          "how-strong-is-strong",
+    "relative_hand_strength":  "how-strong-is-strong",
 }
 
 @dataclass

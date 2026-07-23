@@ -129,36 +129,8 @@ export const ROADMAP_MODULES: LearningModule[] = [
   // `LEARNING_MODULES` in ./curriculum.ts (same pattern Modules 1/2 went through).
 
   // ── Stage 3 — Postflop Foundations ──────────────────────────────────────────
-  {
-    ...ROADMAP_DEFAULTS,
-    id: 'flop-fundamentals-module',
-    path_id: 'intermediate',
-    slug: 'flop-fundamentals-module',
-    title: 'Understanding the Flop',
-    subtitle: 'Learn how the board changes the relationship between two ranges.',
-    description: 'Introduce the foundations of postflop strategy.',
-    learningObjectives: [
-      'Classify boards as dry/wet and static/dynamic',
-      'Identify which range has the advantage on a given flop',
-      'Connect board texture to a first, simple continuation-betting framework',
-    ],
-    difficulty: 'intermediate',
-    stageId: 'postflop-foundations',
-    order: 6,
-    prerequisiteModuleId: 'defending-the-open-module',
-    plannedLessons: [
-      { title: 'Reading Board Texture' },
-      { title: 'Dry vs Wet Boards' },
-      { title: 'Static vs Dynamic Boards' },
-      { title: 'Range Interaction' },
-      { title: 'Range Advantage' },
-      { title: 'Nut Advantage' },
-      { title: 'Who Has the Stronger Range?' },
-      { title: 'Introduction to Continuation Betting' },
-      { title: 'Why We Check' },
-      { title: 'Flop Strategy Lab' },
-    ],
-  },
+  // flop-fundamentals-module has been promoted to real content — see
+  // `LEARNING_MODULES` in ./curriculum.ts (same pattern as Modules 1–5).
   {
     ...ROADMAP_DEFAULTS,
     id: 'betting-checking-module',

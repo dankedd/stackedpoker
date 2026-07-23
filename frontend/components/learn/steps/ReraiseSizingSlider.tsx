@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { calculateCallCost, calculatePotAfterCall, calculateRaiseRisk, computeSPR } from '@/lib/theory/math'
+import { shuffleBySeed } from '@/lib/learn/interactionSafety'
 
 interface ReraiseSizingSliderProps {
   step: LessonStep
@@ -50,7 +51,8 @@ export function ReraiseSizingSlider({ step, onAnswer, disabled = false }: Rerais
     onAnswer(optionId, Date.now() - mountTime.current)
   }
 
-  const options = step.options ?? []
+  const rawOptions = step.options ?? []
+  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">

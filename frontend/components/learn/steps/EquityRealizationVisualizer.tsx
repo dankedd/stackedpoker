@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { calculateSimpleEqR } from '@/lib/theory/math'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
+import { shuffleBySeed } from '@/lib/learn/interactionSafety'
 
 interface EquityRealizationVisualizerProps {
   step: LessonStep
@@ -49,7 +50,8 @@ export function EquityRealizationVisualizer({ step, onAnswer, disabled = false }
   const [selected, setSelected] = useState<string | null>(null)
 
   const mode = step.equity_realization_mode ?? 'meters'
-  const options = step.options ?? []
+  const rawOptions = step.options ?? []
+  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
   const isChallenge = step.equity_realization_correct != null
 
   const [answer, setAnswer] = useState(50)

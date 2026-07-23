@@ -42,6 +42,15 @@ import { MorphologyBuilder } from '@/components/learn/steps/MorphologyBuilder'
 import { BlockerLab } from '@/components/learn/steps/BlockerLab'
 import { ReraiseSizingSlider } from '@/components/learn/steps/ReraiseSizingSlider'
 import { DefenseLens } from '@/components/learn/steps/DefenseLens'
+import { FlopScanner } from '@/components/learn/steps/FlopScanner'
+import { FlopClassifyDrill } from '@/components/learn/steps/FlopClassifyDrill'
+import { SuitIsomorphism } from '@/components/learn/steps/SuitIsomorphism'
+import { FlopBuilder } from '@/components/learn/steps/FlopBuilder'
+import { StraightDetective } from '@/components/learn/steps/StraightDetective'
+import { BoardVolatility } from '@/components/learn/steps/BoardVolatility'
+import { RangeBoardCollision } from '@/components/learn/steps/RangeBoardCollision'
+import { EquityBucket } from '@/components/learn/steps/EquityBucket'
+import { BoardAutopsy } from '@/components/learn/steps/BoardAutopsy'
 import type { ActionQuality } from '@/lib/learn/types'
 import { LevelUpOverlay } from '@/components/learn/LevelUpOverlay'
 import { ConceptTagRow } from '@/components/learn/ConceptPopover'
@@ -56,7 +65,13 @@ type Phase = 'intro' | 'confidence' | 'step' | 'feedback' | 'summary'
 /** Concept ids that name the exact answer to a step quizzing that same concept
  *  (e.g. a step classifying "+EV / 0EV / -EV" tagged with concept_id "positive_ev"
  *  would spoil itself if the tag were shown before answering). */
-const SPOILER_CONCEPT_TAGS = new Set(['positive_ev', 'zero_ev', 'negative_ev', 'first_in'])
+const SPOILER_CONCEPT_TAGS = new Set([
+  'positive_ev', 'zero_ev', 'negative_ev', 'first_in',
+  // Module 4/5 additions — each of these is also used as a literal option id
+  // (or range_bucket category id) on at least one identify-the-term/classify
+  // step, so showing the chip before answering would print the answer.
+  'polarized', 'blockers', 'squeeze', 'rejam', 'domination',
+])
 
 // ── Progress bar ──────────────────────────────────────────────────────────────
 
@@ -277,6 +292,51 @@ function StepRenderer({
 
   if (step.type === 'sizing_slider') {
     return <ReraiseSizingSlider step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
+  }
+
+  // ── Understanding the Flop (Module 6) ─────────────────────────────────────
+
+  if (step.type === 'flop_scanner') {
+    // Always unscored — an inspection tool, not a quiz.
+    return <FlopScanner step={step} onComplete={() => evaluate(null, 0)} />
+  }
+
+  if (step.type === 'flop_classify_drill') {
+    return <FlopClassifyDrill step={step} onAnswer={(answers, ms) => evaluate(answers, ms)} />
+  }
+
+  if (step.type === 'suit_isomorphism') {
+    return (
+      <SuitIsomorphism
+        step={step}
+        onAnswer={(id, ms) => evaluate(id, ms)}
+        onComplete={() => evaluate(null, 0)}
+      />
+    )
+  }
+
+  if (step.type === 'flop_builder') {
+    return <FlopBuilder step={step} onAnswer={(board, ms) => evaluate(board, ms)} />
+  }
+
+  if (step.type === 'straight_detective') {
+    return <StraightDetective step={step} onAnswer={(ids, ms) => evaluate(ids, ms)} />
+  }
+
+  if (step.type === 'board_volatility') {
+    return <BoardVolatility step={step} onAnswer={(response, ms) => evaluate(response, ms)} />
+  }
+
+  if (step.type === 'range_board_collision') {
+    return <RangeBoardCollision step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
+  }
+
+  if (step.type === 'equity_bucket') {
+    return <EquityBucket step={step} onAnswer={(response, ms) => evaluate(response, ms)} />
+  }
+
+  if (step.type === 'board_autopsy') {
+    return <BoardAutopsy step={step} onAnswer={(keys, ms) => evaluate(keys, ms)} />
   }
 
   // Classify-family: board_classify, nut_advantage, blocker_id, range_identify, bluff_pick, reflection_prompt

@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
+import { shuffleBySeed } from '@/lib/learn/interactionSafety'
 
 interface MorphologyBuilderProps {
   step: LessonStep
@@ -37,9 +38,15 @@ export function MorphologyBuilder({ step, onAnswer, disabled = false }: Morpholo
     setSubmitted(false)
   }, [step.id])
 
+  // Declared unconditionally (before the mode branch below) so hook order
+  // never depends on `mode` — this component instance persists across
+  // consecutive morphology_builder steps regardless of their mode.
+  const rawOptions = step.options ?? []
+  const shuffledOptions = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
+
   if (mode === 'classify') {
     const range = step.morphology_builder_range ?? []
-    const options = step.options ?? []
+    const options = shuffledOptions
 
     function handleSelect(optionId: string) {
       if (disabled || classifySelected) return
