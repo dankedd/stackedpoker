@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { calculateSimpleEqR } from '@/lib/theory/math'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { shuffleBySeed, bindVisualOptions } from '@/lib/learn/interactionSafety'
 
 interface EquityRealizationVisualizerProps {
   step: LessonStep
@@ -53,6 +53,15 @@ export function EquityRealizationVisualizer({ step, onAnswer, disabled = false }
   const rawOptions = step.options ?? []
   const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
   const isChallenge = step.equity_realization_correct != null
+
+  // 'card_compare': when every hand names the option that identifies it, bind hand +
+  // option into one clickable unit so the visual and its answer can never separate —
+  // see interactionSafety.bindVisualOptions. Falls back to the legacy separate
+  // visual-row + option-list rendering for conceptual (non-per-hand) questions.
+  const boundHands = useMemo(() => {
+    if (mode !== 'card_compare' || !step.equity_realization_hands) return null
+    return bindVisualOptions(step.equity_realization_hands, rawOptions, step.id)
+  }, [mode, step.equity_realization_hands, rawOptions, step.id])
 
   const [answer, setAnswer] = useState(50)
   const [sprValue, setSprValue] = useState(6)
@@ -142,7 +151,44 @@ export function EquityRealizationVisualizer({ step, onAnswer, disabled = false }
         </div>
       )}
 
-      {mode === 'card_compare' && step.equity_realization_hands && (
+      {mode === 'card_compare' && boundHands && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {boundHands.map(({ visual: h, option: opt }) => {
+            const isSelected = selected === opt.id
+            const hasSelected = selected !== null
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                disabled={disabled || (hasSelected && !isSelected)}
+                onClick={() => handleSelect(opt.id)}
+                className={cn(
+                  'w-full rounded-2xl border p-4 text-center space-y-2 transition-all duration-150 active:scale-[0.97] overflow-hidden',
+                  isSelected
+                    ? 'border-violet-500/50 bg-violet-500/15 shadow-lg shadow-violet-900/20'
+                    : hasSelected
+                    ? 'border-border/20 bg-secondary/15 opacity-50 cursor-default'
+                    : [
+                        'border-border/40 bg-card/60',
+                        'hover:bg-secondary/40 hover:border-violet-500/30 hover:shadow-lg hover:shadow-violet-900/10',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40',
+                      ].join(' ')
+                )}
+              >
+                <p className={cn('text-xs font-bold', isSelected ? 'text-violet-200' : 'text-foreground')}>{h.label}</p>
+                <div className="flex items-center justify-center gap-1.5">
+                  {h.cards.map((c, j) => <PlayingCardMini key={j} card={c} size="md" />)}
+                </div>
+                <p className={cn('text-[11px] font-semibold pt-1', isSelected ? 'text-violet-300' : 'text-muted-foreground/50')}>
+                  Select {h.label}
+                </p>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {mode === 'card_compare' && !boundHands && step.equity_realization_hands && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {step.equity_realization_hands.map((h, i) => (
             <div key={i} className="rounded-2xl border border-border/40 bg-card/60 p-4 text-center space-y-2">
@@ -213,7 +259,7 @@ export function EquityRealizationVisualizer({ step, onAnswer, disabled = false }
             {submitted ? 'Submitted' : `Lock in ${answer}%`}
           </button>
         </div>
-      ) : options.length > 0 ? (
+      ) : boundHands ? null : options.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           {options.map((opt) => {
             const isSelected = selected === opt.id

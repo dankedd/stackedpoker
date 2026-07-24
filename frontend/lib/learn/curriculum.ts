@@ -1616,8 +1616,8 @@ export const LESSONS: Lesson[] = [
         // Illustrative, tightened-down opening range (not the app's real UTG baseline —
         // that exact range is a later graded range_build target in Module 3/4, so this
         // lesson never shows it in full before the learner is asked to construct it).
-        range_compare_a: { label: 'A tight, cautious opening range (illustrative)', range: ['AA', 'KK', 'QQ', 'JJ', 'TT', 'AKs', 'AKo', 'AQs'] },
-        range_compare_b: { label: 'BB’s real calling range vs a BTN open', range: RANGE_TARGETS.BB_defend_vs_BTN_100bb },
+        range_compare_a: { label: 'A tight, cautious opening range (illustrative)', range: ['AA', 'KK', 'QQ', 'JJ', 'TT', 'AKs', 'AKo', 'AQs'], option_id: 'tight' },
+        range_compare_b: { label: 'BB’s real calling range vs a BTN open', range: RANGE_TARGETS.BB_defend_vs_BTN_100bb, option_id: 'bb' },
         range_compare_prompt: 'Which range is wider?',
         options: [
           {
@@ -1992,8 +1992,8 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['range_thinking', 'range_morphology'],
         // Illustrative early-position range — not the app's real UTG baseline, which is
         // a later graded range_build target in Module 3/4.
-        range_compare_a: { label: 'A tight, early-position opening range (illustrative)', range: ['AA', 'KK', 'QQ', 'JJ', 'TT', 'AKs', 'AKo', 'AQs'] },
-        range_compare_b: { label: 'BB defending range vs a BTN open', range: RANGE_TARGETS.BB_defend_vs_BTN_100bb },
+        range_compare_a: { label: 'A tight, early-position opening range (illustrative)', range: ['AA', 'KK', 'QQ', 'JJ', 'TT', 'AKs', 'AKo', 'AQs'], option_id: 'early' },
+        range_compare_b: { label: 'BB defending range vs a BTN open', range: RANGE_TARGETS.BB_defend_vs_BTN_100bb, option_id: 'bb' },
         range_compare_prompt: 'Which range is wider?',
         options: [
           {
@@ -2486,10 +2486,12 @@ export const LESSONS: Lesson[] = [
         range_compare_a: {
           label: 'Range A — wide, lots of weaker hands',
           range: ['AA','KK','QQ','JJ','TT','99','88','77','66','55','44','33','22','AKs','AKo','AQs','AQo','AJs','AJo','ATs','KQs','KQo','A9s','A8s','A5s','A4s','A3s','A2s','76s','65s','54s'],
+          option_id: 'range_a',
         },
         range_compare_b: {
           label: 'Range B — narrow, mostly premium hands',
           range: ['AA', 'KK', 'QQ', 'JJ', 'AKs', 'AKo', 'AQs'],
+          option_id: 'range_b',
         },
         range_compare_prompt: "Against which range does Hero's A-K have MORE equity?",
         options: [
@@ -2520,10 +2522,12 @@ export const LESSONS: Lesson[] = [
         range_compare_a: {
           label: 'CO range (opens)',
           range: ['AA','KK','QQ','JJ','TT','99','88','77','66','55','44','33','22','AKs','AKo','AQs','AQo','AJs','AJo','ATs','ATo','KQs','KQo','KJs','KJo','KTs','QJs','QJo','QTs','JTs','A9s','A8s','A7s','A6s','A5s','A4s','A3s','A2s','K9s','Q9s','J9s','T9s','98s','87s','76s','65s','54s'],
+          option_id: 'co',
         },
         range_compare_b: {
           label: 'BB range (defends)',
           range: ['22','33','44','55','66','77','88','99','TT','JJ','QQ','AJo','ATo','A9s','A8s','A7s','A6s','A5s','A4s','A3s','A2s','KTo','K9s','K8s','QTo','Q9s','J9s','J8s','T9s','T8s','98s','97s','87s','76s','65s','54s','43s','KQo','KJo','QJo','JTo'],
+          option_id: 'bb',
         },
         range_compare_prompt: 'Whose range gains more equity on this broadway-heavy flop?',
         options: [
@@ -2920,10 +2924,12 @@ export const LESSONS: Lesson[] = [
         range_compare_a: {
           label: 'Range A — many weak hands',
           range: ['A9o','A8o','A7o','A6o','A5o','A4o','A3o','A2o','K9o','K8o','Q9o','J9o','T9o','98o','87o','76o','65o','54o','A2s','A3s','A4s','A5s','76s','65s'],
+          option_id: 'range_a',
         },
         range_compare_b: {
           label: 'Range B — many strong hands',
           range: ['AA', 'KK', 'QQ', 'JJ', 'TT', 'AKs', 'AKo', 'AQs', 'AQo', 'KQs'],
+          option_id: 'range_b',
         },
         range_compare_prompt: 'Where should Hero expect MORE fold equity?',
         options: [
@@ -3083,8 +3089,8 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['suitedness_realization'],
         equity_realization_mode: 'card_compare',
         equity_realization_hands: [
-          { label: 'A♠5♠ (suited)', cards: ['As', '5s'] },
-          { label: 'A♠5♦ (offsuit)', cards: ['As', '5d'] },
+          { label: 'A♠5♠ (suited)', cards: ['As', '5s'], option_id: 'suited' },
+          { label: 'A♠5♦ (offsuit)', cards: ['As', '5d'], option_id: 'offsuit' },
         ],
         equity_realization_prompt: 'Which hand generally has better postflop equity realization?',
         options: [
@@ -3099,8 +3105,8 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['connectedness_realization'],
         equity_realization_mode: 'card_compare',
         equity_realization_hands: [
-          { label: 'Q♣7♦ (disconnected)', cards: ['Qc', '7d'] },
-          { label: '9♠8♠ (connected, suited)', cards: ['9s', '8s'] },
+          { label: 'Q♣7♦ (disconnected)', cards: ['Qc', '7d'], option_id: 'disconnected' },
+          { label: '9♠8♠ (connected, suited)', cards: ['9s', '8s'], option_id: 'connected' },
         ],
         equity_realization_prompt: 'Which hand can interact profitably with more boards, through straight draws, backdoors, and strong runouts?',
         options: [
@@ -4997,8 +5003,8 @@ export const LESSONS: Lesson[] = [
         type: 'range_compare',
         concept_ids: ['range_vs_range', 'opener_range_strength'],
         narrative: 'Two 100bb opening ranges from the same 6-max game — one from UTG, one from BTN.',
-        range_compare_a: { label: 'UTG opens (~15%)', range: RANGE_TARGETS.UTG_open_100bb },
-        range_compare_b: { label: 'BTN opens (~40%)', range: RANGE_TARGETS.BTN_open_100bb },
+        range_compare_a: { label: 'UTG opens (~15%)', range: RANGE_TARGETS.UTG_open_100bb, option_id: 'utg' },
+        range_compare_b: { label: 'BTN opens (~40%)', range: RANGE_TARGETS.BTN_open_100bb, option_id: 'btn' },
         range_compare_prompt: 'Which range contains more marginal, speculative hands a 3-bet can profitably attack?',
         ask_confidence: true,
         options: [
@@ -7621,8 +7627,8 @@ export const LESSONS: Lesson[] = [
         hero_hand: ['As', 'Ts'],
         effective_stack_bb: 100,
         table_size: 6,
-        range_compare_a: { label: 'UTG opens (~15%)', range: RANGE_TARGETS.UTG_open_100bb },
-        range_compare_b: { label: 'CO opens (~25%)', range: RANGE_TARGETS.CO_open_100bb },
+        range_compare_a: { label: 'UTG opens (~15%)', range: RANGE_TARGETS.UTG_open_100bb, option_id: 'utg' },
+        range_compare_b: { label: 'CO opens (~25%)', range: RANGE_TARGETS.CO_open_100bb, option_id: 'co' },
         range_compare_prompt: 'In which scenario should Hero generally continue more aggressively?',
         ask_confidence: true,
         options: [
@@ -7651,8 +7657,8 @@ export const LESSONS: Lesson[] = [
             concept_ids: ['opener_range_strength'],
             narrative: 'Try a starker contrast first: Hero holds 7♠6♠. Scenario A: UTG opens. Scenario B: BTN opens.',
             hero_hand: ['7s', '6s'],
-            range_compare_a: { label: 'UTG opens (~15%)', range: RANGE_TARGETS.UTG_open_100bb },
-            range_compare_b: { label: 'BTN opens (~40%)', range: RANGE_TARGETS.BTN_open_100bb },
+            range_compare_a: { label: 'UTG opens (~15%)', range: RANGE_TARGETS.UTG_open_100bb, option_id: 'utg' },
+            range_compare_b: { label: 'BTN opens (~40%)', range: RANGE_TARGETS.BTN_open_100bb, option_id: 'btn' },
             range_compare_prompt: 'In which scenario does 76s have a much easier time continuing?',
             options: [
               { id: 'btn', label: 'Scenario B — vs the BTN open', quality: 'perfect', feedback: 'Right — 76s struggles badly against UTG\'s tight, strong range but is a comfortable continue against BTN\'s wide, weak one.' },
@@ -8245,8 +8251,8 @@ export const LESSONS: Lesson[] = [
         table_size: 6,
         hero_position: 'BB',
         effective_stack_bb: 100,
-        range_compare_a: { label: 'vs UTG open', range: entriesToHandList(DEFEND_DEEP.BB_vs_UTG) },
-        range_compare_b: { label: 'vs BTN open', range: entriesToHandList(DEFEND_DEEP.BB_vs_BTN) },
+        range_compare_a: { label: 'vs UTG open', range: entriesToHandList(DEFEND_DEEP.BB_vs_UTG), option_id: 'vs_utg' },
+        range_compare_b: { label: 'vs BTN open', range: entriesToHandList(DEFEND_DEEP.BB_vs_BTN), option_id: 'vs_btn' },
         range_compare_prompt: 'Which range is Hero defending wider?',
         ask_confidence: true,
         options: [

@@ -276,15 +276,22 @@ export interface LessonStep {
   /** 'meters' / 'calculator': raw equity vs actual pot capture. */
   equity_realization_raw?: number
   equity_realization_captured?: number
-  /** 'card_compare': two hands (each a 2-card array) shown side-by-side. */
-  equity_realization_hands?: { label: string; cards: string[] }[]
+  /** 'card_compare': two hands (each a 2-card array) shown side-by-side.
+   *  `option_id`: when set on every hand AND it matches an id in `options`, the hand
+   *  and its option are rendered as one bound, fully-clickable unit (see
+   *  `interactionSafety.bindVisualOptions`) instead of a separate visual row plus an
+   *  independently-shuffled option list — the pairing is what stops the anti-position-bias
+   *  shuffle from separating an answer button from the visual it describes. */
+  equity_realization_hands?: { label: string; cards: string[]; option_id?: string }[]
   equity_realization_prompt?: string
   /** 'calculator' numeric question target (e.g. resulting capture %). */
   equity_realization_correct?: number
   equity_realization_tolerance?: number
   // Range compare — two 13x13 grids side-by-side (uses `options` for the follow-up question)
-  range_compare_a?: { label: string; range: string[] }
-  range_compare_b?: { label: string; range: string[] }
+  /** `option_id`: when BOTH sides set this to a matching id in `options`, the grid and its
+   *  option are rendered as one bound, fully-clickable unit — see `equity_realization_hands`. */
+  range_compare_a?: { label: string; range: string[]; option_id?: string }
+  range_compare_b?: { label: string; range: string[]; option_id?: string }
   range_compare_prompt?: string
   // ── Preflop Foundation (Module 3) ──────────────────────────────────────────
   // Players behind — slider over opponents still left to act

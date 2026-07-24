@@ -7,6 +7,8 @@
  * for the class of bug this exists to prevent.
  */
 
+import type { StepOption } from './types'
+
 // ── Deterministic seeded RNG ──────────────────────────────────────────────────
 // Never Math.random(): these values must be stable across server render and
 // client hydration (and reproducible in tests), or they'd cause hydration
@@ -76,6 +78,49 @@ export function shuffleBySeed<T>(items: readonly T[], seed: string): T[] {
     ;[arr[i], arr[j]] = [arr[j], arr[i]]
   }
   return arr
+}
+
+// ── Visual ↔ answer binding ────────────────────────────────────────────────────
+// Global rule (see the Module "visual comparison" UX audit): whenever a question
+// shows two or more visual alternatives — hole cards, 13x13 ranges, boards, bet
+// sizes, etc. — side by side, the selection control for each one must be
+// physically attached to the visual it represents. `shuffleBySeed` alone is not
+// enough for this: shuffling `options` independently of the visuals it describes
+// is exactly how a visual and its answer can end up swapped. Callers that render
+// a fixed set of visuals next to a separately-shuffled option list MUST route
+// through `bindVisualOptions` instead of shuffling `options` directly whenever
+// each visual has a specific, single option that identifies it.
+
+export interface VisualOptionUnit<V> {
+  visual: V
+  option: StepOption
+}
+
+/**
+ * Pairs each visual with the `StepOption` its `option_id` points to, then
+ * shuffles those `{ visual, option }` units as single, atomic pairs — never
+ * `options` alone — so the anti-position-bias shuffle can't separate an answer
+ * button from the visual object it describes.
+ *
+ * Returns `null` (never a partial pairing) when any visual lacks an `option_id`
+ * or its match can't be found, so callers can fall back to legacy unbound
+ * rendering for conceptual questions where the options aren't a 1:1 pick of
+ * "which visual is X" (e.g. a multi-sentence rationale spanning both visuals).
+ */
+export function bindVisualOptions<V extends { option_id?: string }>(
+  visuals: readonly V[],
+  options: readonly StepOption[],
+  seed: string,
+): VisualOptionUnit<V>[] | null {
+  if (visuals.length === 0 || options.length === 0) return null
+  const units: VisualOptionUnit<V>[] = []
+  for (const visual of visuals) {
+    if (!visual.option_id) return null
+    const option = options.find((o) => o.id === visual.option_id)
+    if (!option) return null
+    units.push({ visual, option })
+  }
+  return shuffleBySeed(units, seed)
 }
 
 // ── Question-heading alignment ────────────────────────────────────────────────

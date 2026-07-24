@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { shuffleBySeed, bindVisualOptions } from '@/lib/learn/interactionSafety'
 
 interface RangeCompareProps {
   step: LessonStep
@@ -36,6 +36,16 @@ export function RangeCompare({ step, onAnswer, disabled = false }: RangeCompareP
   const heroHand = step.hero_hand ?? []
   const board = step.board ?? []
 
+  // When both grids name the option that identifies them, bind grid + option into one
+  // clickable unit so a "which range is X" answer can never render under the wrong grid —
+  // see interactionSafety.bindVisualOptions. Falls back to the legacy separate
+  // grid-row + option-list rendering for conceptual questions that aren't a direct
+  // per-grid pick (e.g. a question about a trend, or about a single unlabeled range).
+  const boundSides = useMemo(() => {
+    if (!a || !b) return null
+    return bindVisualOptions([a, b], rawOptions, step.id)
+  }, [a, b, rawOptions, step.id])
+
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
       {step.narrative && (
@@ -61,7 +71,42 @@ export function RangeCompare({ step, onAnswer, disabled = false }: RangeCompareP
         </div>
       )}
 
-      {a && (
+      {boundSides ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {boundSides.map(({ visual: side, option: opt }) => {
+            const isSelected = selected === opt.id
+            const hasSelected = selected !== null
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                disabled={disabled || (hasSelected && !isSelected)}
+                onClick={() => handleSelect(opt.id)}
+                className={cn(
+                  'w-full rounded-2xl border p-3 space-y-1.5 text-left transition-all duration-150 active:scale-[0.97] overflow-hidden',
+                  isSelected
+                    ? 'border-violet-500/50 bg-violet-500/15 shadow-lg shadow-violet-900/20'
+                    : hasSelected
+                    ? 'border-border/20 bg-secondary/15 opacity-50 cursor-default'
+                    : [
+                        'border-border/40 bg-card/60',
+                        'hover:bg-secondary/40 hover:border-violet-500/30 hover:shadow-lg hover:shadow-violet-900/10',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40',
+                      ].join(' ')
+                )}
+              >
+                <p className={cn('text-center text-[10px] font-bold uppercase tracking-[0.15em]', isSelected ? 'text-violet-300' : 'text-violet-400/70')}>
+                  {side.label}
+                </p>
+                <PokerRangeGrid range={side.range} />
+                <p className={cn('text-center text-[11px] font-semibold pt-1', isSelected ? 'text-violet-300' : 'text-muted-foreground/50')}>
+                  Select {side.label}
+                </p>
+              </button>
+            )
+          })}
+        </div>
+      ) : a && (
         <div className={cn('grid gap-4', b ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 max-w-sm mx-auto')}>
           <div className="space-y-1.5">
             <p className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-violet-400/70">
@@ -86,7 +131,7 @@ export function RangeCompare({ step, onAnswer, disabled = false }: RangeCompareP
         </div>
       )}
 
-      {options.length > 0 ? (
+      {boundSides ? null : options.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {options.map((opt) => {
             const isSelected = selected === opt.id
