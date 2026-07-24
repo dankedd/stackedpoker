@@ -1,15 +1,39 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { CheckCircle2, XCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
+import { RangeRevealComparison } from '@/components/learn/visuals/RangeRevealComparison'
 import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { diagnoseMorphologyBuild, type MorphologyPanelDiagnostic } from '@/lib/learn/evaluator'
 
 interface MorphologyBuilderProps {
   step: LessonStep
   onAnswer: (response: string | { linear: string[]; polarized: string[] }, timeMs: number) => void
   disabled?: boolean
+}
+
+// Human-readable description of the same boolean facts diagnoseMorphologyBuild already computed —
+// not a second source of truth, just prose over the shared diagnostic.
+function describeLinear(diag: MorphologyPanelDiagnostic): string {
+  if (diag.yourRange.length === 0) return 'Range A needs at least one hand before it has a shape to check.'
+  if (diag.ok) {
+    return 'Your linear range runs straight down from the strongest hand with no gaps — that unbroken top-down order is exactly what "linear" means.'
+  }
+  return 'A linear range has to be an unbroken run starting from the strongest hand in the pool — skipping a stronger hand to include a weaker one breaks the shape. Compare the two grids above to see where your range breaks the run.'
+}
+
+function describePolarized(diag: MorphologyPanelDiagnostic): string {
+  if (diag.yourRange.length === 0) return 'Range B needs at least one hand before it has a shape to check.'
+  if (diag.ok) {
+    return 'Your polarized range keeps top-strength hands and bottom-strength hands while leaving out enough of the middle — the classic "top and bottom, not the middle" shape.'
+  }
+  const unmet = (diag.criteria ?? []).filter((c) => !c.met).map((c) => c.label.toLowerCase())
+  return unmet.length > 0
+    ? `A polarized range needs to: ${unmet.join('; ')}.`
+    : 'Review the checklist above — a polarized range needs top hands, bottom hands, and a skipped middle.'
 }
 
 /**
@@ -28,6 +52,8 @@ export function MorphologyBuilder({ step, onAnswer, disabled = false }: Morpholo
   const [linearSet, setLinearSet] = useState<Set<string>>(new Set())
   const [polarSet, setPolarSet] = useState<Set<string>>(new Set())
   const [submitted, setSubmitted] = useState(false)
+  const [reviewing, setReviewing] = useState(false)
+  const [frozenResponse, setFrozenResponse] = useState<{ linear: string[]; polarized: string[] } | null>(null)
 
   useEffect(() => {
     mountTime.current = Date.now()
@@ -36,6 +62,8 @@ export function MorphologyBuilder({ step, onAnswer, disabled = false }: Morpholo
     setPolarSet(new Set())
     setActiveTarget('linear')
     setSubmitted(false)
+    setReviewing(false)
+    setFrozenResponse(null)
   }, [step.id])
 
   // Declared unconditionally (before the mode branch below) so hook order
@@ -113,13 +141,87 @@ export function MorphologyBuilder({ step, onAnswer, disabled = false }: Morpholo
   }
 
   function handleSubmit() {
-    if (disabled || submitted) return
+    if (disabled || submitted || reviewing) return
+    // Freeze the submission before revealing anything — the reveal below is read-only and the
+    // exact same { linear, polarized } payload is sent to the evaluator once "Continue" is pressed.
+    const frozen = { linear: Array.from(linearSet), polarized: Array.from(polarSet) }
+    setFrozenResponse(frozen)
+    setReviewing(true)
+  }
+
+  function handleContinueFromReview() {
+    if (disabled || submitted || !frozenResponse) return
     setSubmitted(true)
-    onAnswer({ linear: Array.from(linearSet), polarized: Array.from(polarSet) }, Date.now() - mountTime.current)
+    onAnswer(frozenResponse, Date.now() - mountTime.current)
   }
 
   const activeSet = activeTarget === 'linear' ? linearSet : polarSet
   const canSubmit = linearSet.size > 0 && polarSet.size > 0
+
+  if (reviewing && frozenResponse) {
+    const pool = step.morphology_builder_pool ?? []
+    const diagnostics = diagnoseMorphologyBuild(pool, frozenResponse.linear, frozenResponse.polarized)
+    const activeDiag: MorphologyPanelDiagnostic = activeTarget === 'linear' ? diagnostics.linear : diagnostics.polarized
+
+    return (
+      <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-3">
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Here&apos;s how each range you built compares to a reference construction of the intended shape.
+          </p>
+        </div>
+
+        <div className="flex justify-center gap-2">
+          {(['linear', 'polarized'] as const).map((target) => {
+            const isActive = activeTarget === target
+            const diag = target === 'linear' ? diagnostics.linear : diagnostics.polarized
+            return (
+              <button
+                key={target}
+                type="button"
+                onClick={() => setActiveTarget(target)}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wide border transition-all duration-150',
+                  isActive
+                    ? target === 'linear'
+                      ? 'bg-violet-500/20 border-violet-500/40 text-violet-300 shadow-md'
+                      : 'bg-blue-500/20 border-blue-500/40 text-blue-300 shadow-md'
+                    : 'border-border/40 bg-secondary/30 text-muted-foreground/50 hover:text-muted-foreground',
+                )}
+              >
+                {diag.ok ? (
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                ) : (
+                  <XCircle className="h-3.5 w-3.5 text-red-400" />
+                )}
+                {target === 'linear' ? 'Range A — Linear' : 'Range B — Polarized'}
+              </button>
+            )
+          })}
+        </div>
+
+        <RangeRevealComparison
+          yourRange={activeDiag.yourRange}
+          targetRange={activeDiag.targetRange}
+          targetLabel={activeDiag.targetLabel}
+          multipleValid={activeDiag.multipleValid}
+          criteria={activeDiag.criteria}
+          patternExplanation={
+            activeTarget === 'linear' ? describeLinear(activeDiag) : describePolarized(activeDiag)
+          }
+        />
+
+        <button
+          type="button"
+          onClick={handleContinueFromReview}
+          disabled={disabled || submitted}
+          className="group relative w-full inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden bg-gradient-to-r from-violet-600 to-blue-500 disabled:opacity-50"
+        >
+          Continue
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">

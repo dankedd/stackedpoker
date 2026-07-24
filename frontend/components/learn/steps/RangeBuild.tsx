@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { RANGE_TARGETS } from '@/lib/learn/ranges'
-import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
+import { RangeRevealComparison } from '@/components/learn/visuals/RangeRevealComparison'
 
 // 13 ranks in descending order
 const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']
@@ -116,10 +116,10 @@ export function RangeBuild({ step, onAnswer, disabled = false }: RangeBuildProps
       <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
         <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-4">
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Here&apos;s how your range compares to the baseline.
+            Here&apos;s how your range compares to the target range.
           </p>
         </div>
-        <PokerRangeGrid range={targetCombos} mode="diff" comparisonRange={finalCombos} />
+        <RangeRevealComparison yourRange={finalCombos} targetRange={targetCombos} targetLabel="Target range" />
         <button
           type="button"
           onClick={handleContinueFromDiff}

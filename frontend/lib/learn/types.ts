@@ -647,6 +647,26 @@ export interface UserLeak {
 export type EvaluationSource = 'solver' | 'theory_engine' | 'heuristic' | 'failed'
 export type EvaluationConfidence = 'high' | 'medium' | 'low' | null
 
+/**
+ * Structured "what was the correct answer" reveal, computed by evaluator.ts
+ * from the SAME data used to score the response — never a separately
+ * hand-authored key. Populated only when the learner's answer wasn't fully
+ * correct (so a perfect answer never gets an unnecessary comparison), and
+ * omitted entirely for step types whose own component already renders a
+ * richer item-by-item reveal (range_bucket, board_rank_sort, hand_ranking_order,
+ * straight_detective, board_autopsy, range_build, range_heatmap).
+ */
+export interface AnswerReveal {
+  /** Terminology appropriate to the interaction, e.g. "Correct play", "Correct classification", "Correct answer". */
+  term: string
+  /** The correct/preferred answer's display value. If more than one option is equally correct, joined with " or ". */
+  correct: string
+  /** The learner's own answer's display value, when worth contrasting directly against `correct`. */
+  yours?: string
+  /** Other answers the evaluator also accepts as correct, distinct from the primary `correct` value (used for partial-credit "preferred vs also acceptable" cases). */
+  alsoAccepted?: string[]
+}
+
 // ── Step evaluation result from API ──────────────────────────────────────────
 
 export interface StepResult {
@@ -663,6 +683,10 @@ export interface StepResult {
   /** Structured breakdown to render alongside `feedback`, carried through from the
    *  answered option's `feedback_structured_items`. See `StepOption`. */
   structured_points?: { term: string; description: string }[]
+  /** "What was the correct answer" reveal — see `AnswerReveal`. Undefined when the
+   *  answer was fully correct, or when the step's own component already shows a
+   *  richer item-by-item reveal. */
+  answer_reveal?: AnswerReveal
   // Evaluation pipeline metadata — always present from v2 onwards
   evaluation_source: EvaluationSource
   confidence: EvaluationConfidence

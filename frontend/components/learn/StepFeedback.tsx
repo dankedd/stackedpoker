@@ -100,6 +100,33 @@ function StructuredFeedbackList({ items }: { items: { term: string; description:
   )
 }
 
+// ── Correct-answer reveal ─────────────────────────────────────────────────────
+// Sits between the score and the WHY explanation: RESULT -> SCORE -> CORRECT
+// ANSWER -> EXPLANATION. `result.answer_reveal` is only ever populated by
+// evaluator.ts (the same source of truth as scoring) and only when the
+// response wasn't fully correct, so a perfect answer never gets an
+// unnecessary "you were wrong" comparison here.
+
+function AnswerRevealBlock({ term, correct, yours, alsoAccepted }: NonNullable<StepResult['answer_reveal']>) {
+  return (
+    <div className="my-3 rounded-xl border border-border/40 bg-secondary/30 px-4 py-3">
+      {yours && (
+        <p className="text-xs text-muted-foreground/70 mb-1">
+          Your answer: <span className="font-medium text-foreground/70">{yours}</span>
+        </p>
+      )}
+      <p className="text-sm font-semibold text-foreground">
+        {term}: <span className="text-violet-300">{correct}</span>
+      </p>
+      {alsoAccepted && alsoAccepted.length > 0 && (
+        <p className="text-xs text-muted-foreground/60 mt-1">
+          Also accepted: {alsoAccepted.join(' · ')}
+        </p>
+      )}
+    </div>
+  )
+}
+
 // ── Continue button ───────────────────────────────────────────────────────────
 
 function ContinueButton({ onClick, isLast }: { onClick: () => void; isLast: boolean }) {
@@ -180,6 +207,7 @@ export function StepFeedback({ result, onContinue, onRetry, isLast, onPrevious }
             <p className={cn('text-sm font-semibold mb-1', QUALITY_COLORS[result.quality])}>
               Score: {result.score}/100
             </p>
+            {result.answer_reveal && <AnswerRevealBlock {...result.answer_reveal} />}
             <p className="text-sm text-muted-foreground leading-relaxed">{result.feedback}</p>
             {result.structured_points && result.structured_points.length > 0 && (
               <StructuredFeedbackList items={result.structured_points} />

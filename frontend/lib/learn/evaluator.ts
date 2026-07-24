@@ -9,7 +9,7 @@
  * The same action on the same step always produces the same result.
  */
 
-import type { LessonStep, StepResult, ActionQuality } from './types'
+import type { LessonStep, StepResult, ActionQuality, AnswerReveal, ScenarioOutcome } from './types'
 import { levelForXP } from './types'
 import { RANGE_TARGETS } from './ranges'
 import {
@@ -50,6 +50,10 @@ interface EvalCore {
   /** True when this step had nothing to grade (passive/informational content or an
    *  exploration-mode visualizer). See `isScoredStep` for the classification rule. */
   unscored?: boolean
+  /** "What was the correct answer" reveal — see `AnswerReveal` in types.ts. Only
+   *  set when the response wasn't fully correct; left undefined for step types
+   *  whose own component already renders a richer item-by-item reveal. */
+  answer_reveal?: AnswerReveal
 }
 
 /** The single, shared "unscored" sentinel — same shape everywhere so the router
@@ -136,7 +140,56 @@ export function isScoredStep(step: LessonStep): boolean {
 // decision_spot, bet_size_choose, bluff_pick, board_classify, nut_advantage,
 // blocker_id, range_identify, reflection_prompt, mdf_slider (when options present)
 
+/** Terminology for the "correct answer" reveal, per step type — keyed off the
+ *  step's own `type` (never a separate authored field) so it can't drift from
+ *  what resolveCore actually routes to evalOptionBased. Anything not listed
+ *  falls back to the generic "Correct answer". */
+const OPTION_BASED_TERM: Partial<Record<LessonStep['type'], string>> = {
+  decision_spot: 'Correct play',
+  bet_size_choose: 'Correct sizing',
+  bluff_pick: 'Correct play',
+  board_classify: 'Correct classification',
+  range_identify: 'Correct range',
+  reflection_prompt: 'Best answer',
+  action_sequence: 'Correct answer',
+  range_morphology: 'Correct classification',
+  morphology_builder: 'Correct classification',
+  ev_tree: 'Correct decision',
+  sizing_slider: 'Correct sizing',
+  equity_bucket: 'Correct bucket',
+}
+
+/** Every option tied for the highest quality tier actually authored on this step —
+ *  the "correct answer(s)" per the SAME data the score above was computed from.
+ *  Falls back gracefully if no option reaches 'perfect' (rare authoring case):
+ *  whatever tier IS the best available is treated as correct for reveal purposes. */
+function bestOptions(step: LessonStep) {
+  const options = step.options ?? []
+  if (options.length === 0) return []
+  const bestScore = Math.max(...options.map((o) => QUALITY_SCORES[o.quality]))
+  return options.filter((o) => QUALITY_SCORES[o.quality] === bestScore)
+}
+
+/** Builds the `answer_reveal` for an option-based step, or undefined if the
+ *  learner's chosen option is already among the best-tier options (nothing to
+ *  reveal — they got it right, no unnecessary comparison). */
+function optionAnswerReveal(
+  step: LessonStep,
+  chosenOption: { id: string; label: string } | undefined,
+  term: string,
+): AnswerReveal | undefined {
+  const best = bestOptions(step)
+  if (best.length === 0) return undefined
+  if (chosenOption && best.some((o) => o.id === chosenOption.id)) return undefined
+  return {
+    term,
+    correct: best.map((o) => o.label).join(' or '),
+    yours: chosenOption?.label,
+  }
+}
+
 function evalOptionBased(step: LessonStep, response: unknown): EvalCore {
+  const term = OPTION_BASED_TERM[step.type] ?? 'Correct answer'
   const optionId = String(response ?? '')
   const option = step.options?.find((o) => o.id === optionId)
 
@@ -147,6 +200,7 @@ function evalOptionBased(step: LessonStep, response: unknown): EvalCore {
       score: QUALITY_SCORES.mistake,
       feedback: step.wrong_feedback ?? 'Response not recognised. Review the options.',
       ev_loss_bb: 0,
+      answer_reveal: optionAnswerReveal(step, undefined, term),
     }
   }
 
@@ -157,6 +211,7 @@ function evalOptionBased(step: LessonStep, response: unknown): EvalCore {
     ev_loss_bb: option.ev_loss_bb ?? 0,
     concept_triggered: option.concept_triggered,
     structured_points: option.feedback_structured_items,
+    answer_reveal: optionAnswerReveal(step, option, term),
   }
 }
 
@@ -169,12 +224,21 @@ function evalNumeric(opts: {
   correctFeedback: string
   wrongFeedback: string
   unit?: string
+  /** Terminology for the structured reveal, e.g. "Correct MDF", "Correct required equity". */
+  term?: string
 }): EvalCore {
-  const { actual, tolerance, response, correctFeedback, wrongFeedback, unit = '' } = opts
+  const { actual, tolerance, response, correctFeedback, wrongFeedback, unit = '', term = 'Correct answer' } = opts
   const value = Number(response)
+  const correctDisplay = `${actual}${unit}`
 
   if (isNaN(value)) {
-    return { quality: 'punt', score: QUALITY_SCORES.punt, feedback: wrongFeedback, ev_loss_bb: 0 }
+    return {
+      quality: 'punt',
+      score: QUALITY_SCORES.punt,
+      feedback: wrongFeedback,
+      ev_loss_bb: 0,
+      answer_reveal: { term, correct: correctDisplay },
+    }
   }
 
   const delta = Math.abs(value - actual)
@@ -183,6 +247,7 @@ function evalNumeric(opts: {
   // echoing the learner's own answer here is the one reliable place the
   // "your answer vs correct answer" reveal reaches every one of them.
   const yourAnswer = `You answered ${value}${unit}.`
+  const yourDisplay = `${value}${unit}`
 
   if (delta <= tolerance) {
     return { quality: 'perfect', score: 100, feedback: `${yourAnswer} ${correctFeedback}`, ev_loss_bb: 0 }
@@ -193,6 +258,7 @@ function evalNumeric(opts: {
       score: QUALITY_SCORES.good,
       feedback: `${yourAnswer} ${correctFeedback} (close — exact answer is ${actual}${unit})`,
       ev_loss_bb: 0,
+      answer_reveal: { term, correct: correctDisplay, yours: yourDisplay },
     }
   }
   if (delta <= tolerance * 3.5) {
@@ -201,6 +267,7 @@ function evalNumeric(opts: {
       score: QUALITY_SCORES.acceptable,
       feedback: `${yourAnswer} ${wrongFeedback} The exact value is ${actual}${unit}.`,
       ev_loss_bb: 0,
+      answer_reveal: { term, correct: correctDisplay, yours: yourDisplay },
     }
   }
   return {
@@ -208,6 +275,7 @@ function evalNumeric(opts: {
     score: QUALITY_SCORES.mistake,
     feedback: `${yourAnswer} ${wrongFeedback} The correct answer is ${actual}${unit}.`,
     ev_loss_bb: 0,
+    answer_reveal: { term, correct: correctDisplay, yours: yourDisplay },
   }
 }
 
@@ -233,6 +301,7 @@ function evalEquityPredict(step: LessonStep, response: unknown): EvalCore {
       ev_loss_bb: 0,
       concept_triggered,
       concept_explanation,
+      answer_reveal: { term: 'Actual equity', correct: `${actual}%` },
     }
   }
 
@@ -257,6 +326,7 @@ function evalEquityPredict(step: LessonStep, response: unknown): EvalCore {
       ev_loss_bb: 0,
       concept_triggered,
       concept_explanation,
+      answer_reveal: { term: 'Actual equity', correct: `${actual}%`, yours: `${value}%` },
     }
   }
   if (delta <= tolerance * 3.5) {
@@ -267,6 +337,7 @@ function evalEquityPredict(step: LessonStep, response: unknown): EvalCore {
       ev_loss_bb: 0,
       concept_triggered,
       concept_explanation,
+      answer_reveal: { term: 'Actual equity', correct: `${actual}%`, yours: `${value}%` },
     }
   }
   return {
@@ -276,6 +347,7 @@ function evalEquityPredict(step: LessonStep, response: unknown): EvalCore {
     ev_loss_bb: 0,
     concept_triggered,
     concept_explanation,
+    answer_reveal: { term: 'Actual equity', correct: `${actual}%`, yours: `${value}%` },
   }
 }
 
@@ -427,6 +499,84 @@ function evalRangeBucket(step: LessonStep, response: unknown): EvalCore {
 // membership: linear should be a contiguous top-down prefix of the pool; polarized
 // should combine top-third and bottom-third hands while skipping some of the middle.
 
+export interface MorphologyCriterion {
+  label: string
+  met: boolean
+}
+
+export interface MorphologyPanelDiagnostic {
+  ok: boolean
+  yourRange: string[]
+  /** Illustrative reference construction, derived from the exact same rule this panel is graded against. */
+  targetRange: string[]
+  targetLabel: string
+  /** True when the structural rule accepts more than one valid construction — the UI must not present
+   *  `targetRange` as the only correct answer when this is true. */
+  multipleValid: boolean
+  criteria?: MorphologyCriterion[]
+}
+
+export interface MorphologyBuildDiagnostics {
+  linear: MorphologyPanelDiagnostic
+  polarized: MorphologyPanelDiagnostic
+}
+
+/**
+ * Pure structural diagnostics for a morphology_builder 'build' submission — the single source of
+ * truth for both scoring (evalMorphologyBuild below) and the visual reveal (MorphologyBuilder.tsx),
+ * so the reveal can never drift into a second, separately maintained answer key.
+ */
+export function diagnoseMorphologyBuild(
+  pool: string[],
+  linear: string[],
+  polarized: string[],
+): MorphologyBuildDiagnostics {
+  const indexOf = (h: string) => pool.indexOf(h)
+
+  const linearIdx = linear.map(indexOf).filter((i) => i >= 0).sort((a, b) => a - b)
+  const expectedPrefix = Array.from({ length: linearIdx.length }, (_, i) => i)
+  const linearHasGaps = linearIdx.some((v, i) => v !== expectedPrefix[i])
+  const linearOk = linearIdx.length > 0 && !linearHasGaps
+  // For a submission of this size, the only prefix that satisfies the rule above is pool[0..size-1] —
+  // so, unlike `polarized` below, this reference is not "one of several valid" shapes, it's the exact
+  // target implied by how many hands the learner chose.
+  const validLinearCount = linear.filter((h) => indexOf(h) >= 0).length
+  const linearTarget = pool.slice(0, validLinearCount)
+
+  const n = pool.length
+  const topCut = Math.ceil(n / 3)
+  const bottomCut = n - Math.ceil(n / 3)
+  const polarIdx = polarized.map(indexOf).filter((i) => i >= 0)
+  const hasTop = polarIdx.some((i) => i < topCut)
+  const hasBottom = polarIdx.some((i) => i >= bottomCut)
+  const middleIndices = Array.from({ length: n }, (_, i) => i).filter((i) => i >= topCut && i < bottomCut)
+  const hasGap = middleIndices.some((i) => !polarIdx.includes(i))
+  const polarOk = hasTop && hasBottom && hasGap
+  const polarTarget = [...pool.slice(0, topCut), ...pool.slice(bottomCut)]
+
+  return {
+    linear: {
+      ok: linearOk,
+      yourRange: linear,
+      targetRange: linearTarget,
+      targetLabel: 'Reference construction',
+      multipleValid: false,
+    },
+    polarized: {
+      ok: polarOk,
+      yourRange: polarized,
+      targetRange: polarTarget,
+      targetLabel: 'Reference construction',
+      multipleValid: true,
+      criteria: [
+        { label: 'Includes at least one top-strength hand', met: hasTop },
+        { label: 'Includes at least one bottom-strength (weak) hand', met: hasBottom },
+        { label: 'Skips at least one middle-strength hand', met: hasGap },
+      ],
+    },
+  }
+}
+
 function evalMorphologyBuild(step: LessonStep, response: unknown): EvalCore {
   const pool = step.morphology_builder_pool ?? []
   const resp =
@@ -443,22 +593,9 @@ function evalMorphologyBuild(step: LessonStep, response: unknown): EvalCore {
     }
   }
 
-  const indexOf = (h: string) => pool.indexOf(h)
-
-  const linearIdx = linear.map(indexOf).filter((i) => i >= 0).sort((a, b) => a - b)
-  const expectedPrefix = Array.from({ length: linearIdx.length }, (_, i) => i)
-  const linearHasGaps = linearIdx.some((v, i) => v !== expectedPrefix[i])
-  const linearOk = linearIdx.length > 0 && !linearHasGaps
-
-  const n = pool.length
-  const topCut = Math.ceil(n / 3)
-  const bottomCut = n - Math.ceil(n / 3)
-  const polarIdx = polarized.map(indexOf).filter((i) => i >= 0)
-  const hasTop = polarIdx.some((i) => i < topCut)
-  const hasBottom = polarIdx.some((i) => i >= bottomCut)
-  const middleIndices = Array.from({ length: n }, (_, i) => i).filter((i) => i >= topCut && i < bottomCut)
-  const hasGap = middleIndices.some((i) => !polarIdx.includes(i))
-  const polarOk = hasTop && hasBottom && hasGap
+  const { linear: linearDiag, polarized: polarDiag } = diagnoseMorphologyBuild(pool, linear, polarized)
+  const linearOk = linearDiag.ok
+  const polarOk = polarDiag.ok
 
   if (linearOk && polarOk) {
     return {
@@ -502,7 +639,43 @@ interface ScenarioResponse {
   explanation: string
 }
 
-function evalScenarioTree(response: unknown): EvalCore {
+/** Walks every root-to-leaf path in the tree, pairing the option-label trail
+ *  with that leaf's outcome — used only to compute the optimal-line reveal,
+ *  never to re-derive the learner's own score (the component supplies that). */
+function collectScenarioOutcomes(step: LessonStep): { trail: string[]; outcome: ScenarioOutcome }[] {
+  const nodeMap = new Map((step.scenario_nodes ?? []).map((n) => [n.id, n]))
+  const results: { trail: string[]; outcome: ScenarioOutcome }[] = []
+
+  function walk(nodeId: string | undefined, trail: string[]) {
+    if (!nodeId) return
+    const node = nodeMap.get(nodeId)
+    if (!node) return
+    if (node.outcome) {
+      results.push({ trail, outcome: node.outcome })
+      return
+    }
+    for (const child of node.children ?? []) {
+      walk(child.node_id, [...trail, child.option_label])
+    }
+  }
+
+  walk(step.scenario_root, [])
+  return results
+}
+
+/** The best (highest quality tier, then highest EV) line(s) through the tree —
+ *  derived from the exact same leaf outcome data the learner's line is scored
+ *  against, so this can never drift from what "optimal" means for this scenario. */
+function bestScenarioLines(step: LessonStep) {
+  const all = collectScenarioOutcomes(step)
+  if (all.length === 0) return []
+  const bestQualityScore = Math.max(...all.map((o) => QUALITY_SCORES[o.outcome.quality]))
+  const topTier = all.filter((o) => QUALITY_SCORES[o.outcome.quality] === bestQualityScore)
+  const bestEv = Math.max(...topTier.map((o) => o.outcome.ev_bb))
+  return topTier.filter((o) => o.outcome.ev_bb === bestEv)
+}
+
+function evalScenarioTree(step: LessonStep, response: unknown): EvalCore {
   // Accept either the new rich object or the legacy bare quality string
   let quality: ActionQuality
   let explanation: string
@@ -516,11 +689,25 @@ function evalScenarioTree(response: unknown): EvalCore {
     explanation = SCENARIO_FALLBACK_FEEDBACK[quality]
   }
 
+  let answer_reveal: AnswerReveal | undefined
+  if (quality !== 'perfect') {
+    const best = bestScenarioLines(step)
+    if (best.length > 0) {
+      const [first, ...rest] = best
+      answer_reveal = {
+        term: 'Optimal line',
+        correct: first.trail.join(' → '),
+        alsoAccepted: rest.length > 0 ? rest.map((o) => o.trail.join(' → ')) : undefined,
+      }
+    }
+  }
+
   return {
     quality,
     score: QUALITY_SCORES[quality] ?? QUALITY_SCORES.punt,
     feedback: explanation,
     ev_loss_bb: 0,
+    answer_reveal,
   }
 }
 
@@ -574,6 +761,15 @@ function asBoard(cards: string[] | undefined, label: string): [string, string, s
   return [cards[0], cards[1], cards[2]]
 }
 
+/** Human-readable labels for classifyFlop dimension values — display only,
+ *  never involved in comparisons (those always use the raw values). */
+const CLASSIFY_VALUE_LABEL: Record<string, string> = {
+  trips: 'Trips', paired: 'Paired', unpaired: 'Unpaired',
+  monotone: 'Monotone', two_tone: 'Two-Tone', rainbow: 'Rainbow',
+  high_mid: 'High-Mid', mid_low: 'Mid-Low', high_low: 'High-Low', 'n/a': 'N/A',
+  A: 'A', H: 'H (K-Q-J-T)', M: 'M (9-8-7-6)', L: 'L (5-4-3-2)',
+}
+
 function evalFlopClassifyDrill(step: LessonStep, response: unknown): EvalCore {
   const boards = step.flop_classify_drill_boards ?? []
   const dimension = step.flop_classify_drill_dimension
@@ -585,25 +781,34 @@ function evalFlopClassifyDrill(step: LessonStep, response: unknown): EvalCore {
 
   let correctCount = 0
   const misses: number[] = []
+  const correctByIndex = new Map<number, string>()
   boards.forEach((b, i) => {
     const correct = dimensionValue(classifyFlop(asBoard(b, 'flop_classify_drill')), dimension)
+    correctByIndex.set(i, correct)
     if (answers[i] === correct) correctCount++
     else misses.push(i + 1)
   })
 
   const pct = Math.round((correctCount / boards.length) * 100)
   const detail = misses.length > 0 ? ` (missed board${misses.length > 1 ? 's' : ''} ${misses.join(', ')})` : ''
+  const answer_reveal: AnswerReveal | undefined = misses.length > 0 ? {
+    term: 'Correct classification',
+    correct: misses.map((boardNum) => {
+      const value = correctByIndex.get(boardNum - 1) ?? ''
+      return `Board ${boardNum}: ${CLASSIFY_VALUE_LABEL[value] ?? value}`
+    }).join(', '),
+  } : undefined
 
   if (correctCount === boards.length) {
     return { quality: 'perfect', score: 100, feedback: `Perfect — ${boards.length}/${boards.length} correct.`, ev_loss_bb: 0 }
   }
   if (pct >= 80) {
-    return { quality: 'good', score: pct, feedback: `${correctCount}/${boards.length} correct${detail}.`, ev_loss_bb: 0 }
+    return { quality: 'good', score: pct, feedback: `${correctCount}/${boards.length} correct${detail}.`, ev_loss_bb: 0, answer_reveal }
   }
   if (pct >= 60) {
-    return { quality: 'acceptable', score: pct, feedback: `${correctCount}/${boards.length} correct${detail}. Review the ones you missed.`, ev_loss_bb: 0 }
+    return { quality: 'acceptable', score: pct, feedback: `${correctCount}/${boards.length} correct${detail}. Review the ones you missed.`, ev_loss_bb: 0, answer_reveal }
   }
-  return { quality: 'mistake', score: Math.max(15, pct), feedback: `${correctCount}/${boards.length} correct${detail}. Revisit this classification before continuing.`, ev_loss_bb: 0 }
+  return { quality: 'mistake', score: Math.max(15, pct), feedback: `${correctCount}/${boards.length} correct${detail}. Revisit this classification before continuing.`, ev_loss_bb: 0, answer_reveal }
 }
 
 const VOLATILITY_ORDER: Record<VolatilityLevel, number> = { low: 0, medium: 1, high: 2 }
@@ -700,9 +905,14 @@ function evalBoardVolatility(step: LessonStep, response: unknown): EvalCore {
     const pct = Math.round(accuracy * 100)
 
     if (inversions === 0) return { quality: 'perfect', score: 100, feedback: 'That ordering matches — low to high volatility.', ev_loss_bb: 0 }
-    if (accuracy >= 0.75) return { quality: 'good', score: Math.max(QUALITY_SCORES.good, pct), feedback: 'Close — a couple of boards are out of order.', ev_loss_bb: 0 }
-    if (accuracy >= 0.5) return { quality: 'acceptable', score: Math.max(QUALITY_SCORES.acceptable, pct), feedback: 'Roughly right, but several boards are out of order.', ev_loss_bb: 0 }
-    return { quality: 'mistake', score: Math.max(15, pct), feedback: 'This ordering doesn\'t track static-to-dynamic. Review each board\'s texture and straight potential.', ev_loss_bb: 0 }
+
+    const boardById = new Map(boards.map((b) => [b.id, b.board]))
+    const correctOrderDisplay = correctOrder.map((id) => formatCards(boardById.get(id) ?? [])).join(' → ')
+    const reveal: AnswerReveal = { term: 'Correct order (low to high volatility)', correct: correctOrderDisplay }
+
+    if (accuracy >= 0.75) return { quality: 'good', score: Math.max(QUALITY_SCORES.good, pct), feedback: 'Close — a couple of boards are out of order.', ev_loss_bb: 0, answer_reveal: reveal }
+    if (accuracy >= 0.5) return { quality: 'acceptable', score: Math.max(QUALITY_SCORES.acceptable, pct), feedback: 'Roughly right, but several boards are out of order.', ev_loss_bb: 0, answer_reveal: reveal }
+    return { quality: 'mistake', score: Math.max(15, pct), feedback: 'This ordering doesn\'t track static-to-dynamic. Review each board\'s texture and straight potential.', ev_loss_bb: 0, answer_reveal: reveal }
   }
 
   // runout_storm (default)
@@ -711,11 +921,19 @@ function evalBoardVolatility(step: LessonStep, response: unknown): EvalCore {
   const correctIds = new Set(pool.filter((card) => turnImpact(board, card).changesBoard))
   const selectedIds = new Set(Array.isArray(response) ? (response as string[]) : [])
 
-  return evalIdSetSelection(correctIds, selectedIds, {
+  const core = evalIdSetSelection(correctIds, selectedIds, {
     unit: 'card',
     correctFeedback: 'Exactly right — those are the turn cards that meaningfully change this board.',
     noneFeedback: 'Correct — none of these cards meaningfully change this board.',
   })
+  if (core.quality === 'perfect') return core
+  return {
+    ...core,
+    answer_reveal: {
+      term: 'Correct cards',
+      correct: correctIds.size > 0 ? formatCards([...correctIds]) : 'None of these cards',
+    },
+  }
 }
 
 function evalEquityBucket(step: LessonStep, response: unknown): EvalCore {
@@ -744,6 +962,7 @@ function evalEquityBucket(step: LessonStep, response: unknown): EvalCore {
     feedback: `Not quite — ${actualPct}% equity is ${BUCKET_LABEL[correctBucket]}, not ${BUCKET_LABEL[selected] ?? selected}.${explanation ? ` ${explanation}` : ''}`,
     ev_loss_bb: 0,
     concept_explanation: explanation,
+    answer_reveal: { term: 'Correct bucket', correct: BUCKET_LABEL[correctBucket], yours: selected ? (BUCKET_LABEL[selected] ?? selected) : undefined },
   }
 }
 
@@ -913,6 +1132,7 @@ function evalCardsIdentify(step: LessonStep, response: unknown): EvalCore {
       score: QUALITY_SCORES.good,
       feedback: `You found both of your hole cards. ${explanation}`,
       ev_loss_bb: 0,
+      answer_reveal: { term: 'Correct hole cards', correct: formatCards(heroCards) },
     }
   }
   return {
@@ -920,6 +1140,7 @@ function evalCardsIdentify(step: LessonStep, response: unknown): EvalCore {
     score: foundCount > 0 ? QUALITY_SCORES.acceptable : QUALITY_SCORES.mistake,
     feedback: `${foundCount} of ${heroCards.length} correct — your hole cards are ${formatCards(heroCards)}. ${explanation}`,
     ev_loss_bb: 0,
+    answer_reveal: { term: 'Correct hole cards', correct: formatCards(heroCards) },
   }
 }
 
@@ -959,6 +1180,7 @@ function evalBuildFirstHand(step: LessonStep, response: unknown): EvalCore {
       score: QUALITY_SCORES.acceptable,
       feedback: `${overlap} of ${correct.size} correct — Hero's best hand is ${correctList}. ${explanation}`,
       ev_loss_bb: 0,
+      answer_reveal: { term: 'Correct hand', correct: correctList },
     }
   }
   return {
@@ -966,6 +1188,7 @@ function evalBuildFirstHand(step: LessonStep, response: unknown): EvalCore {
     score: Math.max(20, Math.round(accuracy * 100)),
     feedback: `Not quite — Hero's best hand is ${correctList}. ${explanation}`,
     ev_loss_bb: 0,
+    answer_reveal: { term: 'Correct hand', correct: correctList },
   }
 }
 
@@ -1002,6 +1225,7 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
         correctFeedback: `Correct — ${step.mdf_slider_target}%.`,
         wrongFeedback:   `The correct value is ${step.mdf_slider_target}%.`,
         unit: '%',
+        term: 'Correct MDF',
       })
 
     // Range steps
@@ -1020,7 +1244,7 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
 
     // Scenario tree
     case 'scenario_tree':
-      return evalScenarioTree(response)
+      return evalScenarioTree(step, response)
 
     // Position table — quiz mode is option-based (explore mode is filtered out above)
     case 'position_table':
@@ -1036,6 +1260,7 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
           ?? `Correct — ${step.combo_visualizer_correct} combinations.`,
         wrongFeedback:   step.combo_visualizer_wrong_feedback
           ?? `The correct count is ${step.combo_visualizer_correct}.`,
+        term: 'Correct combo count',
       })
 
     // Action sequence — notation translation / classification, option-based
@@ -1052,6 +1277,7 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
           ?? `Correct — SPR is ${step.spr_visualizer_correct}.`,
         wrongFeedback:   step.wrong_feedback
           ?? `SPR = effective stack ÷ pot. Correct answer: ${step.spr_visualizer_correct}.`,
+        term: 'Correct SPR',
       })
 
     // Range morphology — shape/capped-uncapped selection, option-based
@@ -1073,6 +1299,7 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
           wrongFeedback:   step.wrong_feedback
             ?? `Required equity = call ÷ final pot. Answer: ${step.pot_odds_correct}%.`,
           unit: '%',
+          term: 'Correct required equity',
         })
       }
       return evalOptionBased(step, response)
@@ -1093,6 +1320,7 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
           wrongFeedback:   step.wrong_feedback
             ?? `The correct answer is ${step.outs_deck_correct}${step.outs_deck_mode === 'clean_dirty' ? ' clean outs' : '%'}.`,
           unit: step.outs_deck_mode === 'clean_dirty' ? '' : '%',
+          term: step.outs_deck_mode === 'clean_dirty' ? 'Correct clean-out count' : 'Correct outs',
         })
       }
       return evalOptionBased(step, response)
@@ -1113,6 +1341,7 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
           wrongFeedback:   step.wrong_feedback
             ?? `Required fold % = bet ÷ (bet + pot). Answer: ${step.bluff_breakeven_correct}%.`,
           unit: '%',
+          term: 'Correct required fold %',
         })
       }
       return evalOptionBased(step, response)
@@ -1127,6 +1356,7 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
           correctFeedback: step.correct_feedback ?? `Correct — ${step.equity_realization_correct}%.`,
           wrongFeedback:   step.wrong_feedback ?? `The correct answer is ${step.equity_realization_correct}%.`,
           unit: '%',
+          term: 'Correct equity realization',
         })
       }
       return evalOptionBased(step, response)
@@ -1147,6 +1377,7 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
           correctFeedback: step.correct_feedback ?? `Correct — approximately ${step.players_behind_correct}%.`,
           wrongFeedback:   step.wrong_feedback ?? `The illustrative model gives approximately ${step.players_behind_correct}%.`,
           unit: '%',
+          term: 'Correct resistance risk',
         })
       }
       return evalOptionBased(step, response)
@@ -1173,6 +1404,7 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
           correctFeedback: step.correct_feedback ?? `Correct — ${step.open_size_correct}%.`,
           wrongFeedback:   step.wrong_feedback ?? `The correct answer is ${step.open_size_correct}%.`,
           unit: '%',
+          term: 'Correct break-even fold %',
         })
       }
       return evalOptionBased(step, response)
@@ -1311,6 +1543,7 @@ export function evaluateStepLocally(
     concept_triggered: core.concept_triggered,
     concept_explanation: core.concept_explanation,
     structured_points: core.structured_points,
+    answer_reveal: core.answer_reveal,
     xp_earned,
     level_before,
     level_after,
