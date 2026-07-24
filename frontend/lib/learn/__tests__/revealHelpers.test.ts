@@ -93,6 +93,77 @@ describe('computeBucketReveal — acceptable alternates (e.g. bar-s4 style steps
   })
 })
 
+describe('computeBucketReveal — "The Squeeze" (sqz-s5) regression for reported KQo mis-render bug', () => {
+  // sqz-s5: pool ['AA', 'AKo', 'A5s', 'KQo', '76s', '92o']
+  // correct: AA/AKo/A5s -> squeeze, KQo -> call, 76s/92o -> fold
+  // acceptable: KQo -> [squeeze] (a genuine boundary hand — see the companion
+  // decision_spot step sqz-s5b, which grades 3-bet as 'acceptable' quality
+  // for the same KQo spot), 76s -> [call]
+  const step = findStep('sqz-s5')
+
+  // TEST A — every hand answered SQUEEZE (the exact reported reproduction)
+  it('scores AA/AKo/A5s as exact matches, KQo as correct via its acceptable alternate, and 76s/92o as wrong', () => {
+    const allSqueeze = Object.fromEntries((step.range_bucket_pool ?? []).map((h) => [h, 'squeeze']))
+    const reveal = computeBucketReveal(step, allSqueeze)
+
+    const byHand = Object.fromEntries(reveal.map((r) => [r.hand, r]))
+    expect(byHand.AA).toMatchObject({ yourCategoryId: 'squeeze', correctCategoryId: 'squeeze', correct: true })
+    expect(byHand.AKo).toMatchObject({ yourCategoryId: 'squeeze', correctCategoryId: 'squeeze', correct: true })
+    expect(byHand.A5s).toMatchObject({ yourCategoryId: 'squeeze', correctCategoryId: 'squeeze', correct: true })
+    // KQo: submitted 'squeeze' != canonical best 'call', but 'squeeze' is an
+    // authored acceptable alternate, so this must be scored correct — and,
+    // critically, the reveal must still expose 'squeeze' as what was
+    // actually submitted, not silently swap in 'call'.
+    expect(byHand.KQo).toMatchObject({ yourCategoryId: 'squeeze', correctCategoryId: 'call', correct: true })
+    expect(byHand['76s']).toMatchObject({ yourCategoryId: 'squeeze', correctCategoryId: 'fold', correct: false })
+    expect(byHand['92o']).toMatchObject({ yourCategoryId: 'squeeze', correctCategoryId: 'fold', correct: false })
+
+    const correctCount = reveal.filter((r) => r.correct).length
+    expect(correctCount).toBe(4) // AA, AKo, A5s, KQo — not 3 (KQo's squeeze is a validated acceptable alternate) and not 6
+  })
+
+  // TEST B — every hand answered exactly per the canonical answer key
+  it('scores 6/6 when every hand matches range_bucket_correct exactly', () => {
+    const reveal = computeBucketReveal(step, step.range_bucket_correct ?? {})
+    expect(reveal.filter((r) => r.correct)).toHaveLength(6)
+  })
+
+  // TEST C — every hand deliberately wrong (and not an accepted alternate)
+  it('scores 0/6 when every hand is assigned a category that is neither correct nor accepted', () => {
+    // AA/AKo/A5s want 'squeeze' (no accepted alt) -> 'fold' is wrong.
+    // KQo wants 'call', only accepts 'squeeze' -> 'fold' is wrong.
+    // 76s/92o want 'fold', 76s also accepts 'call' -> 'squeeze' is wrong for both.
+    const allWrong = { AA: 'fold', AKo: 'fold', A5s: 'fold', KQo: 'fold', '76s': 'squeeze', '92o': 'squeeze' }
+    const reveal = computeBucketReveal(step, allWrong)
+    expect(reveal.every((r) => !r.correct)).toBe(true)
+  })
+
+  // TEST D — mixed answers, verify every row independently
+  it('grades a mixed submission row by row', () => {
+    const mixed = { AA: 'squeeze', AKo: 'call', A5s: 'squeeze', KQo: 'call', '76s': 'fold', '92o': 'call' }
+    const reveal = computeBucketReveal(step, mixed)
+    const byHand = Object.fromEntries(reveal.map((r) => [r.hand, r]))
+    expect(byHand.AA.correct).toBe(true)
+    expect(byHand.AKo.correct).toBe(false)
+    expect(byHand.A5s.correct).toBe(true)
+    expect(byHand.KQo.correct).toBe(true)
+    expect(byHand['76s'].correct).toBe(true)
+    expect(byHand['92o'].correct).toBe(false)
+  })
+
+  // TEST G — computing the reveal must never mutate the submitted answers
+  it('does not mutate the submitted assignments object', () => {
+    const submitted = Object.freeze({ AA: 'squeeze', AKo: 'squeeze', A5s: 'squeeze', KQo: 'squeeze', '76s': 'squeeze', '92o': 'squeeze' })
+    expect(() => computeBucketReveal(step, submitted)).not.toThrow()
+    // Re-deriving the reveal from the same frozen object must be perfectly
+    // stable — nothing about evaluating it once may change what a second
+    // evaluation sees.
+    const first = computeBucketReveal(step, submitted)
+    const second = computeBucketReveal(step, submitted)
+    expect(second).toEqual(first)
+  })
+})
+
 describe('explainHandNotation', () => {
   it('explains pocket pairs', () => {
     expect(explainHandNotation('QQ')).toMatch(/pocket pair/i)

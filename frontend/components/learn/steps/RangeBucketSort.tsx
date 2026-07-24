@@ -12,6 +12,10 @@ interface RangeBucketSortProps {
   disabled?: boolean
   /** Forces the post-submit reveal phase without requiring a real submission — used by tests. */
   reviewMode?: boolean
+  /** Seeds the frozen submitted assignments when reviewMode is forced — used only by tests to
+   *  exercise the reveal against a specific submission (e.g. an answer that's correct via an
+   *  authored acceptable alternate rather than the canonical best category). */
+  initialAssignments?: Record<string, string>
 }
 
 /**
@@ -20,25 +24,33 @@ interface RangeBucketSortProps {
  * first, then tap hands to assign them to whichever bucket is active.
  *
  * Two phases before `onAnswer` fires: 'assign' (freely reassign, nothing
- * scored yet) -> 'reviewed' (frozen; every hand recolors to its CORRECT
- * category, incorrect hands get a red border + "Your answer: X" caption).
- * `onAnswer` only fires once the learner clicks Continue out of the reviewed
- * state, using the assignments exactly as they stood when "Submit sort" was
- * pressed — the reveal is purely a read of that frozen state, so it can never
- * change what gets scored.
+ * scored yet) -> 'reviewed' (frozen; every hand recolors based on whether its
+ * own submitted category was correct — the badge always shows what the
+ * learner actually picked, never a silently substituted canonical answer;
+ * incorrect hands additionally get a "Correct: X" caption). `onAnswer` only
+ * fires once the learner clicks Continue out of the reviewed state, using the
+ * assignments exactly as they stood when "Submit sort" was pressed — the
+ * reveal is purely a read of that frozen state, so it can never change what
+ * gets scored.
  */
-export function RangeBucketSort({ step, onAnswer, disabled = false, reviewMode = false }: RangeBucketSortProps) {
+export function RangeBucketSort({
+  step,
+  onAnswer,
+  disabled = false,
+  reviewMode = false,
+  initialAssignments,
+}: RangeBucketSortProps) {
   const mountTime = useRef(Date.now())
   const categories = step.range_bucket_categories ?? []
   const pool = step.range_bucket_pool ?? []
 
   const [activeCategory, setActiveCategory] = useState<string>(categories[0]?.id ?? '')
-  const [assignments, setAssignments] = useState<Record<string, string>>({})
+  const [assignments, setAssignments] = useState<Record<string, string>>(initialAssignments ?? {})
   const [phase, setPhase] = useState<'assign' | 'reviewed'>(reviewMode ? 'reviewed' : 'assign')
 
   useEffect(() => {
     mountTime.current = Date.now()
-    setAssignments({})
+    setAssignments(initialAssignments ?? {})
     setActiveCategory(categories[0]?.id ?? '')
     setPhase(reviewMode ? 'reviewed' : 'assign')
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -178,7 +190,12 @@ export function RangeBucketSort({ step, onAnswer, disabled = false, reviewMode =
 
           <div className="space-y-1.5">
             {reveal.map((r) => {
-              const idx = categoryIndex(r.correctCategoryId)
+              // Badge always reflects what the learner actually submitted
+              // (r.yourCategoryId), never the canonical best category — a
+              // hand can be correct via an authored acceptable alternate
+              // (yourCategoryId !== correctCategoryId) and the learner must
+              // still see their own pick, not a silently substituted one.
+              const idx = categoryIndex(r.yourCategoryId)
               const colors = idx >= 0 ? CATEGORY_COLORS[idx % CATEGORY_COLORS.length] : null
               return (
                 <div
@@ -197,11 +214,11 @@ export function RangeBucketSort({ step, onAnswer, disabled = false, reviewMode =
                       colors ? `${colors.chip} text-white` : 'bg-secondary/50 text-foreground',
                     )}
                   >
-                    {categoryLabel(r.correctCategoryId)}
+                    {categoryLabel(r.yourCategoryId)}
                   </span>
                   {!r.correct && (
                     <span className="text-[11px] text-muted-foreground/60">
-                      Your answer: <span className="font-semibold text-red-300">{categoryLabel(r.yourCategoryId)}</span>
+                      Correct: <span className="font-semibold text-emerald-300">{categoryLabel(r.correctCategoryId)}</span>
                     </span>
                   )}
                   <CorrectnessIcon correct={r.correct} className="ml-auto" />

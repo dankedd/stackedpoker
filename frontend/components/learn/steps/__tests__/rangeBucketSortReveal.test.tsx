@@ -74,3 +74,76 @@ describe('RangeBucketSort — reviewMode reveals the correct category for every 
     expect(html).toMatch(/is a pocket pair|is suited|is offsuit/)
   })
 })
+
+// Regression test for a reported bug: selecting SQUEEZE for every hand in
+// "The Squeeze" (sqz-s5) rendered KQo's badge as "CALL" and marked it correct
+// with no indication the learner had actually picked SQUEEZE — because the
+// review row displayed the canonical best category instead of what was
+// submitted. KQo is correct here (squeeze is an authored acceptable
+// alternate for it), but the DOM must show what the learner picked, not a
+// silently substituted answer.
+describe('RangeBucketSort — reveal always displays what was actually submitted, never a substituted answer', () => {
+  const sqzStep = findStep('sqz-s5')
+  const allSqueeze = Object.fromEntries((sqzStep.range_bucket_pool ?? []).map((h) => [h, 'squeeze']))
+  const html = renderToStaticMarkup(
+    <RangeBucketSort step={sqzStep} onAnswer={noop} reviewMode initialAssignments={allSqueeze} />,
+  )
+
+  function rowFor(hand: string): string {
+    const start = html.indexOf(`data-hand="${hand}"`)
+    expect(start).toBeGreaterThanOrEqual(0)
+    const end = html.indexOf('data-hand=', start + 1)
+    return html.slice(start, end === -1 ? undefined : end)
+  }
+
+  it('reports 4 of 6 correct — AA, AKo, A5s exact matches plus KQo via its acceptable alternate — not 3 and not 6', () => {
+    expect(html).toContain('4 of 6 correct')
+  })
+
+  it('KQo: badge shows SQUEEZE (what the learner picked), marked correct, with no "Correct:" caption', () => {
+    const row = rowFor('KQo')
+    expect(row).toContain('data-correct="true"')
+    expect(row).toMatch(/SQUEEZE/i)
+    expect(row).not.toMatch(/>CALL</i)
+    expect(row).not.toContain('Correct:')
+  })
+
+  it('76s: badge shows SQUEEZE (what the learner picked), marked incorrect, with a "Correct: Fold" caption', () => {
+    const row = rowFor('76s')
+    expect(row).toContain('data-correct="false"')
+    expect(row).toMatch(/SQUEEZE/i)
+    expect(row).toContain('Correct:')
+    expect(row).toMatch(/Fold/i)
+  })
+
+  it('92o: badge shows SQUEEZE (what the learner picked), marked incorrect, with a "Correct: Fold" caption', () => {
+    const row = rowFor('92o')
+    expect(row).toContain('data-correct="false"')
+    expect(row).toMatch(/SQUEEZE/i)
+    expect(row).toContain('Correct:')
+    expect(row).toMatch(/Fold/i)
+  })
+
+  it('AA/AKo/A5s: badge shows SQUEEZE, marked correct, no "Correct:" caption', () => {
+    for (const hand of ['AA', 'AKo', 'A5s']) {
+      const row = rowFor(hand)
+      expect(row).toContain('data-correct="true"')
+      expect(row).toMatch(/SQUEEZE/i)
+      expect(row).not.toContain('Correct:')
+    }
+  })
+})
+
+describe('RangeBucketSort — submission is frozen at "Submit sort" time, not re-derived from render state', () => {
+  it('onAnswer receives exactly the assignments injected at submit time, unchanged by review rendering', () => {
+    const sqzStep = findStep('sqz-s5')
+    const submitted = { AA: 'squeeze', AKo: 'squeeze', A5s: 'squeeze', KQo: 'squeeze', '76s': 'squeeze', '92o': 'squeeze' }
+    const onAnswer = vi.fn()
+    // Render the reveal (which reads `submitted` to compute the on-screen breakdown) —
+    // this must never mutate what a subsequent onAnswer(submitted, ...) call would see.
+    renderToStaticMarkup(
+      <RangeBucketSort step={sqzStep} onAnswer={onAnswer} reviewMode initialAssignments={submitted} />,
+    )
+    expect(submitted).toEqual({ AA: 'squeeze', AKo: 'squeeze', A5s: 'squeeze', KQo: 'squeeze', '76s': 'squeeze', '92o': 'squeeze' })
+  })
+})
