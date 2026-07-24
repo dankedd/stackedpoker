@@ -353,8 +353,14 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_ids: ['streets'],
         concept_title: 'The Four Streets',
-        concept_content:
-          'A hand unfolds in four stages, called streets. PREFLOP: only hole cards exist, no community cards yet. FLOP: the first 3 community cards appear together. TURN: a 4th community card is added. RIVER: the 5th and final community card appears. Betting happens on every street.',
+        concept_content: 'A hand unfolds in four stages, called streets.',
+        concept_structured_items: [
+          { term: 'PREFLOP', description: 'Only hole cards exist. No community cards have been dealt yet.' },
+          { term: 'FLOP', description: 'The first 3 community cards are dealt together.' },
+          { term: 'TURN', description: 'The 4th community card is added.' },
+          { term: 'RIVER', description: 'The 5th and final community card is dealt.' },
+        ],
+        concept_note: 'Betting can take place on every street.',
         xp: 3,
       },
       {
@@ -370,16 +376,25 @@ export const LESSONS: Lesson[] = [
         id: 'l1-s8',
         type: 'decision_spot',
         concept_ids: ['winning_the_pot'],
-        narrative: 'Every other player folds on the flop, well before the river is ever dealt.',
-        decision_spot_question: 'Does the last player need to show their cards to win the pot?',
+        narrative:
+          'Hero reaches the flop against two opponents. Hero bets 6 chips. The first opponent folds. The second opponent folds too. Hero is now the only player still in the hand.',
+        decision_spot_question: 'Does Hero need to show their cards to win the pot?',
         options: [
           {
-            id: 'no_reveal', label: 'No — the hand is already over, nothing needs to be shown', quality: 'perfect',
-            feedback: 'Correct. The pot is won the instant only one player remains, on any street — the river and showdown only matter if more than one player is still in the hand at the end.',
+            id: 'no_reveal', label: 'No — once every opponent has folded, Hero wins the pot immediately', quality: 'perfect',
+            feedback: 'Correct. Here, both opponents folded, so the hand ends immediately — Hero wins the pot without showing their cards.',
+            feedback_structured_items: [
+              { term: '1. Fold-out', description: 'Everyone else folds — the last player remaining wins the pot immediately, without showing their cards.' },
+              { term: '2. Showdown', description: 'Two or more players see it through to the end of the river betting — everyone remaining reveals their hand, and the best one wins.' },
+            ],
           },
           {
-            id: 'must_reveal', label: 'Yes — every hand ends in a showdown', quality: 'mistake',
-            feedback: 'A showdown only happens if two or more players make it all the way to the end of the river betting. Everyone folding earlier ends the hand immediately, with no cards shown.',
+            id: 'must_reveal', label: 'Yes — every hand must reach showdown before someone can win', quality: 'mistake',
+            feedback: 'Not quite. Here, both opponents folded, so the hand ends immediately — Hero wins the pot without showing their cards.',
+            feedback_structured_items: [
+              { term: '1. Fold-out', description: 'Everyone else folds — the last player remaining wins the pot immediately, without showing their cards.' },
+              { term: '2. Showdown', description: 'Two or more players see it through to the end of the river betting — everyone remaining reveals their hand, and the best one wins.' },
+            ],
           },
         ],
         xp: 4,
@@ -397,19 +412,25 @@ export const LESSONS: Lesson[] = [
         id: 'l1-s10',
         type: 'decision_spot',
         concept_ids: ['basic_actions'],
-        narrative: 'Nobody has bet yet this street — the action is completely open.',
+        hero_hand: ['Ac', '7c'],
+        board: ['Kd', '8s', '3h'],
+        street: 'flop',
+        narrative:
+          'Hero is heads-up on the flop. Villain acts first and checks — no chips have been bet on this street. It’s now Hero’s turn to act.',
+        decision_spot_question: 'Which action lets Hero continue in the hand without putting any chips into the pot?',
         options: [
           {
-            id: 'call', label: 'Call', quality: 'perfect',
-            feedback: 'Correct — you can only call an amount that already exists. With nothing bet yet, there is nothing to match, so "call" isn’t on the table until someone bets first.',
+            id: 'check', label: 'Check', quality: 'perfect',
+            feedback:
+              'Correct. Since nobody has bet, Hero doesn’t need to match anything to stay in the hand — CHECK passes the action along for free. (BET would put chips in when nobody has bet yet; CALL matches an existing bet, but there isn’t one here; FOLD gives up the hand.)',
           },
           {
-            id: 'check', label: 'Check', quality: 'mistake',
-            feedback: 'Checking is exactly what you do when nobody has bet yet — it’s available right now, not the odd one out.',
+            id: 'call', label: 'Call', quality: 'mistake',
+            feedback: 'Call means matching a bet that already exists. Nothing has been bet this street, so there’s nothing to call — it isn’t on the table yet.',
           },
           {
             id: 'fold', label: 'Fold', quality: 'mistake',
-            feedback: 'You can technically fold at any decision point, even facing no bet — it doesn’t require a previous bet to exist first.',
+            feedback: 'Folding gives up the hand, but Hero isn’t facing any bet that would force that choice. Check keeps the hand alive for free, so there’s no reason to fold here.',
           },
         ],
         xp: 5,
@@ -653,8 +674,11 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_ids: ['action_order'],
         concept_title: 'Two Different Starting Points',
-        concept_content:
-          'Preflop and postflop action don’t start from the same seat. PREFLOP: action starts with the first seat left of the Big Blind (UTG), since the blinds already put money in. POSTFLOP (every street after): action restarts from the first live seat left of the Button.',
+        concept_content: 'Preflop and postflop action don’t start from the same seat.',
+        concept_structured_items: [
+          { term: 'PREFLOP', description: 'Action starts with the first seat left of the Big Blind (UTG), since the blinds already put money in.' },
+          { term: 'POSTFLOP', description: 'Every street after the flop, action restarts from the first live seat left of the Button.' },
+        ],
         xp: 4,
       },
       {
@@ -1612,8 +1636,12 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_ids: ['range_morphology'],
         concept_title: 'Range Shapes',
-        concept_content:
-          'Beyond width, ranges have a SHAPE — how the hand strength inside them is distributed. LINEAR: best hands first, continuing downward without a deliberate gap — "strongest to weakest, no skips." POLARIZED: very strong hands PLUS weak hands/bluffs, with much of the medium-strength region absent — "the top and the bottom, not the middle." CONDENSED: concentrated around medium-strength hands, with the very top and very bottom reduced or missing — "mostly the middle."',
+        concept_content: 'Beyond width, ranges have a shape — how the hand strength inside them is distributed.',
+        concept_structured_items: [
+          { term: 'LINEAR', description: 'Best hands first, continuing downward without a deliberate gap — "strongest to weakest, no skips."' },
+          { term: 'POLARIZED', description: 'Very strong hands plus weak hands/bluffs, with much of the medium-strength region absent — "the top and the bottom, not the middle."' },
+          { term: 'CONDENSED', description: 'Concentrated around medium-strength hands, with the very top and very bottom reduced or missing — "mostly the middle."' },
+        ],
         xp: 4,
       },
       {
@@ -4221,8 +4249,12 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_ids: ['sb_first_in'],
         concept_title: 'The Contradiction',
-        concept_content:
-          'Why can the Small Blind play so many hands despite being out of position after the flop? DISADVANTAGE: OOP on every postflop street. ADVANTAGE: already has 0.5bb invested. ONLY: one opponent — the BB — remains to respond.',
+        concept_content: 'Why can the Small Blind play so many hands despite being out of position after the flop?',
+        concept_structured_items: [
+          { term: 'DISADVANTAGE', description: 'Out of position on every postflop street.' },
+          { term: 'ADVANTAGE', description: 'Already has 0.5bb invested.' },
+          { term: 'ONE OPPONENT', description: 'Only one player — the BB — remains to respond.' },
+        ],
         xp: 6,
       },
       {
@@ -9808,8 +9840,12 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_ids: ['flop_structure'],
         concept_title: 'Structure: Do Any Ranks Repeat?',
-        concept_content:
-          "STRUCTURE looks only at RANKS, never suits. TRIPS: all three cards share a rank (rare — 0.24% of flops). PAIRED: exactly two share a rank. UNPAIRED: all three ranks are different (the large majority of flops).",
+        concept_content: 'Structure looks only at ranks, never suits.',
+        concept_structured_items: [
+          { term: 'TRIPS', description: 'All three cards share a rank (rare — 0.24% of flops).' },
+          { term: 'PAIRED', description: 'Exactly two cards share a rank.' },
+          { term: 'UNPAIRED', description: 'All three ranks are different (the large majority of flops).' },
+        ],
         xp: 2,
       },
       {
@@ -9933,8 +9969,13 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_ids: ['flop_texture'],
         concept_title: 'Texture: Do Any Suits Repeat?',
-        concept_content:
-          "TEXTURE looks only at SUITS, never ranks. MONOTONE: all three cards share a suit. TWO-TONE: exactly two share a suit. RAINBOW: all three suits are different. This is the axis that governs flush potential.",
+        concept_content: 'Texture looks only at suits, never ranks.',
+        concept_structured_items: [
+          { term: 'MONOTONE', description: 'All three cards share a suit.' },
+          { term: 'TWO-TONE', description: 'Exactly two cards share a suit.' },
+          { term: 'RAINBOW', description: 'All three suits are different.' },
+        ],
+        concept_note: 'This is the axis that governs flush potential.',
         xp: 2,
       },
       {
@@ -11794,8 +11835,13 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_ids: ['checking_range', 'range_protection'],
         concept_title: 'Four Roles, Not Two Actions',
-        concept_content:
-          'BET-VALUE: strong enough to want calls from worse. BET-BLUFF: not there yet, but has the equity, blockers, or playability to profit from folds. CHECK-REALIZE: a hand that checks because it would rather see the next card cheaply than build a pot it can\'t comfortably continue in. CHECK-PROTECT: a hand that checks specifically because the checking range itself needs some real strength in it — otherwise an opponent could attack every check profitably, knowing it\'s pure air.',
+        concept_content: 'Every hand in a range plays one of four roles.',
+        concept_structured_items: [
+          { term: 'BET-VALUE', description: 'Strong enough to want calls from worse.' },
+          { term: 'BET-BLUFF', description: 'Not there yet, but has the equity, blockers, or playability to profit from folds.' },
+          { term: 'CHECK-REALIZE', description: 'Checks because it would rather see the next card cheaply than build a pot it can\'t comfortably continue in.' },
+          { term: 'CHECK-PROTECT', description: 'Checks specifically because the checking range itself needs some real strength in it — otherwise an opponent could attack every check profitably, knowing it\'s pure air.' },
+        ],
         xp: 8,
       },
       {

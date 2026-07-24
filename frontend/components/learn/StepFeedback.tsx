@@ -81,6 +81,25 @@ function SourceBadge({ source }: { source: string }) {
   return null
 }
 
+// ── Structured feedback list ──────────────────────────────────────────────────
+// Same convention as ConceptReveal's StructuredTheoryList — for feedback that
+// enumerates a genuinely categorical/sequential rule set instead of prose.
+
+function StructuredFeedbackList({ items }: { items: { term: string; description: string }[] }) {
+  return (
+    <div className="rounded-xl border border-violet-500/15 bg-secondary/20 divide-y divide-border/20 overflow-hidden mt-3">
+      {items.map((item, i) => (
+        <div key={i} className="flex items-start gap-3 px-4 py-3">
+          <span className="shrink-0 rounded-md border border-violet-500/30 bg-violet-500/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-300 leading-4">
+            {item.term}
+          </span>
+          <p className="text-sm text-muted-foreground leading-relaxed pt-0.5">{item.description}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ── Continue button ───────────────────────────────────────────────────────────
 
 function ContinueButton({ onClick, isLast }: { onClick: () => void; isLast: boolean }) {
@@ -162,6 +181,9 @@ export function StepFeedback({ result, onContinue, onRetry, isLast, onPrevious }
               Score: {result.score}/100
             </p>
             <p className="text-sm text-muted-foreground leading-relaxed">{result.feedback}</p>
+            {result.structured_points && result.structured_points.length > 0 && (
+              <StructuredFeedbackList items={result.structured_points} />
+            )}
           </div>
         </div>
       </div>

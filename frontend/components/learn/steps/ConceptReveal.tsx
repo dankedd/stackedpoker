@@ -132,6 +132,25 @@ function resolveVisual(visualType?: string, conceptId?: string) {
   return null
 }
 
+// ── Structured theory list ────────────────────────────────────────────────────
+// For genuinely categorical/sequential concepts (streets, range shapes, hand-ranking
+// tiers, etc.) — highlighted term badge + description, instead of one long paragraph.
+
+function StructuredTheoryList({ items }: { items: { term: string; description: string }[] }) {
+  return (
+    <div className="rounded-xl border border-violet-500/15 bg-secondary/20 divide-y divide-border/20 overflow-hidden">
+      {items.map((item, i) => (
+        <div key={i} className="flex items-start gap-3 px-4 py-3">
+          <span className="shrink-0 rounded-md border border-violet-500/30 bg-violet-500/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-300 leading-4">
+            {item.term}
+          </span>
+          <p className="text-sm text-muted-foreground leading-relaxed pt-0.5">{item.description}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // ── Concept data lookup ───────────────────────────────────────────────────────
 
 /** Whether CONCEPT_DATA has any enrichment content for this concept — used to
@@ -249,16 +268,23 @@ export function ConceptReveal({ step, onComplete }: ConceptRevealProps) {
         <div className="h-px bg-gradient-to-r from-violet-500/30 via-violet-500/10 to-transparent mb-5" />
 
         {/* Content */}
-        {step.concept_content ? (
+        {step.concept_content || step.concept_structured_items ? (
           <div className="space-y-3 mb-5">
-            {step.concept_content
-              .split(/\n+/)
-              .filter(Boolean)
-              .map((para, i) => (
-                <p key={i} className="text-sm text-muted-foreground leading-relaxed">
-                  {para}
-                </p>
-              ))}
+            {step.concept_content &&
+              step.concept_content
+                .split(/\n+/)
+                .filter(Boolean)
+                .map((para, i) => (
+                  <p key={i} className="text-sm text-muted-foreground leading-relaxed">
+                    {para}
+                  </p>
+                ))}
+            {step.concept_structured_items && step.concept_structured_items.length > 0 && (
+              <StructuredTheoryList items={step.concept_structured_items} />
+            )}
+            {step.concept_note && (
+              <p className="text-xs text-violet-300/70 italic">{step.concept_note}</p>
+            )}
           </div>
         ) : step.narrative ? (
           <p className="text-sm text-muted-foreground leading-relaxed mb-5">{step.narrative}</p>

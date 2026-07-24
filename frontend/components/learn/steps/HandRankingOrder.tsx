@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronUp, ChevronDown, GripVertical, CheckCircle2, XCircle } from 'lucide-react'
+import { GripVertical, CheckCircle2, XCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { SortableRankingList } from '@/components/learn/SortableRankingList'
 
 interface HandRankingOrderProps {
   step: LessonStep
@@ -14,8 +15,9 @@ interface HandRankingOrderProps {
 }
 
 /**
- * Drag (desktop) or tap the up/down arrows (mobile/keyboard/accessibility) to
- * reorder all 10 standard hand categories from strongest to weakest.
+ * True sortable drag-and-drop (desktop pointer, touch, or keyboard — see
+ * SortableRankingList) to reorder all 10 standard hand categories from
+ * strongest to weakest.
  *
  * Two local phases before handing off to the generic evaluate()/StepFeedback
  * flow: 'arrange' (freely reorder, nothing scored yet) and 'reviewed' (frozen,
@@ -46,44 +48,16 @@ export function HandRankingOrder({ step, onAnswer, disabled = false }: HandRanki
 
   const [order, setOrder] = useState<string[]>(initialOrder)
   const [phase, setPhase] = useState<'arrange' | 'reviewed'>('arrange')
-  const [draggedId, setDraggedId] = useState<string | null>(null)
 
   useEffect(() => {
     mountTime.current = Date.now()
     setOrder(initialOrder)
     setPhase('arrange')
-    setDraggedId(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step.id])
 
   const itemById = useMemo(() => new Map(items.map((i) => [i.id, i])), [items])
   const arranging = phase === 'arrange' && !disabled
-
-  function moveItem(id: string, direction: 'up' | 'down') {
-    if (!arranging) return
-    setOrder((prev) => {
-      const idx = prev.indexOf(id)
-      const swapWith = direction === 'up' ? idx - 1 : idx + 1
-      if (idx < 0 || swapWith < 0 || swapWith >= prev.length) return prev
-      const next = [...prev]
-      ;[next[idx], next[swapWith]] = [next[swapWith], next[idx]]
-      return next
-    })
-  }
-
-  function handleDrop(targetId: string) {
-    if (!arranging || !draggedId || draggedId === targetId) {
-      setDraggedId(null)
-      return
-    }
-    setOrder((prev) => {
-      const next = prev.filter((x) => x !== draggedId)
-      const targetIdx = next.indexOf(targetId)
-      next.splice(targetIdx, 0, draggedId)
-      return next
-    })
-    setDraggedId(null)
-  }
 
   function handleCheckOrder() {
     if (!arranging) return
@@ -111,30 +85,32 @@ export function HandRankingOrder({ step, onAnswer, disabled = false }: HandRanki
         </p>
       )}
 
-      <ol className="space-y-2" aria-label="Hand ranking order, strongest to weakest">
-        {order.map((id, i) => {
+      <SortableRankingList
+        ids={order}
+        onReorder={setOrder}
+        disabled={!arranging}
+        ariaLabel="Hand ranking order, strongest to weakest"
+        className="space-y-2"
+        renderItem={(id, i, { isDragging, attributes, listeners }) => {
           const item = itemById.get(id)
           if (!item) return null
           const isCorrectSlot = phase === 'reviewed' ? id === correctOrder[i] : null
           const positionLabel = i === 0 ? 'Strongest' : i === order.length - 1 ? 'Weakest' : null
 
           return (
-            <li
-              key={id}
+            <div
               data-category-id={id}
-              draggable={arranging}
-              onDragStart={() => arranging && setDraggedId(id)}
-              onDragOver={(e) => arranging && e.preventDefault()}
-              onDrop={() => handleDrop(id)}
-              onDragEnd={() => setDraggedId(null)}
+              {...attributes}
+              {...(arranging ? listeners : {})}
               className={cn(
-                'flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all duration-150',
+                'flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-shadow duration-150',
+                arranging && 'cursor-grab select-none active:cursor-grabbing',
                 phase === 'reviewed'
                   ? isCorrectSlot
                     ? 'border-emerald-500/40 bg-emerald-500/10'
                     : 'border-red-500/40 bg-red-500/10'
-                  : draggedId === id
-                  ? 'border-violet-500/50 bg-violet-500/10 opacity-50'
+                  : isDragging
+                  ? 'border-violet-500/60 bg-violet-500/10 shadow-lg shadow-violet-500/20 scale-[1.02]'
                   : 'border-border/50 bg-secondary/40',
               )}
             >
@@ -148,9 +124,9 @@ export function HandRankingOrder({ step, onAnswer, disabled = false }: HandRanki
                 )}
               </div>
 
-              {/* Drag handle (visual affordance for desktop dragging) */}
+              {/* Drag handle — visual affordance; the whole row is draggable */}
               {arranging && (
-                <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground/30 cursor-grab active:cursor-grabbing" aria-hidden />
+                <GripVertical className="h-4 w-4 shrink-0 text-muted-foreground/30" aria-hidden />
               )}
 
               {/* Category label + example hand */}
@@ -169,34 +145,10 @@ export function HandRankingOrder({ step, onAnswer, disabled = false }: HandRanki
                   ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" aria-label="Correct position" />
                   : <XCircle className="h-4 w-4 shrink-0 text-red-400" aria-label="Incorrect position" />
               )}
-
-              {/* Tap/click move buttons — mobile + keyboard + accessibility path */}
-              {arranging && (
-                <div className="flex shrink-0 flex-col gap-0.5">
-                  <button
-                    type="button"
-                    onClick={() => moveItem(id, 'up')}
-                    disabled={i === 0}
-                    aria-label={`Move ${item.label} up`}
-                    className="rounded-md p-0.5 text-muted-foreground/60 hover:text-foreground hover:bg-secondary/60 disabled:opacity-20 disabled:pointer-events-none transition-colors"
-                  >
-                    <ChevronUp className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => moveItem(id, 'down')}
-                    disabled={i === order.length - 1}
-                    aria-label={`Move ${item.label} down`}
-                    className="rounded-md p-0.5 text-muted-foreground/60 hover:text-foreground hover:bg-secondary/60 disabled:opacity-20 disabled:pointer-events-none transition-colors"
-                  >
-                    <ChevronDown className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
-            </li>
+            </div>
           )
-        })}
-      </ol>
+        }}
+      />
 
       {phase === 'arrange' && (
         <button

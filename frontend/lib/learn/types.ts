@@ -80,6 +80,10 @@ export interface StepOption {
   ev_loss_bb?: number
   feedback: string
   concept_triggered?: string
+  /** Optional structured breakdown shown alongside `feedback` (e.g. an enumerated list of
+   *  rules) — rendered as highlighted term/description rows instead of folding everything
+   *  into the feedback paragraph. Same convention as `concept_structured_items`. */
+  feedback_structured_items?: { term: string; description: string }[]
 }
 
 // ── Scenario tree node (for scenario_tree step type) ────────────────────────
@@ -161,6 +165,13 @@ export interface LessonStep {
   // Concept reveal content
   concept_content?: string
   concept_title?: string
+  /** Optional structured breakdown of a genuinely categorical/sequential concept (e.g. the four
+   *  streets, hand-ranking tiers, range shapes) — rendered as highlighted term/description rows
+   *  instead of folding everything into `concept_content` prose. Shown after `concept_content`. */
+  concept_structured_items?: { term: string; description: string }[]
+  /** Short closing note shown after `concept_structured_items` (e.g. a caveat that applies to
+   *  every row). Only meaningful alongside `concept_structured_items`. */
+  concept_note?: string
   // MDF slider
   /** Question the user must answer via the slider */
   mdf_slider_question?: string
@@ -649,6 +660,9 @@ export interface StepResult {
   level_after: number
   leveled_up: boolean
   concept_explanation?: string
+  /** Structured breakdown to render alongside `feedback`, carried through from the
+   *  answered option's `feedback_structured_items`. See `StepOption`. */
+  structured_points?: { term: string; description: string }[]
   // Evaluation pipeline metadata — always present from v2 onwards
   evaluation_source: EvaluationSource
   confidence: EvaluationConfidence

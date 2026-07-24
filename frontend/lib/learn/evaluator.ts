@@ -46,6 +46,7 @@ interface EvalCore {
   ev_loss_bb: number
   concept_triggered?: string
   concept_explanation?: string
+  structured_points?: { term: string; description: string }[]
   /** True when this step had nothing to grade (passive/informational content or an
    *  exploration-mode visualizer). See `isScoredStep` for the classification rule. */
   unscored?: boolean
@@ -155,6 +156,7 @@ function evalOptionBased(step: LessonStep, response: unknown): EvalCore {
     feedback: option.feedback,
     ev_loss_bb: option.ev_loss_bb ?? 0,
     concept_triggered: option.concept_triggered,
+    structured_points: option.feedback_structured_items,
   }
 }
 
@@ -1308,6 +1310,7 @@ export function evaluateStepLocally(
     feedback:       core.feedback,
     concept_triggered: core.concept_triggered,
     concept_explanation: core.concept_explanation,
+    structured_points: core.structured_points,
     xp_earned,
     level_before,
     level_after,
