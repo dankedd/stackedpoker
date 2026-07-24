@@ -6,6 +6,9 @@
  * Combo counts: pair=6, suited=4, offsuit=12
  */
 
+import { entriesToHandList } from './preflopBaselines'
+import { THREEBET_MEDIUM } from './threebetBaselines'
+
 // ── BTN open (~40%) ──────────────────────────────────────────────────────────
 
 const BTN_OPEN_100BB: string[] = [
@@ -198,6 +201,68 @@ const BTN_OPEN_FOUNDATION: string[] = [
   'JTs',
 ]
 
+// bos-s3 ("Start with the obvious core") hand-authors a deliberately partial
+// premium-only core as its OWN graded target — not the full BTN_open_100bb.
+// bos-s4 ("Now expand outward") immediately follows it in the same lesson,
+// same environment, and grades against the full BTN range. Reusing this exact
+// 18-hand core as bos-s4's foundation is the most theoretically precise choice
+// possible: it's literally what the curriculum already taught as "the core"
+// one step earlier, so bos-s3 and bos-s4 share this single constant instead
+// of two independently-authored lists drifting apart over time.
+export const BTN_OPEN_CORE: string[] = [
+  'AA', 'KK', 'QQ', 'JJ', 'TT', '99', '88', '77', '66',
+  'AKs', 'AQs', 'AJs', 'ATs', 'AKo', 'AQo',
+  'KQs', 'KJs', 'KQo',
+]
+
+// CO opens a hair tighter than BTN — same premium spine, but the pair floor
+// and suited-broadway tail pull back a notch to leave more of CO's own
+// boundary (small pairs, wheel aces, suited-connector floor) for the learner.
+// mtc-s9's own narrative asks the learner to "focus especially on the
+// marginal bottom" — this foundation is sized specifically to leave that
+// bottom untouched.
+const CO_OPEN_FOUNDATION: string[] = [
+  'AA', 'KK', 'QQ', 'JJ', 'TT', '99', '88', '77',
+  'AKs', 'AQs', 'AJs', 'ATs', 'AKo', 'AQo',
+  'KQs', 'KJs', 'KTs',
+  'QJs',
+]
+
+// HJ tightens further still — pair floor rises again, suited-king tail
+// shrinks to just the top two, and the suited-queen/jack broadways are left
+// out entirely so the learner decides where HJ's broadway floor sits.
+const HJ_OPEN_FOUNDATION: string[] = [
+  'AA', 'KK', 'QQ', 'JJ', 'TT', '99', '88',
+  'AKs', 'AQs', 'AJs', 'ATs', 'AKo', 'AQo',
+  'KQs', 'KJs',
+  'QJs',
+]
+
+// UTG is the tightest open in the ladder (target is only ~35 hands to begin
+// with), so the foundation stays deliberately minimal — top pairs and the
+// cleanest two suited/one offsuit combo. Everything else (77-99, the Ax
+// wheel/blocker tail, every suited king/queen/jack, every suited connector)
+// is left for the learner, which is nearly the entire UTG range.
+const UTG_OPEN_FOUNDATION: string[] = [
+  'AA', 'KK', 'QQ', 'JJ', 'TT',
+  'AKs', 'AQs',
+  'AKo',
+]
+
+// BB vs BTN 3-bet (bar-s7): NOT hand-invented. THREEBET_MEDIUM is already the
+// codebase's own mechanically-derived "always 3-bet" cut of THREEBET_DEEP
+// (frequency >= 1 — see threebetBaselines.ts). Reusing it here is the same
+// "derive, never invent" discipline applied to a foundation: it leaves every
+// mixed-frequency hand (JJ, TT, AQs, AJs, A2s, K5s, 65s, 54s, 76s) — the
+// exact "board coverage" bluffs/extensions bar-s6a/bar-s6b just taught about
+// — for the learner to place.
+const BB_VS_BTN_3BET_FOUNDATION: string[] = entriesToHandList(THREEBET_MEDIUM.BB_vs_BTN)
+
 export const RANGE_FOUNDATIONS: Record<string, string[]> = {
   BTN_open_foundation: BTN_OPEN_FOUNDATION,
+  BTN_open_core: BTN_OPEN_CORE,
+  CO_open_foundation: CO_OPEN_FOUNDATION,
+  HJ_open_foundation: HJ_OPEN_FOUNDATION,
+  UTG_open_foundation: UTG_OPEN_FOUNDATION,
+  BB_vs_BTN_3bet_foundation: BB_VS_BTN_3BET_FOUNDATION,
 }

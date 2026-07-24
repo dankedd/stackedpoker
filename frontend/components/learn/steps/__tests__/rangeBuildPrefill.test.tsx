@@ -82,3 +82,45 @@ describe('RangeBuild — the real fi-s7 curriculum step is wired to a foundation
     expect(html).toContain('Reset to foundation')
   })
 })
+
+describe('RangeBuild — full curriculum sweep: every range_build step renders with the right starting hand count', () => {
+  // Every step known to have a foundation wired up must render >0 hands
+  // selected on first paint — this is the direct fix/regression-guard for the
+  // reported bug: the CO opening-range exercise (mtc-s9, "Step 9 of 9") was
+  // rendering "0 hands / 0 combos / 0.0% of range" despite the reusable
+  // prefill system already existing, because no step referenced it yet.
+  const stepsExpectedToStartNonEmpty = [
+    'fi-s7', 'mtc-s9', 'bos-s4', 'bos-s5', 'bos-s6', 'bos-s7', 'lab-r3', 'lab-r12', 'bar-s7',
+  ]
+  // Documented exceptions — see INTENTIONALLY_UNPREFILLED in
+  // rangePrefilledFoundation.test.ts for the reasoning behind each.
+  const stepsExpectedToStartEmpty = ['bos-s3', 'sqz-s7a']
+
+  const allCurriculumSteps = LESSONS.flatMap((l) => l.steps)
+
+  for (const id of stepsExpectedToStartNonEmpty) {
+    it(`${id} renders with hands already selected (not "0 hands / 0 combos / 0.0% of range")`, () => {
+      const step = allCurriculumSteps.find((s) => s.id === id)
+      expect(step, `curriculum step "${id}" not found — did it get renamed or removed?`).toBeTruthy()
+      const html = renderToStaticMarkup(<RangeBuild step={step!} onAnswer={noop} />)
+      expect(html).not.toContain('>0 <')
+      expect(html).not.toMatch(/>0 <[\s\S]*?hands/)
+    })
+  }
+
+  for (const id of stepsExpectedToStartEmpty) {
+    it(`${id} intentionally still starts empty (documented, not accidental)`, () => {
+      const step = allCurriculumSteps.find((s) => s.id === id)
+      expect(step, `curriculum step "${id}" not found — did it get renamed or removed?`).toBeTruthy()
+      const html = renderToStaticMarkup(<RangeBuild step={step!} onAnswer={noop} />)
+      expect(html).toContain('>0 <')
+    })
+  }
+
+  it('every range_build step in the curriculum is accounted for in exactly one of the two lists above', () => {
+    const allRangeBuildIds = allCurriculumSteps.filter((s) => s.type === 'range_build').map((s) => s.id)
+    const accountedFor = new Set([...stepsExpectedToStartNonEmpty, ...stepsExpectedToStartEmpty])
+    const missing = allRangeBuildIds.filter((id) => !accountedFor.has(id))
+    expect(missing, 'new range_build step(s) added without a prefill decision reflected in this test').toEqual([])
+  })
+})

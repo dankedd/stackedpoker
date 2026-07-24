@@ -8,7 +8,7 @@
 import type { LearningPath, LearningModule, Lesson } from './types'
 import { ROADMAP_MODULES } from './curriculumRoadmap'
 import { RFI_DEEP, entriesToHandList, SB_SPLIT, BAD_LIMP_EXAMPLE } from './preflopBaselines'
-import { RANGE_TARGETS } from './ranges'
+import { RANGE_TARGETS, BTN_OPEN_CORE } from './ranges'
 import { THREEBET_DEEP } from './threebetBaselines'
 import { DEFEND_DEEP } from './defendBaselines'
 import {
@@ -3910,6 +3910,9 @@ export const LESSONS: Lesson[] = [
         narrative: 'Build the CO opening range. Focus especially on the marginal bottom — the suited connectors, small pairs, and blocker-heavy hands that make the final call harder than the pairs and broadways at the top.',
         range_target: 'CO_open_100bb',
         range_build_show_diff: true,
+        range_prefilled_key: 'CO_open_foundation',
+        range_prefilled_note:
+          "We've filled in the obvious top of the range. Now build the marginal bottom yourself.",
         xp: 15,
       },
     ],
@@ -4418,7 +4421,10 @@ export const LESSONS: Lesson[] = [
         type: 'range_build',
         concept_ids: ['range_construction'],
         narrative: 'Start with the obvious core: premium pairs, strong broadways, strong aces.',
-        range_combos: ['AA','KK','QQ','JJ','TT','99','88','77','66','AKs','AQs','AJs','ATs','AKo','AQo','KQs','KJs','KQo'],
+        // Intentionally NOT prefilled — this step's own target IS the "obvious
+        // core," so prefilling it would hand over the entire answer. Building
+        // this list by hand is the whole exercise.
+        range_combos: BTN_OPEN_CORE,
         xp: 10,
       },
       {
@@ -4429,6 +4435,9 @@ export const LESSONS: Lesson[] = [
           'Now expand outward: suited aces, weaker broadways, suited kings, suited connectors, small pairs, offsuit marginal hands. Reason from position, players behind, stack depth, playability, and blockers — not from memory. Watch the combo count and percentage-of-1,326 counter update live as you go.',
         range_target: 'BTN_open_100bb',
         range_build_show_diff: true,
+        range_prefilled_key: 'BTN_open_core',
+        range_prefilled_note:
+          "That's the core you just built. Now expand outward into the marginal hands.",
         xp: 15,
       },
       {
@@ -4439,6 +4448,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'CO',
         range_target: 'CO_open_100bb',
         range_build_show_diff: true,
+        range_prefilled_key: 'CO_open_foundation',
         xp: 15,
       },
       {
@@ -4449,6 +4459,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'HJ',
         range_target: 'HJ_open_100bb',
         range_build_show_diff: true,
+        range_prefilled_key: 'HJ_open_foundation',
         xp: 15,
       },
       {
@@ -4460,6 +4471,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'UTG',
         range_target: 'UTG_open_100bb',
         range_build_show_diff: true,
+        range_prefilled_key: 'UTG_open_foundation',
         xp: 15,
       },
       {
@@ -4613,6 +4625,7 @@ export const LESSONS: Lesson[] = [
         ante_bb: 0.5,
         range_target: 'BTN_open_100bb',
         range_build_show_diff: true,
+        range_prefilled_key: 'BTN_open_foundation',
         xp: 15,
       },
       // ── Round 4 — Players behind ──────────────────────────────────────────
@@ -4739,6 +4752,7 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 40,
         range_target: 'CO_open_100bb',
         range_build_show_diff: true,
+        range_prefilled_key: 'CO_open_foundation',
         xp: 15,
       },
       // ── Round 13 — Plan before raising ────────────────────────────────────
@@ -5289,6 +5303,9 @@ export const LESSONS: Lesson[] = [
         range_combos: entriesToHandList(THREEBET_DEEP.BB_vs_BTN),
         range_tolerance: 10,
         range_build_show_diff: true,
+        range_prefilled_key: 'BB_vs_BTN_3bet_foundation',
+        range_prefilled_note:
+          "We've filled in the clear value core. Now decide which mixed-frequency hands and bluffs belong alongside it.",
         ask_confidence: true,
         xp: 22,
       },
@@ -6200,6 +6217,10 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN calls'],
         range_hint: 'Paint Hero\'s squeezing range here — remember there are two ranges to get through and extra dead money already in the pot.',
+        // Intentionally NOT prefilled — this target is already a minimal,
+        // curated 9-hand squeeze range. Any "obvious core" subset large
+        // enough to matter would cover most of the answer, so this stays
+        // fully learner-built. See rangePrefilledFoundation.test.ts.
         range_combos: ['AA', 'KK', 'QQ', 'JJ', 'AKs', 'AKo', 'AQs', 'A5s', 'A4s'],
         range_tolerance: 12,
         range_build_show_diff: true,
