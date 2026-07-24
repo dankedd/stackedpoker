@@ -2297,7 +2297,10 @@ export const LESSONS: Lesson[] = [
         outs_deck_question: 'How many of these 8 outs are clean?',
         outs_deck_correct: 6,
         outs_deck_tolerance: 0.5,
-        correct_feedback: '8 nominal outs, but 6h and Jh complete a heart flush for Villain too — only 6 are clean.',
+        correct_feedback:
+          "8 nominal outs — four 6s and four Jacks. Clean outs (6): 6♣, 6♦, 6♠, J♣, J♦, J♠ — Hero holds spades, unrelated to the board's hearts, so these just complete the straight. Dirty outs (2): 6♥ and J♥ — each lays a 4th heart on the board, so any Villain holding just one heart rivers a flush that beats Hero's straight, even though Hero also gets there.",
+        wrong_feedback:
+          "Only 6 of the 8 are clean. 6♥ and J♥ put a 4th heart on the board — Hero's straight still arrives, but any Villain holding a single heart now has a flush that beats it, which is what makes those two outs dirty.",
         xp: 10,
       },
       {
@@ -2345,14 +2348,18 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['clean_outs', 'dead_outs'],
         outs_deck_mode: 'clean_dirty',
         narrative:
-          'Mixed challenge. Same idea, different suit: Hero has an open-ended straight draw, and the board already shows three diamonds.',
-        hero_hand: ['9d', '8d'],
+          "Mixed challenge. Same idea, different suit: Hero holds clubs, and the board already shows three diamonds.",
+        hero_hand: ['9c', '8c'],
         board: ['Td', '7d', '2d'],
         outs_deck_out_cards: ['6c', '6d', '6h', '6s', 'Jc', 'Jd', 'Jh', 'Js'],
         outs_deck_dead_out_cards: ['6d', 'Jd'],
         outs_deck_question: 'How many of these 8 outs are clean?',
         outs_deck_correct: 6,
         outs_deck_tolerance: 0.5,
+        correct_feedback:
+          "8 nominal outs — four 6s and four Jacks. Clean outs (6): 6♣, 6♥, 6♠, J♣, J♥, J♠ — Hero holds clubs, unrelated to the board's diamonds, so these just complete the straight. Dirty outs (2): 6♦ and J♦ — each lays a 4th diamond on the board, so any Villain holding just one diamond rivers a flush that beats Hero's straight, even though Hero also gets there.",
+        wrong_feedback:
+          "Only 6 of the 8 are clean. 6♦ and J♦ put a 4th diamond on the board — Hero's straight still arrives, but any Villain holding a single diamond now has a flush that beats it, which is what makes those two outs dirty.",
         xp: 8,
       },
       {

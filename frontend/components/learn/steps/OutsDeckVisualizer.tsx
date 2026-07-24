@@ -184,6 +184,22 @@ export function OutsDeckVisualizer({ step, onAnswer, disabled = false, reviewMod
             {unseen} unseen cards
             {nominalOuts > 0 && <> · <span className="text-emerald-400/80 font-semibold">{nominalOuts} outs</span> highlighted</>}
           </p>
+          {mode === 'clean_dirty' && revealDerived && (
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 border-t border-border/20 pt-3 text-[10px]">
+              <span className="flex items-center gap-1.5 text-emerald-300">
+                <span className="inline-block h-3 w-3 rounded-sm border border-emerald-500/50 bg-emerald-500/15" />
+                Clean out — solid border
+              </span>
+              <span className="flex items-center gap-1.5 text-amber-300/80">
+                <span className="inline-block h-3 w-3 rounded-sm border border-dashed border-amber-500/40 bg-amber-500/10" />
+                Dirty out — dashed border
+              </span>
+              <span className="flex items-center gap-1.5 text-muted-foreground/40">
+                <span className="inline-block h-3 w-3 rounded-sm border border-border/25 bg-secondary/20" />
+                Not an out
+              </span>
+            </div>
+          )}
         </div>
       )}
 
