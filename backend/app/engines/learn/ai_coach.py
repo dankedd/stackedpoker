@@ -188,5 +188,12 @@ async def generate_coach_reply(
         return response.choices[0].message.content or "Let me think about how to help you with this spot."
     except Exception as e:
         latency_ms = int((time.monotonic() - started) * 1000)
-        logger.error("coach_reply_failed mode=%s latency_ms=%d error=%s", mode, latency_ms, e)
+        # Classify by exception type/status without ever logging the API key or
+        # request/response bodies — openai-python raises typed exceptions
+        # (AuthenticationError, RateLimitError, APITimeoutError, NotFoundError
+        # for bad model access, etc.), all exposing `status_code` where relevant.
+        logger.error(
+            "coach_openai_failed mode=%s latency_ms=%d exc_type=%s status_code=%s",
+            mode, latency_ms, type(e).__name__, getattr(e, "status_code", None),
+        )
         return "What do you think the key factor is in this spot?"

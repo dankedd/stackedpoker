@@ -354,6 +354,35 @@ def test_unrelated_curriculum_content_not_dumped_into_context(fake_db, captured_
     assert captured_reply[0]["theory"] == []
 
 
+# ── Regression: training_sessions schema drift ─────────────────────────────────
+#
+# Root cause of a real production incident: coach.py's session-creation INSERT
+# sent `created_at`, but the actual `training_sessions` table (see
+# supabase_learning_schema.sql) has no such column — only `started_at`. The
+# FakeSupabase test double doesn't validate column names against a real
+# schema, so this shipped without any test catching it; PostgREST rejected
+# every first message with PGRST204, which coach.py mapped to a 502, which
+# the frontend displayed as "temporarily unavailable" — OpenAI was never
+# reached. Verified directly against production Supabase's live OpenAPI
+# schema on 2026-07-24 (insert-then-delete round trip, no data left behind).
+REAL_TRAINING_SESSIONS_COLUMNS = {
+    "id", "user_id", "session_type", "context", "messages", "started_at", "updated_at",
+}
+
+
+def test_new_session_insert_only_uses_real_training_sessions_columns(fake_db, captured_reply):
+    user = {"sub": "user-schema"}
+    body = coach_module.CoachMessageBody(message="hi", context={})
+    run(coach_module.coach_message(body, FakeRequest(), user))
+
+    inserted = fake_db.tables["training_sessions"][0]
+    assert set(inserted.keys()) <= REAL_TRAINING_SESSIONS_COLUMNS, (
+        f"session INSERT includes column(s) not in the real schema: "
+        f"{set(inserted.keys()) - REAL_TRAINING_SESSIONS_COLUMNS}"
+    )
+    assert "started_at" in inserted  # the actual timestamp column — not created_at
+
+
 # ── Route-level: general behavior ──────────────────────────────────────────────
 
 

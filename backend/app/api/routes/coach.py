@@ -114,6 +114,7 @@ async def coach_message(
     """
     settings = get_settings()
     user_id: str = current_user.get("sub", "")
+    req_id = uuid.uuid4().hex[:8]  # correlates this request's log lines without exposing anything sensitive
 
     if not body.message.strip():
         raise HTTPException(status_code=422, detail="Message cannot be empty.")
@@ -150,9 +151,10 @@ async def coach_message(
                 {
                     "id": session_id,
                     "user_id": user_id,
+                    "session_type": "chat",
                     "messages": [],
                     "context": body.context,
-                    "created_at": now,
+                    "started_at": now,
                     "updated_at": now,
                 },
                 settings,
@@ -190,8 +192,8 @@ async def coach_message(
         theory = ground_theory(extract_concept_ids(safe_context))
 
         logger.info(
-            "coach_request user=%s mode=%s lesson_id=%s step_id=%s theory_ids=%s",
-            user_id, mode, lesson_id, step_id, [t["id"] for t in theory],
+            "coach_request req_id=%s user=%s mode=%s lesson_id=%s step_id=%s theory_ids=%s",
+            req_id, user_id, mode, lesson_id, step_id, [t["id"] for t in theory],
         )
 
         # ── Generate coach reply ──────────────────────────────────────────────
@@ -225,10 +227,15 @@ async def coach_message(
     except HTTPException:
         raise
     except httpx.HTTPError as e:
-        logger.error("Coach message DB error user=%s: %s", user_id, e)
+        status_code = getattr(getattr(e, "response", None), "status_code", None)
+        body = getattr(getattr(e, "response", None), "text", None)
+        logger.error(
+            "coach_db_error req_id=%s user=%s exc_type=%s upstream_status=%s upstream_body=%s",
+            req_id, user_id, type(e).__name__, status_code, (body or "")[:500],
+        )
         raise HTTPException(status_code=502, detail="Could not save session.")
-    except Exception:
-        logger.exception("Coach message error user=%s", user_id)
+    except Exception as e:
+        logger.exception("coach_unhandled_error req_id=%s user=%s exc_type=%s", req_id, user_id, type(e).__name__)
         raise HTTPException(status_code=500, detail="Coach unavailable. Please try again.")
 
 
@@ -262,7 +269,7 @@ async def get_session(
             "user_id": user_id,
             "messages": session.get("messages") or [],
             "context": session.get("context") or {},
-            "created_at": session.get("created_at"),
+            "created_at": session.get("started_at"),  # DB column is `started_at`; wire key kept for API stability
             "updated_at": session.get("updated_at"),
             "message_count": len(session.get("messages") or []),
         }
