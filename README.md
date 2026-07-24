@@ -151,7 +151,14 @@ Frontend available at `http://localhost:3000`
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_ANON_KEY
 NEXT_PUBLIC_API_URL   ← set to your Railway/Render backend URL
+NEXT_PUBLIC_SITE_URL  ← https://stackedpokerai.com (the ONLY canonical prod domain)
 ```
+
+**Domains:** `stackedpokerai.com` must be the Production domain in Vercel →
+Project → Settings → Domains, with `www.stackedpokerai.com` redirecting to it.
+The project's default `*.vercel.app` URL cannot be unassigned, but the app's
+own `next.config.ts` redirects it (and `www`) to the apex domain — see
+`frontend/next.config.ts`.
 
 ### Backend → Railway
 
@@ -169,7 +176,12 @@ DATABASE_URL
 SUPABASE_URL
 SUPABASE_ANON_KEY
 SUPABASE_JWT_SECRET
-ALLOWED_ORIGINS=https://your-vercel-app.vercel.app
+ALLOWED_ORIGINS=https://stackedpokerai.com
+FRONTEND_URL=https://stackedpokerai.com   ← used for Stripe checkout/portal
+                                             redirect URLs. If this is stale
+                                             (e.g. still an old *.vercel.app
+                                             value) users get sent back there
+                                             after checkout/billing-portal.
 ```
 
 ### Backend → Render (alternative)

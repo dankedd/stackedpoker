@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff, AlertCircle, Loader2, Spade } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { getSiteUrl } from '@/lib/site-url'
 import { Button } from '@/components/ui/button'
 
 function GoogleIcon() {
@@ -60,7 +61,7 @@ export function LoginContent() {
     setOauthLoading(provider)
     const supabase = createClient()
     // Pass `next` so the callback route redirects to the intended page.
-    const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`
+    const callbackUrl = `${getSiteUrl(window.location.origin)}/auth/callback?next=${encodeURIComponent(redirectTo)}`
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: callbackUrl },

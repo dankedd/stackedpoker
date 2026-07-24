@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Eye, EyeOff, AlertCircle, CheckCircle2, Loader2, Spade } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { getSiteUrl } from '@/lib/site-url'
 import { Button } from '@/components/ui/button'
 
 function GoogleIcon() {
@@ -56,7 +57,7 @@ export default function SignupPage() {
     setError(null)
     setOauthLoading(provider)
     const supabase = createClient()
-    const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent('/dashboard')}`
+    const callbackUrl = `${getSiteUrl(window.location.origin)}/auth/callback?next=${encodeURIComponent('/dashboard')}`
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: callbackUrl },
@@ -83,7 +84,7 @@ export default function SignupPage() {
       password,
       options: {
         data: { username: username.trim() },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${getSiteUrl(window.location.origin)}/auth/callback`,
       },
     })
 

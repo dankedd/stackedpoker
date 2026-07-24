@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { getSiteUrl } from '@/lib/site-url'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
@@ -8,15 +9,12 @@ export async function GET(request: NextRequest) {
   const oauthError       = searchParams.get('error')
   const oauthErrorDesc   = searchParams.get('error_description')
 
-  // On Vercel and other proxied hosts, `origin` reflects the internal URL
-  // rather than the public-facing domain. x-forwarded-host gives us the real one.
-  const forwardedHost = request.headers.get('x-forwarded-host')
-  const isLocal = process.env.NODE_ENV === 'development'
-  const baseUrl = isLocal
-    ? origin
-    : forwardedHost
-    ? `https://${forwardedHost}`
-    : origin
+  // Always resolve to the canonical production domain, never to whatever
+  // host the request actually arrived on — this is what stops a stray
+  // x-forwarded-host (or a direct hit on the *.vercel.app deployment URL)
+  // from leaking into a post-auth redirect. Local dev keeps using the real
+  // request origin so non-3000 ports still work.
+  const baseUrl = getSiteUrl(origin)
 
   // ── OAuth error redirect (e.g. access_denied, server_error from Supabase) ──
   if (oauthError) {
