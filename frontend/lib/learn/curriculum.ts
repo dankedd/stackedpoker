@@ -1405,27 +1405,27 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['nuts'],
         concept_title: 'A Different Board',
         concept_content:
-          'Board: 9♦8♣7♦. Hero holds J♣T♣ — the nut straight, J-T-9-8-7. Two diamonds are already out there, so a flush isn’t live yet, but it’s getting closer.',
-        hero_hand: ['Jc', 'Tc'],
-        board: ['9d', '8c', '7d'],
+          'Board: 8♠8♥8♦ — trip eights sitting on the board itself, just like a moment ago. Hero holds A♠A♦ this time. Combined with the board’s trip eights, Hero already has a full house: eights full of aces. An ace is the highest card a pair can be, so no pocket pair anyone else could hold builds a bigger full house than Hero’s on this board.',
+        hero_hand: ['As', 'Ad'],
+        board: ['8s', '8h', '8d'],
         xp: 3,
       },
       {
         id: 'l4-s15',
         type: 'action_sequence',
         concept_ids: ['nuts'],
-        narrative: 'The turn and river both bring diamonds, putting four total diamonds on the board.',
-        hero_hand: ['Jc', 'Tc'],
-        board: ['9d', '8c', '7d', '4d', '2d'],
-        action_sequence_prompt: 'Does J-T still hold the mathematical nuts?',
+        narrative: 'Preflop, Villain limped in with an unclear, wide range. The turn and river bring 3♦ and 2♥ — two blanks that change nothing about either hand.',
+        hero_hand: ['As', 'Ad'],
+        board: ['8s', '8h', '8d', '3d', '2h'],
+        action_sequence_prompt: 'Is eights full of aces actually the mathematical nuts here — the single best hand possible?',
         options: [
           {
-            id: 'no', label: 'No — any single diamond in a hand now makes a flush', quality: 'perfect',
-            feedback: 'Correct. With four diamonds on the board, holding just one more diamond completes a flush, which beats a straight. Hero’s hand hasn’t changed at all — but the board redefined what the best possible hand is.',
+            id: 'no', label: 'No — whoever holds the one remaining 8 has quad eights, which beats it', quality: 'perfect',
+            feedback: 'Correct. The board only shows three eights — one is still unaccounted for. Whoever holds it makes four of a kind, which beats any full house, Hero’s included. Hero’s hand is about as strong as a full house gets, but it isn’t, strictly speaking, the single best hand possible.',
           },
           {
-            id: 'yes', label: 'Yes — a straight can’t be beaten once it’s made', quality: 'mistake',
-            feedback: 'A straight is beaten by a flush, and four diamonds on the board make a flush possible for anyone holding just one more diamond — the nuts moved on from Hero’s straight.',
+            id: 'yes', label: 'Yes — a full house full of aces can’t be beaten', quality: 'mistake',
+            feedback: 'A full house isn’t the top of the hand rankings — four of a kind is. Since the board already shows trip eights, whoever holds the last remaining 8 makes quad eights, which beats any full house, including Hero’s.',
           },
         ],
         xp: 7,
@@ -1436,7 +1436,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['effective_nuts'],
         concept_title: 'Effective Nuts',
         concept_content:
-          'Mathematically, any lone diamond now beats Hero’s straight. But most hands an opponent actually shows up with here don’t contain a random, disconnected diamond. Against a realistic range, Hero’s straight often still plays like the practical nuts — even though it technically isn’t the literal mathematical nuts anymore. That gap between "the single best hand possible" and "the best hand a real opponent is likely to have" is exactly what effective nuts describes.',
+          'Mathematically, whoever holds that last 8 has Hero beat. But look at how the hand was actually played: Villain limped in preflop with a wide range, then just called down bet after bet — never raising, not even on a flop that already showed trip eights. A player sitting on the case card for quads on a tripled board is usually building the pot, not quietly calling three streets. That doesn’t make it impossible Villain has it, but it makes it unlikely. Against what Villain has actually shown through their actions, Hero’s full house plays like the practical nuts — even though, card for card, the literal mathematical nuts belongs to whoever has that last 8. That gap between "the single best hand possible" and "the best hand a real opponent’s actions make plausible" is exactly what effective nuts describes.',
         xp: 4,
       },
       {
