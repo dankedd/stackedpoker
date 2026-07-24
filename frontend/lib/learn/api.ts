@@ -48,21 +48,39 @@ async function learnFetch<T>(
   path: string,
   token: string,
   init?: RequestInit,
+  timeoutMs = 30_000,
 ): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    ...init,
-  })
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+
+  let res: Response
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      signal: controller.signal,
+      ...init,
+    })
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') {
+      const err = new Error('Request timed out. Please try again.')
+      ;(err as Error & { status?: number }).status = 0
+      throw err
+    }
+    throw e
+  } finally {
+    clearTimeout(timeout)
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ detail: 'Unknown error' }))
     const detail = body.detail ?? `HTTP ${res.status}`
     const message = typeof detail === 'string' ? detail : (detail.message ?? JSON.stringify(detail))
     const err = new Error(message)
-    ;(err as Error & { detail?: unknown }).detail = detail
+    ;(err as Error & { detail?: unknown; status?: number }).detail = detail
+    ;(err as Error & { status?: number }).status = res.status
     throw err
   }
 
@@ -356,18 +374,49 @@ export async function evaluateRange(
 
 // ── Coach (unrelated to progress persistence, left as-is) ────────────────────
 
+// Canonical coach API contract — matches backend/app/api/routes/coach.py
+// exactly (mounted at /api, route paths /coach/message and
+// /coach/session/{id}). The backend returns { session_id, reply, message_count }
+// where `reply` is a plain string — normalized into a CoachMessage here so
+// CoachChat can treat it identically to a locally-constructed user message.
 export async function sendCoachMessage(
   sessionId: string | null,
   message: string,
   context: Record<string, unknown>,
   token: string,
 ): Promise<{ session_id: string; reply: CoachMessage }> {
-  return learnFetch<{ session_id: string; reply: CoachMessage }>('/api/learn/coach/message', token, {
-    method: 'POST',
-    body: JSON.stringify({ session_id: sessionId, message, context }),
-  })
+  const res = await learnFetch<{ session_id: string; reply: string; message_count: number }>(
+    '/api/coach/message',
+    token,
+    { method: 'POST', body: JSON.stringify({ session_id: sessionId, message, context }) },
+    45_000, // LLM calls run longer than typical CRUD endpoints
+  )
+  return {
+    session_id: res.session_id,
+    reply: { role: 'coach', content: res.reply, timestamp: new Date().toISOString() },
+  }
 }
 
 export async function fetchCoachSession(sessionId: string, token: string): Promise<TrainingSession> {
-  return learnFetch<TrainingSession>(`/api/learn/coach/sessions/${encodeURIComponent(sessionId)}`, token)
+  const res = await learnFetch<{
+    session_id: string
+    user_id: string
+    messages: { role: 'user' | 'assistant'; content: string; ts: string }[]
+    context: Record<string, unknown>
+    created_at: string
+    updated_at: string
+  }>(`/api/coach/session/${encodeURIComponent(sessionId)}`, token)
+  return {
+    id: res.session_id,
+    user_id: res.user_id,
+    session_type: 'coach',
+    context: res.context,
+    messages: res.messages.map((m) => ({
+      role: m.role === 'user' ? 'user' : 'coach',
+      content: m.content,
+      timestamp: m.ts,
+    })),
+    started_at: res.created_at,
+    updated_at: res.updated_at,
+  }
 }

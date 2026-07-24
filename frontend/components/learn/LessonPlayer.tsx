@@ -7,6 +7,8 @@ import {
 import { cn } from '@/lib/utils'
 import type { Lesson, LessonStep, StepResult } from '@/lib/learn/types'
 import { evaluateStepLocally } from '@/lib/learn/evaluator'
+import { buildLessonReviewContext } from '@/lib/learn/coachReview'
+import { COACH_REVIEW_STORAGE_KEY } from '@/lib/learn/coachReviewStorage'
 import { PokerContextBar } from '@/components/learn/PokerContextBar'
 import { StepFeedback } from '@/components/learn/StepFeedback'
 import { PreviousButton } from '@/components/learn/PreviousButton'
@@ -757,7 +759,15 @@ export function LessonPlayer({
           setPendingConfidence(null)
           setPhase('intro')
         }}
-        onCoachReview={() => { window.location.href = '/coach' }}
+        onCoachReview={() => {
+          try {
+            const review = buildLessonReviewContext(lesson, results, totalXP)
+            sessionStorage.setItem(COACH_REVIEW_STORAGE_KEY, JSON.stringify(review))
+          } catch {
+            // Best-effort — the Coach page still works as general chat without a review payload.
+          }
+          window.location.href = '/coach?review=1'
+        }}
       />
     )
   }

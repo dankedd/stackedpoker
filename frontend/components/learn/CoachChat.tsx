@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, KeyboardEvent } from 'react'
+import { useState, useRef, useEffect, useImperativeHandle, forwardRef, type ReactNode, type KeyboardEvent } from 'react'
 import { Send, Bot, User, BrainCircuit } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CoachMessage } from '@/lib/learn/types'
@@ -13,6 +13,18 @@ interface CoachChatProps {
   context?: Record<string, unknown>
   sessionId?: string | null
   className?: string
+  /** Sent automatically once, on mount, as if the coach proactively opened
+   *  the conversation (used for Coach Review's personalized lesson recap). */
+  initialMessage?: string
+  /** Rendered above the message list instead of the "ask anything" empty
+   *  state — used for the Coach Review banner. */
+  banner?: ReactNode
+}
+
+export interface CoachChatHandle {
+  /** Sends a message as if the learner typed it — used by external
+   *  "suggested question" buttons that live outside this component. */
+  sendMessage: (text: string) => void
 }
 
 // ── Suggested starters ────────────────────────────────────────────────────────
@@ -124,18 +136,21 @@ function MessageBubble({ msg }: { msg: CoachMessage }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function CoachChat({
+export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function CoachChat({
   token,
   context = {},
   sessionId: initSessionId = null,
   className,
-}: CoachChatProps) {
+  initialMessage,
+  banner,
+}, ref) {
   const [messages, setMessages] = useState<CoachMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(initSessionId)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const autoStarted = useRef(false)
 
   // Auto-scroll on new messages or typing indicator
   useEffect(() => {
@@ -168,20 +183,37 @@ export function CoachChat({
     try {
       const { session_id, reply } = await sendCoachMessage(currentSessionId, msg, context, token)
       setCurrentSessionId(session_id)
-      setMessages(prev => [...prev, reply])
-    } catch {
       setMessages(prev => [
         ...prev,
-        {
-          role: 'coach',
-          content: "Sorry, I couldn't connect right now. Please try again in a moment.",
-          timestamp: new Date().toISOString(),
-        },
+        reply.content.trim() ? reply : { ...reply, content: "Hmm, I didn't catch that — could you rephrase?" },
+      ])
+    } catch (err) {
+      const status = (err as { status?: number } | undefined)?.status
+      let content = "Sorry, I couldn't connect right now. Please try again in a moment."
+      if (status === 401) content = 'Your session expired — please sign in again to keep chatting.'
+      else if (status === 429) content = "You're sending messages a bit fast — give it a few seconds and try again."
+      else if (status === 0) content = 'That took too long to respond. Please try again.'
+      else if (status && status >= 500) content = 'The coach is temporarily unavailable. Please try again shortly.'
+      setMessages(prev => [
+        ...prev,
+        { role: 'coach', content, timestamp: new Date().toISOString() },
       ])
     } finally {
       setLoading(false)
     }
   }
+
+  useImperativeHandle(ref, () => ({ sendMessage: (text: string) => { void send(text) } }))
+
+  // Auto-send the opening message once (e.g. Coach Review's lesson recap) —
+  // the ref guard keeps this from double-firing under StrictMode's double-invoke.
+  useEffect(() => {
+    if (initialMessage && !autoStarted.current) {
+      autoStarted.current = true
+      void send(initialMessage)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialMessage])
 
   const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -216,7 +248,9 @@ export function CoachChat({
 
       {/* Message list */}
       <div className="flex-1 overflow-y-auto min-h-0 p-4 space-y-4">
-        {noMessages && (
+        {banner && <div className="mb-1">{banner}</div>}
+
+        {noMessages && !initialMessage && (
           <div className="space-y-3 py-4">
             <p className="text-center text-xs text-muted-foreground/50">
               Ask your AI coach anything about poker strategy
@@ -290,4 +324,4 @@ export function CoachChat({
       </div>
     </div>
   )
-}
+})

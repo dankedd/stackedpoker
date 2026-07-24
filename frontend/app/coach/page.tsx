@@ -1,11 +1,16 @@
 "use client";
 
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Bot, AlertTriangle, BookOpen, ChevronRight, MessageSquare } from "lucide-react";
+import { Bot, AlertTriangle, BookOpen, ChevronRight, MessageSquare, Sparkles } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { CoachChat } from "@/components/learn/CoachChat";
+import { CoachChat, type CoachChatHandle } from "@/components/learn/CoachChat";
 import { useAuth } from "@/hooks/useAuth";
+import { useLearnProgress } from "@/contexts/LearnProgressContext";
+import { COACH_REVIEW_STORAGE_KEY } from "@/lib/learn/coachReviewStorage";
+import type { CoachLessonReviewContext } from "@/lib/learn/coachReview";
 import { cn } from "@/lib/utils";
 
 // ── Suggested questions ───────────────────────────────────────────────────────
@@ -19,32 +24,65 @@ const SUGGESTED_QUESTIONS = [
   "When should I use a donk bet?",
 ];
 
-// ── Mock leaks + concepts ─────────────────────────────────────────────────────
-
-const MOCK_LEAKS = [
-  { concept: "C-bet sizing", severity: "moderate", note: "Betting too large on dry boards" },
-  { concept: "Blind defense", severity: "severe", note: "Over-folding to BTN opens" },
-  { concept: "Turn barrels", severity: "mild", note: "Giving up too often on turns" },
-];
-
-const MOCK_CONCEPTS = [
-  "Pot odds",
-  "Positional advantage",
-  "Range balance",
-  "Board texture",
-  "Bluff catchers",
-];
-
 const SEVERITY_STYLE: Record<string, string> = {
   mild: "bg-amber-500/10 border-amber-500/25 text-amber-400",
   moderate: "bg-orange-500/10 border-orange-500/25 text-orange-400",
   severe: "bg-red-500/10 border-red-500/25 text-red-400",
 };
 
+function humanize(id: string): string {
+  return id.replace(/_/g, " ");
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function CoachPage() {
+  return (
+    <Suspense>
+      <CoachPageContent />
+    </Suspense>
+  );
+}
+
+function CoachPageContent() {
   const { user, session } = useAuth();
+  const { progress } = useLearnProgress();
+  const searchParams = useSearchParams();
+  const chatRef = useRef<CoachChatHandle>(null);
+
+  const [review, setReview] = useState<CoachLessonReviewContext | null>(null);
+  const [reviewLoaded, setReviewLoaded] = useState(false);
+
+  // Read (and consume) the pending Coach Review payload LessonPlayer left in
+  // sessionStorage right before navigating here — real per-lesson performance
+  // data, never fabricated. Read once on mount only.
+  useEffect(() => {
+    if (searchParams.get("review") !== "1") {
+      setReviewLoaded(true);
+      return;
+    }
+    try {
+      const raw = sessionStorage.getItem(COACH_REVIEW_STORAGE_KEY);
+      sessionStorage.removeItem(COACH_REVIEW_STORAGE_KEY);
+      if (raw) setReview(JSON.parse(raw) as CoachLessonReviewContext);
+    } catch {
+      // Missing/corrupt payload — falls back to general coaching below.
+    }
+    setReviewLoaded(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const activeLeaks = progress.leaks.filter((l) => !l.resolved).slice(0, 3);
+  const weakConcepts = Object.entries(progress.concepts)
+    .filter(([, entry]) => entry.mastery_level <= 2)
+    .sort((a, b) => a[1].mastery_level - b[1].mastery_level)
+    .slice(0, 5)
+    .map(([id]) => id);
+
+  const coachContext = review
+    ? { source: "lesson_review", lessonReview: review }
+    : { source: "coach_page" };
+  const initialMessage = review ? `Review my "${review.lessonTitle}" lesson.` : undefined;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -66,10 +104,12 @@ export default function CoachPage() {
                   AI Coaching
                 </p>
                 <h1 className="text-3xl sm:text-4xl font-black text-foreground mb-2 tracking-tight">
-                  Your Personal Coach
+                  {review ? "Lesson Review" : "Your Personal Coach"}
                 </h1>
                 <p className="text-muted-foreground max-w-lg leading-relaxed">
-                  Concept-driven, Socratic coaching — adapts to your leaks, study history, and current skill level.
+                  {review
+                    ? `Reviewing "${review.lessonTitle}" — scored ${review.avgScore}/100.`
+                    : "Concept-driven, Socratic coaching — adapts to your leaks, study history, and current skill level."}
                 </p>
               </div>
             </div>
@@ -129,10 +169,23 @@ export default function CoachPage() {
                   </div>
                 </div>
 
-                {session?.access_token ? (
+                {session?.access_token && reviewLoaded ? (
                   <CoachChat
+                    ref={chatRef}
                     token={session.access_token}
-                    context={{ source: "coach_page" }}
+                    context={coachContext}
+                    initialMessage={initialMessage}
+                    banner={
+                      review ? (
+                        <div className="flex items-start gap-2.5 rounded-xl border border-violet-500/20 bg-violet-500/5 px-3.5 py-2.5 mb-2">
+                          <Sparkles className="h-3.5 w-3.5 text-violet-400 shrink-0 mt-0.5" />
+                          <p className="text-xs text-muted-foreground/80 leading-relaxed">
+                            Reviewing <span className="font-semibold text-foreground">{review.lessonTitle}</span> — the
+                            coach can see what you got right and where you struggled.
+                          </p>
+                        </div>
+                      ) : undefined
+                    }
                     className="flex-1 overflow-hidden"
                   />
                 ) : (
@@ -185,7 +238,9 @@ export default function CoachPage() {
                     <button
                       key={q}
                       type="button"
-                      className="text-xs px-3 py-1.5 rounded-full border border-border/35 bg-card/40 text-muted-foreground/70 hover:border-violet-500/35 hover:text-violet-300 hover:bg-violet-500/8 transition-all duration-150"
+                      onClick={() => chatRef.current?.sendMessage(q)}
+                      disabled={!user}
+                      className="text-xs px-3 py-1.5 rounded-full border border-border/35 bg-card/40 text-muted-foreground/70 hover:border-violet-500/35 hover:text-violet-300 hover:bg-violet-500/8 transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {q}
                     </button>
@@ -203,24 +258,30 @@ export default function CoachPage() {
                   <AlertTriangle className="h-3.5 w-3.5 text-orange-400" />
                   <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/50">Active Leaks</p>
                 </div>
-                <div className="space-y-2.5">
-                  {MOCK_LEAKS.map((leak) => (
-                    <div key={leak.concept} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-secondary/10 border border-border/25">
-                      <span
-                        className={cn(
-                          "text-[10px] font-bold px-1.5 py-0.5 rounded-md border capitalize shrink-0 mt-0.5",
-                          SEVERITY_STYLE[leak.severity]
-                        )}
-                      >
-                        {leak.severity[0].toUpperCase()}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-foreground">{leak.concept}</p>
-                        <p className="text-[11px] text-muted-foreground/70 leading-tight mt-0.5">{leak.note}</p>
+                {activeLeaks.length > 0 ? (
+                  <div className="space-y-2.5">
+                    {activeLeaks.map((leak) => (
+                      <div key={leak.id} className="flex items-start gap-2.5 p-2.5 rounded-xl bg-secondary/10 border border-border/25">
+                        <span
+                          className={cn(
+                            "text-[10px] font-bold px-1.5 py-0.5 rounded-md border capitalize shrink-0 mt-0.5",
+                            SEVERITY_STYLE[leak.severity]
+                          )}
+                        >
+                          {leak.severity[0].toUpperCase()}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-foreground capitalize">{humanize(leak.concept_id)}</p>
+                          <p className="text-[11px] text-muted-foreground/70 leading-tight mt-0.5 capitalize">{humanize(leak.leak_type)}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground/50">
+                    {user ? "No active leaks detected — nice work." : "Sign in to see your active leaks."}
+                  </p>
+                )}
                 <Link
                   href="/progress"
                   className="flex items-center gap-1 text-xs text-violet-400/70 hover:text-violet-300 transition-colors mt-3.5 font-medium"
@@ -235,17 +296,26 @@ export default function CoachPage() {
                   <BookOpen className="h-3.5 w-3.5 text-violet-400/70" />
                   <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/50">Concepts to Review</p>
                 </div>
-                <div className="space-y-1.5">
-                  {MOCK_CONCEPTS.map((concept) => (
-                    <div
-                      key={concept}
-                      className="flex items-center justify-between px-3 py-2 rounded-lg bg-secondary/15 border border-border/25 hover:border-violet-500/20 hover:bg-violet-500/5 transition-colors cursor-pointer"
-                    >
-                      <span className="text-xs text-foreground/80">{concept}</span>
-                      <ChevronRight className="h-3 w-3 text-muted-foreground/30" />
-                    </div>
-                  ))}
-                </div>
+                {weakConcepts.length > 0 ? (
+                  <div className="space-y-1.5">
+                    {weakConcepts.map((id) => (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => chatRef.current?.sendMessage(`Can you help me understand ${humanize(id)}?`)}
+                        disabled={!user}
+                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-secondary/15 border border-border/25 hover:border-violet-500/20 hover:bg-violet-500/5 transition-colors text-left disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <span className="text-xs text-foreground/80 capitalize">{humanize(id)}</span>
+                        <ChevronRight className="h-3 w-3 text-muted-foreground/30" />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground/50">
+                    {user ? "No weak concepts flagged yet — keep learning." : "Sign in to see concepts to review."}
+                  </p>
+                )}
                 <Link
                   href="/learn"
                   className="flex items-center gap-1 text-xs text-violet-400/70 hover:text-violet-300 transition-colors mt-3.5 font-medium"
