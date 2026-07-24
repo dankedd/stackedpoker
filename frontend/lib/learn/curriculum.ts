@@ -11927,6 +11927,346 @@ export const LESSONS: Lesson[] = [
       },
     ],
   },
+
+  {
+    id: 'cbet-decision-lab',
+    module_id: 'cbetting-fundamentals-module',
+    slug: 'cbet-decision-lab',
+    title: 'The C-Bet Decision Lab',
+    subtitle: 'Every tool from this module, mixed and applied under pressure.',
+    lesson_type: 'simulation',
+    concept_ids: [
+      'cbet_definition', 'range_advantage', 'range_composition', 'equity_buckets', 'strong_hand_density',
+      'polarization_advantage', 'cbet_frequency', 'cbet_sizing', 'position_postflop', 'ip_cbet', 'oop_cbet',
+      'checking_range', 'range_protection', 'cbet_hand_selection', 'threebet_pot_cbet',
+    ],
+    estimated_min: 30,
+    xp_reward: 450,
+    sort_order: 9,
+    steps: [
+      // ── Scenario 1 — The Baseline Read ──────────────────────────────────────
+      {
+        id: 'cdl-s1a',
+        type: 'decision_spot',
+        concept_ids: ['range_advantage'],
+        narrative: 'Cash game, 100bb effective. BTN opens 2.3bb, BB calls. BTN is in position. Board: A♠9♦3♣.',
+        table_size: 6,
+        hero_position: 'BTN',
+        villain_position: 'BB',
+        effective_stack_bb: 100,
+        board: ['As', '9d', '3c'],
+        decision_spot_question: 'What does this board do to the range interaction between these two ranges?',
+        options: [
+          {
+            id: 'comprehensive', label: 'BTN\'s range keeps far more Aces and strong broadway holdings than BB\'s calling range, which is dense with unpaired, non-Ace trash here', quality: 'perfect',
+            feedback: 'Correct — this is the same range-advantage read from Lessons 3-4: BTN\'s opening range simply contains more of what this specific board rewards.',
+          },
+          {
+            id: 'symmetric', label: 'The two ranges interact with this board roughly symmetrically', quality: 'mistake',
+            feedback: 'This is one of the least symmetric boards in the whole module — BTN\'s Ace-heavy range and BB\'s Ace-light calling range are exactly what makes it so lopsided.',
+          },
+        ],
+        xp: 10,
+      },
+      {
+        id: 'cdl-s1b',
+        type: 'cbet_frequency_size',
+        concept_ids: ['cbet_frequency', 'cbet_sizing'],
+        narrative: 'Same spot. BTN\'s range advantage here is about as strong as it gets.',
+        table_size: 6,
+        hero_position: 'BTN',
+        villain_position: 'BB',
+        effective_stack_bb: 100,
+        board: ['As', '9d', '3c'],
+        cbet_frequency_size_prompt: 'Choose the aggregate frequency, then the primary sizing.',
+        cbet_frequency_size_frequency_options: [
+          { id: 'check_heavy', label: 'Check-Heavy' }, { id: 'low', label: 'Low' }, { id: 'medium', label: 'Medium' },
+          { id: 'high', label: 'High' }, { id: 'near_range', label: 'Near-Range Bet' },
+        ],
+        cbet_frequency_size_sizing_options: [
+          { id: 'check', label: 'Check' }, { id: 'small', label: 'Small (~25-33%)' }, { id: 'medium', label: 'Medium (~50-67%)' },
+        ],
+        options: [
+          { id: 'near_range|small', label: 'Near-Range Bet + Small', quality: 'perfect', feedback: 'Correct — the same merged, high-frequency, cheap-sizing logic from Lesson 6\'s A93r case.' },
+          { id: 'high|small', label: 'High Frequency + Small', quality: 'good', feedback: 'The sizing logic is right, but this board supports pushing all the way to a near-range bet.' },
+          { id: 'medium|medium', label: 'Medium Frequency + Medium', quality: 'mistake', feedback: 'This underestimates just how lopsided the range advantage is here — it supports much higher frequency at a cheaper size.' },
+        ],
+        xp: 16,
+      },
+
+      // ── Scenario 2 — The Mirror ──────────────────────────────────────────────
+      {
+        id: 'cdl-s2a',
+        type: 'decision_spot',
+        concept_ids: ['range_advantage'],
+        narrative: 'Same preflop action, same positions. Board is now 6♠5♦4♣ instead.',
+        table_size: 6,
+        hero_position: 'BTN',
+        villain_position: 'BB',
+        effective_stack_bb: 100,
+        board: ['6s', '5d', '4c'],
+        decision_spot_question: 'What changed about the range interaction on this board compared to A93r?',
+        options: [
+          {
+            id: 'comprehensive', label: 'BB\'s calling range now connects with this low, connected texture (suited connectors, small pairs) at least as well as BTN\'s range does — the advantage BTN had on A93r has largely evaporated', quality: 'perfect',
+            feedback: 'Correct — this is the 654r read from Lesson 5: the same two ranges, a very different board, and a much more symmetric interaction.',
+          },
+          {
+            id: 'still_favors_btn', label: 'BTN still holds a similar range advantage here as on A93r', quality: 'mistake',
+            feedback: "BTN's range advantage was driven largely by Aces and broadway strength — none of that carries over to a low, connected board like this one.",
+          },
+        ],
+        xp: 10,
+      },
+      {
+        id: 'cdl-s2b',
+        type: 'decision_spot',
+        concept_ids: ['cbet_frequency'],
+        narrative: 'Same 654r board. Given that symmetric read, what should happen to BTN\'s betting frequency?',
+        table_size: 6,
+        hero_position: 'BTN',
+        villain_position: 'BB',
+        effective_stack_bb: 100,
+        board: ['6s', '5d', '4c'],
+        options: [
+          { id: 'low', label: 'It should drop well below the A93r frequency — this board no longer rewards near-universal betting', quality: 'perfect', feedback: 'Correct — a much more symmetric range interaction, with real check-raise potential from BB, pulls frequency down significantly from the near-range-bet extreme.' },
+          { id: 'near_range', label: 'It should stay a near-range bet, just like A93r', quality: 'mistake', feedback: 'Treating every flop the same regardless of range interaction is exactly the "preflop aggression determines flop strategy" mistake this module set out to correct.' },
+        ],
+        xp: 10,
+      },
+
+      // ── Scenario 3 — Read the Distribution ──────────────────────────────────
+      {
+        id: 'cdl-s3',
+        type: 'range_distribution',
+        concept_ids: ['strong_hand_density', 'range_composition'],
+        narrative: 'Cash game. BTN (IP) opens, BB calls — baseline distributions averaged across many flops.',
+        table_size: 6,
+        hero_position: 'BTN',
+        villain_position: 'BB',
+        range_distribution_mode: 'predict',
+        range_distribution_hero: { label: IP_VS_BB_AVERAGE.label, strong: IP_VS_BB_AVERAGE.strong, good: IP_VS_BB_AVERAGE.good, weak: IP_VS_BB_AVERAGE.weak, trash: IP_VS_BB_AVERAGE.trash },
+        range_distribution_villain: { label: BB_VS_IP_AVERAGE.label, strong: BB_VS_IP_AVERAGE.strong, good: BB_VS_IP_AVERAGE.good, weak: BB_VS_IP_AVERAGE.weak, trash: BB_VS_IP_AVERAGE.trash },
+        range_distribution_prompt: 'Before the reveal — which range carries more Trash, and which carries more Strong?',
+        options: [
+          { id: 'bb_trash_btn_strong', label: 'BB carries more Trash; BTN carries more Strong', quality: 'perfect', feedback: 'Correct — the calling range is wider and weaker on average, carrying far more Trash, while the opener\'s range is tighter and stronger.' },
+          { id: 'reversed', label: 'BTN carries more Trash; BB carries more Strong', quality: 'mistake', feedback: "It's the opposite — the wider calling range (BB) is the one carrying the bulk of the Trash here." },
+          { id: 'equal', label: 'Both ranges are roughly equal in shape', quality: 'mistake', feedback: 'These two ranges are far from equal in shape — that asymmetry is exactly what drives high-frequency c-betting in the baseline case.' },
+        ],
+        xp: 14,
+      },
+
+      // ── Scenario 4 — Rank the Boards ─────────────────────────────────────────
+      {
+        id: 'cdl-s4',
+        type: 'board_rank_sort',
+        concept_ids: ['cbet_frequency', 'range_advantage'],
+        narrative: 'Cash game, 100bb effective. BTN opens, BB calls, BTN is in position on every board below. Order these from bets most to bets least.',
+        table_size: 6,
+        hero_position: 'BTN',
+        villain_position: 'BB',
+        effective_stack_bb: 100,
+        board_rank_sort_prompt: 'Tap in order: bets most first, bets least last.',
+        board_rank_sort_boards: [
+          { id: 'ace_dry2', label: 'A♦T♦4♠', board: ['Ad', 'Td', '4s'] },
+          { id: 'king_dry2', label: 'K♦9♠5♣', board: ['Kd', '9s', '5c'] },
+          { id: 'broadway_wet2', label: 'Q♥J♥9♠', board: ['Qh', 'Jh', '9s'] },
+          { id: 'low_connected2', label: '7♠6♦5♣', board: ['7s', '6d', '5c'] },
+        ],
+        board_rank_sort_target: ['ace_dry2', 'king_dry2', 'broadway_wet2', 'low_connected2'],
+        xp: 16,
+      },
+
+      // ── Scenario 5 — The Polarized Contrast ──────────────────────────────────
+      {
+        id: 'cdl-s5',
+        type: 'cbet_frequency_size',
+        concept_ids: ['polarization_advantage', 'threebet_pot_cbet'],
+        narrative:
+          'Cash game, 100bb effective. Hero 3-bet preflop from the BTN; BB called. This continuing range is more polarized than a single-raised-pot range. Board: J♠6♦2♣.',
+        table_size: 6,
+        hero_position: 'BTN',
+        villain_position: 'BB',
+        effective_stack_bb: 100,
+        board: ['Js', '6d', '2c'],
+        cbet_frequency_size_prompt: 'Choose the aggregate frequency, then the primary sizing, for this polarized range.',
+        cbet_frequency_size_frequency_options: [
+          { id: 'check_heavy', label: 'Check-Heavy' }, { id: 'low', label: 'Low' }, { id: 'medium', label: 'Medium' }, { id: 'high', label: 'High' },
+        ],
+        cbet_frequency_size_sizing_options: [
+          { id: 'check', label: 'Check' }, { id: 'medium', label: 'Medium (~50-67%)' }, { id: 'big', label: 'Big (~75-100%+)' },
+        ],
+        options: [
+          { id: 'medium|big', label: 'Medium Frequency + Big', quality: 'perfect', feedback: 'Correct — the same polarized, lower-frequency-but-bigger-sizing shape from the Q72r 3-bet-pot case in Lesson 6.' },
+          { id: 'high|small', label: 'High Frequency + Small', quality: 'mistake', feedback: 'That combination belongs to a wide, merged range — a 3-bet continuing range is shaped very differently, with far fewer medium-strength hands to protect cheaply.' },
+        ],
+        xp: 16,
+      },
+
+      // ── Scenario 6 — What Does Hero's Hand Do? ───────────────────────────────
+      {
+        id: 'cdl-s6',
+        type: 'range_bucket',
+        concept_ids: ['cbet_hand_selection', 'range_protection'],
+        narrative: 'Cash game, 100bb effective. BTN opens 2.3bb, BB calls. BTN is in position. Board: T♠9♦4♣.',
+        table_size: 6,
+        hero_position: 'BTN',
+        villain_position: 'BB',
+        effective_stack_bb: 100,
+        range_bucket_prompt: 'Sort each BTN hand into the role it plays in this spot.',
+        range_bucket_pool: ['TT', 'AT', 'KQs', 'AhJh', '87s', '66', '55', 'AcKc'],
+        range_bucket_categories: [
+          { id: 'bet_value', label: 'Bet — Value' },
+          { id: 'bet_bluff', label: 'Bet — Bluff' },
+          { id: 'check_realize', label: 'Check — Realize' },
+          { id: 'check_protect', label: 'Check — Protect' },
+        ],
+        range_bucket_correct: {
+          TT: 'bet_value', AT: 'bet_value',
+          KQs: 'bet_bluff', '87s': 'bet_bluff',
+          '66': 'check_realize', '55': 'check_realize',
+          AhJh: 'check_protect', AcKc: 'check_protect',
+        },
+        range_bucket_acceptable: {
+          KQs: ['bet_value'],
+          '66': ['check_protect'],
+          AhJh: ['bet_bluff'],
+          AcKc: ['check_realize'],
+        },
+        xp: 22,
+      },
+
+      // ── Scenario 7 — Position Flip ───────────────────────────────────────────
+      {
+        id: 'cdl-s7a',
+        type: 'decision_spot',
+        concept_ids: ['ip_cbet'],
+        narrative:
+          'Cash game, 100bb effective. BTN opens, BB calls. BTN (Hero) is in position. Board: J♠7♦2♣. Hero holds A♦Q♦ — two overcards, no pair.',
+        table_size: 6,
+        hero_position: 'BTN',
+        villain_position: 'BB',
+        effective_stack_bb: 100,
+        board: ['Js', '7d', '2c'],
+        decision_spot_question: 'Hero checks back this hand. What does that check cost Hero?',
+        options: [
+          { id: 'comprehensive', label: 'Very little — the street closes immediately, and Hero still gets to see the turn and realize AQ\'s equity for free', quality: 'perfect', feedback: 'Correct — the in-position check is close to free, same logic as Lesson 8.' },
+          { id: 'gives_initiative', label: 'It hands the betting initiative to BB for the rest of the street', quality: 'mistake', feedback: "BB already acted before Hero's check ends the street — there's no further action for BB to take this street." },
+        ],
+        xp: 10,
+      },
+      {
+        id: 'cdl-s7b',
+        type: 'decision_spot',
+        concept_ids: ['oop_cbet'],
+        narrative:
+          'Same stakes. Hero (SB) 3-bet preflop, BTN called, BB folded — Hero is the preflop aggressor but out of position. Board: J♠7♦2♣ (same board). Hero again holds A♦Q♦.',
+        table_size: 6,
+        hero_position: 'SB',
+        villain_position: 'BTN',
+        effective_stack_bb: 100,
+        board: ['Js', '7d', '2c'],
+        decision_spot_question: 'Hero is considering checking this same hand from out of position. What is different here?',
+        options: [
+          { id: 'comprehensive', label: 'The street does not close — BTN still gets to act, now with the information that Hero checked, and may bet into it', quality: 'perfect', feedback: 'Correct — out of position, the same check hands the initiative to Villain instead of ending the street for free.' },
+          { id: 'identical', label: 'Nothing is different — a check always accomplishes the same thing', quality: 'mistake', feedback: 'Whether a check ends the street depends entirely on whether someone still has to act after it — out of position, someone always does.' },
+        ],
+        xp: 10,
+      },
+
+      // ── Final Boss — Build the Whole Read ────────────────────────────────────
+      {
+        id: 'cdl-fb1',
+        type: 'equity_bucket',
+        concept_ids: ['equity_buckets'],
+        narrative:
+          'Cash game, 100bb effective. Hero opens BTN with K♣Q♣, BB calls. Board: K♠9♦4♣ — Hero flops top pair.',
+        table_size: 6,
+        hero_position: 'BTN',
+        villain_position: 'BB',
+        effective_stack_bb: 100,
+        board: ['Ks', '9d', '4c'],
+        equity_bucket_mode: 'scenario',
+        equity_bucket_scenario_hero_hand: ['Kc', 'Qc'],
+        equity_bucket_scenario_actual: 79,
+        equity_bucket_scenario_explanation: 'Top pair with a strong kicker on a dry, disconnected board against a wide calling range — this is comfortably ahead of the vast majority of BB\'s continuing hands.',
+        equity_bucket_prompt: 'Which bucket does K♣Q♣ fall into here?',
+        xp: 10,
+      },
+      {
+        id: 'cdl-fb2',
+        type: 'decision_spot',
+        concept_ids: ['range_advantage'],
+        narrative: 'Same spot. Beyond Hero\'s specific hand, how does BTN\'s whole range compare to BB\'s on this board?',
+        table_size: 6,
+        hero_position: 'BTN',
+        villain_position: 'BB',
+        board: ['Ks', '9d', '4c'],
+        options: [
+          { id: 'comprehensive', label: 'BTN\'s range keeps more Kings and strong overpairs; BB\'s calling range is heavy with unpaired, non-King trash on this dry a texture', quality: 'perfect', feedback: 'Correct — the same range-advantage read that supports a high-frequency approach here, independent of Hero\'s specific hand.' },
+          { id: 'no_advantage', label: 'There is no meaningful range advantage on this board', quality: 'mistake', feedback: 'A dry King-high board with BTN\'s range containing far more Kings than BB\'s calling range is a clear range-advantage spot.' },
+        ],
+        xp: 8,
+      },
+      {
+        id: 'cdl-fb3',
+        type: 'cbet_frequency_size',
+        concept_ids: ['cbet_frequency', 'cbet_sizing'],
+        narrative: 'Same spot and range advantage. Choose the frequency and sizing for BTN\'s whole range here.',
+        table_size: 6,
+        hero_position: 'BTN',
+        villain_position: 'BB',
+        effective_stack_bb: 100,
+        board: ['Ks', '9d', '4c'],
+        cbet_frequency_size_prompt: 'Choose the aggregate frequency, then the primary sizing.',
+        cbet_frequency_size_frequency_options: [
+          { id: 'check_heavy', label: 'Check-Heavy' }, { id: 'low', label: 'Low' }, { id: 'medium', label: 'Medium' },
+          { id: 'high', label: 'High' }, { id: 'near_range', label: 'Near-Range Bet' },
+        ],
+        cbet_frequency_size_sizing_options: [
+          { id: 'check', label: 'Check' }, { id: 'small', label: 'Small (~25-33%)' }, { id: 'medium', label: 'Medium (~50-67%)' },
+        ],
+        options: [
+          { id: 'high|small', label: 'High Frequency + Small', quality: 'perfect', feedback: 'Correct — a merged, high-frequency, cheaply-sized approach, consistent with the range advantage just identified.' },
+          { id: 'near_range|small', label: 'Near-Range Bet + Small', quality: 'good', feedback: 'Close — this board supports very high frequency, though it isn\'t quite as extreme as the A93r near-range-bet case.' },
+          { id: 'medium|medium', label: 'Medium Frequency + Medium', quality: 'mistake', feedback: 'This undersells the range advantage just identified — it supports betting considerably more often, at a cheaper size.' },
+        ],
+        xp: 16,
+      },
+      {
+        id: 'cdl-fb4',
+        type: 'decision_spot',
+        concept_ids: ['cbet_hand_selection'],
+        narrative: 'Given all of that, where does K♣Q♣ itself — a specific top-pair-good-kicker hand — fit inside this strategy?',
+        table_size: 6,
+        hero_position: 'BTN',
+        villain_position: 'BB',
+        board: ['Ks', '9d', '4c'],
+        options: [
+          { id: 'bet_value', label: 'It bets, for value — a Strong-bucket made hand inside a range that is already betting almost everything', quality: 'perfect', feedback: 'Correct — the whole-range read (high frequency, small size) and the individual-hand read (Strong bucket, real made hand) point the same direction: this hand bets for value.' },
+          { id: 'check_protect', label: 'It checks back to protect the checking range', quality: 'mistake', feedback: 'A Strong-bucket made hand inside an already-high-frequency betting range has no reason to sit in the checking range instead — it belongs in the betting range, for value.' },
+        ],
+        xp: 12,
+      },
+      {
+        id: 'cdl-fb5',
+        type: 'decision_spot',
+        concept_ids: ['cbet_definition', 'range_advantage'],
+        narrative: 'Zoom back out. What is the one idea underneath every scenario in this lab?',
+        options: [
+          {
+            id: 'comprehensive', label: 'A c-bet decision is never about "I raised, so I bet" — it is always about how the two full ranges interact with this specific board, and where Hero\'s exact hand fits inside that resulting strategy', quality: 'perfect',
+            feedback: 'Correct. This is the thesis of the entire module — frequency, sizing, hand selection, and position all flow from range interaction, never from the preflop label alone.',
+          },
+          {
+            id: 'memorize_boards', label: 'Memorize the correct bet size for each board texture as a fixed rule', quality: 'mistake',
+            feedback: 'Memorizing board-texture rules is exactly the shortcut this module replaced — the same texture can call for a different strategy depending on which ranges are actually interacting with it.',
+          },
+        ],
+        xp: 12,
+      },
+    ],
+  },
 ]
 
 // ── Derived lookup maps ───────────────────────────────────────────────────────

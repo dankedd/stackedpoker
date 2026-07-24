@@ -1,6 +1,7 @@
 'use client'
 
 import { AlertCircle, RefreshCw, ChevronRight } from 'lucide-react'
+import { PreviousButton } from './PreviousButton'
 
 interface EvaluationFailedProps {
   /** Error type from the API (for optional debug display) */
@@ -10,9 +11,11 @@ interface EvaluationFailedProps {
   /** Skip this step and advance */
   onContinue: () => void
   isLast: boolean
+  /** Undefined/omitted on step 1, where there's nothing to go back to. */
+  onPrevious?: () => void
 }
 
-export function EvaluationFailed({ errorType, onRetry, onContinue, isLast }: EvaluationFailedProps) {
+export function EvaluationFailed({ errorType, onRetry, onContinue, isLast, onPrevious }: EvaluationFailedProps) {
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
       {/* Main card — neutral, non-alarming */}
@@ -41,6 +44,7 @@ export function EvaluationFailed({ errorType, onRetry, onContinue, isLast }: Eva
 
       {/* Actions */}
       <div className="flex gap-3">
+        {onPrevious && <PreviousButton onClick={onPrevious} compact />}
         <button
           type="button"
           onClick={onRetry}

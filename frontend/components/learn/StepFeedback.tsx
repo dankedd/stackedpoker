@@ -6,12 +6,15 @@ import type { StepResult } from '@/lib/learn/types'
 import { QUALITY_LABELS, QUALITY_COLORS } from '@/lib/learn/types'
 import { XPGain } from './XPGain'
 import { EvaluationFailed } from './EvaluationFailed'
+import { PreviousButton } from './PreviousButton'
 
 interface StepFeedbackProps {
   result: StepResult
   onContinue: () => void
   onRetry: () => void
   isLast: boolean
+  /** Undefined/omitted on step 1, where there's nothing to go back to. */
+  onPrevious?: () => void
 }
 
 // ── Quality-based colour tokens ───────────────────────────────────────────────
@@ -85,7 +88,7 @@ function ContinueButton({ onClick, isLast }: { onClick: () => void; isLast: bool
     <button
       type="button"
       onClick={onClick}
-      className="group relative w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
+      className="group relative flex-1 inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
     >
       <div
         aria-hidden
@@ -108,7 +111,7 @@ function ContinueButton({ onClick, isLast }: { onClick: () => void; isLast: bool
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function StepFeedback({ result, onContinue, onRetry, isLast }: StepFeedbackProps) {
+export function StepFeedback({ result, onContinue, onRetry, isLast, onPrevious }: StepFeedbackProps) {
   // ── Failed state: no score, no XP, honest message ─────────────────────────
   if (!result.evaluation_valid) {
     return (
@@ -117,6 +120,7 @@ export function StepFeedback({ result, onContinue, onRetry, isLast }: StepFeedba
         onRetry={onRetry}
         onContinue={onContinue}
         isLast={isLast}
+        onPrevious={onPrevious}
       />
     )
   }
@@ -186,7 +190,10 @@ export function StepFeedback({ result, onContinue, onRetry, isLast }: StepFeedba
         />
       </div>
 
-      <ContinueButton onClick={onContinue} isLast={isLast} />
+      <div className="flex items-center gap-3">
+        {onPrevious && <PreviousButton onClick={onPrevious} />}
+        <ContinueButton onClick={onContinue} isLast={isLast} />
+      </div>
     </div>
   )
 }

@@ -9,6 +9,7 @@ import type { Lesson, LessonStep, StepResult } from '@/lib/learn/types'
 import { evaluateStepLocally } from '@/lib/learn/evaluator'
 import { PokerContextBar } from '@/components/learn/PokerContextBar'
 import { StepFeedback } from '@/components/learn/StepFeedback'
+import { PreviousButton } from '@/components/learn/PreviousButton'
 import { ConceptReveal } from '@/components/learn/steps/ConceptReveal'
 import { DecisionSpot } from '@/components/learn/steps/DecisionSpot'
 import { EquityPredict } from '@/components/learn/steps/EquityPredict'
@@ -449,6 +450,10 @@ interface LessonPlayerProps {
     userResponse: unknown,
     timeMs: number,
   ) => void
+  /** Fired whenever the visible step index changes — including backward
+   *  navigation, which never touches onStepResult. Purely cosmetic (e.g. a
+   *  header progress-dot indicator); never used for persistence. */
+  onStepIndexChange?: (stepIndex: number) => void
 }
 
 /** Same "exclude passive/invalid steps" rule used by the completion screen —
@@ -460,6 +465,14 @@ function computeAvgScore(results: StepResult[]): number {
   return Math.round(scored.reduce((s, r) => s + r.score, 0) / scored.length)
 }
 
+/** A step's recorded outcome, kept so backward navigation can redisplay it
+ *  without re-evaluating, re-awarding XP, or re-persisting anything. */
+interface AnsweredEntry {
+  result: StepResult
+  userResponse: unknown
+  timeMs: number
+}
+
 export function LessonPlayer({
   lesson,
   userXP = 0,
@@ -467,11 +480,11 @@ export function LessonPlayer({
   onComplete,
   onLessonFinished,
   onStepResult,
+  onStepIndexChange,
 }: LessonPlayerProps) {
+  const clampedInitialIndex = Math.min(Math.max(initialStepIndex, 0), Math.max(lesson.steps.length - 1, 0))
   const [phase, setPhase] = useState<Phase>('intro')
-  const [currentStepIndex, setCurrentStepIndex] = useState(
-    Math.min(Math.max(initialStepIndex, 0), Math.max(lesson.steps.length - 1, 0)),
-  )
+  const [currentStepIndex, setCurrentStepIndex] = useState(clampedInitialIndex)
   const [results, setResults] = useState<StepResult[]>([])
   const [latestResult, setLatestResult] = useState<StepResult | null>(null)
   const [totalXP, setTotalXP] = useState(0)
@@ -480,6 +493,16 @@ export function LessonPlayer({
   // splices an extra step in right after the current index.
   const [dynamicSteps, setDynamicSteps] = useState<LessonStep[]>(lesson.steps)
   const [pendingConfidence, setPendingConfidence] = useState<'low' | 'medium' | 'high' | null>(null)
+  // Every step index answered/viewed so far this session, keyed by index —
+  // the idempotency guard for backward navigation: re-visiting one of these
+  // never re-scores, re-awards XP, or re-persists (see gotoIndex/handleResult).
+  const [answeredSteps, setAnsweredSteps] = useState<Map<number, AnsweredEntry>>(new Map())
+  // Furthest step index this session has ever reached — distinct from
+  // currentStepIndex, which can move backward. Used solely to tell "the user
+  // is stepping into genuinely new territory" (may need adaptive injection)
+  // apart from "the user is re-walking territory already resolved" (must not
+  // inject a second remediation/reinforcement step).
+  const [maxIndexReached, setMaxIndexReached] = useState(clampedInitialIndex)
 
   // Running XP = user's pre-lesson total + XP earned so far in this lesson
   // Used by the local evaluator for accurate level tracking
@@ -502,20 +525,47 @@ export function LessonPlayer({
     setPhase('step')
   }, [])
 
+  // Single place that actually moves `currentStepIndex` anywhere — forward
+  // (advanceStep/handleContinue) or backward (handlePrevious). Re-deriving
+  // phase/latestResult from `answeredSteps` here (rather than at each call
+  // site) is what makes revisiting an already-answered step show its stored
+  // feedback, and revisiting a passive step reopen it fresh, no matter which
+  // direction we arrived from.
+  const gotoIndex = useCallback((targetIndex: number) => {
+    if (targetIndex >= steps.length) {
+      setPhase('summary')
+      return
+    }
+    const entry = answeredSteps.get(targetIndex)
+    setCurrentStepIndex(targetIndex)
+    setMaxIndexReached((m) => Math.max(m, targetIndex))
+    setPendingConfidence(null)
+    if (entry && !entry.result.unscored) {
+      // Already-graded step — reopen the feedback screen instead of the
+      // (now stale) interactive question, so the recorded answer can never
+      // be resubmitted to farm XP or change the score.
+      setLatestResult(entry.result)
+      setPhase('feedback')
+    } else {
+      // Either a brand-new step, or a passive/theory step being revisited —
+      // both simply reopen the step itself.
+      setLatestResult(null)
+      const stepAtTarget = steps[targetIndex]
+      setPhase(!entry && stepAtTarget?.ask_confidence ? 'confidence' : 'step')
+    }
+  }, [steps, answeredSteps])
+
   // Advance to the next step (or the lesson summary, if this was the last one).
   // Shared by the unscored/passive path (skips feedback entirely) and the
   // scored path's "Continue" button (after the feedback screen).
   const advanceStep = useCallback(() => {
-    if (isLastStep) {
-      setPhase('summary')
-    } else {
-      const next = steps[currentStepIndex + 1]
-      setCurrentStepIndex((i) => i + 1)
-      setLatestResult(null)
-      setPendingConfidence(null)
-      setPhase(next?.ask_confidence ? 'confidence' : 'step')
-    }
-  }, [isLastStep, currentStepIndex, steps])
+    gotoIndex(currentStepIndex + 1)
+  }, [gotoIndex, currentStepIndex])
+
+  const handlePrevious = useCallback(() => {
+    if (currentStepIndex <= 0) return
+    gotoIndex(currentStepIndex - 1)
+  }, [currentStepIndex, gotoIndex])
 
   const handleResult = useCallback((result: StepResult, userResponse: unknown, timeMs: number) => {
     // Merge in the learner's self-reported confidence, if this step asked for one
@@ -523,12 +573,34 @@ export function LessonPlayer({
       ? { ...result, learner_confidence: pendingConfidence }
       : result
 
-    setResults((prev) => [...prev, enriched])
-    setTotalXP((prev) => prev + enriched.xp_earned)
+    // A passive/theory step reopened via "Previous" fires onComplete again
+    // when the learner clicks through it a second time. It must not be
+    // re-scored, re-added to totals, or re-sent to the caller for
+    // persistence — that's exactly the "no duplicate completion records /
+    // no double XP" requirement for backward navigation. (Scored steps never
+    // reach this branch a second time: revisiting one always lands on the
+    // stored feedback screen, not the interactive question — see gotoIndex.)
+    const alreadyRecorded = answeredSteps.has(currentStepIndex)
 
-    if (currentStep) {
-      onStepResult?.(currentStep, currentStepIndex, enriched, userResponse, timeMs)
-      recordConceptResult(currentStep.concept_ids?.[0], enriched.quality)
+    if (!alreadyRecorded) {
+      setResults((prev) => [...prev, enriched])
+      setTotalXP((prev) => prev + enriched.xp_earned)
+      setAnsweredSteps((prev) => {
+        const next = new Map(prev)
+        next.set(currentStepIndex, { result: enriched, userResponse, timeMs })
+        return next
+      })
+
+      if (currentStep) {
+        onStepResult?.(currentStep, currentStepIndex, enriched, userResponse, timeMs)
+        recordConceptResult(currentStep.concept_ids?.[0], enriched.quality)
+      }
+
+      // Trigger level-up overlay
+      if (enriched.leveled_up && enriched.level_after) {
+        setLevelUpData({ level: enriched.level_after, xp: enriched.xp_earned })
+        setShowLevelUp(true)
+      }
     }
 
     if (enriched.unscored) {
@@ -540,39 +612,48 @@ export function LessonPlayer({
 
     setLatestResult(enriched)
     setPhase('feedback')
-
-    // Trigger level-up overlay
-    if (enriched.leveled_up && enriched.level_after) {
-      setLevelUpData({ level: enriched.level_after, xp: enriched.xp_earned })
-      setShowLevelUp(true)
-    }
-  }, [currentStep, currentStepIndex, onStepResult, pendingConfidence, advanceStep])
+  }, [currentStep, currentStepIndex, onStepResult, pendingConfidence, advanceStep, answeredSteps])
 
   const handleRetry = useCallback(() => {
     // Go back to the step so the user can re-answer (failed evaluation, no penalty)
     setLatestResult(null)
     setResults((prev) => prev.slice(0, -1))  // remove the failed result
+    setAnsweredSteps((prev) => {
+      if (!prev.has(currentStepIndex)) return prev
+      const next = new Map(prev)
+      next.delete(currentStepIndex)
+      return next
+    })
     setPhase('step')
-  }, [])
+  }, [currentStepIndex])
 
   const handleContinue = useCallback(() => {
-    const injected = currentStep && latestResult ? pickInjectedStep(currentStep, latestResult) : null
+    // Only a first-time completion (not a forward re-walk after reviewing
+    // earlier steps) may inject a remediation/reinforcement step — otherwise
+    // re-answering-by-viewing the same feedback screen on the way back
+    // forward would splice a duplicate copy into the queue.
+    const isReviewing = currentStepIndex < maxIndexReached
+    if (!isReviewing) {
+      const injected = currentStep && latestResult ? pickInjectedStep(currentStep, latestResult) : null
 
-    if (injected) {
-      setDynamicSteps((prev) => {
-        const next = [...prev]
-        next.splice(currentStepIndex + 1, 0, injected)
-        return next
-      })
-      setCurrentStepIndex((i) => i + 1)
-      setLatestResult(null)
-      setPendingConfidence(null)
-      setPhase(injected.ask_confidence ? 'confidence' : 'step')
-      return
+      if (injected) {
+        const targetIndex = currentStepIndex + 1
+        setDynamicSteps((prev) => {
+          const next = [...prev]
+          next.splice(targetIndex, 0, injected)
+          return next
+        })
+        setCurrentStepIndex(targetIndex)
+        setMaxIndexReached((m) => Math.max(m, targetIndex))
+        setLatestResult(null)
+        setPendingConfidence(null)
+        setPhase(injected.ask_confidence ? 'confidence' : 'step')
+        return
+      }
     }
 
     advanceStep()
-  }, [currentStep, currentStepIndex, latestResult, advanceStep])
+  }, [currentStep, currentStepIndex, latestResult, advanceStep, maxIndexReached])
 
   const handleSummaryDone = useCallback(() => {
     onComplete(computeAvgScore(results), totalXP)
@@ -631,6 +712,8 @@ export function LessonPlayer({
           setTotalXP(0)
           setDynamicSteps(lesson.steps)
           setCurrentStepIndex(0)
+          setMaxIndexReached(0)
+          setAnsweredSteps(new Map())
           setLatestResult(null)
           setPendingConfidence(null)
           setPhase('intro')

@@ -57,6 +57,10 @@ export type StepType =
   | 'board_autopsy'         // a board plus an intentionally-flawed classification; learner flags the wrong fields, graded against classifyFlop
   // ── Poker Fundamentals (Module 1) ──
   | 'hand_ranking_order'    // drag/tap-reorder all 10 standard hand categories from strongest to weakest
+  // ── Poker Fundamentals — Lesson 1 opening interactive beats ──
+  | 'pot_win_intro'   // tap the pot on a live-looking table; chips animate to Hero. Unscored onboarding.
+  | 'cards_identify'  // tap which dealt cards are Hero's private hole cards vs the shared community cards
+  | 'build_first_hand' // tap the 5 cards (from Hero's hole cards + the board) that make Hero's best hand
   // ── C-Betting Fundamentals (Module 7) ──
   | 'range_distribution'    // two-range (Hero vs Villain) Strong/Good/Weak/Trash stacked-bar comparison
   | 'cbet_frequency_size'   // two-stage: aggregate betting-frequency bucket, then primary sizing bucket
@@ -436,6 +440,20 @@ export interface LessonStep {
   // display copy deterministically via shuffleBySeed(items, step.id).
   hand_ranking_order_items?: { id: string; label: string; example: string[] }[]
   hand_ranking_order_prompt?: string
+  // ── Lesson 1 opening interactive beats ──────────────────────────────────────
+  // Pot win intro — Step 1: a live-looking table (built from `pot_win_intro_seats`),
+  // Hero's cards stay face-down throughout. Tapping the pot animates chips to Hero.
+  pot_win_intro_seats?: { id: string; label: string; isHero: boolean; stack: number }[]
+  pot_win_intro_pot?: number
+  pot_win_intro_prompt?: string
+  // Cards identify — Step 2: Hero's `hero_hand` deal face-up alongside 5 face-down
+  // community placeholders. Learner taps which cards are Hero's alone.
+  cards_identify_prompt?: string
+  // Build first hand — Step 3: all 7 cards (`hero_hand` + `board`) are shown face-up;
+  // learner taps the 5 that form Hero's best hand. `build_first_hand_correct` is the
+  // target 5-card answer (a subset of hero_hand ∪ board).
+  build_first_hand_prompt?: string
+  build_first_hand_correct?: string[]
   // ── C-Betting Fundamentals (Module 7) ───────────────────────────────────────
   // Range distribution — two-range (Hero vs Villain) Strong/Good/Weak/Trash stacked-bar comparison.
   /** Each entry sums to ~100 (strong+good+weak+trash). Labeled illustrative, not solver-exact, on-screen. */

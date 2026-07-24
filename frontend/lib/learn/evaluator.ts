@@ -74,6 +74,7 @@ export function isScoredStep(step: LessonStep): boolean {
     case 'concept_reveal':
     case 'defense_lens':
     case 'flop_scanner':
+    case 'pot_win_intro':
       return false
 
     // ── Understanding the Flop (Module 6) — mode-gated ──
@@ -862,6 +863,94 @@ function evalHandRankingOrder(step: LessonStep, response: unknown): EvalCore {
   return { quality: 'mistake', score: Math.max(20, pct), feedback: `${positionSummary} Review the full hierarchy below.${detail}`, ev_loss_bb: 0 }
 }
 
+// ── Cards identify (Lesson 1, Step 2) ─────────────────────────────────────────
+// Learner taps which of the dealt cards are Hero's private hole cards
+// (`step.hero_hand`) among Hero's cards + N face-down community placeholders.
+// The explanation always lands regardless of accuracy — this is foundational
+// content, not a gatekeeping quiz.
+
+function evalCardsIdentify(step: LessonStep, response: unknown): EvalCore {
+  const heroCards = step.hero_hand ?? []
+  const correctIds = new Set(heroCards)
+  const selectedIds = new Set(Array.isArray(response) ? (response as string[]) : [])
+  const explanation =
+    step.concept_content ??
+    "In Texas Hold'em you receive 2 private hole cards. Up to 5 community cards are shared by everyone."
+
+  const foundCount = heroCards.filter((c) => correctIds.has(c) && selectedIds.has(c)).length
+  const extras = [...selectedIds].filter((c) => !correctIds.has(c)).length
+  const gotBoth = heroCards.length > 0 && foundCount === heroCards.length
+
+  if (gotBoth && extras === 0) {
+    return {
+      quality: 'perfect',
+      score: 100,
+      feedback: `Exactly right — those are your hole cards. ${explanation}`,
+      ev_loss_bb: 0,
+    }
+  }
+  if (gotBoth) {
+    return {
+      quality: 'good',
+      score: QUALITY_SCORES.good,
+      feedback: `You found both of your hole cards. ${explanation}`,
+      ev_loss_bb: 0,
+    }
+  }
+  return {
+    quality: foundCount > 0 ? 'acceptable' : 'mistake',
+    score: foundCount > 0 ? QUALITY_SCORES.acceptable : QUALITY_SCORES.mistake,
+    feedback: `${foundCount} of ${heroCards.length} correct — your hole cards are ${heroCards.join(' and ')}. ${explanation}`,
+    ev_loss_bb: 0,
+  }
+}
+
+// ── Build first hand (Lesson 1, Step 3) ───────────────────────────────────────
+// Learner taps the 5 cards (from Hero's 2 hole cards + the 5-card board) that
+// form Hero's best possible poker hand, against a hand-authored, unambiguous
+// `build_first_hand_correct` target.
+
+function evalBuildFirstHand(step: LessonStep, response: unknown): EvalCore {
+  const correct = new Set(step.build_first_hand_correct ?? [])
+  const selected = new Set(Array.isArray(response) ? (response as string[]) : [])
+  const explanation =
+    step.concept_content ??
+    "Your final poker hand uses the best 5-card combination available from your 2 hole cards and the 5 community cards."
+
+  if (correct.size === 0) {
+    return { quality: 'good', score: 80, feedback: 'Hand recorded.', ev_loss_bb: 0 }
+  }
+
+  const overlap = [...selected].filter((c) => correct.has(c)).length
+  const allCorrect = overlap === correct.size && selected.size === correct.size
+
+  if (allCorrect) {
+    return {
+      quality: 'perfect',
+      score: 100,
+      feedback: `Exactly right — that's Hero's best 5-card hand. ${explanation}`,
+      ev_loss_bb: 0,
+    }
+  }
+
+  const accuracy = overlap / correct.size
+  const correctList = [...correct].join(', ')
+  if (accuracy >= 0.6) {
+    return {
+      quality: 'acceptable',
+      score: QUALITY_SCORES.acceptable,
+      feedback: `${overlap} of ${correct.size} correct — Hero's best hand is ${correctList}. ${explanation}`,
+      ev_loss_bb: 0,
+    }
+  }
+  return {
+    quality: 'mistake',
+    score: Math.max(20, Math.round(accuracy * 100)),
+    feedback: `Not quite — Hero's best hand is ${correctList}. ${explanation}`,
+    ev_loss_bb: 0,
+  }
+}
+
 // ── Step-type router ──────────────────────────────────────────────────────────
 
 function resolveCore(step: LessonStep, response: unknown): EvalCore {
@@ -1134,6 +1223,16 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
     // Hand ranking order — drag/tap-reorder all 10 categories strongest to weakest
     case 'hand_ranking_order':
       return evalHandRankingOrder(step, response)
+
+    // ── Lesson 1 opening interactive beats ──────────────────────────────────
+
+    // Cards identify — tap Hero's hole cards out of Hero's cards + community placeholders
+    case 'cards_identify':
+      return evalCardsIdentify(step, response)
+
+    // Build first hand — tap the 5 cards that form Hero's best hand
+    case 'build_first_hand':
+      return evalBuildFirstHand(step, response)
 
     // ── C-Betting Fundamentals (Module 7) ───────────────────────────────────
 
