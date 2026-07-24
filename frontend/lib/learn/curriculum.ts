@@ -1852,16 +1852,20 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['poker_terminology'],
         narrative:
-          'Everyone folds around to the Big Blind, who then raises. The Big Blind already had a forced bet posted before the hand even began — nobody else voluntarily put a chip in.',
-        decision_spot_question: 'Is BB still first in?',
+          'Everyone folds around to the Small Blind, who calls to complete the bet instead of folding. Action moves to the Big Blind, who then raises. Both blinds had forced bets posted before the hand began — but the Small Blind\'s call was a free choice, not a mandatory one.',
+        decision_spot_question: 'Who was first in the pot?',
         options: [
           {
-            id: 'first_in', label: 'Yes — BB is still first in', quality: 'perfect',
-            feedback: 'Correct. A forced blind isn’t a voluntary entry — it doesn’t count. Since nobody else voluntarily entered before BB raised, BB is first in, even though BB technically already had chips in the pot.',
+            id: 'sb_first_in', label: 'The Small Blind — their call was the first voluntary action', quality: 'perfect',
+            feedback: 'Correct. Neither blind\'s forced post counts as "entering" the pot — that money goes in automatically, before anyone chooses anything. The Small Blind could have folded and didn\'t; that call is the first voluntary action of the hand, so the Small Blind is first in. The Big Blind\'s raise is voluntary too, but it lands second, into a pot someone else already opened.',
           },
           {
-            id: 'not_first_in', label: 'No — BB can’t be first in, since BB already had chips in the pot', quality: 'mistake',
-            feedback: 'The forced blind doesn’t count as a voluntary entry. "First in" is about voluntary action, not about whether any chips happen to already be in front of you — BB is still first in here.',
+            id: 'bb_first_in', label: 'The Big Blind — they\'re the one who raised', quality: 'mistake',
+            feedback: '"First in" tracks who first chose to put chips in, not who acted most aggressively. The Small Blind\'s call happened before the Big Blind acted at all, and since folding was on the table and they chose not to, that call is the first voluntary entry. The Big Blind is acting second here, not first in.',
+          },
+          {
+            id: 'neither_forced', label: 'Neither — both players already had forced money in before acting', quality: 'mistake',
+            feedback: 'The forced post is only the mandatory part of each blind\'s chips — it\'s not a decision, so it can\'t make anyone "first in." But once action reaches a blind and they choose to call or raise rather than fold, that specific choice is voluntary. The Small Blind\'s call was exactly that choice, made before the Big Blind acted, which is why the Small Blind is first in.',
           },
         ],
         xp: 12,
