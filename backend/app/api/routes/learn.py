@@ -75,6 +75,25 @@ async def _supabase_upsert(table: str, data: dict, settings, on_conflict: str = 
         return result[0] if result else {}
 
 
+async def _optional_supabase_get(
+    table: str, query: str, settings, *, user_id: str, section: str,
+) -> list[dict]:
+    """Best-effort fetch for a non-critical enrichment section of the progress
+    bundle (achievements, concept mastery, leaks). A schema gap or outage in
+    ONE of these (e.g. a table that hasn't been migrated to production yet)
+    must never take down core lesson/step/XP/module progress with it — the
+    section degrades to empty and the real backend error is logged for
+    diagnosis, never swallowed silently."""
+    try:
+        return await _supabase_get(table, query, settings)
+    except httpx.HTTPError as e:
+        logger.warning(
+            "Optional progress section '%s' unavailable (table=%s) user=%s: %s",
+            section, table, user_id, e,
+        )
+        return []
+
+
 # ── Request bodies ────────────────────────────────────────────────────────────
 
 class StepResultBody(BaseModel):
@@ -275,27 +294,54 @@ async def _upsert_leak(user_id: str, concept_id: str, node_type: str, leak_type:
 async def get_full_progress(current_user: dict = Depends(get_current_user)) -> dict:
     """Everything needed to restore Learn state on open: XP/level/streak, every
     lesson's status + resume position, completed step ids, concept mastery,
-    active leaks, unlocked achievements, and the Continue Learning target."""
+    active leaks, unlocked achievements, and the Continue Learning target.
+
+    CORE vs OPTIONAL: lesson progress, step/resume position, XP/skill, and
+    module completion are load-bearing — if any of those queries fail, the
+    account's progress genuinely cannot be trusted, so this raises (502/500)
+    rather than ever returning a quietly-empty account. Concept mastery,
+    leaks, and achievements are enrichment — each is fetched independently via
+    `_optional_supabase_get` so a schema gap or outage in any ONE of them
+    (e.g. a not-yet-migrated table) degrades to an empty section instead of
+    taking down lesson/step/XP/module progress with it. This split is what
+    fixes the production incident where a missing `user_achievements` table
+    502'd this entire endpoint despite every core table being healthy."""
     settings = get_settings()
     user_id: str = current_user.get("sub", "")
 
+    # ── CORE progress — must succeed, or the whole response is an error. ──────
     try:
         skill = await _get_skill_row(user_id, settings)
         lesson_rows = await _supabase_get("user_lesson_progress", f"user_id=eq.{user_id}&select=*", settings)
         step_rows = await _supabase_get(
             "user_step_progress", f"user_id=eq.{user_id}&select=lesson_id,step_id", settings,
         )
-        concept_rows = await _supabase_get("user_concept_mastery", f"user_id=eq.{user_id}&select=*", settings)
-        leak_rows = await _supabase_get(
-            "user_leaks", f"user_id=eq.{user_id}&resolved=eq.false&select=*&order=severity.asc", settings,
-        )
-        achievement_rows = await _supabase_get(
-            "user_achievements", f"user_id=eq.{user_id}&select=achievement_id,earned_at", settings,
-        )
         module_rows = await _supabase_get(
             "user_module_progress", f"user_id=eq.{user_id}&select=module_id", settings,
         )
+    except httpx.HTTPError as e:
+        logger.error("Core progress DB error user=%s: %s", user_id, e)
+        raise HTTPException(status_code=502, detail="Could not load progress.")
+    except Exception:
+        logger.exception("Core progress error user=%s", user_id)
+        raise HTTPException(status_code=500, detail="Progress unavailable.")
 
+    # ── OPTIONAL/enrichment progress — each isolated so one broken section
+    # can never take the response down with it. ───────────────────────────────
+    concept_rows = await _optional_supabase_get(
+        "user_concept_mastery", f"user_id=eq.{user_id}&select=*", settings,
+        user_id=user_id, section="concept_mastery",
+    )
+    leak_rows = await _optional_supabase_get(
+        "user_leaks", f"user_id=eq.{user_id}&resolved=eq.false&select=*&order=severity.asc", settings,
+        user_id=user_id, section="leaks",
+    )
+    achievement_rows = await _optional_supabase_get(
+        "user_achievements", f"user_id=eq.{user_id}&select=achievement_id,earned_at", settings,
+        user_id=user_id, section="achievements",
+    )
+
+    try:
         lessons = {
             lr["lesson_id"]: {
                 "status": lr.get("status", "locked"),
@@ -364,9 +410,6 @@ async def get_full_progress(current_user: dict = Depends(get_current_user)) -> d
             "completed_modules": [mr["module_id"] for mr in module_rows],
             "continue": continue_target,
         }
-    except httpx.HTTPError as e:
-        logger.error("Progress DB error user=%s: %s", user_id, e)
-        raise HTTPException(status_code=502, detail="Could not load progress.")
     except Exception:
         logger.exception("Progress error user=%s", user_id)
         raise HTTPException(status_code=500, detail="Progress unavailable.")

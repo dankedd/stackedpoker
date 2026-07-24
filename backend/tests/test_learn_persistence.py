@@ -13,7 +13,9 @@ import asyncio
 import uuid
 from datetime import datetime, timezone
 
+import httpx
 import pytest
+from fastapi import HTTPException
 
 from app.api.routes import learn as learn_module
 from app.engines.learn import achievements as achievements_module
@@ -78,6 +80,11 @@ class FakeResponse:
 
 class FakeSupabase:
     def __init__(self):
+        # Tables in this set simulate a production schema gap (e.g. a
+        # not-yet-migrated table): any GET against them raises the same
+        # httpx.HTTPStatusError PostgREST's real PGRST205 produces, instead of
+        # ever returning rows. Used to reproduce the exact production incident.
+        self.broken_tables: set[str] = set()
         self.tables: dict[str, list[dict]] = {
             "achievements": [
                 {"id": "first_lesson", "xp_bonus": 25},
@@ -173,6 +180,19 @@ class FakeAsyncClient:
 
     async def get(self, url, headers=None):
         path, query = self._split(url)
+        if path in self.db.broken_tables:
+            request = httpx.Request("GET", url)
+            response = httpx.Response(
+                404,
+                request=request,
+                json={
+                    "code": "PGRST205",
+                    "details": None,
+                    "hint": None,
+                    "message": f"Could not find the table 'public.{path}' in the schema cache",
+                },
+            )
+            raise httpx.HTTPStatusError(f"table '{path}' not found", request=request, response=response)
         return FakeResponse(self.db.select(path, query))
 
     async def head(self, url, headers=None):
@@ -690,6 +710,84 @@ def test_full_logout_login_lifecycle_reproduction(fake_db):
     # ── USER_A logs back in a second time — still there ──────────────────────
     progress_a_again = run(learn_module.get_full_progress(user_a))
     assert progress_a_again["lessons"][lesson_x]["status"] == "completed"
+
+
+# ── Reproduction of the production incident: a missing/uncached optional
+#    table (user_achievements, real error PGRST205) must degrade only its own
+#    section — never take down core lesson/step/XP/module progress with it. ──
+
+
+def test_get_progress_survives_missing_achievements_table(fake_db):
+    """The exact production failure: user_lesson_progress, user_step_progress,
+    user_skill_progress, and user_module_progress all succeed; user_achievements
+    throws PGRST205 (table not found). GET /learn/progress must still return
+    the user's real core progress with achievements degraded to []."""
+    user_id = "user-incident-1"
+    user = {"sub": user_id}
+
+    fake_db.insert("user_skill_progress", {
+        "user_id": user_id, "total_xp": 500, "level": 3, "streak_days": 2,
+    })
+    fake_db.insert("user_lesson_progress", {
+        "user_id": user_id, "lesson_id": "lesson-z", "status": "in_progress",
+        "current_step_index": 5, "current_step_id": "l-s6", "total_steps": 19,
+        "module_id": "module-z", "path_id": "beginner", "updated_at": _now_iso(),
+    })
+    fake_db.insert("user_step_progress", {"user_id": user_id, "lesson_id": "lesson-z", "step_id": "l-s5"})
+    fake_db.insert("user_step_progress", {"user_id": user_id, "lesson_id": "lesson-z", "step_id": "l-s6"})
+    fake_db.insert("user_module_progress", {"user_id": user_id, "module_id": "module-y", "path_id": "beginner"})
+
+    fake_db.broken_tables.add("user_achievements")
+
+    restored = run(learn_module.get_full_progress(user))  # must NOT raise
+
+    # Core progress is fully intact.
+    assert restored["skill"]["total_xp"] == 500
+    assert restored["lessons"]["lesson-z"]["status"] == "in_progress"
+    assert restored["lessons"]["lesson-z"]["current_step_index"] == 5
+    assert set(restored["completed_steps"]["lesson-z"]) == {"l-s5", "l-s6"}
+    assert restored["completed_modules"] == ["module-y"]
+    assert restored["continue"]["lesson_id"] == "lesson-z"
+
+    # Only the broken optional section degrades.
+    assert restored["achievements"] == []
+
+
+def test_get_progress_survives_missing_leaks_and_concepts_tables(fake_db):
+    """Same isolation, for the other two optional sections."""
+    user_id = "user-incident-2"
+    user = {"sub": user_id}
+    fake_db.insert("user_skill_progress", {"user_id": user_id, "total_xp": 10, "level": 1, "streak_days": 0})
+    fake_db.insert("user_lesson_progress", {"user_id": user_id, "lesson_id": "lesson-zz", "status": "completed"})
+
+    fake_db.broken_tables.add("user_leaks")
+    fake_db.broken_tables.add("user_concept_mastery")
+
+    restored = run(learn_module.get_full_progress(user))  # must NOT raise
+
+    assert restored["skill"]["total_xp"] == 10
+    assert restored["lessons"]["lesson-zz"]["status"] == "completed"
+    assert restored["leaks"] == []
+    assert restored["concepts"] == {}
+
+
+@pytest.mark.parametrize(
+    "broken_table",
+    ["user_lesson_progress", "user_step_progress", "user_module_progress", "user_skill_progress"],
+)
+def test_get_progress_raises_when_a_core_table_fails(fake_db, broken_table):
+    """A CORE failure must NEVER be silently converted into an empty account —
+    it must surface as a real error (502), the opposite of the optional-section
+    behavior above."""
+    user_id = "user-incident-3"
+    user = {"sub": user_id}
+    fake_db.insert("user_lesson_progress", {"user_id": user_id, "lesson_id": "lesson-core", "status": "completed"})
+
+    fake_db.broken_tables.add(broken_table)
+
+    with pytest.raises(HTTPException) as exc_info:
+        run(learn_module.get_full_progress(user))
+    assert exc_info.value.status_code == 502
 
 
 def test_replaying_completion_after_relogin_does_not_duplicate_xp(fake_db):
