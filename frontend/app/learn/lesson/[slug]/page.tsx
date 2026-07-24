@@ -350,6 +350,7 @@ export default function LessonPage() {
               lesson={lesson}
               initialStepIndex={resumeStepIndex}
               onStepResult={handleStepResult}
+              onStepIndexChange={setCurrentStep}
               onComplete={handleComplete}
               onLessonFinished={handleLessonFinished}
             />
@@ -372,6 +373,7 @@ export default function LessonPage() {
                 lesson={lesson}
                 initialStepIndex={resumeStepIndex}
                 onStepResult={handleStepResult}
+                onStepIndexChange={setCurrentStep}
                 onComplete={handleComplete}
                 onLessonFinished={handleLessonFinished}
               />

@@ -53,6 +53,9 @@ import { RangeBoardCollision } from '@/components/learn/steps/RangeBoardCollisio
 import { EquityBucket } from '@/components/learn/steps/EquityBucket'
 import { BoardAutopsy } from '@/components/learn/steps/BoardAutopsy'
 import { HandRankingOrder } from '@/components/learn/steps/HandRankingOrder'
+import { PotWinIntro } from '@/components/learn/steps/PotWinIntro'
+import { CardsIdentify } from '@/components/learn/steps/CardsIdentify'
+import { BuildFirstHand } from '@/components/learn/steps/BuildFirstHand'
 import { RangeDistributionBar } from '@/components/learn/steps/RangeDistributionBar'
 import { FrequencySizeLab } from '@/components/learn/steps/FrequencySizeLab'
 import { BoardRankSort } from '@/components/learn/steps/BoardRankSort'
@@ -348,6 +351,21 @@ function StepRenderer({
     return <HandRankingOrder step={step} onAnswer={(order, ms) => evaluate(order, ms)} />
   }
 
+  // ── Lesson 1 opening interactive beats ──────────────────────────────────
+
+  if (step.type === 'pot_win_intro') {
+    // Purely exploratory onboarding — unscored, no feedback screen.
+    return <PotWinIntro step={step} onComplete={() => evaluate(null, 0)} />
+  }
+
+  if (step.type === 'cards_identify') {
+    return <CardsIdentify step={step} onAnswer={(cards, ms) => evaluate(cards, ms)} />
+  }
+
+  if (step.type === 'build_first_hand') {
+    return <BuildFirstHand step={step} onAnswer={(cards, ms) => evaluate(cards, ms)} />
+  }
+
   if (step.type === 'range_distribution') {
     return <RangeDistributionBar step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
   }
@@ -515,6 +533,7 @@ export function LessonPlayer({
   const steps = dynamicSteps
   const currentStep: LessonStep | undefined = steps[currentStepIndex]
   const isLastStep = currentStepIndex === steps.length - 1
+  const canGoPrevious = currentStepIndex > 0
 
   const handleStart = useCallback(() => {
     setPhase(currentStep?.ask_confidence ? 'confidence' : 'step')
@@ -679,6 +698,14 @@ export function LessonPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase])
 
+  useEffect(() => {
+    onStepIndexChange?.(currentStepIndex)
+    // Deliberately only tracking currentStepIndex — `onStepIndexChange`
+    // itself is a caller-supplied callback for a cosmetic indicator (e.g.
+    // header progress dots), not a dependency that should re-fire this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStepIndex])
+
   // ── Level-up overlay ───────────────────────────────────────────────────────
   if (showLevelUp && levelUpData) {
     return (
@@ -791,9 +818,19 @@ export function LessonPlayer({
             onContinue={handleContinue}
             onRetry={handleRetry}
             isLast={isLastStep}
+            onPrevious={canGoPrevious ? handlePrevious : undefined}
           />
         )}
       </div>
+
+      {/* Standalone Previous control for 'step'/'confidence' phases — those have
+          no existing Continue control to sit next to (the step's own interactive
+          UI, or ConfidencePrompt, serves that role), so Previous stands alone here. */}
+      {canGoPrevious && (phase === 'step' || phase === 'confidence') && (
+        <div>
+          <PreviousButton onClick={handlePrevious} />
+        </div>
+      )}
     </div>
   )
 }
