@@ -863,6 +863,22 @@ function evalHandRankingOrder(step: LessonStep, response: unknown): EvalCore {
   return { quality: 'mistake', score: Math.max(20, pct), feedback: `${positionSummary} Review the full hierarchy below.${detail}`, ev_loss_bb: 0 }
 }
 
+// ── Card display formatting (Lesson 1 steps) ──────────────────────────────────
+
+const SUIT_SYMBOL: Record<string, string> = { h: '♥', d: '♦', c: '♣', s: '♠' }
+
+/** 'Kc' -> 'K♣', 'Th' -> '10♥' — for feedback text, never internal comparisons. */
+function formatCard(card: string): string {
+  if (!card || card.length < 2) return card
+  const rank = card[0].toUpperCase() === 'T' ? '10' : card[0].toUpperCase()
+  const suit = SUIT_SYMBOL[card[1].toLowerCase()] ?? card[1]
+  return `${rank}${suit}`
+}
+
+function formatCards(cards: string[]): string {
+  return cards.map(formatCard).join(', ')
+}
+
 // ── Cards identify (Lesson 1, Step 2) ─────────────────────────────────────────
 // Learner taps which of the dealt cards are Hero's private hole cards
 // (`step.hero_hand`) among Hero's cards + N face-down community placeholders.
@@ -900,7 +916,7 @@ function evalCardsIdentify(step: LessonStep, response: unknown): EvalCore {
   return {
     quality: foundCount > 0 ? 'acceptable' : 'mistake',
     score: foundCount > 0 ? QUALITY_SCORES.acceptable : QUALITY_SCORES.mistake,
-    feedback: `${foundCount} of ${heroCards.length} correct — your hole cards are ${heroCards.join(' and ')}. ${explanation}`,
+    feedback: `${foundCount} of ${heroCards.length} correct — your hole cards are ${formatCards(heroCards)}. ${explanation}`,
     ev_loss_bb: 0,
   }
 }
@@ -934,7 +950,7 @@ function evalBuildFirstHand(step: LessonStep, response: unknown): EvalCore {
   }
 
   const accuracy = overlap / correct.size
-  const correctList = [...correct].join(', ')
+  const correctList = formatCards([...correct])
   if (accuracy >= 0.6) {
     return {
       quality: 'acceptable',
