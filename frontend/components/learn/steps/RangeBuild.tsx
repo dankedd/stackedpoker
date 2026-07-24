@@ -1,10 +1,20 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
-import { RANGE_TARGETS } from '@/lib/learn/ranges'
 import { RangeRevealComparison } from '@/components/learn/visuals/RangeRevealComparison'
+import {
+  DEFAULT_PREFILL_NOTE,
+  resolvePrefilledHands,
+  resolveTargetHands,
+  createInitialRangeSelection,
+  toggleRangeHand,
+  clearRangeSelection,
+  resetRangeToFoundation,
+  isPrefilledCell,
+  type RangeSelectionState,
+} from '@/lib/learn/rangePrefill'
 
 // 13 ranks in descending order
 const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']
@@ -46,29 +56,28 @@ interface RangeBuildProps {
 
 export function RangeBuild({ step, onAnswer, disabled = false }: RangeBuildProps) {
   const mountTime = useRef(Date.now())
-  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const foundation = useMemo(() => resolvePrefilledHands(step), [step])
+  const foundationSet = useMemo(() => new Set(foundation), [foundation])
+  const [rangeState, setRangeState] = useState<RangeSelectionState>(() => createInitialRangeSelection(foundation))
   const [submitted, setSubmitted] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [dragMode, setDragMode] = useState<'add' | 'remove'>('add')
   const [reviewingDiff, setReviewingDiff] = useState(false)
 
+  const selected = rangeState.selected
+
   useEffect(() => {
     mountTime.current = Date.now()
-    setSelected(new Set())
+    setRangeState(createInitialRangeSelection(foundation))
     setSubmitted(false)
     setReviewingDiff(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step.id])
 
   const toggleHand = useCallback(
     (hand: string, mode?: 'add' | 'remove') => {
       if (disabled || submitted) return
-      setSelected(prev => {
-        const next = new Set(prev)
-        const effectiveMode = mode ?? (next.has(hand) ? 'remove' : 'add')
-        if (effectiveMode === 'add') next.add(hand)
-        else next.delete(hand)
-        return next
-      })
+      setRangeState(prev => toggleRangeHand(prev, hand, mode))
     },
     [disabled, submitted]
   )
@@ -111,7 +120,7 @@ export function RangeBuild({ step, onAnswer, disabled = false }: RangeBuildProps
   }
 
   if (reviewingDiff) {
-    const targetCombos = step.range_combos ?? RANGE_TARGETS[step.range_target ?? ''] ?? []
+    const targetCombos = resolveTargetHands(step)
     return (
       <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
         <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-4">
@@ -131,9 +140,14 @@ export function RangeBuild({ step, onAnswer, disabled = false }: RangeBuildProps
     )
   }
 
-  function handleClear() {
+  function handleClearAll() {
     if (disabled || submitted) return
-    setSelected(new Set())
+    setRangeState(clearRangeSelection())
+  }
+
+  function handleResetToFoundation() {
+    if (disabled || submitted) return
+    setRangeState(resetRangeToFoundation(foundation))
   }
 
   // Stats
@@ -150,6 +164,15 @@ export function RangeBuild({ step, onAnswer, disabled = false }: RangeBuildProps
       {step.narrative && (
         <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-3">
           <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>
+        </div>
+      )}
+
+      {/* Prefilled foundation explanation */}
+      {foundation.length > 0 && (
+        <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-4 py-3">
+          <p className="text-sm text-amber-200/80 leading-relaxed">
+            {step.range_prefilled_note ?? DEFAULT_PREFILL_NOTE}
+          </p>
         </div>
       )}
 
@@ -178,14 +201,27 @@ export function RangeBuild({ step, onAnswer, disabled = false }: RangeBuildProps
             <span className="text-muted-foreground/50 font-normal text-xs">% of range</span>
           </span>
         </div>
-        {!submitted && !disabled && selected.size > 0 && (
-          <button
-            type="button"
-            onClick={handleClear}
-            className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-          >
-            Clear
-          </button>
+        {!submitted && !disabled && (
+          <div className="flex items-center gap-3">
+            {foundation.length > 0 && (
+              <button
+                type="button"
+                onClick={handleResetToFoundation}
+                className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
+              >
+                Reset to foundation
+              </button>
+            )}
+            {selected.size > 0 && (
+              <button
+                type="button"
+                onClick={handleClearAll}
+                className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+              >
+                Clear all
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -216,6 +252,7 @@ export function RangeBuild({ step, onAnswer, disabled = false }: RangeBuildProps
                 const isSelected = selected.has(hand)
                 const isPair = rowIdx === colIdx
                 const isSuited = rowIdx < colIdx
+                const isPrefilled = isPrefilledCell(rangeState, foundationSet, hand)
 
                 return (
                   <div
@@ -224,7 +261,9 @@ export function RangeBuild({ step, onAnswer, disabled = false }: RangeBuildProps
                       'flex-1 min-w-0 aspect-square flex items-center justify-center',
                       'm-px rounded-[3px] cursor-pointer select-none transition-colors duration-75',
                       'text-[8px] font-bold leading-none',
-                      isSelected
+                      isPrefilled
+                        ? 'bg-violet-500/30 text-violet-200 border border-dashed border-amber-400/60'
+                        : isSelected
                         ? isPair
                           ? 'bg-violet-500 text-white shadow-sm shadow-violet-500/40'
                           : isSuited
@@ -239,6 +278,7 @@ export function RangeBuild({ step, onAnswer, disabled = false }: RangeBuildProps
                     )}
                     onMouseDown={() => handleMouseDown(hand)}
                     onMouseEnter={() => handleMouseEnter(hand)}
+                    title={isPrefilled ? 'Prefilled foundation — click to remove if you disagree' : undefined}
                   >
                     <span className="truncate px-0.5">{hand}</span>
                   </div>
@@ -263,6 +303,12 @@ export function RangeBuild({ step, onAnswer, disabled = false }: RangeBuildProps
           <div className="h-2.5 w-2.5 rounded-[2px] bg-violet-500/60" />
           <span>Offsuit (lower)</span>
         </div>
+        {foundation.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            <div className="h-2.5 w-2.5 rounded-[2px] bg-violet-500/30 border border-dashed border-amber-400/60" />
+            <span>Prefilled foundation</span>
+          </div>
+        )}
       </div>
 
       {/* Submit button */}

@@ -149,6 +149,19 @@ export interface LessonStep {
   /** range_build: after submitting, show an inline three-color diff (correct/missed/too-wide)
    *  against the target range before advancing to the generic score feedback. */
   range_build_show_diff?: boolean
+  /** range_build: hands pre-selected when the grid loads, e.g. ['AA','KK','AKs'] — the
+   *  "obvious core" of the range so the learner isn't clicking premium hands one at a
+   *  time. Must be a strict subset of the graded target, never the whole range (the
+   *  boundary/marginal hands are the actual exercise). Wins over `range_prefilled_key`
+   *  if both are set. The learner can freely deselect these; scoring only looks at the
+   *  final submitted set, so prefilling never grants free credit. */
+  range_prefilled?: string[]
+  /** range_build: lookup key into RANGE_FOUNDATIONS (frontend/lib/learn/ranges.ts) for a
+   *  reusable named prefilled-foundation set, analogous to `range_target` vs `range_combos`. */
+  range_prefilled_key?: string
+  /** range_build: custom copy shown above the grid when a prefilled foundation is present,
+   *  explaining why some cells are already filled in. Falls back to a generic default. */
+  range_prefilled_note?: string
   /** For range_heatmap: equity value per hand (0–100) keyed by hand notation */
   range_heatmap_data?: Record<string, number>
   /** For range_heatmap: which hands are in the "target" range to identify */

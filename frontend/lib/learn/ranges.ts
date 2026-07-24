@@ -169,3 +169,35 @@ export const RANGE_TARGETS: Record<string, string[]> = {
   BTN_call_vs_CO_100bb:    BTN_CALL_VS_CO_100BB,
   BB_defend_vs_BTN_100bb:  BB_DEFEND_VS_BTN_100BB,
 }
+
+// ── Prefilled "foundation" ranges ────────────────────────────────────────────
+//
+// A foundation is the subset of a range_build target so universally obvious
+// (premium pairs, premium suited/offsuit broadways) that clicking each one by
+// hand teaches nothing — it's pure mechanical overhead. Keeping it a MINORITY
+// of the target range is deliberate: everything left out (offsuit ace depth,
+// suited king/queen/jack thresholds, the whole suited-connector tail) is
+// exactly the boundary judgment the exercise exists to teach. See
+// RangeBuild.tsx and rangePrefill.ts for how these get merged into a step.
+//
+// Do not add a foundation here for a range that is a graded target of a LATER
+// lesson unless you have re-audited that later step's exact answer isn't
+// exposed by it — see the leak-regression tests in
+// frontend/lib/learn/__tests__/rangePrefilledFoundation.test.ts.
+
+const BTN_OPEN_FOUNDATION: string[] = [
+  // All pairs — BTN opens every pair at 100bb, never a live question.
+  'AA', 'KK', 'QQ', 'JJ', 'TT', '99', '88', '77', '66', '55', '44', '33', '22',
+  // Premium suited aces / top offsuit aces.
+  'AKs', 'AQs', 'AJs', 'ATs', 'AKo', 'AQo',
+  // Premium suited/offsuit kings.
+  'KQs', 'KJs', 'KTs', 'KQo',
+  // Premium suited queens.
+  'QJs', 'QTs',
+  // Premium suited jack.
+  'JTs',
+]
+
+export const RANGE_FOUNDATIONS: Record<string, string[]> = {
+  BTN_open_foundation: BTN_OPEN_FOUNDATION,
+}

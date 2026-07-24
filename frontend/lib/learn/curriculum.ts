@@ -3683,6 +3683,9 @@ export const LESSONS: Lesson[] = [
         narrative: "Build the hands you think Hero should open from the Button. There's no wrong answer here yet — build your instinct, and the module will sharpen it from here.",
         range_target: 'BTN_open_100bb',
         range_build_show_diff: true,
+        range_prefilled_key: 'BTN_open_foundation',
+        range_prefilled_note:
+          "We've filled in the obvious opens. Now you decide how wide the Button should go.",
         xp: 15,
       },
     ],
