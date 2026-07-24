@@ -1,30 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-
-// Same 13x13 layout convention used by RangeBuild / RangeHeatmap:
-// pairs on the diagonal, suited above, offsuit below.
-const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']
-
-function buildHandGrid(): string[][] {
-  return RANKS.map((r1, row) =>
-    RANKS.map((r2, col) => {
-      if (row === col) return r1 + r1
-      if (row < col) return r1 + r2 + 's'
-      return r2 + r1 + 'o'
-    }),
-  )
-}
-
-const HAND_GRID = buildHandGrid()
-
-function comboCount(hand: string): number {
-  if (hand.endsWith('s')) return 4
-  if (hand.endsWith('o')) return 12
-  return 6
-}
-
-const TOTAL_COMBOS = 1326
+import { RANKS, HAND_GRID, comboCount, TOTAL_COMBOS } from '@/lib/learn/handGrid'
 
 type PreflopAction = 'raise' | 'limp' | 'shove' | 'fold'
 

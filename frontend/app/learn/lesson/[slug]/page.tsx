@@ -26,8 +26,19 @@ import {
   LESSONS_BY_MODULE,
   MODULES_BY_PATH,
 } from "@/lib/learn/curriculum";
-import type { LessonStep, StepResult } from "@/lib/learn/types";
+import type { LessonStep, StepResult, Lesson } from "@/lib/learn/types";
+import { selectDrillAttempt, selectLabAttempt } from "@/lib/learn/mttRfiLabPool";
+import { getOrCreateLabAttemptSeed, clearLabAttemptSeed } from "@/lib/learn/labPoolSeed";
 import { cn } from "@/lib/utils";
+
+// Lessons whose `steps` are a fresh stratified draw from MTT_LAB_POOL rather than a
+// fixed array — the curriculum.ts entry only carries a *default* draw (for previews/xp
+// totals); every real play-through substitutes a per-attempt seeded draw here so a
+// retry sees a different combination of the same validated pool.
+const POOLED_LESSON_IDS: Record<string, (seed: string) => LessonStep[]> = {
+  "opening-range-drill": selectDrillAttempt,
+  "preflop-foundation-lab": selectLabAttempt,
+};
 
 // ── Step progress dots (minimal header) ───────────────────────────────────────
 
@@ -54,7 +65,21 @@ export default function LessonPage() {
   const { session } = useAuth();
   const { progress, recordStepResult, recordLessonComplete, recordModuleComplete } = useLearnProgress();
 
-  const lesson = LESSONS_BY_SLUG[slug];
+  const rawLesson = LESSONS_BY_SLUG[slug];
+  const userKey = session?.user?.id ?? "guest";
+
+  // Substitute a fresh, per-attempt seeded draw for pooled lessons — everything
+  // downstream (progress, step rendering, header dots, completion) reads `lesson`
+  // exactly as before; only its `steps` differ from the static curriculum default.
+  const effectiveLesson = useMemo<Lesson | undefined>(() => {
+    const gen = rawLesson && POOLED_LESSON_IDS[rawLesson.id];
+    if (!rawLesson || !gen) return rawLesson;
+    const seed = getOrCreateLabAttemptSeed(rawLesson.id, userKey);
+    return { ...rawLesson, steps: gen(seed) };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawLesson, userKey]);
+
+  const lesson = effectiveLesson;
   const [completionData, setCompletionData] = useState<{
     score: number;
     xpEarned: number;
@@ -177,6 +202,13 @@ export default function LessonPage() {
       lessonXpReward: lesson.xp_reward,
       pathLessonIds,
     });
+
+    // Pooled lessons (Drill/Lab) get a fresh stratified draw on the *next* attempt —
+    // clearing here, not on entry, keeps the just-finished attempt's own question set
+    // stable for any late-arriving retry of this same completion call.
+    if (POOLED_LESSON_IDS[lesson.id]) {
+      clearLabAttemptSeed(lesson.id, userKey);
+    }
 
     // Did finishing THIS lesson just complete every lesson in its module?
     // `progress.lessons` may not yet reflect this lesson's completion (the

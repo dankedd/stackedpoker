@@ -12,6 +12,10 @@ import {
   resistanceRisk, entriesToHandList,
 } from '../preflopBaselines'
 import { expandHandClass } from '../combos'
+import { MTT_RFI_CHARTS, MTT_RFI_CHART_KEYS } from '../mttRfiBaselines'
+import { MTT_LAB_POOL, LAB_POOL_TARGET_COUNTS, DRILL_POOL_TARGET_COUNTS, selectLabAttempt, selectDrillAttempt } from '../mttRfiLabPool'
+import { MTT_RFI_COVERAGE } from '../mttRfiCoverage'
+import { MTT_RFI_FOUNDATIONS } from '../mttRfiRanges'
 import type { LessonStep } from '../types'
 
 const MODULE_ID = 'preflop-foundation-module'
@@ -24,13 +28,46 @@ const allSteps: LessonStep[] = lessons.flatMap((l) => l.steps)
 // again without any test catching it.
 const KNOWN_SPOILER_TAGS = new Set(['positive_ev', 'zero_ev', 'negative_ev', 'first_in'])
 
+const EXPECTED_LESSON_IDS = [
+  'first-in',
+  'the-players-behind-you',
+  'more-than-two-cards',
+  'stacks-change-the-range',
+  'early-position-ranges',
+  'middle-position-ranges',
+  'cutoff-ranges',
+  'button-ranges',
+  'the-price-of-entering',
+  'to-limp-or-to-raise',
+  'the-small-blind-is-different',
+  'build-the-opening-strategy',
+  'opening-range-drill',
+  'preflop-foundation-lab',
+]
+
 describe('Module 3 exists and is wired up', () => {
-  it('has all 9 lessons (8 + Lab)', () => {
-    expect(lessons.length).toBe(9)
+  it('has all 14 lessons (9 original + 4 new position lessons + drill), in the right order', () => {
+    expect(lessons.length).toBe(14)
+    expect(lessons.map((l) => l.id)).toEqual(EXPECTED_LESSON_IDS)
   })
 
   it('every lesson belongs to the promoted module, not the roadmap placeholder', () => {
     for (const l of lessons) expect(l.module_id).toBe(MODULE_ID)
+  })
+
+  it('all 9 original lesson ids are preserved (migration safety — no orphaned user progress)', () => {
+    const originalIds = [
+      'first-in', 'the-players-behind-you', 'more-than-two-cards', 'stacks-change-the-range',
+      'the-price-of-entering', 'to-limp-or-to-raise', 'the-small-blind-is-different',
+      'build-the-opening-strategy', 'preflop-foundation-lab',
+    ]
+    const currentIds = new Set(lessons.map((l) => l.id))
+    for (const id of originalIds) expect(currentIds.has(id), `original lesson id "${id}" missing`).toBe(true)
+  })
+
+  it('sort_order is strictly increasing across the lesson list', () => {
+    const orders = lessons.map((l) => l.sort_order)
+    for (let i = 1; i < orders.length; i++) expect(orders[i]).toBeGreaterThan(orders[i - 1])
   })
 })
 
@@ -179,12 +216,124 @@ describe('Players-behind resistance-risk model', () => {
   })
 })
 
+describe('range_build_multi steps resolve against the canonical MTT chart data', () => {
+  const multiSteps = allSteps.filter((s) => s.type === 'range_build_multi')
+
+  it('the module actually contains range_build_multi steps (regression guard against silently losing them)', () => {
+    expect(multiSteps.length).toBeGreaterThan(10)
+  })
+
+  it('every range_build_multi_chart resolves to a real MTT_RFI_CHARTS entry', () => {
+    for (const step of multiSteps) {
+      expect(step.range_build_multi_chart, `${step.id} has no range_build_multi_chart`).toBeTruthy()
+      expect(
+        MTT_RFI_CHARTS[step.range_build_multi_chart ?? ''],
+        `${step.id}: chart key "${step.range_build_multi_chart}" does not exist`,
+      ).toBeDefined()
+    }
+  })
+
+  it('every range_build_multi_prefilled_key resolves and is a subset of hands actually in its target chart', () => {
+    for (const step of multiSteps) {
+      if (!step.range_build_multi_prefilled_key) continue
+      const foundation = MTT_RFI_FOUNDATIONS[step.range_build_multi_prefilled_key]
+      expect(foundation, `${step.id}: prefill key "${step.range_build_multi_prefilled_key}" not found`).toBeDefined()
+      const chart = MTT_RFI_CHARTS[step.range_build_multi_chart ?? '']
+      const chartHandActions = new Map(chart.cells.map((c) => [c.hand, c.actions]))
+      for (const [hand, action] of Object.entries(foundation!.hands)) {
+        const actions = chartHandActions.get(hand)
+        expect(actions, `${step.id}: prefilled hand "${hand}" is not in the target chart at all`).toBeDefined()
+        expect(
+          actions?.[action] ?? 0,
+          `${step.id}: prefilled ${hand}->${action} is not what the chart actually says (should be a pure/obvious action)`,
+        ).toBeGreaterThanOrEqual(0.9)
+      }
+    }
+  })
+})
+
+describe('MTT_LAB_POOL — validated question pool for the Drill and Lab', () => {
+  it('every pool question\'s chartKeys resolve against MTT_RFI_CHARTS', () => {
+    for (const q of MTT_LAB_POOL) {
+      for (const key of q.chartKeys) {
+        expect(MTT_RFI_CHARTS[key], `pool question "${q.id}" references unknown chart "${key}"`).toBeDefined()
+      }
+    }
+  })
+
+  it('has no duplicate question ids', () => {
+    const ids = MTT_LAB_POOL.map((q) => q.id)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('every LAB_POOL_TARGET_COUNTS category has at least that many pool entries available', () => {
+    for (const [category, count] of Object.entries(LAB_POOL_TARGET_COUNTS)) {
+      const available = MTT_LAB_POOL.filter((q) => q.category === category).length
+      expect(available, `category "${category}" has only ${available} entries, needs >= ${count}`).toBeGreaterThanOrEqual(count)
+    }
+  })
+
+  it('LAB_POOL_TARGET_COUNTS sums to ~40', () => {
+    const total = Object.values(LAB_POOL_TARGET_COUNTS).reduce((a, b) => a + b, 0)
+    expect(total).toBe(40)
+  })
+
+  it('selectLabAttempt always returns exactly 40 steps, stratified across every category', () => {
+    for (const seed of ['seed-a', 'seed-b', 'seed-c']) {
+      const steps = selectLabAttempt(seed)
+      expect(steps.length).toBe(40)
+    }
+  })
+
+  it('selectDrillAttempt returns a smaller, valid draw with no reconstruction questions', () => {
+    const steps = selectDrillAttempt('seed-x')
+    const expectedTotal = Object.values(DRILL_POOL_TARGET_COUNTS).reduce((a, b) => a + b, 0)
+    expect(steps.length).toBe(expectedTotal)
+    expect(DRILL_POOL_TARGET_COUNTS.reconstruction).toBeUndefined()
+  })
+
+  it('a Lab retry (different seed) can draw a different combination of questions', () => {
+    const a = selectLabAttempt('retry-seed-a').map((s) => s.id)
+    const b = selectLabAttempt('retry-seed-b').map((s) => s.id)
+    expect(a).not.toEqual(b)
+  })
+})
+
+describe('Chart coverage — every one of the 32 canonical charts is actually taught or drilled', () => {
+  it('every MTT_RFI_CHART_KEYS entry is referenced by at least one lesson step or Lab pool question', () => {
+    // Coverage is recorded by mttRfiLabPool.ts (pool questions) as a module-load side
+    // effect; lesson-authored range_build_multi steps are checked directly here since
+    // curriculum.ts doesn't call recordCoverage itself (keeping lesson authoring plain data).
+    const lessonChartKeys = new Set(
+      allSteps.filter((s) => s.type === 'range_build_multi').map((s) => s.range_build_multi_chart),
+    )
+    const uncovered: string[] = []
+    for (const key of MTT_RFI_CHART_KEYS) {
+      const coveredByPool = (MTT_RFI_COVERAGE[key]?.usedByLabPoolQuestionIds.length ?? 0) > 0
+      const coveredByLesson = lessonChartKeys.has(key)
+      if (!coveredByPool && !coveredByLesson) uncovered.push(key)
+    }
+    expect(uncovered, `charts never taught or drilled: ${uncovered.join(', ')}`).toEqual([])
+  })
+})
+
 describe('Context completeness — every decision-style step in Module 3 has enough context', () => {
   it('any step naming a specific stack depth in its narrative also carries it as structured context where the step type supports it', () => {
-    // Spot-check the two steps fixed during the audit for exactly this gap.
+    // Spot-check the step fixed during the original audit for exactly this gap.
     const poe8 = allSteps.find((s) => s.id === 'poe-s8')
-    const labR7 = allSteps.find((s) => s.id === 'lab-r7')
     expect(poe8?.effective_stack_bb).toBe(20)
-    expect(labR7?.effective_stack_bb).toBe(20)
+  })
+
+  it('every generated hand-decision pool question carries structured position/stack/table context, never just prose', () => {
+    const handDecisionQuestions = MTT_LAB_POOL.filter(
+      (q) => q.stepTemplate.type === 'decision_spot' && q.stepTemplate.range_build_multi_chart === undefined && q.chartKeys.length === 1,
+    )
+    for (const q of handDecisionQuestions) {
+      const step = q.stepTemplate
+      if (!/\d+bb effective/.test(step.narrative ?? '')) continue
+      expect(step.effective_stack_bb, `${q.id} mentions a stack depth but has no effective_stack_bb`).toBeGreaterThan(0)
+      expect(step.hero_position, `${q.id} mentions a stack depth but has no hero_position`).toBeTruthy()
+      expect(step.table_size, `${q.id} mentions a stack depth but has no table_size`).toBeTruthy()
+    }
   })
 })

@@ -16,38 +16,7 @@ import {
   isPrefilledCell,
   type RangeSelectionState,
 } from '@/lib/learn/rangePrefill'
-
-// 13 ranks in descending order
-const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2']
-
-// Build the full 169-hand grid
-// [row][col] where row = rank1, col = rank2
-// Pairs on diagonal (row === col): e.g. AA
-// Suited ABOVE diagonal (row < col → col rank > row rank → use col+row+"s"): AKs is [0][1]
-// Offsuit BELOW diagonal (row > col): AKo is [1][0]
-function buildHandGrid(): string[][] {
-  return RANKS.map((r1, row) =>
-    RANKS.map((r2, col) => {
-      if (row === col) return r1 + r1          // pair
-      if (row < col) return r1 + r2 + 's'     // suited (above diagonal)
-      return r2 + r1 + 'o'                     // offsuit (below diagonal)
-    })
-  )
-}
-
-const HAND_GRID = buildHandGrid()
-
-// Approximate combo counts per cell
-function comboCount(hand: string): number {
-  if (hand.endsWith('s')) return 4
-  if (hand.endsWith('o')) return 12
-  // pair
-  return 6
-}
-
-// Total combos in a 13x13 grid = 4*78 + 12*78 + 6*13 = 312 + 936 + 78 = 1326
-const TOTAL_COMBOS = 1326
-const TOTAL_HANDS = 1326 // same as above: total two-card combos
+import { RANKS, HAND_GRID, comboCount, TOTAL_COMBOS } from '@/lib/learn/handGrid'
 
 // Splits an instruction note into a strong lead sentence and a more muted
 // follow-up, purely for presentation — the underlying copy is untouched.

@@ -16,6 +16,7 @@ import { ConceptReveal } from '@/components/learn/steps/ConceptReveal'
 import { DecisionSpot } from '@/components/learn/steps/DecisionSpot'
 import { EquityPredict } from '@/components/learn/steps/EquityPredict'
 import { RangeBuild } from '@/components/learn/steps/RangeBuild'
+import { MultiActionRangeBuild } from '@/components/learn/steps/MultiActionRangeBuild'
 import { ClassifyStep } from '@/components/learn/steps/ClassifyStep'
 import { BetSizeSlider } from '@/components/learn/steps/BetSizeSlider'
 import { MdfSlider } from '@/components/learn/steps/MdfSlider'
@@ -191,6 +192,10 @@ function StepRenderer({
 
   if (step.type === 'range_build') {
     return <RangeBuild step={step} onAnswer={(combos, ms) => evaluate(combos, ms)} />
+  }
+
+  if (step.type === 'range_build_multi') {
+    return <MultiActionRangeBuild step={step} onAnswer={(assignments, ms) => evaluate(assignments, ms)} />
   }
 
   if (step.type === 'range_heatmap') {

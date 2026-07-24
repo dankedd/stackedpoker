@@ -137,8 +137,12 @@ describe('RangeBuild — full curriculum sweep: every range_build step renders w
   // reported bug: the CO opening-range exercise (mtc-s9, "Step 9 of 9") was
   // rendering "0 hands / 0 combos / 0.0% of range" despite the reusable
   // prefill system already existing, because no step referenced it yet.
+  // Note: the old fixed-array Preflop Foundation Lab ('lab-r3', 'lab-r12') was replaced by a
+  // pooled ~40-question draw from MTT_LAB_POOL (see mttRfiLabPool.ts) — its range-construction
+  // questions are now `range_build_multi` steps, covered by module3Audit.test.ts instead, not
+  // plain `range_build` steps tracked here.
   const stepsExpectedToStartNonEmpty = [
-    'fi-s7', 'mtc-s9', 'bos-s4', 'bos-s5', 'bos-s6', 'bos-s7', 'lab-r3', 'lab-r12', 'bar-s7',
+    'fi-s7', 'mtc-s9', 'bos-s4', 'bos-s5', 'bos-s6', 'bos-s7', 'bar-s7',
   ]
   // Documented exceptions — see INTENTIONALLY_UNPREFILLED in
   // rangePrefilledFoundation.test.ts for the reasoning behind each.

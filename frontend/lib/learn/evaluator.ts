@@ -12,6 +12,7 @@
 import type { LessonStep, StepResult, ActionQuality, AnswerReveal, ScenarioOutcome } from './types'
 import { levelForXP } from './types'
 import { RANGE_TARGETS } from './ranges'
+import { MTT_RFI_CHARTS, type MttAction, type MttRfiChart } from './mttRfiBaselines'
 import {
   classifyFlop, dimensionValue, equityBucket, estimateVolatility, turnImpact,
   type FlopClassification, type VolatilityLevel,
@@ -423,6 +424,79 @@ function evalRange(
     quality: 'mistake',
     score: Math.max(20, rawScore),
     feedback: `Range has significant errors${detail ? ` (${detail})` : ''}. Study the correct ranges for this position.`,
+    ev_loss_bb: 0,
+  }
+}
+
+// ── Multi-action range build (Module 3 MTT upgrade) ───────────────────────────
+// Combo-weighted expected-accuracy scoring against a real MttRfiChart (mttRfiBaselines.ts):
+// for each of the 169 hand classes, credit = the book's own frequency for whichever action
+// the learner assigned that hand (0 for a wrong/unassigned hand). This is what makes a
+// book-sourced mixed-frequency hand (e.g. "A5s: raise 0.65 / fold 0.35") gradeable as
+// partial credit instead of forcing a false binary right/wrong. Hands absent from both the
+// chart and the learner's response are implicit fold/fold — full credit, matching the sparse
+// chart convention ("absent = 100% fold").
+
+function evalMultiActionRange(
+  chart: MttRfiChart,
+  tolerance: number,
+  response: unknown,
+): EvalCore {
+  const assignments: Record<string, MttAction> =
+    response && typeof response === 'object' && !Array.isArray(response)
+      ? (response as Record<string, MttAction>)
+      : {}
+
+  const chartByHand = new Map(chart.cells.map((c) => [c.hand, c.actions]))
+  const allHands = new Set<string>([...chartByHand.keys(), ...Object.keys(assignments)])
+
+  if (allHands.size === 0) {
+    return { quality: 'good', score: 80, feedback: 'Range recorded.', ev_loss_bb: 0 }
+  }
+
+  let totalCombos = 0
+  let earnedCombos = 0
+  let wrongCombos = 0
+
+  for (const hand of allHands) {
+    const combos = handCombos(hand)
+    totalCombos += combos
+    const bookActions = chartByHand.get(hand) ?? { fold: 1 }
+    const chosen: MttAction = assignments[hand] ?? 'fold'
+    const credit = bookActions[chosen] ?? 0
+    earnedCombos += credit * combos
+    if (credit < 0.5) wrongCombos += combos
+  }
+
+  const accuracy = totalCombos > 0 ? earnedCombos / totalCombos : 0
+  const rawScore = Math.round(accuracy * 100)
+  const toleranceFraction = (tolerance ?? 5) / 100
+  const wrongPct = Math.round((wrongCombos / totalCombos) * 100)
+  const detail = wrongPct > 0 ? `${wrongPct}% of combos assigned the wrong action` : ''
+
+  if (accuracy >= 1 - toleranceFraction) {
+    return { quality: 'perfect', score: 100, feedback: 'Excellent — matches the baseline strategy!', ev_loss_bb: 0 }
+  }
+  if (accuracy >= 0.82 - toleranceFraction) {
+    return {
+      quality: 'good',
+      score: Math.max(QUALITY_SCORES.good, rawScore),
+      feedback: `Good — close to the baseline strategy${detail ? ` (${detail})` : ''}.`,
+      ev_loss_bb: 0,
+    }
+  }
+  if (accuracy >= 0.60 - toleranceFraction) {
+    return {
+      quality: 'acceptable',
+      score: Math.max(QUALITY_SCORES.acceptable, rawScore),
+      feedback: `Roughly right but has leaks${detail ? ` (${detail})` : ''}. Review the boundary hands.`,
+      ev_loss_bb: 0,
+    }
+  }
+  return {
+    quality: 'mistake',
+    score: Math.max(20, rawScore),
+    feedback: `Significant errors versus the baseline strategy${detail ? ` (${detail})` : ''}.`,
     ev_loss_bb: 0,
   }
 }
@@ -1240,6 +1314,14 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
     case 'range_heatmap': {
       const targetHands = step.range_heatmap_target ?? []
       return evalRange(targetHands, 5, response)
+    }
+
+    case 'range_build_multi': {
+      const chart = MTT_RFI_CHARTS[step.range_build_multi_chart ?? '']
+      if (!chart) {
+        return { quality: 'good', score: 80, feedback: 'Range recorded.', ev_loss_bb: 0 }
+      }
+      return evalMultiActionRange(chart, step.range_build_multi_tolerance ?? 5, response)
     }
 
     // Scenario tree

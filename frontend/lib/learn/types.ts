@@ -4,6 +4,7 @@ export type StepType =
   | 'concept_reveal'
   | 'decision_spot'
   | 'range_build'
+  | 'range_build_multi'  // per-hand action assignment (raise/limp/jam/fold) graded against a real MttRfiChart
   | 'range_identify'
   | 'equity_predict'
   | 'bet_size_choose'
@@ -168,6 +169,22 @@ export interface LessonStep {
   range_heatmap_target?: string[]
   /** For range_heatmap: renders a 3-4 color action-map grid instead of the numeric equity gradient. */
   range_heatmap_action_map?: Record<string, 'raise' | 'limp' | 'shove' | 'fold'>
+  // ── Multi-action range build (Module 3 MTT upgrade) — range_build_multi only ──
+  /** MTT_RFI_CHARTS key (frontend/lib/learn/mttRfiBaselines.ts), e.g. 'UTG1_RFI_25BB'. The
+   *  single source of truth this step is graded against — lessons, drills, and the Lab all
+   *  resolve through this same chart so an answer can never disagree with itself. */
+  range_build_multi_chart?: string
+  /** Which action chips are offered, in order — lets earlier lessons omit 'limp'/'jam' until
+   *  they're introduced. Defaults to whichever actions actually appear in the target chart. */
+  range_build_multi_actions?: ('raise' | 'limp' | 'jam' | 'fold')[]
+  range_build_multi_prefilled?: Record<string, 'raise' | 'limp' | 'jam' | 'fold'>
+  /** Lookup key into MTT_RFI_FOUNDATIONS (frontend/lib/learn/mttRfiRanges.ts), analogous to `range_prefilled_key`. */
+  range_build_multi_prefilled_key?: string
+  range_build_multi_prefilled_note?: string
+  /** After submitting, show the learner-vs-book diff + the mixed-hand inspector before advancing. */
+  range_build_multi_show_diff?: boolean
+  /** Combo-weighted expected-accuracy tolerance band, same convention/units as `range_tolerance`. Default 5. */
+  range_build_multi_tolerance?: number
   // Equity predict (hand vs range)
   equity_actual?: number
   equity_tolerance?: number

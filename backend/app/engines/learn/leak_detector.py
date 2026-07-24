@@ -45,6 +45,14 @@ FINDING_TO_LEAK: dict[str, tuple[str, str]] = {
     "limping":                    ("limping",              "open_limping_leak"),
     "rake_adjustment":            ("rake_adjustment",      "rake_awareness"),
     "preflop_planning":           ("preflop_planning",     "no_plan_vs_jams"),
+    # MTT RFI mastery upgrade (Module 3)
+    "early_position_rfi":         ("early_position_rfi",   "early_position_leak"),
+    "middle_position_rfi":        ("middle_position_rfi",  "middle_position_leak"),
+    "co_rfi":                     ("co_rfi",               "co_range_leak"),
+    "btn_rfi":                    ("btn_rfi",              "btn_range_leak"),
+    "shallow_stack_rfi":          ("shallow_stack_rfi",    "shallow_stack_leak"),
+    "mid_stack_rfi":              ("mid_stack_rfi",        "mid_stack_leak"),
+    "deep_stack_rfi":             ("deep_stack_rfi",       "deep_stack_leak"),
     # Understanding the Flop (Module 6)
     "flop_classification":       ("flop_classification",  "board_only_thinking"),
     "flop_structure":            ("flop_structure",       "structure_texture_confusion"),
