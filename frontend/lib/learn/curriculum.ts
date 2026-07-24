@@ -282,31 +282,43 @@ export const LESSONS: Lesson[] = [
       // knows them. This lesson exists purely so a total beginner can follow
       // everything that comes after it.
       {
+        // Step 1 — "Win the Pot": an interactive table beats a wall of text.
+        // Purely exploratory (unscored, see isScoredStep) — the learner taps
+        // the pot and watches chips move to Hero before reading anything.
         id: 'l1-s1',
-        type: 'concept_reveal',
+        type: 'pot_win_intro',
         concept_ids: ['holdem_objective'],
-        concept_title: 'The Goal of Texas Hold’em',
+        pot_win_intro_prompt: 'Your goal is simple: win the pot.',
+        pot_win_intro_pot: 15,
         concept_content:
-          "Texas Hold'em is a card game played for chips. You win chips one of two ways: every other player folds and gives up the hand, or you show down the best 5-card hand when the betting is over. That's the entire goal — everything else in this course is about making better decisions on the way there.",
+          "Every poker hand is a battle for the chips in the middle. You can win them one of two ways: showing down the best 5-card hand, or making everyone else fold before it gets there.",
         xp: 2,
       },
       {
+        // Step 2 — "Your Cards vs. the Board": Hero's hole cards deal in,
+        // then 5 community placeholders. Learner taps which 2 are Hero's own.
         id: 'l1-s2',
-        type: 'concept_reveal',
-        concept_ids: ['hole_cards'],
-        concept_title: 'Your Hole Cards',
+        type: 'cards_identify',
+        concept_ids: ['hole_cards', 'community_cards'],
+        hero_hand: ['Kc', '9d'],
+        cards_identify_prompt: 'Tap the 2 cards that belong only to you.',
         concept_content:
-          'Each hand, every player is dealt 2 private cards face down — your hole cards. Only you can see them. Everything you decide is based on these 2 cards plus whatever the table reveals.',
-        xp: 2,
+          "Each hand, you're dealt 2 private hole cards — only you can see them. The table also deals up to 5 community cards face up in the middle, shared by everyone still in the hand.",
+        xp: 3,
       },
       {
+        // Step 3 — "Build Your First Hand": an unambiguous nut-flush example
+        // (both hole cards + 3 of the 5 board cards). Learner taps the best 5.
         id: 'l1-s3',
-        type: 'concept_reveal',
+        type: 'build_first_hand',
         concept_ids: ['community_cards'],
-        concept_title: 'The Community Cards',
+        hero_hand: ['Ah', 'Kh'],
+        board: ['Qh', 'Jh', '4h', '9c', '2s'],
+        build_first_hand_correct: ['Ah', 'Kh', 'Qh', 'Jh', '4h'],
+        build_first_hand_prompt: "Tap the 5 cards that make Hero's best possible poker hand.",
         concept_content:
-          'The table also deals up to 5 shared cards face up in the middle, called the community cards. Every player still in the hand builds their best 5-card hand using any combination of their own 2 hole cards and the shared community cards.',
-        xp: 2,
+          "Your final poker hand uses the best 5-card combination available from your 2 hole cards and the 5 community cards. Here, both hole cards happen to complete the flush — but that's not a rule. Later you'll see hands where the best 5 come from just 1 hole card, or even 0.",
+        xp: 4,
       },
       {
         id: 'l1-s4',
@@ -322,16 +334,16 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['blinds'],
         narrative:
-          'Imagine a version of poker with no forced blinds at all — nobody has to put a single chip in before seeing their cards.',
-        decision_spot_question: 'What would the optimal strategy become for a perfectly rational player holding a random hand?',
+          'Imagine poker with no blinds or antes. Before the cards are dealt, there is nothing in the pot to win. Folding costs you nothing.',
+        decision_spot_question: 'If everyone plays perfectly and there is no forced money in the pot, why would a player voluntarily risk chips with an ordinary hand?',
         options: [
           {
-            id: 'fold_always', label: 'Fold every single hand and wait', quality: 'perfect',
-            feedback: 'Correct — with nothing already at stake, there’s zero cost to folding and zero reward for playing a bad hand, so a perfectly rational player would simply wait forever for the best possible cards. Blinds exist specifically to prevent this: they force money into every pot, so waiting forever is no longer free.',
+            id: 'play_anyway', label: 'They should play anyway — winning future bets makes entering the pot profitable.', quality: 'mistake',
+            feedback: 'There is nothing yet to win, and folding costs nothing — so risking chips on an ordinary hand has no edge to justify it. Blinds are what create that missing incentive: they force money into the pot before anyone acts.',
           },
           {
-            id: 'play_everything', label: 'Play every hand aggressively', quality: 'mistake',
-            feedback: 'Without any forced cost to sitting out, there would be no reason to risk chips on a weak hand — the incentive would run the opposite direction, toward folding and waiting.',
+            id: 'no_reason', label: 'They usually shouldn’t — with nothing already in the pot to win, there is no reason to risk chips without a sufficiently strong advantage.', quality: 'perfect',
+            feedback: 'Correct. Blinds create something worth competing for before anyone acts. Without forced money, players could keep folding weak and ordinary hands at no cost, destroying much of the incentive to enter pots. Blinds force the game into action.',
           },
         ],
         xp: 5,
