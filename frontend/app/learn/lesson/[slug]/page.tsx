@@ -15,6 +15,12 @@ import { LessonCompletionCard } from "@/components/learn/LessonCompletionCard";
 import { useAuth } from "@/hooks/useAuth";
 import { useLearnProgress } from "@/contexts/LearnProgressContext";
 import {
+  startCompletion,
+  completeLesson,
+  type CompletionFlowResult,
+  type PendingCompletionRef,
+} from "@/lib/learn/completionFlow";
+import {
   LESSONS_BY_SLUG,
   MODULES_BY_SLUG,
   LESSONS_BY_MODULE,
@@ -60,15 +66,17 @@ export default function LessonPage() {
   } | null>(null);
 
   // Holds the in-flight (or already-settled) durable-completion request once
-  // handleLessonFinished kicks it off — see runCompletion below. Reset to
-  // null whenever a fresh attempt at this lesson begins so a retry doesn't
-  // reuse a stale prior attempt's result.
-  const pendingCompletionRef = useRef<Promise<{
-    bonusXp: number;
-    leveledUp: boolean;
-    newLevel: number;
-    moduleComplete?: { xp: number };
-  }> | null>(null);
+  // handleLessonFinished kicks it off — see runCompletion below. Cleared back
+  // to null on failure (by startCompletion) so a retry starts a genuinely
+  // fresh attempt instead of re-awaiting a dead, rejected promise forever.
+  const pendingCompletionRef = useRef<PendingCompletionRef["current"]>(null);
+
+  // Surfaced only around the "Continue Learning" click — the eager
+  // background write (handleLessonFinished) stays invisible, matching the
+  // existing celebratory UI, unless/until the learner actually clicks and
+  // hits a failure.
+  const [isPersistingCompletion, setIsPersistingCompletion] = useState(false);
+  const [completionError, setCompletionError] = useState<string | null>(null);
 
   const module = lesson ? MODULES_BY_SLUG[lesson.module_id] : undefined;
   const pathId = module?.path_id;
@@ -201,18 +209,38 @@ export default function LessonPage() {
   // close the tab": the network request is already in flight the moment the
   // lesson is functionally done, not gated behind a later button click.
   const handleLessonFinished = (score: number) => {
-    pendingCompletionRef.current = runCompletion(score);
+    // Errors here are surfaced later, if/when the learner clicks "Continue
+    // Learning" and re-awaits this same (or, after failure, a fresh) attempt
+    // via handleComplete below — not swallowed, just deferred so a failed
+    // background save doesn't throw before there's any UI to show it in.
+    startCompletion(pendingCompletionRef, () => runCompletion(score)).catch(() => {});
   };
 
   // Fired when the user clicks "Continue Learning" on the celebration screen.
   // Normally the completion write already started (and often finished) via
   // handleLessonFinished above — this just awaits that same in-flight
-  // request rather than re-submitting it. The fallback exists only in case
-  // onLessonFinished never fired for some reason (defense in depth).
+  // request rather than re-submitting it (never fires a duplicate, even
+  // under a rapid double-click — the ref is checked synchronously). If that
+  // attempt (or an earlier background one) failed, the ref was already
+  // cleared, so this starts a genuinely fresh attempt — the retry path is
+  // identical to the first-click path, not a separate code branch.
   const handleComplete = async (score: number, xpEarned: number) => {
-    const promise = pendingCompletionRef.current ?? runCompletion(score);
-    const { bonusXp, leveledUp, newLevel, moduleComplete } = await promise;
-    setCompletionData({ score, xpEarned: xpEarned + bonusXp, leveledUp, newLevel, moduleComplete });
+    setCompletionError(null);
+    setIsPersistingCompletion(true);
+    await completeLesson(
+      pendingCompletionRef,
+      () => runCompletion(score),
+      {
+        onSuccess: ({ bonusXp, leveledUp, newLevel, moduleComplete }: CompletionFlowResult) => {
+          setCompletionData({ score, xpEarned: xpEarned + bonusXp, leveledUp, newLevel, moduleComplete });
+        },
+        onError: (err: unknown) => {
+          console.error("[Learn] lesson completion failed to save", err);
+          setCompletionError("Couldn't save your progress — check your connection and try again.");
+        },
+      },
+    );
+    setIsPersistingCompletion(false);
   };
 
   // ── Completion screen ──────────────────────────────────────────────────────
@@ -353,6 +381,8 @@ export default function LessonPage() {
               onStepIndexChange={setCurrentStep}
               onComplete={handleComplete}
               onLessonFinished={handleLessonFinished}
+              isCompletionPending={isPersistingCompletion}
+              completionError={completionError}
             />
           ) : (
             <div className="space-y-6">
@@ -376,6 +406,8 @@ export default function LessonPage() {
                 onStepIndexChange={setCurrentStep}
                 onComplete={handleComplete}
                 onLessonFinished={handleLessonFinished}
+                isCompletionPending={isPersistingCompletion}
+                completionError={completionError}
               />
             </div>
           )}

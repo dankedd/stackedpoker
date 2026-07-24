@@ -460,6 +460,14 @@ interface LessonPlayerProps {
    *  (above) still fires on the "Continue Learning" click, for whatever
    *  UI transition the caller wants to gate on that explicit action. */
   onLessonFinished?: (score: number, xpEarned: number) => void
+  /** True while the caller's "Continue Learning" click is awaiting the
+   *  durable completion write — surfaced on the primary CTA so a slow save
+   *  reads as "in progress" instead of an inert, unresponsive button. */
+  isCompletionPending?: boolean
+  /** Set by the caller when the completion write failed (after its own
+   *  retries) — swaps the CTA into a retry affordance instead of leaving it
+   *  looking like it silently did nothing. */
+  completionError?: string | null
   /** Fired once per answered/viewed step, for the caller to persist via LearnProgressContext */
   onStepResult?: (
     step: LessonStep,
@@ -497,6 +505,8 @@ export function LessonPlayer({
   initialStepIndex = 0,
   onComplete,
   onLessonFinished,
+  isCompletionPending,
+  completionError,
   onStepResult,
   onStepIndexChange,
 }: LessonPlayerProps) {
@@ -733,6 +743,8 @@ export function LessonPlayer({
         results={results}
         totalXP={totalXP}
         onContinue={handleSummaryDone}
+        isSubmitting={isCompletionPending}
+        submitError={completionError}
         onRetry={() => {
           lessonFinishedFiredRef.current = false
           setResults([])

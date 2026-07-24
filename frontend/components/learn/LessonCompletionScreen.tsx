@@ -302,6 +302,15 @@ interface LessonCompletionScreenProps {
   onContinue: () => void
   onRetry?: () => void
   onCoachReview?: () => void
+  /** True while the durable server-side completion write triggered by
+   *  `onContinue` is in flight — disables the CTA and swaps its label so a
+   *  slow save reads as "in progress", never as a dead button, and a rapid
+   *  double-click can't fire a second request. */
+  isSubmitting?: boolean
+  /** Set when that write failed — the CTA becomes a retry action (still
+   *  wired to the same `onContinue`, which starts a fresh attempt) instead
+   *  of silently doing nothing. */
+  submitError?: string | null
 }
 
 export function LessonCompletionScreen({
@@ -311,6 +320,8 @@ export function LessonCompletionScreen({
   onContinue,
   onRetry,
   onCoachReview,
+  isSubmitting,
+  submitError,
 }: LessonCompletionScreenProps) {
 
   // ── Reveal phases ──────────────────────────────────────────────────────────
@@ -591,15 +602,20 @@ export function LessonCompletionScreen({
         <button
           type="button"
           onClick={onContinue}
-          className="group relative w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 py-4 text-sm font-bold text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
+          disabled={isSubmitting}
+          aria-busy={isSubmitting}
+          className="group relative w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 py-4 text-sm font-bold text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-y-0 disabled:hover:shadow-violet-500/25"
         >
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent"
           />
-          Continue Learning
+          {isSubmitting ? 'Saving…' : submitError ? 'Retry' : 'Continue Learning'}
           <ChevronRight className="h-4 w-4 shrink-0" />
         </button>
+        {submitError && !isSubmitting && (
+          <p className="text-xs text-rose-400/80 text-center -mt-1.5">{submitError}</p>
+        )}
 
         {/* Secondary */}
         <div className="grid grid-cols-2 gap-3">

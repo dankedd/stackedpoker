@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isNewLearnerIdentity } from '@/contexts/LearnProgressContext'
+import { isNewLearnerIdentity, shouldSkipRehydration } from '@/contexts/LearnProgressContext'
 
 // Regression coverage for the exact bug report: "complete a lesson, see it
 // green, log out, log back into the SAME account, and it's no longer
@@ -89,5 +89,55 @@ describe('isNewLearnerIdentity — LearnProgressContext hydration-reset guard', 
     expect(refetchWasTriggered).toBe(true)
     expect(hydratedRef).toBe(true)
     expect(hydratedForUser).toBe('user-a')
+  })
+})
+
+describe('shouldSkipRehydration — avoids re-fetching progress on a same-user token refresh', () => {
+  // Regression coverage for a contributing cause of "the lesson-completion
+  // screen disappears / a click on it does nothing": the hydration effect
+  // re-ran doMergeThenLoad() -> loadAuthedProgress() (which flips
+  // progress.loading back to true) on EVERY change of the `token` value,
+  // including a routine background access-token refresh for the SAME
+  // already-hydrated user. app/learn/lesson/[slug]/page.tsx gates its ENTIRE
+  // render behind `progress.loading`, so that spurious reload unmounts
+  // LessonPlayer — discarding the celebration screen and any in-flight click
+  // — even though nothing about the user's identity actually changed.
+
+  it('a background token refresh for the same already-hydrated user must skip the re-fetch', () => {
+    const isNewIdentity = isNewLearnerIdentity('user-a', 'user-a')
+    expect(shouldSkipRehydration(isNewIdentity, /* alreadyHydrated */ true)).toBe(true)
+  })
+
+  it('a genuine new login/account switch must NOT skip the re-fetch, even though alreadyHydrated may still read true from the previous user', () => {
+    const isNewIdentity = isNewLearnerIdentity('user-a', 'user-b')
+    expect(shouldSkipRehydration(isNewIdentity, true)).toBe(false)
+  })
+
+  it('the very first load for a user (not yet hydrated) must NOT be skipped, even for the "same" identity comparison', () => {
+    // hydratedForUserRef starts null, so the first ever effect run for a
+    // freshly-authenticated user IS a new identity (null -> user-a) — but
+    // this also covers the defensive case of alreadyHydrated=false directly.
+    expect(shouldSkipRehydration(/* isNewIdentity */ false, /* alreadyHydrated */ false)).toBe(false)
+  })
+
+  it('end-to-end: simulates a lesson-completion click racing a background token refresh', () => {
+    let hydratedForUser: string | null = 'user-a'
+    let hydratedRef = true // already hydrated before this session's lesson began
+    let loadingFlips = 0
+
+    function onTokenChangeEffect(currentUserId: string) {
+      const isNewIdentity = isNewLearnerIdentity(hydratedForUser, currentUserId)
+      if (isNewIdentity) hydratedRef = false
+      if (shouldSkipRehydration(isNewIdentity, hydratedRef)) return
+      loadingFlips += 1 // stands in for setProgress({ ...p, loading: true })
+      hydratedRef = true
+      hydratedForUser = currentUserId
+    }
+
+    // A Supabase background refresh fires mid-lesson for the SAME user.
+    onTokenChangeEffect('user-a')
+
+    expect(loadingFlips).toBe(0) // must NOT have torn down the active screen
+    expect(hydratedRef).toBe(true)
   })
 })

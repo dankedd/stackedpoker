@@ -175,6 +175,19 @@ export function isNewLearnerIdentity(
   return previousUserId !== currentUserId
 }
 
+/**
+ * Whether the hydration effect below should skip re-fetching entirely for
+ * this run. True only when this is neither a new identity nor an
+ * in-progress/never-completed initial load — i.e. purely a background
+ * access-token refresh for a user whose progress is already loaded. Without
+ * this, every token refresh re-ran the full fetch, flipping `loading` back
+ * to `true` for no reason — which unmounts anything gated on it (e.g. an
+ * active lesson-completion screen the learner is mid-click on).
+ */
+export function shouldSkipRehydration(isNewIdentity: boolean, alreadyHydrated: boolean): boolean {
+  return !isNewIdentity && alreadyHydrated
+}
+
 function computeContinueTarget(lessons: Record<string, LessonProgressEntry>): ContinueLearningTarget | null {
   const inProgress = Object.entries(lessons).filter(([, l]) => l.status === 'in_progress')
   if (inProgress.length === 0) return null
@@ -306,9 +319,15 @@ export function LearnProgressProvider({ children }: { children: React.ReactNode 
     // login or a different account) — a background access-token refresh for
     // the SAME already-hydrated user must not re-arm the guard and risk
     // dropping a save that's in flight.
-    if (isNewLearnerIdentity(hydratedForUserRef.current, user.id)) {
+    const isNewIdentity = isNewLearnerIdentity(hydratedForUserRef.current, user.id)
+    if (isNewIdentity) {
       hydratedRef.current = false
     }
+
+    // A background token refresh for the same already-hydrated user needs no
+    // re-fetch at all — skip it so `loading` doesn't flip back to true and
+    // tear down anything gated on it mid-interaction (see shouldSkipRehydration).
+    if (shouldSkipRehydration(isNewIdentity, hydratedRef.current)) return
 
     const doMergeThenLoad = async () => {
       if (mergedForUser.current !== user.id && hasGuestProgress()) {
