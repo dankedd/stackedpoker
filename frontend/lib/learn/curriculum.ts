@@ -5323,7 +5323,7 @@ export const LESSONS: Lesson[] = [
     estimated_min: 14,
     xp_reward: 170,
     sort_order: 3,
-    next_lesson_teaser: 'Position Changes Everything',
+    next_lesson_teaser: 'Position and Equity Realization',
     steps: [
       {
         id: 'lvp-s1',
@@ -5518,10 +5518,10 @@ export const LESSONS: Lesson[] = [
   },
 
   {
-    id: 'position-changes-everything',
+    id: 'position-and-equity-realization',
     module_id: 'preflop-aggression-module',
-    slug: 'position-changes-everything',
-    title: 'Position Changes Everything',
+    slug: 'position-and-equity-realization',
+    title: 'Position and Equity Realization',
     subtitle: 'Position determines how much equity your hands can actually realize.',
     lesson_type: 'micro',
     concept_ids: ['position_three_bet', 'equity_realization_preflop', 'opener_range_strength'],
@@ -8480,7 +8480,7 @@ export const LESSONS: Lesson[] = [
     estimated_min: 16,
     xp_reward: 190,
     sort_order: 5,
-    next_lesson_teaser: 'Position Changes Everything',
+    next_lesson_teaser: 'Defending In Position',
     steps: [
       {
         id: 'sbp-s1',
@@ -8661,7 +8661,7 @@ export const LESSONS: Lesson[] = [
     id: 'position-changes-everything-defense',
     module_id: 'defending-the-open-module',
     slug: 'defending-in-position',
-    title: 'Position Changes Everything',
+    title: 'Defending In Position',
     subtitle: 'When you can call and keep position, more hands can survive.',
     lesson_type: 'micro',
     concept_ids: ['btn_defense', 'position_three_bet', 'players_behind_aggression'],
@@ -11860,7 +11860,7 @@ export const LESSONS: Lesson[] = [
     estimated_min: 18,
     xp_reward: 210,
     sort_order: 7,
-    next_lesson_teaser: 'Position Changes Everything',
+    next_lesson_teaser: 'In Position vs Out of Position',
     steps: [
       {
         id: 'wdm-s1',
@@ -11949,7 +11949,7 @@ export const LESSONS: Lesson[] = [
     id: 'position-changes-everything',
     module_id: 'cbetting-fundamentals-module',
     slug: 'position-changes-everything',
-    title: 'Position Changes Everything',
+    title: 'In Position vs Out of Position',
     subtitle: 'Checking means something different depending on who acts next.',
     lesson_type: 'micro',
     concept_ids: ['position_postflop', 'ip_cbet', 'oop_cbet'],
@@ -12372,6 +12372,16 @@ export const LESSONS: Lesson[] = [
 
 export const LESSONS_BY_SLUG: Record<string, Lesson> =
   Object.fromEntries(LESSONS.map((l) => [l.slug, l]))
+
+/**
+ * Keyed by the globally-unique lesson.id — the ONE identifier persisted to
+ * progress records (see api.ts / guestProgress.ts). Never substitute
+ * LESSONS_BY_SLUG for this: slugs are a route-display concern and, for
+ * lessons where id !== slug, keying off id into a slug map silently resolves
+ * to the wrong lesson (or nothing at all).
+ */
+export const LESSONS_BY_ID: Record<string, Lesson> =
+  Object.fromEntries(LESSONS.map((l) => [l.id, l]))
 
 export const MODULES_BY_SLUG: Record<string, LearningModule> =
   Object.fromEntries(LEARNING_MODULES.map((m) => [m.slug, m]))

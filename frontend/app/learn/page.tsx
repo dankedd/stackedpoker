@@ -23,7 +23,7 @@ import { StreakBadge } from "@/components/learn/StreakBadge";
 import { AchievementsPanel } from "@/components/learn/AchievementBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { useLearnProgress } from "@/contexts/LearnProgressContext";
-import { LESSONS_BY_SLUG, LEARNING_MODULES, LESSONS, LEARNING_PATHS } from "@/lib/learn/curriculum";
+import { LESSONS_BY_ID, LEARNING_MODULES, LESSONS, LEARNING_PATHS } from "@/lib/learn/curriculum";
 import { ACHIEVEMENTS } from "@/lib/learn/types";
 import { xpToNextLevel } from "@/lib/learn/types";
 import type { ModuleDisplayStatus } from "@/lib/learn/journey";
@@ -150,8 +150,12 @@ export default function LearnPage() {
     (c) => !c.next_review || new Date(c.next_review) <= new Date()
   ).length;
 
+  // continueTarget.lesson_id is the persisted lesson.id (never a route slug)
+  // — must resolve through LESSONS_BY_ID, not the slug-keyed map, or a lesson
+  // whose id differs from its slug silently fails to resume (or resolves to
+  // an unrelated lesson that happens to share that slug string).
   const continueLesson = progress.continueTarget
-    ? LESSONS_BY_SLUG[progress.continueTarget.lesson_id]
+    ? LESSONS_BY_ID[progress.continueTarget.lesson_id]
     : undefined;
 
   // ── Poker Journey derived state ──────────────────────────────────────────
