@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { Lightbulb, RotateCcw, Eraser, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { RangeRevealComparison } from '@/components/learn/visuals/RangeRevealComparison'
@@ -47,6 +48,62 @@ function comboCount(hand: string): number {
 // Total combos in a 13x13 grid = 4*78 + 12*78 + 6*13 = 312 + 936 + 78 = 1326
 const TOTAL_COMBOS = 1326
 const TOTAL_HANDS = 1326 // same as above: total two-card combos
+
+// Splits an instruction note into a strong lead sentence and a more muted
+// follow-up, purely for presentation — the underlying copy is untouched.
+function splitLeadSentence(text: string): [string, string] {
+  const match = text.match(/^(.*?[.!?])\s+([\s\S]*)$/)
+  if (!match) return [text, '']
+  return [match[1], match[2]]
+}
+
+// ── Small presentational helpers ────────────────────────────────────────────
+
+function RangeStat({ value, label, accent = false }: { value: string | number; label: string; accent?: boolean }) {
+  return (
+    <div className="flex flex-col">
+      <span
+        className={cn(
+          'text-base font-bold leading-none tabular-nums',
+          accent ? 'text-violet-300' : 'text-foreground'
+        )}
+      >
+        {value}
+      </span>
+      <span className="mt-1 text-[10px] font-medium uppercase tracking-wide leading-none text-muted-foreground/45">
+        {label}
+      </span>
+    </div>
+  )
+}
+
+function ToolbarAction({
+  icon: Icon,
+  label,
+  onClick,
+  tone,
+}: {
+  icon: LucideIcon
+  label: string
+  onClick: () => void
+  tone: 'accent' | 'muted'
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'inline-flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors duration-150',
+        tone === 'accent'
+          ? 'text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 hover:text-violet-200'
+          : 'text-muted-foreground/60 hover:bg-secondary/60 hover:text-muted-foreground'
+      )}
+    >
+      <Icon className="h-3.5 w-3.5" aria-hidden />
+      {label}
+    </button>
+  )
+}
 
 interface RangeBuildProps {
   step: LessonStep
@@ -97,6 +154,13 @@ export function RangeBuild({ step, onAnswer, disabled = false }: RangeBuildProps
 
   function handleMouseUp() {
     setIsDragging(false)
+  }
+
+  function handleCellKeyDown(e: React.KeyboardEvent<HTMLButtonElement>, hand: string) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      toggleHand(hand)
+    }
   }
 
   const finalCombos = Array.from(selected)
@@ -153,162 +217,128 @@ export function RangeBuild({ step, onAnswer, disabled = false }: RangeBuildProps
   // Stats
   const selectedCombos = Array.from(selected).reduce((sum, h) => sum + comboCount(h), 0)
   const pctOfRange = ((selectedCombos / TOTAL_COMBOS) * 100).toFixed(1)
+  const [noteLead, noteRest] = splitLeadSentence(step.range_prefilled_note ?? DEFAULT_PREFILL_NOTE)
+  const showControls = !submitted && !disabled && (foundation.length > 0 || selected.size > 0)
 
   return (
     <div
-      className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300"
+      className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300"
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
-      {/* Narrative / prompt */}
-      {step.narrative && (
-        <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-3">
-          <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>
-        </div>
-      )}
+      {/* Context / instruction */}
+      <div className="space-y-2.5">
+        {step.narrative && <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>}
 
-      {/* Prefilled foundation explanation */}
-      {foundation.length > 0 && (
-        <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 px-4 py-3">
-          <p className="text-sm text-amber-200/80 leading-relaxed">
-            {step.range_prefilled_note ?? DEFAULT_PREFILL_NOTE}
-          </p>
-        </div>
-      )}
+        {foundation.length > 0 && (
+          <div className="flex items-start gap-2.5 rounded-lg border border-violet-500/15 bg-violet-500/[0.07] px-3.5 py-2.5">
+            <Lightbulb className="h-4 w-4 shrink-0 mt-0.5 text-violet-400" aria-hidden />
+            <p className="text-sm leading-snug">
+              <span className="font-medium text-foreground/95">{noteLead}</span>
+              {noteRest && <span className="text-muted-foreground"> {noteRest}</span>}
+            </p>
+          </div>
+        )}
 
-      {/* Hint */}
-      {step.range_hint && (
-        <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 px-3 py-2">
-          <p className="text-xs text-violet-400/80">{step.range_hint}</p>
-        </div>
-      )}
+        {step.range_hint && <p className="text-xs text-violet-400/70 leading-relaxed">{step.range_hint}</p>}
+      </div>
 
-      {/* Stats bar */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-bold text-foreground">
-            {selected.size}{' '}
-            <span className="text-muted-foreground/50 font-normal">
-              hand{selected.size !== 1 ? 's' : ''}
-            </span>
-          </span>
-          <span className="text-sm font-bold text-violet-400">
-            {selectedCombos}{' '}
-            <span className="text-muted-foreground/50 font-normal text-xs">combos</span>
-          </span>
-          <span className="text-sm font-bold text-amber-400">
-            {pctOfRange}
-            <span className="text-muted-foreground/50 font-normal text-xs">% of range</span>
-          </span>
+      {/* Range summary + controls */}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-xl border border-border/15 bg-secondary/15 px-4 py-3">
+        <div className="flex items-center gap-5">
+          <RangeStat value={selected.size} label="Hands" />
+          <RangeStat value={selectedCombos} label="Combos" accent />
+          <RangeStat value={`${pctOfRange}%`} label="Range width" />
         </div>
-        {!submitted && !disabled && (
-          <div className="flex items-center gap-3">
+
+        {showControls && (
+          <div className="flex items-center gap-1.5 sm:ml-auto">
             {foundation.length > 0 && (
-              <button
-                type="button"
-                onClick={handleResetToFoundation}
-                className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
-              >
-                Reset to foundation
-              </button>
+              <ToolbarAction icon={RotateCcw} label="Reset to foundation" onClick={handleResetToFoundation} tone="accent" />
             )}
-            {selected.size > 0 && (
-              <button
-                type="button"
-                onClick={handleClearAll}
-                className="text-xs text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-              >
-                Clear all
-              </button>
-            )}
+            {selected.size > 0 && <ToolbarAction icon={Eraser} label="Clear all" onClick={handleClearAll} tone="muted" />}
           </div>
         )}
       </div>
 
-      {/* Range grid */}
-      <div className="overflow-x-auto">
-        <div className="inline-block min-w-full">
-          {/* Column headers */}
-          <div className="flex ml-7 mb-0.5">
+      {/* 13x13 range matrix — column labels, row labels and cells all live in
+          ONE css grid so every axis stays pixel-perfectly aligned, and every
+          data cell shares the same `minmax(2rem, 1fr)` column track so cells
+          are always identical width and (via aspect-square) identical height. */}
+      <div>
+        <div className="overflow-x-auto pb-1">
+          <div className="grid grid-cols-[1.75rem_repeat(13,minmax(2rem,1fr))] gap-[3px]">
+            <div aria-hidden />
             {RANKS.map(r => (
               <div
-                key={r}
-                className="flex-1 min-w-0 text-center text-[9px] font-bold text-muted-foreground/40 leading-none"
+                key={`col-${r}`}
+                className="flex items-center justify-center text-[10px] font-semibold text-muted-foreground/45"
               >
                 {r}
               </div>
             ))}
+
+            {HAND_GRID.map((row, rowIdx) => (
+              <Fragment key={rowIdx}>
+                <div className="flex items-center justify-center text-[10px] font-semibold text-muted-foreground/45">
+                  {RANKS[rowIdx]}
+                </div>
+                {row.map((hand, colIdx) => {
+                  const isSelected = selected.has(hand)
+                  const isPrefilled = isPrefilledCell(rangeState, foundationSet, hand)
+
+                  return (
+                    <button
+                      key={colIdx}
+                      type="button"
+                      disabled={disabled || submitted}
+                      onMouseDown={() => handleMouseDown(hand)}
+                      onMouseEnter={() => handleMouseEnter(hand)}
+                      onKeyDown={e => handleCellKeyDown(e, hand)}
+                      title={isPrefilled ? `${hand} — prefilled foundation, click to remove` : hand}
+                      className={cn(
+                        'relative flex aspect-square items-center justify-center rounded-[5px] border',
+                        'text-[10px] sm:text-[11px] font-semibold leading-none select-none',
+                        'cursor-pointer transition-colors duration-150',
+                        'focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-1 focus-visible:ring-offset-background',
+                        'disabled:cursor-default disabled:pointer-events-none disabled:opacity-70',
+                        isPrefilled
+                          ? 'bg-violet-500/20 border-violet-400/30 text-violet-100 hover:bg-violet-500/28'
+                          : isSelected
+                          ? 'bg-blue-500 border-blue-400/40 text-white font-bold hover:bg-blue-400'
+                          : 'bg-secondary/30 border-border/15 text-muted-foreground/60 hover:bg-secondary/50 hover:border-border/30 hover:text-foreground/80'
+                      )}
+                    >
+                      {hand}
+                      {isPrefilled && (
+                        <span aria-hidden className="absolute right-0.5 top-0.5 h-1 w-1 rounded-full bg-violet-200/80" />
+                      )}
+                    </button>
+                  )
+                })}
+              </Fragment>
+            ))}
           </div>
-
-          {/* Rows */}
-          {HAND_GRID.map((row, rowIdx) => (
-            <div key={rowIdx} className="flex items-center">
-              {/* Row label */}
-              <div className="w-7 text-[9px] font-bold text-muted-foreground/40 text-center shrink-0">
-                {RANKS[rowIdx]}
-              </div>
-              {/* Cells */}
-              {row.map((hand, colIdx) => {
-                const isSelected = selected.has(hand)
-                const isPair = rowIdx === colIdx
-                const isSuited = rowIdx < colIdx
-                const isPrefilled = isPrefilledCell(rangeState, foundationSet, hand)
-
-                return (
-                  <div
-                    key={colIdx}
-                    className={cn(
-                      'flex-1 min-w-0 aspect-square flex items-center justify-center',
-                      'm-px rounded-[3px] cursor-pointer select-none transition-colors duration-75',
-                      'text-[8px] font-bold leading-none',
-                      isPrefilled
-                        ? 'bg-violet-500/30 text-violet-200 border border-dashed border-amber-400/60'
-                        : isSelected
-                        ? isPair
-                          ? 'bg-violet-500 text-white shadow-sm shadow-violet-500/40'
-                          : isSuited
-                          ? 'bg-violet-600/80 text-white'
-                          : 'bg-violet-500/60 text-white'
-                        : isPair
-                        ? 'bg-secondary/70 text-muted-foreground/60 hover:bg-violet-500/20 hover:text-violet-300'
-                        : isSuited
-                        ? 'bg-secondary/50 text-muted-foreground/40 hover:bg-violet-500/15 hover:text-violet-400/70'
-                        : 'bg-secondary/30 text-muted-foreground/30 hover:bg-violet-500/10 hover:text-violet-400/50',
-                      (disabled || submitted) && 'cursor-default pointer-events-none'
-                    )}
-                    onMouseDown={() => handleMouseDown(hand)}
-                    onMouseEnter={() => handleMouseEnter(hand)}
-                    title={isPrefilled ? 'Prefilled foundation — click to remove if you disagree' : undefined}
-                  >
-                    <span className="truncate px-0.5">{hand}</span>
-                  </div>
-                )
-              })}
-            </div>
-          ))}
         </div>
+        <p className="mt-1.5 text-center text-[10px] text-muted-foreground/35 sm:hidden">Scroll to see all hands →</p>
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-[10px] text-muted-foreground/40">
-        <div className="flex items-center gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-[2px] bg-violet-500" />
-          <span>Pairs (diagonal)</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-[2px] bg-violet-600/80" />
-          <span>Suited (upper)</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-[2px] bg-violet-500/60" />
-          <span>Offsuit (lower)</span>
-        </div>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-muted-foreground/50">
         {foundation.length > 0 && (
           <div className="flex items-center gap-1.5">
-            <div className="h-2.5 w-2.5 rounded-[2px] bg-violet-500/30 border border-dashed border-amber-400/60" />
-            <span>Prefilled foundation</span>
+            <span className="h-2.5 w-2.5 rounded-[3px] border border-violet-400/30 bg-violet-500/20" />
+            Foundation
           </div>
         )}
+        <div className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-[3px] bg-blue-500" />
+          Your selection
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-[3px] border border-border/15 bg-secondary/30" />
+          Not selected
+        </div>
       </div>
 
       {/* Submit button */}
