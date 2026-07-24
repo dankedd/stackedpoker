@@ -152,20 +152,18 @@ function CoachPageContent() {
             {/* ── Left: Chat ── */}
             <div className="flex-1 min-w-0">
               <div className="rounded-2xl border border-border/40 bg-gradient-to-b from-card/80 to-card/60 overflow-hidden flex flex-col shadow-xl shadow-black/20" style={{ minHeight: 540, maxHeight: "72vh" }}>
-                {/* Chat header — premium */}
+                {/* Chat header — single unified header, no model badge */}
                 <div className="flex items-center gap-3 px-5 py-4 border-b border-border/30 bg-card/40 backdrop-blur-sm">
-                  <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-blue-500 shadow-md shadow-violet-500/25">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-blue-500 shadow-md shadow-violet-500/25">
                     <Bot className="h-4.5 w-4.5 text-white" />
-                    {/* Online dot */}
-                    <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 border-2 border-background" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-foreground">Stacked Coach</p>
-                    <p className="text-[10px] text-emerald-400/80 font-medium">Online · GTO + Exploitative reasoning</p>
+                    <p className="text-[10px] text-muted-foreground/50">Your personal poker strategy coach</p>
                   </div>
-                  <div className="flex items-center gap-1.5 text-[10px] font-semibold text-violet-400/60 bg-violet-500/8 border border-violet-500/15 px-2.5 py-1 rounded-full">
-                    <span className="h-1.5 w-1.5 rounded-full bg-violet-400 animate-pulse" />
-                    GPT-4o
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[10px] text-emerald-400/70 font-medium">Online</span>
                   </div>
                 </div>
 

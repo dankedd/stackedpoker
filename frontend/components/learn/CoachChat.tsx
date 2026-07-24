@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useImperativeHandle, forwardRef, type ReactNode, type KeyboardEvent } from 'react'
-import { Send, Bot, User, BrainCircuit } from 'lucide-react'
+import { Send, Bot, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CoachMessage } from '@/lib/learn/types'
 import { sendCoachMessage } from '@/lib/learn/api'
@@ -225,28 +225,13 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
   const noMessages = messages.length === 0
 
   return (
-    <div
-      className={cn(
-        'flex flex-col rounded-2xl border border-border/50 bg-card/60 overflow-hidden',
-        className
-      )}
-    >
-      {/* Title bar */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border/40 bg-card/80 shrink-0">
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-blue-500">
-          <BrainCircuit className="h-4 w-4 text-white" />
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-foreground leading-none">AI Coach</p>
-          <p className="text-[10px] text-muted-foreground/50 mt-0.5">GTO-aware poker tutor</p>
-        </div>
-        <div className="ml-auto flex items-center gap-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[10px] text-emerald-400/70 font-medium">Online</span>
-        </div>
-      </div>
-
-      {/* Message list */}
+    // No card chrome of its own (border/rounded/bg) — this component is always
+    // embedded directly beneath the page-level header inside that page's own
+    // card, so adding a second border here would show as a visible seam.
+    <div className={cn('flex flex-col overflow-hidden', className)}>
+      {/* Message list — the page-level header above this component is the
+          single source of the "Stacked Coach" title/Online status; this
+          component intentionally has no header of its own. */}
       <div className="flex-1 overflow-y-auto min-h-0 p-4 space-y-4">
         {banner && <div className="mb-1">{banner}</div>}
 
