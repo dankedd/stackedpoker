@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import {
   CheckCircle2, Clock, Zap, ChevronRight, BookOpen,
 } from 'lucide-react'
@@ -64,6 +64,7 @@ import { BuildFirstHand } from '@/components/learn/steps/BuildFirstHand'
 import { RangeDistributionBar } from '@/components/learn/steps/RangeDistributionBar'
 import { FrequencySizeLab } from '@/components/learn/steps/FrequencySizeLab'
 import { BoardRankSort } from '@/components/learn/steps/BoardRankSort'
+import { TendencySummary } from '@/components/learn/steps/TendencySummary'
 import type { ActionQuality } from '@/lib/learn/types'
 import { LevelUpOverlay } from '@/components/learn/LevelUpOverlay'
 import { ConceptTagRow } from '@/components/learn/ConceptPopover'
@@ -156,15 +157,32 @@ function StepRenderer({
   step,
   currentXP,
   onResult,
+  steps,
+  resultsByStepId,
 }: {
   step: LessonStep
   currentXP: number
   onResult: (result: StepResult, userResponse: unknown, timeMs: number) => void
+  /** Full lesson step list + this playthrough's real results so far — only read by
+   *  'tendency_summary' steps (see TendencySummary.tsx). Every other step type ignores them. */
+  steps: LessonStep[]
+  resultsByStepId: Map<string, StepResult>
 }) {
   // Evaluate locally — instant, deterministic, no network dependency
   function evaluate(userResponse: unknown, timeMs: number) {
     const result = evaluateStepLocally(step, userResponse, currentXP)
     onResult(result, userResponse, timeMs)
+  }
+
+  if (step.type === 'tendency_summary') {
+    return (
+      <TendencySummary
+        step={step}
+        steps={steps}
+        resultsByStepId={resultsByStepId}
+        onComplete={() => evaluate(null, 0)}
+      />
+    )
   }
 
   if (step.type === 'concept_reveal') {
@@ -550,6 +568,18 @@ export function LessonPlayer({
   // Used by the local evaluator for accurate level tracking
   const runningXP = userXP + totalXP
 
+  // Step id -> this playthrough's REAL result so far — the only thing a
+  // 'tendency_summary' step is allowed to read (see TendencySummary.tsx).
+  // Derived, never itself stored, so it can never drift from answeredSteps.
+  const resultsByStepId = useMemo(() => {
+    const map = new Map<string, StepResult>()
+    for (const [index, entry] of answeredSteps) {
+      const id = dynamicSteps[index]?.id
+      if (id) map.set(id, entry.result)
+    }
+    return map
+  }, [answeredSteps, dynamicSteps])
+
   // Level-up overlay state
   const [showLevelUp, setShowLevelUp] = useState(false)
   const [levelUpData, setLevelUpData] = useState<{ level: number; xp: number } | null>(null)
@@ -849,6 +879,8 @@ export function LessonPlayer({
             step={currentStep}
             currentXP={runningXP}
             onResult={handleResult}
+            steps={dynamicSteps}
+            resultsByStepId={resultsByStepId}
           />
         )}
 

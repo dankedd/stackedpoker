@@ -98,7 +98,11 @@ export function RangeCompare({ step, onAnswer, disabled = false }: RangeCompareP
                 <p className={cn('text-center text-[10px] font-bold uppercase tracking-[0.15em]', isSelected ? 'text-violet-300' : 'text-violet-400/70')}>
                   {side.label}
                 </p>
-                <PokerRangeGrid range={side.range} />
+                {side.strategies ? (
+                  <PokerRangeGrid range={side.range} mode="strategy" strategies={side.strategies} />
+                ) : (
+                  <PokerRangeGrid range={side.range} />
+                )}
                 <p className={cn('text-center text-[11px] font-semibold pt-1', isSelected ? 'text-violet-300' : 'text-muted-foreground/50')}>
                   Select {side.label}
                 </p>
@@ -112,14 +116,22 @@ export function RangeCompare({ step, onAnswer, disabled = false }: RangeCompareP
             <p className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-violet-400/70">
               {a.label}
             </p>
-            <PokerRangeGrid range={a.range} />
+            {a.strategies ? (
+              <PokerRangeGrid range={a.range} mode="strategy" strategies={a.strategies} />
+            ) : (
+              <PokerRangeGrid range={a.range} />
+            )}
           </div>
           {b && (
             <div className="space-y-1.5">
               <p className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-blue-400/70">
                 {b.label}
               </p>
-              <PokerRangeGrid range={b.range} />
+              {b.strategies ? (
+                <PokerRangeGrid range={b.range} mode="strategy" strategies={b.strategies} />
+              ) : (
+                <PokerRangeGrid range={b.range} />
+              )}
             </div>
           )}
         </div>

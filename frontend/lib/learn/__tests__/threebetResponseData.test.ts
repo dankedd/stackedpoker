@@ -10,6 +10,7 @@ import { describe, it, expect } from 'vitest'
 import {
   THREEBET_RESPONSE_CHARTS,
   THREEBET_RESPONSE_FOUNDATIONS,
+  THREEBET_RESPONSE_FLAWED_EXAMPLES,
   type ThreebetResponseAction,
 } from '../threebetResponseBaselines'
 import { RFI_DEEP, entriesToHandList } from '../preflopBaselines'
@@ -106,6 +107,43 @@ describe('THREEBET_RESPONSE_CHARTS — combo-weighted % is close to the book-sta
       }
     })
   }
+})
+
+describe('THREEBET_RESPONSE_FLAWED_EXAMPLES — Range Repair exercise data', () => {
+  const flawed = THREEBET_RESPONSE_FLAWED_EXAMPLES.BTN_vs_BB_3bet_response_flawed_example
+  const real = THREEBET_RESPONSE_CHARTS.BTN_vs_BB_3bet_response
+
+  it('exists and shares the exact same hand universe as the real BTN vs BB chart', () => {
+    expect(flawed).toBeDefined()
+    const flawedHands = new Set(flawed.cells.map((c) => c.hand))
+    const realHands = new Set(real.cells.map((c) => c.hand))
+    expect(flawedHands).toEqual(realHands)
+  })
+
+  it('differs from the real chart in EXACTLY the four documented leaks, nothing else', () => {
+    const EXPECTED_DIFFERING_HANDS = new Set(['KQo', 'KJo', 'QJo', '87s', '76s', '65s', 'A5s', 'A4s', 'JJ', 'TT'])
+    const realByHand = new Map(real.cells.map((c) => [c.hand, Object.keys(c.actions)[0]]))
+    const flawedByHand = new Map(flawed.cells.map((c) => [c.hand, Object.keys(c.actions)[0]]))
+    const actuallyDiffering = new Set<string>()
+    for (const hand of realByHand.keys()) {
+      if (realByHand.get(hand) !== flawedByHand.get(hand)) actuallyDiffering.add(hand)
+    }
+    expect(actuallyDiffering).toEqual(EXPECTED_DIFFERING_HANDS)
+  })
+
+  it('every documented leak\'s "repaired" action (i.e. the real chart\'s action) is a genuine change, not a no-op', () => {
+    for (const hand of ['KQo', 'KJo', 'QJo', '87s', '76s', '65s', 'A5s', 'A4s', 'JJ', 'TT']) {
+      const flawedAction = Object.keys(flawed.cells.find((c) => c.hand === hand)!.actions)[0]
+      const realAction = Object.keys(real.cells.find((c) => c.hand === hand)!.actions)[0]
+      expect(flawedAction, `${hand} should actually differ between flawed and real`).not.toBe(realAction)
+    }
+  })
+
+  it('cells are still pure single-action (no fabricated mixed frequencies), same as every other chart', () => {
+    for (const cell of flawed.cells) {
+      expect(Object.entries(cell.actions).length).toBe(1)
+    }
+  })
 })
 
 describe('THREEBET_RESPONSE_FOUNDATIONS — every foundation hand matches its chart', () => {

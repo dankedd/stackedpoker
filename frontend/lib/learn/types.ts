@@ -68,6 +68,8 @@ export type StepType =
   | 'range_distribution'    // two-range (Hero vs Villain) Strong/Good/Weak/Trash stacked-bar comparison
   | 'cbet_frequency_size'   // two-stage: aggregate betting-frequency bucket, then primary sizing bucket
   | 'board_rank_sort'       // order 3-5 boards from bets-most to bets-least by tap-to-reorder
+  // ── Cross-step tendency summary (reusable capstone pattern) ──
+  | 'tendency_summary'      // reads this playthrough's actual results from `summary_source_step_ids`, grouped by `tendency_tag` — a genuinely personalized "here's the pattern in what you just did" closer, unscored
 
 export type ActionQuality = 'perfect' | 'good' | 'acceptable' | 'mistake' | 'punt'
 export type LessonType = 'micro' | 'range_trainer' | 'puzzle_drill' | 'concept_reveal' | 'simulation'
@@ -344,9 +346,13 @@ export interface LessonStep {
   equity_realization_tolerance?: number
   // Range compare — two 13x13 grids side-by-side (uses `options` for the follow-up question)
   /** `option_id`: when BOTH sides set this to a matching id in `options`, the grid and its
-   *  option are rendered as one bound, fully-clickable unit — see `equity_realization_hands`. */
-  range_compare_a?: { label: string; range: string[]; option_id?: string }
-  range_compare_b?: { label: string; range: string[]; option_id?: string }
+   *  option are rendered as one bound, fully-clickable unit — see `equity_realization_hands`.
+   *  `strategies`: optional full action-frequency mix (see rangeStrategy.ts) — when present,
+   *  the grid renders PokerRangeGrid's 'strategy' mode (colored by action) instead of plain
+   *  membership, for comparisons where WHICH action a hand takes is the point (e.g. a 4-bet/
+   *  call/fold response range), not just whether it's in range. */
+  range_compare_a?: { label: string; range: string[]; option_id?: string; strategies?: import('./rangeStrategy').RangeStrategyMap }
+  range_compare_b?: { label: string; range: string[]; option_id?: string; strategies?: import('./rangeStrategy').RangeStrategyMap }
   range_compare_prompt?: string
   // ── Preflop Foundation (Module 3) ──────────────────────────────────────────
   // Players behind — slider over opponents still left to act
@@ -548,6 +554,26 @@ export interface LessonStep {
   /** Ground truth order, id list, most-bet first. Hand-authored — c-bet frequency ranking isn't a deterministic function of the board. */
   board_rank_sort_target?: string[]
   board_rank_sort_prompt?: string
+  // ── Cross-step tendency summary ─────────────────────────────────────────────
+  /** Any step can carry this: a machine id grouping it into a later `tendency_summary`
+   *  step (e.g. 'offsuit_broadway'). Purely descriptive metadata — never read by this
+   *  step's own evaluator, only by a downstream tendency_summary step. */
+  tendency_tag?: string
+  /** Human-readable label for `tendency_tag`, e.g. "offsuit broadways". Shown by the
+   *  downstream tendency_summary step; authored on the SOURCE step so the summary
+   *  component stays fully generic (no hardcoded domain vocabulary). */
+  tendency_tag_label?: string
+  /** Shown by the downstream tendency_summary step ONLY when this step's answer
+   *  wasn't correct — one short clause explaining the pattern, e.g. "these look strong
+   *  on paper but get dominated and realize equity poorly". */
+  tendency_tag_leak_hint?: string
+  /** tendency_summary only: step ids (within the SAME lesson, already answered earlier
+   *  in this playthrough) whose real StepResult.quality + tendency_tag/label/leak_hint
+   *  feed this step's synthesized message. Always reads actual results from THIS
+   *  playthrough — never a canned or simulated readout. */
+  summary_source_step_ids?: string[]
+  /** Optional lead-in shown above the synthesized tendency breakdown. */
+  tendency_summary_intro?: string
   // Visual
   visual?: 'table' | 'range_grid' | 'equity_bar' | 'heatmap' | 'pressure_chart'
   // ── Adaptive system (remediation) ───────────────────────────────────────────

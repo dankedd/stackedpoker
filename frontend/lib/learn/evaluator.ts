@@ -84,6 +84,7 @@ export function isScoredStep(step: LessonStep): boolean {
     case 'defense_lens':
     case 'flop_scanner':
     case 'pot_win_intro':
+    case 'tendency_summary':
       return false
 
     // ── Understanding the Flop (Module 6) — mode-gated ──
