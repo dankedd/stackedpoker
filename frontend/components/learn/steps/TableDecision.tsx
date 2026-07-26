@@ -179,11 +179,17 @@ export function TableDecision({ step, onAnswer, disabled = false }: TableDecisio
         heroHand={heroCards}
         effectiveStackBb={step.effective_stack_bb ?? chart.stackBB}
         anteBb={step.ante_bb}
+        actionBeforeHero={step.action_before_hero}
+        heroAction={answered && evaluation ? { label: evaluation.chosenAction.toUpperCase() } : undefined}
+        result={evaluation ? (evaluation.quality === 'perfect' || evaluation.quality === 'good' ? 'correct' : 'incorrect') : undefined}
       />
 
       {!answered ? (
         <DecisionSpot
-          step={{ ...step, narrative: undefined, options }}
+          // hero_position is intentionally cleared here — TableDecision already
+          // renders the shared table above; the nested DecisionSpot only supplies
+          // the action buttons, never a second copy of the table.
+          step={{ ...step, narrative: undefined, hero_position: undefined, options }}
           onAnswer={handleInnerAnswer}
           disabled={disabled}
         />

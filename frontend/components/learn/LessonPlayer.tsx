@@ -790,15 +790,32 @@ export function LessonPlayer({
   // ── Step / Feedback ────────────────────────────────────────────────────────
   if (!currentStep) return null
 
+  // decision_spot and table_decision steps with a hero_position now render the shared
+  // PreflopTable visualization themselves (see DecisionSpot.tsx / TableDecision.tsx),
+  // which carries the same position/stack/ante/action-before-hero facts the text-pill
+  // PokerContextBar would otherwise restate right above it — showing both is exactly
+  // the redundant "HAND / UTG / 60bb, then UTG, 60bb effective..." duplication the
+  // preflop table redesign removes. Steps that also carry a `board` are postflop spots
+  // (hero_position is reused there for framing) and must keep the text context bar,
+  // matching DecisionSpot.tsx's own `!board` gate exactly. Every other step type is
+  // untouched.
+  const rendersOwnPreflopTable =
+    (currentStep.type === 'decision_spot' ||
+      currentStep.type === 'table_decision' ||
+      (currentStep.type === 'concept_reveal' && currentStep.visual === 'table')) &&
+    !!currentStep.hero_position &&
+    !currentStep.board?.length
+
   const hasContext =
-    currentStep.board?.length ||
-    currentStep.hero_position ||
-    currentStep.villain_position ||
-    currentStep.pot_bb != null ||
-    currentStep.effective_stack_bb != null ||
-    currentStep.table_size != null ||
-    currentStep.ante_bb != null ||
-    (currentStep.action_before_hero?.length ?? 0) > 0
+    !rendersOwnPreflopTable &&
+    (currentStep.board?.length ||
+      currentStep.hero_position ||
+      currentStep.villain_position ||
+      currentStep.pot_bb != null ||
+      currentStep.effective_stack_bb != null ||
+      currentStep.table_size != null ||
+      currentStep.ante_bb != null ||
+      (currentStep.action_before_hero?.length ?? 0) > 0)
 
   return (
     <div className="flex flex-col gap-5">

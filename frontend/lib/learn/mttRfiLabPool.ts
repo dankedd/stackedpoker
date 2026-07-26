@@ -18,6 +18,7 @@ import type { LessonStep, StepOption } from './types'
 import { MTT_RFI_CHARTS, POSITION_KEY_TO_LABEL, type MttAction, type MttRfiActionFrequencies, type MttRfiChart } from './mttRfiBaselines'
 import { shuffleBySeed } from './interactionSafety'
 import { recordCoverage } from './mttRfiCoverage'
+import { positionsBeforeHero } from './preflopTableState'
 
 export type LabPoolCategory =
   | 'fundamentals'
@@ -53,17 +54,22 @@ function positionLabel(chart: MttRfiChart): string {
  */
 export function buildTableDecisionStep(id: string, chartKey: string, hand: string): LessonStep {
   const chart = MTT_RFI_CHARTS[chartKey]
+  const heroPosition = POSITION_KEY_TO_LABEL[chart.positionKey]
+  // Every RFI chart is a first-in spot by construction — derive who actually folded
+  // before Hero from real seat order (UTG has nobody before it; BTN has 6 folds).
+  // Never blindly assert "everyone folds" regardless of position.
+  const actionBeforeHero = positionsBeforeHero(heroPosition, 9).map((pos) => `${pos} folds`)
   return {
     id,
     type: 'table_decision',
     concept_ids: [conceptForPosition(chart.positionKey), conceptForStack(chart.stackBB)],
     table_decision_chart: chartKey,
     table_decision_hand: hand,
-    hero_position: POSITION_KEY_TO_LABEL[chart.positionKey],
+    hero_position: heroPosition,
     effective_stack_bb: chart.stackBB,
     table_size: 9,
     ante_bb: FIXED_ANTE_BB,
-    action_before_hero: ['Everyone folds'],
+    action_before_hero: actionBeforeHero,
     xp: 8,
   }
 }

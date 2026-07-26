@@ -636,3 +636,14 @@
 
 .scrollbar-none::-webkit-scrollbar { display: none; }
 .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Preflop table: respect reduced motion for the "your turn" pulse and
+   fade-in entrance animation used across all preflop decision steps ────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .preflop-table-root, .preflop-table-root * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

@@ -15,6 +15,7 @@ import { buildHandDecisionOptions, buildTableDecisionStep } from './mttRfiLabPoo
 import { selectDrillQuestions } from './mttBoundarySelector'
 import { canonicalCombo } from './combos'
 import { recordCoverage } from './mttRfiCoverage'
+import { positionsBeforeHero } from './preflopTableState'
 
 const FIXED_ANTE_BB = 0.125
 const BUILD_STACK_BB: MttStackBB = 60
@@ -58,6 +59,9 @@ export function buildPositionLesson(config: PositionLessonConfig): Lesson {
   const buildChart = MTT_RFI_CHARTS[buildChartKey(positionKey, BUILD_STACK_BB)]
   const heroPositionLabel = buildChart.position
   const conceptId = conceptForPositionKey(positionKey)
+  // Every position-mastery lesson teaches a first-in (RFI) spot — derive who
+  // actually folded before Hero from real seat order, never hand-author it.
+  const actionBeforeHero = positionsBeforeHero(heroPositionLabel, 9).map((pos) => `${pos} folds`)
 
   const steps: LessonStep[] = []
 
@@ -72,7 +76,7 @@ export function buildPositionLesson(config: PositionLessonConfig): Lesson {
     effective_stack_bb: BUILD_STACK_BB,
     table_size: 9,
     ante_bb: FIXED_ANTE_BB,
-    action_before_hero: ['Everyone folds'],
+    action_before_hero: actionBeforeHero,
     concept_content: understandContent,
     xp: 8,
   })
@@ -90,10 +94,12 @@ export function buildPositionLesson(config: PositionLessonConfig): Lesson {
       id: `${id}-predict-${i + 1}`,
       type: 'decision_spot',
       concept_ids: [conceptId],
-      narrative: `${heroPositionLabel}, 60bb effective, folds to Hero. Hero holds ${hand}.`,
       hero_hand: cards,
       hero_position: heroPositionLabel,
       effective_stack_bb: BUILD_STACK_BB,
+      table_size: 9,
+      ante_bb: FIXED_ANTE_BB,
+      action_before_hero: actionBeforeHero,
       decision_spot_question: 'What does the baseline strategy do here? (Quick guess — no pressure.)',
       options,
       xp: 4,

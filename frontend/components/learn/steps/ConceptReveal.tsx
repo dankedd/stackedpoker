@@ -132,7 +132,7 @@ function resolveVisual(step: LessonStep, conceptId?: string) {
   // they did before this function took the whole step; those checks are effectively guarded
   // by the OR'd conceptId condition anyway.
   const visualType = step.visual as string | undefined
-  if (visualType === 'table' && step.hero_position) {
+  if (visualType === 'table' && step.hero_position && !step.board?.length) {
     return (
       <PreflopTable
         tableSize={step.table_size ?? 9}
@@ -140,6 +140,7 @@ function resolveVisual(step: LessonStep, conceptId?: string) {
         heroHand={step.hero_hand}
         effectiveStackBb={step.effective_stack_bb}
         anteBb={step.ante_bb}
+        actionBeforeHero={step.action_before_hero}
       />
     )
   }
@@ -330,20 +331,6 @@ export function ConceptReveal({ step, onComplete }: ConceptRevealProps) {
               <ConceptEnrichment conceptId={primaryConceptId} />
             )}
           </>
-        )}
-
-        {/* Concept tags */}
-        {step.concept_ids && step.concept_ids.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-5 pt-4 border-t border-border/20">
-            {step.concept_ids.map(id => (
-              <span
-                key={id}
-                className="text-[10px] px-2 py-0.5 rounded-full border border-violet-500/20 bg-violet-500/8 text-violet-400/70 font-medium"
-              >
-                {id.replace(/_/g, ' ')}
-              </span>
-            ))}
-          </div>
         )}
       </div>
 

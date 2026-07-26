@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { shuffleBySeed, isPokerActionSet } from '@/lib/learn/interactionSafety'
+import { PreflopTable } from '@/components/learn/visuals/PreflopTable'
 
 interface DecisionSpotProps {
   step: LessonStep
@@ -66,6 +67,24 @@ export function DecisionSpot({ step, onAnswer, disabled = false }: DecisionSpotP
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      {/* Shared preflop table — replaces the old text-pill context bar for any
+          PREFLOP decision spot (RFI, facing-open, squeeze, defend). The table alone
+          communicates position/cards/stack/action-before-Hero, so the narrative
+          below can stay focused on genuine reasoning rather than restating facts
+          already visible on the table. Gated on the absence of `board`: steps that
+          also carry a flop/turn board are postflop spots (this codebase reuses
+          hero_position there for framing) and must never show a preflop table. */}
+      {step.hero_position && !step.board?.length && (
+        <PreflopTable
+          tableSize={step.table_size ?? 9}
+          heroPosition={step.hero_position}
+          heroHand={step.hero_hand}
+          effectiveStackBb={step.effective_stack_bb}
+          anteBb={step.ante_bb}
+          actionBeforeHero={step.action_before_hero}
+        />
+      )}
+
       {/* Narrative / context */}
       {step.narrative && (
         <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-4">

@@ -3720,6 +3720,8 @@ export const LESSONS: Lesson[] = [
         hero_hand: ['Ad', '5d'],
         hero_position: 'UTG',
         effective_stack_bb: 40,
+        table_size: 9,
+        action_before_hero: [],
         decision_spot_question: 'Which plan is most realistic for a speculative blocker hand like this, opened from early position?',
         options: [
           { id: 'raise_fold', label: 'Raise now, planning to fold to real resistance — the blocker and playability were worth a shot, not a stack', quality: 'perfect', feedback: 'Correct. A5s opens for its blocker value and playability, not because it wants to play a big pot from early position against real aggression — raise-and-fold-to-resistance is the honest plan here.' },
@@ -3928,6 +3930,8 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['open_shove'],
         hero_position: 'BTN',
         effective_stack_bb: 15,
+        table_size: 9,
+        action_before_hero: ['Everyone folds'],
         narrative:
           'At 15bb on the Button, Hero holds a hand with good equity if called, but an awkward decision if it raises small and faces a rejam. Why might shoving all-in be more attractive than a small raise here?',
         options: [
@@ -3974,6 +3978,8 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['stack_depth_preflop'],
         hero_position: 'BTN',
         effective_stack_bb: 15,
+        table_size: 9,
+        action_before_hero: ['Everyone folds'],
         narrative: 'BTN opens at a 15bb effective stack. Which factor matters MOST for hand selection right now?',
         options: [
           { id: 'raw_equity', label: 'Raw equity if the hand goes to showdown', quality: 'perfect', feedback: 'Correct — at 15bb, stacks often go in with cards still to come. Raw equity dominates; playability and implied odds matter far less than they would at 100bb.' },
@@ -4030,10 +4036,11 @@ export const LESSONS: Lesson[] = [
         id: 'utg-s2',
         type: 'decision_spot',
         concept_ids: ['utg_rfi'],
-        narrative: 'UTG, 60bb effective, folds to Hero. Hero holds Q♠Q♦.',
+        narrative: 'UTG, 60bb effective. Hero is first to act. Hero holds Q♠Q♦.',
         hero_hand: ['Qs', 'Qd'],
         hero_position: 'UTG',
         effective_stack_bb: 60,
+        action_before_hero: [],
         decision_spot_question: 'RAISE or FOLD?',
         options: [
           { id: 'raise', label: 'RAISE', quality: 'perfect', feedback: 'Correct — QQ is a clean, obvious open from every seat at every depth.' },
@@ -4045,10 +4052,11 @@ export const LESSONS: Lesson[] = [
         id: 'utg-s3',
         type: 'decision_spot',
         concept_ids: ['utg_rfi'],
-        narrative: 'UTG, 60bb effective, folds to Hero. Hero holds J♠9♠.',
+        narrative: 'UTG, 60bb effective. Hero is first to act. Hero holds J♠9♠.',
         hero_hand: ['Js', '9s'],
         hero_position: 'UTG',
         effective_stack_bb: 60,
+        action_before_hero: [],
         decision_spot_question: 'RAISE or FOLD?',
         options: [
           { id: 'raise', label: 'RAISE', quality: 'perfect', feedback: 'Correct — J9s is raised 75% of the time at UTG/60bb, a real (if not automatic) part of the range.' },
@@ -4060,10 +4068,11 @@ export const LESSONS: Lesson[] = [
         id: 'utg-s4',
         type: 'decision_spot',
         concept_ids: ['utg_rfi'],
-        narrative: 'UTG, 60bb effective, folds to Hero. Hero holds 7♠6♠.',
+        narrative: 'UTG, 60bb effective. Hero is first to act. Hero holds 7♠6♠.',
         hero_hand: ['7s', '6s'],
         hero_position: 'UTG',
         effective_stack_bb: 60,
+        action_before_hero: [],
         decision_spot_question: 'RAISE or FOLD?',
         options: [
           { id: 'fold', label: 'FOLD', quality: 'perfect', feedback: 'Correct — 76s is genuinely a coin flip here (raised only 40% of the time), so folding it is a defensible baseline default, not a clear error.' },
@@ -4075,10 +4084,11 @@ export const LESSONS: Lesson[] = [
         id: 'utg-s5',
         type: 'decision_spot',
         concept_ids: ['utg_rfi'],
-        narrative: 'UTG, 60bb effective, folds to Hero. Hero holds K♠6♠.',
+        narrative: 'UTG, 60bb effective. Hero is first to act. Hero holds K♠6♠.',
         hero_hand: ['Ks', '6s'],
         hero_position: 'UTG',
         effective_stack_bb: 60,
+        action_before_hero: [],
         decision_spot_question: 'RAISE or FOLD?',
         options: [
           { id: 'fold', label: 'FOLD', quality: 'perfect', feedback: 'Correct — K6s raises only 10% of the time at UTG/60bb. It sits right at the ragged bottom edge of the range.' },
@@ -4324,6 +4334,8 @@ export const LESSONS: Lesson[] = [
         hero_hand: ['As', 'Ad'],
         hero_position: 'SB',
         effective_stack_bb: 60,
+        table_size: 9,
+        action_before_hero: ['Everyone folds'],
         decision_spot_question: 'RAISE or LIMP? (Quick guess — no pressure.)',
         options: [
           { id: 'limp', label: 'LIMP', quality: 'perfect', feedback: 'Correct-ish — at 60bb, AA is a genuine mix: 40% raise / 60% limp. Limp is the majority action, but raise is a very real minority, not a mistake.' },
@@ -4339,6 +4351,8 @@ export const LESSONS: Lesson[] = [
         hero_hand: ['Ks', '3s'],
         hero_position: 'SB',
         effective_stack_bb: 60,
+        table_size: 9,
+        action_before_hero: ['Everyone folds'],
         decision_spot_question: 'RAISE or LIMP? (Quick guess — no pressure.)',
         options: [
           { id: 'limp', label: 'LIMP', quality: 'perfect', feedback: 'Correct — K3s is a pure limp at SB/60bb, no raise component at all.' },
@@ -4354,6 +4368,8 @@ export const LESSONS: Lesson[] = [
         hero_hand: ['7c', '2d'],
         hero_position: 'SB',
         effective_stack_bb: 60,
+        table_size: 9,
+        action_before_hero: ['Everyone folds'],
         decision_spot_question: 'RAISE, LIMP, or FOLD? (Quick guess — no pressure.)',
         options: [
           { id: 'fold', label: 'FOLD', quality: 'perfect', feedback: 'Correct — 72o is outside the baseline entirely, even with SB’s discount and single remaining opponent.' },
@@ -4370,6 +4386,8 @@ export const LESSONS: Lesson[] = [
         hero_hand: ['7s', '6s'],
         hero_position: 'SB',
         effective_stack_bb: 15,
+        table_size: 9,
+        action_before_hero: ['Everyone folds'],
         decision_spot_question: 'JAM, LIMP, or FOLD? (Quick guess — no pressure.)',
         options: [
           { id: 'jam', label: 'JAM', quality: 'perfect', feedback: 'Correct — 76s is a pure jam at SB/15bb, the same "good equity, poor postflop playability if just called" logic you saw at other positions.' },

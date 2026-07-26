@@ -10,11 +10,19 @@ const SIZE_CONFIG = {
   xs: { outer: 'w-[27px] h-[38px] rounded-[4px] p-[2.5px]', rank: 'text-[8px]',  suit: 'text-[7px]'  },
   sm: { outer: 'w-[38px] h-[54px] rounded-[5px] p-[3.5px]', rank: 'text-[11px]', suit: 'text-[9px]'  },
   md: { outer: 'w-[51px] h-[72px] rounded-[6px] p-[4.5px]', rank: 'text-[15px]', suit: 'text-[12px]' },
+  // Desktop Hero-card target (~55-65px tall) per the preflop table redesign.
+  lg: { outer: 'w-[43px] h-[60px] rounded-[7px] p-[5px]', rank: 'text-[17px]', suit: 'text-[13px]' },
 }
+
+const RANK_NAME: Record<string, string> = {
+  A: 'Ace', K: 'King', Q: 'Queen', J: 'Jack', T: '10',
+  '9': '9', '8': '8', '7': '7', '6': '6', '5': '5', '4': '4', '3': '3', '2': '2',
+}
+const SUIT_NAME: Record<string, string> = { h: 'hearts', d: 'diamonds', c: 'clubs', s: 'spades' }
 
 interface PlayingCardMiniProps {
   card: string
-  size?: 'xs' | 'sm' | 'md'
+  size?: 'xs' | 'sm' | 'md' | 'lg'
   className?: string
 }
 
@@ -24,6 +32,8 @@ export function PlayingCardMini({ card, size = 'sm', className }: PlayingCardMin
   if (!card || card.length < 2) {
     return (
       <div
+        role="img"
+        aria-label="Face-down card"
         className={cn('flex items-center justify-center shrink-0', cfg.outer, className)}
         style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
       >
@@ -37,9 +47,12 @@ export function PlayingCardMini({ card, size = 'sm', className }: PlayingCardMin
   const suit    = card[1].toLowerCase()
   const sym     = SUIT_SYMBOL[suit] ?? suit
   const col     = suit === 'h' || suit === 'd' ? RED_COLOR : BLACK_COLOR
+  const accessibleLabel = `${RANK_NAME[rawRank] ?? rawRank} of ${SUIT_NAME[suit] ?? suit}`
 
   return (
     <div
+      role="img"
+      aria-label={accessibleLabel}
       className={cn(
         'relative select-none flex flex-col justify-between shrink-0 overflow-hidden',
         cfg.outer,

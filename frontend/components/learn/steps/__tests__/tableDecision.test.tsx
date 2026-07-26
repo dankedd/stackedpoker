@@ -40,3 +40,38 @@ describe('TableDecision — no answer leakage before submission', () => {
     })
   }
 })
+
+describe('TableDecision — exactly one shared table renders (no duplicate from the nested DecisionSpot)', () => {
+  for (const step of tableDecisionSteps.slice(0, 10)) {
+    it(`${step.id} renders exactly one preflop-table-root`, () => {
+      const html = renderToStaticMarkup(<TableDecision step={step} onAnswer={noop} />)
+      expect((html.match(/preflop-table-root/g) || []).length).toBe(1)
+    })
+  }
+})
+
+describe('TableDecision — UTG regression: no false "folds to Hero" framing', () => {
+  const utgSteps = tableDecisionSteps.filter((s) => s.hero_position === 'UTG')
+
+  it('has at least one UTG table_decision step to guard against', () => {
+    expect(utgSteps.length).toBeGreaterThan(0)
+  })
+
+  for (const step of utgSteps) {
+    it(`${step.id} shows FIRST TO ACT, not a fabricated fold state`, () => {
+      const html = renderToStaticMarkup(<TableDecision step={step} onAnswer={noop} />)
+      expect(html).toContain('FIRST TO ACT')
+      expect(html).not.toMatch(/folds to hero/i)
+      expect(html).not.toContain('ACTION FOLDED TO UTG')
+    })
+  }
+})
+
+describe('TableDecision — no internal identifier leakage (e.g. "utg_rfi") in rendered markup', () => {
+  for (const step of tableDecisionSteps.slice(0, 10)) {
+    it(`${step.id} never renders a raw concept id`, () => {
+      const html = renderToStaticMarkup(<TableDecision step={step} onAnswer={noop} />)
+      expect(html).not.toMatch(/utg_rfi|utg1_rfi|utg2_rfi|lj_rfi|hj_rfi|co_rfi|btn_rfi|sb_first_in/)
+    })
+  }
+})
