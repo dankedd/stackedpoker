@@ -24,6 +24,26 @@ export interface SeatLayoutEntry {
 // (shared with the Replay feature) or any position-ORDER logic.
 const ELLIPSE_RADIUS = 42.5
 
+// The rail is the outer ring between the "outer rail" div (inset-[10%], radius 40) and
+// the "inner felt" div (inset-[12.5%], radius 37.5) below — its centerline sits exactly
+// between those two, at radius 38.75. Non-hero position labels anchor there (see
+// `railCenterlinePoint`); this is a plain rescale of the same symmetric seat ellipse,
+// so it stays exactly as symmetric and never needs a manually eyeballed per-seat offset.
+const RAIL_OUTER_RADIUS = 40
+const RAIL_INNER_RADIUS = 37.5
+const RAIL_CENTERLINE_RADIUS = (RAIL_OUTER_RADIUS + RAIL_INNER_RADIUS) / 2
+
+/** Rescales a seat's anchor point (on the ELLIPSE_RADIUS circle) onto the rail
+ *  centerline circle, preserving its angle exactly — used only for centering the
+ *  non-hero position label text. Hero's own anchor, and the bet-chip/dealer-marker
+ *  anchors (which still read the original `seat.x`/`seat.y`), are unaffected. */
+function railCenterlinePoint(xPct: string, yPct: string): { x: string; y: string } {
+  const ratio = RAIL_CENTERLINE_RADIUS / ELLIPSE_RADIUS
+  const x = 50 + (parseFloat(xPct) - 50) * ratio
+  const y = 50 + (parseFloat(yPct) - 50) * ratio
+  return { x: `${x.toFixed(2)}%`, y: `${y.toFixed(2)}%` }
+}
+
 /** N points evenly spaced around a symmetrical ellipse, slot 0 at bottom-center, then
  *  proceeding counterclockwise on screen (bottom-left, left, upper-left, ... bottom-right) —
  *  the same visual direction the table has always used. `tx` is always horizontally
@@ -231,6 +251,12 @@ export function PreflopTable({
               : undefined
           const markerTone: 'blind' | 'bet' = action ? 'bet' : 'blind'
 
+          // Non-hero position labels anchor on the rail centerline, not the wider seat
+          // ellipse — the label's own geometric center (not the label+stack block's
+          // center) lands exactly on the rail. Hero, bet chips, and the dealer marker
+          // all keep reading the original seat.x/seat.y anchor, unchanged.
+          const railPoint = railCenterlinePoint(seat.x, seat.y)
+
           return (
             <div key={`${seat.position}-${i}`}>
               {markerAmount != null && (
@@ -239,11 +265,11 @@ export function PreflopTable({
               {/* Dealer chip sits slightly inside the rail near BTN's own seat, independent
                   of the position/HERO label — never reads as a single "D BTN" run-on. */}
               {isDealer && <DealerMarker x={seat.x} y={seat.y} />}
+              {isHero ? (
               <div
                 className="absolute z-10"
                 style={{ left: seat.x, top: seat.y, transform: `translate(${seat.tx}, ${seat.ty})` }}
               >
-                {isHero ? (
                   <div className="flex flex-col items-center gap-2.5">
                     {/* Hero cards — one centered wrapper, identical size, small fixed gap.
                         Sits closest to the rail; the extra gap below gives the seat box
@@ -283,29 +309,40 @@ export function PreflopTable({
                       </span>
                     )}
                   </div>
-                ) : (
-                  <div
-                    className={cn('flex flex-col items-center gap-0.5 transition-opacity duration-300', folded && 'opacity-35')}
-                    aria-label={`${seat.position}${folded ? ', folded' : action ? `, ${actionVerb(action)}` : ''}`}
-                  >
-                    <span className="text-[11px] font-bold text-foreground/70 whitespace-nowrap">{seat.position}</span>
-                    {action ? (
-                      <span
-                        className={cn(
-                          'text-[10px] font-semibold whitespace-nowrap',
-                          folded ? 'text-muted-foreground/40' : 'text-sky-300/80',
-                        )}
-                      >
-                        {actionVerb(action)}
-                      </span>
-                    ) : effectiveStackBb != null ? (
-                      <span className="text-[10px] font-medium text-muted-foreground/45 whitespace-nowrap">
-                        {formatBb(effectiveStackBb)} BB
-                      </span>
-                    ) : null}
-                  </div>
-                )}
               </div>
+              ) : (
+                // The position label's own geometric center — not the label+stack block's
+                // center — sits on the rail centerline. The stack/action line is a fully
+                // independent element rendered directly below it, so its presence or
+                // content can never shift where the position label itself sits.
+                <div
+                  aria-label={`${seat.position}${folded ? ', folded' : action ? `, ${actionVerb(action)}` : ''}`}
+                >
+                  <span
+                    className={cn(
+                      'absolute z-10 -translate-x-1/2 -translate-y-1/2 text-center text-[11px] font-bold text-foreground/70 whitespace-nowrap transition-opacity duration-300',
+                      folded && 'opacity-35',
+                    )}
+                    style={{ left: railPoint.x, top: railPoint.y }}
+                  >
+                    {seat.position}
+                  </span>
+                  {(action || effectiveStackBb != null) && (
+                    <span
+                      className={cn(
+                        'absolute z-10 -translate-x-1/2 text-center whitespace-nowrap transition-opacity duration-300',
+                        action
+                          ? cn('text-[10px] font-semibold', folded ? 'text-muted-foreground/40' : 'text-sky-300/80')
+                          : 'text-[10px] font-medium text-muted-foreground/45',
+                        folded && 'opacity-35',
+                      )}
+                      style={{ left: railPoint.x, top: `calc(${railPoint.y} + 10px)` }}
+                    >
+                      {action ? actionVerb(action) : `${formatBb(effectiveStackBb!)} BB`}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           )
         })}
