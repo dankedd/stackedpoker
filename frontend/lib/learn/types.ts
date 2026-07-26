@@ -171,25 +171,34 @@ export interface LessonStep {
   range_heatmap_target?: string[]
   /** For range_heatmap: renders a 3-4 color action-map grid instead of the numeric equity gradient. */
   range_heatmap_action_map?: Record<string, 'raise' | 'limp' | 'shove' | 'fold'>
-  // ── Multi-action range build (Module 3 MTT upgrade) — range_build_multi only ──
-  /** MTT_RFI_CHARTS key (frontend/lib/learn/mttRfiBaselines.ts), e.g. 'UTG1_RFI_25BB'. The
-   *  single source of truth this step is graded against — lessons, drills, and the Lab all
-   *  resolve through this same chart so an answer can never disagree with itself. */
+  // ── Multi-action range build (Module 3 MTT upgrade; generalized for Module 4's
+  //    facing-a-3-bet response lab) — range_build_multi only ──
+  /** Which chart registry `range_build_multi_chart` resolves against. 'mtt_rfi' (default) reads
+   *  MTT_RFI_CHARTS (raise/limp/jam/fold). 'threebet_response' reads THREEBET_RESPONSE_CHARTS
+   *  ('4bet'/call/fold) — see threebetResponseBaselines.ts. Every existing lesson omits this
+   *  field and keeps its current 'mtt_rfi' behavior unchanged. */
+  range_build_multi_domain?: 'mtt_rfi' | 'threebet_response'
+  /** Chart key into whichever registry `range_build_multi_domain` selects, e.g. 'UTG1_RFI_25BB'
+   *  or 'BTN_vs_BB_3bet_response'. The single source of truth this step is graded against —
+   *  lessons, drills, and the Lab all resolve through this same chart so an answer can never
+   *  disagree with itself. */
   range_build_multi_chart?: string
   /** Which action chips are offered, in order — lets earlier lessons omit 'limp'/'jam' until
    *  they're introduced. Defaults to whichever actions actually appear in the target chart. */
-  range_build_multi_actions?: ('raise' | 'limp' | 'jam' | 'fold')[]
-  range_build_multi_prefilled?: Record<string, 'raise' | 'limp' | 'jam' | 'fold'>
-  /** Lookup key into MTT_RFI_FOUNDATIONS (frontend/lib/learn/mttRfiRanges.ts), analogous to `range_prefilled_key`. */
+  range_build_multi_actions?: ('raise' | 'limp' | 'jam' | 'fold' | '4bet' | 'call')[]
+  range_build_multi_prefilled?: Record<string, 'raise' | 'limp' | 'jam' | 'fold' | '4bet' | 'call'>
+  /** Lookup key into MTT_RFI_FOUNDATIONS (mttRfiRanges.ts) or THREEBET_RESPONSE_FOUNDATIONS
+   *  (threebetResponseRanges.ts), per `range_build_multi_domain` — analogous to `range_prefilled_key`. */
   range_build_multi_prefilled_key?: string
   range_build_multi_prefilled_note?: string
   /** After submitting, show the learner-vs-book diff + the mixed-hand inspector before advancing. */
   range_build_multi_show_diff?: boolean
   /** Combo-weighted expected-accuracy tolerance band, same convention/units as `range_tolerance`. Default 5. */
   range_build_multi_tolerance?: number
-  /** range_build_multi only — a source MTT_RFI_CHARTS key whose full dominant-action map seeds
-   *  the grid (a "Transformation Challenge": start from this chart's built strategy, edit only
-   *  what differs). Grading is unaffected — always the full submission vs. `range_build_multi_chart`. */
+  /** range_build_multi only — a source chart key (same registry as `range_build_multi_chart`)
+   *  whose full dominant-action map seeds the grid (a "Transformation Challenge": start from
+   *  this chart's built strategy, edit only what differs). Grading is unaffected — always the
+   *  full submission vs. `range_build_multi_chart`. */
   range_build_multi_transform_from_chart?: string
   // ── Table decision (Module 3 structural redesign) — table_decision only ──
   /** MTT_RFI_CHARTS key — the sole grading source, mirroring range_build_multi_chart's convention. */
@@ -541,13 +550,9 @@ export interface LessonStep {
   board_rank_sort_prompt?: string
   // Visual
   visual?: 'table' | 'range_grid' | 'equity_bar' | 'heatmap' | 'pressure_chart'
-  // ── Adaptive system (confidence + remediation) ─────────────────────────────
-  /** Show a LOW/MEDIUM/HIGH confidence prompt before this step is answered. Author opt-in — not every step. */
-  ask_confidence?: boolean
+  // ── Adaptive system (remediation) ───────────────────────────────────────────
   /** Ordered alternate representations of this step's concept, injected one at a time on repeated misses. */
   remediation_ladder?: LessonStep[]
-  /** A single short follow-up shown after a correct-but-low-confidence answer. */
-  reinforcement_step?: LessonStep
   // XP
   xp?: number
 }
@@ -746,9 +751,6 @@ export interface StepResult {
   evaluation_valid: boolean
   fallback_used: boolean
   error_type?: string
-  /** Learner's self-reported confidence, captured before answering — only present on steps with `ask_confidence`.
-   *  Distinct from `confidence` above, which is the evaluation pipeline's own confidence in the result. */
-  learner_confidence?: 'low' | 'medium' | 'high'
   /** True for passive/informational steps (concept_reveal, exploration modes of the
    *  various visualizer steps) that had nothing to grade. When true, `score`/`quality`
    *  are meaningless placeholders and `xp_earned` is always 0 — the UI must never render

@@ -68,12 +68,11 @@ import type { ActionQuality } from '@/lib/learn/types'
 import { LevelUpOverlay } from '@/components/learn/LevelUpOverlay'
 import { ConceptTagRow } from '@/components/learn/ConceptPopover'
 import { LessonCompletionScreen } from '@/components/learn/LessonCompletionScreen'
-import { ConfidencePrompt } from '@/components/learn/ConfidencePrompt'
 import { recordConceptResult, pickInjectedStep } from '@/lib/learn/adaptiveEngine'
 
 // ── Phase type ────────────────────────────────────────────────────────────────
 
-type Phase = 'intro' | 'confidence' | 'step' | 'feedback' | 'summary'
+type Phase = 'intro' | 'step' | 'feedback' | 'summary'
 
 /** Concept ids that name the exact answer to a step quizzing that same concept
  *  (e.g. a step classifying "+EV / 0EV / -EV" tagged with concept_id "positive_ev"
@@ -534,10 +533,8 @@ export function LessonPlayer({
   const [latestResult, setLatestResult] = useState<StepResult | null>(null)
   const [totalXP, setTotalXP] = useState(0)
   // Dynamic step queue — starts as the authored lesson.steps, but a wrong answer on a step
-  // with a `remediation_ladder` (or a low-confidence correct answer with a `reinforcement_step`)
-  // splices an extra step in right after the current index.
+  // with a `remediation_ladder` splices an extra step in right after the current index.
   const [dynamicSteps, setDynamicSteps] = useState<LessonStep[]>(lesson.steps)
-  const [pendingConfidence, setPendingConfidence] = useState<'low' | 'medium' | 'high' | null>(null)
   // Every step index answered/viewed so far this session, keyed by index —
   // the idempotency guard for backward navigation: re-visiting one of these
   // never re-scores, re-awards XP, or re-persists (see gotoIndex/handleResult).
@@ -563,11 +560,6 @@ export function LessonPlayer({
   const canGoPrevious = currentStepIndex > 0
 
   const handleStart = useCallback(() => {
-    setPhase(currentStep?.ask_confidence ? 'confidence' : 'step')
-  }, [currentStep])
-
-  const handleConfidenceSelect = useCallback((level: 'low' | 'medium' | 'high') => {
-    setPendingConfidence(level)
     setPhase('step')
   }, [])
 
@@ -585,7 +577,6 @@ export function LessonPlayer({
     const entry = answeredSteps.get(targetIndex)
     setCurrentStepIndex(targetIndex)
     setMaxIndexReached((m) => Math.max(m, targetIndex))
-    setPendingConfidence(null)
     if (entry && !entry.result.unscored) {
       // Already-graded step — reopen the feedback screen instead of the
       // (now stale) interactive question, so the recorded answer can never
@@ -596,8 +587,7 @@ export function LessonPlayer({
       // Either a brand-new step, or a passive/theory step being revisited —
       // both simply reopen the step itself.
       setLatestResult(null)
-      const stepAtTarget = steps[targetIndex]
-      setPhase(!entry && stepAtTarget?.ask_confidence ? 'confidence' : 'step')
+      setPhase('step')
     }
   }, [steps, answeredSteps])
 
@@ -614,11 +604,6 @@ export function LessonPlayer({
   }, [currentStepIndex, gotoIndex])
 
   const handleResult = useCallback((result: StepResult, userResponse: unknown, timeMs: number) => {
-    // Merge in the learner's self-reported confidence, if this step asked for one
-    const enriched: StepResult = pendingConfidence
-      ? { ...result, learner_confidence: pendingConfidence }
-      : result
-
     // A passive/theory step reopened via "Previous" fires onComplete again
     // when the learner clicks through it a second time. It must not be
     // re-scored, re-added to totals, or re-sent to the caller for
@@ -629,36 +614,36 @@ export function LessonPlayer({
     const alreadyRecorded = answeredSteps.has(currentStepIndex)
 
     if (!alreadyRecorded) {
-      setResults((prev) => [...prev, enriched])
-      setTotalXP((prev) => prev + enriched.xp_earned)
+      setResults((prev) => [...prev, result])
+      setTotalXP((prev) => prev + result.xp_earned)
       setAnsweredSteps((prev) => {
         const next = new Map(prev)
-        next.set(currentStepIndex, { result: enriched, userResponse, timeMs })
+        next.set(currentStepIndex, { result, userResponse, timeMs })
         return next
       })
 
       if (currentStep) {
-        onStepResult?.(currentStep, currentStepIndex, enriched, userResponse, timeMs)
-        recordConceptResult(currentStep.concept_ids?.[0], enriched.quality)
+        onStepResult?.(currentStep, currentStepIndex, result, userResponse, timeMs)
+        recordConceptResult(currentStep.concept_ids?.[0], result.quality)
       }
 
       // Trigger level-up overlay
-      if (enriched.leveled_up && enriched.level_after) {
-        setLevelUpData({ level: enriched.level_after, xp: enriched.xp_earned })
+      if (result.leveled_up && result.level_after) {
+        setLevelUpData({ level: result.level_after, xp: result.xp_earned })
         setShowLevelUp(true)
       }
     }
 
-    if (enriched.unscored) {
+    if (result.unscored) {
       // Passive/informational step — nothing was graded, so there's no result
       // to show. Skip the feedback screen and go straight to the next step.
       advanceStep()
       return
     }
 
-    setLatestResult(enriched)
+    setLatestResult(result)
     setPhase('feedback')
-  }, [currentStep, currentStepIndex, onStepResult, pendingConfidence, advanceStep, answeredSteps])
+  }, [currentStep, currentStepIndex, onStepResult, advanceStep, answeredSteps])
 
   const handleRetry = useCallback(() => {
     // Go back to the step so the user can re-answer (failed evaluation, no penalty)
@@ -675,9 +660,9 @@ export function LessonPlayer({
 
   const handleContinue = useCallback(() => {
     // Only a first-time completion (not a forward re-walk after reviewing
-    // earlier steps) may inject a remediation/reinforcement step — otherwise
-    // re-answering-by-viewing the same feedback screen on the way back
-    // forward would splice a duplicate copy into the queue.
+    // earlier steps) may inject a remediation step — otherwise re-answering-
+    // by-viewing the same feedback screen on the way back forward would
+    // splice a duplicate copy into the queue.
     const isReviewing = currentStepIndex < maxIndexReached
     if (!isReviewing) {
       const injected = currentStep && latestResult ? pickInjectedStep(currentStep, latestResult) : null
@@ -692,8 +677,7 @@ export function LessonPlayer({
         setCurrentStepIndex(targetIndex)
         setMaxIndexReached((m) => Math.max(m, targetIndex))
         setLatestResult(null)
-        setPendingConfidence(null)
-        setPhase(injected.ask_confidence ? 'confidence' : 'step')
+        setPhase('step')
         return
       }
     }
@@ -771,7 +755,6 @@ export function LessonPlayer({
           setMaxIndexReached(0)
           setAnsweredSteps(new Map())
           setLatestResult(null)
-          setPendingConfidence(null)
           setPhase('intro')
         }}
         onCoachReview={() => {
@@ -861,10 +844,6 @@ export function LessonPlayer({
 
       {/* Step card */}
       <div className="rounded-2xl border border-border/50 bg-card/60 p-6">
-        {phase === 'confidence' && (
-          <ConfidencePrompt onSelect={handleConfidenceSelect} />
-        )}
-
         {phase === 'step' && (
           <StepRenderer
             step={currentStep}
@@ -884,10 +863,10 @@ export function LessonPlayer({
         )}
       </div>
 
-      {/* Standalone Previous control for 'step'/'confidence' phases — those have
-          no existing Continue control to sit next to (the step's own interactive
-          UI, or ConfidencePrompt, serves that role), so Previous stands alone here. */}
-      {canGoPrevious && (phase === 'step' || phase === 'confidence') && (
+      {/* Standalone Previous control for the 'step' phase — it has no existing
+          Continue control to sit next to (the step's own interactive UI serves
+          that role), so Previous stands alone here. */}
+      {canGoPrevious && phase === 'step' && (
         <div>
           <PreviousButton onClick={handlePrevious} />
         </div>

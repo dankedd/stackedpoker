@@ -4577,7 +4577,6 @@ export const LESSONS: Lesson[] = [
         range_compare_a: { label: 'UTG opens (~15%)', range: RANGE_TARGETS.UTG_open_100bb, option_id: 'utg' },
         range_compare_b: { label: 'BTN opens (~40%)', range: RANGE_TARGETS.BTN_open_100bb, option_id: 'btn' },
         range_compare_prompt: 'Which range contains more marginal, speculative hands a 3-bet can profitably attack?',
-        ask_confidence: true,
         options: [
           {
             id: 'btn', label: 'The BTN range', quality: 'perfect',
@@ -4860,7 +4859,6 @@ export const LESSONS: Lesson[] = [
         range_prefilled_key: 'BB_vs_BTN_3bet_foundation',
         range_prefilled_note:
           "We've filled in the clear value core. Now decide which mixed-frequency hands and bluffs belong alongside it.",
-        ask_confidence: true,
         xp: 22,
       },
     ],
@@ -4941,7 +4939,6 @@ export const LESSONS: Lesson[] = [
         action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb'],
         morphology_builder_prompt: 'Using this pool (ordered strongest to weakest), build Range A as LINEAR, then build Range B as POLARIZED.',
         morphology_builder_pool: ['AA', 'KK', 'QQ', 'JJ', 'TT', 'AKs', 'AKo', 'AQs', '99', 'AJs', 'KQs', '88', 'ATs', 'A5s', '76s', '65s'],
-        ask_confidence: true,
         xp: 20,
       },
       {
@@ -4980,7 +4977,6 @@ export const LESSONS: Lesson[] = [
           { id: 'merged', label: 'Merged / mostly linear', quality: 'acceptable', feedback: "Close in spirit — this is best described as strictly linear rather than merged, since there is no gap at all, just a clean top-down cutoff." },
           { id: 'invalid', label: 'Invalid / random', quality: 'mistake', feedback: 'This range is coherent and orderly, not random — every hand here is plausibly stronger than everything excluded.' },
         ],
-        ask_confidence: true,
         remediation_ladder: [
           {
             id: 'lvp-s7a-remediate-1',
@@ -5265,7 +5261,6 @@ export const LESSONS: Lesson[] = [
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'CO',
-        ask_confidence: true,
         options: [
           { id: 'tighter', label: 'Tighter', quality: 'perfect', feedback: "Correct. CO's open is stronger and narrower than a typical SB steal-attempt range — Hero's BB continuing range should tighten to face it." },
           { id: 'similar', label: 'Similar', quality: 'mistake', feedback: 'CO and a late steal from the SB represent quite different range strengths — treating them the same misses that gap.' },
@@ -5442,7 +5437,6 @@ export const LESSONS: Lesson[] = [
         range_bucket_acceptable: {
           K5s: ['not_bluff'],
         },
-        ask_confidence: true,
         remediation_ladder: [
           {
             id: 'btc-s7-remediate-1',
@@ -5812,7 +5806,6 @@ export const LESSONS: Lesson[] = [
           KQo: ['squeeze'],
           '76s': ['call'],
         },
-        ask_confidence: true,
         xp: 18,
       },
       {
@@ -6138,7 +6131,6 @@ export const LESSONS: Lesson[] = [
           '76s': ['call'],
           AQs: ['four_bet', 'fold'],
         },
-        ask_confidence: true,
         remediation_ladder: [
           {
             id: 'trb-s8-remediate-1',
@@ -7343,7 +7335,6 @@ export const LESSONS: Lesson[] = [
         range_compare_a: { label: 'UTG opens (~15%)', range: RANGE_TARGETS.UTG_open_100bb, option_id: 'utg' },
         range_compare_b: { label: 'CO opens (~25%)', range: RANGE_TARGETS.CO_open_100bb, option_id: 'co' },
         range_compare_prompt: 'In which scenario should Hero generally continue more aggressively?',
-        ask_confidence: true,
         options: [
           {
             id: 'co', label: 'Scenario B — vs the CO open', quality: 'perfect',
@@ -7604,7 +7595,6 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['equity_realization_preflop'],
         narrative: 'Hero has enough raw equity, according to the price on offer, to break even. Is calling automatically profitable?',
-        ask_confidence: true,
         options: [
           {
             id: 'no', label: 'No', quality: 'perfect',
@@ -7967,7 +7957,6 @@ export const LESSONS: Lesson[] = [
         range_compare_a: { label: 'vs UTG open', range: entriesToHandList(DEFEND_DEEP.BB_vs_UTG), option_id: 'vs_utg' },
         range_compare_b: { label: 'vs BTN open', range: entriesToHandList(DEFEND_DEEP.BB_vs_BTN), option_id: 'vs_btn' },
         range_compare_prompt: 'Which range is Hero defending wider?',
-        ask_confidence: true,
         options: [
           { id: 'vs_btn', label: 'The range vs the BTN open', quality: 'perfect', feedback: "Correct. BTN's opening range is far wider and weaker than UTG's — BB's calling range expands to match, defending a much larger share of hands against it." },
           { id: 'vs_utg', label: 'The range vs the UTG open', quality: 'mistake', feedback: "It's the reverse — UTG's tight, strong range calls for a narrower BB defense, not a wider one." },
@@ -8816,7 +8805,6 @@ export const LESSONS: Lesson[] = [
           ATo: ['fold'], KTo: ['fold'], '76s': ['fold'], '54s': ['fold'],
           Q8o: ['call'],
         },
-        ask_confidence: true,
         remediation_ladder: [
           {
             id: 'rad-s3-remediate-1',
@@ -9979,7 +9967,6 @@ export const LESSONS: Lesson[] = [
         id: 'fl5-s2',
         type: 'board_volatility',
         concept_ids: ['static_dynamic'],
-        ask_confidence: true,
         narrative: 'Two boards. Which one is more likely to have its relative hand values flipped by the turn and river?',
         board_volatility_mode: 'compare',
         board_volatility_compare_a: ['8h', '7h', '3d'],
@@ -10089,7 +10076,6 @@ export const LESSONS: Lesson[] = [
         id: 'fl6-s2',
         type: 'range_board_collision',
         concept_ids: ['range_board_interaction'],
-        ask_confidence: true,
         narrative: 'Same flop, A♠K♦5♣, under two different preflop matchups. Compare what each range keeps.',
         board: ['As', 'Kd', '5c'],
         range_board_collision_a: { label: 'UTG open (tight)', range: RFI_DEEP['UTG'] ? entriesToHandList(RFI_DEEP['UTG']) : [] },
@@ -10214,7 +10200,6 @@ export const LESSONS: Lesson[] = [
         id: 'fl7-s7',
         type: 'equity_bucket',
         concept_ids: ['equity_buckets', 'relative_hand_strength'],
-        ask_confidence: true,
         equity_bucket_mode: 'scenario',
         narrative: 'Work out which bucket this hand belongs in before answering.',
         equity_bucket_scenario_hero_hand: ['As', 'Kd'],
@@ -10634,7 +10619,6 @@ export const LESSONS: Lesson[] = [
         id: 'flab-cap6',
         type: 'range_board_collision',
         concept_ids: ['range_board_interaction'],
-        ask_confidence: true,
         narrative: '6. Range interaction — BTN opened, BB called. Same board.',
         board: ['8h', '7h', '3d'],
         range_board_collision_a: { label: 'BTN open', range: RFI_DEEP['BTN'] ? entriesToHandList(RFI_DEEP['BTN']) : [] },
@@ -10828,7 +10812,6 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds', 'BB calls', 'BB checks'],
         board: ['6s', '5d', '4c'],
-        ask_confidence: true,
         options: [
           {
             id: 'check', label: 'Check back more often than on the A-high board', quality: 'perfect',
@@ -11056,7 +11039,6 @@ export const LESSONS: Lesson[] = [
         equity_bucket_scenario_actual: 15,
         equity_bucket_scenario_explanation: 'The board itself paired above Hero\'s pair — KK is now second pair at best. A range that called a 3-bet preflop is dense with exactly the hands (Ax, Qx, and the case Ace) that now have Hero\'s kings in serious trouble.',
         equity_bucket_prompt: 'Which bucket does K♥K♦ fall into on THIS board?',
-        ask_confidence: true,
         xp: 10,
       },
       {
@@ -11089,7 +11071,6 @@ export const LESSONS: Lesson[] = [
         range_distribution_hero: { label: IP_VS_BB_AVERAGE.label, strong: IP_VS_BB_AVERAGE.strong, good: IP_VS_BB_AVERAGE.good, weak: IP_VS_BB_AVERAGE.weak, trash: IP_VS_BB_AVERAGE.trash },
         range_distribution_villain: { label: BB_VS_IP_AVERAGE.label, strong: BB_VS_IP_AVERAGE.strong, good: BB_VS_IP_AVERAGE.good, weak: BB_VS_IP_AVERAGE.weak, trash: BB_VS_IP_AVERAGE.trash },
         range_distribution_prompt: 'Which range can apply more pressure here?',
-        ask_confidence: true,
         options: [
           {
             id: 'ip', label: 'IP\'s range — it is more concentrated in Strong and Good, with far less Trash', quality: 'perfect',
@@ -11358,7 +11339,6 @@ export const LESSONS: Lesson[] = [
         range_distribution_hero: { label: IP_VS_BB_AVERAGE.label, strong: IP_VS_BB_AVERAGE.strong, good: IP_VS_BB_AVERAGE.good, weak: IP_VS_BB_AVERAGE.weak, trash: IP_VS_BB_AVERAGE.trash },
         range_distribution_villain: { label: BB_LOW_CONNECTED_BOARDS.label, strong: BB_LOW_CONNECTED_BOARDS.strong, good: BB_LOW_CONNECTED_BOARDS.good, weak: BB_LOW_CONNECTED_BOARDS.weak, trash: BB_LOW_CONNECTED_BOARDS.trash },
         range_distribution_prompt: 'Villain\'s Strong-hand concentration just went up noticeably (7% → 18%) and Trash dropped. What should happen to Hero\'s betting frequency?',
-        ask_confidence: true,
         options: [
           {
             id: 'less', label: 'It should decrease — more strong hands in Villain\'s range means less freedom to bet', quality: 'perfect',
