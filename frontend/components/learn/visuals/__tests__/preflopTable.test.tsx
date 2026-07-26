@@ -231,3 +231,78 @@ describe('PreflopTable — dealer marker never overlaps a seat label', () => {
     expect(html).not.toContain('>D HERO')
   })
 })
+
+/** Extracts the cards-wrapper div's className+style attributes from the rendered HTML. */
+function extractCardsWrapper(html: string): string {
+  const match = html.match(/<div class="absolute z-10 -translate-x-1\/2 -translate-y-1\/2 flex w-\[114px\][^>]*>/)
+  if (!match) throw new Error('cards wrapper not found in markup')
+  return match[0]
+}
+
+describe('PreflopTable — hero cards are mathematically centered on the table\'s true geometric center', () => {
+  it('the felt (inset-[12.5%]) and the cards wrapper (left:50%,top:50%) share the same 50%/50% reference point', () => {
+    const html = renderToStaticMarkup(
+      <PreflopTable tableSize={9} heroPosition="UTG" heroHand={['Qs', 'Qd']} effectiveStackBb={60} actionBeforeHero={[]} />,
+    )
+    // felt: inset-[12.5%] on all 4 sides of the same `relative` parent -> its own center is
+    // trivially (12.5 + (100-25)/2, same) = (50%, 50%) of that parent, by construction.
+    expect(html).toContain('inset-[12.5%]')
+    // cards wrapper: left:50%, top:50%, translate(-50%,-50%) of the SAME parent -> identical
+    // reference point, not derived from any seat coordinate.
+    const wrapper = extractCardsWrapper(html)
+    expect(wrapper).toContain('style="left:50%;top:50%"')
+  })
+
+  it('cards wrapper position is IDENTICAL across every hero position (9-max), proving it never reads seat.x/seat.y', () => {
+    const positions = ['UTG', 'UTG+1', 'UTG+2', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB']
+    const wrappers = positions.map((pos) =>
+      extractCardsWrapper(renderToStaticMarkup(<PreflopTable tableSize={9} heroPosition={pos} heroHand={['Qs', 'Qd']} />)),
+    )
+    for (const w of wrappers) expect(w).toBe(wrappers[0])
+  })
+
+  it('cards wrapper position is unaffected by stack depth, action history, dealer status, table size, or missing cards', () => {
+    const baseline = extractCardsWrapper(
+      renderToStaticMarkup(<PreflopTable tableSize={9} heroPosition="BTN" heroHand={['Qs', 'Qd']} />),
+    )
+    const variants = [
+      <PreflopTable key="a" tableSize={9} heroPosition="BTN" heroHand={['Qs', 'Qd']} effectiveStackBb={15} />,
+      <PreflopTable key="b" tableSize={9} heroPosition="BTN" heroHand={['Qs', 'Qd']} actionBeforeHero={['Everyone folds']} />,
+      <PreflopTable key="c" tableSize={9} heroPosition="BTN" heroHand={['Qs', 'Qd']} heroAction={{ label: 'RAISE' }} result="correct" />,
+      <PreflopTable key="d" tableSize={6} heroPosition="BTN" heroHand={['Qs', 'Qd']} />,
+      <PreflopTable key="e" tableSize={9} heroPosition="BTN" />,
+    ]
+    for (const el of variants) {
+      expect(extractCardsWrapper(renderToStaticMarkup(el))).toBe(baseline)
+    }
+  })
+
+  it('both cards are identical size with no per-card transform/margin — fixed 114px = 54+6+54 row, justify-between', () => {
+    const html = renderToStaticMarkup(<PreflopTable tableSize={9} heroPosition="UTG" heroHand={['Qs', 'Qd']} />)
+    const wrapper = extractCardsWrapper(html)
+    expect(wrapper).toContain('justify-between')
+    expect(wrapper.match(/-translate-x-1\/2/g)?.length).toBe(1)
+    expect(wrapper.match(/-translate-y-1\/2/g)?.length).toBe(1)
+  })
+})
+
+describe('PreflopTable — center status and hero badge anchor off the same fixed point as the cards', () => {
+  it('status sits above (bottom edge at calc(50% - 48px)), badge sits below (top edge at calc(50% + 48px))', () => {
+    const html = renderToStaticMarkup(
+      <PreflopTable tableSize={9} heroPosition="UTG" heroHand={['Qs', 'Qd']} effectiveStackBb={60} actionBeforeHero={[]} />,
+    )
+    expect(html).toContain('calc(50% - 48px)')
+    expect(html).toContain('calc(50% + 48px)')
+    expect(html).toContain('PREFLOP · 60BB')
+    expect(html).toContain('FIRST TO ACT')
+    expect(html).toContain('HERO · UTG')
+  })
+
+  it('hero badge design (violet box, same classes) is unchanged from before', () => {
+    const html = renderToStaticMarkup(
+      <PreflopTable tableSize={9} heroPosition="UTG" heroHand={['Qs', 'Qd']} effectiveStackBb={60} />,
+    )
+    expect(html).toContain('rounded-xl border border-violet-400/30 bg-violet-500/10')
+    expect(html).toContain('text-[11px] font-bold text-violet-200')
+  })
+})

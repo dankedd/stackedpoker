@@ -183,6 +183,7 @@ export function PreflopTable({
   className,
 }: PreflopTableProps) {
   const seats = computeHeroRotatedSeats(tableSize, heroPosition)
+  const heroSeat = seats[0]
   const cards = heroHand && heroHand.length === 2 ? heroHand : ['', '']
   const state = buildPreflopTableRenderState({
     hero_position: heroPosition,
@@ -221,10 +222,14 @@ export function PreflopTable({
           </div>
         )}
 
-        {/* Center — large clean empty space; the orientation line is subtle, the status
-            line (when present) is the more prominent one, and neither competes with the
-            hero cards since hero sits near the rail, well clear of dead-center. */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1 text-center px-3">
+        {/* Center status — anchored to the SAME table-center point as the hero cards below,
+            offset upward by a fixed pixel gap (half the card height + breathing room) so its
+            own bottom edge always clears the cards, regardless of whether one or two lines
+            of status text are present. Never the thing that defines "center" — the cards are. */}
+        <div
+          className="absolute z-10 -translate-x-1/2 -translate-y-full flex flex-col items-center gap-1 text-center px-3"
+          style={{ left: '50%', top: 'calc(50% - 48px)' }}
+        >
           {effectiveStackBb != null && (
             <span className="text-[10px] font-medium tracking-[0.08em] text-white/35 tabular-nums">
               PREFLOP · {formatBb(effectiveStackBb)}BB
@@ -232,6 +237,56 @@ export function PreflopTable({
           )}
           {centerStatus && (
             <span className="text-[12px] font-black tracking-[0.08em] text-violet-300">{centerStatus}</span>
+          )}
+        </div>
+
+        {/* Hero cards — THE anchor for the table's geometric center. Positioned independently
+            of hero's rotated seat slot (no seat.x/seat.y, no seat.tx/seat.ty involved at all),
+            so this wrapper's own midpoint is exactly (50%, 50%) no matter hero's position,
+            stack depth, action history, dealer position, table size, or whether status text
+            exists. One fixed-width flex row (114px = 54+6+54), both cards identical size,
+            no per-card transform/margin — the wrapper's center IS the midpoint by construction. */}
+        <div
+          className="absolute z-10 -translate-x-1/2 -translate-y-1/2 flex w-[114px] items-center justify-between"
+          style={{ left: '50%', top: '50%' }}
+        >
+          <PlayingCardMini card={cards[0]} size="lg" />
+          <PlayingCardMini card={cards[1]} size="lg" />
+        </div>
+
+        {/* Hero badge — anchored the same way as the status text above, mirrored below the
+            cards instead of above. Design/content unchanged from before; only its position
+            now derives from the fixed card anchor instead of hero's seat coordinates. */}
+        <div
+          className="absolute z-10 -translate-x-1/2 flex flex-col items-center gap-2.5"
+          style={{ left: '50%', top: 'calc(50% + 48px)' }}
+        >
+          <div className="flex flex-col items-center gap-0.5 rounded-xl border border-violet-400/30 bg-violet-500/10 px-3 py-1.5">
+            <span className="text-[11px] font-bold text-violet-200 whitespace-nowrap">
+              HERO · {heroSeat.position}
+            </span>
+            {effectiveStackBb != null && (
+              <span className="text-[10px] font-semibold tabular-nums text-violet-200/60">
+                {formatBb(effectiveStackBb)} BB
+              </span>
+            )}
+          </div>
+
+          {heroAction && (
+            <span className="rounded-full bg-violet-500/20 border border-violet-400/30 px-2 py-0.5 text-[9px] font-bold text-violet-200 whitespace-nowrap">
+              {heroAction.label}
+            </span>
+          )}
+          {result && (
+            <span
+              role="status"
+              className={cn(
+                'text-[10px] font-black tracking-wide',
+                result === 'correct' ? 'text-emerald-400' : 'text-red-400',
+              )}
+            >
+              {result === 'correct' ? '✓ CORRECT' : '✕ INCORRECT'}
+            </span>
           )}
         </div>
 
@@ -283,54 +338,10 @@ export function PreflopTable({
                   />
                 )
               )}
-              {isHero ? (
-              <div
-                className="absolute z-10"
-                style={{ left: seat.x, top: seat.y, transform: `translate(${seat.tx}, ${seat.ty})` }}
-              >
-                  <div className="flex flex-col items-center gap-2.5">
-                    {/* Hero cards — one centered, fixed-width wrapper (2 cards + exact gap,
-                        nothing implicit). Its midpoint is mathematically the wrapper's own
-                        center, and the wrapper itself is centered by the parent flex column
-                        — the same axis the HERO badge below centers on, so cards and badge
-                        always share one exact vertical stack, never nudged apart. */}
-                    <div className="flex w-[114px] items-center justify-between">
-                      <PlayingCardMini card={cards[0]} size="lg" />
-                      <PlayingCardMini card={cards[1]} size="lg" />
-                    </div>
-
-                    {/* One compact seat box — not several floating labels. Active Hero is
-                        indicated purely through this box's violet styling (no "YOUR TURN" text). */}
-                    <div className="flex flex-col items-center gap-0.5 rounded-xl border border-violet-400/30 bg-violet-500/10 px-3 py-1.5">
-                      <span className="text-[11px] font-bold text-violet-200 whitespace-nowrap">
-                        HERO · {seat.position}
-                      </span>
-                      {effectiveStackBb != null && (
-                        <span className="text-[10px] font-semibold tabular-nums text-violet-200/60">
-                          {formatBb(effectiveStackBb)} BB
-                        </span>
-                      )}
-                    </div>
-
-                    {heroAction && (
-                      <span className="rounded-full bg-violet-500/20 border border-violet-400/30 px-2 py-0.5 text-[9px] font-bold text-violet-200 whitespace-nowrap">
-                        {heroAction.label}
-                      </span>
-                    )}
-                    {result && (
-                      <span
-                        role="status"
-                        className={cn(
-                          'text-[10px] font-black tracking-wide',
-                          result === 'correct' ? 'text-emerald-400' : 'text-red-400',
-                        )}
-                      >
-                        {result === 'correct' ? '✓ CORRECT' : '✕ INCORRECT'}
-                      </span>
-                    )}
-                  </div>
-              </div>
-              ) : (
+              {/* Hero's own cards/badge render once, outside this per-seat loop entirely,
+                  anchored to the table's fixed geometric center — see below. Nothing to
+                  render here for hero's slot beyond the bet-chip/dealer-marker above. */}
+              {isHero ? null : (
                 // The position label's own geometric center — not the label+stack block's
                 // center — sits on the rail centerline. The stack/action line is a fully
                 // independent element rendered directly below it, so its presence or
