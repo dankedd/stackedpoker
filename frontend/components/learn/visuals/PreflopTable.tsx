@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
-import { POSITIONS_BY_SIZE, SEAT_COORDS, normalizePosition } from '@/lib/replay/positions'
+import { POSITIONS_BY_SIZE, normalizePosition } from '@/lib/replay/positions'
 import {
   buildPreflopTableRenderState,
   deriveCenterStatus,
@@ -18,15 +18,38 @@ export interface SeatLayoutEntry {
   ty: string
 }
 
+// Every seat sits at the same radius from table center — a single symmetrical 9-max
+// (and 2-8-max) ellipse instead of hand-tuned per-seat coordinates. This is purely a
+// rendering concern local to PreflopTable; it does not touch lib/replay/positions.ts
+// (shared with the Replay feature) or any position-ORDER logic.
+const ELLIPSE_RADIUS = 42.5
+
+/** N points evenly spaced around a symmetrical ellipse, slot 0 at bottom-center, then
+ *  proceeding counterclockwise on screen (bottom-left, left, upper-left, ... bottom-right) —
+ *  the same visual direction the table has always used. `tx` is always horizontally
+ *  centered; `ty` anchors each pod from its top/middle/bottom edge depending on which
+ *  third of the ellipse it falls in, so labels never render "inside out". */
+function ellipseSeatCoords(totalSeats: number): { x: string; y: string; tx: string; ty: string }[] {
+  const coords: { x: string; y: string; tx: string; ty: string }[] = []
+  for (let i = 0; i < totalSeats; i++) {
+    const angle = (2 * Math.PI * i) / totalSeats
+    const xPct = 50 - ELLIPSE_RADIUS * Math.sin(angle)
+    const yPct = 50 + ELLIPSE_RADIUS * Math.cos(angle)
+    const ty = yPct > 62 ? '-100%' : yPct < 38 ? '0%' : '-50%'
+    coords.push({ x: `${xPct.toFixed(2)}%`, y: `${yPct.toFixed(2)}%`, tx: '-50%', ty })
+  }
+  return coords
+}
+
 /**
  * Rotates `POSITIONS_BY_SIZE[tableSize]` (clockwise-from-BTN order) so `heroPosition`'s index
- * lands on slot 0, then zips it index-for-index with `SEAT_COORDS[tableSize]` (which always
- * assumes slot 0 = hero, bottom-center). Exported for unit testing.
+ * lands on slot 0, then zips it index-for-index with a symmetrical ellipse's coordinates
+ * (slot 0 = hero, bottom-center). Exported for unit testing.
  */
 export function computeHeroRotatedSeats(tableSize: number, heroPosition: string): SeatLayoutEntry[] {
   const positions = POSITIONS_BY_SIZE[tableSize] ?? POSITIONS_BY_SIZE[9]
-  const coords = SEAT_COORDS[tableSize] ?? SEAT_COORDS[9]
   const N = positions.length
+  const coords = ellipseSeatCoords(N)
   const heroIdx = positions.indexOf(normalizePosition(heroPosition))
   const startIdx = heroIdx >= 0 ? heroIdx : 0
 
@@ -53,7 +76,8 @@ function actionVerb(action: ParsedSeatAction): string {
 }
 
 /** A point `t` of the way from a seat's percentage coordinate toward table center (50%, 50%) —
- *  used to place blind/bet chip markers just inside the rail, near their seat. */
+ *  used to place the dealer button and blind/bet chip markers just inside the rail, near
+ *  their seat, using the same seat-to-center positioning system for both. */
 function towardCenter(xPct: string, yPct: string, t: number): { left: string; top: string } {
   const x = parseFloat(xPct)
   const y = parseFloat(yPct)
@@ -76,6 +100,23 @@ function BetChip({ x, y, amount, tone }: { x: string; y: string; amount: number;
         )}
       >
         {formatBb(amount)}
+      </span>
+    </div>
+  )
+}
+
+/** Positioned just inside the rail near the BTN seat, independent of the BTN/HERO label
+ *  so it never reads as a single "D BTN" run-on. */
+function DealerMarker({ x, y }: { x: string; y: string }) {
+  const pos = towardCenter(x, y, 0.16)
+  return (
+    <div className="absolute z-20 -translate-x-1/2 -translate-y-1/2" style={{ left: pos.left, top: pos.top }}>
+      <span
+        aria-label="Dealer button"
+        title="Dealer"
+        className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-black/10 bg-white/90 text-[8px] font-black text-neutral-800 shadow-sm"
+      >
+        D
       </span>
     </div>
   )
@@ -157,15 +198,17 @@ export function PreflopTable({
           </div>
         )}
 
-        {/* Center — large clean empty space, minimal orientation text only */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1.5 text-center px-3">
+        {/* Center — large clean empty space; the orientation line is subtle, the status
+            line (when present) is the more prominent one, and neither competes with the
+            hero cards since hero sits near the rail, well clear of dead-center. */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1 text-center px-3">
           {effectiveStackBb != null && (
-            <span className="text-[11px] font-bold tracking-[0.06em] text-white/45 tabular-nums">
+            <span className="text-[10px] font-medium tracking-[0.08em] text-white/35 tabular-nums">
               PREFLOP · {formatBb(effectiveStackBb)}BB
             </span>
           )}
           {centerStatus && (
-            <span className="text-[10px] font-black tracking-[0.1em] text-violet-300/85">{centerStatus}</span>
+            <span className="text-[12px] font-black tracking-[0.08em] text-violet-300">{centerStatus}</span>
           )}
         </div>
 
@@ -193,40 +236,39 @@ export function PreflopTable({
               {markerAmount != null && (
                 <BetChip x={seat.x} y={seat.y} amount={markerAmount} tone={markerTone} />
               )}
+              {/* Dealer chip sits slightly inside the rail near BTN's own seat, independent
+                  of the position/HERO label — never reads as a single "D BTN" run-on. */}
+              {isDealer && <DealerMarker x={seat.x} y={seat.y} />}
               <div
                 className="absolute z-10"
                 style={{ left: seat.x, top: seat.y, transform: `translate(${seat.tx}, ${seat.ty})` }}
               >
                 {isHero ? (
-                  <div className="flex flex-col items-center gap-1.5">
-                    <div className="flex gap-1.5">
+                  <div className="flex flex-col items-center gap-2.5">
+                    {/* Hero cards — one centered wrapper, identical size, small fixed gap.
+                        Sits closest to the rail; the extra gap below gives the seat box
+                        (HERO · POS / STACK) clean breathing room rather than crowding it. */}
+                    <div className="flex items-center justify-center gap-1.5">
                       <PlayingCardMini card={cards[0]} size="lg" />
                       <PlayingCardMini card={cards[1]} size="lg" />
                     </div>
-                    <div className="flex items-center gap-1">
-                      {isDealer && <DealerButton />}
-                      <span
-                        className={cn(
-                          'rounded-full border px-2.5 py-0.5 text-[11px] font-bold whitespace-nowrap',
-                          'border-violet-400/40 bg-violet-500/10 text-violet-200',
-                        )}
-                      >
+
+                    {/* One compact seat box — not several floating labels. Active Hero is
+                        indicated purely through this box's violet styling (no "YOUR TURN" text). */}
+                    <div className="flex flex-col items-center gap-0.5 rounded-xl border border-violet-400/30 bg-violet-500/10 px-3 py-1.5">
+                      <span className="text-[11px] font-bold text-violet-200 whitespace-nowrap">
                         HERO · {seat.position}
                       </span>
+                      {effectiveStackBb != null && (
+                        <span className="text-[10px] font-semibold tabular-nums text-violet-200/60">
+                          {formatBb(effectiveStackBb)} BB
+                        </span>
+                      )}
                     </div>
-                    {effectiveStackBb != null && (
-                      <span className="text-[10px] font-semibold tabular-nums text-sky-200/70">
-                        {formatBb(effectiveStackBb)} BB
-                      </span>
-                    )}
-                    {heroAction ? (
+
+                    {heroAction && (
                       <span className="rounded-full bg-violet-500/20 border border-violet-400/30 px-2 py-0.5 text-[9px] font-bold text-violet-200 whitespace-nowrap">
                         {heroAction.label}
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-[9px] font-bold tracking-wide text-emerald-300/80">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
-                        YOUR TURN
                       </span>
                     )}
                     {result && (
@@ -246,10 +288,7 @@ export function PreflopTable({
                     className={cn('flex flex-col items-center gap-0.5 transition-opacity duration-300', folded && 'opacity-35')}
                     aria-label={`${seat.position}${folded ? ', folded' : action ? `, ${actionVerb(action)}` : ''}`}
                   >
-                    <div className="flex items-center gap-1">
-                      {isDealer && <DealerButton />}
-                      <span className="text-[11px] font-bold text-foreground/70 whitespace-nowrap">{seat.position}</span>
-                    </div>
+                    <span className="text-[11px] font-bold text-foreground/70 whitespace-nowrap">{seat.position}</span>
                     {action ? (
                       <span
                         className={cn(
@@ -280,17 +319,5 @@ export function PreflopTable({
         {heroHand && heroHand.length === 2 ? ` Hero holds ${heroHand.join(' and ')}.` : ''}
       </p>
     </div>
-  )
-}
-
-function DealerButton() {
-  return (
-    <span
-      aria-label="Dealer button"
-      title="Dealer"
-      className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-black/10 bg-white/90 text-[8px] font-black text-neutral-800 shadow-sm"
-    >
-      D
-    </span>
   )
 }
