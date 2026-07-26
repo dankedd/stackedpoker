@@ -49,11 +49,47 @@ describe('MultiActionRangeBuild — prefilled foundation is visible on first pai
 })
 
 describe('MultiActionRangeBuild — action toolbar matches the target chart\'s real action set', () => {
-  for (const step of multiSteps.slice(0, 6)) {
+  const mttSteps = multiSteps.filter((s) => s.range_build_multi_domain !== 'threebet_response').slice(0, 6)
+  for (const step of mttSteps) {
     it(`${step.id} offers at least Raise and Fold chips`, () => {
       const html = renderToStaticMarkup(<MultiActionRangeBuild step={step} onAnswer={noop} />)
       expect(html).toContain('>Raise<')
       expect(html).toContain('>Fold<')
+    })
+  }
+
+  const threebetResponseSteps = multiSteps.filter((s) => s.range_build_multi_domain === 'threebet_response')
+  for (const step of threebetResponseSteps) {
+    it(`${step.id} offers 4-Bet, Call, and Fold chips`, () => {
+      const html = renderToStaticMarkup(<MultiActionRangeBuild step={step} onAnswer={noop} />)
+      expect(html).toContain('>4-Bet<')
+      expect(html).toContain('>Call<')
+      expect(html).toContain('>Fold<')
+    })
+  }
+})
+
+describe('MultiActionRangeBuild — initial activeAction can safely be any generalized MultiRangeAction', () => {
+  // The reported production build error was `useState<MttAction>(offeredActions[0] ?? 'fold')`
+  // rejecting a generalized action (e.g. 'call', '4bet') as the initial value. These steps force
+  // each of the 6 actions in the union into `offeredActions[0]` specifically (not just "present
+  // somewhere in the toolbar") via the explicit range_build_multi_actions override, so the very
+  // state initializer the bug was in is exercised for every action, not just the MTT subset.
+  const ALL_ACTIONS = ['fold', 'raise', 'limp', 'jam', '4bet', 'call'] as const
+
+  for (const action of ALL_ACTIONS) {
+    it(`renders with '${action}' active (ringed) on first paint when it is offeredActions[0]`, () => {
+      const step: LessonStep = {
+        id: `test-first-action-${action}`,
+        type: 'range_build_multi',
+        range_build_multi_actions: [action, 'fold'],
+      }
+      const html = renderToStaticMarkup(<MultiActionRangeBuild step={step} onAnswer={noop} />)
+      // No throw is itself the primary regression guard (this exact construction is what
+      // crashed the production build). Also confirm the toolbar rendered this action.
+      const label = action === '4bet' ? '4-Bet' : action[0].toUpperCase() + action.slice(1)
+      expect(html).toContain(`>${label}<`)
+      expect(html).toContain('ring-white/40')
     })
   }
 })
