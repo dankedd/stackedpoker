@@ -233,6 +233,55 @@ def test_extract_concept_ids_from_lesson_review():
     assert set(ids) == {"mdf", "range_advantage"}
 
 
+# ── coach_context.py: canonical range lookup (real data, Level 1 hierarchy) ────
+
+
+def test_canonical_open_range_pure_fold_for_hand_outside_utg_chart():
+    """A5s is not in our UTG_OPEN list at all — a genuine, real pure fold,
+    not an invented number (matches the user-facing 'should I open A5s UTG?'
+    example directly)."""
+    ctx = {"hero_position": "UTG", "hand": "A5s", "effective_stack_bb": 100}
+    result = coach_context.lookup_canonical_open_range(ctx)
+    assert result == {
+        "spot": {"position": "UTG", "stack_bb": 100, "action": "RFI"},
+        "hand": "A5s",
+        "canonical_strategy": {"raise": 0.0, "fold": 1.0},
+    }
+
+
+def test_canonical_open_range_preserves_mixed_frequency():
+    """88 is a real 0.5-weight entry in UTG_OPEN — must come back as a mixed
+    complement, never collapsed into a pure raise or pure fold."""
+    ctx = {"hero_position": "UTG", "hand": "88", "effective_stack_bb": 100}
+    result = coach_context.lookup_canonical_open_range(ctx)
+    assert result["canonical_strategy"] == {"raise": 0.5, "fold": 0.5}
+
+
+def test_canonical_open_range_none_when_villain_position_present():
+    """A vs-position spot (defend/3bet) isn't covered by the open-range
+    chart — must not be misrepresented as canonical RFI data."""
+    ctx = {"hero_position": "BTN", "villain_position": "CO", "hand": "AKs", "effective_stack_bb": 100}
+    assert coach_context.lookup_canonical_open_range(ctx) is None
+
+
+def test_canonical_open_range_none_when_stack_depth_not_supported():
+    """Only the 100bb chart exists — a 40bb spot must fall through to
+    general reasoning rather than being labeled canonical."""
+    ctx = {"hero_position": "UTG", "hand": "AA", "effective_stack_bb": 40}
+    assert coach_context.lookup_canonical_open_range(ctx) is None
+
+
+def test_canonical_open_range_none_for_bb_position():
+    """BB never opens (always facing action) — no chart exists for it."""
+    ctx = {"hero_position": "BB", "hand": "AA", "effective_stack_bb": 100}
+    assert coach_context.lookup_canonical_open_range(ctx) is None
+
+
+def test_canonical_open_range_none_without_hand():
+    ctx = {"hero_position": "UTG", "effective_stack_bb": 100}
+    assert coach_context.lookup_canonical_open_range(ctx) is None
+
+
 # ── Route-level: answer-leak regression tests ──────────────────────────────────
 
 
@@ -342,6 +391,24 @@ def test_current_lesson_step_context_is_included(fake_db, captured_reply):
     assert ctx["board"] == ["Ah", "7c", "2d"]
 
 
+def test_canonical_range_reaches_llm_but_not_persisted_session(fake_db, captured_reply):
+    """The route enriches the LLM-bound context with real canonical range
+    data for a qualifying RFI spot, but the session persisted to Supabase
+    stays a faithful record of what the client actually sent."""
+    user = {"sub": "user-canonical"}
+    body = coach_module.CoachMessageBody(
+        message="Should I open A5s UTG?",
+        context={"hero_position": "UTG", "hand": "A5s", "effective_stack_bb": 100},
+    )
+    run(coach_module.coach_message(body, FakeRequest(), user))
+
+    llm_ctx = captured_reply[0]["context"]
+    assert llm_ctx["canonical_strategy"] == {"raise": 0.0, "fold": 1.0}
+
+    session_row = fake_db.tables["training_sessions"][0]
+    assert "canonical_strategy" not in session_row["context"]
+
+
 def test_unrelated_curriculum_content_not_dumped_into_context(fake_db, captured_reply):
     """Only what the client explicitly scoped is forwarded — no full
     curriculum/module dump riding along."""
@@ -430,9 +497,11 @@ def test_post_submission_reply_explains_the_answer(fake_db):
         real_ai_coach.AsyncOpenAI = old_client_cls
 
 
-def test_openai_failure_degrades_gracefully(monkeypatch):
-    """A downstream OpenAI failure must never surface as a 500 to the coach
-    caller — generate_coach_reply itself catches and returns a safe fallback."""
+def test_openai_failure_raises_coach_unavailable_error(monkeypatch):
+    """A downstream OpenAI failure must NOT be swallowed into a canned string
+    that looks like a real reply — generate_coach_reply raises so the caller
+    can distinguish a genuine failure from a genuine answer (see requirement
+    that fallback behavior never silently fake a Coach response)."""
     class BoomClient:
         def __init__(self, *a, **kw):
             async def _raise(*a, **kw):
@@ -440,8 +509,89 @@ def test_openai_failure_degrades_gracefully(monkeypatch):
             self.chat = type("C", (), {"completions": type("D", (), {"create": staticmethod(_raise)})()})()
 
     monkeypatch.setattr(ai_coach_module, "AsyncOpenAI", BoomClient)
-    reply = run(ai_coach_module.generate_coach_reply([{"role": "user", "content": "hi"}], {}, 1))
-    assert isinstance(reply, str) and reply  # non-empty fallback, no exception raised
+    with pytest.raises(ai_coach_module.CoachUnavailableError):
+        run(ai_coach_module.generate_coach_reply([{"role": "user", "content": "hi"}], {}, 1))
+
+
+def test_openai_failure_returns_503_and_does_not_persist_fake_reply(fake_db, monkeypatch):
+    """Route-level: when the LLM call fails, the caller gets a real 503 (not
+    a 200 with a fabricated reply), and no fake assistant message is written
+    into the session's persisted history."""
+    async def _boom(*a, **kw):
+        raise ai_coach_module.CoachUnavailableError("boom")
+
+    monkeypatch.setattr(coach_module, "generate_coach_reply", _boom)
+    user = {"sub": "user-unavailable"}
+    body = coach_module.CoachMessageBody(message="Should I open A5s UTG?", context={})
+
+    with pytest.raises(HTTPException) as exc_info:
+        run(coach_module.coach_message(body, FakeRequest(), user))
+
+    assert exc_info.value.status_code == 503
+    session_row = fake_db.tables["training_sessions"][0]
+    assert session_row["messages"] == []  # never patched with a fake assistant turn
+
+
+def test_system_prompt_no_longer_socratic_only():
+    """Regression for the reported production behavior: after a learner says
+    'I don't know', the coach must not keep firing open-ended questions. The
+    old prompt explicitly told the model to 'ask one focused question' and
+    never give the answer — assert that instruction, and the matching
+    Socratic fallback string, are both gone."""
+    assert "ask one focused question" not in ai_coach_module.COACH_SYSTEM.lower()
+    assert "give one hint" not in ai_coach_module.COACH_SYSTEM.lower()
+    assert "what do you think the key factor is in this spot?" not in ai_coach_module.COACH_SYSTEM.lower()
+    # teach-first philosophy present
+    assert "answer first" in ai_coach_module.COACH_SYSTEM.lower()
+    assert "uncertainty rule" in ai_coach_module.COACH_SYSTEM.lower()
+    assert "knowledge hierarchy" in ai_coach_module.COACH_SYSTEM.lower()
+
+
+def test_pre_submission_mode_still_protects_the_exact_answer():
+    """The teach-first rewrite must not reopen the answer-leak hole this
+    mode exists to close — it may teach concepts richly, but never name the
+    specific correct choice for the ungraded step in view."""
+    instruction = ai_coach_module.MODE_INSTRUCTIONS["pre_submission"].lower()
+    assert "never state or imply the specific correct option" in instruction
+    assert "teach" in instruction
+
+
+def test_canonical_range_block_reaches_the_openai_system_prompt():
+    """End-to-end (stubbed OpenAI): canonical_strategy/hand/spot context
+    reaches the actual system prompt as a CANONICAL RANGE DATA block, and a
+    mixed frequency is preserved rather than collapsed into a pure action."""
+    sent_system = {}
+
+    async def fake_create(*args, **kwargs):
+        sent_system["content"] = kwargs["messages"][0]["content"]
+        class Msg: content = "Mostly fold — A5s isn't in our UTG opening range."
+        class Choice: message = Msg()
+        class Usage: prompt_tokens = 10; completion_tokens = 12
+        class Resp: choices = [Choice()]; usage = Usage()
+        return Resp()
+
+    class FakeOpenAIClient:
+        def __init__(self, *a, **kw):
+            self.chat = type("C", (), {"completions": type("D", (), {"create": staticmethod(fake_create)})()})()
+
+    old_client_cls = ai_coach_module.AsyncOpenAI
+    ai_coach_module.AsyncOpenAI = FakeOpenAIClient
+    try:
+        context = {
+            "hero_position": "UTG",
+            "hand": "88",
+            "spot": {"position": "UTG", "stack_bb": 100, "action": "RFI"},
+            "canonical_strategy": {"raise": 0.5, "fold": 0.5},
+        }
+        run(ai_coach_module.generate_coach_reply(
+            [{"role": "user", "content": "Should I open 88 UTG?"}], context, 1,
+        ))
+    finally:
+        ai_coach_module.AsyncOpenAI = old_client_cls
+
+    prompt = sent_system["content"]
+    assert "CANONICAL RANGE DATA" in prompt
+    assert "raise 50%" in prompt and "fold 50%" in prompt  # mixed, not collapsed
 
 
 def test_message_length_is_bounded():

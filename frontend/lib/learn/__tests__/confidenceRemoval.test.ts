@@ -71,8 +71,12 @@ describe('confidence check removal — curriculum data', () => {
         }
       }
     }
-    // Sanity: the 5 ladder-bearing lessons found in the pre-removal audit are still intact.
-    expect(laddersFound.length).toBe(5)
+    // Sanity: 5 ladder-bearing lessons were found in the pre-removal audit. "They Raised
+    // Back"'s trb-s8 (a range_bucket pool-sort with a 3-rung ladder) was subsequently
+    // retired as part of that lesson's 3-bet-response redesign — replaced by a full-grid
+    // Range Lab (range_build_multi) whose own diff-review + shape-diagnosis feedback
+    // covers the same remediation role without a ladder — leaving 4 intact.
+    expect(laddersFound.length).toBe(4)
   })
 })
 

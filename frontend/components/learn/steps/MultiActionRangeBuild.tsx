@@ -4,12 +4,12 @@ import { Fragment, useEffect, useMemo, useRef, useState, useCallback } from 'rea
 import { Lightbulb, RotateCcw, Eraser, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
-import type { MttAction } from '@/lib/learn/mttRfiBaselines'
 import { RANKS, HAND_GRID, comboCount, TOTAL_COMBOS } from '@/lib/learn/handGrid'
+import { actionStyle, actionLabel } from '@/lib/learn/actionStyles'
 import { MultiActionRangeReveal } from '@/components/learn/visuals/MultiActionRangeReveal'
 import {
   DEFAULT_MULTI_PREFILL_NOTE,
-  resolveMttTargetChart,
+  resolveMultiActionTargetChart,
   resolveMultiPrefilledAssignments,
   createInitialMultiSelection,
   paintMultiActionHand,
@@ -18,42 +18,23 @@ import {
   resetMultiActionToFoundation,
   isPrefilledMultiCell,
   type MultiActionSelectionState,
+  type MultiRangeAction,
 } from '@/lib/learn/multiActionRangePrefill'
 
-const ACTION_ORDER: MttAction[] = ['raise', 'jam', 'limp', 'fold']
-
-const ACTION_LABEL: Record<MttAction, string> = {
-  raise: 'Raise',
-  jam: 'Jam',
-  limp: 'Limp',
-  fold: 'Fold',
-}
-
-// Same palette PokerRangeGrid uses for 'three_action' display (jam maps to its 'shove').
-const ACTION_CHIP_CLASS: Record<MttAction, string> = {
-  raise: 'bg-violet-500 text-white border-violet-400/40',
-  jam: 'bg-red-500/80 text-white border-red-400/40',
-  limp: 'bg-sky-500/70 text-white border-sky-400/40',
-  fold: 'bg-secondary/50 text-muted-foreground/70 border-border/20',
-}
-
-const ACTION_CELL_CLASS: Record<MttAction, string> = {
-  raise: 'bg-violet-500 border-violet-400/40 text-white font-bold hover:bg-violet-400',
-  jam: 'bg-red-500/80 border-red-400/40 text-white font-bold hover:bg-red-500',
-  limp: 'bg-sky-500/70 border-sky-400/40 text-white font-bold hover:bg-sky-500',
-  fold: 'bg-secondary/50 border-border/20 text-muted-foreground/70 hover:bg-secondary/70',
-}
+/** Aggression-first display order, mirroring PokerRangeGrid's own ACTION_PRIORITY
+ *  so this paint toolbar always agrees with the reveal grid's segment/legend order. */
+const ACTION_PRIORITY = ['4bet', '3bet', 'squeeze', 'raise', 'jam', 'shove', 'limp', 'call', 'fold']
 
 /** Which actions a chart's own cells actually use, always including 'fold' so the
  *  learner can explicitly mark a hand as a fold even in a no-prefill reconstruction. */
-function chartActionsUsed(chart: ReturnType<typeof resolveMttTargetChart>): MttAction[] {
-  const set = new Set<MttAction>(['fold'])
-  if (chart) {
-    for (const cell of chart.cells) {
-      for (const action of Object.keys(cell.actions)) set.add(action as MttAction)
-    }
+function chartActionsUsed(chart: ReturnType<typeof resolveMultiActionTargetChart>): MultiRangeAction[] {
+  const seen = new Set<string>(['fold'])
+  for (const cell of chart?.cells ?? []) {
+    for (const action of Object.keys(cell.actions)) seen.add(action)
   }
-  return ACTION_ORDER.filter((a) => set.has(a))
+  const prioritized = ACTION_PRIORITY.filter((a) => seen.has(a))
+  const rest = [...seen].filter((a) => !ACTION_PRIORITY.includes(a))
+  return [...prioritized, ...rest] as MultiRangeAction[]
 }
 
 function splitLeadSentence(text: string): [string, string] {
@@ -90,21 +71,24 @@ function ToolbarAction({ icon: Icon, label, onClick }: { icon: LucideIcon; label
 
 interface MultiActionRangeBuildProps {
   step: LessonStep
-  onAnswer: (assignments: Record<string, MttAction>, timeMs: number) => void
+  onAnswer: (assignments: Record<string, MultiRangeAction>, timeMs: number) => void
   disabled?: boolean
 }
 
 export function MultiActionRangeBuild({ step, onAnswer, disabled = false }: MultiActionRangeBuildProps) {
   const mountTime = useRef(Date.now())
-  const chart = useMemo(() => resolveMttTargetChart(step), [step])
-  const offeredActions = useMemo(() => step.range_build_multi_actions ?? chartActionsUsed(chart), [step, chart])
+  const chart = useMemo(() => resolveMultiActionTargetChart(step), [step])
+  const offeredActions = useMemo(
+    () => (step.range_build_multi_actions as MultiRangeAction[] | undefined) ?? chartActionsUsed(chart),
+    [step, chart],
+  )
   const prefilled = useMemo(() => resolveMultiPrefilledAssignments(step), [step])
 
   const [state, setState] = useState<MultiActionSelectionState>(() => createInitialMultiSelection(prefilled))
-  const [activeAction, setActiveAction] = useState<MttAction>(offeredActions[0] ?? 'fold')
+  const [activeAction, setActiveAction] = useState<MultiRangeAction>(offeredActions[0] ?? 'fold')
   const [submitted, setSubmitted] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
-  const [dragAction, setDragAction] = useState<MttAction | null>(null)
+  const [dragAction, setDragAction] = useState<MultiRangeAction | null>(null)
   const [reviewingDiff, setReviewingDiff] = useState(false)
 
   useEffect(() => {
@@ -117,7 +101,7 @@ export function MultiActionRangeBuild({ step, onAnswer, disabled = false }: Mult
   }, [step.id])
 
   const paintHand = useCallback(
-    (hand: string, action: MttAction | null) => {
+    (hand: string, action: MultiRangeAction | null) => {
       if (disabled || submitted) return
       setState((prev) => (action === null ? clearMultiActionHand(prev, hand) : paintMultiActionHand(prev, hand, action)))
     },
@@ -231,22 +215,25 @@ export function MultiActionRangeBuild({ step, onAnswer, disabled = false }: Mult
 
       {/* Action toolbar — pick the active paint action, then click/drag cells */}
       <div className="flex flex-wrap items-center gap-2">
-        {offeredActions.map((action) => (
-          <button
-            key={action}
-            type="button"
-            disabled={disabled || submitted}
-            onClick={() => setActiveAction(action)}
-            className={cn(
-              'rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all duration-150',
-              activeAction === action
-                ? cn(ACTION_CHIP_CLASS[action], 'ring-2 ring-offset-1 ring-offset-background ring-white/40')
-                : 'border-border/20 bg-secondary/30 text-muted-foreground/60 hover:bg-secondary/50',
-            )}
-          >
-            {ACTION_LABEL[action]}
-          </button>
-        ))}
+        {offeredActions.map((action) => {
+          const style = actionStyle(action)
+          return (
+            <button
+              key={action}
+              type="button"
+              disabled={disabled || submitted}
+              onClick={() => setActiveAction(action)}
+              className={cn(
+                'rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all duration-150 border-transparent',
+                activeAction === action
+                  ? cn(style.bg, style.text, 'ring-2 ring-offset-1 ring-offset-background ring-white/40')
+                  : 'border-border/20 bg-secondary/30 text-muted-foreground/60 hover:bg-secondary/50',
+              )}
+            >
+              {actionLabel(action)}
+            </button>
+          )
+        })}
       </div>
 
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-xl border border-border/15 bg-secondary/15 px-4 py-3">
@@ -282,6 +269,7 @@ export function MultiActionRangeBuild({ step, onAnswer, disabled = false }: Mult
                 {row.map((hand, colIdx) => {
                   const assigned = state.assignments[hand]
                   const isPrefilled = isPrefilledMultiCell(state, prefilled, hand)
+                  const style = assigned ? actionStyle(assigned) : null
 
                   return (
                     <button
@@ -293,21 +281,21 @@ export function MultiActionRangeBuild({ step, onAnswer, disabled = false }: Mult
                       onKeyDown={(e) => handleCellKeyDown(e, hand)}
                       title={
                         isPrefilled
-                          ? `${hand} — prefilled foundation (${ACTION_LABEL[assigned!]}), click to change`
+                          ? `${hand} — prefilled foundation (${actionLabel(assigned!)}), click to change`
                           : assigned
-                          ? `${hand} — ${ACTION_LABEL[assigned]}`
+                          ? `${hand} — ${actionLabel(assigned)}`
                           : hand
                       }
                       className={cn(
                         'relative flex aspect-square items-center justify-center rounded-[5px] border',
                         'text-[10px] sm:text-[11px] font-semibold leading-none select-none',
-                        'cursor-pointer transition-colors duration-150',
+                        'cursor-pointer transition-colors duration-150 hover:brightness-110',
                         'focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-1 focus-visible:ring-offset-background',
                         'disabled:cursor-default disabled:pointer-events-none disabled:opacity-70',
                         isPrefilled
                           ? 'bg-violet-500/20 border-violet-400/30 text-violet-100 hover:bg-violet-500/28'
-                          : assigned
-                          ? ACTION_CELL_CLASS[assigned]
+                          : style
+                          ? cn(style.bg, style.text, 'border-transparent font-bold')
                           : 'bg-secondary/30 border-border/15 text-muted-foreground/60 hover:bg-secondary/50 hover:border-border/30 hover:text-foreground/80',
                       )}
                     >
@@ -332,8 +320,8 @@ export function MultiActionRangeBuild({ step, onAnswer, disabled = false }: Mult
         )}
         {offeredActions.map((action) => (
           <div key={action} className="flex items-center gap-1.5">
-            <span className={cn('h-2.5 w-2.5 rounded-[3px]', ACTION_CHIP_CLASS[action])} />
-            {ACTION_LABEL[action]}
+            <span className={cn('h-2.5 w-2.5 rounded-[3px]', actionStyle(action).swatch)} />
+            {actionLabel(action)}
           </div>
         ))}
       </div>

@@ -85,30 +85,26 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // stackedpokerai.com is the ONLY canonical production hostname. These run
-  // before middleware/rendering, so anyone hitting www or a known *.vercel.app
-  // production alias is bounced to the apex domain before any auth/session
-  // logic sees the request. Preview deployment URLs (random-hash.vercel.app)
-  // are untouched — Vercel's own infrastructure still needs those to work.
+  // stackedpokerai.com is the ONLY canonical production hostname.
+  // www → apex is NOT handled here — it's owned by Vercel's own Domains
+  // config (Project → Settings → Domains), which intercepts at the edge
+  // before the app is reached. Adding a second www→apex rule here created
+  // an infinite redirect loop (Vercel apex→www, then this rule www→apex).
+  // Only the *.vercel.app production alias is redirected in code, since
+  // Vercel has no dashboard toggle for that. Preview deployment URLs
+  // (random-hash.vercel.app) are untouched — Vercel's own infrastructure
+  // still needs those to work.
   async redirects() {
     const vercelProductionHosts = [
       "stackedpoker.vercel.app",
       "stacked-poker.vercel.app",
     ];
-    return [
-      {
-        source: "/:path*",
-        has: [{ type: "host", value: "www.stackedpokerai.com" }],
-        destination: "https://stackedpokerai.com/:path*",
-        permanent: true,
-      },
-      ...vercelProductionHosts.map((value) => ({
-        source: "/:path*",
-        has: [{ type: "host" as const, value }],
-        destination: "https://stackedpokerai.com/:path*",
-        permanent: true,
-      })),
-    ];
+    return vercelProductionHosts.map((value) => ({
+      source: "/:path*",
+      has: [{ type: "host" as const, value }],
+      destination: "https://stackedpokerai.com/:path*",
+      permanent: true,
+    }));
   },
 };
 

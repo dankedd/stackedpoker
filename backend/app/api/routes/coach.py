@@ -1,4 +1,4 @@
-"""AI coach API routes — conversation sessions with GPT-4o Socratic coaching."""
+"""AI coach API routes — conversation sessions with a GPT-4o poker coach."""
 
 import logging
 import uuid
@@ -11,11 +11,12 @@ from pydantic import BaseModel, field_validator
 from app.config import get_settings
 from app.middleware.auth import get_current_user
 from app.middleware.rate_limiter import _PATH_LIMITS, _check_rate_limit, _get_ip
-from app.engines.learn.ai_coach import generate_coach_reply
+from app.engines.learn.ai_coach import CoachUnavailableError, generate_coach_reply
 from app.engines.learn.coach_context import (
     MAX_MESSAGE_LENGTH,
     extract_concept_ids,
     ground_theory,
+    lookup_canonical_open_range,
     resolve_coaching_mode,
     sanitize_context,
 )
@@ -107,7 +108,7 @@ async def coach_message(
     current_user: dict = Depends(get_current_user),
 ) -> dict:
     """
-    Send a message to the AI coach and receive a Socratic reply.
+    Send a message to the AI coach and receive a reply.
 
     If session_id is None, a new session is created automatically.
     The full conversation history is stored in training_sessions.
@@ -191,13 +192,20 @@ async def coach_message(
         safe_context = sanitize_context(raw_merged, mode)
         theory = ground_theory(extract_concept_ids(safe_context))
 
+        # Best-effort real-data enrichment for the LLM call only — never
+        # persisted, so the stored session context stays a faithful record of
+        # what the client actually sent (see canonical_range docstring for
+        # the narrow conditions this activates under).
+        canonical = lookup_canonical_open_range(safe_context)
+        llm_context = {**safe_context, **canonical} if canonical else safe_context
+
         logger.info(
-            "coach_request req_id=%s user=%s mode=%s lesson_id=%s step_id=%s theory_ids=%s",
-            req_id, user_id, mode, lesson_id, step_id, [t["id"] for t in theory],
+            "coach_request req_id=%s user=%s mode=%s lesson_id=%s step_id=%s theory_ids=%s canonical=%s",
+            req_id, user_id, mode, lesson_id, step_id, [t["id"] for t in theory], bool(canonical),
         )
 
         # ── Generate coach reply ──────────────────────────────────────────────
-        reply = await generate_coach_reply(messages, safe_context, user_level, mode=mode, theory=theory)
+        reply = await generate_coach_reply(messages, llm_context, user_level, mode=mode, theory=theory)
 
         # ── Append assistant reply ────────────────────────────────────────────
         reply_ts = datetime.now(timezone.utc).isoformat()
@@ -226,6 +234,13 @@ async def coach_message(
 
     except HTTPException:
         raise
+    except CoachUnavailableError as e:
+        # The LLM request itself failed (quota/timeout/rate limit/auth/provider
+        # error) — surface this as a real, distinguishable failure rather than
+        # persisting a canned string into the session as if the coach had
+        # actually replied. Logged already inside generate_coach_reply.
+        logger.error("coach_llm_unavailable req_id=%s user=%s exc_type=%s", req_id, user_id, type(e).__name__)
+        raise HTTPException(status_code=503, detail="The coach is temporarily unavailable. Please try again shortly.")
     except httpx.HTTPError as e:
         status_code = getattr(getattr(e, "response", None), "status_code", None)
         body = getattr(getattr(e, "response", None), "text", None)

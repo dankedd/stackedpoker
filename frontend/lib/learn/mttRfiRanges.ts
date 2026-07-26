@@ -10,6 +10,7 @@ import {
   type MttRfiChart,
 } from './mttRfiBaselines'
 import { HAND_GRID } from './handGrid'
+import { fromActionDict, type RangeStrategyMap } from './rangeStrategy'
 
 export function resolveMttChart(key: string): MttRfiChart | undefined {
   return MTT_RFI_CHARTS[key]
@@ -57,6 +58,20 @@ export function chartToDisplayActionMap(chart: MttRfiChart): Record<string, 'rai
   return Object.fromEntries(
     Object.entries(dominant).map(([hand, action]) => [hand, mttActionToDisplayAction(action)]),
   )
+}
+
+/**
+ * The chart's FULL per-hand action-frequency mix — the canonical strategy
+ * model (rangeStrategy.ts), never collapsed to a single dominant action.
+ * This is what an AUTHORITATIVE reveal grid (`PokerRangeGrid` `strategy`
+ * mode) should render, as opposed to `chartToDominantActionMap`/
+ * `chartToDisplayActionMap` above, which are for pedagogical single-action
+ * displays (the learner's own paint UI, foundation prefills).
+ */
+export function chartToStrategyMap(chart: MttRfiChart): RangeStrategyMap {
+  const map: RangeStrategyMap = {}
+  for (const cell of chart.cells) map[cell.hand] = fromActionDict(cell.actions as Record<string, number>)
+  return map
 }
 
 export interface ChartDiffEntry {

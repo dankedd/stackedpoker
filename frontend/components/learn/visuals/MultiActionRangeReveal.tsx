@@ -2,49 +2,62 @@
 
 import { cn } from '@/lib/utils'
 import { PokerRangeGrid } from './PokerRangeGrid'
-import type { MttAction, MttRfiChart } from '@/lib/learn/mttRfiBaselines'
-import { chartToDisplayActionMap, mttActionToDisplayAction, isMixedHand } from '@/lib/learn/mttRfiRanges'
+import type { MultiActionChartLike, MultiRangeAction } from '@/lib/learn/multiActionRangePrefill'
+import { fromActionDict, fromPureAction, dominantFrequency, type RangeStrategyMap } from '@/lib/learn/rangeStrategy'
+import { actionLabel } from '@/lib/learn/actionStyles'
 import { comboCount } from '@/lib/learn/handGrid'
-
-const ACTION_LABEL: Record<MttAction, string> = { raise: 'Raise', jam: 'Jam', limp: 'Limp', fold: 'Fold' }
 
 function formatPct(freq: number): string {
   return `${Math.round(freq * 100)}%`
 }
 
+/** A hand counts as "genuinely mixed" (not a clean pure decision) once no single
+ *  action reaches this share of the book's own strategy for that hand. */
+const MIXED_HAND_THRESHOLD = 0.9
+
 interface MultiActionRangeRevealProps {
-  yourAssignments: Record<string, MttAction>
-  chart: MttRfiChart
+  yourAssignments: Record<string, MultiRangeAction>
+  chart: MultiActionChartLike
   className?: string
 }
 
 /**
  * Post-submit secondary inspector for a range_build_multi step: a full grid diff
- * (learner vs. the book's dominant action per hand), plus a separate tappable-free
- * list of ONLY the genuinely mixed hands (book max-frequency < 90%) with their exact
- * split — kept out of the live grid so mixed-strategy nuance doesn't compete with the
- * paint interaction during play.
+ * (learner vs. the book's full strategy), plus a separate tappable-free list of
+ * ONLY the genuinely mixed hands (book max-frequency < 90%) with their exact
+ * split — kept out of the live grid so mixed-strategy nuance doesn't compete with
+ * the paint interaction during play. Domain-agnostic: works for any chart whose
+ * cells are `{ hand, actions: Partial<Record<string, number>> }` — both the MTT
+ * RFI charts and the 3-bet-response charts satisfy this shape.
  */
 export function MultiActionRangeReveal({ yourAssignments, chart, className }: MultiActionRangeRevealProps) {
-  const bookActionMap = chartToDisplayActionMap(chart)
-  const yourActionMap = Object.fromEntries(
-    Object.entries(yourAssignments).map(([hand, action]) => [hand, mttActionToDisplayAction(action)]),
+  // "Your Strategy" is the learner's simplified single-action-per-hand paint — the
+  // input side stays simple by design. "Baseline Strategy" is the AUTHORITATIVE
+  // reveal and must show the book's full mixed-frequency strategy, never collapsed
+  // to one dominant action (see rangeStrategy.ts).
+  const yourStrategies: RangeStrategyMap = Object.fromEntries(
+    Object.entries(yourAssignments).map(([hand, action]) => [hand, fromPureAction(action)]),
+  )
+  const bookStrategies: RangeStrategyMap = Object.fromEntries(
+    chart.cells.map((c) => [c.hand, fromActionDict(c.actions)]),
   )
   const yourRangeHands = Object.keys(yourAssignments)
   const bookRangeHands = chart.cells.map((c) => c.hand)
 
-  const mixedCells = chart.cells.filter((c) => isMixedHand(c.actions)).sort((a, b) => comboCount(b.hand) - comboCount(a.hand))
+  const mixedCells = chart.cells
+    .filter((c) => dominantFrequency(fromActionDict(c.actions)) < MIXED_HAND_THRESHOLD)
+    .sort((a, b) => comboCount(b.hand) - comboCount(a.hand))
 
   return (
     <div className={cn('space-y-4', className)}>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <p className="text-center text-[11px] font-semibold text-foreground/80">Your Strategy</p>
-          <PokerRangeGrid range={yourRangeHands} mode="three_action" actionMap={yourActionMap} />
+          <PokerRangeGrid range={yourRangeHands} mode="strategy" strategies={yourStrategies} />
         </div>
         <div className="space-y-1.5">
           <p className="text-center text-[11px] font-semibold text-foreground/80">Baseline Strategy</p>
-          <PokerRangeGrid range={bookRangeHands} mode="three_action" actionMap={bookActionMap} />
+          <PokerRangeGrid range={bookRangeHands} mode="strategy" strategies={bookStrategies} />
         </div>
       </div>
 
@@ -57,10 +70,11 @@ export function MultiActionRangeReveal({ yourAssignments, chart, className }: Mu
           <div className="rounded-xl border border-border/30 bg-secondary/20 divide-y divide-border/20 overflow-hidden">
             {mixedCells.map((cell) => {
               const yourAction = yourAssignments[cell.hand]
-              const yourCredit = yourAction ? cell.actions[yourAction] ?? 0 : cell.actions.fold ?? 0
-              const splitText = (Object.entries(cell.actions) as [MttAction, number][])
+              const cellActions = cell.actions
+              const yourCredit = yourAction ? cellActions[yourAction] ?? 0 : cellActions.fold ?? 0
+              const splitText = (Object.entries(cellActions) as [MultiRangeAction, number][])
                 .sort((a, b) => b[1] - a[1])
-                .map(([action, freq]) => `${ACTION_LABEL[action]} ${formatPct(freq)}`)
+                .map(([action, freq]) => `${actionLabel(action)} ${formatPct(freq)}`)
                 .join(' / ')
 
               return (
@@ -74,7 +88,7 @@ export function MultiActionRangeReveal({ yourAssignments, chart, className }: Mu
                         yourCredit >= 0.5 ? 'text-emerald-400' : 'text-amber-400',
                       )}
                     >
-                      You: {ACTION_LABEL[yourAction]} ({formatPct(yourCredit)} credit)
+                      You: {actionLabel(yourAction)} ({formatPct(yourCredit)} credit)
                     </span>
                   )}
                 </div>

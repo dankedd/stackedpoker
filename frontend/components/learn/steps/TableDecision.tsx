@@ -11,7 +11,7 @@ import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 import { MTT_RFI_CHARTS } from '@/lib/learn/mttRfiBaselines'
 import { buildHandDecisionOptions } from '@/lib/learn/mttRfiLabPool'
 import { evaluateTableDecision, type TableDecisionEvaluation } from '@/lib/learn/tableDecisionEngine'
-import { chartToDisplayActionMap } from '@/lib/learn/mttRfiRanges'
+import { chartToStrategyMap } from '@/lib/learn/mttRfiRanges'
 import { canonicalCombo } from '@/lib/learn/combos'
 
 interface TableDecisionProps {
@@ -51,7 +51,7 @@ interface InlineRevealProps {
 
 function InlineReveal({ evaluation, chartKey, hand, onContinue }: InlineRevealProps) {
   const chart = MTT_RFI_CHARTS[chartKey]
-  const actionMap = chartToDisplayActionMap(chart)
+  const strategies = chartToStrategyMap(chart)
   const confusion = evaluation.stackConfusion
 
   return (
@@ -81,8 +81,8 @@ function InlineReveal({ evaluation, chartKey, hand, onContinue }: InlineRevealPr
         </p>
         <PokerRangeGrid
           range={chart.cells.map((c) => c.hand)}
-          mode="three_action"
-          actionMap={actionMap}
+          mode="strategy"
+          strategies={strategies}
           highlightHand={hand}
         />
       </div>
@@ -99,8 +99,8 @@ function InlineReveal({ evaluation, chartKey, hand, onContinue }: InlineRevealPr
               <p className="text-center text-[10px] font-semibold text-muted-foreground/60">{chart.stackBB}bb (this spot)</p>
               <PokerRangeGrid
                 range={chart.cells.map((c) => c.hand)}
-                mode="three_action"
-                actionMap={actionMap}
+                mode="strategy"
+                strategies={strategies}
                 highlightHand={hand}
               />
             </div>
@@ -108,8 +108,8 @@ function InlineReveal({ evaluation, chartKey, hand, onContinue }: InlineRevealPr
               <p className="text-center text-[10px] font-semibold text-muted-foreground/60">{confusion.stackBB}bb</p>
               <PokerRangeGrid
                 range={MTT_RFI_CHARTS[confusion.chartKey].cells.map((c) => c.hand)}
-                mode="three_action"
-                actionMap={chartToDisplayActionMap(MTT_RFI_CHARTS[confusion.chartKey])}
+                mode="strategy"
+                strategies={chartToStrategyMap(MTT_RFI_CHARTS[confusion.chartKey])}
                 highlightHand={hand}
               />
             </div>

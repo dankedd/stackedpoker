@@ -13,6 +13,8 @@ import type { LessonStep, StepResult, ActionQuality, AnswerReveal, ScenarioOutco
 import { levelForXP } from './types'
 import { RANGE_TARGETS } from './ranges'
 import { MTT_RFI_CHARTS, type MttAction, type MttRfiChart } from './mttRfiBaselines'
+import { THREEBET_RESPONSE_CHARTS, type ThreebetResponseAction, type ThreebetResponseChart } from './threebetResponseBaselines'
+import { diagnoseRangeShape } from './threebetResponseRanges'
 import { evaluateTableDecision } from './tableDecisionEngine'
 import {
   classifyFlop, dimensionValue, equityBucket, estimateVolatility, turnImpact,
@@ -501,6 +503,41 @@ function evalMultiActionRange(
     feedback: `Significant errors versus the baseline strategy${detail ? ` (${detail})` : ''}.`,
     ev_loss_bb: 0,
   }
+}
+
+// ── 3-bet response range build (Module 4's "They Raised Back" Range Lab) ──────
+// Same combo-weighted accuracy as evalMultiActionRange, but the feedback is
+// SHAPE-based rather than a generic "X% of combos wrong" line (spec: don't grade
+// only by cell-exact %, analyze the composition) — see diagnoseRangeShape in
+// threebetResponseRanges.ts, which derives 1-3 targeted messages from whichever
+// hand-category mismatches (folding playable suited hands, calling dominated
+// offsuit hands, a 4-bet range with no blockers, ...) actually occurred.
+
+function evalThreebetResponseRange(
+  chart: ThreebetResponseChart,
+  tolerance: number,
+  response: unknown,
+): EvalCore {
+  const assignments: Record<string, ThreebetResponseAction> =
+    response && typeof response === 'object' && !Array.isArray(response)
+      ? (response as Record<string, ThreebetResponseAction>)
+      : {}
+
+  const { accuracy, messages } = diagnoseRangeShape(chart, assignments)
+  const rawScore = Math.round(accuracy * 100)
+  const toleranceFraction = (tolerance ?? 5) / 100
+  const feedback = messages.join(' ')
+
+  if (accuracy >= 1 - toleranceFraction) {
+    return { quality: 'perfect', score: 100, feedback: `Excellent — matches the baseline strategy's shape. ${feedback}`, ev_loss_bb: 0 }
+  }
+  if (accuracy >= 0.82 - toleranceFraction) {
+    return { quality: 'good', score: Math.max(QUALITY_SCORES.good, rawScore), feedback, ev_loss_bb: 0 }
+  }
+  if (accuracy >= 0.60 - toleranceFraction) {
+    return { quality: 'acceptable', score: Math.max(QUALITY_SCORES.acceptable, rawScore), feedback, ev_loss_bb: 0 }
+  }
+  return { quality: 'mistake', score: Math.max(20, rawScore), feedback, ev_loss_bb: 0 }
 }
 
 // ── Range bucket steps (Module 4) ─────────────────────────────────────────────
@@ -1319,6 +1356,13 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
     }
 
     case 'range_build_multi': {
+      if (step.range_build_multi_domain === 'threebet_response') {
+        const chart = THREEBET_RESPONSE_CHARTS[step.range_build_multi_chart ?? '']
+        if (!chart) {
+          return { quality: 'good', score: 80, feedback: 'Range recorded.', ev_loss_bb: 0 }
+        }
+        return evalThreebetResponseRange(chart, step.range_build_multi_tolerance ?? 5, response)
+      }
       const chart = MTT_RFI_CHARTS[step.range_build_multi_chart ?? '']
       if (!chart) {
         return { quality: 'good', score: 80, feedback: 'Range recorded.', ev_loss_bb: 0 }

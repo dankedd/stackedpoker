@@ -37,6 +37,14 @@ interface SortableRankingListProps {
   ariaLabel?: string
   className?: string
   renderItem: (id: string, index: number, drag: SortableRowRenderProps) => ReactNode
+  /**
+   * Stable id passed through to DndContext. dnd-kit auto-generates internal
+   * ids (used for aria-describedby) from a render-order counter, which can
+   * differ between the server and client render pass under SSR and trip a
+   * hydration mismatch — pass something stable (e.g. derived from the
+   * exercise's step id) to avoid that.
+   */
+  id?: string
 }
 
 /**
@@ -56,6 +64,7 @@ export function SortableRankingList({
   ariaLabel,
   className,
   renderItem,
+  id,
 }: SortableRankingListProps) {
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
@@ -75,6 +84,7 @@ export function SortableRankingList({
 
   return (
     <DndContext
+      id={id}
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}

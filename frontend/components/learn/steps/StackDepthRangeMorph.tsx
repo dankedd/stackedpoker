@@ -5,12 +5,13 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import {
   RFI_SHALLOW, RFI_MEDIUM, RFI_DEEP, RFI_SHALLOW_ACTIONS,
-  entriesToHandList, entriesToFrequencyMap, type StackWorld, type RangeEntry,
+  entriesToHandList, type StackWorld, type RangeEntry,
 } from '@/lib/learn/preflopBaselines'
 import { THREEBET_DEEP, THREEBET_MEDIUM, THREEBET_SHALLOW, type ThreebetMatchup } from '@/lib/learn/threebetBaselines'
 import { DEFEND_DEEP, DEFEND_MEDIUM, DEFEND_SHALLOW, type DefendMatchup } from '@/lib/learn/defendBaselines'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { rangeEntriesToStrategyMap } from '@/lib/learn/rangeStrategy'
 
 interface StackDepthRangeMorphProps {
   step: LessonStep
@@ -74,6 +75,12 @@ export function StackDepthRangeMorph({ step, onAnswer, disabled = false }: Stack
     : dataset === 'defend' ? `${defendKey ?? position} defend range`
     : `${position} opening range`
 
+  // The action each dataset's RangeEntry.freq is "in" for — the fold complement
+  // is made explicit by rangeEntriesToStrategyMap so the grid can render an exact
+  // proportional split instead of an opacity approximation.
+  const primaryAction = dataset === 'threebet_defense' ? '3bet' : dataset === 'defend' ? 'call' : 'raise'
+  const strategies = useMemo(() => rangeEntriesToStrategyMap(entries, primaryAction), [entries, primaryAction])
+
   const combos = entries.reduce((sum, e) => sum + (e.hand.length === 2 ? 6 : e.hand.endsWith('s') ? 4 : 12) * e.freq, 0)
   const pct = ((combos / 1326) * 100).toFixed(1)
 
@@ -99,7 +106,7 @@ export function StackDepthRangeMorph({ step, onAnswer, disabled = false }: Stack
         {showActions ? (
           <PokerRangeGrid range={[]} mode="three_action" actionMap={RFI_SHALLOW_ACTIONS[position]} />
         ) : (
-          <PokerRangeGrid range={entriesToHandList(entries)} mode="frequency" frequencies={entriesToFrequencyMap(entries)} />
+          <PokerRangeGrid range={entriesToHandList(entries)} mode="strategy" strategies={strategies} />
         )}
 
         <div className="space-y-1.5 pt-2 border-t border-border/20">

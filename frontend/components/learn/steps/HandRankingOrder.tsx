@@ -86,6 +86,7 @@ export function HandRankingOrder({ step, onAnswer, disabled = false }: HandRanki
       )}
 
       <SortableRankingList
+        id={`hand-ranking-${step.id}`}
         ids={order}
         onReorder={setOrder}
         disabled={!arranging}

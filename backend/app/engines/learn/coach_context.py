@@ -17,10 +17,17 @@ import logging
 from typing import Any
 
 from app.engines.theory.acevedo_knowledge import AcevedoConcept, get_concept
+from app.ranges.preflop.cash_100bb.registry import get_range
 
 logger = logging.getLogger(__name__)
 
 MAX_MESSAGE_LENGTH = 2000
+
+# Position -> open-range (RFI) registry key. Only the five unopened-pot
+# positions have a chart — BB has no "open" (it's always facing action).
+_OPEN_RANGE_KEYS: dict[str, str] = {
+    "UTG": "UTG_OPEN", "HJ": "HJ_OPEN", "CO": "CO_OPEN", "BTN": "BTN_OPEN", "SB": "SB_OPEN",
+}
 
 # Any of these keys, if present in a client-supplied context, could reveal the
 # graded answer to a step the learner has not (or not verifiably) completed.
@@ -91,6 +98,43 @@ def ground_theory(concept_ids: list[str] | None, max_concepts: int = 3) -> list[
         if len(grounded) >= max_concepts:
             break
     return grounded
+
+
+def lookup_canonical_open_range(context: dict[str, Any]) -> dict[str, Any] | None:
+    """Best-effort real-data lookup for an unopened-pot (RFI) preflop spot.
+
+    Only returns data when we can trust it: a specific hand, a position that
+    actually opens (UTG/HJ/CO/BTN/SB — BB never does), no villain_position
+    (this chart only covers the open decision, not a vs-position defend/3bet
+    spot), and an effective stack within our single supported chart depth
+    (100bb, +/-5bb — this codebase has no other stack-depth chart). Outside
+    those conditions, returns None so the coach falls back to general
+    reasoning/qualitative estimates rather than misrepresenting a mismatched
+    chart as canonical.
+
+    The returned `canonical_strategy` is a true complement ({raise, fold})
+    derived from one real weight, not an invented number — an RFI decision's
+    only two actions are raise or fold.
+    """
+    position = context.get("hero_position")
+    hand = context.get("hand")
+    stack_bb = context.get("effective_stack_bb")
+    if context.get("villain_position") or not hand or position not in _OPEN_RANGE_KEYS:
+        return None
+    if not isinstance(stack_bb, (int, float)) or abs(stack_bb - 100) > 5:
+        return None
+
+    try:
+        raise_weight = get_range(_OPEN_RANGE_KEYS[position]).get_weight(hand)
+    except Exception:
+        logger.warning("canonical_range_lookup_failed position=%s hand=%s", position, hand)
+        return None
+
+    return {
+        "spot": {"position": position, "stack_bb": 100, "action": "RFI"},
+        "hand": hand,
+        "canonical_strategy": {"raise": raise_weight, "fold": round(1 - raise_weight, 4)},
+    }
 
 
 def extract_concept_ids(context: dict[str, Any]) -> list[str]:
