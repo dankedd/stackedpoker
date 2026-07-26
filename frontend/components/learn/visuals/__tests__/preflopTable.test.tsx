@@ -55,13 +55,16 @@ describe('PreflopTable — D. Hero BTN', () => {
 })
 
 describe('PreflopTable — E. Hero SB', () => {
-  it('BTN dealer marker is correct (not on Hero) and SB/BB blinds show 0.5bb / 1bb', () => {
+  it('BTN dealer marker is correct (not on Hero) and SB/BB blinds show as in-table chip markers, not a fake stack', () => {
     const html = renderToStaticMarkup(
       <PreflopTable tableSize={9} heroPosition="SB" effectiveStackBb={100} actionBeforeHero={['Everyone folds']} />,
     )
     expect(html).toContain('HERO · SB')
     expect(html).toContain('Dealer button')
-    expect(html).toContain('1 BB') // BB's posted blind
+    // BB's posted blind (1bb) renders as a small chip marker, not as BB's own "stack" line —
+    // every seat, including blinds, still shows its real effective stack.
+    expect(html).toContain('border-white/15 bg-white/10 text-white/60">1</span>')
+    expect(html).toContain('100 BB') // BB's real stack, unchanged by having posted a blind
   })
 })
 
@@ -75,7 +78,7 @@ describe('PreflopTable — F. Hero BB', () => {
 })
 
 describe('PreflopTable — G. Facing an open', () => {
-  it('the opener\'s action and bet size are visible on their own seat', () => {
+  it('the opener\'s action verb is on their own seat, and the real bet size renders as an in-table chip marker', () => {
     const html = renderToStaticMarkup(
       <PreflopTable
         tableSize={9}
@@ -85,7 +88,10 @@ describe('PreflopTable — G. Facing an open', () => {
         actionBeforeHero={['UTG folds', 'HJ folds', 'CO raises to 2.3bb']}
       />,
     )
-    expect(html).toContain('RAISE · 2.3BB')
+    expect(html).toContain('aria-label="CO, RAISE"')
+    // The bet size (2.3bb) is a chip marker positioned between CO's seat and the table
+    // center, not appended to CO's own action label.
+    expect(html).toContain('border-sky-400/30 bg-sky-500/20 text-sky-200">2.3</span>')
     expect(html).toContain('CO OPEN')
   })
 })
@@ -101,8 +107,9 @@ describe('PreflopTable — H. Facing open + call (squeeze context)', () => {
         actionBeforeHero={['CO raises to 2.3bb', 'BTN calls']}
       />,
     )
-    expect(html).toContain('RAISE · 2.3BB')
-    expect(html).toContain('CALL')
+    expect(html).toContain('aria-label="CO, RAISE"')
+    expect(html).toContain('border-sky-400/30 bg-sky-500/20 text-sky-200">2.3</span>')
+    expect(html).toContain('aria-label="BTN, CALL"')
     expect(html).toContain('CO OPEN · BTN CALL')
   })
 })

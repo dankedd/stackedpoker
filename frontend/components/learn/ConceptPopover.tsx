@@ -710,9 +710,9 @@ export function ConceptPopover({ conceptId, children, className }: ConceptPopove
     }
   }, [open])
 
-  if (!entry) {
-    return <span className={cn('text-violet-400/70 underline decoration-dotted cursor-help', className)}>{children ?? conceptId}</span>
-  }
+  // No dictionary entry for this concept id — render nothing rather than leak the
+  // raw internal identifier (e.g. "utg_rfi") into learner-facing UI.
+  if (!entry) return null
 
   const domainCls = DOMAIN_COLORS[entry.domain] ?? DOMAIN_COLORS.strategy
 

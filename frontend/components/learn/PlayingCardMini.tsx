@@ -10,8 +10,9 @@ const SIZE_CONFIG = {
   xs: { outer: 'w-[27px] h-[38px] rounded-[4px] p-[2.5px]', rank: 'text-[8px]',  suit: 'text-[7px]'  },
   sm: { outer: 'w-[38px] h-[54px] rounded-[5px] p-[3.5px]', rank: 'text-[11px]', suit: 'text-[9px]'  },
   md: { outer: 'w-[51px] h-[72px] rounded-[6px] p-[4.5px]', rank: 'text-[15px]', suit: 'text-[12px]' },
-  // Desktop Hero-card target (~55-65px tall) per the preflop table redesign.
-  lg: { outer: 'w-[43px] h-[60px] rounded-[7px] p-[5px]', rank: 'text-[17px]', suit: 'text-[13px]' },
+  // Hero-card target for the preflop table's visual polish pass — noticeably larger
+  // than 'md', the biggest tier used anywhere else.
+  lg: { outer: 'w-[54px] h-[76px] rounded-[8px] p-[6px]', rank: 'text-[21px]', suit: 'text-[16px]' },
 }
 
 const RANK_NAME: Record<string, string> = {
