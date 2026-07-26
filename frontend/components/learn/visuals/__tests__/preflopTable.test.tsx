@@ -179,3 +179,55 @@ describe('PreflopTable — no internal identifier leakage', () => {
     expect(html).not.toMatch(/utg_rfi|_rfi\b/)
   })
 })
+
+describe('PreflopTable — hero cards are mathematically centered (fixed-width wrapper, no per-card offsets)', () => {
+  it('cards render inside one fixed 114px (54+6+54) wrapper with justify-between, not implicit flex sizing', () => {
+    const html = renderToStaticMarkup(
+      <PreflopTable tableSize={9} heroPosition="UTG" heroHand={['Qs', 'Qd']} effectiveStackBb={60} actionBeforeHero={[]} />,
+    )
+    expect(html).toContain('w-[114px]')
+    expect(html).toContain('justify-between')
+  })
+})
+
+describe('PreflopTable — position label typography is larger/clearer, stack stays secondary', () => {
+  it('non-hero position label is 13px font-extrabold at full contrast; stack line is unchanged (smaller, dimmer)', () => {
+    const html = renderToStaticMarkup(
+      <PreflopTable tableSize={9} heroPosition="UTG" effectiveStackBb={60} actionBeforeHero={['Everyone folds']} />,
+    )
+    expect(html).toContain('text-[13px] font-extrabold text-foreground')
+    expect(html).not.toContain('text-[11px] font-bold text-foreground/70')
+    expect(html).toContain('text-[10px] font-medium text-muted-foreground/45')
+  })
+
+  it("Hero's own badge is untouched by this pass (still 11px font-bold violet)", () => {
+    const html = renderToStaticMarkup(
+      <PreflopTable tableSize={9} heroPosition="UTG" effectiveStackBb={60} actionBeforeHero={[]} />,
+    )
+    expect(html).toContain('text-[11px] font-bold text-violet-200')
+  })
+})
+
+describe('PreflopTable — dealer marker never overlaps a seat label', () => {
+  it('non-hero BTN: dealer chip sits on the label\'s own row, offset by a fixed 22px screen-space gap', () => {
+    const html = renderToStaticMarkup(
+      <PreflopTable tableSize={9} heroPosition="SB" effectiveStackBb={100} actionBeforeHero={['Everyone folds']} />,
+    )
+    const btnLabelMatch = html.match(/left:([\d.]+)%;top:([\d.]+)%"[^>]*>BTN</)
+    expect(btnLabelMatch).toBeTruthy()
+    const [, bx, by] = btnLabelMatch!
+    // The dealer marker anchors off the SAME rail point as the label, offset only in x —
+    // i.e. it moves in lockstep with wherever BTN's label actually sits, never independently.
+    expect(html).toContain(`left:calc(${bx}% + 22px);top:${by}%`)
+  })
+
+  it('hero-is-BTN keeps its own toward-center placement — never renders "D BTN" as one run-on', () => {
+    const html = renderToStaticMarkup(
+      <PreflopTable tableSize={9} heroPosition="BTN" effectiveStackBb={100} actionBeforeHero={['Everyone folds']} />,
+    )
+    expect(html).toContain('Dealer button')
+    expect(html).toContain('HERO · BTN')
+    expect(html).not.toContain('>D BTN<')
+    expect(html).not.toContain('>D HERO')
+  })
+})

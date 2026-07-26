@@ -125,12 +125,15 @@ function BetChip({ x, y, amount, tone }: { x: string; y: string; amount: number;
   )
 }
 
-/** Positioned just inside the rail near the BTN seat, independent of the BTN/HERO label
- *  so it never reads as a single "D BTN" run-on. */
-function DealerMarker({ x, y }: { x: string; y: string }) {
-  const pos = towardCenter(x, y, 0.16)
+/** Fixed pixel gap between the BTN position label's own center and the dealer chip's
+ *  left edge — "BTN" is always exactly 3 characters, so a constant screen-space offset
+ *  (not a radius/angle-dependent one) clears the label at every possible rail position,
+ *  robust for BTN sitting anywhere around the ellipse. */
+const DEALER_LABEL_GAP_PX = 22
+
+function DealerMarker({ style }: { style: React.CSSProperties }) {
   return (
-    <div className="absolute z-20 -translate-x-1/2 -translate-y-1/2" style={{ left: pos.left, top: pos.top }}>
+    <div className="absolute z-20" style={style}>
       <span
         aria-label="Dealer button"
         title="Dealer"
@@ -262,19 +265,36 @@ export function PreflopTable({
               {markerAmount != null && (
                 <BetChip x={seat.x} y={seat.y} amount={markerAmount} tone={markerTone} />
               )}
-              {/* Dealer chip sits slightly inside the rail near BTN's own seat, independent
-                  of the position/HERO label — never reads as a single "D BTN" run-on. */}
-              {isDealer && <DealerMarker x={seat.x} y={seat.y} />}
+              {/* Dealer chip sits beside the label as its own element — never reads as a
+                  single "D BTN" run-on, never overlaps the label or its stack line.
+                  Hero-is-BTN keeps the old toward-center placement (no fixed-width label
+                  to gap against there — HERO's badge is a variable-width box, not a
+                  constant-width 3-letter position string); every other seat gets a fixed
+                  screen-space gap from the rail label, which works at any rail angle
+                  since "BTN" is always exactly 3 characters wide. */}
+              {isDealer && (
+                isHero ? (
+                  <DealerMarker
+                    style={{ ...towardCenter(seat.x, seat.y, 0.16), transform: 'translate(-50%, -50%)' }}
+                  />
+                ) : (
+                  <DealerMarker
+                    style={{ left: `calc(${railPoint.x} + ${DEALER_LABEL_GAP_PX}px)`, top: railPoint.y, transform: 'translateY(-50%)' }}
+                  />
+                )
+              )}
               {isHero ? (
               <div
                 className="absolute z-10"
                 style={{ left: seat.x, top: seat.y, transform: `translate(${seat.tx}, ${seat.ty})` }}
               >
                   <div className="flex flex-col items-center gap-2.5">
-                    {/* Hero cards — one centered wrapper, identical size, small fixed gap.
-                        Sits closest to the rail; the extra gap below gives the seat box
-                        (HERO · POS / STACK) clean breathing room rather than crowding it. */}
-                    <div className="flex items-center justify-center gap-1.5">
+                    {/* Hero cards — one centered, fixed-width wrapper (2 cards + exact gap,
+                        nothing implicit). Its midpoint is mathematically the wrapper's own
+                        center, and the wrapper itself is centered by the parent flex column
+                        — the same axis the HERO badge below centers on, so cards and badge
+                        always share one exact vertical stack, never nudged apart. */}
+                    <div className="flex w-[114px] items-center justify-between">
                       <PlayingCardMini card={cards[0]} size="lg" />
                       <PlayingCardMini card={cards[1]} size="lg" />
                     </div>
@@ -320,7 +340,7 @@ export function PreflopTable({
                 >
                   <span
                     className={cn(
-                      'absolute z-10 -translate-x-1/2 -translate-y-1/2 text-center text-[11px] font-bold text-foreground/70 whitespace-nowrap transition-opacity duration-300',
+                      'absolute z-10 -translate-x-1/2 -translate-y-1/2 text-center text-[13px] font-extrabold text-foreground whitespace-nowrap transition-opacity duration-300',
                       folded && 'opacity-35',
                     )}
                     style={{ left: railPoint.x, top: railPoint.y }}
@@ -336,7 +356,7 @@ export function PreflopTable({
                           : 'text-[10px] font-medium text-muted-foreground/45',
                         folded && 'opacity-35',
                       )}
-                      style={{ left: railPoint.x, top: `calc(${railPoint.y} + 10px)` }}
+                      style={{ left: railPoint.x, top: `calc(${railPoint.y} + 12px)` }}
                     >
                       {action ? actionVerb(action) : `${formatBb(effectiveStackBb!)} BB`}
                     </span>
