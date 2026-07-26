@@ -6,13 +6,16 @@ const SUIT_SYMBOL: Record<string, string> = { h: '♥', d: '♦', c: '♣', s: '
 const RED_COLOR   = '#B41C22'
 const BLACK_COLOR = '#1C1917'
 
+// `inset` (px) is the corner index's distance from BOTH the card's edges — used as an
+// explicit top/left (and mirrored bottom/right) offset, never as container padding, so
+// the two corner blocks are pinned independently of flex content-height distribution.
 const SIZE_CONFIG = {
-  xs: { outer: 'w-[27px] h-[38px] rounded-[4px] p-[2.5px]', rank: 'text-[8px]',  suit: 'text-[7px]'  },
-  sm: { outer: 'w-[38px] h-[54px] rounded-[5px] p-[3.5px]', rank: 'text-[11px]', suit: 'text-[9px]'  },
-  md: { outer: 'w-[51px] h-[72px] rounded-[6px] p-[4.5px]', rank: 'text-[15px]', suit: 'text-[12px]' },
+  xs: { outer: 'w-[27px] h-[38px] rounded-[4px]', inset: 2.5, rank: 'text-[8px]',  suit: 'text-[7px]'  },
+  sm: { outer: 'w-[38px] h-[54px] rounded-[5px]', inset: 3.5, rank: 'text-[11px]', suit: 'text-[9px]'  },
+  md: { outer: 'w-[51px] h-[72px] rounded-[6px]', inset: 4.5, rank: 'text-[15px]', suit: 'text-[12px]' },
   // Hero-card target for the preflop table's visual polish pass — noticeably larger
   // than 'md', the biggest tier used anywhere else.
-  lg: { outer: 'w-[54px] h-[76px] rounded-[8px] p-[6px]', rank: 'text-[21px]', suit: 'text-[16px]' },
+  lg: { outer: 'w-[54px] h-[76px] rounded-[8px]', inset: 6, rank: 'text-[21px]', suit: 'text-[16px]' },
 }
 
 const RANK_NAME: Record<string, string> = {
@@ -54,11 +57,7 @@ export function PlayingCardMini({ card, size = 'sm', className }: PlayingCardMin
     <div
       role="img"
       aria-label={accessibleLabel}
-      className={cn(
-        'relative select-none flex flex-col justify-between shrink-0 overflow-hidden',
-        cfg.outer,
-        className,
-      )}
+      className={cn('relative select-none shrink-0 overflow-hidden', cfg.outer, className)}
       style={{
         background: 'linear-gradient(165deg, #FEFEFC 0%, #F9F6F0 40%, #F0EBE1 100%)',
         boxShadow: [
@@ -79,13 +78,29 @@ export function PlayingCardMini({ card, size = 'sm', className }: PlayingCardMin
           borderRadius: 'inherit',
         }}
       />
-      <div className="relative z-10 flex flex-col items-start leading-none font-black" style={{ color: col }}>
+
+      {/* Top-left corner index — pinned via explicit top/left, not flex distribution. */}
+      <div
+        className="absolute z-10 flex flex-col items-start leading-none font-black"
+        style={{ top: cfg.inset, left: cfg.inset, color: col }}
+      >
         <span className={cn('leading-none tracking-tight', cfg.rank)}>{rank}</span>
-        <span className={cn('leading-none -mt-[1px]', cfg.suit)}>{sym}</span>
+        <span className={cn('leading-none', cfg.suit)}>{sym}</span>
       </div>
-      <div className="relative z-10 flex flex-col items-end leading-none font-black rotate-180" style={{ color: col }}>
+
+      {/* Bottom-right corner index — the EXACT mirror: same `inset` value, but anchored
+          via bottom/right instead of top/left, then rotated 180deg around its own center.
+          Rotation is a paint-time transform and never moves the pinned bounding box, so
+          this corner's distance from the card's bottom/right edges is always identical to
+          the top-left corner's distance from the top/left edges — regardless of glyph
+          metrics (verified explicitly for Q, whose descender previously made this corner
+          look uneven against a content-height-driven `justify-between` layout). */}
+      <div
+        className="absolute z-10 flex flex-col items-end leading-none font-black rotate-180"
+        style={{ bottom: cfg.inset, right: cfg.inset, color: col }}
+      >
         <span className={cn('leading-none tracking-tight', cfg.rank)}>{rank}</span>
-        <span className={cn('leading-none -mt-[1px]', cfg.suit)}>{sym}</span>
+        <span className={cn('leading-none', cfg.suit)}>{sym}</span>
       </div>
     </div>
   )
