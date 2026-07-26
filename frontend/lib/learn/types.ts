@@ -5,6 +5,8 @@ export type StepType =
   | 'decision_spot'
   | 'range_build'
   | 'range_build_multi'  // per-hand action assignment (raise/limp/jam/fold) graded against a real MttRfiChart
+  | 'table_decision'     // visual poker-table decision drill for one (chart, hand) pair, with inline post-answer range reveal
+  | 'mtt_stack_depth_compare' // 4-stop (15/25/40/60bb) slider comparison of one position's MTT_RFI_CHARTS, with an action-diff toggle
   | 'range_identify'
   | 'equity_predict'
   | 'bet_size_choose'
@@ -185,6 +187,20 @@ export interface LessonStep {
   range_build_multi_show_diff?: boolean
   /** Combo-weighted expected-accuracy tolerance band, same convention/units as `range_tolerance`. Default 5. */
   range_build_multi_tolerance?: number
+  /** range_build_multi only — a source MTT_RFI_CHARTS key whose full dominant-action map seeds
+   *  the grid (a "Transformation Challenge": start from this chart's built strategy, edit only
+   *  what differs). Grading is unaffected — always the full submission vs. `range_build_multi_chart`. */
+  range_build_multi_transform_from_chart?: string
+  // ── Table decision (Module 3 structural redesign) — table_decision only ──
+  /** MTT_RFI_CHARTS key — the sole grading source, mirroring range_build_multi_chart's convention. */
+  table_decision_chart?: string
+  /** Hand class under test, e.g. 'A5s'. */
+  table_decision_hand?: string
+  // ── MTT stack-depth compare (Module 3 structural redesign) — mtt_stack_depth_compare only ──
+  mtt_stack_depth_compare_position?: string
+  /** Diff-mode's fixed "from" depth. Defaults to 60 (the curriculum's canonical build depth). */
+  mtt_stack_depth_compare_reference_bb?: 15 | 25 | 40 | 60
+  mtt_stack_depth_compare_prompt?: string
   // Equity predict (hand vs range)
   equity_actual?: number
   equity_tolerance?: number

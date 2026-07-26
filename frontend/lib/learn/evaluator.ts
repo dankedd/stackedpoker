@@ -13,6 +13,7 @@ import type { LessonStep, StepResult, ActionQuality, AnswerReveal, ScenarioOutco
 import { levelForXP } from './types'
 import { RANGE_TARGETS } from './ranges'
 import { MTT_RFI_CHARTS, type MttAction, type MttRfiChart } from './mttRfiBaselines'
+import { evaluateTableDecision } from './tableDecisionEngine'
 import {
   classifyFlop, dimensionValue, equityBucket, estimateVolatility, turnImpact,
   type FlopClassification, type VolatilityLevel,
@@ -106,6 +107,7 @@ export function isScoredStep(step: LessonStep): boolean {
     case 'range_compare':
     case 'hand_dna':
     case 'stack_depth_morph':
+    case 'mtt_stack_depth_compare':
     case 'dead_money_visualizer':
     case 'strategy_complexity':
     case 'range_diff':
@@ -1324,6 +1326,23 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
       return evalMultiActionRange(chart, step.range_build_multi_tolerance ?? 5, response)
     }
 
+    case 'table_decision': {
+      const evaluation = evaluateTableDecision(
+        step.table_decision_chart ?? '',
+        step.table_decision_hand ?? '',
+        String(response ?? ''),
+      )
+      if (!evaluation) {
+        return { quality: 'good', score: 80, feedback: 'Recorded.', ev_loss_bb: 0 }
+      }
+      return {
+        quality: evaluation.quality,
+        score: QUALITY_SCORES[evaluation.quality],
+        feedback: evaluation.feedback,
+        ev_loss_bb: 0,
+      }
+    }
+
     // Scenario tree
     case 'scenario_tree':
       return evalScenarioTree(step, response)
@@ -1470,6 +1489,10 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
 
     // Stack depth morph — a reasoning question over the morphing range
     case 'stack_depth_morph':
+      return evalOptionBased(step, response)
+
+    // MTT stack-depth compare — a reasoning question over the 4-depth comparison, when authored
+    case 'mtt_stack_depth_compare':
       return evalOptionBased(step, response)
 
     // Dead money visualizer — a reasoning question over the ante toggle

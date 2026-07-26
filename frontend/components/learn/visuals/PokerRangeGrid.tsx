@@ -2,8 +2,23 @@
 
 import { cn } from '@/lib/utils'
 import { RANKS, HAND_GRID, comboCount, TOTAL_COMBOS } from '@/lib/learn/handGrid'
+import type { ChartDiffEntry } from '@/lib/learn/mttRfiRanges'
 
 type PreflopAction = 'raise' | 'limp' | 'shove' | 'fold'
+
+const ACTION_DIFF_COLOR: Record<ChartDiffEntry['kind'], string> = {
+  added: 'bg-emerald-500/70 text-white',
+  removed: 'bg-red-500/60 text-white',
+  changed: 'bg-amber-500/60 text-white',
+  unchanged: 'bg-secondary/30 text-muted-foreground/15',
+}
+
+const ACTION_DIFF_LABEL: Record<ChartDiffEntry['kind'], string> = {
+  added: 'Added (fold -> in)',
+  removed: 'Removed (in -> fold)',
+  changed: 'Action changed',
+  unchanged: 'Unchanged',
+}
 
 const ACTION_COLOR: Record<PreflopAction, string> = {
   raise: 'bg-violet-500 text-white',
@@ -23,17 +38,24 @@ interface PokerRangeGridProps {
   /** Hand notations included in the range, e.g. ['AA', 'KQs', 'JTs']. In 'diff' mode, this is the BASELINE range. */
   range: string[]
   className?: string
-  /** 'membership' (default) = binary in/out. 'frequency' = shade by mix %. 'three_action' = color by actionMap. 'diff' = compare `range` (baseline) against `comparisonRange` (learner/example). */
-  mode?: 'membership' | 'frequency' | 'three_action' | 'diff'
+  /** 'membership' (default) = binary in/out. 'frequency' = shade by mix %. 'three_action' = color by actionMap.
+   *  'diff' = compare `range` (baseline) against `comparisonRange` (learner/example), boolean membership only.
+   *  'action_diff' = compare two MttRfiCharts' dominant actions via `actionDiff` (added/removed/changed/unchanged). */
+  mode?: 'membership' | 'frequency' | 'three_action' | 'diff' | 'action_diff'
   /** 'frequency' mode: mix % per hand (0-1), keyed by hand notation. */
   frequencies?: Record<string, number>
   /** 'three_action' mode: which action each hand takes. */
   actionMap?: Record<string, PreflopAction>
   /** 'diff' mode: the range being compared against the baseline (`range`). */
   comparisonRange?: string[]
+  /** 'action_diff' mode: precomputed per-hand diff (see mttRfiRanges.ts#computeChartDiff). */
+  actionDiff?: ChartDiffEntry[]
+  /** Rings exactly one cell (e.g. the just-tested hand) without touching its existing color. */
+  highlightHand?: string
 }
 
-/** Read-only 13x13 range-grid display — membership, frequency-shaded, 3-4 action colored, or a baseline-vs-comparison diff. */
+/** Read-only 13x13 range-grid display — membership, frequency-shaded, 3-4 action colored, a
+ *  baseline-vs-comparison diff, or a two-chart action-level diff. */
 export function PokerRangeGrid({
   range,
   className,
@@ -41,13 +63,21 @@ export function PokerRangeGrid({
   frequencies,
   actionMap,
   comparisonRange,
+  actionDiff,
+  highlightHand,
 }: PokerRangeGridProps) {
   const inRange = new Set(range)
   const inComparison = new Set(comparisonRange ?? [])
   const combos = range.reduce((sum, h) => sum + comboCount(h), 0)
   const pct = ((combos / TOTAL_COMBOS) * 100).toFixed(1)
+  const diffByHand = new Map((actionDiff ?? []).map((d) => [d.hand, d]))
 
   function cellClasses(hand: string, isPair: boolean, isSuited: boolean): string {
+    if (mode === 'action_diff') {
+      const entry = diffByHand.get(hand)
+      return entry ? ACTION_DIFF_COLOR[entry.kind] : ACTION_DIFF_COLOR.unchanged
+    }
+
     if (mode === 'frequency' && frequencies) {
       const freq = frequencies[hand] ?? 0
       if (freq <= 0) return 'bg-secondary/30 text-muted-foreground/15'
@@ -122,6 +152,7 @@ export function PokerRangeGrid({
                       'flex-1 min-w-0 aspect-square flex items-center justify-center',
                       'm-px rounded-[3px] select-none text-[8px] font-bold leading-none',
                       cellClasses(hand, isPair, isSuited),
+                      highlightHand === hand && 'ring-2 ring-white ring-offset-1 ring-offset-background z-10 relative',
                     )}
                   >
                     <span className="truncate px-0.5">{hand}</span>
@@ -159,6 +190,15 @@ export function PokerRangeGrid({
             <div className="h-2.5 w-2.5 rounded-[2px] bg-red-500/60" />
             <span>Too wide</span>
           </div>
+        </div>
+      ) : mode === 'action_diff' ? (
+        <div className="flex flex-wrap items-center justify-center gap-3 text-[10px] text-muted-foreground/40">
+          {(['added', 'changed', 'removed'] as ChartDiffEntry['kind'][]).map((kind) => (
+            <div key={kind} className="flex items-center gap-1.5">
+              <div className={cn('h-2.5 w-2.5 rounded-[2px]', ACTION_DIFF_COLOR[kind])} />
+              <span>{ACTION_DIFF_LABEL[kind]}</span>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="flex items-center justify-between text-[10px] text-muted-foreground/40">

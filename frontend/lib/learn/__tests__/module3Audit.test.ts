@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest'
 import { LESSONS_BY_MODULE } from '../curriculum'
 import { RANGE_TARGETS } from '../ranges'
 import {
-  RFI_DEEP, RFI_MEDIUM, RFI_SHALLOW, RFI_SHALLOW_ACTIONS, SB_SPLIT,
+  RFI_DEEP, RFI_MEDIUM, RFI_SHALLOW, RFI_SHALLOW_ACTIONS,
   resistanceRisk, entriesToHandList,
 } from '../preflopBaselines'
 import { expandHandClass } from '../combos'
@@ -28,26 +28,40 @@ const allSteps: LessonStep[] = lessons.flatMap((l) => l.steps)
 // again without any test catching it.
 const KNOWN_SPOILER_TAGS = new Set(['positive_ev', 'zero_ev', 'negative_ev', 'first_in'])
 
+// Target structure of the Module 3 structural redesign (RFI Mastery rebuild):
+// one repeatable 8-step loop (Understand/Predict/Build/Compare/Transform/Drill/Review)
+// per position, no standalone BB lesson (no first-in decision exists for BB).
 const EXPECTED_LESSON_IDS = [
   'first-in',
-  'the-players-behind-you',
   'more-than-two-cards',
   'stacks-change-the-range',
-  'early-position-ranges',
-  'middle-position-ranges',
+  'utg-mastery',
+  'utg1-mastery',
+  'utg2-mastery',
+  'lj-mastery',
+  'hj-mastery',
   'cutoff-ranges',
   'button-ranges',
-  'the-price-of-entering',
-  'to-limp-or-to-raise',
   'the-small-blind-is-different',
-  'build-the-opening-strategy',
-  'opening-range-drill',
   'preflop-foundation-lab',
 ]
 
+// Lesson ids retired by the redesign, and where their content went — see the
+// migration plan. Verified gone here so a future edit can't silently
+// resurrect a stale id and orphan progress against it.
+const RETIRED_LESSON_IDS = [
+  'the-players-behind-you', // merged into first-in
+  'early-position-ranges', // split into utg-mastery / utg1-mastery / utg2-mastery
+  'middle-position-ranges', // split into lj-mastery / hj-mastery
+  'the-price-of-entering', // ante/sizing folded into first-in + every position lesson's context bar
+  'to-limp-or-to-raise', // limping concept folded into the-small-blind-is-different
+  'build-the-opening-strategy', // superseded by the 8 position-mastery lessons + the Lab
+  'opening-range-drill', // superseded by each position lesson's Drill step + the Lab's interleaving
+]
+
 describe('Module 3 exists and is wired up', () => {
-  it('has all 14 lessons (9 original + 4 new position lessons + drill), in the right order', () => {
-    expect(lessons.length).toBe(14)
+  it('has all 12 lessons (3 intro + 8 position-mastery + Lab), in the right order', () => {
+    expect(lessons.length).toBe(12)
     expect(lessons.map((l) => l.id)).toEqual(EXPECTED_LESSON_IDS)
   })
 
@@ -55,14 +69,18 @@ describe('Module 3 exists and is wired up', () => {
     for (const l of lessons) expect(l.module_id).toBe(MODULE_ID)
   })
 
-  it('all 9 original lesson ids are preserved (migration safety — no orphaned user progress)', () => {
-    const originalIds = [
-      'first-in', 'the-players-behind-you', 'more-than-two-cards', 'stacks-change-the-range',
-      'the-price-of-entering', 'to-limp-or-to-raise', 'the-small-blind-is-different',
-      'build-the-opening-strategy', 'preflop-foundation-lab',
+  it('the 7 kept lesson ids are preserved (migration safety — no orphaned user progress)', () => {
+    const keptIds = [
+      'first-in', 'more-than-two-cards', 'stacks-change-the-range',
+      'cutoff-ranges', 'button-ranges', 'the-small-blind-is-different', 'preflop-foundation-lab',
     ]
     const currentIds = new Set(lessons.map((l) => l.id))
-    for (const id of originalIds) expect(currentIds.has(id), `original lesson id "${id}" missing`).toBe(true)
+    for (const id of keptIds) expect(currentIds.has(id), `kept lesson id "${id}" missing`).toBe(true)
+  })
+
+  it('retired lesson ids never resurface (their content was intentionally merged/superseded elsewhere)', () => {
+    const currentIds = new Set(lessons.map((l) => l.id))
+    for (const id of RETIRED_LESSON_IDS) expect(currentIds.has(id), `retired lesson id "${id}" should not exist`).toBe(false)
   })
 
   it('sort_order is strictly increasing across the lesson list', () => {
@@ -116,27 +134,15 @@ describe('Answer leakage — Lesson 1 range reveal vs. range-build exercise', ()
 })
 
 describe('Answer leakage — Small Blind lesson ordering', () => {
-  it('quiz steps (sbd-s8a/b/c) appear before the full answer-key reveal (sbd-s5)', () => {
+  it('the low-stakes Predict guesses (sb-predict-1..4) appear before the full 60bb reveal (sb-build) and the Drill', () => {
     const sbLesson = lessons.find((l) => l.id === 'the-small-blind-is-different')!
     const ids = sbLesson.steps.map((s) => s.id)
-    const quizIndexes = ['sbd-s8a', 'sbd-s8b', 'sbd-s8c'].map((id) => ids.indexOf(id))
-    const revealIndex = ids.indexOf('sbd-s5')
-    expect(quizIndexes.every((i) => i >= 0)).toBe(true)
-    expect(revealIndex).toBeGreaterThan(Math.max(...quizIndexes))
-  })
-})
-
-describe('Answer leakage — Lesson 6 does not pre-expose Lesson 7\'s SB split', () => {
-  it('tlr-s5 does not render the exact SB_SPLIT limp/raise partition', () => {
-    const tlr5 = allSteps.find((s) => s.id === 'tlr-s5')
-    expect(tlr5?.range_compare_a).toBeTruthy()
-    expect(tlr5?.range_compare_b).toBeTruthy()
-
-    const sbLimp = new Set(Object.entries(SB_SPLIT).filter(([, a]) => a === 'limp').map(([h]) => h))
-    const sbRaise = new Set(Object.entries(SB_SPLIT).filter(([, a]) => a === 'raise').map(([h]) => h))
-
-    expect(new Set(tlr5!.range_compare_a!.range)).not.toEqual(sbLimp)
-    expect(new Set(tlr5!.range_compare_b!.range)).not.toEqual(sbRaise)
+    const predictIndexes = ['sb-predict-1', 'sb-predict-2', 'sb-predict-3', 'sb-predict-4'].map((id) => ids.indexOf(id))
+    const buildIndex = ids.indexOf('sb-build')
+    const firstDrillIndex = ids.findIndex((id) => id.startsWith('sb-drill-'))
+    expect(predictIndexes.every((i) => i >= 0)).toBe(true)
+    expect(buildIndex).toBeGreaterThan(Math.max(...predictIndexes))
+    expect(firstDrillIndex).toBeGreaterThan(buildIndex)
   })
 })
 
@@ -318,20 +324,33 @@ describe('Chart coverage — every one of the 32 canonical charts is actually ta
 })
 
 describe('Context completeness — every decision-style step in Module 3 has enough context', () => {
-  it('any step naming a specific stack depth in its narrative also carries it as structured context where the step type supports it', () => {
-    // Spot-check the step fixed during the original audit for exactly this gap.
-    const poe8 = allSteps.find((s) => s.id === 'poe-s8')
-    expect(poe8?.effective_stack_bb).toBe(20)
+  it('any step naming a specific stack depth ("Xbb") in its narrative also carries it as structured context', () => {
+    // Generalized regression guard for the gap originally caught on poe-s8 (now
+    // retired along with the-price-of-entering): a narrative shouldn't be the
+    // only place a stack depth lives if the step type has a field for it.
+    const offenders: string[] = []
+    for (const step of allSteps) {
+      if (!step.narrative || step.effective_stack_bb != null) continue
+      // mtt_stack_depth_compare steps are inherently multi-depth — their structured
+      // depth context is mtt_stack_depth_compare_reference_bb, not effective_stack_bb.
+      if (step.type === 'mtt_stack_depth_compare') continue
+      // Only a single, specific depth named as real context is a gap — steps that
+      // deliberately name several depths (e.g. "10bb, 25bb, or 60bb") are asking a
+      // multi-depth comparison question, not missing structured context.
+      const matches = [...step.narrative.matchAll(/(\d+)\s*bb\b/gi)]
+      const distinctValues = new Set(matches.map((m) => m[1]))
+      if (distinctValues.size === 1) {
+        offenders.push(`${step.id}: narrative mentions a single stack depth but effective_stack_bb is not set`)
+      }
+    }
+    expect(offenders).toEqual([])
   })
 
-  it('every generated hand-decision pool question carries structured position/stack/table context, never just prose', () => {
-    const handDecisionQuestions = MTT_LAB_POOL.filter(
-      (q) => q.stepTemplate.type === 'decision_spot' && q.stepTemplate.range_build_multi_chart === undefined && q.chartKeys.length === 1,
-    )
+  it('every generated hand-decision (table_decision) pool question carries structured position/stack/table context, never just prose', () => {
+    const handDecisionQuestions = MTT_LAB_POOL.filter((q) => q.stepTemplate.type === 'table_decision')
+    expect(handDecisionQuestions.length).toBeGreaterThan(0)
     for (const q of handDecisionQuestions) {
       const step = q.stepTemplate
-      if (!/\d+bb effective/.test(step.narrative ?? '')) continue
-      expect(step.effective_stack_bb, `${q.id} mentions a stack depth but has no effective_stack_bb`).toBeGreaterThan(0)
       expect(step.hero_position, `${q.id} mentions a stack depth but has no hero_position`).toBeTruthy()
       expect(step.table_size, `${q.id} mentions a stack depth but has no table_size`).toBeTruthy()
     }

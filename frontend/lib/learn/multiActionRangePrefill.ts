@@ -7,7 +7,7 @@
  * MultiActionRangeBuild.tsx.
  */
 import { MTT_RFI_CHARTS, type MttAction, type MttRfiChart } from './mttRfiBaselines'
-import { MTT_RFI_FOUNDATIONS } from './mttRfiRanges'
+import { MTT_RFI_FOUNDATIONS, chartToDominantActionMap } from './mttRfiRanges'
 import type { LessonStep } from './types'
 
 export const DEFAULT_MULTI_PREFILL_NOTE =
@@ -18,8 +18,15 @@ export function resolveMttTargetChart(step: LessonStep): MttRfiChart | undefined
   return MTT_RFI_CHARTS[step.range_build_multi_chart ?? '']
 }
 
-/** Resolves a step's prefilled foundation assignments — inline hands win over a named key. */
+/** Resolves a step's prefilled foundation assignments. Precedence: a Transformation Challenge's
+ *  source chart (full dominant-action seed) wins over an inline foundation, which wins over a
+ *  named foundation key. Grading is unaffected by any of these — evalMultiActionRange always
+ *  grades the final submission against `range_build_multi_chart` (the target), never the seed. */
 export function resolveMultiPrefilledAssignments(step: LessonStep): Record<string, MttAction> {
+  if (step.range_build_multi_transform_from_chart) {
+    const source = MTT_RFI_CHARTS[step.range_build_multi_transform_from_chart]
+    if (source) return chartToDominantActionMap(source)
+  }
   return (
     step.range_build_multi_prefilled ??
     MTT_RFI_FOUNDATIONS[step.range_build_multi_prefilled_key ?? '']?.hands ??

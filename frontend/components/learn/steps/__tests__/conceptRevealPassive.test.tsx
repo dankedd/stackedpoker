@@ -48,12 +48,26 @@ describe('ConceptReveal never renders a graded result screen', () => {
 })
 
 describe('Empty theory-bar bug: the visual wrapper only renders when there is real visual content', () => {
-  it('does NOT render an empty rounded-box wrapper for visual types with no renderer (e.g. "table")', () => {
-    const step = findStep('fi-s2') // visual: 'table' — VisualSection/resolveVisual has no renderer for this
-    expect(step.visual).toBe('table')
+  it('does NOT render an empty rounded-box wrapper for visual types with no renderer (e.g. "heatmap")', () => {
+    const step = findStep('cyw-s2') // visual: 'heatmap' — resolveVisual has no renderer for this
+    expect(step.visual).toBe('heatmap')
     const html = renderToStaticMarkup(<ConceptReveal step={step} onComplete={() => {}} />)
     // The empty-wrapper bug rendered this exact class combination unconditionally
     // whenever step.visual was set, regardless of whether anything was inside it.
+    expect(html).not.toContain('rounded-xl border border-border/30 bg-secondary/20')
+  })
+
+  it('DOES render PreflopTable for visual "table" when hero_position is set', () => {
+    const tableStep = ALL_STEPS.find((s) => s.type === 'concept_reveal' && s.visual === 'table' && s.hero_position)
+    expect(tableStep, 'no concept_reveal step with visual:table + hero_position found').toBeTruthy()
+    const html = renderToStaticMarkup(<ConceptReveal step={tableStep!} onComplete={() => {}} />)
+    expect(html).toContain(tableStep!.hero_position!)
+  })
+
+  it('does NOT render PreflopTable for visual "table" when hero_position is missing (e.g. a bare intro step)', () => {
+    const bareTableStep = ALL_STEPS.find((s) => s.type === 'concept_reveal' && s.visual === 'table' && !s.hero_position)
+    if (!bareTableStep) return // no such fixture currently exists — nothing to guard
+    const html = renderToStaticMarkup(<ConceptReveal step={bareTableStep} onComplete={() => {}} />)
     expect(html).not.toContain('rounded-xl border border-border/30 bg-secondary/20')
   })
 

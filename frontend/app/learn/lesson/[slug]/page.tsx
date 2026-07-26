@@ -27,7 +27,7 @@ import {
   MODULES_BY_PATH,
 } from "@/lib/learn/curriculum";
 import type { LessonStep, StepResult, Lesson } from "@/lib/learn/types";
-import { selectDrillAttempt, selectLabAttempt } from "@/lib/learn/mttRfiLabPool";
+import { selectLabAttempt } from "@/lib/learn/mttRfiLabPool";
 import { getOrCreateLabAttemptSeed, clearLabAttemptSeed } from "@/lib/learn/labPoolSeed";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +36,6 @@ import { cn } from "@/lib/utils";
 // totals); every real play-through substitutes a per-attempt seeded draw here so a
 // retry sees a different combination of the same validated pool.
 const POOLED_LESSON_IDS: Record<string, (seed: string) => LessonStep[]> = {
-  "opening-range-drill": selectDrillAttempt,
   "preflop-foundation-lab": selectLabAttempt,
 };
 

@@ -14,8 +14,8 @@
  * steps, which are graded by evalMultiActionRange directly against the chart — nothing to
  * "generate" since the grading already reads the canonical data at answer time).
  */
-import type { LessonStep } from './types'
-import { MTT_RFI_CHARTS, type MttAction, type MttRfiActionFrequencies, type MttRfiChart } from './mttRfiBaselines'
+import type { LessonStep, StepOption } from './types'
+import { MTT_RFI_CHARTS, POSITION_KEY_TO_LABEL, type MttAction, type MttRfiActionFrequencies, type MttRfiChart } from './mttRfiBaselines'
 import { shuffleBySeed } from './interactionSafety'
 import { recordCoverage } from './mttRfiCoverage'
 
@@ -39,37 +39,56 @@ export interface LabPoolQuestion {
 const ACTION_LABEL: Record<MttAction, string> = { raise: 'Raise', jam: 'Jam', limp: 'Limp', fold: 'Fold' }
 // Book's stated environment is a fixed 12.5%-of-big-blind ante (9-max, cEV) at
 // every stack depth studied — the ante does NOT scale with the effective stack.
-const FIXED_ANTE_BB = 0.125
+export const FIXED_ANTE_BB = 0.125
 
 function positionLabel(chart: MttRfiChart): string {
   return chart.position
 }
 
+/**
+ * Builds a fully-contexted `table_decision` LessonStep for a single (chart, hand) pair —
+ * the shared building block for every position lesson's Drill phase and the Lab's
+ * table-decision questions. Context fields mirror genHandDecision's derivation exactly, so
+ * a drill step and a Lab pool question over the same chart/hand look and behave identically.
+ */
+export function buildTableDecisionStep(id: string, chartKey: string, hand: string): LessonStep {
+  const chart = MTT_RFI_CHARTS[chartKey]
+  return {
+    id,
+    type: 'table_decision',
+    concept_ids: [conceptForPosition(chart.positionKey), conceptForStack(chart.stackBB)],
+    table_decision_chart: chartKey,
+    table_decision_hand: hand,
+    hero_position: POSITION_KEY_TO_LABEL[chart.positionKey],
+    effective_stack_bb: chart.stackBB,
+    table_size: 9,
+    ante_bb: FIXED_ANTE_BB,
+    action_before_hero: ['Everyone folds'],
+    xp: 8,
+  }
+}
+
 /** Every action offered by a chart (so a decision_spot's options match what's actually possible). */
-function chartActionSet(chart: MttRfiChart): MttAction[] {
+export function chartActionSet(chart: MttRfiChart): MttAction[] {
   const set = new Set<MttAction>(['fold'])
   for (const cell of chart.cells) for (const a of Object.keys(cell.actions)) set.add(a as MttAction)
   return (['raise', 'jam', 'limp', 'fold'] as MttAction[]).filter((a) => set.has(a))
 }
 
-function cellActionsFor(chart: MttRfiChart, hand: string): MttRfiActionFrequencies {
+export function cellActionsFor(chart: MttRfiChart, hand: string): MttRfiActionFrequencies {
   const cell = chart.cells.find((c) => c.hand === hand)
   return cell ? cell.actions : { fold: 1 }
 }
 
 /**
- * Generates a "given this spot, what does Hero do?" decision_spot for a single (chart, hand)
- * pair. Quality is assigned purely from the real frequency: the action with the highest
- * frequency is 'perfect'; any other action actually present at >=15% is 'acceptable' (a real,
- * legitimate part of a mixed strategy — not simply "wrong"); anything at 0% is 'mistake'.
+ * Builds the graded options for a "given this spot, what does Hero do?" question over a
+ * single (chart, hand) pair. Quality is assigned purely from the real frequency: the action
+ * with the highest frequency is 'perfect'; any other action actually present at >=15% is
+ * 'acceptable' (a real, legitimate part of a mixed strategy — not simply "wrong"); anything
+ * at 0% is 'mistake'. Shared by genHandDecision (Lab pool) and TableDecision.tsx (position
+ * lesson drills) so the two can never disagree about what "correct" means for a hand.
  */
-function genHandDecision(
-  id: string,
-  chartKey: string,
-  hand: string,
-  category: LabPoolCategory,
-): LabPoolQuestion {
-  const chart = MTT_RFI_CHARTS[chartKey]
+export function buildHandDecisionOptions(chart: MttRfiChart, hand: string, seed: string): StepOption[] {
   const actions = cellActionsFor(chart, hand)
   const offered = chartActionSet(chart)
   const bestAction = (Object.entries(actions) as [string, number][]).sort((a, b) => b[1] - a[1])[0][0] as MttAction
@@ -103,23 +122,83 @@ function genHandDecision(
       feedback: `The baseline strategy never takes this action with ${hand} here — it's ${ACTION_LABEL[bestAction]} (${Math.round(bestFreq * 100)}%) instead.`,
     }
   })
+  return shuffleBySeed(options, seed)
+}
 
+/**
+ * Generates a "given this spot, what does Hero do?" table decision for a single (chart, hand)
+ * pair, fully assembled as a Lab-pool step. Uses the same visual poker-table format as every
+ * position lesson's Drill phase (buildTableDecisionStep) — per the structural redesign, table
+ * decisions are the DOMINANT format in the Lab, not a secondary multiple-choice card.
+ */
+function genHandDecision(
+  id: string,
+  chartKey: string,
+  hand: string,
+  category: LabPoolCategory,
+): LabPoolQuestion {
   return {
     id,
     category,
     chartKeys: [chartKey],
+    stepTemplate: buildTableDecisionStep(id, chartKey, hand),
+  }
+}
+
+/** "From which of these two positions does this hand enter the baseline strategy — one, both,
+ *  or neither?" — the "range ladder" question type, auto-derived from real non-fold weight at
+ *  a fixed stack depth (>=50% non-fold counts as "enters the strategy"). */
+function genPositionComparison(
+  id: string,
+  positionA: string,
+  positionB: string,
+  stackBB: number,
+  hand: string,
+  category: LabPoolCategory,
+): LabPoolQuestion {
+  const chartKeyA = `${positionA}_RFI_${stackBB}BB`
+  const chartKeyB = `${positionB}_RFI_${stackBB}BB`
+  const chartA = MTT_RFI_CHARTS[chartKeyA]
+  const chartB = MTT_RFI_CHARTS[chartKeyB]
+  const nonFoldA = 1 - (cellActionsFor(chartA, hand).fold ?? 0)
+  const nonFoldB = 1 - (cellActionsFor(chartB, hand).fold ?? 0)
+  const inA = nonFoldA >= 0.5
+  const inB = nonFoldB >= 0.5
+  const labelA = POSITION_KEY_TO_LABEL[chartA.positionKey]
+  const labelB = POSITION_KEY_TO_LABEL[chartB.positionKey]
+
+  const correctId = inA && inB ? 'both' : inA ? 'a_only' : inB ? 'b_only' : 'neither'
+  const detail = `${labelA}: ${Math.round(nonFoldA * 100)}% non-fold. ${labelB}: ${Math.round(nonFoldB * 100)}% non-fold.`
+
+  const allOptions = [
+    { id: 'a_only', label: `Only ${labelA}` },
+    { id: 'b_only', label: `Only ${labelB}` },
+    { id: 'both', label: `Both ${labelA} and ${labelB}` },
+    { id: 'neither', label: 'Neither' },
+  ]
+
+  return {
+    id,
+    category,
+    chartKeys: [chartKeyA, chartKeyB],
     stepTemplate: {
       id,
       type: 'decision_spot',
-      concept_ids: [conceptForPosition(chart.positionKey), conceptForStack(chart.stackBB)],
-      narrative: `Action folds to Hero. ${positionLabel(chart)}, ${chart.stackBB}bb effective, 9-max, ${FIXED_ANTE_BB}bb ante. Hero holds ${hand}.`,
-      hero_position: chart.positionKey === 'UTG1' ? 'UTG+1' : chart.positionKey === 'UTG2' ? 'UTG+2' : chart.positionKey,
-      effective_stack_bb: chart.stackBB,
+      concept_ids: [conceptForPosition(chartA.positionKey), conceptForPosition(chartB.positionKey)],
+      narrative: `${stackBB}bb effective at both tables. Hero holds ${hand}.`,
+      effective_stack_bb: stackBB,
       table_size: 9,
-      ante_bb: FIXED_ANTE_BB,
-      decision_spot_question: 'What does the baseline strategy do here?',
-      options: shuffleBySeed(options, id),
-      xp: 8,
+      decision_spot_question: `From which of these does ${hand} enter the baseline opening strategy — ${labelA}, ${labelB}, both, or neither?`,
+      options: shuffleBySeed(
+        allOptions.map((o) => ({
+          id: o.id,
+          label: o.label,
+          quality: o.id === correctId ? ('perfect' as const) : ('mistake' as const),
+          feedback: o.id === correctId ? `Correct. ${detail}` : `Not quite. ${detail}`,
+        })),
+        id,
+      ),
+      xp: 10,
     },
   }
 }
@@ -270,12 +349,23 @@ function genReconstruction(id: string, chartKey: string, effectiveBB: number): L
   }
 }
 
-function conceptForPosition(positionKey: string): string {
-  if (positionKey === 'UTG' || positionKey === 'UTG1' || positionKey === 'UTG2') return 'early_position_rfi'
-  if (positionKey === 'LJ' || positionKey === 'HJ') return 'middle_position_rfi'
-  if (positionKey === 'CO') return 'co_rfi'
-  if (positionKey === 'BTN') return 'btn_rfi'
-  return 'sb_first_in'
+/** Granular per-position mastery/leak dimension — one per canonical position, so a learner's
+ *  performance can distinguish "good at BTN, weak at UTG+1" rather than lumping early-position
+ *  seats into one aggregate. `co_rfi`/`btn_rfi`/`sb_first_in` predate this granularity and are
+ *  reused as-is (already position-specific); `utg_rfi`/`utg1_rfi`/`utg2_rfi`/`lj_rfi`/`hj_rfi`
+ *  are new. The old `early_position_rfi`/`middle_position_rfi` aggregates stay registered in the
+ *  backend (harmless) but are no longer written by new content. */
+export function conceptForPosition(positionKey: string): string {
+  switch (positionKey) {
+    case 'UTG': return 'utg_rfi'
+    case 'UTG1': return 'utg1_rfi'
+    case 'UTG2': return 'utg2_rfi'
+    case 'LJ': return 'lj_rfi'
+    case 'HJ': return 'hj_rfi'
+    case 'CO': return 'co_rfi'
+    case 'BTN': return 'btn_rfi'
+    default: return 'sb_first_in'
+  }
 }
 
 function conceptForStack(stackBB: number): string {
@@ -343,6 +433,7 @@ const FUNDAMENTALS: LabPoolQuestion[] = [
     id: 'pool-fund-5', category: 'fundamentals', chartKeys: [],
     stepTemplate: {
       id: 'pool-fund-5', type: 'decision_spot', concept_ids: ['stack_depth_preflop'],
+      effective_stack_bb: 15,
       narrative: 'At 15bb, many strong hands take a JAM action instead of a plain RAISE that exists at deeper stacks.',
       decision_spot_question: 'What is the main strategic reason jamming replaces raising at shallow depths?',
       options: [
@@ -452,6 +543,16 @@ const STACK_COMPARISONS: [string, string, string][] = [
   ['SB_RFI_15BB', 'SB_RFI_25BB', 'A2s'],
 ]
 
+// "From which of these does HAND enter the baseline strategy — one, both, or neither?" —
+// the "range ladder" question type, spread across categories rather than a standalone bucket.
+const POSITION_COMPARISONS: { positionA: string; positionB: string; stackBB: number; hand: string; category: LabPoolCategory }[] = [
+  { positionA: 'UTG', positionB: 'BTN', stackBB: 25, hand: 'K7o', category: 'early_position' }, // UTG folds (0%), BTN raises (100%)
+  { positionA: 'UTG', positionB: 'UTG1', stackBB: 25, hand: 'A5o', category: 'early_position' }, // folds at both — even adjacent early seats agree
+  { positionA: 'HJ', positionB: 'CO', stackBB: 25, hand: 'A8o', category: 'middle_position' }, // pure raise at both
+  { positionA: 'LJ', positionB: 'HJ', stackBB: 15, hand: 'A8o', category: 'middle_position' }, // LJ mixes it 45%, HJ raises it clean — a genuine boundary hand
+  { positionA: 'CO', positionB: 'BTN', stackBB: 60, hand: 'K4s', category: 'co_btn' }, // pure raise at both
+]
+
 const RECONSTRUCTIONS: [string, number][] = [
   ['UTG_RFI_60BB', 60],
   ['HJ_RFI_40BB', 40],
@@ -478,6 +579,10 @@ function buildPool(): LabPoolQuestion[] {
   STACK_COMPARISONS.forEach(([chartA, chartB, hand], i) => pool.push(genStackComparison(`pool-stack-${i}`, chartA, chartB, hand, 'stack_comparison')))
 
   RECONSTRUCTIONS.forEach(([chartKey, bb], i) => pool.push(genReconstruction(`pool-recon-${i}`, chartKey, bb)))
+
+  POSITION_COMPARISONS.forEach(({ positionA, positionB, stackBB, hand, category }, i) =>
+    pool.push(genPositionComparison(`pool-poscmp-${i}`, positionA, positionB, stackBB, hand, category)),
+  )
 
   for (const q of pool) {
     for (const chartKey of q.chartKeys) {

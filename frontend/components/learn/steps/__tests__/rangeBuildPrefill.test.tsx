@@ -142,11 +142,11 @@ describe('RangeBuild — full curriculum sweep: every range_build step renders w
   // questions are now `range_build_multi` steps, covered by module3Audit.test.ts instead, not
   // plain `range_build` steps tracked here.
   const stepsExpectedToStartNonEmpty = [
-    'fi-s7', 'mtc-s9', 'bos-s4', 'bos-s5', 'bos-s6', 'bos-s7', 'bar-s7',
+    'fi-s7', 'mtc-s9', 'bar-s7',
   ]
   // Documented exceptions — see INTENTIONALLY_UNPREFILLED in
   // rangePrefilledFoundation.test.ts for the reasoning behind each.
-  const stepsExpectedToStartEmpty = ['bos-s3', 'sqz-s7a']
+  const stepsExpectedToStartEmpty = ['sqz-s7a']
 
   const allCurriculumSteps = LESSONS.flatMap((l) => l.steps)
 

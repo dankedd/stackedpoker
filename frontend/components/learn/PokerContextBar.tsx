@@ -16,6 +16,14 @@ interface PokerContextBarProps {
   effectiveStackBb?: number
   street?: string
   heroHand?: string[]
+  /** Table size, e.g. 9 for 9-max — rendered as a compact "9-max" pill. */
+  tableSize?: number
+  /** Ante size in bb — rendered as a second amber stat next to Pot. */
+  anteBb?: number
+  /** Action already taken before Hero. If every entry matches /folds?$/i, collapses to a
+   *  single "Folds to Hero" pill; otherwise joined as plain text (kept generic so this prop
+   *  isn't hardcoded to an RFI-only framing). */
+  actionBeforeHero?: string[]
   className?: string
 }
 
@@ -27,10 +35,16 @@ export function PokerContextBar({
   effectiveStackBb,
   street,
   heroHand,
+  tableSize,
+  anteBb,
+  actionBeforeHero,
   className,
 }: PokerContextBarProps) {
   const hasContext =
-    board?.length || heroPosition || villainPosition || potBb != null || effectiveStackBb != null
+    board?.length || heroPosition || villainPosition || potBb != null || effectiveStackBb != null ||
+    tableSize != null || anteBb != null || (actionBeforeHero?.length ?? 0) > 0
+
+  const allFoldedToHero = !!actionBeforeHero?.length && actionBeforeHero.every((a) => /folds?$/i.test(a.trim()))
 
   if (!hasContext) return null
 
@@ -89,6 +103,13 @@ export function PokerContextBar({
         </div>
       )}
 
+      {/* Table size */}
+      {tableSize != null && (
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-border/30 bg-secondary/40 text-muted-foreground/60">
+          {tableSize}-max
+        </span>
+      )}
+
       {/* Position matchup */}
       {(heroPosition || villainPosition) && (
         <div className="flex items-center gap-1.5">
@@ -108,6 +129,19 @@ export function PokerContextBar({
         </div>
       )}
 
+      {/* Action before Hero */}
+      {actionBeforeHero && actionBeforeHero.length > 0 && (
+        allFoldedToHero ? (
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-border/30 bg-secondary/30 text-muted-foreground/50">
+            Folds to Hero
+          </span>
+        ) : (
+          <span className="text-[10px] font-medium text-muted-foreground/50">
+            {actionBeforeHero.join(', ')}
+          </span>
+        )
+      )}
+
       {/* Pot */}
       {potBb != null && (
         <div className="flex items-center gap-1">
@@ -124,6 +158,16 @@ export function PokerContextBar({
           <div className="h-1.5 w-1.5 rounded-full bg-sky-400/50" />
           <span className="text-xs font-bold tabular-nums text-sky-200/70">
             {effectiveStackBb % 1 === 0 ? effectiveStackBb : effectiveStackBb.toFixed(1)}bb eff
+          </span>
+        </div>
+      )}
+
+      {/* Ante */}
+      {anteBb != null && (
+        <div className="flex items-center gap-1">
+          <div className="h-1.5 w-1.5 rounded-full bg-amber-400/30" />
+          <span className="text-xs font-bold tabular-nums text-amber-200/50">
+            Ante {anteBb % 1 === 0 ? anteBb : anteBb.toFixed(3).replace(/0+$/, '').replace(/\.$/, '')}bb
           </span>
         </div>
       )}

@@ -48,6 +48,11 @@ FINDING_TO_LEAK: dict[str, tuple[str, str]] = {
     # MTT RFI mastery upgrade (Module 3)
     "early_position_rfi":         ("early_position_rfi",   "early_position_leak"),
     "middle_position_rfi":        ("middle_position_rfi",  "middle_position_leak"),
+    "utg_rfi":                    ("utg_rfi",              "utg_range_leak"),
+    "utg1_rfi":                   ("utg1_rfi",             "utg1_range_leak"),
+    "utg2_rfi":                   ("utg2_rfi",             "utg2_range_leak"),
+    "lj_rfi":                     ("lj_rfi",               "lj_range_leak"),
+    "hj_rfi":                     ("hj_rfi",               "hj_range_leak"),
     "co_rfi":                     ("co_rfi",               "co_range_leak"),
     "btn_rfi":                    ("btn_rfi",              "btn_range_leak"),
     "shallow_stack_rfi":          ("shallow_stack_rfi",    "shallow_stack_leak"),

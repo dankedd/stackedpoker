@@ -9,6 +9,7 @@ import {
   type MttRfiActionFrequencies,
   type MttRfiChart,
 } from './mttRfiBaselines'
+import { HAND_GRID } from './handGrid'
 
 export function resolveMttChart(key: string): MttRfiChart | undefined {
   return MTT_RFI_CHARTS[key]
@@ -58,6 +59,31 @@ export function chartToDisplayActionMap(chart: MttRfiChart): Record<string, 'rai
   )
 }
 
+export interface ChartDiffEntry {
+  hand: string
+  before: MttAction | 'fold'
+  after: MttAction | 'fold'
+  kind: 'added' | 'removed' | 'changed' | 'unchanged'
+}
+
+/**
+ * Dominant-action comparison between two charts (e.g. the same position at two stack depths),
+ * over the full 169-hand grid — powers the Difference View. 'added' = fold->non-fold,
+ * 'removed' = non-fold->fold, 'changed' = one non-fold action to a different non-fold action,
+ * 'unchanged' = same dominant action on both sides.
+ */
+export function computeChartDiff(chartA: MttRfiChart, chartB: MttRfiChart): ChartDiffEntry[] {
+  const domA = chartToDominantActionMap(chartA)
+  const domB = chartToDominantActionMap(chartB)
+  return HAND_GRID.flat().map((hand) => {
+    const before = domA[hand] ?? 'fold'
+    const after = domB[hand] ?? 'fold'
+    const kind: ChartDiffEntry['kind'] =
+      before === after ? 'unchanged' : before === 'fold' ? 'added' : after === 'fold' ? 'removed' : 'changed'
+    return { hand, before, after, kind }
+  })
+}
+
 /** A hand counts as "genuinely mixed" (not a clean pure decision) once no single action reaches this share. */
 export const MIXED_HAND_THRESHOLD = 0.9
 
@@ -79,6 +105,36 @@ export interface MttRfiFoundation {
  * Populated per-lesson as `range_build_multi` steps are authored (see mttRfiCoverage.ts).
  */
 export const MTT_RFI_FOUNDATIONS: Record<string, MttRfiFoundation> = {
+  // Deliberately minimal (per the structural redesign's "do not heavily prefill — this is
+  // reconstruction" design goal): only the pure-raise top pairs, nothing suited/offsuit/marginal.
+  UTG_RFI_60BB_foundation: {
+    chartKey: 'UTG_RFI_60BB',
+    hands: { AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise' },
+  },
+  UTG1_RFI_60BB_foundation: {
+    chartKey: 'UTG1_RFI_60BB',
+    hands: { AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise' },
+  },
+  UTG2_RFI_60BB_foundation: {
+    chartKey: 'UTG2_RFI_60BB',
+    hands: { AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise' },
+  },
+  LJ_RFI_60BB_foundation: {
+    chartKey: 'LJ_RFI_60BB',
+    hands: { AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise' },
+  },
+  HJ_RFI_60BB_foundation: {
+    chartKey: 'HJ_RFI_60BB',
+    hands: { AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise' },
+  },
+  CO_RFI_60BB_foundation: {
+    chartKey: 'CO_RFI_60BB',
+    hands: { AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise' },
+  },
+  BTN_RFI_60BB_foundation: {
+    chartKey: 'BTN_RFI_60BB',
+    hands: { AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise' },
+  },
   SB_RFI_15BB_foundation: {
     chartKey: 'SB_RFI_15BB',
     hands: {

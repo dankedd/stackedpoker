@@ -17,6 +17,8 @@ import { DecisionSpot } from '@/components/learn/steps/DecisionSpot'
 import { EquityPredict } from '@/components/learn/steps/EquityPredict'
 import { RangeBuild } from '@/components/learn/steps/RangeBuild'
 import { MultiActionRangeBuild } from '@/components/learn/steps/MultiActionRangeBuild'
+import { TableDecision } from '@/components/learn/steps/TableDecision'
+import { MttStackDepthCompare } from '@/components/learn/steps/MttStackDepthCompare'
 import { ClassifyStep } from '@/components/learn/steps/ClassifyStep'
 import { BetSizeSlider } from '@/components/learn/steps/BetSizeSlider'
 import { MdfSlider } from '@/components/learn/steps/MdfSlider'
@@ -196,6 +198,14 @@ function StepRenderer({
 
   if (step.type === 'range_build_multi') {
     return <MultiActionRangeBuild step={step} onAnswer={(assignments, ms) => evaluate(assignments, ms)} />
+  }
+
+  if (step.type === 'table_decision') {
+    return <TableDecision step={step} onAnswer={(optionId, ms) => evaluate(optionId, ms)} />
+  }
+
+  if (step.type === 'mtt_stack_depth_compare') {
+    return <MttStackDepthCompare step={step} onAnswer={(optionId, ms) => evaluate(optionId, ms)} />
   }
 
   if (step.type === 'range_heatmap') {
@@ -784,7 +794,11 @@ export function LessonPlayer({
     currentStep.board?.length ||
     currentStep.hero_position ||
     currentStep.villain_position ||
-    currentStep.pot_bb != null
+    currentStep.pot_bb != null ||
+    currentStep.effective_stack_bb != null ||
+    currentStep.table_size != null ||
+    currentStep.ante_bb != null ||
+    (currentStep.action_before_hero?.length ?? 0) > 0
 
   return (
     <div className="flex flex-col gap-5">
@@ -811,6 +825,9 @@ export function LessonPlayer({
           effectiveStackBb={currentStep.effective_stack_bb}
           street={currentStep.street}
           heroHand={currentStep.hero_hand}
+          tableSize={currentStep.table_size}
+          anteBb={currentStep.ante_bb}
+          actionBeforeHero={currentStep.action_before_hero}
         />
       )}
 

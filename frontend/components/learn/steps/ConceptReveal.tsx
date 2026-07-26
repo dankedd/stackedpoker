@@ -8,6 +8,7 @@ import { CONCEPT_DATA } from '@/components/learn/ConceptPopover'
 import { EquityBar } from '@/components/learn/visuals/EquityBar'
 import { FoldFreqBar } from '@/components/learn/visuals/PressureGauge'
 import { NutAdvantageMeter } from '@/components/learn/visuals/NutAdvantageMeter'
+import { PreflopTable } from '@/components/learn/visuals/PreflopTable'
 
 // ── Visual type renderers ─────────────────────────────────────────────────────
 
@@ -122,10 +123,26 @@ function NutAdvantageVisual() {
 // ── Visual type dispatch ──────────────────────────────────────────────────────
 // Returns the visual node for this step, or null if there's nothing to show —
 // callers must only render their wrapper card when this is non-null, or an
-// empty rounded box appears for visual types with no renderer (e.g. 'table',
-// 'range_grid', 'heatmap', 'pressure_chart').
+// empty rounded box appears for visual types with no renderer (e.g. 'range_grid',
+// 'heatmap', 'pressure_chart' — 'table' now renders PreflopTable when hero_position is set).
 
-function resolveVisual(visualType?: string, conceptId?: string) {
+function resolveVisual(step: LessonStep, conceptId?: string) {
+  // Widened to a plain string so the (pre-existing) 'mdf_bar'/'nut_advantage' checks below —
+  // neither of which is in LessonStep['visual']'s declared union — keep compiling exactly as
+  // they did before this function took the whole step; those checks are effectively guarded
+  // by the OR'd conceptId condition anyway.
+  const visualType = step.visual as string | undefined
+  if (visualType === 'table' && step.hero_position) {
+    return (
+      <PreflopTable
+        tableSize={step.table_size ?? 9}
+        heroPosition={step.hero_position}
+        heroHand={step.hero_hand}
+        effectiveStackBb={step.effective_stack_bb}
+        anteBb={step.ante_bb}
+      />
+    )
+  }
   if (visualType === 'equity_bar') return <EquityBarVisual conceptId={conceptId} />
   if (visualType === 'mdf_bar' || conceptId === 'mdf' || conceptId === 'alpha') return <MdfVisual />
   if (visualType === 'nut_advantage' || conceptId === 'nut_advantage') return <NutAdvantageVisual />
@@ -231,7 +248,7 @@ interface ConceptRevealProps {
 export function ConceptReveal({ step, onComplete }: ConceptRevealProps) {
   const [enriched, setEnriched] = useState(false)
   const primaryConceptId = step.concept_ids?.[0]
-  const visualContent = resolveVisual(step.visual, primaryConceptId)
+  const visualContent = resolveVisual(step, primaryConceptId)
   const showEnrichment = hasEnrichmentContent(primaryConceptId)
 
   return (

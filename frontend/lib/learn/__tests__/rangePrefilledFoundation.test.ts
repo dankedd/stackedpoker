@@ -27,7 +27,6 @@ function comboWeight(hands: string[]): number {
 // moment a NEW range_build step appears without either a foundation or an
 // entry (and reason) in this map.
 const INTENTIONALLY_UNPREFILLED: Record<string, string> = {
-  'bos-s3': "target IS the 'obvious core' itself — prefilling would hand over ~100% of the answer",
   'sqz-s7a': 'target is already a minimal curated 9-hand squeeze range — no room for a foundation that leaves a real decision',
 }
 
@@ -141,14 +140,9 @@ describe('Answer leakage — no foundation exactly matches a graded range_build 
   // Each entry here is NOT a leak: the matched target is an EARLIER step in
   // the SAME lesson that the learner has already built and been graded on
   // themselves before reaching the step doing the reusing — nothing is
-  // exposed ahead of when the learner already saw it. See the "bos-s3 /
-  // bos-s4 share one authored constant" describe block above for the intent.
-  const ALLOWED_EXACT_MATCHES: Record<string, string[]> = {
-    BTN_open_core: ['bos-s3 (inline range_combos)'],
-  }
-  const ALLOWED_STEP_MATCHES: Record<string, string[]> = {
-    'bos-s4': ['bos-s3 (inline range_combos)'],
-  }
+  // exposed ahead of when the learner already saw it.
+  const ALLOWED_EXACT_MATCHES: Record<string, string[]> = {}
+  const ALLOWED_STEP_MATCHES: Record<string, string[]> = {}
 
   it('has at least one graded target to check against (sanity)', () => {
     expect(gradedTargetSets.length).toBeGreaterThan(0)
@@ -196,13 +190,5 @@ describe('Answer leakage — no foundation exactly matches a graded range_build 
       if (identical) offenders.push(`${step.id}: foundation is identical to its own target`)
     }
     expect(offenders).toEqual([])
-  })
-})
-
-describe('bos-s3 / bos-s4 share one authored "obvious core" constant (no drift between two hand-typed lists)', () => {
-  it('bos-s4\'s foundation is exactly bos-s3\'s target — the core taught one step earlier', () => {
-    const bos3 = rangeBuildSteps.find((s) => s.id === 'bos-s3')!
-    const bos4 = rangeBuildSteps.find((s) => s.id === 'bos-s4')!
-    expect(new Set(resolvePrefilledHands(bos4))).toEqual(new Set(resolveTargetHands(bos3)))
   })
 })

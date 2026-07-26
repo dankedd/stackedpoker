@@ -201,20 +201,6 @@ const BTN_OPEN_FOUNDATION: string[] = [
   'JTs',
 ]
 
-// bos-s3 ("Start with the obvious core") hand-authors a deliberately partial
-// premium-only core as its OWN graded target — not the full BTN_open_100bb.
-// bos-s4 ("Now expand outward") immediately follows it in the same lesson,
-// same environment, and grades against the full BTN range. Reusing this exact
-// 18-hand core as bos-s4's foundation is the most theoretically precise choice
-// possible: it's literally what the curriculum already taught as "the core"
-// one step earlier, so bos-s3 and bos-s4 share this single constant instead
-// of two independently-authored lists drifting apart over time.
-export const BTN_OPEN_CORE: string[] = [
-  'AA', 'KK', 'QQ', 'JJ', 'TT', '99', '88', '77', '66',
-  'AKs', 'AQs', 'AJs', 'ATs', 'AKo', 'AQo',
-  'KQs', 'KJs', 'KQo',
-]
-
 // CO opens a hair tighter than BTN — same premium spine, but the pair floor
 // and suited-broadway tail pull back a notch to leave more of CO's own
 // boundary (small pairs, wheel aces, suited-connector floor) for the learner.
@@ -260,7 +246,6 @@ const BB_VS_BTN_3BET_FOUNDATION: string[] = entriesToHandList(THREEBET_MEDIUM.BB
 
 export const RANGE_FOUNDATIONS: Record<string, string[]> = {
   BTN_open_foundation: BTN_OPEN_FOUNDATION,
-  BTN_open_core: BTN_OPEN_CORE,
   CO_open_foundation: CO_OPEN_FOUNDATION,
   HJ_open_foundation: HJ_OPEN_FOUNDATION,
   UTG_open_foundation: UTG_OPEN_FOUNDATION,
