@@ -2,14 +2,15 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   TrendingUp, BookOpen, BarChart3, ChevronRight,
-  Layers, Clock, Spade, Brain, Zap, Settings,
+  Layers, Clock, Spade, Puzzle, Film, Settings, Zap,
 } from "lucide-react";
-import { PuzzleTrainingPanel } from "@/components/dashboard/PuzzleTrainingPanel";
 import { createClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/layout/Navbar";
 import { UpgradeBanner } from "@/components/billing/UpgradeBanner";
 import { ManageSubscriptionButton } from "@/components/billing/ManageSubscriptionButton";
+import { StatusBadge } from "@/components/layout/StatusBadge";
+import { ContinueLearningCard } from "@/components/dashboard/ContinueLearningCard";
+import { LearningPathSummary } from "@/components/dashboard/LearningPathSummary";
 import { cn } from "@/lib/utils";
 
 // Client component just for the upgrade CTA (needs onClick)
@@ -60,18 +61,16 @@ export default async function DashboardPage() {
                 Welcome back, <span className="bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">{displayName}</span>
               </h1>
               <p className="text-muted-foreground mt-2 leading-relaxed">
-                {handsAnalyzed > 0
-                  ? `${handsAnalyzed} hand${handsAnalyzed !== 1 ? "s" : ""} analyzed — keep building your edge.`
-                  : "Analyze your first hand to start building patterns and closing leaks."}
+                Pick up where you left off and keep building your poker foundation.
               </p>
             </div>
             <Link
-              href="/analyze"
+              href="/learn"
               className="group relative overflow-hidden shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-sm font-semibold shadow-lg shadow-violet-500/25 hover:shadow-violet-500/45 hover:-translate-y-0.5 transition-all duration-200"
             >
               <div aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-              <Spade className="h-4 w-4" />
-              Analyze a hand
+              <BookOpen className="h-4 w-4" />
+              Continue Learning
             </Link>
           </div>
         </div>
@@ -124,7 +123,7 @@ export default async function DashboardPage() {
               <div>
                 <p className="font-semibold text-foreground text-sm">Upgrade to Pro</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Advanced analysis, AI coaching, puzzles & more — €14.99/month · iDEAL & card
+                  Unlock advanced learning paths, priority support & more — €14.99/month · iDEAL & card
                 </p>
               </div>
             </div>
@@ -142,101 +141,76 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {/* Quick actions */}
+        {/* Continue Learning — primary CTA */}
+        <div className="mb-6">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-3">
+            Continue learning
+          </p>
+          <ContinueLearningCard />
+        </div>
+
+        {/* Your Learning Path */}
         <div className="mb-10">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground/50 mb-4">Quick actions</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Link href="/analyze" className="group block">
-              <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/8 hover:border-violet-500/40 p-6 card-lift h-full">
-                <div className="flex items-start justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-violet-600 to-blue-500 transition-transform duration-200 group-hover:scale-105 will-change-transform">
-                    <Spade className="h-5 w-5 text-white" />
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-violet-400 group-hover:translate-x-0.5 transition-all duration-200" />
-                </div>
-                <h3 className="text-foreground font-semibold mt-4">Analyze a Hand</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Paste a hand history or upload a screenshot for instant GTO coaching.
-                </p>
-              </div>
-            </Link>
+          <LearningPathSummary />
+        </div>
 
-            <Link href="/history" className="group block">
-              <div className="rounded-xl border border-border/60 bg-card/40 hover:bg-card/70 hover:border-border/80 p-6 card-lift h-full">
-                <div className="flex items-start justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary border border-border/60 transition-transform duration-200 group-hover:scale-105 will-change-transform">
-                    <BookOpen className="h-5 w-5 text-muted-foreground" />
+        {/* Next for Stacked — muted, clearly secondary */}
+        <div className="mb-10">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground/50 mb-4">
+            Next for Stacked
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { href: "/practice", icon: Puzzle, title: "Practice", status: "next" as const, description: "Turn concepts into instinct through strategy-backed training." },
+              { href: "/analyze",  icon: Spade,  title: "Analyze",  status: "later" as const, description: "Study your own hands with strategy-backed explanations." },
+              { href: "/replay",   icon: Film,   title: "Replay",   status: "later" as const, description: "Reconstruct hands street by street." },
+            ].map((item) => (
+              <Link key={item.href} href={item.href} className="group block">
+                <div className="rounded-xl border border-border/40 bg-card/30 hover:bg-card/50 hover:border-border/60 p-4 h-full transition-colors">
+                  <div className="flex items-center justify-between mb-2.5">
+                    <item.icon className="h-4 w-4 text-muted-foreground/50" />
+                    <StatusBadge status={item.status} className="text-[9px] py-0.5 px-2" />
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all duration-200" />
+                  <h3 className="text-sm font-semibold text-muted-foreground/80">{item.title}</h3>
+                  <p className="text-xs text-muted-foreground/45 mt-1 leading-relaxed">{item.description}</p>
                 </div>
-                <h3 className="text-foreground font-semibold mt-4">Hand History</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Review past analyses, replay hands, and track your improvement.
-                </p>
-              </div>
-            </Link>
+              </Link>
+            ))}
+          </div>
+        </div>
 
-            <Link href="/analyze/puzzles" className="group block">
-              <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/8 hover:border-violet-500/40 p-6 card-lift h-full">
-                <div className="flex items-start justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/20 border border-violet-500/25 transition-transform duration-200 group-hover:scale-105 will-change-transform">
-                    <Brain className="h-5 w-5 text-violet-400" />
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-violet-400 group-hover:translate-x-0.5 transition-all duration-200" />
-                </div>
-                <h3 className="text-foreground font-semibold mt-4">Puzzles</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Train with multi-street interactive scenarios and live AI coaching.
-                </p>
-              </div>
+        {/* Account */}
+        <div className="mb-10">
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground/50 mb-4">Account</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Link href="/history" className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card/40 hover:bg-card/70 hover:border-border/80 px-4 py-3.5 transition-colors">
+              <BookOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="text-sm text-foreground font-medium flex-1">Hand History</span>
+              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
             </Link>
-
-            <Link href="/settings" className="group block">
-              <div className="rounded-xl border border-border/60 bg-card/40 hover:bg-card/70 hover:border-border/80 p-6 card-lift h-full">
-                <div className="flex items-start justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary border border-border/60 transition-transform duration-200 group-hover:scale-105 will-change-transform">
-                    <Settings className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition-all duration-200" />
-                </div>
-                <h3 className="text-foreground font-semibold mt-4">Settings</h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Manage your subscription, billing, and account details.
-                </p>
-              </div>
+            <Link href="/settings" className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card/40 hover:bg-card/70 hover:border-border/80 px-4 py-3.5 transition-colors">
+              <Settings className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="text-sm text-foreground font-medium flex-1">Settings</span>
+              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>
         </div>
 
-        {/* Puzzle training stats */}
-        <div className="mb-10">
-          <PuzzleTrainingPanel />
-        </div>
-
-        {/* Recent analyses placeholder */}
+        {/* Recent analyses — de-emphasized, Analyze is in development */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground/50">Recent Analyses</p>
-            <Link href="/history" className="text-sm text-violet-400 hover:text-violet-300 transition-colors">
-              View all →
-            </Link>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground/40">Recent Analyses</p>
           </div>
-          <div className="rounded-xl border border-border/60 bg-card/40 p-12 text-center">
-            <div className="flex justify-center mb-5">
-              <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500/12 to-blue-500/8 border border-violet-500/15">
-                <Layers className="h-7 w-7 text-violet-400/50" />
-                <div className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-[#0B0F1A] border border-border/60 flex items-center justify-center">
-                  <span className="text-[9px] font-bold text-muted-foreground/60">0</span>
-                </div>
+          <div className="rounded-xl border border-border/40 bg-card/20 p-8 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary/30 border border-border/40">
+                <Layers className="h-5 w-5 text-muted-foreground/40" />
               </div>
             </div>
-            <p className="text-foreground font-semibold">Start your study library</p>
-            <p className="text-sm text-muted-foreground mt-1.5 mb-6 max-w-xs mx-auto leading-relaxed">
-              Analyze your first hand to start building patterns, tracking leaks, and improving your game.
+            <p className="text-foreground/70 font-medium text-sm">Analyze is in development</p>
+            <p className="text-xs text-muted-foreground/50 mt-1.5 max-w-xs mx-auto leading-relaxed">
+              We&apos;re rebuilding hand analysis around a reliable strategy foundation. Your analyzed hands will show up here once it&apos;s available.
             </p>
-            <Button variant="poker" size="sm" asChild>
-              <Link href="/analyze">Analyze your first hand</Link>
-            </Button>
           </div>
         </div>
 

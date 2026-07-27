@@ -5,10 +5,10 @@ import { ArrowRight, CheckCircle2, Zap } from "lucide-react";
 import { useInView } from "@/hooks/useInView";
 
 const TRUST = [
-  "3 free analyses included",
+  "Free to start",
   "No credit card",
-  "GGPoker & PokerStars",
-  "Instant results",
+  "Structured curriculum",
+  "Learn at your own pace",
 ];
 
 export function CtaSection() {
@@ -44,24 +44,24 @@ export function CtaSection() {
             </div>
 
             <h2 className="mb-5 text-3xl sm:text-4xl lg:text-[3.25rem] font-black text-foreground leading-[1.05] tracking-tight">
-              Stop leaving EV{" "}
+              Start understanding{" "}
               <br className="hidden sm:block" />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-blue-300 to-violet-500 animate-gradient">
-                on the table.
+                poker strategy.
               </span>
             </h2>
 
             <p className="mx-auto mb-9 max-w-lg text-lg text-muted-foreground/70 leading-relaxed">
-              Analyze your first hand in seconds — no account, no credit card, no setup.
-              Just paste your hand history and let the engine do the work.
+              Start the Foundations path in seconds — no account, no credit card, no setup.
+              Just structured lessons that build real understanding.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
               <Link
-                href="/analyze"
+                href="/learn"
                 className="group inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-[15px] font-semibold shadow-xl shadow-violet-500/40 hover:shadow-violet-500/60 hover:-translate-y-0.5 active:translate-y-px active:scale-[0.97] transition-all duration-200 btn-poker-hover will-change-transform"
               >
-                Analyze a hand — free
+                Start learning — free
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
               </Link>
               <Link

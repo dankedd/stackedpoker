@@ -6,7 +6,7 @@ import { useInView } from "@/hooks/useInView";
 const TESTIMONIALS = [
   {
     quote:
-      "Spotted a major leak in my flop c-bet sizing within the first session. The AI explained exactly why my line was exploitable — paid for itself the first week of grinding.",
+      "The c-betting module found a leak I didn't know I had within the first few lessons — and explained exactly why my sizing was off, not just that it was.",
     name: "Mark V.",
     role: "Cash game regular",
     stakes: "NL100 · 6-max",
@@ -15,7 +15,7 @@ const TESTIMONIALS = [
   },
   {
     quote:
-      "The coaching doesn't just flag mistakes — it explains range dynamics, why the board texture matters, and what adjustment to make next time. Actually useful.",
+      "Every lesson doesn't just tell you the answer — it explains range dynamics, why the board texture matters, and what to take away. Actually sticks.",
     name: "Sophie L.",
     role: "MTT player",
     stakes: "MTT · $50–200 buyins",
@@ -24,7 +24,7 @@ const TESTIMONIALS = [
   },
   {
     quote:
-      "The replay feature is what sold me. Stepping through streets and seeing exactly where I went wrong visually — that's how I actually learn. Nothing else has this.",
+      "Predicting the decision before you're told the answer is what sold me. Committing first and seeing the reveal — that's how I actually learn. Nothing else has this.",
     name: "Tom B.",
     role: "Micro-stakes grinder",
     stakes: "NL25 · Full ring",

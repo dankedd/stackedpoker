@@ -3,8 +3,8 @@ import { Spade } from "lucide-react";
 
 const LINKS = {
   Product: [
-    { label: "Analyze Hand",  href: "/analyze" },
-    { label: "Dashboard",     href: "/dashboard" },
+    { label: "Learn",         href: "/learn" },
+    { label: "Practice",      href: "/practice" },
     { label: "Features",      href: "/#features" },
     { label: "How It Works",  href: "/#how-it-works" },
   ],
@@ -35,7 +35,7 @@ export function LandingFooter() {
               </span>
             </Link>
             <p className="text-[13px] text-slate-500 leading-relaxed max-w-[200px]">
-              GTO-inspired analysis and AI coaching for serious poker players.
+              A structured, interactive platform for learning poker strategy.
             </p>
           </div>
 

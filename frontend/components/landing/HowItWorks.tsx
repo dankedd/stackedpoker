@@ -1,15 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ClipboardPaste, Cpu, MessageSquare } from "lucide-react";
+import { ArrowRight, Target, Eye, Lightbulb } from "lucide-react";
 import { useInView } from "@/hooks/useInView";
 
 const steps = [
   {
-    icon: ClipboardPaste,
-    title: "Paste your hand",
+    icon: Target,
+    title: "Predict the decision",
     description:
-      "Copy a hand history from GGPoker or PokerStars. All standard export formats are supported automatically — no reformatting needed.",
+      "Every lesson puts you in a real spot first — a hand, a board, a range. You commit to an answer before you're told anything.",
     iconCls: "text-violet-400",
     iconBg: "bg-violet-500/12",
     iconRing: "ring-1 ring-violet-500/25 shadow-lg shadow-violet-500/15",
@@ -17,10 +17,10 @@ const steps = [
     numCls: "text-violet-500/20",
   },
   {
-    icon: Cpu,
-    title: "Instant analysis",
+    icon: Eye,
+    title: "See the reveal",
     description:
-      "The engine classifies the spot, evaluates board texture, runs GTO-inspired heuristics, and flags every suboptimal decision — in under 5 seconds.",
+      "The correct approach for that spot is revealed alongside your answer — side by side, so the gap is obvious immediately.",
     iconCls: "text-blue-400",
     iconBg: "bg-blue-500/12",
     iconRing: "ring-1 ring-blue-500/25 shadow-lg shadow-blue-500/15",
@@ -28,10 +28,10 @@ const steps = [
     numCls: "text-blue-500/20",
   },
   {
-    icon: MessageSquare,
-    title: "Receive coaching",
+    icon: Lightbulb,
+    title: "Understand why",
     description:
-      "Claude explains every finding in plain language — range dynamics, position theory, sizing rationale. Know exactly what to change and why.",
+      "Every reveal explains the reasoning — range dynamics, position, board texture — so it sticks as a concept, not a memorized line.",
     iconCls: "text-emerald-400",
     iconBg: "bg-emerald-500/12",
     iconRing: "ring-1 ring-emerald-500/25 shadow-lg shadow-emerald-500/15",
@@ -61,13 +61,13 @@ export function HowItWorks() {
             How it works
           </div>
           <h2 className="mb-5 text-4xl font-black tracking-tight text-foreground sm:text-[3.25rem] leading-[1.05]">
-            Three steps to{" "}
+            Active learning,{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400 animate-gradient">
-              better decisions
+              not passive reading
             </span>
           </h2>
           <p className="text-muted-foreground/65 text-lg">
-            From hand history to expert coaching in under 10 seconds.
+            Predict → reveal → understand. Every lesson follows the same loop.
           </p>
         </div>
 
@@ -105,10 +105,10 @@ export function HowItWorks() {
 
         <div className={`mt-14 text-center scroll-reveal ${stepsVisible ? "visible" : ""} scroll-delay-4`}>
           <Link
-            href="/analyze"
+            href="/learn"
             className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-[15px] font-semibold shadow-lg shadow-violet-500/25 hover:shadow-violet-500/45 hover:-translate-y-0.5 active:translate-y-px active:scale-[0.97] transition-all duration-200 btn-poker-hover will-change-transform"
           >
-            Try it now — free
+            Start learning — free
             <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
           </Link>
         </div>

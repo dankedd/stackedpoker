@@ -2,56 +2,56 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useInView } from "@/hooks/useInView";
+import { getJourneyOverview, JOURNEY_STAGES } from "@/lib/learn/journey";
+import { LESSONS } from "@/lib/learn/curriculum";
 
 interface StatDef {
   end: number;
-  decimals?: number;
   suffix: string;
   label: string;
   sub: string;
   gradient: string;
 }
 
+const journeyOverview = getJourneyOverview({});
+
 const STATS: StatDef[] = [
   {
-    end: 50,
-    suffix: "K+",
-    label: "Hands analyzed",
-    sub: "and counting",
+    end: LESSONS.length,
+    suffix: "+",
+    label: "Interactive lessons",
+    sub: "live right now",
     gradient: "from-violet-400 to-blue-400",
   },
   {
-    end: 4.8,
-    decimals: 1,
-    suffix: "s",
-    label: "Avg analysis time",
-    sub: "end-to-end",
+    end: journeyOverview.availableModules,
+    suffix: "",
+    label: "Modules available",
+    sub: "structured & in order",
     gradient: "from-blue-400 to-cyan-400",
   },
   {
-    end: 12,
-    suffix: "+",
-    label: "Spot categories",
-    sub: "auto-classified",
+    end: journeyOverview.totalRoadmapModules,
+    suffix: "",
+    label: "Modules planned",
+    sub: "the full curriculum",
     gradient: "from-violet-400 to-purple-400",
   },
   {
-    end: 3,
+    end: JOURNEY_STAGES.length,
     suffix: "",
-    label: "Free analyses",
-    sub: "no card required",
+    label: "Learning stages",
+    sub: "fundamentals to advanced",
     gradient: "from-emerald-400 to-teal-400",
   },
 ];
 
 function AnimatedNumber({
   end,
-  decimals = 0,
   suffix,
   trigger,
 }: {
   end: number;
-  decimals?: number;
   suffix: string;
   trigger: boolean;
 }) {
@@ -78,7 +78,7 @@ function AnimatedNumber({
 
   return (
     <>
-      {decimals ? val.toFixed(decimals) : Math.round(val)}
+      {Math.round(val)}
       {suffix}
     </>
   );
@@ -127,7 +127,7 @@ export function Stats() {
           className={`text-center mb-10 scroll-reveal ${sectionVisible ? "visible" : ""}`}
         >
           <p className="text-[12px] uppercase tracking-widest text-muted-foreground/35 font-mono">
-            By the numbers
+            The curriculum, by the numbers
           </p>
         </div>
 
@@ -140,12 +140,7 @@ export function Stats() {
               <p
                 className={`mb-1.5 text-5xl sm:text-6xl font-black tracking-tight tabular-nums text-transparent bg-clip-text bg-gradient-to-r ${s.gradient}`}
               >
-                <AnimatedNumber
-                  end={s.end}
-                  decimals={s.decimals}
-                  suffix={s.suffix}
-                  trigger={triggered}
-                />
+                <AnimatedNumber end={s.end} suffix={s.suffix} trigger={triggered} />
               </p>
               <p className="text-[14px] font-semibold text-foreground/70">{s.label}</p>
               <p className="text-[11px] text-muted-foreground/40 mt-0.5">{s.sub}</p>

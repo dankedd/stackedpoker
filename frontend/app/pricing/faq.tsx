@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const FAQS = [
   {
     q: "What's the difference between the plans?",
-    a: "Free gives you core analysis to try the platform. Pro (€14.99/month) unlocks advanced analysis, AI coaching, extended replay tools, expanded puzzle access, leak detection, and training history. Premium (€34.99/month) includes everything in Pro plus advanced solver-backed analysis, premium coaching, advanced leak intelligence, priority features, and premium study systems.",
+    a: "Free gives you core analysis to try the platform. Pro (€14.99/month) unlocks advanced analysis, AI coaching, extended replay tools, expanded puzzle access, leak detection, and training history. Premium (€34.99/month) includes everything in Pro plus advanced hand analysis, premium coaching, advanced leak intelligence, priority features, and premium study systems.",
   },
   {
     q: "Can I cancel anytime?",

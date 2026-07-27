@@ -37,7 +37,7 @@ const PRO_FEATURES = [
 
 const PREMIUM_FEATURES = [
   { text: "Everything in Pro",                unlimited: false },
-  { text: "Advanced solver-backed analysis",  unlimited: true },
+  { text: "Advanced hand analysis",           unlimited: true },
   { text: "Premium AI coaching",              unlimited: true },
   { text: "Advanced leak intelligence",       unlimited: true },
   { text: "Adaptive training (coming soon)",  unlimited: true },

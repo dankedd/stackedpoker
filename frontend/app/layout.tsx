@@ -22,16 +22,16 @@ export const metadata: Metadata = {
   // *.vercel.app deployment URL, not the custom domain. Setting it
   // explicitly keeps every canonical/OG URL pinned to stackedpokerai.com.
   metadataBase: new URL(getSiteUrl()),
-  title: "Stacked Poker — GTO-Inspired Hand Analysis",
+  title: "Stacked Poker — Learn Poker Strategy the Right Way",
   description:
-    "Upload your GGPoker or PokerStars screenshot and get instant GTO coaching with solver-inspired analysis. Premium poker training platform.",
-  keywords: ["poker", "GTO", "hand analysis", "poker coaching", "poker training", "PokerStars", "GGPoker", "Stacked Poker"],
+    "A structured, interactive platform for learning poker strategy — predict the decision, see the reveal, understand why it works.",
+  keywords: ["poker", "poker strategy", "learn poker", "poker course", "poker training", "range training", "Stacked Poker"],
   alternates: {
     canonical: "/",
   },
   openGraph: {
     title: "Stacked Poker",
-    description: "Premium AI-powered poker hand analysis and GTO coaching",
+    description: "A structured, interactive platform for learning poker strategy.",
     type: "website",
     url: "/",
   },

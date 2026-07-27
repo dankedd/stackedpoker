@@ -1,68 +1,54 @@
 "use client";
 
-import { Brain, BarChart3, Map, Layers, Zap, Play } from "lucide-react";
+import { BookOpen, LayoutGrid, Layers, Map, Zap, BarChart3, CheckCircle2, Circle, Lock } from "lucide-react";
 import { useInView } from "@/hooks/useInView";
 
-function CoachingPreview() {
+function CurriculumPreview() {
+  const rows = [
+    { label: "Poker Fundamentals", status: "complete" as const },
+    { label: "Preflop Aggression", status: "current" as const },
+    { label: "C-Betting Fundamentals", status: "locked" as const },
+  ];
+  const ICONS = { complete: CheckCircle2, current: Circle, locked: Lock };
+  const STYLES = {
+    complete: "border-emerald-500/25 bg-emerald-500/[0.04] text-emerald-400",
+    current: "border-violet-500/30 bg-violet-500/[0.05] text-violet-400",
+    locked: "border-border/25 bg-black/20 text-muted-foreground/35",
+  };
+
   return (
-    <div className="mt-5 rounded-xl border border-violet-500/20 bg-black/40 p-3.5 font-mono text-[11px] leading-relaxed">
-      <div className="flex items-center gap-2 mb-2.5">
-        <div className="flex gap-1">
-          <div className="h-1.5 w-1.5 rounded-full bg-rose-500/60" />
-          <div className="h-1.5 w-1.5 rounded-full bg-amber-500/60" />
-          <div className="h-1.5 w-1.5 rounded-full bg-emerald-500/60" />
-        </div>
-        <span className="text-muted-foreground/35 tracking-wider text-[9px] uppercase">
-          ai coach · live
-        </span>
-        <div className="ml-auto flex items-center gap-1">
-          <div className="h-1 w-1 rounded-full bg-violet-400 animate-pulse" />
-          <span className="text-[9px] text-violet-400/50">analyzing</span>
-        </div>
-      </div>
-
-      <div className="space-y-1.5 mb-2.5">
-        <div className="flex items-start gap-2">
-          <span className="text-emerald-400 shrink-0">✓</span>
-          <span className="text-foreground/60">Preflop 3x open — correct sizing BTN NL100</span>
-        </div>
-        <div className="flex items-start gap-2">
-          <span className="text-amber-400 shrink-0">△</span>
-          <span className="text-amber-300/80">C-bet 75% pot → overbet on dry board, prefer 25–33%</span>
-        </div>
-        <div className="flex items-start gap-2">
-          <span className="text-red-400 shrink-0">✗</span>
-          <span className="text-red-300/70">Turn barrel — range disadvantage, check behind</span>
-        </div>
-      </div>
-
-      <div className="border-t border-border/20 pt-2.5 text-muted-foreground/60">
-        On A♦ 7♣ 2♠ you hold{" "}
-        <span className="text-violet-300">strong range advantage</span> as PFR.
-        Small sizing (25–33%) protects cheaply while building the pot.
-        <span className="inline-block w-px h-3 bg-violet-400/70 ml-0.5 align-middle animate-cursor" />
-      </div>
+    <div className="mt-5 rounded-xl border border-violet-500/20 bg-black/40 p-3.5 space-y-2">
+      {rows.map((r) => {
+        const Icon = ICONS[r.status];
+        return (
+          <div
+            key={r.label}
+            className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-[11px] font-medium ${STYLES[r.status]}`}
+          >
+            <Icon className="h-3.5 w-3.5 shrink-0" />
+            <span className={r.status === "locked" ? "" : "text-foreground/80"}>{r.label}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-function ReplayPreview() {
+function TablePreview() {
   const board = [
     ["A", "♦", "red"],
     ["7", "♣", "slate"],
     ["2", "♠", "slate"],
-    ["K", "♥", "red"],
   ] as const;
 
   return (
     <div className="mt-5 rounded-xl border border-blue-500/20 bg-black/40 p-3.5 text-[11px]">
       <div className="flex items-center justify-between mb-3">
         <span className="font-mono text-muted-foreground/40 text-[9px] uppercase tracking-wider">
-          Hand Replay
+          Postflop Decision
         </span>
         <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/25 text-[9px] text-blue-400">
-          <Play className="h-2 w-2 fill-current" />
-          Turn · street 3/4
+          BTN vs BB · Flop
         </div>
       </div>
 
@@ -80,48 +66,43 @@ function ReplayPreview() {
         <span className="absolute top-1 left-2 text-[8px] text-muted-foreground/30 font-mono">BB</span>
       </div>
 
-      <div className="mt-2.5 flex items-center gap-1.5">
-        <div className="h-1 w-1 rounded-full bg-muted-foreground/25" />
-        <div className="flex-1 relative h-0.5 bg-border/30 rounded-full overflow-hidden">
-          <div className="absolute inset-y-0 left-0 w-3/4 bg-blue-500/50 rounded-full" />
-        </div>
-        <div className="h-1.5 w-1.5 rounded-full bg-blue-400/70" />
-        <span className="text-[8px] text-muted-foreground/35 font-mono">Turn</span>
-      </div>
+      <p className="mt-2.5 text-[10px] text-muted-foreground/50 leading-relaxed">
+        Every decision is taught in the context of real stacks, pots, and positions — not an abstract chart.
+      </p>
     </div>
   );
 }
 
 const SMALL_FEATURES = [
   {
-    icon: BarChart3,
-    title: "Hand Parser",
+    icon: Layers,
+    title: "Range Training",
     description:
-      "Automatic detection of GGPoker and PokerStars histories. Every street, every bet, all positions.",
+      "See and construct ranges rather than memorizing disconnected charts. Build the shape yourself, street by street.",
     iconCls: "text-violet-400",
     iconBg: "bg-violet-500/10 border-violet-500/20",
   },
   {
     icon: Map,
-    title: "Board Texture",
+    title: "Visual Strategy",
     description:
-      "Classifies every board: A-high dry, wet broadway, monotone, paired, low connected. Know your edge.",
+      "Range grids, boards, and equity concepts made visual — see why a strategy changes, not just that it does.",
     iconCls: "text-blue-400",
     iconBg: "bg-blue-500/10 border-blue-500/20",
   },
   {
-    icon: Layers,
-    title: "Spot Classification",
+    icon: Zap,
+    title: "Active Learning",
     description:
-      "SRP vs 3-bet pot, position matchups, effective stack depth — precise context for every recommendation.",
+      "Predict, commit, reveal, understand. Every concept is taught through interaction, not passive reading.",
     iconCls: "text-sky-400",
     iconBg: "bg-sky-500/10 border-sky-500/20",
   },
   {
-    icon: Zap,
-    title: "GTO Heuristics",
+    icon: BarChart3,
+    title: "Adaptive Review",
     description:
-      "Rules engine evaluates c-bet frequency, sizing, and line choices against solver benchmarks.",
+      "Concept mastery is tracked lesson by lesson, with extra reinforcement whenever you need it.",
     iconCls: "text-amber-400",
     iconBg: "bg-amber-500/10 border-amber-500/20",
   },
@@ -149,58 +130,55 @@ export function Features() {
             Features
           </div>
           <h2 className="mb-5 text-4xl font-black tracking-tight text-foreground sm:text-[3.25rem] leading-[1.05]">
-            Fix your leaks,{" "}
+            Learn poker{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-blue-300 to-violet-500 animate-gradient">
-              not just your stats
+              the way it's actually played
             </span>
           </h2>
           <p className="text-muted-foreground/70 text-lg leading-relaxed">
-            From raw hand history to actionable GTO coaching in under 5 seconds. No solver required.
+            A structured curriculum taught through interactive tables and real ranges — not articles to skim.
           </p>
         </div>
 
         {/* Bento grid */}
         <div ref={gridRef} className="grid gap-4 lg:grid-cols-12">
-          {/* AI Coaching — hero card */}
+          {/* Structured Learning Path — hero card */}
           <div className={`lg:col-span-7 rounded-2xl border border-violet-500/25 bg-card/70 p-6 card-lift hover:border-violet-500/40 scroll-reveal ${gridVisible ? "visible" : ""}`}>
             <div className="flex items-center gap-3 mb-1">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 border border-violet-500/20">
-                <Brain className="h-5 w-5 text-violet-400" />
+                <BookOpen className="h-5 w-5 text-violet-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground">AI Coaching</h3>
+                <h3 className="font-semibold text-foreground">Structured Learning Path</h3>
                 <p className="text-[11px] text-muted-foreground/50">
-                  Powered by Claude · Explains the why
+                  Concept by concept, in order
                 </p>
               </div>
             </div>
             <p className="mt-3 text-sm text-muted-foreground/70 leading-relaxed">
-              Every mistake comes with a full explanation — range dynamics, board texture, sizing
-              rationale. Not just &ldquo;wrong,&rdquo; but{" "}
-              <em className="not-italic text-foreground/75">why it costs you</em> and exactly how to
-              fix it.
+              Progress through poker concepts deliberately — each module unlocks the next,
+              building from fundamentals to advanced postflop strategy without gaps.
             </p>
-            <CoachingPreview />
+            <CurriculumPreview />
           </div>
 
-          {/* Replay Engine — hero card */}
+          {/* Interactive Poker Tables — hero card */}
           <div className={`lg:col-span-5 rounded-2xl border border-blue-500/20 bg-card/70 p-6 card-lift hover:border-blue-500/35 scroll-reveal scroll-delay-1 ${gridVisible ? "visible" : ""}`}>
             <div className="flex items-center gap-3 mb-1">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/20">
-                <Play className="h-5 w-5 text-blue-400 fill-current" />
+                <LayoutGrid className="h-5 w-5 text-blue-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground">Hand Replay</h3>
+                <h3 className="font-semibold text-foreground">Interactive Poker Tables</h3>
                 <p className="text-[11px] text-muted-foreground/50">
-                  Animated · Street-by-street
+                  Real stacks, pots, positions
                 </p>
               </div>
             </div>
             <p className="mt-3 text-sm text-muted-foreground/70 leading-relaxed">
-              Step through every street with animated action labels, pot tracking, and synchronized
-              coaching callouts. See exactly where the hand went wrong.
+              Learn decisions in the context of real table states — not abstract theory.
             </p>
-            <ReplayPreview />
+            <TablePreview />
           </div>
 
           {/* 4 smaller features */}

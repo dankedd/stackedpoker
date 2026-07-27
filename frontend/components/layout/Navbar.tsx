@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Spade, Menu, X } from "lucide-react";
+import { Spade, Menu, X, ChevronDown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { StatusBadge, type ProductStatus } from "@/components/layout/StatusBadge";
 import { cn } from "@/lib/utils";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -18,42 +19,28 @@ interface NavItem {
   primary?: boolean; // signals this is the core feature
 }
 
+interface DevNavItem {
+  label: string;
+  href: string;
+  status: ProductStatus;
+}
+
+// Learn dominates. Ranges is the one other reliable tool. Everything still
+// being rebuilt lives in the separate "in development" cluster below.
 const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard",   href: "/dashboard" },
-  { label: "Analyze",     href: "/analyze", primary: true },
-  { label: "Learn",       href: "/learn", primary: true },
-  { label: "Tournaments", href: "/analyze/tournament" },
-  { label: "Puzzles",     href: "/analyze/puzzles" },
-  { label: "History",     href: "/history" },
+  { label: "Learn",    href: "/learn", primary: true },
+  { label: "Progress", href: "/progress" },
+  { label: "Ranges",   href: "/train/ranges" },
 ];
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Active-state helper
-// ─────────────────────────────────────────────────────────────────────────────
+const DEV_ITEMS: DevNavItem[] = [
+  { label: "Practice", href: "/practice", status: "next" },
+  { label: "Analyze",  href: "/analyze",  status: "development" },
+  { label: "Replay",   href: "/replay",   status: "development" },
+];
 
-function useActiveItem(pathname: string) {
-  return (item: NavItem): boolean => {
-    if (item.href === "/analyze") {
-      // Active for /analyze and sub-tools but NOT /analyze/puzzles or /analyze/tournament
-      return (
-        pathname === "/analyze" ||
-        pathname.startsWith("/analyze/hand") ||
-        pathname.startsWith("/analyze/session")
-      );
-    }
-    if (item.href === "/analyze/tournament") {
-      return pathname.startsWith("/analyze/tournament");
-    }
-    if (item.href === "/analyze/puzzles") {
-      return pathname.startsWith("/analyze/puzzles");
-    }
-    if (item.href === "/learn") {
-      return pathname === "/learn" || pathname.startsWith("/learn/") ||
-             pathname.startsWith("/coach") || pathname.startsWith("/progress") ||
-             pathname.startsWith("/train");
-    }
-    return pathname === item.href || pathname.startsWith(item.href + "/");
-  };
+function isItemActive(pathname: string, href: string): boolean {
+  return pathname === href || pathname.startsWith(href + "/");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -85,8 +72,10 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [devOpen, setDevOpen] = useState(false);
+  const devRef = useRef<HTMLDivElement>(null);
   const isSticky = variant === "sticky";
-  const isActive = useActiveItem(pathname);
+  const devActive = DEV_ITEMS.some((item) => isItemActive(pathname, item.href));
 
   // Scroll listener (sticky only)
   useEffect(() => {
@@ -96,16 +85,27 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
     return () => window.removeEventListener("scroll", onScroll);
   }, [isSticky]);
 
-  // Close mobile menu on route change
+  // Close mobile menu + dev dropdown on route change
   useEffect(() => {
     setMobileOpen(false);
+    setDevOpen(false);
   }, [pathname]);
+
+  // Close dev dropdown on outside click
+  useEffect(() => {
+    if (!devOpen) return;
+    function handler(e: MouseEvent) {
+      if (!devRef.current?.contains(e.target as Node)) setDevOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [devOpen]);
 
   // ── Nav pill ──────────────────────────────────────────────────────────────
   const nav = (
     <nav
       className={cn(
-        "w-full max-w-[920px] flex items-center justify-between",
+        "w-full max-w-[960px] flex items-center justify-between",
         "rounded-2xl backdrop-blur-xl px-5 transition-all duration-300 ease-out",
         isSticky
           ? scrolled
@@ -133,11 +133,47 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
           <Link
             key={item.href}
             href={item.href}
-            className={navLinkCls(isActive(item), item.primary)}
+            className={navLinkCls(isItemActive(pathname, item.href), item.primary)}
           >
             {item.label}
           </Link>
         ))}
+
+        {/* ── In development cluster (desktop dropdown) ── */}
+        <div className="relative ml-1" ref={devRef}>
+          <button
+            type="button"
+            onClick={() => setDevOpen((v) => !v)}
+            className={cn(
+              "flex items-center gap-1 px-3 py-1.5 rounded-xl text-[13px] font-medium transition-all duration-150",
+              devActive
+                ? "text-slate-300 bg-white/[0.06]"
+                : "text-slate-500 hover:text-slate-300 hover:bg-white/[0.05]"
+            )}
+            aria-haspopup="true"
+            aria-expanded={devOpen}
+          >
+            In development
+            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-150", devOpen && "rotate-180")} />
+          </button>
+
+          {devOpen && (
+            <div className="absolute top-[calc(100%+8px)] right-0 w-64 rounded-2xl border border-white/[0.1] bg-[#070C1B] shadow-2xl shadow-black/70 overflow-hidden animate-dropdown-in z-50">
+              <div className="p-1.5">
+                {DEV_ITEMS.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-slate-400 hover:text-slate-200 hover:bg-white/[0.06] transition-all duration-150"
+                  >
+                    {item.label}
+                    <StatusBadge status={item.status} className="py-0.5 px-2 text-[9px]" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Right side ── */}
@@ -187,7 +223,7 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
               className={cn(
                 "flex items-center px-3 py-2.5 rounded-xl text-[13px] transition-all",
                 item.primary ? "font-semibold" : "font-medium",
-                isActive(item)
+                isItemActive(pathname, item.href)
                   ? item.primary
                     ? "text-violet-300 bg-violet-500/12"
                     : "text-white bg-white/[0.09]"
@@ -199,6 +235,23 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
               {item.label}
             </Link>
           ))}
+
+          {/* ── In development section ── */}
+          <div className="mt-2 pt-2 border-t border-white/[0.06]">
+            <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-600">
+              In development
+            </p>
+            {DEV_ITEMS.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-slate-500 hover:text-slate-300 hover:bg-white/[0.05] transition-all"
+              >
+                {item.label}
+                <StatusBadge status={item.status} className="py-0.5 px-2 text-[9px]" />
+              </Link>
+            ))}
+          </div>
         </nav>
 
         {!loading && !user && (

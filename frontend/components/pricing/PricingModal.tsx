@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 const FREE_FEATURES = [
   { label: "3 hand analyses", included: true },
-  { label: "Basic GTO coaching", included: true },
+  { label: "Basic hand coaching", included: true },
   { label: "GGPoker & PokerStars", included: true },
   { label: "Session analysis", included: false },
   { label: "Unlimited analyses", included: false },
