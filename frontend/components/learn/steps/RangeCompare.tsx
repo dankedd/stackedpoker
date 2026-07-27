@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
+import { RangeComparisonLayout } from '@/components/learn/visuals/RangeComparisonLayout'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 import { shuffleBySeed, bindVisualOptions } from '@/lib/learn/interactionSafety'
 
@@ -72,7 +73,7 @@ export function RangeCompare({ step, onAnswer, disabled = false }: RangeCompareP
       )}
 
       {boundSides ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <RangeComparisonLayout>
           {boundSides.map(({ visual: side, option: opt }) => {
             const isSelected = selected === opt.id
             const hasSelected = selected !== null
@@ -109,9 +110,9 @@ export function RangeCompare({ step, onAnswer, disabled = false }: RangeCompareP
               </button>
             )
           })}
-        </div>
-      ) : a && (
-        <div className={cn('grid gap-4', b ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 max-w-sm mx-auto')}>
+        </RangeComparisonLayout>
+      ) : a && b ? (
+        <RangeComparisonLayout>
           <div className="space-y-1.5">
             <p className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-violet-400/70">
               {a.label}
@@ -122,18 +123,29 @@ export function RangeCompare({ step, onAnswer, disabled = false }: RangeCompareP
               <PokerRangeGrid range={a.range} />
             )}
           </div>
-          {b && (
-            <div className="space-y-1.5">
-              <p className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-blue-400/70">
-                {b.label}
-              </p>
-              {b.strategies ? (
-                <PokerRangeGrid range={b.range} mode="strategy" strategies={b.strategies} />
-              ) : (
-                <PokerRangeGrid range={b.range} />
-              )}
-            </div>
-          )}
+          <div className="space-y-1.5">
+            <p className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-blue-400/70">
+              {b.label}
+            </p>
+            {b.strategies ? (
+              <PokerRangeGrid range={b.range} mode="strategy" strategies={b.strategies} />
+            ) : (
+              <PokerRangeGrid range={b.range} />
+            )}
+          </div>
+        </RangeComparisonLayout>
+      ) : a && (
+        <div className="grid grid-cols-1 max-w-sm mx-auto">
+          <div className="space-y-1.5">
+            <p className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-violet-400/70">
+              {a.label}
+            </p>
+            {a.strategies ? (
+              <PokerRangeGrid range={a.range} mode="strategy" strategies={a.strategies} />
+            ) : (
+              <PokerRangeGrid range={a.range} />
+            )}
+          </div>
         </div>
       )}
 

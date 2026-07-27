@@ -8,6 +8,7 @@ import { QUALITY_LABELS, QUALITY_COLORS } from '@/lib/learn/types'
 import { DecisionSpot } from './DecisionSpot'
 import { PreflopTable } from '@/components/learn/visuals/PreflopTable'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
+import { RangeComparisonLayout } from '@/components/learn/visuals/RangeComparisonLayout'
 import { MTT_RFI_CHARTS } from '@/lib/learn/mttRfiBaselines'
 import { buildHandDecisionOptions } from '@/lib/learn/mttRfiLabPool'
 import { evaluateTableDecision, type TableDecisionEvaluation } from '@/lib/learn/tableDecisionEngine'
@@ -94,7 +95,7 @@ function InlineReveal({ evaluation, chartKey, hand, onContinue }: InlineRevealPr
             {evaluation.chosenAction} is the baseline strategy&apos;s own choice for {hand} at {confusion.stackBB}bb
             ({Math.round(confusion.frequency * 100)}%) — just not at {chart.stackBB}bb.
           </p>
-          <div className="grid grid-cols-2 gap-3">
+          <RangeComparisonLayout gapClassName="gap-3">
             <div className="space-y-1">
               <p className="text-center text-[10px] font-semibold text-muted-foreground/60">{chart.stackBB}bb (this spot)</p>
               <PokerRangeGrid
@@ -113,7 +114,7 @@ function InlineReveal({ evaluation, chartKey, hand, onContinue }: InlineRevealPr
                 highlightHand={hand}
               />
             </div>
-          </div>
+          </RangeComparisonLayout>
         </div>
       )}
 

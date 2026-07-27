@@ -6,6 +6,23 @@ import type { ChartDiffEntry } from '@/lib/learn/mttRfiRanges'
 import type { ActionId, RangeStrategyMap, StrategyMix } from '@/lib/learn/rangeStrategy'
 import { classifyMix, pruneMix } from '@/lib/learn/rangeStrategy'
 import { actionCssColor, actionLabel, actionStyle } from '@/lib/learn/actionStyles'
+import { HAND_BOARD_CATEGORY_LABEL, type HandBoardCategory } from '@/lib/learn/handBoardInteraction'
+
+/** 'category' mode palette — deliberately distinct bg color AND border style per tier
+ *  (never color alone): solid ring = a made hand, dashed ring = a draw, so the
+ *  distinction survives grayscale/colorblind viewing too. */
+const CATEGORY_STYLE: Record<HandBoardCategory, { bg: string; ring: string }> = {
+  set: { bg: 'bg-emerald-500/80 text-white', ring: 'ring-1 ring-emerald-200/60' },
+  straight: { bg: 'bg-emerald-500/80 text-white', ring: 'ring-1 ring-emerald-200/60' },
+  two_pair: { bg: 'bg-emerald-600/70 text-white', ring: 'ring-1 ring-emerald-200/50' },
+  overpair: { bg: 'bg-sky-500/70 text-white', ring: 'ring-1 ring-sky-200/50' },
+  top_pair: { bg: 'bg-sky-500/60 text-white', ring: 'ring-1 ring-sky-200/40' },
+  straight_draw: { bg: 'bg-amber-500/60 text-white', ring: 'ring-1 ring-dashed ring-amber-200/50' },
+  weak_pair: { bg: 'bg-amber-500/40 text-white', ring: '' },
+  underpair: { bg: 'bg-amber-500/30 text-white', ring: '' },
+  overcards: { bg: 'bg-secondary/50 text-muted-foreground/30', ring: '' },
+  none: { bg: 'bg-secondary/30 text-muted-foreground/15', ring: '' },
+}
 
 type PreflopAction = 'raise' | 'limp' | 'shove' | 'fold'
 
@@ -102,8 +119,18 @@ interface PokerRangeGridProps {
    *  split of every action in that hand's `strategies[hand]` mix (see rangeStrategy.ts), rather than
    *  collapsing to one dominant color. Use this for any AUTHORITATIVE reveal of a real strategy —
    *  superseded the old opacity-shaded 'frequency' mode, which only supported one action's frequency
-   *  and had no exact-percentage hover/tap detail. */
-  mode?: 'membership' | 'three_action' | 'diff' | 'action_diff' | 'strategy'
+   *  and had no exact-percentage hover/tap detail.
+   *  'category' = colors each in-range hand by its live hand-vs-board classification (Module 8's
+   *  Range Collision Viewer — see `categoryMap`/`handBoardInteraction.ts`). Never an equity gradient —
+   *  a discrete category per cell, with both color AND ring-style distinguishing tiers. */
+  mode?: 'membership' | 'three_action' | 'diff' | 'action_diff' | 'strategy' | 'category'
+  /** 'category' mode: hand -> its live classification against the current board (see
+   *  `classifyRangeVsBoard` in handBoardInteraction.ts). A hand absent from this map, or not in
+   *  `range`, renders as plain out-of-range/'none' styling. */
+  categoryMap?: Record<string, HandBoardCategory>
+  /** 'category' mode: which categories to visually call out via the legend — defaults to every
+   *  category actually present in `categoryMap`. */
+  categoryLegend?: HandBoardCategory[]
   /** 'three_action' mode: which action each hand takes. */
   actionMap?: Record<string, PreflopAction>
   /** 'diff' mode: the range being compared against the baseline (`range`). */
@@ -132,6 +159,8 @@ export function PokerRangeGrid({
   strategies,
   strategyActionOrder,
   highlightHand,
+  categoryMap,
+  categoryLegend,
 }: PokerRangeGridProps) {
   const inRange = new Set(range)
   const inComparison = new Set(comparisonRange ?? [])
@@ -188,7 +217,7 @@ export function PokerRangeGrid({
             {RANKS.map((r) => (
               <div
                 key={r}
-                className="flex-1 min-w-0 text-center text-[9px] font-bold text-muted-foreground/40 leading-none"
+                className="flex-1 min-w-0 text-center text-[11px] sm:text-[9px] font-bold text-muted-foreground/40 leading-none"
               >
                 {r}
               </div>
@@ -198,12 +227,53 @@ export function PokerRangeGrid({
           {/* Rows */}
           {HAND_GRID.map((row, rowIdx) => (
             <div key={rowIdx} className="flex items-center">
-              <div className="w-7 text-[9px] font-bold text-muted-foreground/40 text-center shrink-0">
+              <div className="w-7 text-[11px] sm:text-[9px] font-bold text-muted-foreground/40 text-center shrink-0">
                 {RANKS[rowIdx]}
               </div>
               {row.map((hand, colIdx) => {
                 const isPair = rowIdx === colIdx
                 const isSuited = rowIdx < colIdx
+
+                if (mode === 'category') {
+                  const inR = inRange.has(hand)
+                  const category = inR ? categoryMap?.[hand] ?? 'none' : undefined
+                  const style = category ? CATEGORY_STYLE[category] : undefined
+                  const label = category ? HAND_BOARD_CATEGORY_LABEL[category] : undefined
+
+                  return (
+                    <div
+                      key={colIdx}
+                      tabIndex={0}
+                      role="group"
+                      aria-label={inR ? `${hand}${label ? `: ${label}` : ''}` : `${hand}: not in range`}
+                      title={inR ? `${hand}${label ? ` — ${label}` : ''}` : hand}
+                      className={cn(
+                        'group relative flex-1 min-w-0 aspect-square flex items-center justify-center',
+                        'm-px rounded-[3px] select-none text-[10px] sm:text-[8px] font-bold leading-none cursor-default',
+                        'focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:z-20',
+                        inR ? (style?.bg ?? 'bg-violet-500/60 text-white') : cellClasses(hand, isPair, isSuited),
+                        inR && style?.ring,
+                        highlightHand === hand && 'ring-2 ring-white ring-offset-1 ring-offset-background z-10 relative',
+                      )}
+                    >
+                      <span className="truncate px-0.5">{hand}</span>
+                      {inR && label && (
+                        <div
+                          role="tooltip"
+                          className={cn(
+                            'pointer-events-none absolute bottom-full left-1/2 z-30 mb-1 w-max max-w-[9rem] -translate-x-1/2',
+                            'rounded-md border border-border/30 bg-popover px-2 py-1 text-left text-[9px] font-medium leading-tight text-popover-foreground shadow-lg',
+                            'opacity-0 scale-95 transition-all duration-100',
+                            'group-hover:opacity-100 group-hover:scale-100 group-focus:opacity-100 group-focus:scale-100 group-focus-within:opacity-100 group-focus-within:scale-100',
+                          )}
+                        >
+                          <p className="font-bold">{hand}</p>
+                          <p className="text-muted-foreground">{label}</p>
+                        </div>
+                      )}
+                    </div>
+                  )
+                }
 
                 if (mode === 'strategy') {
                   const mix = strategies?.[hand] ?? { fold: 1 }
@@ -219,7 +289,7 @@ export function PokerRangeGrid({
                       title={`${hand}\n${breakdown}`}
                       className={cn(
                         'group relative flex-1 min-w-0 aspect-square flex items-center justify-center',
-                        'm-px rounded-[3px] select-none text-[8px] font-bold leading-none cursor-default',
+                        'm-px rounded-[3px] select-none text-[10px] sm:text-[8px] font-bold leading-none cursor-default',
                         'focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:z-20',
                         highlightHand === hand && 'ring-2 ring-white ring-offset-1 ring-offset-background z-10 relative',
                       )}
@@ -250,7 +320,7 @@ export function PokerRangeGrid({
                     key={colIdx}
                     className={cn(
                       'flex-1 min-w-0 aspect-square flex items-center justify-center',
-                      'm-px rounded-[3px] select-none text-[8px] font-bold leading-none',
+                      'm-px rounded-[3px] select-none text-[10px] sm:text-[8px] font-bold leading-none',
                       cellClasses(hand, isPair, isSuited),
                       highlightHand === hand && 'ring-2 ring-white ring-offset-1 ring-offset-background z-10 relative',
                     )}
@@ -265,8 +335,21 @@ export function PokerRangeGrid({
       </div>
 
       {/* Legend / stats */}
-      {mode === 'strategy' ? (
-        <div className="flex flex-wrap items-center justify-center gap-3 text-[10px] text-muted-foreground/40">
+      {mode === 'category' ? (
+        <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] sm:text-[10px] text-muted-foreground/40">
+          {(categoryLegend ?? Array.from(new Set(Object.values(categoryMap ?? {})))).map((cat) => (
+            <div key={cat} className="flex items-center gap-1.5">
+              <div className={cn('h-2.5 w-2.5 rounded-[2px]', CATEGORY_STYLE[cat].bg)} />
+              <span>{HAND_BOARD_CATEGORY_LABEL[cat]}</span>
+            </div>
+          ))}
+          <div className="flex items-center gap-1.5">
+            <div className="h-2.5 w-2.5 rounded-[2px] bg-secondary/30" />
+            <span>Out of range</span>
+          </div>
+        </div>
+      ) : mode === 'strategy' ? (
+        <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] sm:text-[10px] text-muted-foreground/40">
           {strategyOrder.map((a) => (
             <div key={a} className="flex items-center gap-1.5">
               <div className={cn('h-2.5 w-2.5 rounded-[2px]', actionStyle(a).swatch)} />
@@ -286,7 +369,7 @@ export function PokerRangeGrid({
             ))}
         </div>
       ) : mode === 'diff' ? (
-        <div className="flex flex-wrap items-center justify-center gap-3 text-[10px] text-muted-foreground/40">
+        <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] sm:text-[10px] text-muted-foreground/40">
           <div className="flex items-center gap-1.5">
             <div className="h-2.5 w-2.5 rounded-[2px] bg-emerald-500/70" />
             <span>Correctly included</span>
@@ -301,7 +384,7 @@ export function PokerRangeGrid({
           </div>
         </div>
       ) : mode === 'action_diff' ? (
-        <div className="flex flex-wrap items-center justify-center gap-3 text-[10px] text-muted-foreground/40">
+        <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] sm:text-[10px] text-muted-foreground/40">
           {(['added', 'changed', 'removed'] as ChartDiffEntry['kind'][]).map((kind) => (
             <div key={kind} className="flex items-center gap-1.5">
               <div className={cn('h-2.5 w-2.5 rounded-[2px]', ACTION_DIFF_COLOR[kind])} />
@@ -310,7 +393,7 @@ export function PokerRangeGrid({
           ))}
         </div>
       ) : (
-        <div className="flex items-center justify-between text-[10px] text-muted-foreground/40">
+        <div className="flex items-center justify-between text-[11px] sm:text-[10px] text-muted-foreground/40">
           <div className="flex items-center gap-1.5">
             <div className="h-2.5 w-2.5 rounded-[2px] bg-violet-500" />
             <span>In range</span>

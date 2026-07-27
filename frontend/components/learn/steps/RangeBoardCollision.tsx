@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
+import { RangeComparisonLayout } from '@/components/learn/visuals/RangeComparisonLayout'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 import { shuffleBySeed } from '@/lib/learn/interactionSafety'
 import { totalBlockedCombos } from '@/lib/learn/combos'
@@ -60,8 +61,8 @@ export function RangeBoardCollision({ step, onAnswer, disabled = false }: RangeB
         </div>
       )}
 
-      {a && (
-        <div className={cn('grid gap-4', b ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 max-w-sm mx-auto')}>
+      {a && b ? (
+        <RangeComparisonLayout>
           <div className="space-y-1.5">
             <p className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-violet-400/70">{a.label}</p>
             <PokerRangeGrid range={a.range} />
@@ -72,18 +73,29 @@ export function RangeBoardCollision({ step, onAnswer, disabled = false }: RangeB
               </p>
             )}
           </div>
-          {b && (
-            <div className="space-y-1.5">
-              <p className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-blue-400/70">{b.label}</p>
-              <PokerRangeGrid range={b.range} />
-              {statsB && (
-                <p className="text-center text-[10px] text-muted-foreground/50">
-                  {statsB.total} combos → <span className="text-blue-300/80 font-semibold">{statsB.remaining}</span> remain after removal
-                  {statsB.blocked > 0 && ` (${statsB.blocked} blocked by the board)`}
-                </p>
-              )}
-            </div>
-          )}
+          <div className="space-y-1.5">
+            <p className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-blue-400/70">{b.label}</p>
+            <PokerRangeGrid range={b.range} />
+            {statsB && (
+              <p className="text-center text-[10px] text-muted-foreground/50">
+                {statsB.total} combos → <span className="text-blue-300/80 font-semibold">{statsB.remaining}</span> remain after removal
+                {statsB.blocked > 0 && ` (${statsB.blocked} blocked by the board)`}
+              </p>
+            )}
+          </div>
+        </RangeComparisonLayout>
+      ) : a && (
+        <div className="grid grid-cols-1 max-w-sm mx-auto">
+          <div className="space-y-1.5">
+            <p className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-violet-400/70">{a.label}</p>
+            <PokerRangeGrid range={a.range} />
+            {statsA && (
+              <p className="text-center text-[10px] text-muted-foreground/50">
+                {statsA.total} combos → <span className="text-violet-300/80 font-semibold">{statsA.remaining}</span> remain after removal
+                {statsA.blocked > 0 && ` (${statsA.blocked} blocked by the board)`}
+              </p>
+            )}
+          </div>
         </div>
       )}
 

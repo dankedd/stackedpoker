@@ -2,6 +2,7 @@
 
 import { cn } from '@/lib/utils'
 import { PokerRangeGrid } from './PokerRangeGrid'
+import { RangeComparisonLayout } from './RangeComparisonLayout'
 import type { MultiActionChartLike, MultiRangeAction } from '@/lib/learn/multiActionRangePrefill'
 import { fromActionDict, fromPureAction, dominantFrequency, type RangeStrategyMap } from '@/lib/learn/rangeStrategy'
 import { actionLabel } from '@/lib/learn/actionStyles'
@@ -50,7 +51,7 @@ export function MultiActionRangeReveal({ yourAssignments, chart, className }: Mu
 
   return (
     <div className={cn('space-y-4', className)}>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <RangeComparisonLayout gapClassName="gap-3">
         <div className="space-y-1.5">
           <p className="text-center text-[11px] font-semibold text-foreground/80">Your Strategy</p>
           <PokerRangeGrid range={yourRangeHands} mode="strategy" strategies={yourStrategies} />
@@ -59,7 +60,7 @@ export function MultiActionRangeReveal({ yourAssignments, chart, className }: Mu
           <p className="text-center text-[11px] font-semibold text-foreground/80">Baseline Strategy</p>
           <PokerRangeGrid range={bookRangeHands} mode="strategy" strategies={bookStrategies} />
         </div>
-      </div>
+      </RangeComparisonLayout>
 
       {mixedCells.length > 0 && (
         <div className="space-y-1.5">

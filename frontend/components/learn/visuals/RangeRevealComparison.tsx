@@ -3,6 +3,7 @@
 import { CheckCircle2, XCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PokerRangeGrid } from './PokerRangeGrid'
+import { RangeComparisonLayout } from './RangeComparisonLayout'
 
 export interface RangeRevealCriterion {
   label: string
@@ -56,7 +57,7 @@ export function RangeRevealComparison({
     <div className={cn('space-y-3', className)}>
       {title && <p className="text-center text-xs font-bold uppercase tracking-wide text-muted-foreground/60">{title}</p>}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <RangeComparisonLayout gapClassName="gap-3">
         <div className="space-y-1.5">
           <p className="text-center text-[11px] font-semibold text-foreground/80">Your Range</p>
           <PokerRangeGrid range={yourRange} />
@@ -65,7 +66,7 @@ export function RangeRevealComparison({
           <p className="text-center text-[11px] font-semibold text-foreground/80">{targetLabel}</p>
           <PokerRangeGrid range={targetRange} />
         </div>
-      </div>
+      </RangeComparisonLayout>
 
       <div className="space-y-1.5">
         <p className="text-center text-[11px] font-semibold text-foreground/80">Differences</p>
