@@ -17,9 +17,10 @@ import {
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
+  horizontalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { restrictToParentElement, restrictToVerticalAxis } from '@dnd-kit/modifiers'
+import { restrictToParentElement, restrictToVerticalAxis, restrictToHorizontalAxis } from '@dnd-kit/modifiers'
 
 type UseSortableResult = ReturnType<typeof useSortable>
 
@@ -45,6 +46,11 @@ interface SortableRankingListProps {
    * exercise's step id) to avoid that.
    */
   id?: string
+  /** 'vertical' (default) = the original reorder-a-list UX. 'horizontal' = a
+   *  left-to-right spectrum (e.g. Module 8's board-sorting puzzle) — same
+   *  interaction, restricted to the horizontal axis instead. `className` applies
+   *  to the wrapping <ol> either way (e.g. pass `flex gap-2` for horizontal). */
+  axis?: 'vertical' | 'horizontal'
 }
 
 /**
@@ -65,6 +71,7 @@ export function SortableRankingList({
   className,
   renderItem,
   id,
+  axis = 'vertical',
 }: SortableRankingListProps) {
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
@@ -82,15 +89,17 @@ export function SortableRankingList({
     onReorder(arrayMove(ids, oldIndex, newIndex))
   }
 
+  const isHorizontal = axis === 'horizontal'
+
   return (
     <DndContext
       id={id}
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
-      modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+      modifiers={[isHorizontal ? restrictToHorizontalAxis : restrictToVerticalAxis, restrictToParentElement]}
     >
-      <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+      <SortableContext items={ids} strategy={isHorizontal ? horizontalListSortingStrategy : verticalListSortingStrategy}>
         <ol aria-label={ariaLabel} className={className}>
           {ids.map((id, index) => (
             <SortableRow key={id} id={id} index={index} disabled={disabled} renderItem={renderItem} />

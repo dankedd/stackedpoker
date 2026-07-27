@@ -138,36 +138,11 @@ export const ROADMAP_MODULES: LearningModule[] = [
   // continuation-bet lens, so the two were not built as separate modules.
 
   // ── Stage 4 — Range Thinking ─────────────────────────────────────────────────
-  {
-    ...ROADMAP_DEFAULTS,
-    id: 'range-vs-range-module',
-    path_id: 'intermediate',
-    slug: 'range-vs-range-module',
-    title: 'Range vs Range',
-    subtitle: 'Stop analyzing isolated hands and start seeing the entire strategy.',
-    description: 'Deepen the range-thinking foundation introduced in Module 1.',
-    learningObjectives: [
-      'Construct and weight a full range rather than a single hand',
-      'Compare range composition, distribution and nut density between two ranges',
-      'See how actions taken so far transform what a range can still contain',
-    ],
-    difficulty: 'intermediate',
-    stageId: 'range-thinking',
-    order: 8,
-    prerequisiteModuleId: 'cbetting-fundamentals-module',
-    plannedLessons: [
-      { title: 'Constructing a Range' },
-      { title: 'Weighted Ranges' },
-      { title: 'Range Composition' },
-      { title: 'Range Equity' },
-      { title: 'Range Distribution' },
-      { title: 'Range Advantage Revisited' },
-      { title: 'Nut Distribution' },
-      { title: 'Capped and Uncapped Ranges' },
-      { title: 'How Actions Transform Ranges' },
-      { title: 'Range Reconstruction Lab' },
-    ],
-  },
+  // range-vs-range-module has been promoted to real content — see
+  // `LEARNING_MODULES` in ./curriculum.ts (same pattern as Modules 1-7). Its
+  // detailed build spec used different lesson titles than this stub's original
+  // placeholders, so the promoted entry's content replaces rather than reuses
+  // `plannedLessons` below (same judgment call precedent as Module 7's rename).
   {
     ...ROADMAP_DEFAULTS,
     id: 'blockers-module',

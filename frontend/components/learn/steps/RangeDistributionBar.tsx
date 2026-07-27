@@ -11,8 +11,8 @@ interface RangeDistributionBarProps {
   disabled?: boolean
 }
 
-type Bucket = 'strong' | 'good' | 'weak' | 'trash'
-const BUCKETS: { key: Bucket; label: string; color: string }[] = [
+export type Bucket = 'strong' | 'good' | 'weak' | 'trash'
+export const BUCKETS: { key: Bucket; label: string; color: string }[] = [
   { key: 'strong', label: 'Strong', color: 'bg-emerald-500/70' },
   { key: 'good', label: 'Good', color: 'bg-sky-500/70' },
   { key: 'weak', label: 'Weak', color: 'bg-amber-500/70' },

@@ -64,6 +64,10 @@ import { BuildFirstHand } from '@/components/learn/steps/BuildFirstHand'
 import { RangeDistributionBar } from '@/components/learn/steps/RangeDistributionBar'
 import { FrequencySizeLab } from '@/components/learn/steps/FrequencySizeLab'
 import { BoardRankSort } from '@/components/learn/steps/BoardRankSort'
+import { BoardSortingPuzzle } from '@/components/learn/steps/BoardSortingPuzzle'
+import { RangeCollision } from '@/components/learn/steps/RangeCollision'
+import { RangeEquityPredict } from '@/components/learn/steps/RangeEquityPredict'
+import { RangeXRayStep } from '@/components/learn/steps/RangeXRayStep'
 import { TendencySummary } from '@/components/learn/steps/TendencySummary'
 import type { ActionQuality } from '@/lib/learn/types'
 import { LevelUpOverlay } from '@/components/learn/LevelUpOverlay'
@@ -409,7 +413,25 @@ function StepRenderer({
   }
 
   if (step.type === 'board_rank_sort') {
-    return <BoardRankSort step={step} onAnswer={(order, ms) => evaluate(order, ms)} />
+    return step.board_rank_sort_layout === 'spectrum' ? (
+      <BoardSortingPuzzle step={step} onAnswer={(order, ms) => evaluate(order, ms)} />
+    ) : (
+      <BoardRankSort step={step} onAnswer={(order, ms) => evaluate(order, ms)} />
+    )
+  }
+
+  // ── Range vs Range (Module 8) ─────────────────────────────────────────────
+
+  if (step.type === 'range_collision') {
+    return <RangeCollision step={step} onAnswer={(response, ms) => evaluate(response, ms)} />
+  }
+
+  if (step.type === 'range_equity_predict') {
+    return <RangeEquityPredict step={step} onAnswer={(value, ms) => evaluate(value, ms)} />
+  }
+
+  if (step.type === 'range_xray') {
+    return <RangeXRayStep step={step} onAnswer={(response, ms) => evaluate(response, ms)} />
   }
 
   // Classify-family: board_classify, nut_advantage, blocker_id, range_identify, bluff_pick, reflection_prompt

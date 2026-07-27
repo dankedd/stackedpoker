@@ -67,7 +67,11 @@ export type StepType =
   // ── C-Betting Fundamentals (Module 7) ──
   | 'range_distribution'    // two-range (Hero vs Villain) Strong/Good/Weak/Trash stacked-bar comparison
   | 'cbet_frequency_size'   // two-stage: aggregate betting-frequency bucket, then primary sizing bucket
-  | 'board_rank_sort'       // order 3-5 boards from bets-most to bets-least by tap-to-reorder
+  | 'board_rank_sort'       // order 3-5 boards from bets-most to bets-least by tap-to-reorder (or drag-to-spectrum, see board_rank_sort_layout)
+  // ── Range vs Range (Module 8) ──
+  | 'range_collision'       // Range Collision Viewer: two full 13x13 ranges + a board, in 'reveal'/'predict'/'morph'/'archaeology' modes
+  | 'range_equity_predict'  // slider estimate of a range-vs-range equity split, then reveal vs a book-cited number
+  | 'range_xray'            // Strong/Good/Weak/Trash equity-bucket bar(s); numeric where book-supported, else qualitative
   // ── Cross-step tendency summary (reusable capstone pattern) ──
   | 'tendency_summary'      // reads this playthrough's actual results from `summary_source_step_ids`, grouped by `tendency_tag` — a genuinely personalized "here's the pattern in what you just did" closer, unscored
 
@@ -554,6 +558,63 @@ export interface LessonStep {
   /** Ground truth order, id list, most-bet first. Hand-authored — c-bet frequency ranking isn't a deterministic function of the board. */
   board_rank_sort_target?: string[]
   board_rank_sort_prompt?: string
+  /** 'list' (default) = BoardRankSort.tsx's tap-to-reorder list. 'spectrum' = BoardSortingPuzzle.tsx's
+   *  drag-onto-a-horizontal-spectrum UI (with a tap move-left/move-right non-drag fallback) — same
+   *  step type, same evaluator, purely a presentational choice. End labels for spectrum mode. */
+  board_rank_sort_layout?: 'list' | 'spectrum'
+  board_rank_sort_spectrum_low_label?: string
+  board_rank_sort_spectrum_high_label?: string
+  // ── Range vs Range (Module 8) ───────────────────────────────────────────────
+  // Range Collision Viewer — two full 13x13 ranges rendered against a board, in one
+  // of four modes. Per-cell "does this hand connect with the board" highlighting is
+  // ALWAYS derived live from handBoardInteraction.ts's deterministic card-logic
+  // classifier (never hand-authored, never an equity number) — `range_collision_a/b`
+  // only supply the actual hand LIST, not per-hand strength.
+  range_collision_mode?: 'reveal' | 'predict' | 'morph' | 'archaeology'
+  range_collision_a?: { label: string; range: string[]; source_note?: string }
+  range_collision_b?: { label: string; range: string[]; source_note?: string }
+  /** Book-cited preflop range-vs-range equity split, shown in 'reveal'/'archaeology' modes. */
+  range_collision_preflop_equity?: { a: number; b: number }
+  /** Book-cited postflop range-vs-range equity split on `board`. */
+  range_collision_postflop_equity?: { a: number; b: number }
+  /** Which hand-connection categories (from handBoardInteraction.ts) this step calls out in its
+   *  legend/emphasis — a teaching hint, not a data source (the classifier itself is always live). */
+  range_collision_emphasize_categories?: import('./handBoardInteraction').HandBoardCategory[]
+  /** predict mode: '5pt' = STRONGLY A .. STRONGLY B, '3pt' = A / CLOSE / B — use '3pt' whenever
+   *  the source doesn't support 5-way precision. Scored via `options` (ids match the scale). */
+  range_collision_scale?: '5pt' | '3pt'
+  range_collision_prompt?: string
+  /** morph mode: additional curated board states to switch between. */
+  range_collision_boards?: {
+    id: string
+    label: string
+    board: string[]
+    preflop_equity?: { a: number; b: number }
+    postflop_equity?: { a: number; b: number }
+  }[]
+  /** archaeology mode: real side labels, revealed only after the learner answers (uses `options` for the guess). */
+  range_collision_reveal_labels?: { a: string; b: string }
+  /** Progressive "Show Me Why" layers, revealed one at a time after the main reveal. */
+  range_collision_show_me_why?: { title: string; body: string }[]
+  range_collision_source_ref?: string
+  // Range equity predict — slider estimate of a range-vs-range equity split, then reveal.
+  range_equity_predict_a_label?: string
+  range_equity_predict_b_label?: string
+  range_equity_predict_board?: string[]
+  /** Side A's equity %, 0-100 — the book-cited answer. */
+  range_equity_predict_correct?: number
+  range_equity_predict_tolerance?: number
+  range_equity_predict_prompt?: string
+  range_equity_predict_source_ref?: string
+  // Range X-Ray — Strong/Good/Weak/Trash bucket bar(s). `strong` is numeric only where the
+  // source gives an exact figure; good/weak/trash are qualitative captions, never invented %.
+  range_xray_entries?: { label: string; strong?: number; good_note?: string; weak_note?: string; trash_note?: string }[]
+  range_xray_prompt?: string
+  /** Optional: a mini range grid rendered beneath the bars, click-a-bucket-to-highlight (via the
+   *  same live card-logic classifier as range_collision — never fabricated per-hand equity). */
+  range_xray_grid?: { label: string; range: string[] }
+  range_xray_board?: string[]
+  range_xray_source_ref?: string
   // ── Cross-step tendency summary ─────────────────────────────────────────────
   /** Any step can carry this: a machine id grouping it into a later `tendency_summary`
    *  step (e.g. 'offsuit_broadway'). Purely descriptive metadata — never read by this
@@ -1452,6 +1513,47 @@ export const ACHIEVEMENTS: Achievement[] = [
     icon: '🏛️',
     category: 'mastery',
     condition: 'Complete "The C-Bet Decision Lab" capstone',
+    xp_bonus: 200,
+    tier: 'gold',
+  },
+  // Range vs Range (Module 8)
+  {
+    id: 'range_thinker',
+    title: 'Range Thinker',
+    description: 'Learned to see a flop as two colliding ranges, not one strong hand',
+    icon: '🧬',
+    category: 'learning',
+    condition: 'Complete "Stop Thinking Hand vs Hand" and "Who Owns This Flop?"',
+    xp_bonus: 75,
+    tier: 'bronze',
+  },
+  {
+    id: 'board_archaeologist',
+    title: 'Board Archaeologist',
+    description: 'Correctly reasoned backward from range composition to identify the preflop raiser',
+    icon: '🗺️',
+    category: 'performance',
+    condition: 'Score well on the Range Archaeology exercise',
+    xp_bonus: 100,
+    tier: 'silver',
+  },
+  {
+    id: 'xray_vision',
+    title: 'X-Ray Vision',
+    description: 'Mastered reading an equity-bucket distribution, not just a raw equity number',
+    icon: '🩻',
+    category: 'mastery',
+    condition: 'Complete "X-Ray the Range"',
+    xp_bonus: 100,
+    tier: 'silver',
+  },
+  {
+    id: 'range_scientist',
+    title: 'Range Scientist',
+    description: 'Completed Module 8: Range vs Range',
+    icon: '🔬',
+    category: 'mastery',
+    condition: 'Complete "The Range Lab" capstone',
     xp_bonus: 200,
     tier: 'gold',
   },

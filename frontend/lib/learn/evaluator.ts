@@ -119,6 +119,14 @@ export function isScoredStep(step: LessonStep): boolean {
     case 'range_distribution':
       return !!step.options?.length
 
+    // Range vs Range (Module 8) — mode-gated: range_collision is scored only in
+    // 'predict'/'archaeology' modes (a real options-based guess); 'reveal'/'morph'
+    // are pure illustration. range_xray is a bucket-display visualization, scored
+    // only when a follow-up question was authored — same pattern as equity_bucket.
+    case 'range_collision':
+    case 'range_xray':
+      return !!step.options?.length
+
     case 'pot_odds_explorer':
       return step.pot_odds_correct != null || !!step.options?.length
     case 'outs_deck':
@@ -1645,8 +1653,33 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
       return evalOptionBased(step, response)
 
     // Board rank sort — order boards by expected c-bet frequency, hand-authored target order
+    // (also used, unchanged, for the spectrum drag-layout — see board_rank_sort_layout)
     case 'board_rank_sort':
       return evalBoardRankSort(step, response)
+
+    // ── Range vs Range (Module 8) ───────────────────────────────────────────
+
+    // Range Collision Viewer — 'predict'/'archaeology' modes ask an options-based
+    // question (favor-scale pick, or "which side is the raiser"); 'reveal'/'morph'
+    // are unscored (filtered out by isScoredStep before reaching here).
+    case 'range_collision':
+      return evalOptionBased(step, response)
+
+    // Range equity predict — slider estimate of a range-vs-range equity split.
+    case 'range_equity_predict':
+      return evalNumeric({
+        actual: step.range_equity_predict_correct ?? 50,
+        tolerance: step.range_equity_predict_tolerance ?? 8,
+        response,
+        correctFeedback: 'That\'s close to the book\'s figure for this exact matchup.',
+        wrongFeedback: 'Range-vs-range equity here is further off than it looks — inspect the ranges below.',
+        unit: '%',
+        term: 'Book equity',
+      })
+
+    // Range X-Ray — scored only when a follow-up question was authored.
+    case 'range_xray':
+      return evalOptionBased(step, response)
 
     default:
       // Unknown step type — attempt option-based, fall back to punt
