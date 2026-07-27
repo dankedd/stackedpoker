@@ -131,6 +131,13 @@ function BetChip({ x, y, amount, tone }: { x: string; y: string; amount: number;
  *  robust for BTN sitting anywhere around the ellipse. */
 const DEALER_LABEL_GAP_PX = 22
 
+/** Fixed pixel gap between Hero's own seat-rail anchor and the dealer chip's left edge,
+ *  used only when Hero is on the button. Hero has no fixed-width label to gap against
+ *  (the cards row above it is a constant 114px, centered on the seat), so this is sized
+ *  to clear that row's half-width (57px) plus a small margin — large enough that the
+ *  chip never overlaps the hole cards, HERO badge, or action pill stacked above it. */
+const HERO_DEALER_GAP_PX = 68
+
 function DealerMarker({ style }: { style: React.CSSProperties }) {
   return (
     <div className="absolute z-20" style={style}>
@@ -265,17 +272,16 @@ export function PreflopTable({
               {markerAmount != null && (
                 <BetChip x={seat.x} y={seat.y} amount={markerAmount} tone={markerTone} />
               )}
-              {/* Dealer chip sits beside the label as its own element — never reads as a
-                  single "D BTN" run-on, never overlaps the label or its stack line.
-                  Hero-is-BTN keeps the old toward-center placement (no fixed-width label
-                  to gap against there — HERO's badge is a variable-width box, not a
-                  constant-width 3-letter position string); every other seat gets a fixed
-                  screen-space gap from the rail label, which works at any rail angle
-                  since "BTN" is always exactly 3 characters wide. */}
+              {/* Dealer chip sits beside the seat as its own element — never reads as a
+                  single "D BTN"/"D HERO" run-on, never overlaps a label, stack line, or
+                  (for Hero) the hole cards/badge/action-pill column. Both branches use the
+                  same seat-relative system: anchor on that seat's own rail point, then
+                  offset a fixed screen-space gap to the right — Hero just uses a wider gap
+                  since it's clearing a 114px card row instead of a 3-character label. */}
               {isDealer && (
                 isHero ? (
                   <DealerMarker
-                    style={{ ...towardCenter(seat.x, seat.y, 0.16), transform: 'translate(-50%, -50%)' }}
+                    style={{ left: `calc(${railPoint.x} + ${HERO_DEALER_GAP_PX}px)`, top: railPoint.y, transform: 'translateY(-50%)' }}
                   />
                 ) : (
                   <DealerMarker

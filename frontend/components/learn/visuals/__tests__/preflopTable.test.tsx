@@ -253,7 +253,7 @@ describe('PreflopTable — dealer marker never overlaps a seat label', () => {
     expect(html).toContain(`left:calc(${bx}% + 22px);top:${by}%`)
   })
 
-  it('hero-is-BTN keeps its own toward-center placement — never renders "D BTN" as one run-on', () => {
+  it('hero-is-BTN offsets the dealer chip off Hero\'s own rail point, clear of the centered card column — never renders "D BTN" as one run-on', () => {
     const html = renderToStaticMarkup(
       <PreflopTable tableSize={9} heroPosition="BTN" effectiveStackBb={100} actionBeforeHero={['Everyone folds']} />,
     )
@@ -261,5 +261,10 @@ describe('PreflopTable — dealer marker never overlaps a seat label', () => {
     expect(html).toContain('HERO · BTN')
     expect(html).not.toContain('>D BTN<')
     expect(html).not.toContain('>D HERO')
+    // Hero's hole cards/badge/action-pill column is centered on the seat's own rail x
+    // (50%, since Hero always sits bottom-center) — the dealer chip must be offset well
+    // clear of it (68px to the right), never sitting back on that same centerline.
+    expect(html).toContain('left:calc(50.00% + 68px)')
+    expect(html).not.toContain('translate(-50%, -50%)')
   })
 })
