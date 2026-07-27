@@ -3,6 +3,7 @@
 import { cn } from '@/lib/utils'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 import { POSITIONS_BY_SIZE, normalizePosition } from '@/lib/replay/positions'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import {
   buildPreflopTableRenderState,
   deriveCenterStatus,
@@ -18,27 +19,73 @@ export interface SeatLayoutEntry {
   ty: string
 }
 
-// Every seat sits at the same radius from table center — a single symmetrical 9-max
-// (and 2-8-max) ellipse instead of hand-tuned per-seat coordinates. This is purely a
-// rendering concern local to PreflopTable; it does not touch lib/replay/positions.ts
-// (shared with the Replay feature) or any position-ORDER logic.
-const ELLIPSE_RADIUS = 42.5
+/**
+ * Every geometric constant the table needs, bundled per breakpoint. Desktop and
+ * mobile are two independent, hand-tuned maps — mobile is NOT a scaled-down
+ * desktop (no transform: scale() anywhere), it has its own radius, rail
+ * thickness, dealer-chip gaps, and Hero anchor strategy. See `heroPodAnchor`.
+ */
+interface TableLayoutConfig {
+  /** CSS `aspect-ratio` (width / height) for the table's outer container. */
+  aspectRatio: string
+  /** % radius (from table center) at which every seat's anchor point sits. */
+  ellipseRadius: number
+  /** % radius of the outer rail ring — drives the outer ring's `inset-[]`. */
+  railOuterRadius: number
+  /** % radius of the inner felt ring — drives the felt's `inset-[]`. */
+  railInnerRadius: number
+  /** Fixed px gap between a non-hero seat's rail point and its dealer chip. */
+  dealerLabelGapPx: number
+  /** Fixed px gap for Hero's own dealer chip — only meaningful when
+   *  `heroPodAnchor` is `'seat'`; unused when it's `'center'` (see below). */
+  heroDealerGapPx: number
+  /** How far (0-1) a bet/blind chip is pulled from its seat toward table center. */
+  chipPullFactor: number
+  /** `'seat'` — Hero's cards/badge/stack render at Hero's own rail point, like
+   *  every other seat (desktop, unchanged). `'center'` — Hero's entire pod,
+   *  plus the PREFLOP·BB/status lines, renders as one unified column at the
+   *  table's true center, fully decoupled from the rail (mobile only): this is
+   *  what gives mobile its fixed, non-overlapping central vertical hierarchy. */
+  heroPodAnchor: 'seat' | 'center'
+}
 
-// The rail is the outer ring between the "outer rail" div (inset-[10%], radius 40) and
-// the "inner felt" div (inset-[12.5%], radius 37.5) below — its centerline sits exactly
-// between those two, at radius 38.75. Non-hero position labels anchor there (see
-// `railCenterlinePoint`); this is a plain rescale of the same symmetric seat ellipse,
-// so it stays exactly as symmetric and never needs a manually eyeballed per-seat offset.
-const RAIL_OUTER_RADIUS = 40
-const RAIL_INNER_RADIUS = 37.5
-const RAIL_CENTERLINE_RADIUS = (RAIL_OUTER_RADIUS + RAIL_INNER_RADIUS) / 2
+export const DESKTOP_LAYOUT: TableLayoutConfig = {
+  aspectRatio: '16 / 10.5',
+  ellipseRadius: 42.5,
+  railOuterRadius: 40,
+  railInnerRadius: 37.5,
+  dealerLabelGapPx: 22,
+  heroDealerGapPx: 68,
+  chipPullFactor: 0.4,
+  heroPodAnchor: 'seat',
+}
 
-/** Rescales a seat's anchor point (on the ELLIPSE_RADIUS circle) onto the rail
+/** Mobile: ~92-96% width (see the root div below), a taller/more-oval shape,
+ *  a smaller seat radius (more edge clearance for labels at 320-430px), a
+ *  gentler chip-pull factor (keeps blind/bet chips clear of the wider center
+ *  column), and Hero's pod centered rather than rail-anchored. */
+export const MOBILE_LAYOUT: TableLayoutConfig = {
+  aspectRatio: '3 / 4',
+  ellipseRadius: 38,
+  railOuterRadius: 36,
+  railInnerRadius: 33.5,
+  dealerLabelGapPx: 22,
+  heroDealerGapPx: 22, // unused — heroPodAnchor is 'center', so Hero's dealer chip always takes the non-hero branch below
+  chipPullFactor: 0.2,
+  heroPodAnchor: 'center',
+}
+
+/** Rescales a seat's anchor point (on the `ellipseRadius` circle) onto the rail
  *  centerline circle, preserving its angle exactly — used only for centering the
  *  non-hero position label text. Hero's own anchor, and the bet-chip/dealer-marker
  *  anchors (which still read the original `seat.x`/`seat.y`), are unaffected. */
-function railCenterlinePoint(xPct: string, yPct: string): { x: string; y: string } {
-  const ratio = RAIL_CENTERLINE_RADIUS / ELLIPSE_RADIUS
+export function railCenterlinePoint(
+  xPct: string,
+  yPct: string,
+  ellipseRadius: number = DESKTOP_LAYOUT.ellipseRadius,
+  railCenterlineRadius: number = (DESKTOP_LAYOUT.railOuterRadius + DESKTOP_LAYOUT.railInnerRadius) / 2,
+): { x: string; y: string } {
+  const ratio = railCenterlineRadius / ellipseRadius
   const x = 50 + (parseFloat(xPct) - 50) * ratio
   const y = 50 + (parseFloat(yPct) - 50) * ratio
   return { x: `${x.toFixed(2)}%`, y: `${y.toFixed(2)}%` }
@@ -49,12 +96,15 @@ function railCenterlinePoint(xPct: string, yPct: string): { x: string; y: string
  *  the same visual direction the table has always used. `tx` is always horizontally
  *  centered; `ty` anchors each pod from its top/middle/bottom edge depending on which
  *  third of the ellipse it falls in, so labels never render "inside out". */
-function ellipseSeatCoords(totalSeats: number): { x: string; y: string; tx: string; ty: string }[] {
+function ellipseSeatCoords(
+  totalSeats: number,
+  radius: number = DESKTOP_LAYOUT.ellipseRadius,
+): { x: string; y: string; tx: string; ty: string }[] {
   const coords: { x: string; y: string; tx: string; ty: string }[] = []
   for (let i = 0; i < totalSeats; i++) {
     const angle = (2 * Math.PI * i) / totalSeats
-    const xPct = 50 - ELLIPSE_RADIUS * Math.sin(angle)
-    const yPct = 50 + ELLIPSE_RADIUS * Math.cos(angle)
+    const xPct = 50 - radius * Math.sin(angle)
+    const yPct = 50 + radius * Math.cos(angle)
     const ty = yPct > 62 ? '-100%' : yPct < 38 ? '0%' : '-50%'
     coords.push({ x: `${xPct.toFixed(2)}%`, y: `${yPct.toFixed(2)}%`, tx: '-50%', ty })
   }
@@ -66,10 +116,14 @@ function ellipseSeatCoords(totalSeats: number): { x: string; y: string; tx: stri
  * lands on slot 0, then zips it index-for-index with a symmetrical ellipse's coordinates
  * (slot 0 = hero, bottom-center). Exported for unit testing.
  */
-export function computeHeroRotatedSeats(tableSize: number, heroPosition: string): SeatLayoutEntry[] {
+export function computeHeroRotatedSeats(
+  tableSize: number,
+  heroPosition: string,
+  ellipseRadius: number = DESKTOP_LAYOUT.ellipseRadius,
+): SeatLayoutEntry[] {
   const positions = POSITIONS_BY_SIZE[tableSize] ?? POSITIONS_BY_SIZE[9]
   const N = positions.length
-  const coords = ellipseSeatCoords(N)
+  const coords = ellipseSeatCoords(N, ellipseRadius)
   const heroIdx = positions.indexOf(normalizePosition(heroPosition))
   const startIdx = heroIdx >= 0 ? heroIdx : 0
 
@@ -104,8 +158,20 @@ function towardCenter(xPct: string, yPct: string, t: number): { left: string; to
   return { left: `${x + (50 - x) * t}%`, top: `${y + (50 - y) * t}%` }
 }
 
-function BetChip({ x, y, amount, tone }: { x: string; y: string; amount: number; tone: 'blind' | 'bet' }) {
-  const pos = towardCenter(x, y, 0.4)
+function BetChip({
+  x,
+  y,
+  amount,
+  tone,
+  pullFactor,
+}: {
+  x: string
+  y: string
+  amount: number
+  tone: 'blind' | 'bet'
+  pullFactor: number
+}) {
+  const pos = towardCenter(x, y, pullFactor)
   return (
     <div
       className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
@@ -124,19 +190,6 @@ function BetChip({ x, y, amount, tone }: { x: string; y: string; amount: number;
     </div>
   )
 }
-
-/** Fixed pixel gap between the BTN position label's own center and the dealer chip's
- *  left edge — "BTN" is always exactly 3 characters, so a constant screen-space offset
- *  (not a radius/angle-dependent one) clears the label at every possible rail position,
- *  robust for BTN sitting anywhere around the ellipse. */
-const DEALER_LABEL_GAP_PX = 22
-
-/** Fixed pixel gap between Hero's own seat-rail anchor and the dealer chip's left edge,
- *  used only when Hero is on the button. Hero has no fixed-width label to gap against
- *  (the cards row above it is a constant 114px, centered on the seat), so this is sized
- *  to clear that row's half-width (57px) plus a small margin — large enough that the
- *  chip never overlaps the hole cards, HERO badge, or action pill stacked above it. */
-const HERO_DEALER_GAP_PX = 68
 
 function DealerMarker({ style }: { style: React.CSSProperties }) {
   return (
@@ -189,7 +242,11 @@ export function PreflopTable({
   result,
   className,
 }: PreflopTableProps) {
-  const seats = computeHeroRotatedSeats(tableSize, heroPosition)
+  const isMobile = useIsMobile()
+  const layout = isMobile ? MOBILE_LAYOUT : DESKTOP_LAYOUT
+  const railCenterlineRadius = (layout.railOuterRadius + layout.railInnerRadius) / 2
+
+  const seats = computeHeroRotatedSeats(tableSize, heroPosition, layout.ellipseRadius)
   const cards = heroHand && heroHand.length === 2 ? heroHand : ['', '']
   const state = buildPreflopTableRenderState({
     hero_position: heroPosition,
@@ -199,12 +256,87 @@ export function PreflopTable({
   const centerStatus = state ? deriveCenterStatus(state) : undefined
   const seatState = new Map<string, PreflopSeatState>(state?.seats.map((s) => [s.position, s]))
 
+  // Hero's pod — cards, result badge, HERO·position + stack, action pill. Shared
+  // between the desktop branch (rendered at Hero's own rail point below) and the
+  // mobile branch (folded into the unified center column) so the two never drift.
+  const heroPod = (
+    <div className="flex flex-col items-center gap-2.5">
+      {/* Hero cards — one centered, fixed-width wrapper (2 cards + exact gap,
+          nothing implicit). Its midpoint is mathematically the wrapper's own
+          center, and the wrapper itself is centered by the parent flex column
+          — the same axis the HERO badge below centers on, so cards and badge
+          always share one exact vertical stack, never nudged apart. */}
+      <div className="flex w-[114px] items-center justify-between">
+        <PlayingCardMini card={cards[0]} size="lg" />
+        <PlayingCardMini card={cards[1]} size="lg" />
+      </div>
+
+      {/* Result badge — directly under the cards, above the HERO box. Always
+          rendered (a non-breaking space in place of real text when there's no
+          result yet) so this row's height never changes between "no answer
+          yet" and "answered" — nothing below it (the HERO box, the action
+          pill) ever shifts when the badge appears. */}
+      <span
+        role="status"
+        className={cn(
+          'text-[10px] font-black tracking-wide',
+          result === 'correct' ? 'text-emerald-400' : result === 'incorrect' ? 'text-red-400' : 'invisible',
+        )}
+      >
+        {result === 'correct' ? '✓ CORRECT' : result === 'incorrect' ? '✕ INCORRECT' : ' '}
+      </span>
+
+      {/* One compact seat box — not several floating labels. Active Hero is
+          indicated purely through this box's violet styling (no "YOUR TURN" text). */}
+      <div className="flex flex-col items-center gap-0.5 rounded-xl border border-violet-400/30 bg-violet-500/10 px-3 py-1.5">
+        <span className="text-[11px] font-bold text-violet-200 whitespace-nowrap">
+          HERO · {seats[0].position}
+        </span>
+        {effectiveStackBb != null && (
+          <span className="text-[10px] font-semibold tabular-nums text-violet-200/60">
+            {formatBb(effectiveStackBb)} BB
+          </span>
+        )}
+      </div>
+
+      {/* Same reserved-space treatment as the result badge above — this pill
+          and the result badge always appear together (both derive from the
+          same post-answer state), so both must be shift-proof. */}
+      <span
+        className={cn(
+          'rounded-full border px-2 py-0.5 text-[9px] font-bold whitespace-nowrap',
+          heroAction ? 'border-violet-400/30 bg-violet-500/20 text-violet-200' : 'invisible border-transparent',
+        )}
+      >
+        {heroAction ? heroAction.label : ' '}
+      </span>
+    </div>
+  )
+
+  // PREFLOP·BB / center-status lines — desktop renders these alone (Hero's pod
+  // sits on the rail); mobile prepends them to the unified Hero column instead.
+  const orientationLines = (
+    <>
+      {effectiveStackBb != null && (
+        <span className="text-[10px] font-medium tracking-[0.08em] text-white/35 tabular-nums">
+          PREFLOP · {formatBb(effectiveStackBb)}BB
+        </span>
+      )}
+      {centerStatus && (
+        <span className="text-[12px] font-black tracking-[0.08em] text-violet-300">{centerStatus}</span>
+      )}
+    </>
+  )
+
   return (
     <div className={cn('preflop-table-root space-y-2', className)}>
-      <div className="relative mx-auto w-full max-w-2xl" style={{ aspectRatio: '16 / 10.5' }}>
+      <div
+        className={cn('relative mx-auto', isMobile ? 'w-[94%]' : 'w-full max-w-2xl')}
+        style={{ aspectRatio: layout.aspectRatio }}
+      >
         {/* Outer rail — a thin premium border ring, distinct from the inner playing surface */}
         <div
-          className="absolute inset-[10%] rounded-[999px]"
+          className={cn('absolute rounded-[999px]', isMobile ? 'inset-[14%]' : 'inset-[10%]')}
           style={{
             background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.015) 100%)',
             boxShadow: '0 18px 44px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.04) inset',
@@ -212,7 +344,7 @@ export function PreflopTable({
         />
         {/* Inner felt — very dark desaturated navy, subtly lighter than the rail */}
         <div
-          className="absolute inset-[12.5%] rounded-[999px] border border-white/[0.05]"
+          className={cn('absolute rounded-[999px] border border-white/[0.05]', isMobile ? 'inset-[16.5%]' : 'inset-[12.5%]')}
           style={{
             background: 'radial-gradient(ellipse at 50% 42%, rgba(42,45,61,0.85) 0%, rgba(23,25,36,0.92) 62%, rgba(15,16,24,0.95) 100%)',
             boxShadow: 'inset 0 0 46px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.025)',
@@ -228,19 +360,24 @@ export function PreflopTable({
           </div>
         )}
 
-        {/* Center — large clean empty space; the orientation line is subtle, the status
-            line (when present) is the more prominent one, and neither competes with the
-            hero cards since hero sits near the rail, well clear of dead-center. */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1 text-center px-3">
-          {effectiveStackBb != null && (
-            <span className="text-[10px] font-medium tracking-[0.08em] text-white/35 tabular-nums">
-              PREFLOP · {formatBb(effectiveStackBb)}BB
-            </span>
-          )}
-          {centerStatus && (
-            <span className="text-[12px] font-black tracking-[0.08em] text-violet-300">{centerStatus}</span>
-          )}
-        </div>
+        {layout.heroPodAnchor === 'seat' ? (
+          // Desktop — large clean empty space; the orientation line is subtle, the
+          // status line (when present) is the more prominent one, and neither
+          // competes with the hero cards since hero sits near the rail, well
+          // clear of dead-center.
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1 text-center px-3">
+            {orientationLines}
+          </div>
+        ) : (
+          // Mobile — the full central vertical hierarchy (orientation lines, hole
+          // cards, HERO·position, stack) as ONE fixed-gap column at the table's
+          // true center. Hero has no separate rail-anchored pod on mobile, so
+          // this is the only place any of it renders.
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-2 text-center px-3">
+            {orientationLines}
+            {heroPod}
+          </div>
+        )}
 
         {seats.map((seat, i) => {
           const isHero = i === 0
@@ -265,87 +402,41 @@ export function PreflopTable({
           // ellipse — the label's own geometric center (not the label+stack block's
           // center) lands exactly on the rail. Hero, bet chips, and the dealer marker
           // all keep reading the original seat.x/seat.y anchor, unchanged.
-          const railPoint = railCenterlinePoint(seat.x, seat.y)
+          const railPoint = railCenterlinePoint(seat.x, seat.y, layout.ellipseRadius, railCenterlineRadius)
 
           return (
             <div key={`${seat.position}-${i}`}>
               {markerAmount != null && (
-                <BetChip x={seat.x} y={seat.y} amount={markerAmount} tone={markerTone} />
+                <BetChip x={seat.x} y={seat.y} amount={markerAmount} tone={markerTone} pullFactor={layout.chipPullFactor} />
               )}
               {/* Dealer chip sits beside the seat as its own element — never reads as a
                   single "D BTN"/"D HERO" run-on, never overlaps a label, stack line, or
-                  (for Hero) the hole cards/badge/action-pill column. Both branches use the
-                  same seat-relative system: anchor on that seat's own rail point, then
-                  offset a fixed screen-space gap to the right — Hero just uses a wider gap
-                  since it's clearing a 114px card row instead of a 3-character label. */}
+                  (for Hero, desktop only) the hole cards/badge/action-pill column. Both
+                  branches use the same seat-relative system: anchor on that seat's own
+                  rail point, then offset a fixed screen-space gap to the right. Desktop's
+                  Hero-is-BTN case uses a wider gap to clear its rail-anchored card row;
+                  mobile has nothing rendered at Hero's rail point (the pod lives in the
+                  center column instead), so it always takes the normal small-gap branch. */}
               {isDealer && (
-                isHero ? (
+                layout.heroPodAnchor === 'seat' && isHero ? (
                   <DealerMarker
-                    style={{ left: `calc(${railPoint.x} + ${HERO_DEALER_GAP_PX}px)`, top: railPoint.y, transform: 'translateY(-50%)' }}
+                    style={{ left: `calc(${railPoint.x} + ${layout.heroDealerGapPx}px)`, top: railPoint.y, transform: 'translateY(-50%)' }}
                   />
                 ) : (
                   <DealerMarker
-                    style={{ left: `calc(${railPoint.x} + ${DEALER_LABEL_GAP_PX}px)`, top: railPoint.y, transform: 'translateY(-50%)' }}
+                    style={{ left: `calc(${railPoint.x} + ${layout.dealerLabelGapPx}px)`, top: railPoint.y, transform: 'translateY(-50%)' }}
                   />
                 )
               )}
               {isHero ? (
-              <div
-                className="absolute z-10"
-                style={{ left: seat.x, top: seat.y, transform: `translate(${seat.tx}, ${seat.ty})` }}
-              >
-                  <div className="flex flex-col items-center gap-2.5">
-                    {/* Hero cards — one centered, fixed-width wrapper (2 cards + exact gap,
-                        nothing implicit). Its midpoint is mathematically the wrapper's own
-                        center, and the wrapper itself is centered by the parent flex column
-                        — the same axis the HERO badge below centers on, so cards and badge
-                        always share one exact vertical stack, never nudged apart. */}
-                    <div className="flex w-[114px] items-center justify-between">
-                      <PlayingCardMini card={cards[0]} size="lg" />
-                      <PlayingCardMini card={cards[1]} size="lg" />
-                    </div>
-
-                    {/* Result badge — directly under the cards, above the HERO box. Always
-                        rendered (a non-breaking space in place of real text when there's no
-                        result yet) so this row's height never changes between "no answer
-                        yet" and "answered" — nothing below it (the HERO box, the action
-                        pill) ever shifts when the badge appears. */}
-                    <span
-                      role="status"
-                      className={cn(
-                        'text-[10px] font-black tracking-wide',
-                        result === 'correct' ? 'text-emerald-400' : result === 'incorrect' ? 'text-red-400' : 'invisible',
-                      )}
-                    >
-                      {result === 'correct' ? '✓ CORRECT' : result === 'incorrect' ? '✕ INCORRECT' : ' '}
-                    </span>
-
-                    {/* One compact seat box — not several floating labels. Active Hero is
-                        indicated purely through this box's violet styling (no "YOUR TURN" text). */}
-                    <div className="flex flex-col items-center gap-0.5 rounded-xl border border-violet-400/30 bg-violet-500/10 px-3 py-1.5">
-                      <span className="text-[11px] font-bold text-violet-200 whitespace-nowrap">
-                        HERO · {seat.position}
-                      </span>
-                      {effectiveStackBb != null && (
-                        <span className="text-[10px] font-semibold tabular-nums text-violet-200/60">
-                          {formatBb(effectiveStackBb)} BB
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Same reserved-space treatment as the result badge above — this pill
-                        and the result badge always appear together (both derive from the
-                        same post-answer state), so both must be shift-proof. */}
-                    <span
-                      className={cn(
-                        'rounded-full border px-2 py-0.5 text-[9px] font-bold whitespace-nowrap',
-                        heroAction ? 'border-violet-400/30 bg-violet-500/20 text-violet-200' : 'invisible border-transparent',
-                      )}
-                    >
-                      {heroAction ? heroAction.label : ' '}
-                    </span>
+                layout.heroPodAnchor === 'seat' && (
+                  <div
+                    className="absolute z-10"
+                    style={{ left: seat.x, top: seat.y, transform: `translate(${seat.tx}, ${seat.ty})` }}
+                  >
+                    {heroPod}
                   </div>
-              </div>
+                )
               ) : (
                 // The position label's own geometric center — not the label+stack block's
                 // center — sits on the rail centerline. The stack/action line is a fully
