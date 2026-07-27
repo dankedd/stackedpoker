@@ -299,6 +299,21 @@ export function PreflopTable({
                       <PlayingCardMini card={cards[1]} size="lg" />
                     </div>
 
+                    {/* Result badge — directly under the cards, above the HERO box. Always
+                        rendered (a non-breaking space in place of real text when there's no
+                        result yet) so this row's height never changes between "no answer
+                        yet" and "answered" — nothing below it (the HERO box, the action
+                        pill) ever shifts when the badge appears. */}
+                    <span
+                      role="status"
+                      className={cn(
+                        'text-[10px] font-black tracking-wide',
+                        result === 'correct' ? 'text-emerald-400' : result === 'incorrect' ? 'text-red-400' : 'invisible',
+                      )}
+                    >
+                      {result === 'correct' ? '✓ CORRECT' : result === 'incorrect' ? '✕ INCORRECT' : ' '}
+                    </span>
+
                     {/* One compact seat box — not several floating labels. Active Hero is
                         indicated purely through this box's violet styling (no "YOUR TURN" text). */}
                     <div className="flex flex-col items-center gap-0.5 rounded-xl border border-violet-400/30 bg-violet-500/10 px-3 py-1.5">
@@ -312,22 +327,17 @@ export function PreflopTable({
                       )}
                     </div>
 
-                    {heroAction && (
-                      <span className="rounded-full bg-violet-500/20 border border-violet-400/30 px-2 py-0.5 text-[9px] font-bold text-violet-200 whitespace-nowrap">
-                        {heroAction.label}
-                      </span>
-                    )}
-                    {result && (
-                      <span
-                        role="status"
-                        className={cn(
-                          'text-[10px] font-black tracking-wide',
-                          result === 'correct' ? 'text-emerald-400' : 'text-red-400',
-                        )}
-                      >
-                        {result === 'correct' ? '✓ CORRECT' : '✕ INCORRECT'}
-                      </span>
-                    )}
+                    {/* Same reserved-space treatment as the result badge above — this pill
+                        and the result badge always appear together (both derive from the
+                        same post-answer state), so both must be shift-proof. */}
+                    <span
+                      className={cn(
+                        'rounded-full border px-2 py-0.5 text-[9px] font-bold whitespace-nowrap',
+                        heroAction ? 'border-violet-400/30 bg-violet-500/20 text-violet-200' : 'invisible border-transparent',
+                      )}
+                    >
+                      {heroAction ? heroAction.label : ' '}
+                    </span>
                   </div>
               </div>
               ) : (

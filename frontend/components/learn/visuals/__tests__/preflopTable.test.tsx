@@ -151,6 +151,38 @@ describe('PreflopTable — J. Post-answer result state', () => {
     )
     expect(html).toContain('✕ INCORRECT')
   })
+
+  it('reserves the result-badge and hero-action-pill rows even before an answer exists — layout-shift regression guard', () => {
+    // Same number of <span> "slots" in that hero column whether or not result/heroAction
+    // are provided: the result badge and action pill must always mount (with an
+    // invisible placeholder), never be added/removed from the tree based on state.
+    const before = renderToStaticMarkup(
+      <PreflopTable tableSize={9} heroPosition="UTG" heroHand={['Qs', 'Qd']} effectiveStackBb={60} actionBeforeHero={[]} />,
+    )
+    const after = renderToStaticMarkup(
+      <PreflopTable
+        tableSize={9}
+        heroPosition="UTG"
+        heroHand={['Qs', 'Qd']}
+        effectiveStackBb={60}
+        actionBeforeHero={[]}
+        heroAction={{ label: 'RAISE' }}
+        result="correct"
+      />,
+    )
+    expect(before).toContain('role="status"')
+    expect(before).toContain('invisible')
+    expect(after).toContain('role="status"')
+    expect(after).toContain('✓ CORRECT')
+    expect(after).toContain('RAISE')
+    // The result badge sits directly after the cards row and before the HERO box in both
+    // renders — never conditionally spliced in after the HERO box.
+    const cardsIdx = before.indexOf('Queen of spades')
+    const statusIdx = before.indexOf('role="status"')
+    const heroBoxIdx = before.indexOf('HERO · UTG')
+    expect(cardsIdx).toBeLessThan(statusIdx)
+    expect(statusIdx).toBeLessThan(heroBoxIdx)
+  })
 })
 
 describe('PreflopTable — ante and unknown-context graceful degradation', () => {

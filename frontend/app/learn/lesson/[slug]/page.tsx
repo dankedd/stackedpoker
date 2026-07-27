@@ -40,19 +40,30 @@ const POOLED_LESSON_IDS: Record<string, (seed: string) => LessonStep[]> = {
 };
 
 // ── Step progress dots (minimal header) ───────────────────────────────────────
+// Three visual states, independent of the header's left/right content:
+//  - completed (i < current): solid violet
+//  - current   (i === current): larger + brighter, the focal point
+//  - upcoming  (i > current): dark gray, deliberately recessive
 
 function HeaderDots({ total, current }: { total: number; current: number }) {
   return (
-    <div className="flex items-center gap-1">
-      {Array.from({ length: total }).map((_, i) => (
-        <div
-          key={i}
-          className={cn(
-            "h-1.5 rounded-full transition-all duration-300",
-            i <= current ? "w-4 bg-violet-500" : "w-2 bg-white/10"
-          )}
-        />
-      ))}
+    <div className="flex flex-col items-center gap-1">
+      <div className="flex items-center gap-1">
+        {Array.from({ length: total }).map((_, i) => (
+          <div
+            key={i}
+            className={cn(
+              "rounded-full transition-all duration-300",
+              i < current && "h-1.5 w-4 bg-violet-500",
+              i === current && "h-2.5 w-2.5 bg-violet-400 shadow-[0_0_8px_rgba(167,139,250,0.7)] ring-2 ring-violet-400/30",
+              i > current && "h-1.5 w-1.5 bg-zinc-700"
+            )}
+          />
+        ))}
+      </div>
+      <p className="text-[10px] font-medium tabular-nums text-muted-foreground/70">
+        {Math.min(current + 1, total)} / {total}
+      </p>
     </div>
   );
 }
@@ -376,26 +387,31 @@ export default function LessonPage() {
         <div className="absolute top-1/3 -right-20 h-72 w-72 rounded-full bg-blue-500/5 blur-3xl" />
       </div>
 
-      {/* Sticky header */}
-      <div className="relative z-40 sticky top-0 flex items-center justify-between gap-4 px-4 sm:px-6 py-3.5 border-b border-border/25 bg-background/90 backdrop-blur-md">
+      {/* Sticky header — a 3-column grid (1fr / auto / auto) keeps the center
+          column's midpoint locked to the viewport center: unlike a flex
+          `justify-between` layout, unequal left/right content widths (a long
+          module name vs. a fixed-width XP badge) can never pull it off-center. */}
+      <div className="relative z-40 sticky top-0 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4 px-4 sm:px-6 py-3.5 border-b border-border/25 bg-background/90 backdrop-blur-md">
         {/* Left — back link */}
         <Link
           href={module ? `/learn/module/${module.slug}` : "/learn"}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0 group"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors justify-self-start min-w-0 group"
         >
-          <ChevronLeft className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" />
-          <span className="hidden sm:inline">{module?.title ?? "Back"}</span>
+          <ChevronLeft className="h-4 w-4 shrink-0 group-hover:-translate-x-0.5 transition-transform" />
+          <span className="hidden sm:inline truncate">{module?.title ?? "Back"}</span>
           <span className="sm:hidden">Back</span>
         </Link>
 
-        {/* Center — title + step dots */}
-        <div className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
-          <p className="text-xs font-semibold text-foreground/80 truncate max-w-xs">{lesson.title}</p>
+        {/* Center — title + step dots, always the grid's true middle column */}
+        <div className="flex flex-col items-center gap-1.5 min-w-0">
+          <p className="text-xs font-semibold text-foreground/80 truncate max-w-[10rem] sm:max-w-xs">
+            {lesson.title}
+          </p>
           <HeaderDots total={lesson.steps.length} current={currentStep} />
         </div>
 
         {/* Right — XP badge */}
-        <div className="flex items-center gap-1.5 text-xs font-semibold shrink-0 text-amber-400 bg-amber-500/8 border border-amber-500/15 px-2.5 py-1 rounded-full">
+        <div className="flex items-center gap-1.5 text-xs font-semibold justify-self-end shrink-0 text-amber-400 bg-amber-500/8 border border-amber-500/15 px-2.5 py-1 rounded-full">
           <Star className="h-3 w-3 fill-amber-400/50" />
           {lesson.xp_reward} XP
         </div>
