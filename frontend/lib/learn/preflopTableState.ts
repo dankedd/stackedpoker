@@ -124,6 +124,15 @@ export interface PreflopSeatState {
   action?: ParsedSeatAction
   /** Forced blind this seat posts, in bb, if any. */
   postedBlindBb?: number
+  /** This seat's total CURRENT-STREET commitment in bb — blinds, then whatever
+   *  the action sequence adds on top ("raise to Nbb" always overwrites with the
+   *  absolute total, never adds on top of a prior commitment). 0 for a seat that
+   *  hasn't posted a blind or acted. A folded seat keeps its last commitment —
+   *  those chips already belong to the pot. */
+  committedBb: number
+  /** effectiveStackBb - committedBb. Undefined when effectiveStackBb isn't known
+   *  (never fabricated). */
+  stackBehindBb?: number
 }
 
 export interface PreflopTableRenderState {
@@ -135,11 +144,43 @@ export interface PreflopTableRenderState {
   /** True when actionsBeforeHero is an empty array — Hero is first to act. */
   heroIsFirstToAct: boolean
   anteBb?: number
+  /** Total pot: forced blinds + antes + every seat's current commitment, including
+   *  chips already committed by a seat that has since folded. Always derived from
+   *  the same seat/action data driving the rest of the table — never a separately
+   *  hardcoded number. */
+  potBb: number
+}
+
+/** Sequentially walks the parsed action list (seeded with forced blinds) to
+ *  compute each seat's current-street commitment. A "raise to Nbb" entry is
+ *  always the seat's new ABSOLUTE total — overwriting, never adding — which is
+ *  what makes an already-in blind raising to Nbb correctly deduct only the
+ *  incremental difference from its stack (spec item 5) with no separate
+ *  bookkeeping. Calls/limps/checks commit whatever the current bet-to-call is;
+ *  folds leave the seat's last commitment untouched (those chips already belong
+ *  to the pot — spec item 6). */
+function computeCommitments(order: string[], actionsBeforeHero: ParsedSeatAction[] | undefined): Map<string, number> {
+  const committed = new Map<string, number>()
+  for (const position of order) {
+    committed.set(position, position === 'SB' ? SB_BB : position === 'BB' ? BB_BB : 0)
+  }
+  if (!actionsBeforeHero) return committed
+
+  let currentBet = BB_BB
+  for (const entry of actionsBeforeHero) {
+    if (entry.kind === 'raise' || entry.kind === 'allin') {
+      currentBet = entry.betBb ?? currentBet
+      committed.set(entry.position, currentBet)
+    } else if (entry.kind === 'call' || entry.kind === 'limp' || entry.kind === 'check') {
+      committed.set(entry.position, currentBet)
+    }
+  }
+  return committed
 }
 
 /** Full derivation entry point: turns a LessonStep's existing fields into
  *  render-ready seat state. Never fabricates data the step doesn't carry. */
-export function buildPreflopTableRenderState(step: Pick<LessonStep, 'hero_position' | 'table_size' | 'action_before_hero' | 'ante_bb'>): PreflopTableRenderState | undefined {
+export function buildPreflopTableRenderState(step: Pick<LessonStep, 'hero_position' | 'table_size' | 'action_before_hero' | 'ante_bb' | 'effective_stack_bb'>): PreflopTableRenderState | undefined {
   const heroPosition = step.hero_position
   if (!heroPosition) return undefined
   const tableSize = step.table_size ?? 9
@@ -147,15 +188,28 @@ export function buildPreflopTableRenderState(step: Pick<LessonStep, 'hero_positi
   const dealer = dealerPosition()
 
   const actionsBeforeHero = parseActionBeforeHero(step.action_before_hero, heroPosition, tableSize)
+  if (step.action_before_hero !== undefined && actionsBeforeHero === undefined && process.env.NODE_ENV !== 'production') {
+    // eslint-disable-next-line no-console
+    console.warn('[PreflopTable] action_before_hero has an unparseable entry — the table will render without action/fold/pot state:', step.action_before_hero)
+  }
   const latest = actionsBeforeHero ? latestActionBySeat(actionsBeforeHero) : undefined
+  const commitments = computeCommitments(order, actionsBeforeHero)
 
-  const seats: PreflopSeatState[] = order.map((position) => ({
-    position,
-    isHero: position === normalizePosition(heroPosition),
-    isDealer: position === dealer,
-    action: latest?.get(position),
-    postedBlindBb: position === 'SB' ? SB_BB : position === 'BB' ? BB_BB : undefined,
-  }))
+  const seats: PreflopSeatState[] = order.map((position) => {
+    const committedBb = commitments.get(position) ?? 0
+    return {
+      position,
+      isHero: position === normalizePosition(heroPosition),
+      isDealer: position === dealer,
+      action: latest?.get(position),
+      postedBlindBb: position === 'SB' ? SB_BB : position === 'BB' ? BB_BB : undefined,
+      committedBb,
+      stackBehindBb: step.effective_stack_bb != null ? step.effective_stack_bb - committedBb : undefined,
+    }
+  })
+
+  const anteContribution = step.ante_bb ? step.ante_bb * tableSize : 0
+  const potBb = anteContribution + seats.reduce((sum, s) => sum + s.committedBb, 0)
 
   return {
     tableSize,
@@ -164,6 +218,7 @@ export function buildPreflopTableRenderState(step: Pick<LessonStep, 'hero_positi
     actionsBeforeHero,
     heroIsFirstToAct: actionsBeforeHero !== undefined && actionsBeforeHero.length === 0,
     anteBb: step.ante_bb,
+    potBb,
   }
 }
 
@@ -177,17 +232,31 @@ export function deriveCenterStatus(state: PreflopTableRenderState): string | und
   if (state.heroIsFirstToAct) return 'FIRST TO ACT'
   if (!state.actionsBeforeHero) return undefined
 
-  const nonFold = state.actionsBeforeHero.filter((a) => a.kind !== 'fold' && !a.isHero)
+  // Hero's own already-completed action (e.g. an opening raise that's now being
+  // 3-bet) counts toward this sequence just like any other seat's — a table
+  // that hides Hero's own raise, or mislabels the next raise as a plain "RAISE"
+  // instead of "3-BET", is exactly the question/table mismatch this derivation
+  // exists to prevent (spec items 7, 11, 17).
+  const nonFold = state.actionsBeforeHero.filter((a) => a.kind !== 'fold')
   if (nonFold.length === 0) return `ACTION FOLDED TO ${state.heroPosition}`
 
+  let raiseCount = 0
   return nonFold
-    .map((a, i) => {
-      const verb =
-        a.kind === 'allin' ? 'JAM'
-        : a.kind === 'raise' ? (i === 0 ? 'OPEN' : 'RAISE')
-        : a.kind === 'call' ? 'CALL'
-        : a.kind === 'limp' ? 'LIMP'
-        : 'CHECK'
+    .map((a) => {
+      let verb: string
+      if (a.kind === 'allin') {
+        raiseCount += 1
+        verb = 'JAM'
+      } else if (a.kind === 'raise') {
+        raiseCount += 1
+        verb = raiseCount === 1 ? 'OPEN' : `${raiseCount + 1}-BET`
+      } else if (a.kind === 'call') {
+        verb = 'CALL'
+      } else if (a.kind === 'limp') {
+        verb = 'LIMP'
+      } else {
+        verb = 'CHECK'
+      }
       return `${a.position} ${verb}`
     })
     .join(' · ')

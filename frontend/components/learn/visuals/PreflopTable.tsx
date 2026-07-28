@@ -47,6 +47,12 @@ interface TableLayoutConfig {
    *  table's true center, fully decoupled from the rail (mobile only): this is
    *  what gives mobile its fixed, non-overlapping central vertical hierarchy. */
   heroPodAnchor: 'seat' | 'center'
+  /** Half-width/half-height (in the same %-of-container units as seat x/y) of a
+   *  protected rectangle around dead-center that bet/blind chips must never enter
+   *  — only meaningful when `heroPodAnchor` is `'center'`, since that's the only
+   *  mode with a wide/tall central column for chips to collide with. `undefined`
+   *  on desktop: chips there just lerp straight toward (50,50) as before. */
+  protectedZone?: { halfWidthPct: number; halfHeightPct: number }
 }
 
 export const DESKTOP_LAYOUT: TableLayoutConfig = {
@@ -73,6 +79,11 @@ export const MOBILE_LAYOUT: TableLayoutConfig = {
   heroDealerGapPx: 22, // unused — heroPodAnchor is 'center', so Hero's dealer chip always takes the non-hero branch below
   chipPullFactor: 0.2,
   heroPodAnchor: 'center',
+  // The central column (orientation lines + hole cards + result badge + HERO box +
+  // action pill) can run tall and its cards row alone is ~55% of the felt width —
+  // wide/tall enough that a plain toward-center lerp would carry a blind/bet chip
+  // straight through it. Tuned against 320-430px screenshots, not guessed.
+  protectedZone: { halfWidthPct: 22, halfHeightPct: 30 },
 }
 
 /** Rescales a seat's anchor point (on the `ellipseRadius` circle) onto the rail
@@ -137,6 +148,10 @@ function formatBb(n: number): string {
   return n % 1 === 0 ? String(n) : n.toFixed(1).replace(/\.0$/, '')
 }
 
+function formatAnte(anteBb: number): string {
+  return formatBb(anteBb) === String(anteBb) ? String(anteBb) : anteBb.toFixed(3).replace(/0+$/, '').replace(/\.$/, '')
+}
+
 /** Action verb only — the bet size (if any) is shown separately as an in-table chip marker. */
 function actionVerb(action: ParsedSeatAction): string {
   switch (action.kind) {
@@ -152,10 +167,40 @@ function actionVerb(action: ParsedSeatAction): string {
 /** A point `t` of the way from a seat's percentage coordinate toward table center (50%, 50%) —
  *  used to place the dealer button and blind/bet chip markers just inside the rail, near
  *  their seat, using the same seat-to-center positioning system for both. */
-function towardCenter(xPct: string, yPct: string, t: number): { left: string; top: string } {
+function towardCenter(
+  xPct: string,
+  yPct: string,
+  t: number,
+  protectedZone?: { halfWidthPct: number; halfHeightPct: number },
+): { left: string; top: string } {
   const x = parseFloat(xPct)
   const y = parseFloat(yPct)
-  return { left: `${x + (50 - x) * t}%`, top: `${y + (50 - y) * t}%` }
+  const dx = 50 - x
+  const dy = 50 - y
+  let clampedT = t
+
+  if (protectedZone) {
+    // Same seat point → center segment as always, but stopped at the edge of the
+    // protected rectangle (a standard ray/AABB slab test) instead of running
+    // through it — the segment's t-interval inside the rect is [enter, exit];
+    // if that interval falls within [0, t], clamp to its entry point.
+    const xLo = 50 - protectedZone.halfWidthPct
+    const xHi = 50 + protectedZone.halfWidthPct
+    const yLo = 50 - protectedZone.halfHeightPct
+    const yHi = 50 + protectedZone.halfHeightPct
+
+    const txEnter = dx === 0 ? -Infinity : Math.min((xLo - x) / dx, (xHi - x) / dx)
+    const txExit = dx === 0 ? Infinity : Math.max((xLo - x) / dx, (xHi - x) / dx)
+    const tyEnter = dy === 0 ? -Infinity : Math.min((yLo - y) / dy, (yHi - y) / dy)
+    const tyExit = dy === 0 ? Infinity : Math.max((yLo - y) / dy, (yHi - y) / dy)
+
+    const enter = Math.max(txEnter, tyEnter, 0)
+    const exit = Math.min(txExit, tyExit, t)
+
+    if (enter <= exit) clampedT = enter
+  }
+
+  return { left: `${x + dx * clampedT}%`, top: `${y + dy * clampedT}%` }
 }
 
 function BetChip({
@@ -164,14 +209,16 @@ function BetChip({
   amount,
   tone,
   pullFactor,
+  protectedZone,
 }: {
   x: string
   y: string
   amount: number
   tone: 'blind' | 'bet'
   pullFactor: number
+  protectedZone?: { halfWidthPct: number; halfHeightPct: number }
 }) {
-  const pos = towardCenter(x, y, pullFactor)
+  const pos = towardCenter(x, y, pullFactor, protectedZone)
   return (
     <div
       className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
@@ -252,9 +299,16 @@ export function PreflopTable({
     hero_position: heroPosition,
     table_size: tableSize,
     action_before_hero: actionBeforeHero,
+    effective_stack_bb: effectiveStackBb,
   })
   const centerStatus = state ? deriveCenterStatus(state) : undefined
   const seatState = new Map<string, PreflopSeatState>(state?.seats.map((s) => [s.position, s]))
+  // Hero's own already-completed action (e.g. an opening raise now facing a
+  // 3-bet) — read once here so both the shared hero pod (stack line) and the
+  // per-seat loop (bet-chip marker) agree on the same underlying fact.
+  const heroSeatInfo = seatState.get(seats[0].position)
+  const heroOwnAction = heroSeatInfo?.action && heroSeatInfo.action.kind !== 'fold' ? heroSeatInfo.action : undefined
+  const heroStackBehindBb = heroOwnAction && heroSeatInfo?.stackBehindBb != null ? heroSeatInfo.stackBehindBb : undefined
 
   // Hero's pod — cards, result badge, HERO·position + stack, action pill. Shared
   // between the desktop branch (rendered at Hero's own rail point below) and the
@@ -294,7 +348,7 @@ export function PreflopTable({
         </span>
         {effectiveStackBb != null && (
           <span className="text-[10px] font-semibold tabular-nums text-violet-200/60">
-            {formatBb(effectiveStackBb)} BB
+            {formatBb(heroStackBehindBb ?? effectiveStackBb)} BB
           </span>
         )}
       </div>
@@ -315,11 +369,22 @@ export function PreflopTable({
 
   // PREFLOP·BB / center-status lines — desktop renders these alone (Hero's pod
   // sits on the rail); mobile prepends them to the unified Hero column instead.
+  // Mobile also folds the ante into this line (spec: "PREFLOP · 60BB · ANTE
+  // 0.125BB") rather than floating a separate badge along the top rail — at
+  // mobile widths that badge collides with the top seats' labels and this same
+  // center text. Desktop keeps its own floating ante tag, which has room to sit
+  // cleanly clear of both.
   const orientationLines = (
     <>
       {effectiveStackBb != null && (
-        <span className="text-[10px] font-medium tracking-[0.08em] text-white/35 tabular-nums">
+        <span className="text-[10px] font-medium tracking-[0.08em] text-white/35 tabular-nums whitespace-nowrap">
           PREFLOP · {formatBb(effectiveStackBb)}BB
+          {isMobile && anteBb != null && ` · ANTE ${formatAnte(anteBb)}BB`}
+        </span>
+      )}
+      {state && state.potBb > 0 && (
+        <span className="flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/8 px-2 py-0.5 text-[9px] font-bold text-amber-300/80 tabular-nums whitespace-nowrap">
+          POT {formatBb(state.potBb)}BB
         </span>
       )}
       {centerStatus && (
@@ -351,11 +416,13 @@ export function PreflopTable({
           }}
         />
 
-        {/* Ante — a small independent tag along the top rail, kept out of the main center stack */}
-        {anteBb != null && (
+        {/* Ante — a small independent tag along the top rail, kept out of the main center
+            stack. Desktop only: mobile folds this into the orientation line instead (see
+            `orientationLines` above) since there's no clear top-rail space for it there. */}
+        {!isMobile && anteBb != null && (
           <div className="absolute left-1/2 top-[15%] z-10 -translate-x-1/2">
             <span className="rounded-full border border-amber-500/20 bg-amber-500/8 px-2 py-0.5 text-[8px] font-semibold text-amber-300/70 whitespace-nowrap">
-              ANTE {formatBb(anteBb) === String(anteBb) ? anteBb : anteBb.toFixed(3).replace(/0+$/, '').replace(/\.$/, '')}BB
+              ANTE {formatAnte(anteBb)}BB
             </span>
           </div>
         )}
@@ -383,20 +450,25 @@ export function PreflopTable({
           const isHero = i === 0
           const seatInfo = seatState.get(seat.position)
           const isDealer = seatInfo?.isDealer ?? seat.position === 'BTN'
-          const action = isHero ? undefined : seatInfo?.action
-          const folded = action?.kind === 'fold'
+          // Hero's own already-completed action (e.g. an opening raise now being
+          // 3-bet) is a real fact about this hand, not something to hide just
+          // because Hero also has a dedicated pod — only a genuine fold is
+          // impossible pre-decision, so that's the only kind actually excluded.
+          const ownAction = seatInfo?.action
+          const folded = !isHero && ownAction?.kind === 'fold'
 
           // Bet/blind chip marker: raises/all-ins show their real size; an un-acted blind
           // seat shows its posted blind. Never both, and never fabricated when absent.
+          const actedRaiseOrAllin = ownAction && (ownAction.kind === 'raise' || ownAction.kind === 'allin')
           const markerAmount =
             isHero
-              ? heroAction?.betBb
-              : action && (action.kind === 'raise' || action.kind === 'allin')
-              ? action.betBb
-              : !action && seatInfo?.postedBlindBb != null
+              ? heroAction?.betBb ?? (actedRaiseOrAllin ? ownAction!.betBb : undefined)
+              : actedRaiseOrAllin
+              ? ownAction!.betBb
+              : !ownAction && seatInfo?.postedBlindBb != null
               ? seatInfo.postedBlindBb
               : undefined
-          const markerTone: 'blind' | 'bet' = action ? 'bet' : 'blind'
+          const markerTone: 'blind' | 'bet' = (isHero ? heroAction != null || actedRaiseOrAllin : !!ownAction) ? 'bet' : 'blind'
 
           // Non-hero position labels anchor on the rail centerline, not the wider seat
           // ellipse — the label's own geometric center (not the label+stack block's
@@ -407,7 +479,14 @@ export function PreflopTable({
           return (
             <div key={`${seat.position}-${i}`}>
               {markerAmount != null && (
-                <BetChip x={seat.x} y={seat.y} amount={markerAmount} tone={markerTone} pullFactor={layout.chipPullFactor} />
+                <BetChip
+                  x={seat.x}
+                  y={seat.y}
+                  amount={markerAmount}
+                  tone={markerTone}
+                  pullFactor={layout.chipPullFactor}
+                  protectedZone={layout.protectedZone}
+                />
               )}
               {/* Dealer chip sits beside the seat as its own element — never reads as a
                   single "D BTN"/"D HERO" run-on, never overlaps a label, stack line, or
@@ -443,7 +522,7 @@ export function PreflopTable({
                 // independent element rendered directly below it, so its presence or
                 // content can never shift where the position label itself sits.
                 <div
-                  aria-label={`${seat.position}${folded ? ', folded' : action ? `, ${actionVerb(action)}` : ''}`}
+                  aria-label={`${seat.position}${folded ? ', folded' : ownAction ? `, ${actionVerb(ownAction)}` : ''}`}
                 >
                   <span
                     className={cn(
@@ -454,18 +533,26 @@ export function PreflopTable({
                   >
                     {seat.position}
                   </span>
-                  {(action || effectiveStackBb != null) && (
+                  {/* Mobile information reduction: a folded seat shows only its dimmed
+                      position label above, nothing else — no "FOLD" text, no stack.
+                      Desktop keeps the single FOLD line (never paired with a stack, so
+                      it's not "clutter" by the same rule). */}
+                  {!(isMobile && folded) && (ownAction || effectiveStackBb != null) && (
                     <span
                       className={cn(
                         'absolute z-10 -translate-x-1/2 text-center whitespace-nowrap transition-opacity duration-300',
-                        action
+                        ownAction
                           ? cn('text-[10px] font-semibold', folded ? 'text-muted-foreground/40' : 'text-sky-300/80')
                           : 'text-[10px] font-medium text-muted-foreground/45',
                         folded && 'opacity-35',
                       )}
                       style={{ left: railPoint.x, top: `calc(${railPoint.y} + 12px)` }}
                     >
-                      {action ? actionVerb(action) : `${formatBb(effectiveStackBb!)} BB`}
+                      {ownAction
+                        ? ownAction.kind === 'fold' || seatInfo?.stackBehindBb == null
+                          ? actionVerb(ownAction)
+                          : `${actionVerb(ownAction)} · ${formatBb(seatInfo.stackBehindBb)} BB`
+                        : `${formatBb(effectiveStackBb!)} BB`}
                     </span>
                   )}
                 </div>

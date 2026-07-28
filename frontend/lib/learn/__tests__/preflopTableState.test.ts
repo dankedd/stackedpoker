@@ -268,4 +268,111 @@ describe('deriveCenterStatus — a one-line orientation summary, never a hand-hi
     const state = buildPreflopTableRenderState({ hero_position: 'CO', table_size: 9 })!
     expect(deriveCenterStatus(state)).toBeUndefined()
   })
+
+  it("Hero's own prior raise counts toward the sequence — a 3-bet is labeled 3-BET, not RAISE", () => {
+    // The exact real-content shape of curriculum.ts's 'trb-s0-problem' step: Hero
+    // opens CO, BTN re-raises. Hero's own open must appear (not be filtered out
+    // just because it's Hero's), and BTN's raise must read as the second raise
+    // in the sequence, not a second "open".
+    const state = buildPreflopTableRenderState({
+      hero_position: 'CO', table_size: 6,
+      action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.5bb', 'BTN raises to 8bb'],
+    })!
+    expect(deriveCenterStatus(state)).toBe('CO OPEN · BTN 3-BET')
+  })
+
+  it('4-bet chain: OPEN · 3-BET · 4-BET, ordinal-aware regardless of who raised', () => {
+    const state = buildPreflopTableRenderState({
+      hero_position: 'BB', table_size: 6,
+      action_before_hero: ['UTG raises to 2.3bb', 'CO raises to 7bb', 'BTN raises to 20bb'],
+    })!
+    expect(deriveCenterStatus(state)).toBe('UTG OPEN · CO 3-BET · BTN 4-BET')
+  })
+
+  it('an all-in re-raise still advances the ordinal for any later raise (JAM label unaffected)', () => {
+    const state = buildPreflopTableRenderState({
+      hero_position: 'BB', table_size: 6,
+      action_before_hero: ['Hero raises to 2bb', 'SB raises all-in to 15bb'],
+    })!
+    expect(deriveCenterStatus(state)).toBe('BB OPEN · SB JAM')
+  })
+})
+
+describe('potBb — always derived from the same seat/action data, never hardcoded (spec item 6)', () => {
+  it('no action yet: pot is just the forced blinds', () => {
+    const state = buildPreflopTableRenderState({ hero_position: 'UTG', table_size: 9, action_before_hero: [] })!
+    expect(state.potBb).toBe(SB_BB + BB_BB)
+  })
+
+  it('an ante contributes tableSize x ante_bb on top of the blinds', () => {
+    const state = buildPreflopTableRenderState({ hero_position: 'UTG', table_size: 6, action_before_hero: [], ante_bb: 0.125 })!
+    expect(state.potBb).toBeCloseTo(SB_BB + BB_BB + 0.125 * 6)
+  })
+
+  it('a single open sums the opener\'s raise plus the untouched blinds', () => {
+    const state = buildPreflopTableRenderState({
+      hero_position: 'BTN', table_size: 9, action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb'],
+    })!
+    expect(state.potBb).toBeCloseTo(2.3 + SB_BB + BB_BB)
+  })
+
+  it('a squeeze sums the open + the call + the untouched blinds', () => {
+    const state = buildPreflopTableRenderState({
+      hero_position: 'SB', table_size: 9, action_before_hero: ['CO raises to 2.3bb', 'BTN calls'],
+    })!
+    expect(state.potBb).toBeCloseTo(2.3 + 2.3 + SB_BB + BB_BB)
+  })
+
+  it('folded chips still belong to the pot: a limper who folds to a later raise keeps their commitment', () => {
+    // UTG limps in for 1bb, HJ isolates to 3bb, and UTG folds to the raise — UTG's
+    // 1bb limp must still count toward the pot even though UTG is no longer live
+    // (spec item 6: chips committed by a player who later folds still belong to the pot).
+    const state = buildPreflopTableRenderState({
+      hero_position: 'BTN', table_size: 9,
+      action_before_hero: ['UTG limps', 'HJ raises to 3bb', 'UTG folds'],
+    })!
+    expect(state.seats.find((s) => s.position === 'UTG')?.committedBb).toBe(1)
+    expect(state.potBb).toBeCloseTo(1 + 3 + SB_BB + BB_BB)
+  })
+})
+
+describe('stackBehindBb — raise-to semantics deduct only the incremental chips (spec item 5)', () => {
+  it('an unopened seat with no effective stack given has no stackBehindBb (never fabricated)', () => {
+    const state = buildPreflopTableRenderState({ hero_position: 'UTG', table_size: 9, action_before_hero: [] })!
+    expect(state.seats.find((s) => s.position === 'UTG')?.stackBehindBb).toBeUndefined()
+  })
+
+  it('a raiser\'s stack behind is startingStack - the RAISE-TO total, not startingStack - blind - raiseTo', () => {
+    // SB already has 0.5bb committed from the blind; SB then raises TO 8bb. The
+    // stack deduction must be 8 total (7.5 incremental on top of the blind), not
+    // 0.5 + 8 = 8.5 double-counted.
+    const state = buildPreflopTableRenderState({
+      hero_position: 'BTN', table_size: 9, effective_stack_bb: 100,
+      action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'SB raises to 8bb'],
+    })!
+    const sb = state.seats.find((s) => s.position === 'SB')!
+    expect(sb.committedBb).toBe(8)
+    expect(sb.stackBehindBb).toBe(92)
+  })
+
+  it('Hero\'s own prior open reduces Hero\'s own stack-behind too', () => {
+    const state = buildPreflopTableRenderState({
+      hero_position: 'CO', table_size: 6, effective_stack_bb: 100,
+      action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.5bb', 'BTN raises to 8bb'],
+    })!
+    const hero = state.seats.find((s) => s.isHero)!
+    expect(hero.committedBb).toBe(2.5)
+    expect(hero.stackBehindBb).toBe(97.5)
+    const btn = state.seats.find((s) => s.position === 'BTN')!
+    expect(btn.committedBb).toBe(8)
+    expect(btn.stackBehindBb).toBe(92)
+  })
+
+  it('an untouched blind-only seat still reports its blind as committedBb', () => {
+    const state = buildPreflopTableRenderState({
+      hero_position: 'CO', table_size: 9, effective_stack_bb: 100, action_before_hero: ['Everyone folds'],
+    })!
+    expect(state.seats.find((s) => s.position === 'BB')?.committedBb).toBe(BB_BB)
+    expect(state.seats.find((s) => s.position === 'BB')?.stackBehindBb).toBe(99)
+  })
 })

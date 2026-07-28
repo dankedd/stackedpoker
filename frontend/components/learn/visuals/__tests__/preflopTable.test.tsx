@@ -114,6 +114,30 @@ describe('PreflopTable — H. Facing open + call (squeeze context)', () => {
   })
 })
 
+describe('PreflopTable — K. Hero opens, then faces a 3-bet (the reported table/question mismatch)', () => {
+  it("shows Hero's own prior raise as a chip marker, reduces Hero's stack, and labels the villain's raise 3-BET not RAISE", () => {
+    const html = renderToStaticMarkup(
+      <PreflopTable
+        tableSize={6}
+        heroPosition="CO"
+        heroHand={['As', 'Kd']}
+        effectiveStackBb={100}
+        actionBeforeHero={['UTG folds', 'HJ folds', 'CO raises to 2.5bb', 'BTN raises to 8bb']}
+      />,
+    )
+    // Hero's own 2.5bb open is visible as a chip marker, not hidden.
+    expect(html).toContain('border-sky-400/30 bg-sky-500/20 text-sky-200">2.5</span>')
+    // BTN's re-raise is visible with its real size too.
+    expect(html).toContain('border-sky-400/30 bg-sky-500/20 text-sky-200">8</span>')
+    // The center status correctly frames this as a 3-bet, not a second "open"/"raise".
+    expect(html).toContain('CO OPEN · BTN 3-BET')
+    // Hero's displayed stack reflects the 2.5bb already committed (100 - 2.5 = 97.5).
+    expect(html).toContain('97.5 BB')
+    // The pot reflects blinds + Hero's open + BTN's 3-bet.
+    expect(html).toContain(`POT ${2.5 + 8 + 0.5 + 1}BB`)
+  })
+})
+
 describe('PreflopTable — I. Hero cards', () => {
   it('renders the exact cards passed, with accessible labels', () => {
     const html = renderToStaticMarkup(
