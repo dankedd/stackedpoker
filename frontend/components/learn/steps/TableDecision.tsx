@@ -95,7 +95,10 @@ function InlineReveal({ evaluation, chartKey, hand, onContinue }: InlineRevealPr
             {evaluation.chosenAction} is the baseline strategy&apos;s own choice for {hand} at {confusion.stackBB}bb
             ({Math.round(confusion.frequency * 100)}%) — just not at {chart.stackBB}bb.
           </p>
-          <RangeComparisonLayout gapClassName="gap-3">
+          {/* Two complete 13x13 grids need more room than the sm: breakpoint gives them
+           *  within this card's width — sideBySideFrom="lg" stacks them full-width until
+           *  there's real room, instead of shrinking both to illegibility side by side. */}
+          <RangeComparisonLayout gapClassName="gap-3" sideBySideFrom="lg">
             <div className="space-y-1">
               <p className="text-center text-[10px] font-semibold text-muted-foreground/60">{chart.stackBB}bb (this spot)</p>
               <PokerRangeGrid
