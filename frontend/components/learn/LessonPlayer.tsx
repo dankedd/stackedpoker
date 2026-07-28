@@ -894,8 +894,19 @@ export function LessonPlayer({
         <ConceptTagRow conceptIds={currentStep.concept_ids} />
       )}
 
-      {/* Step card */}
-      <div className="rounded-2xl border border-border/50 bg-card/60 p-6">
+      {/* Step card — dense visualization steps (full 13x13 range grids) get reduced
+          horizontal padding below `sm:` (640px) to reclaim room for the grid at the
+          narrowest supported widths; every other step type keeps the standard p-6 at
+          all sizes. Vertical padding (py-6) never changes, and a small px-3 (12px)
+          gutter is always kept — the card must never touch the viewport edge. */}
+      <div
+        className={cn(
+          'rounded-2xl border border-border/50 bg-card/60 py-6',
+          currentStep.type === 'range_collision' || currentStep.type === 'range_xray'
+            ? 'px-3 sm:px-6'
+            : 'px-6',
+        )}
+      >
         {phase === 'step' && (
           <StepRenderer
             step={currentStep}
