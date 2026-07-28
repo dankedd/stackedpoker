@@ -66,8 +66,14 @@ export function RangeCollisionViewer({ a, b, board, emphasizeCategories, classNa
       {/* Board — centered above the entire comparison, on every breakpoint */}
       <div className="flex justify-center">{boardPanel}</div>
 
-      {/* CO vs BB — one symmetric unit: side-by-side from `sm:` up, stacked full-width on mobile */}
-      <RangeComparisonLayout gapClassName="gap-5 sm:gap-3" className="sm:max-w-3xl sm:mx-auto">
+      {/*
+        One symmetric unit: side-by-side once there's real room for two complete 13x13
+        grids (`lg:`, 1024px — see RangeComparisonLayout's doc comment), full-width stacked
+        below that. No inner max-width cap here — the outer lesson container (widened for
+        this exact step type, see app/learn/lesson/[slug]/page.tsx) is the only width
+        constraint, so this can actually use the extra room instead of re-shrinking itself.
+      */}
+      <RangeComparisonLayout gapClassName="gap-5 lg:gap-4" sideBySideFrom="lg">
         {gridA}
         {gridB}
       </RangeComparisonLayout>

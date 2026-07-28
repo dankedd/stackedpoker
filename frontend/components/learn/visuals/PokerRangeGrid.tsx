@@ -256,140 +256,148 @@ export function PokerRangeGrid({
   }
 
   return (
-    <div className={cn('space-y-2', className)}>
-      <div className="overflow-x-auto">
-        <div className="inline-block min-w-full">
-          {/* Column headers */}
-          <div className="flex ml-7 mb-0.5">
-            {RANKS.map((r) => (
-              <div
-                key={r}
-                className="flex-1 min-w-0 text-center text-[11px] sm:text-[9px] font-bold text-muted-foreground/40 leading-none"
-              >
-                {r}
-              </div>
-            ))}
-          </div>
+    <div className={cn('space-y-2 w-full min-w-0', className)}>
+      {/* No horizontal scroll container here on purpose — the whole 13x13 matrix must always
+       *  be visible without scrolling or clipped columns. `min-w-0` on this block (and every
+       *  flex row/cell inside it) is what lets the grid actually shrink to whatever width its
+       *  parent gives it instead of overflowing: a plain flex child defaults to
+       *  `min-width: auto`, which floors its shrink at the content's natural (min-content)
+       *  width — for a 13-column hand grid with non-wrapping cell text, that floor is wider
+       *  than most comparison layouts, which is exactly what forced the old
+       *  `overflow-x-auto` + `inline-block` wrapper into a scrollbar instead of a fit. */}
+      <div className="w-full min-w-0">
+        {/* Column headers. `gap-px` (not per-cell `m-px` margins) keeps the same hairline
+         *  spacing while costing roughly half the horizontal space at the narrowest
+         *  supported widths — 12 gaps of 1px instead of 13 cells x 2px of margin. */}
+        <div className="flex gap-px ml-5 mb-0.5">
+          {RANKS.map((r) => (
+            <div
+              key={r}
+              className="flex-1 min-w-0 text-center text-[8px] sm:text-[10px] font-bold text-muted-foreground/40 leading-none"
+            >
+              {r}
+            </div>
+          ))}
+        </div>
 
-          {/* Rows */}
-          {HAND_GRID.map((row, rowIdx) => (
-            <div key={rowIdx} className="flex items-center">
-              <div className="w-7 text-[11px] sm:text-[9px] font-bold text-muted-foreground/40 text-center shrink-0">
-                {RANKS[rowIdx]}
-              </div>
-              {row.map((hand, colIdx) => {
-                const isPair = rowIdx === colIdx
-                const isSuited = rowIdx < colIdx
+        {/* Rows */}
+        {HAND_GRID.map((row, rowIdx) => (
+          <div key={rowIdx} className="flex items-center gap-px">
+            <div className="w-5 text-[8px] sm:text-[10px] font-bold text-muted-foreground/40 text-center shrink-0">
+              {RANKS[rowIdx]}
+            </div>
+            {row.map((hand, colIdx) => {
+              const isPair = rowIdx === colIdx
+              const isSuited = rowIdx < colIdx
 
-                if (mode === 'category') {
-                  // LAYER 1 (range membership) is checked first and independently of LAYER 2/3
-                  // (board interaction) — an in-range hand ALWAYS gets in-range styling, even
-                  // when its category is 'none'/'overcards' (no meaningful board interaction).
-                  // Board interaction only ever adds emphasis on top of range membership; it
-                  // never demotes an in-range hand down to the out-of-range style.
-                  const inR = inRange.has(hand)
-                  const category: HandBoardCategory = categoryMap?.[hand] ?? 'none'
-                  const tier = HAND_BOARD_INTERACTION_TIER[category]
-                  const style = inR ? categoryCellStyle(category) : undefined
-                  const tierLabel = HAND_BOARD_INTERACTION_TIER_LABEL[tier]
-                  const categoryLabel = HAND_BOARD_CATEGORY_LABEL[category]
-
-                  return (
-                    <div
-                      key={colIdx}
-                      tabIndex={0}
-                      role="group"
-                      aria-label={
-                        inR ? `${hand}: in range, ${categoryLabel.toLowerCase()}` : `${hand}: not in range`
-                      }
-                      title={inR ? `${hand} — In range — ${categoryLabel}` : `${hand} — Not in range`}
-                      className={cn(
-                        'group relative flex-1 min-w-0 aspect-square flex items-center justify-center',
-                        'm-px rounded-[3px] select-none text-[10px] sm:text-[8px] font-bold leading-none cursor-default',
-                        'focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:z-20',
-                        inR ? style!.bg : OUT_OF_RANGE_STYLE,
-                        inR && style!.ring,
-                        highlightHand === hand && 'ring-2 ring-white ring-offset-1 ring-offset-background z-10 relative',
-                      )}
-                    >
-                      <span className="truncate px-0.5">{hand}</span>
-                      {/* Hover/focus/tap detail — always in the DOM, shown via CSS only, present
-                          for EVERY cell (in-range or not) so "why is this dark?" always has an
-                          answer instead of only the in-range cells getting a rich tooltip. */}
-                      <div
-                        role="tooltip"
-                        className={cn(
-                          'pointer-events-none absolute bottom-full left-1/2 z-30 mb-1 w-max max-w-[10rem] -translate-x-1/2',
-                          'rounded-md border border-border/30 bg-popover px-2 py-1 text-left text-[9px] font-medium leading-tight text-popover-foreground shadow-lg',
-                          'opacity-0 scale-95 transition-all duration-100',
-                          'group-hover:opacity-100 group-hover:scale-100 group-focus:opacity-100 group-focus:scale-100 group-focus-within:opacity-100 group-focus-within:scale-100',
-                        )}
-                      >
-                        <p className="font-bold">{hand}</p>
-                        <p className="text-muted-foreground">Preflop: {inR ? 'In range' : 'Not in range'}</p>
-                        {inR && <p className="text-muted-foreground">Board: {categoryLabel}{tier !== 'unconnected' ? ` (${tierLabel})` : ''}</p>}
-                      </div>
-                    </div>
-                  )
-                }
-
-                if (mode === 'strategy') {
-                  const mix = strategies?.[hand] ?? { fold: 1 }
-                  const breakdown = formatMixBreakdown(mix, strategyOrder)
-                  const mixInfo = classifyMix(mix, actionLabel)
-
-                  return (
-                    <div
-                      key={colIdx}
-                      tabIndex={0}
-                      role="group"
-                      aria-label={`${hand}: ${breakdown}`}
-                      title={`${hand}\n${breakdown}`}
-                      className={cn(
-                        'group relative flex-1 min-w-0 aspect-square flex items-center justify-center',
-                        'm-px rounded-[3px] select-none text-[10px] sm:text-[8px] font-bold leading-none cursor-default',
-                        'focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:z-20',
-                        highlightHand === hand && 'ring-2 ring-white ring-offset-1 ring-offset-background z-10 relative',
-                      )}
-                      style={{ background: segmentedBackground(mix, strategyOrder) }}
-                    >
-                      <span className="relative z-10 truncate rounded-sm bg-black/30 px-0.5 text-white drop-shadow-sm">
-                        {hand}
-                      </span>
-                      {/* Hover/focus/tap detail — always in the DOM (SSR/testable), shown via CSS only. */}
-                      <div
-                        role="tooltip"
-                        className={cn(
-                          'pointer-events-none absolute bottom-full left-1/2 z-30 mb-1 w-max max-w-[9rem] -translate-x-1/2',
-                          'rounded-md border border-border/30 bg-popover px-2 py-1 text-left text-[9px] font-medium leading-tight text-popover-foreground shadow-lg',
-                          'opacity-0 scale-95 transition-all duration-100',
-                          'group-hover:opacity-100 group-hover:scale-100 group-focus:opacity-100 group-focus:scale-100 group-focus-within:opacity-100 group-focus-within:scale-100',
-                        )}
-                      >
-                        <p className="font-bold">{hand} — {mixInfo.label}</p>
-                        <p className="text-muted-foreground">{breakdown}</p>
-                      </div>
-                    </div>
-                  )
-                }
+              if (mode === 'category') {
+                // LAYER 1 (range membership) is checked first and independently of LAYER 2/3
+                // (board interaction) — an in-range hand ALWAYS gets in-range styling, even
+                // when its category is 'none'/'overcards' (no meaningful board interaction).
+                // Board interaction only ever adds emphasis on top of range membership; it
+                // never demotes an in-range hand down to the out-of-range style.
+                const inR = inRange.has(hand)
+                const category: HandBoardCategory = categoryMap?.[hand] ?? 'none'
+                const tier = HAND_BOARD_INTERACTION_TIER[category]
+                const style = inR ? categoryCellStyle(category) : undefined
+                const tierLabel = HAND_BOARD_INTERACTION_TIER_LABEL[tier]
+                const categoryLabel = HAND_BOARD_CATEGORY_LABEL[category]
 
                 return (
                   <div
                     key={colIdx}
+                    tabIndex={0}
+                    role="group"
+                    aria-label={
+                      inR ? `${hand}: in range, ${categoryLabel.toLowerCase()}` : `${hand}: not in range`
+                    }
+                    title={inR ? `${hand} — In range — ${categoryLabel}` : `${hand} — Not in range`}
                     className={cn(
-                      'flex-1 min-w-0 aspect-square flex items-center justify-center',
-                      'm-px rounded-[3px] select-none text-[10px] sm:text-[8px] font-bold leading-none',
-                      cellClasses(hand, isPair, isSuited),
+                      'group relative flex-1 min-w-0 aspect-square flex items-center justify-center',
+                      'rounded-[3px] select-none text-[8px] sm:text-[10px] font-bold leading-none cursor-default',
+                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:z-20',
+                      inR ? style!.bg : OUT_OF_RANGE_STYLE,
+                      inR && style!.ring,
                       highlightHand === hand && 'ring-2 ring-white ring-offset-1 ring-offset-background z-10 relative',
                     )}
                   >
                     <span className="truncate px-0.5">{hand}</span>
+                    {/* Hover/focus/tap detail — always in the DOM, shown via CSS only, present
+                        for EVERY cell (in-range or not) so "why is this dark?" always has an
+                        answer instead of only the in-range cells getting a rich tooltip. */}
+                    <div
+                      role="tooltip"
+                      className={cn(
+                        'pointer-events-none absolute bottom-full left-1/2 z-30 mb-1 w-max max-w-[10rem] -translate-x-1/2',
+                        'rounded-md border border-border/30 bg-popover px-2 py-1 text-left text-[9px] font-medium leading-tight text-popover-foreground shadow-lg',
+                        'opacity-0 scale-95 transition-all duration-100',
+                        'group-hover:opacity-100 group-hover:scale-100 group-focus:opacity-100 group-focus:scale-100 group-focus-within:opacity-100 group-focus-within:scale-100',
+                      )}
+                    >
+                      <p className="font-bold">{hand}</p>
+                      <p className="text-muted-foreground">Preflop: {inR ? 'In range' : 'Not in range'}</p>
+                      {inR && <p className="text-muted-foreground">Board: {categoryLabel}{tier !== 'unconnected' ? ` (${tierLabel})` : ''}</p>}
+                    </div>
                   </div>
                 )
-              })}
-            </div>
-          ))}
-        </div>
+              }
+
+              if (mode === 'strategy') {
+                const mix = strategies?.[hand] ?? { fold: 1 }
+                const breakdown = formatMixBreakdown(mix, strategyOrder)
+                const mixInfo = classifyMix(mix, actionLabel)
+
+                return (
+                  <div
+                    key={colIdx}
+                    tabIndex={0}
+                    role="group"
+                    aria-label={`${hand}: ${breakdown}`}
+                    title={`${hand}\n${breakdown}`}
+                    className={cn(
+                      'group relative flex-1 min-w-0 aspect-square flex items-center justify-center',
+                      'rounded-[3px] select-none text-[8px] sm:text-[10px] font-bold leading-none cursor-default',
+                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:z-20',
+                      highlightHand === hand && 'ring-2 ring-white ring-offset-1 ring-offset-background z-10 relative',
+                    )}
+                    style={{ background: segmentedBackground(mix, strategyOrder) }}
+                  >
+                    <span className="relative z-10 truncate rounded-sm bg-black/30 px-0.5 text-white drop-shadow-sm">
+                      {hand}
+                    </span>
+                    {/* Hover/focus/tap detail — always in the DOM (SSR/testable), shown via CSS only. */}
+                    <div
+                      role="tooltip"
+                      className={cn(
+                        'pointer-events-none absolute bottom-full left-1/2 z-30 mb-1 w-max max-w-[9rem] -translate-x-1/2',
+                        'rounded-md border border-border/30 bg-popover px-2 py-1 text-left text-[9px] font-medium leading-tight text-popover-foreground shadow-lg',
+                        'opacity-0 scale-95 transition-all duration-100',
+                        'group-hover:opacity-100 group-hover:scale-100 group-focus:opacity-100 group-focus:scale-100 group-focus-within:opacity-100 group-focus-within:scale-100',
+                      )}
+                    >
+                      <p className="font-bold">{hand} — {mixInfo.label}</p>
+                      <p className="text-muted-foreground">{breakdown}</p>
+                    </div>
+                  </div>
+                )
+              }
+
+              return (
+                <div
+                  key={colIdx}
+                  className={cn(
+                    'flex-1 min-w-0 aspect-square flex items-center justify-center',
+                    'rounded-[3px] select-none text-[8px] sm:text-[10px] font-bold leading-none',
+                    cellClasses(hand, isPair, isSuited),
+                    highlightHand === hand && 'ring-2 ring-white ring-offset-1 ring-offset-background z-10 relative',
+                  )}
+                >
+                  <span className="truncate px-0.5">{hand}</span>
+                </div>
+              )
+            })}
+          </div>
+        ))}
       </div>
 
       {/* Legend / stats */}

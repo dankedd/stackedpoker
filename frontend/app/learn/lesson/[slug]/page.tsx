@@ -174,6 +174,18 @@ export default function LessonPage() {
   const lessonIdx = allLessons.findIndex((l) => l.id === lesson.id);
   const nextLesson = allLessons[lessonIdx + 1] ?? null;
 
+  // Side-by-side range comparisons (Module 8's Range Collision Viewer, X-Ray mini-grid,
+  // and TableDecision's "right idea, wrong stack depth" reveal) need real room for two
+  // complete 13x13 matrices — the normal prose-reading width (max-w-2xl) forces them into
+  // a horizontal scrollbar. table_decision is included even though its stack-confusion
+  // panel is conditional (only some wrong answers trigger it) because PreflopTable caps
+  // itself at max-w-2xl regardless of this container's width, so the extra room is a no-op
+  // visually until the panel actually appears. Only these step types widen the container;
+  // every other lesson's steps keep the standard reading width.
+  const currentStepType = lesson.steps[currentStep]?.type;
+  const isWideVisualizationStep =
+    currentStepType === "range_collision" || currentStepType === "range_xray" || currentStepType === "table_decision";
+
   const handleStepResult = (
     step: LessonStep,
     stepIndex: number,
@@ -419,7 +431,12 @@ export default function LessonPage() {
 
       {/* Player area */}
       <div className="relative flex-1 flex items-start justify-center py-10 px-4">
-        <div className="w-full max-w-2xl">
+        <div
+          className={cn(
+            "w-full transition-[max-width] duration-300",
+            isWideVisualizationStep ? "max-w-5xl" : "max-w-2xl",
+          )}
+        >
           {session?.access_token ? (
             <LessonPlayer
               lesson={lesson}

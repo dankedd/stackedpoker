@@ -265,3 +265,54 @@ describe('PokerRangeGrid — category mode: in-range-but-unconnected is visually
     expect(outOfRangeCell).toContain('role="tooltip"')
   })
 })
+
+// ── The grid must never force horizontal scrolling ────────────────────────────
+// Regression coverage for the overflow/cropping bug: the old `overflow-x-auto` +
+// `inline-block min-w-full` wrapper let the grid's intrinsic (max-content) width
+// dominate over its parent's actual width, forcing a scrollbar on any container
+// narrower than ~13 cells' natural text width. The fix relies on the row/column
+// containers being plain `w-full` (never intrinsically/shrink-to-fit sized) with
+// every cell carrying `min-w-0` (overriding flexbox's default `min-width: auto`,
+// which otherwise floors a flex item's shrink at its own content's min-content
+// size) so cells genuinely shrink to whatever width the parent provides.
+describe('PokerRangeGrid — never introduces horizontal scrolling', () => {
+  it('renders no overflow-inducing wrapper (no overflow-x-auto, no inline-block, no min-w-full)', () => {
+    const modes = ['membership', 'diff', 'category', 'strategy'] as const
+    for (const mode of modes) {
+      const html = renderToStaticMarkup(
+        <PokerRangeGrid
+          range={['AA', 'KQs']}
+          mode={mode}
+          categoryMap={{ AA: 'overpair' }}
+          comparisonRange={['AA']}
+          strategies={{ AA: { raise: 1 } }}
+        />,
+      )
+      expect(html).not.toContain('overflow-x-auto')
+      expect(html).not.toContain('inline-block')
+      expect(html).not.toContain('min-w-full')
+    }
+  })
+
+  it('every cell carries min-w-0 so it can shrink below its own text width', () => {
+    const html = renderToStaticMarkup(<PokerRangeGrid range={['AA']} mode="membership" />)
+    // 169 cells total; every one must be shrinkable, not just some.
+    const cellMatches = html.match(/class="[^"]*aspect-square[^"]*"/g) ?? []
+    expect(cellMatches.length).toBe(169)
+    for (const cell of cellMatches) expect(cell).toContain('min-w-0')
+  })
+
+  it('the outer grid wrapper is a plain w-full block, not a shrink-to-fit inline element', () => {
+    const html = renderToStaticMarkup(<PokerRangeGrid range={['AA']} mode="membership" />)
+    expect(html).toContain('w-full min-w-0')
+  })
+
+  it('column headers and row labels use ascending (not inverted) responsive font sizes', () => {
+    // A cell that's already tiny on mobile must not get EVEN SMALLER at a wider
+    // breakpoint where it typically has more room, not less.
+    const html = renderToStaticMarkup(<PokerRangeGrid range={['AA']} mode="membership" />)
+    expect(html).toContain('text-[8px] sm:text-[10px]')
+    expect(html).not.toContain('text-[10px] sm:text-[8px]')
+    expect(html).not.toContain('text-[11px] sm:text-[9px]')
+  })
+})
