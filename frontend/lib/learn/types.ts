@@ -926,26 +926,16 @@ export interface TrainingSession {
 }
 
 // ── XP / level utilities ──────────────────────────────────────────────────────
+// The level curve itself lives in `./levelCurve.ts` (the single shared
+// helper every Learn surface must use) — re-exported here so existing
+// `from '@/lib/learn/types'` imports keep working.
 
-export const LEVEL_THRESHOLDS = [
-  0, 100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200, 4000,
-  5000, 6200, 7600, 9200, 11000, 13000, 15500, 18500, 22000, 26000,
-]
-
-export function levelForXP(xp: number): number {
-  for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
-    if (xp >= LEVEL_THRESHOLDS[i]) return i + 1
-  }
-  return 1
-}
+export { levelForXP, getLevelProgress, type LevelProgress } from './levelCurve'
+import { getLevelProgress } from './levelCurve'
 
 export function xpToNextLevel(xp: number): { current: number; needed: number; pct: number } {
-  const level = levelForXP(xp)
-  const currentFloor = LEVEL_THRESHOLDS[level - 1] ?? 0
-  const nextCeil = LEVEL_THRESHOLDS[level] ?? LEVEL_THRESHOLDS[LEVEL_THRESHOLDS.length - 1] + 10000
-  const current = xp - currentFloor
-  const needed = nextCeil - currentFloor
-  return { current, needed, pct: Math.min(100, Math.round((current / needed) * 100)) }
+  const p = getLevelProgress(xp)
+  return { current: p.currentLevelXp, needed: p.xpRequiredForNextLevel, pct: p.progressPercent }
 }
 
 // ── Display constants ─────────────────────────────────────────────────────────

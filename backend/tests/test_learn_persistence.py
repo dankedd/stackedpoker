@@ -38,6 +38,8 @@ def _parse_filters(query: str) -> dict:
             continue
         if val.startswith("eq."):
             filters[key] = ("eq", val[3:])
+        elif val.startswith("neq."):
+            filters[key] = ("neq", val[4:])
         elif val.startswith("gte."):
             filters[key] = ("gte", float(val[4:]))
         elif val.startswith("in."):
@@ -56,6 +58,9 @@ def _row_matches(row: dict, filters: dict) -> bool:
                 if str(rv).lower() != str(val).lower():
                     return False
             elif str(rv) != str(val):
+                return False
+        elif op == "neq":
+            if str(rv) == str(val):
                 return False
         elif op == "gte":
             if rv is None or float(rv) < val:
@@ -124,11 +129,20 @@ class FakeSupabase:
         self._table(table).append(row)
         return row
 
-    def patch(self, table: str, query: str, data: dict) -> None:
+    def patch(self, table: str, query: str, data: dict) -> list[dict]:
+        """Mirrors PostgREST's `Prefer: return=representation` — returns the
+        rows the UPDATE actually matched (and updated). Runs fully
+        synchronously once entered (no `await` inside), which is what makes
+        it a valid stand-in for a real single-statement atomic SQL UPDATE:
+        a compare-and-swap filter (e.g. `status=neq.completed`) evaluated
+        here can never be split by another interleaved task."""
         filters = _parse_filters(query)
+        affected = []
         for row in self._table(table):
             if _row_matches(row, filters):
                 row.update(data)
+                affected.append(row)
+        return affected
 
     def upsert(self, table: str, data: dict, on_conflict_cols: list[str]) -> dict:
         for row in self._table(table):
@@ -136,6 +150,17 @@ class FakeSupabase:
                 row.update(data)
                 return row
         return self.insert(table, data)
+
+    def increment_user_xp(self, user_id: str, xp_delta: int) -> int:
+        """Mirrors supabase_xp_atomic_increment.sql's increment_user_xp RPC:
+        a single atomic `total_xp = total_xp + delta` update, returning the
+        new total. The row must already exist (learn.py always calls
+        _get_skill_row — which creates it if missing — before awarding)."""
+        for row in self._table("user_skill_progress"):
+            if row.get("user_id") == user_id:
+                row["total_xp"] = row.get("total_xp", 0) + xp_delta
+                return row["total_xp"]
+        raise AssertionError(f"increment_user_xp called for unknown user {user_id}")
 
     def award_achievement(self, user_id: str, achievement_id: str) -> bool:
         catalog = {a["id"]: a for a in self._table("achievements")}
@@ -179,6 +204,12 @@ class FakeAsyncClient:
         return path, query
 
     async def get(self, url, headers=None):
+        # A real yield point (unlike a bare `async def` with no internal
+        # await, which asyncio never actually interleaves) — needed so
+        # asyncio.gather-driven "simultaneous requests" tests genuinely
+        # interleave two in-flight calls instead of silently running them
+        # back-to-back, which would make a race-condition test meaningless.
+        await asyncio.sleep(0)
         path, query = self._split(url)
         if path in self.db.broken_tables:
             request = httpx.Request("GET", url)
@@ -196,14 +227,19 @@ class FakeAsyncClient:
         return FakeResponse(self.db.select(path, query))
 
     async def head(self, url, headers=None):
+        await asyncio.sleep(0)
         path, query = self._split(url)
         total = self.db.count(path, query)
         return FakeResponse(None, headers={"content-range": f"0-0/{total}"})
 
     async def post(self, url, headers=None, json=None):
+        await asyncio.sleep(0)
         path, query = self._split(url)
         if path == "rpc/award_achievement":
             return FakeResponse(self.db.award_achievement(json["p_user_id"], json["p_achievement_id"]))
+        if path == "rpc/increment_user_xp":
+            new_total = self.db.increment_user_xp(json["p_user_id"], json["p_xp_delta"])
+            return FakeResponse([{"total_xp": new_total}])
         prefer = (headers or {}).get("Prefer", "")
         if "resolution=merge-duplicates" in prefer:
             on_conflict = ""
@@ -215,9 +251,10 @@ class FakeAsyncClient:
         return FakeResponse([self.db.insert(path, json)])
 
     async def patch(self, url, headers=None, json=None):
+        await asyncio.sleep(0)
         path, query = self._split(url)
-        self.db.patch(path, query, json)
-        return FakeResponse(None)
+        affected = self.db.patch(path, query, json)
+        return FakeResponse(affected)
 
 
 class FakeSettings:
@@ -241,6 +278,17 @@ def fake_db(monkeypatch):
 
 def run(coro):
     return asyncio.run(coro)
+
+
+def run_concurrently(*coros):
+    """Runs several coroutines via asyncio.gather inside a single event loop.
+    `asyncio.gather(...)` must be constructed while a loop is already
+    running (or ensure_future has nothing to schedule onto) — so the gather
+    call itself is wrapped in a coroutine and handed to run(), rather than
+    calling asyncio.gather directly at module/test scope."""
+    async def _gather():
+        return await asyncio.gather(*coros)
+    return run(_gather())
 
 
 # ── Step submission idempotency ───────────────────────────────────────────────
@@ -788,6 +836,119 @@ def test_get_progress_raises_when_a_core_table_fails(fake_db, broken_table):
     with pytest.raises(HTTPException) as exc_info:
         run(learn_module.get_full_progress(user))
     assert exc_info.value.status_code == 502
+
+
+# ── Concurrent awards: atomic increment must not lose an update ──────────────
+
+
+def test_simultaneous_step_completions_do_not_lose_an_xp_delta(fake_db):
+    """Two different steps for the same user, submitted concurrently (their
+    Supabase round-trips interleaved via asyncio.gather), must both land —
+    the atomic increment_user_xp RPC must never let one overwrite the
+    other's delta the way a read-then-PATCH-absolute-value pattern would."""
+    user = {"sub": "user-race-1"}
+    body_a = learn_module.StepResultBody(
+        score=100, quality="perfect", xp_earned=30, concept_ids=[], step_index=0, total_steps=2,
+    )
+    body_b = learn_module.StepResultBody(
+        score=100, quality="perfect", xp_earned=40, concept_ids=[], step_index=1, total_steps=2,
+    )
+
+    results = run_concurrently(
+        learn_module.submit_step_result("lesson-race", "step-a", body_a, user),
+        learn_module.submit_step_result("lesson-race", "step-b", body_b, user),
+    )
+
+    # Both deltas must be reflected in the final total — neither was lost.
+    final_totals = {r["new_total_xp"] for r in results}
+    assert max(final_totals) == 70
+
+    skill_rows = fake_db.select("user_skill_progress", "user_id=eq.user-race-1")
+    assert skill_rows[0]["total_xp"] == 70
+
+
+def test_duplicate_concurrent_completion_requests_award_once(fake_db):
+    """Two requests to complete the SAME lesson land concurrently — only one
+    may be treated as the genuine first completion. Seeded as already
+    `in_progress` (the realistic case — a learner has answered its steps
+    before hitting "complete"), since that PATCH-based transition is exactly
+    what the `status=neq.completed` compare-and-swap guards; the from-scratch
+    INSERT path is separately protected by user_lesson_progress's own
+    (user_id, lesson_id) primary key in real Postgres."""
+    user_id = "user-race-2"
+    user = {"sub": user_id}
+    fake_db.insert("user_lesson_progress", {
+        "user_id": user_id, "lesson_id": "lesson-race-2", "status": "in_progress",
+        "best_score": 0, "attempts": 1, "time_spent_sec": 0,
+    })
+    body = learn_module.LessonCompleteBody(score=100, lesson_xp_reward=200, path_lesson_ids=[])
+
+    results = run_concurrently(
+        learn_module.complete_lesson("lesson-race-2", body, user),
+        learn_module.complete_lesson("lesson-race-2", body, user),
+    )
+
+    bonuses_awarded = [r["bonus_xp_earned"] for r in results if r["bonus_xp_earned"] > 0]
+    assert len(bonuses_awarded) == 1
+    assert sorted(r["already_completed"] for r in results) == [False, True]
+
+    skill_rows = fake_db.select("user_skill_progress", f"user_id=eq.{user_id}")
+    # 200 lesson bonus + 25 first_lesson + 50 perfect_lesson achievements, exactly once.
+    assert skill_rows[0]["total_xp"] == 275
+
+    lesson_rows = fake_db.select("user_lesson_progress", f"user_id=eq.{user_id}&lesson_id=eq.lesson-race-2")
+    assert len(lesson_rows) == 1
+    assert lesson_rows[0]["status"] == "completed"
+
+
+# ── Server-side sanity ceiling on client-supplied XP amounts ──────────────────
+
+
+def test_step_xp_award_is_capped_regardless_of_client_claim(fake_db):
+    """A tampered client (e.g. via DevTools) claiming an absurd xp_earned on
+    a genuinely-first completion must still only be credited up to the
+    server's sanity ceiling, never the raw client-supplied number."""
+    user = {"sub": "user-cap-1"}
+    body = learn_module.StepResultBody(
+        score=100, quality="perfect", xp_earned=999_999, concept_ids=[], step_index=0, total_steps=1,
+    )
+    result = run(learn_module.submit_step_result("lesson-cap", "step-1", body, user))
+
+    assert result["xp_awarded_this_call"] == learn_module.MAX_STEP_XP_AWARD
+    assert result["new_total_xp"] == learn_module.MAX_STEP_XP_AWARD
+
+    skill_rows = fake_db.select("user_skill_progress", "user_id=eq.user-cap-1")
+    assert skill_rows[0]["total_xp"] == learn_module.MAX_STEP_XP_AWARD
+
+
+def test_lesson_bonus_xp_is_capped_regardless_of_client_claim(fake_db):
+    user = {"sub": "user-cap-2"}
+    body = learn_module.LessonCompleteBody(score=100, lesson_xp_reward=999_999, path_lesson_ids=[])
+    result = run(learn_module.complete_lesson("lesson-cap-2", body, user))
+    assert result["bonus_xp_earned"] == learn_module.MAX_LESSON_BONUS_XP
+
+
+def test_module_bonus_xp_is_capped_regardless_of_client_claim(fake_db):
+    user = {"sub": "user-cap-3"}
+    fake_db.insert("user_lesson_progress", {"user_id": "user-cap-3", "lesson_id": "m-cap-l1", "status": "completed"})
+    body = learn_module.ModuleCompleteBody(module_xp_reward=999_999, lesson_ids=["m-cap-l1"])
+    result = run(learn_module.complete_module("module-cap", body, user))
+    assert result["bonus_xp_earned"] == learn_module.MAX_MODULE_BONUS_XP
+
+
+# ── Level is always re-derived from total_xp, never trusted from a stale cache ──
+
+
+def test_get_full_progress_recomputes_level_even_if_cached_column_is_stale(fake_db):
+    """Simulates a level-curve formula change: total_xp implies level 3 under
+    the current formula, but the cached `level` column was left at a stale
+    value from before. GET /learn/progress must report the recomputed level."""
+    user = {"sub": "user-stale-level"}
+    fake_db.insert("user_skill_progress", {
+        "user_id": "user-stale-level", "total_xp": 1050, "level": 99, "streak_days": 0,
+    })
+    restored = run(learn_module.get_full_progress(user))
+    assert restored["skill"]["level"] == 3
 
 
 def test_replaying_completion_after_relogin_does_not_duplicate_xp(fake_db):

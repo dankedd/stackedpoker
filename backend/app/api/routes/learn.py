@@ -18,13 +18,28 @@ from pydantic import BaseModel
 
 from app.config import get_settings
 from app.middleware.auth import get_current_user
-from app.engines.learn.xp_calculator import apply_xp_to_user, level_for_xp
+from app.engines.learn.xp_calculator import level_for_xp
 from app.engines.learn.srs_engine import compute_next_review
 from app.engines.learn.leak_detector import detect_leaks_from_step
 from app.engines.learn.achievements import check_and_award_achievements
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["learn"])
+
+# ── Server-side sanity ceilings ────────────────────────────────────────────────
+# Answer evaluation (score/quality/xp_earned) is computed client-side (see the
+# module docstring) because it depends on curriculum content
+# (frontend/lib/learn/curriculum.ts) the backend doesn't have loaded. That
+# means the exact "correct" XP for a given step/lesson/module can't be fully
+# re-derived here without duplicating the curriculum server-side (out of
+# scope for this change). As defense-in-depth against a client sending an
+# arbitrary inflated amount (e.g. via DevTools), every award is still clamped
+# to a generous ceiling well above any real authored value (max authored step
+# xp is 28, max lesson xp_reward ~320, max module xp_reward 1000 as of this
+# writing) — a legitimate award is never affected, but "999999 XP" is.
+MAX_STEP_XP_AWARD = 100
+MAX_LESSON_BONUS_XP = 500
+MAX_MODULE_BONUS_XP = 2000
 
 
 # ── Supabase REST helpers ─────────────────────────────────────────────────────
@@ -55,11 +70,18 @@ async def _supabase_post(table: str, data: dict, settings) -> dict:
         return result[0] if result else {}
 
 
-async def _supabase_patch(table: str, query: str, data: dict, settings) -> None:
+async def _supabase_patch(table: str, query: str, data: dict, settings) -> list[dict]:
+    """Returns the rows the PATCH actually affected (via Prefer:
+    return=representation) — an empty list means the WHERE clause in `query`
+    matched nothing, which is exactly how a compare-and-swap guard (e.g.
+    `...&status=neq.completed`) tells a caller "someone else already won this
+    race" instead of blindly assuming its own write took effect."""
     url = f"{settings.supabase_url}/rest/v1/{table}?{query}"
+    headers = {**_sb_headers(settings), "Prefer": "return=representation"}
     async with httpx.AsyncClient(timeout=10.0) as client:
-        r = await client.patch(url, headers=_sb_headers(settings), json=data)
+        r = await client.patch(url, headers=headers, json=data)
         r.raise_for_status()
+        return r.json()
 
 
 async def _supabase_upsert(table: str, data: dict, settings, on_conflict: str = "") -> dict:
@@ -161,7 +183,13 @@ class MergeGuestProgressBody(BaseModel):
 # ── Helpers: user_skill_progress / user_lesson_progress rows ──────────────────
 
 async def _get_skill_row(user_id: str, settings) -> dict:
-    """Return the user_skill_progress row, creating it if missing."""
+    """Return the user_skill_progress row, creating it if missing.
+
+    Uses upsert (ON CONFLICT merge) rather than a bare insert so two
+    concurrent first-ever requests for a brand-new user can't collide on the
+    user_id primary key and 502 one of them — the loser's upsert just merges
+    onto the row the winner already created.
+    """
     rows = await _supabase_get(
         "user_skill_progress", f"user_id=eq.{user_id}&select=*", settings,
     )
@@ -175,7 +203,32 @@ async def _get_skill_row(user_id: str, settings) -> dict:
         "unlocked_paths": ["beginner"],
         "achievements": [],
     }
-    return await _supabase_post("user_skill_progress", new_row, settings)
+    return await _supabase_upsert("user_skill_progress", new_row, settings, on_conflict="user_id")
+
+
+async def _award_xp(user_id: str, current_xp: int, delta: int, settings) -> tuple[int, int, bool]:
+    """Atomically increments the user's total XP by `delta` (a no-op if
+    delta<=0) via a single SQL UPDATE (the `increment_user_xp` RPC —
+    supabase_xp_atomic_increment.sql), so two simultaneous awards for the
+    same user can never lose an update to a race the way a
+    read-current-then-PATCH-absolute-value pattern would. Level is derived
+    from the DB-returned total afterward (never computed from the
+    possibly-stale `current_xp` passed in) and is the ONLY thing ever cached
+    back onto `level` — that column is a display convenience, never a second
+    source of truth. Returns (new_total_xp, new_level, leveled_up).
+    """
+    if delta <= 0:
+        return current_xp, level_for_xp(current_xp), False
+
+    result = await _supabase_post(
+        "rpc/increment_user_xp", {"p_user_id": user_id, "p_xp_delta": delta}, settings,
+    )
+    new_total_xp = result.get("total_xp", current_xp + delta)
+    old_level = level_for_xp(current_xp)
+    new_level = level_for_xp(new_total_xp)
+    if new_level != old_level:
+        await _supabase_patch("user_skill_progress", f"user_id=eq.{user_id}", {"level": new_level}, settings)
+    return new_total_xp, new_level, new_level > old_level
 
 
 async def _get_lesson_row(user_id: str, lesson_id: str, settings) -> dict | None:
@@ -398,7 +451,10 @@ async def get_full_progress(current_user: dict = Depends(get_current_user)) -> d
         return {
             "skill": {
                 "total_xp": skill.get("total_xp", 0),
-                "level": skill.get("level", 1),
+                # Always recomputed from total_xp — never trust the cached
+                # `level` column, which can go stale (e.g. after a level-curve
+                # formula change) until the user's next XP-awarding event.
+                "level": level_for_xp(skill.get("total_xp", 0)),
                 "streak_days": skill.get("streak_days", 0),
                 "last_active": skill.get("last_active"),
             },
@@ -439,8 +495,10 @@ async def submit_step_result(
 
         skill = await _get_skill_row(user_id, settings)
         current_xp = skill.get("total_xp", 0)
-        xp_awarded_this_call = body.xp_earned if is_first_completion else 0
-        new_total_xp, new_level, leveled_up = apply_xp_to_user(current_xp, xp_awarded_this_call)
+        xp_awarded_this_call = (
+            min(max(0, body.xp_earned), MAX_STEP_XP_AWARD) if is_first_completion else 0
+        )
+        new_total_xp, new_level, leveled_up = await _award_xp(user_id, current_xp, xp_awarded_this_call, settings)
 
         if is_first_completion:
             await _supabase_post(
@@ -453,7 +511,7 @@ async def submit_step_result(
                     "best_score": body.score,
                     "last_score": body.score,
                     "last_quality": body.quality,
-                    "xp_awarded": body.xp_earned,
+                    "xp_awarded": xp_awarded_this_call,
                     "last_response": body.response,
                     "concept_ids": body.concept_ids,
                 },
@@ -478,13 +536,13 @@ async def submit_step_result(
         new_streak, today_str, streak_changed = _apply_streak(
             skill.get("last_active"), skill.get("streak_days", 0),
         )
-        skill_patch: dict = {}
-        if xp_awarded_this_call > 0:
-            skill_patch.update(total_xp=new_total_xp, level=new_level)
+        # total_xp and level (when it changed) were already persisted atomically
+        # by _award_xp above — this patch is streak bookkeeping only.
         if streak_changed:
-            skill_patch.update(streak_days=new_streak, last_active=today_str)
-        if skill_patch:
-            await _supabase_patch("user_skill_progress", f"user_id=eq.{user_id}", skill_patch, settings)
+            await _supabase_patch(
+                "user_skill_progress", f"user_id=eq.{user_id}",
+                {"streak_days": new_streak, "last_active": today_str}, settings,
+            )
 
         existing_lesson = await _get_lesson_row(user_id, lesson_id, settings)
         lesson_patch: dict = {
@@ -537,7 +595,7 @@ async def submit_step_result(
             # until its next full-progress fetch.
             refreshed = await _get_skill_row(user_id, settings)
             new_total_xp = refreshed.get("total_xp", new_total_xp)
-            new_level = refreshed.get("level", new_level)
+            new_level = level_for_xp(new_total_xp)
 
         return {
             "new_total_xp": new_total_xp,
@@ -573,17 +631,6 @@ async def complete_lesson(
 
     try:
         existing = await _get_lesson_row(user_id, lesson_id, settings)
-        already_completed = bool(existing and existing.get("status") == "completed")
-
-        skill = await _get_skill_row(user_id, settings)
-        current_xp = skill.get("total_xp", 0)
-
-        bonus_xp = 0
-        if not already_completed:
-            score_pct = max(0, min(100, body.score)) / 100
-            bonus_xp = int(round(body.lesson_xp_reward * score_pct))
-
-        new_total_xp, new_level, leveled_up = apply_xp_to_user(current_xp, bonus_xp)
 
         lesson_patch: dict = {
             "status": "completed",
@@ -594,24 +641,60 @@ async def complete_lesson(
             "module_id": body.module_id,
             "path_id": body.path_id,
         }
-        if not already_completed:
-            lesson_patch["completed_at"] = datetime.now(timezone.utc).isoformat()
-            lesson_patch["completion_xp_awarded"] = True
 
-        if existing:
+        # `won_first_completion` is decided by the WRITE itself, not the read
+        # above — two concurrent completions of the same never-before-completed
+        # lesson must have exactly one of them win, or both would see
+        # `existing.status != 'completed'` and both award the bonus. The
+        # `&status=neq.completed` filter makes the UPDATE itself the atomic
+        # gate: Postgres serializes concurrent UPDATEs to the same row, so
+        # only the first to actually commit can still satisfy that WHERE
+        # clause — the second's same UPDATE then matches zero rows.
+        if existing and existing.get("status") == "completed":
+            won_first_completion = False
             await _supabase_patch(
                 "user_lesson_progress", f"user_id=eq.{user_id}&lesson_id=eq.{lesson_id}", lesson_patch, settings,
             )
+        elif existing:
+            cas_patch = {
+                **lesson_patch,
+                "completed_at": datetime.now(timezone.utc).isoformat(),
+                "completion_xp_awarded": True,
+            }
+            affected = await _supabase_patch(
+                "user_lesson_progress",
+                f"user_id=eq.{user_id}&lesson_id=eq.{lesson_id}&status=neq.completed",
+                cas_patch,
+                settings,
+            )
+            won_first_completion = bool(affected)
+            if not won_first_completion:
+                # Another concurrent request already flipped it to completed
+                # between our read and our write — still apply score bookkeeping.
+                await _supabase_patch(
+                    "user_lesson_progress", f"user_id=eq.{user_id}&lesson_id=eq.{lesson_id}", lesson_patch, settings,
+                )
         else:
+            lesson_patch["completed_at"] = datetime.now(timezone.utc).isoformat()
+            lesson_patch["completion_xp_awarded"] = True
             await _supabase_post(
                 "user_lesson_progress", {"user_id": user_id, "lesson_id": lesson_id, **lesson_patch}, settings,
             )
+            won_first_completion = True
 
-        if bonus_xp > 0:
-            await _supabase_patch(
-                "user_skill_progress", f"user_id=eq.{user_id}",
-                {"total_xp": new_total_xp, "level": new_level}, settings,
-            )
+        already_completed = not won_first_completion
+
+        skill = await _get_skill_row(user_id, settings)
+        current_xp = skill.get("total_xp", 0)
+
+        bonus_xp = 0
+        if won_first_completion:
+            score_pct = max(0, min(100, body.score)) / 100
+            reward = min(max(0, body.lesson_xp_reward), MAX_LESSON_BONUS_XP)
+            bonus_xp = int(round(reward * score_pct))
+
+        new_total_xp, new_level, leveled_up = await _award_xp(user_id, current_xp, bonus_xp, settings)
+        # total_xp/level (when bonus_xp > 0) were already persisted atomically by _award_xp above.
 
         newly_unlocked = await check_and_award_achievements(
             user_id, settings, path_id=body.path_id, path_lesson_ids=body.path_lesson_ids or None,
@@ -619,7 +702,7 @@ async def complete_lesson(
         if newly_unlocked:
             refreshed = await _get_skill_row(user_id, settings)
             new_total_xp = refreshed.get("total_xp", new_total_xp)
-            new_level = refreshed.get("level", new_level)
+            new_level = level_for_xp(new_total_xp)
 
         # Read the row back rather than trusting the patch/post call succeeded
         # silently — the response is only allowed to claim "completed" if the
@@ -689,12 +772,12 @@ async def complete_module(
 
         skill = await _get_skill_row(user_id, settings)
         current_xp = skill.get("total_xp", 0)
-        new_total_xp, new_level, leveled_up = current_xp, skill.get("level", 1), False
+        new_total_xp, new_level, leveled_up = current_xp, level_for_xp(current_xp), False
 
         bonus_xp = 0
         if not already_completed and eligible:
-            bonus_xp = max(0, body.module_xp_reward)
-            new_total_xp, new_level, leveled_up = apply_xp_to_user(current_xp, bonus_xp)
+            bonus_xp = min(max(0, body.module_xp_reward), MAX_MODULE_BONUS_XP)
+            new_total_xp, new_level, leveled_up = await _award_xp(user_id, current_xp, bonus_xp, settings)
 
             await _supabase_post(
                 "user_module_progress",
@@ -706,17 +789,13 @@ async def complete_module(
                 },
                 settings,
             )
-            if bonus_xp > 0:
-                await _supabase_patch(
-                    "user_skill_progress", f"user_id=eq.{user_id}",
-                    {"total_xp": new_total_xp, "level": new_level}, settings,
-                )
+            # total_xp/level were already persisted atomically by _award_xp above.
 
         newly_unlocked = await check_and_award_achievements(user_id, settings)
         if newly_unlocked:
             refreshed = await _get_skill_row(user_id, settings)
             new_total_xp = refreshed.get("total_xp", new_total_xp)
-            new_level = refreshed.get("level", new_level)
+            new_level = level_for_xp(new_total_xp)
 
         return {
             "module_id": module_id,
@@ -889,17 +968,16 @@ async def merge_guest_progress(
 
             imported_lessons.append(guest_lesson.lesson_id)
 
-        if total_xp != skill.get("total_xp", 0):
-            new_level = level_for_xp(total_xp)
-            await _supabase_patch(
-                "user_skill_progress", f"user_id=eq.{user_id}",
-                {"total_xp": total_xp, "level": new_level}, settings,
-            )
+        starting_xp = skill.get("total_xp", 0)
+        guest_delta = total_xp - starting_xp
+        final_total_xp = total_xp
+        if guest_delta > 0:
+            final_total_xp, _new_level, _leveled_up = await _award_xp(user_id, starting_xp, guest_delta, settings)
 
         newly_unlocked = await check_and_award_achievements(user_id, settings)
         return {
             "imported_lessons": imported_lessons,
-            "new_total_xp": total_xp,
+            "new_total_xp": final_total_xp,
             "newly_unlocked_achievement_ids": newly_unlocked,
         }
 

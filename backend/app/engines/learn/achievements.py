@@ -12,6 +12,8 @@ import logging
 
 import httpx
 
+from app.engines.learn.xp_calculator import level_for_xp
+
 logger = logging.getLogger(__name__)
 
 PATH_COMPLETE_ACHIEVEMENT: dict[str, str] = {
@@ -75,10 +77,13 @@ async def check_and_award_achievements(
         try:
             skill_rows = await _get(
                 client, settings, "user_skill_progress",
-                f"user_id=eq.{user_id}&select=level,streak_days",
+                f"user_id=eq.{user_id}&select=total_xp,streak_days",
             )
             skill = skill_rows[0] if skill_rows else {}
-            level = skill.get("level", 1)
+            # Always derived from total_xp — never trust the cached `level`
+            # column, which can lag behind the true value under the level
+            # curve formula (see xp_calculator.get_level_progress).
+            level = level_for_xp(skill.get("total_xp", 0))
             streak = skill.get("streak_days", 0)
 
             candidates: list[str] = []

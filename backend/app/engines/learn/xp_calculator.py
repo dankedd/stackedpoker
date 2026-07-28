@@ -1,6 +1,26 @@
-"""XP calculation for lesson completions and step responses."""
+"""XP calculation for lesson completions and step responses.
+
+Level curve
+-----------
+Levels are NOT a hardcoded threshold table — they're derived from one
+deterministic formula, mirrored exactly in `frontend/lib/learn/levelCurve.ts`
+(the two must stay in lockstep; there is no shared package between the Python
+backend and the TS frontend, so "shared" means "same formula, verified by
+tests in both languages," not literally one file).
+
+    xp_required_for_level(level) = round(LEVEL_BASE_XP * LEVEL_GROWTH_RATE ** (level - 1))
+
+This is the XP needed to advance FROM `level` TO `level + 1` — level 1 needs
+500 XP to reach level 2, level 2 needs 550 to reach level 3, etc. (+10% per
+level). Cumulative thresholds are the running sum of these per-level costs,
+never authored/guessed directly.
+"""
 
 from dataclasses import dataclass
+
+LEVEL_BASE_XP = 500
+LEVEL_GROWTH_RATE = 1.10
+
 
 @dataclass
 class XPResult:
@@ -12,20 +32,65 @@ class XPResult:
     level_after: int
     leveled_up: bool
 
-LEVEL_THRESHOLDS = [0, 100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200, 4000,
-                    5000, 6200, 7600, 9200, 11000, 13000, 15500, 18500, 22000, 26000,
-                    30500, 35500, 41000, 47000, 54000, 62000, 71000, 81000, 92000]
 
-def xp_for_level(level: int) -> int:
-    if level <= 0: return 0
-    if level >= len(LEVEL_THRESHOLDS): return LEVEL_THRESHOLDS[-1] + (level - len(LEVEL_THRESHOLDS) + 1) * 10000
-    return LEVEL_THRESHOLDS[level]
+@dataclass
+class LevelProgress:
+    level: int
+    total_xp: int
+    current_level_xp: int
+    xp_required_for_next_level: int
+    xp_remaining: int
+    progress_percent: int
+    current_level_threshold: int
+    next_level_threshold: int
+
+
+def xp_required_for_level(level: int) -> int:
+    """XP needed to advance from `level` to `level + 1`."""
+    level = max(1, level)
+    return round(LEVEL_BASE_XP * (LEVEL_GROWTH_RATE ** (level - 1)))
+
+
+def get_level_progress(total_xp: int) -> LevelProgress:
+    """Single source of truth: derives level + all display fields from total_xp.
+
+    Never stores/increments level independently — always recomputed from the
+    persisted total_xp ledger. O(level) — fine since level grows very slowly
+    against XP under a 10%-compounding curve.
+    """
+    total_xp = max(0, total_xp)
+    level = 1
+    threshold = 0
+    while True:
+        required = xp_required_for_level(level)
+        if threshold + required > total_xp:
+            break
+        threshold += required
+        level += 1
+
+    required_for_next = xp_required_for_level(level)
+    next_threshold = threshold + required_for_next
+    current_level_xp = total_xp - threshold
+    xp_remaining = next_threshold - total_xp
+    progress_percent = (
+        round((current_level_xp / required_for_next) * 100) if required_for_next else 0
+    )
+
+    return LevelProgress(
+        level=level,
+        total_xp=total_xp,
+        current_level_xp=current_level_xp,
+        xp_required_for_next_level=required_for_next,
+        xp_remaining=xp_remaining,
+        progress_percent=progress_percent,
+        current_level_threshold=threshold,
+        next_level_threshold=next_threshold,
+    )
+
 
 def level_for_xp(total_xp: int) -> int:
-    for i, threshold in enumerate(reversed(LEVEL_THRESHOLDS)):
-        if total_xp >= threshold:
-            return len(LEVEL_THRESHOLDS) - i
-    return 1
+    return get_level_progress(total_xp).level
+
 
 def calculate_step_xp(base: int, score: int, time_ms: int, streak: int) -> XPResult:
     """Calculate XP for a single lesson step response."""
@@ -45,6 +110,7 @@ def calculate_step_xp(base: int, score: int, time_ms: int, streak: int) -> XPRes
     total = earned + speed_bonus + streak_bonus
     return XPResult(base_xp=earned, speed_bonus=speed_bonus, streak_bonus=streak_bonus,
                     total_xp=total, level_before=1, level_after=1, leveled_up=False)
+
 
 def apply_xp_to_user(current_xp: int, xp_earned: int) -> tuple[int, int, bool]:
     """Returns (new_total_xp, new_level, leveled_up)."""

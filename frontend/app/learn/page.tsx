@@ -416,7 +416,7 @@ export default function LearnPage() {
                             Level {progress.skill.level}
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            {progress.skill.total_xp.toLocaleString()} XP
+                            {progress.skill.total_xp.toLocaleString()} total XP
                           </span>
                         </div>
                         <div className="h-2 rounded-full bg-white/[0.05] overflow-hidden">
@@ -425,12 +425,16 @@ export default function LearnPage() {
                             style={{ width: `${xpInfo.pct}%` }}
                           />
                         </div>
+                        {/* Explicitly the XP earned WITHIN this level, never
+                            the running total — those are different numbers
+                            and must never be conflated (e.g. never render
+                            something like "1920 / 666 XP"). */}
                         <div className="flex items-center justify-between mt-2">
                           <span className="text-[10px] text-muted-foreground/40">
-                            Daily goal
+                            {xpInfo.current.toLocaleString()} / {xpInfo.needed.toLocaleString()} XP
                           </span>
                           <span className="text-[10px] text-muted-foreground">
-                            {xpInfo.needed - xpInfo.current} XP to next level
+                            {xpInfo.needed - xpInfo.current} XP to Level {progress.skill.level + 1}
                           </span>
                         </div>
                       </div>

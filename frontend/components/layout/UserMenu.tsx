@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { LayoutDashboard, BookOpen, Settings, LogOut, ChevronDown, CreditCard } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useLearnProgress } from '@/contexts/LearnProgressContext'
 
 const DROPDOWN_W = 224 // w-56 = 14rem
 
@@ -16,6 +17,7 @@ interface DropdownPos {
 
 export function UserMenu() {
   const { user, signOut, loading } = useAuth()
+  const { progress } = useLearnProgress()
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState<DropdownPos>({ top: 0, left: 0, originX: '50%' })
   const triggerRef  = useRef<HTMLButtonElement>(null)
@@ -124,6 +126,11 @@ export function UserMenu() {
               <p className="text-[13px] font-semibold text-white truncate">{displayName}</p>
               <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
             </div>
+            {!progress.isGuest && (
+              <span className="ml-auto shrink-0 rounded-full border border-violet-400/30 bg-violet-500/10 px-2 py-0.5 text-[10px] font-bold text-violet-300">
+                LVL {progress.skill.level}
+              </span>
+            )}
           </div>
         </div>
 
@@ -166,8 +173,13 @@ export function UserMenu() {
         aria-haspopup="true"
         aria-expanded={open}
       >
-        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-violet-600/80 to-blue-500/80 border border-violet-400/30 text-white text-[11px] font-bold shadow-sm shadow-violet-500/30">
+        <div className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-600/80 to-blue-500/80 border border-violet-400/30 text-white text-[11px] font-bold shadow-sm shadow-violet-500/30">
           {initials}
+          {!progress.isGuest && (
+            <span className="absolute -bottom-1.5 -right-1.5 rounded-full border border-[#070C1B] bg-violet-500 px-1 text-[9px] font-bold leading-[13px] text-white">
+              {progress.skill.level}
+            </span>
+          )}
         </div>
         <span className="hidden sm:block text-[13px] font-medium text-slate-300 max-w-[96px] truncate">
           {displayName}
