@@ -7,7 +7,7 @@ import {
   Flame,
   CheckCircle,
   Circle,
-  Clock as ClockIcon,
+  Lock,
   ChevronRight,
   ChevronDown,
   AlertTriangle,
@@ -16,6 +16,7 @@ import {
   Trophy,
   Target,
   Sparkles,
+  Layers,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -31,12 +32,13 @@ import type { MasteryLevel } from "@/lib/learn/types";
 import {
   JOURNEY_STAGES,
   getCompletedModuleIds,
-  getModuleDisplayStatus,
+  getModuleRowStatus,
   getStageStatus,
   getNextLessonTarget,
   getNextPlannedModule,
   getJourneyOverview,
 } from "@/lib/learn/journey";
+import type { ModuleRowStatus } from "@/lib/learn/journey";
 import { cn } from "@/lib/utils";
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
@@ -65,20 +67,15 @@ function LoadingSkeleton() {
 
 // ── Journey status styling ───────────────────────────────────────────────────
 //
-// Display-only status, distinct from journey.ts's ModuleDisplayStatus
-// ('complete' | 'available' | 'coming_soon'). The journey isn't gated — more
-// than one module can be 'available' (unlocked, not completed) at once — but
-// the spec calls for exactly ONE visible "current" module at a time, so this
-// row-level status splits 'available' into the single next-lesson-target
-// module ('current') vs every other unlocked-but-untouched module ('upcoming').
-
-type ModuleRowStatus = "complete" | "current" | "upcoming" | "coming_soon";
+// Status itself comes from the shared lib/learn/journey.ts#getModuleRowStatus
+// (same function the Foundations-style per-path page uses) — only the visual
+// mapping lives here.
 
 const MODULE_STATUS_ICON: Record<ModuleRowStatus, typeof Circle> = {
   complete: CheckCircle,
   current: Circle,
-  upcoming: Circle,
-  coming_soon: ClockIcon,
+  available: Circle,
+  planned: Lock,
 };
 
 const MODULE_STATUS_STYLE: Record<ModuleRowStatus, { badge: string; icon: string; row: string }> = {
@@ -92,12 +89,12 @@ const MODULE_STATUS_STYLE: Record<ModuleRowStatus, { badge: string; icon: string
     icon: "text-violet-400",
     row: "border-violet-500/25 bg-violet-500/[0.03] hover:border-violet-500/40",
   },
-  upcoming: {
+  available: {
     badge: "bg-secondary/25 border-border/25 text-muted-foreground/60",
     icon: "text-muted-foreground/40",
     row: "border-border/25 bg-card/30 hover:border-border/40",
   },
-  coming_soon: {
+  planned: {
     badge: "bg-secondary/20 border-border/20 text-muted-foreground/50",
     icon: "text-muted-foreground/30",
     row: "border-border/20 bg-card/20 opacity-50",
@@ -107,8 +104,8 @@ const MODULE_STATUS_STYLE: Record<ModuleRowStatus, { badge: string; icon: string
 const MODULE_STATUS_LABEL: Record<ModuleRowStatus, string> = {
   complete: "Completed",
   current: "Current",
-  upcoming: "Available",
-  coming_soon: "Coming Soon",
+  available: "Available",
+  planned: "Planned",
 };
 
 // ── Severity badge ────────────────────────────────────────────────────────────
@@ -250,6 +247,7 @@ export default function LearnPage() {
     [progress.lessons]
   );
   const nextPlannedModule = useMemo(() => getNextPlannedModule(), []);
+  const foundationsPath = useMemo(() => LEARNING_PATHS.find((p) => p.id === "beginner"), []);
   const currentStageId = useMemo(() => {
     const current = JOURNEY_STAGES.find(
       (s) => getStageStatus(s, completedModuleIds) === "current"
@@ -381,6 +379,25 @@ export default function LearnPage() {
                   · {journeyOverview.totalRoadmapModules} planned in total
                 </p>
               </div>
+
+              {/* ── Foundations entry ── */}
+              <Link href="/learn/path/beginner" className="group mb-8 flex items-center gap-4 rounded-2xl border border-border/50 bg-card/60 p-5 hover:border-violet-500/25 transition-colors">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 border border-violet-500/20">
+                  <Layers className="h-5 w-5 text-violet-400/80" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-violet-400/60 mb-0.5">
+                    Foundations
+                  </p>
+                  <p className="text-sm text-muted-foreground truncate">
+                    {foundationsPath?.description ?? "Build your complete strategic foundation."}
+                  </p>
+                </div>
+                <span className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl border border-violet-500/30 text-violet-400 text-xs font-semibold group-hover:bg-violet-500/10 transition-colors whitespace-nowrap">
+                  View Foundations
+                  <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                </span>
+              </Link>
 
               {/* ── Stats row: Level ring + daily XP + streak ── */}
               {user && (
@@ -626,16 +643,14 @@ export default function LearnPage() {
                         {isOpen && (
                           <div className="px-5 pb-4 space-y-2">
                             {stageModules.map((mod) => {
-                              const rawStatus = getModuleDisplayStatus(mod, completedModuleIds);
-                              const status: ModuleRowStatus =
-                                rawStatus === "available"
-                                  ? mod.id === nextLessonTarget?.module.id
-                                    ? "current"
-                                    : "upcoming"
-                                  : rawStatus;
+                              const status = getModuleRowStatus(
+                                mod,
+                                completedModuleIds,
+                                nextLessonTarget?.module.id ?? null
+                              );
                               const styles = MODULE_STATUS_STYLE[status];
                               const StatusIcon = MODULE_STATUS_ICON[status];
-                              const clickable = status !== "coming_soon";
+                              const clickable = status !== "planned";
 
                               const row = (
                                 <div

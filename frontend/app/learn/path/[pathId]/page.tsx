@@ -4,11 +4,10 @@ import { useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
-  ChevronLeft,
-  CheckCircle,
-  Clock as ClockIcon,
-  Circle,
   ChevronRight,
+  CheckCircle,
+  Circle,
+  Lock,
   BookOpen,
   Star,
   Zap,
@@ -19,8 +18,10 @@ import { useLearnProgress } from "@/contexts/LearnProgressContext";
 import { LEARNING_PATHS, MODULES_BY_PATH, LESSONS_BY_MODULE } from "@/lib/learn/curriculum";
 import {
   getCompletedModuleIds,
-  getModuleDisplayStatus,
-  type ModuleDisplayStatus,
+  getNextLessonTarget,
+  getModuleRowStatus,
+  isModuleImplemented,
+  type ModuleRowStatus,
 } from "@/lib/learn/journey";
 import { cn } from "@/lib/utils";
 
@@ -32,41 +33,52 @@ function Skeleton({ className }: { className?: string }) {
 
 // ── Status styling ────────────────────────────────────────────────────────────
 //
-// Same accessibility model as the rest of the Poker Journey (lib/learn/journey.ts):
-// every implemented module is open to everyone — "coming_soon" only means the
-// module has no playable content yet, never that progress is blocking access.
+// Status itself comes from the shared lib/learn/journey.ts#getModuleRowStatus
+// (same function /learn's stage accordion uses) — only the visual mapping
+// lives here, so this page and /learn can never disagree on what's current.
 
-const STATUS_ICON: Record<ModuleDisplayStatus, typeof Circle> = {
+const STATUS_ICON: Record<ModuleRowStatus, typeof Circle> = {
   complete: CheckCircle,
+  current: Circle,
   available: Circle,
-  coming_soon: ClockIcon,
+  planned: Lock,
 };
 
 const STATUS_STYLE: Record<
-  ModuleDisplayStatus,
-  { card: string; icon: string; badge: string }
+  ModuleRowStatus,
+  { card: string; icon: string; badge: string; ring: string }
 > = {
   complete: {
     card: "border-emerald-500/25 bg-emerald-500/[0.04] hover:border-emerald-500/40",
     icon: "text-emerald-400",
     badge: "bg-emerald-500/10 border-emerald-500/25 text-emerald-400",
+    ring: "border-emerald-500/50",
   },
-  available: {
-    card: "border-border/50 bg-card/60 hover:border-violet-500/30 hover:bg-violet-500/[0.03]",
+  current: {
+    card: "border-violet-500/30 bg-violet-500/[0.04] hover:border-violet-500/45",
     icon: "text-violet-400",
     badge: "bg-violet-500/10 border-violet-500/25 text-violet-400",
+    ring: "border-violet-500/50",
   },
-  coming_soon: {
-    card: "border-border/30 bg-card/30 opacity-60",
+  available: {
+    card: "border-border/50 bg-card/60 hover:border-violet-500/25 hover:bg-violet-500/[0.03]",
+    icon: "text-muted-foreground/60",
+    badge: "bg-secondary/25 border-border/25 text-muted-foreground/60",
+    ring: "border-border/40",
+  },
+  planned: {
+    card: "border-border/25 bg-card/25",
     icon: "text-muted-foreground/40",
-    badge: "bg-secondary/30 border-border/30 text-muted-foreground/40",
+    badge: "bg-secondary/20 border-border/20 text-muted-foreground/45",
+    ring: "border-border/30",
   },
 };
 
-const STATUS_LABEL: Record<ModuleDisplayStatus, string> = {
+const STATUS_LABEL: Record<ModuleRowStatus, string> = {
   complete: "Completed",
+  current: "Current",
   available: "Available",
-  coming_soon: "Coming Soon",
+  planned: "Planned",
 };
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -77,12 +89,31 @@ export default function PathPage() {
   const loading = progress.loading;
 
   const path = LEARNING_PATHS.find((p) => p.id === pathId);
-  const modules = MODULES_BY_PATH[pathId] ?? [];
+  const modules = useMemo(
+    () => (MODULES_BY_PATH[pathId] ?? []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    [pathId]
+  );
 
   const completedIds = useMemo(
     () => getCompletedModuleIds(progress.lessons),
     [progress.lessons]
   );
+  const currentModuleId = useMemo(
+    () => getNextLessonTarget(progress.lessons)?.module.id ?? null,
+    [progress.lessons]
+  );
+
+  // ── Live header stats — "available" only counts built modules; "total"
+  // includes planned ones, so the two numbers diverge honestly the moment a
+  // module is added to this path before it's built. Never hardcoded.
+  const totalModules = modules.length;
+  const availableModulesList = modules.filter(isModuleImplemented);
+  const availableModules = availableModulesList.length;
+  const availableLessons = availableModulesList.reduce(
+    (sum, m) => sum + (LESSONS_BY_MODULE[m.id]?.length ?? 0),
+    0
+  );
+  const availableXp = availableModulesList.reduce((sum, m) => sum + m.xp_reward, 0);
 
   if (!path) {
     return (
@@ -108,14 +139,14 @@ export default function PathPage() {
       <main className="flex-1 py-10 sm:py-14">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
 
-          {/* Back link */}
-          <Link
-            href="/learn"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Learning Hub
-          </Link>
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
+            <Link href="/learn" className="hover:text-foreground transition-colors">
+              Learning Hub
+            </Link>
+            <ChevronRight className="h-3.5 w-3.5 opacity-40" />
+            <span className="text-foreground">{path.title}</span>
+          </div>
 
           {/* Path header */}
           <div className="mb-10">
@@ -132,53 +163,91 @@ export default function PathPage() {
             </div>
             <p className="text-muted-foreground ml-16">{path.description}</p>
 
-            {/* Stats */}
-            <div className="flex gap-6 mt-4 ml-16 text-sm text-muted-foreground">
+            {/* Stats — available now vs full roadmap, never conflated */}
+            <div className="flex flex-wrap gap-x-6 gap-y-1.5 mt-4 ml-16 text-sm text-muted-foreground">
               <span>
-                <span className="font-semibold text-foreground">{modules.length}</span> modules
+                <span className="font-semibold text-foreground">{availableModules}</span> available modules
+                {" · "}
+                <span className="font-semibold text-foreground">{totalModules}</span> total modules
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-x-6 gap-y-1.5 mt-1 ml-16 text-sm text-muted-foreground">
+              <span>
+                <span className="font-semibold text-foreground">{availableLessons}</span> available lessons
               </span>
               <span>
-                <span className="font-semibold text-foreground">
-                  {modules.reduce((s, m) => s + (LESSONS_BY_MODULE[m.id]?.length ?? 0), 0)}
-                </span>{" "}
-                lessons
-              </span>
-              <span>
-                <span className="font-semibold text-amber-400">
-                  {modules.reduce((s, m) => s + m.xp_reward, 0)}
-                </span>{" "}
-                XP available
+                <span className="font-semibold text-amber-400">{availableXp}</span> XP available
               </span>
             </div>
           </div>
 
-          {/* Skill tree */}
+          {/* Roadmap */}
           {loading ? (
             <div className="space-y-4">
               {[0, 1, 2].map((i) => <Skeleton key={i} className="h-32" />)}
             </div>
           ) : (
             <div className="relative">
-              {/* Vertical spine line */}
+              {/* Vertical spine line — runs the full column height, so it
+                  continues through planned cards automatically. */}
               <div
                 aria-hidden
                 className="absolute left-[23px] top-10 bottom-0 w-0.5 bg-gradient-to-b from-violet-500/30 via-border/30 to-transparent"
               />
 
               <div className="space-y-4">
-                {modules.map((mod, idx) => {
-                  const status = getModuleDisplayStatus(mod, completedIds);
+                {modules.map((mod) => {
+                  const status = getModuleRowStatus(mod, completedIds, currentModuleId);
                   const styles = STATUS_STYLE[status];
                   const Icon = STATUS_ICON[status];
-                  const lessonCount = LESSONS_BY_MODULE[mod.id]?.length ?? 0;
-                  const isClickable = status !== "coming_soon";
+                  const isPlanned = status === "planned";
+                  const isClickable = !isPlanned;
+
+                  if (isPlanned) {
+                    // Compact, muted card — visible enough to create
+                    // anticipation, never showing fake lesson/XP data and
+                    // never navigable to unfinished lesson content.
+                    return (
+                      <div
+                        key={mod.id}
+                        className={cn("relative rounded-2xl border p-4 sm:p-5", styles.card)}
+                      >
+                        <div className="flex items-start gap-3 sm:gap-4">
+                          <div
+                            className={cn(
+                              "relative z-10 flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border-2 bg-background",
+                              styles.ring
+                            )}
+                          >
+                            <Icon className={cn("h-3.5 w-3.5 sm:h-4 sm:w-4", styles.icon)} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full border", styles.badge)}>
+                                {STATUS_LABEL[status]}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground/70">
+                                Module {mod.order ?? "—"}
+                              </span>
+                            </div>
+                            <h3 className="font-semibold text-muted-foreground/80 text-sm truncate">{mod.title}</h3>
+                            {mod.description && (
+                              <p className="text-xs text-muted-foreground/60 mt-0.5 leading-relaxed line-clamp-2">
+                                {mod.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
 
                   const card = (
                     <div
                       className={cn(
                         "rounded-2xl border p-5 transition-all duration-200",
                         styles.card,
-                        isClickable ? "cursor-pointer" : "cursor-default"
+                        "cursor-pointer"
                       )}
                     >
                       <div className="flex items-start gap-4">
@@ -186,19 +255,10 @@ export default function PathPage() {
                         <div
                           className={cn(
                             "relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 bg-background",
-                            status === "complete"
-                              ? "border-emerald-500/50"
-                              : status === "available"
-                              ? "border-violet-500/50"
-                              : "border-border/40"
+                            styles.ring
                           )}
                         >
-                          <Icon
-                            className={cn(
-                              "h-4 w-4",
-                              styles.icon
-                            )}
-                          />
+                          <Icon className={cn("h-4 w-4", styles.icon)} />
                         </div>
 
                         {/* Content */}
@@ -206,16 +266,11 @@ export default function PathPage() {
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
                               <div className="flex items-center gap-2 flex-wrap mb-1">
-                                <span
-                                  className={cn(
-                                    "text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize",
-                                    styles.badge
-                                  )}
-                                >
+                                <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full border", styles.badge)}>
                                   {STATUS_LABEL[status]}
                                 </span>
                                 <span className="text-[10px] text-muted-foreground">
-                                  Module {idx + 1}
+                                  Module {mod.order ?? "—"}
                                 </span>
                               </div>
                               <h3 className="font-semibold text-foreground">{mod.title}</h3>
@@ -224,13 +279,11 @@ export default function PathPage() {
                               </p>
                             </div>
 
-                            {isClickable && (
-                              <ChevronRight className="h-5 w-5 text-muted-foreground/40 shrink-0 mt-0.5" />
-                            )}
+                            <ChevronRight className="h-5 w-5 text-muted-foreground/40 shrink-0 mt-0.5" />
                           </div>
 
                           {/* Meta row */}
-                          <div className="flex items-center gap-4 mt-3">
+                          <div className="flex items-center gap-4 mt-3 flex-wrap">
                             {/* Concept tags */}
                             <div className="flex flex-wrap gap-1.5">
                               {mod.concept_ids.slice(0, 3).map((c) => (
@@ -246,7 +299,8 @@ export default function PathPage() {
                             <div className="ml-auto flex items-center gap-3 text-xs text-muted-foreground shrink-0">
                               <span className="flex items-center gap-1">
                                 <BookOpen className="h-3 w-3" />
-                                {lessonCount} lesson{lessonCount !== 1 ? "s" : ""}
+                                {LESSONS_BY_MODULE[mod.id]?.length ?? 0} lesson
+                                {(LESSONS_BY_MODULE[mod.id]?.length ?? 0) !== 1 ? "s" : ""}
                               </span>
                               <span className="flex items-center gap-1 text-amber-400">
                                 <Zap className="h-3 w-3" />

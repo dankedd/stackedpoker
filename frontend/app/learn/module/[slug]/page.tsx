@@ -211,7 +211,7 @@ export default function ModulePage() {
         <main className="flex-1 py-10 sm:py-14">
           <div className="mx-auto max-w-3xl px-4 sm:px-6">
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
-              <Link href="/learn" className="hover:text-foreground transition-colors">Learn</Link>
+              <Link href="/learn" className="hover:text-foreground transition-colors">Learning Hub</Link>
               <ChevronRight className="h-3.5 w-3.5 opacity-40" />
               <span className="text-foreground">{module.title}</span>
             </div>
@@ -297,7 +297,7 @@ export default function ModulePage() {
           {/* Breadcrumbs */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
             <Link href="/learn" className="hover:text-foreground transition-colors">
-              Learn
+              Learning Hub
             </Link>
             <ChevronRight className="h-3.5 w-3.5 opacity-40" />
             {path && (

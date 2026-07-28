@@ -67,6 +67,31 @@ export function getModuleDisplayStatus(
   return 'available'
 }
 
+// ── Module row status (single source of truth for /learn + per-path pages) ───
+//
+// The journey isn't gated — more than one module can be 'available' (unlocked,
+// not completed) at once — but every surface that lists modules needs exactly
+// ONE visible "current" module. This layers a single current-module id (always
+// `getNextLessonTarget(lessons)?.module.id`, the same global value everywhere)
+// on top of `getModuleDisplayStatus` so /learn's stage accordion and a path's
+// Foundations-style roadmap can never disagree about what's current vs merely
+// available vs not yet built ('planned' — same underlying state as
+// 'coming_soon', renamed here to match the curriculum's own `contentStatus:
+// 'planned'` field and the roadmap-facing vocabulary).
+
+export type ModuleRowStatus = 'complete' | 'current' | 'available' | 'planned'
+
+export function getModuleRowStatus(
+  module: LearningModule,
+  completedModuleIds: Set<string>,
+  currentModuleId: string | null,
+): ModuleRowStatus {
+  const raw = getModuleDisplayStatus(module, completedModuleIds)
+  if (raw === 'coming_soon') return 'planned'
+  if (raw === 'complete') return 'complete'
+  return module.id === currentModuleId ? 'current' : 'available'
+}
+
 // ── Stage status ──────────────────────────────────────────────────────────────
 
 export function getStageForModule(moduleId: string): JourneyStage | undefined {

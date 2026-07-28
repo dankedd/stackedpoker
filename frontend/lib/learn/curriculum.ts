@@ -209,7 +209,7 @@ export const LEARNING_MODULES: LearningModule[] = [
   },
   {
     id: 'flop-fundamentals-module',
-    path_id: 'intermediate',
+    path_id: 'beginner',
     slug: 'flop-fundamentals-module',
     title: 'Understanding the Flop',
     description: 'Learn to read the board before deciding what to do on it — flop structure, texture, rank families, possible straights, static vs dynamic boards, and how a flop interacts with the ranges in play.',
@@ -237,7 +237,7 @@ export const LEARNING_MODULES: LearningModule[] = [
   },
   {
     id: 'cbetting-fundamentals-module',
-    path_id: 'intermediate',
+    path_id: 'beginner',
     slug: 'cbetting-fundamentals-module',
     title: 'C-Betting Fundamentals',
     description: 'Turn range advantage into pressure — move from "should I bet?" to reasoning about how two full ranges interact with a flop, and where your exact hand belongs inside that strategy.',
@@ -266,7 +266,7 @@ export const LEARNING_MODULES: LearningModule[] = [
   },
   {
     id: 'range-vs-range-module',
-    path_id: 'intermediate',
+    path_id: 'beginner',
     slug: 'range-vs-range-module',
     title: 'Range vs Range',
     description: 'Stop analyzing isolated hands and start seeing the entire strategy — how two full preflop ranges collide on a flop, why the preflop favorite can lose its edge, and why raw equity alone never tells the whole story.',
