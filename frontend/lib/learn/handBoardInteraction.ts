@@ -40,13 +40,69 @@ export const HAND_BOARD_CATEGORY_LABEL: Record<HandBoardCategory, string> = {
   straight: 'Straight',
   straight_draw: 'Straight draw',
   overcards: 'Overcards',
-  none: 'No connection',
+  none: 'No significant interaction',
 }
 
-/** Categories that read as genuinely strong made hands on the flop — the "illustrative
- *  Strong-bucket" cell set used when a Range X-Ray's STRONG segment is tapped (see
- *  RangeXRay.tsx). Explicitly NOT a claim these hands hit any specific % of the time. */
-export const STRONG_MADE_CATEGORIES: HandBoardCategory[] = ['set', 'straight', 'two_pair', 'overpair']
+/**
+ * The canonical 4-tier grouping of every `HandBoardCategory`, used everywhere Module 8
+ * needs to visually distinguish "how much does this in-range hand actually connect with
+ * the board" without inventing a new taxonomy per component.
+ *
+ * DELIBERATELY NAMED TO AVOID ANY OVERLAP with Modern Poker Theory's Equity Buckets
+ * (Strong >=75% / Good 50-<75% / Weak 33-<50% / Trash <33%, see `flopClassifier.ts`'s
+ * `equityBucket()`). These are two different measurement systems: Equity Buckets classify
+ * a VERIFIED hand-vs-range equity PERCENTAGE; this tiering classifies a hand-CLASS's
+ * qualitative card-logic relationship to a board (does it pair, does it complete a
+ * straight, etc) with no percentage behind it at all. Earlier naming ('strong'/'medium'/
+ * 'weak'/'base', labeled "Strong interaction"/"Weak interaction") accidentally reused
+ * Equity Bucket vocabulary and risked implying "strong interaction" meant ">=75% equity" —
+ * it never did. Renamed to 'made'/'connected'/'marginal'/'unconnected' so the two concepts
+ * can never be confused on screen, in a tooltip, or in code.
+ *
+ * 'unconnected' explicitly means "in the preflop range, but no meaningful board
+ * interaction" — NOT "out of range" (a separate, prior question `PokerRangeGrid` answers
+ * via plain range membership) and NOT a claim about equity.
+ */
+export type HandBoardInteractionTier = 'made' | 'connected' | 'marginal' | 'unconnected'
+
+export const HAND_BOARD_INTERACTION_TIER: Record<HandBoardCategory, HandBoardInteractionTier> = {
+  set: 'made',
+  straight: 'made',
+  two_pair: 'made',
+  overpair: 'made',
+  top_pair: 'connected',
+  straight_draw: 'connected',
+  weak_pair: 'marginal',
+  underpair: 'marginal',
+  overcards: 'unconnected',
+  none: 'unconnected',
+}
+
+/** UI-facing labels — never "Strong"/"Good"/"Weak"/"Trash" (those exact words are reserved
+ *  for verified Equity Bucket data; see the type doc comment above). */
+export const HAND_BOARD_INTERACTION_TIER_LABEL: Record<HandBoardInteractionTier, string> = {
+  made: 'Made hand',
+  connected: 'Connected',
+  marginal: 'Marginal',
+  unconnected: 'In range',
+}
+
+/** Every category belonging to a given tier — e.g. `categoriesInTier('made')` ->
+ *  `['set', 'straight', 'two_pair', 'overpair']`. Derived, not hand-duplicated, so the
+ *  tier assignment above stays the single source of truth. */
+export function categoriesInTier(tier: HandBoardInteractionTier): HandBoardCategory[] {
+  return (Object.keys(HAND_BOARD_INTERACTION_TIER) as HandBoardCategory[]).filter(
+    (c) => HAND_BOARD_INTERACTION_TIER[c] === tier,
+  )
+}
+
+/** Categories that read as genuinely made hands on the flop — the illustrative cell set
+ *  used when a Range X-Ray's STRONG equity-bucket segment is tapped (see RangeXRay.tsx).
+ *  Explicitly NOT a claim these hands hit any specific % of the time, and NOT itself an
+ *  Equity Bucket — see the type doc comment above for why the naming here is deliberately
+ *  distinct from that vocabulary. Derived from `HAND_BOARD_INTERACTION_TIER` so the two can
+ *  never drift apart. */
+export const MADE_HAND_CATEGORIES: HandBoardCategory[] = categoriesInTier('made')
 
 function parseHandClass(hand: string): { r1: Rank; r2: Rank; isPair: boolean } {
   const r1 = hand[0] as Rank

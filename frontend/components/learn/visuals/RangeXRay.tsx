@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { cn } from '@/lib/utils'
 import { BUCKETS, type Bucket } from '@/components/learn/steps/RangeDistributionBar'
 import { PokerRangeGrid } from './PokerRangeGrid'
-import { classifyRangeVsBoard, type HandBoardCategory } from '@/lib/learn/handBoardInteraction'
+import { classifyRangeVsBoard, categoriesInTier, type HandBoardCategory } from '@/lib/learn/handBoardInteraction'
 
 export interface RangeXRayEntry {
   label: string
@@ -22,15 +22,20 @@ interface RangeXRayProps {
   className?: string
 }
 
-/** Illustrative, non-numeric mapping from a bucket to the hand-vs-board categories
- *  (handBoardInteraction.ts) it roughly corresponds to — used ONLY to drive
- *  click-a-bucket-to-highlight on the mini grid. Never a claim about the bucket's
- *  exact composition, just "where these kinds of hands tend to live." */
+/** Illustrative, non-numeric mapping from a VERIFIED equity bucket (this component's own
+ *  `Bucket` type — Strong/Good/Weak/Trash, real equity-bucket data) to the qualitative
+ *  hand-vs-board interaction categories (handBoardInteraction.ts's own, DELIBERATELY
+ *  DIFFERENTLY-NAMED tier taxonomy — made/connected/marginal/unconnected, never "strong"/
+ *  "weak") it roughly corresponds to — used ONLY to drive click-a-bucket-to-highlight on
+ *  the mini grid. This is a bridge between two distinct measurement systems, never a claim
+ *  that the equity bucket's exact composition equals this category set — the caption text
+ *  below always says "illustrative." Derived from `categoriesInTier`, not hand-duplicated,
+ *  so this can never drift from PokerRangeGrid's own tier coloring. */
 const BUCKET_CATEGORY_HINT: Record<Bucket, HandBoardCategory[]> = {
-  strong: ['set', 'straight', 'two_pair', 'overpair'],
-  good: ['top_pair', 'straight_draw'],
-  weak: ['weak_pair', 'underpair'],
-  trash: ['overcards', 'none'],
+  strong: categoriesInTier('made'),
+  good: categoriesInTier('connected'),
+  weak: categoriesInTier('marginal'),
+  trash: categoriesInTier('unconnected'),
 }
 
 function noteFor(entry: RangeXRayEntry, bucket: Bucket): string | undefined {
@@ -149,7 +154,7 @@ export function RangeXRay({ entries, grid, board, className }: RangeXRayProps) {
           />
           <p className="text-center text-[9px] text-muted-foreground/30 mt-1">
             {activeBucket
-              ? `Illustrative — hands that make one of ${BUCKETS.find((b) => b.key === activeBucket)!.label.toLowerCase()}-type holdings on this board, not a combo-exact accounting of the % above.`
+              ? `Illustrative — highlighting hand-vs-board categories (not verified equity) typically associated with the ${BUCKETS.find((b) => b.key === activeBucket)!.label} bucket, not a combo-exact accounting of the % above.`
               : `${grid.label} vs this board — tap a bucket above to highlight where its hand types concentrate.`}
           </p>
         </div>

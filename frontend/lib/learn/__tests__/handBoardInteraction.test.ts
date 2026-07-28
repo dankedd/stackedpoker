@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { classifyHandVsBoard, classifyRangeVsBoard, STRONG_MADE_CATEGORIES } from '../handBoardInteraction'
+import { classifyHandVsBoard, classifyRangeVsBoard, MADE_HAND_CATEGORIES } from '../handBoardInteraction'
 
 // Module 8's central book scenario board: 8h 7s 5s (two-tone, unpaired, rank-only logic
 // ignores suit — see file header). Straight windows: 9-8-7-6-5 (needs 96) and
@@ -116,9 +116,9 @@ function BOARD_875_LOCAL(): string[] {
   return ['8h', '7s', '5s']
 }
 
-describe('STRONG_MADE_CATEGORIES', () => {
+describe('MADE_HAND_CATEGORIES', () => {
   it('is a fixed, non-empty illustrative set covering the book\'s named strong-hand types', () => {
-    expect(STRONG_MADE_CATEGORIES).toEqual(expect.arrayContaining(['set', 'straight', 'two_pair', 'overpair']))
-    expect(STRONG_MADE_CATEGORIES.length).toBeGreaterThan(0)
+    expect(MADE_HAND_CATEGORIES).toEqual(expect.arrayContaining(['set', 'straight', 'two_pair', 'overpair']))
+    expect(MADE_HAND_CATEGORIES.length).toBeGreaterThan(0)
   })
 })

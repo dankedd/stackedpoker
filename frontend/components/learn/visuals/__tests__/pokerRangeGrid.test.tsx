@@ -164,3 +164,104 @@ describe('PokerRangeGrid — backwards compatibility: pure-action existing modes
     expect(distinctColors(stops).size).toBe(1)
   })
 })
+
+// ── 'category' mode: range membership must never be erased by board interaction ──
+
+function categoryCellHtmlFor(html: string, hand: string): string {
+  const marker = `title="${hand} —`
+  const idx = html.indexOf(marker)
+  if (idx === -1) throw new Error(`Cell for "${hand}" not found in rendered HTML`)
+  const cellStart = html.lastIndexOf('<div tabindex="0" role="group"', idx)
+  const nextCellStart = html.indexOf('<div tabindex="0" role="group"', idx + marker.length)
+  const cellEnd = nextCellStart === -1 ? html.length : nextCellStart
+  return html.slice(cellStart === -1 ? Math.max(0, idx - 200) : cellStart, cellEnd)
+}
+
+describe('PokerRangeGrid — category mode: in-range-but-unconnected is visually distinct from out-of-range', () => {
+  it('an in-range hand with no board interaction gets the base "in range" style, never the out-of-range style', () => {
+    const html = renderToStaticMarkup(
+      <PokerRangeGrid range={['AA', 'KK']} mode="category" categoryMap={{ AA: 'none' }} />,
+    )
+    const cell = categoryCellHtmlFor(html, 'AA')
+    expect(cell).toContain('bg-slate-500/35') // base in-range tier
+    expect(cell).not.toContain('bg-secondary/20') // out-of-range style must not appear
+    expect(cell).toContain('Preflop: In range')
+    expect(cell).toContain('Board: No significant interaction')
+  })
+
+  it('a hand absent from `range` gets the dark out-of-range style, never the base in-range style', () => {
+    const html = renderToStaticMarkup(<PokerRangeGrid range={['AA']} mode="category" categoryMap={{}} />)
+    const cell = categoryCellHtmlFor(html, '72o')
+    expect(cell).toContain('bg-secondary/20')
+    expect(cell).not.toContain('bg-slate-500/35')
+    expect(cell).toContain('Preflop: Not in range')
+  })
+
+  it('an in-range hand with a strong board interaction gets the strong tier style, distinct from base', () => {
+    const html = renderToStaticMarkup(
+      <PokerRangeGrid range={['77']} mode="category" categoryMap={{ '77': 'set' }} />,
+    )
+    const cell = categoryCellHtmlFor(html, '77')
+    expect(cell).toContain('bg-emerald-500/80')
+    expect(cell).toContain('Board: Set (Made hand)')
+  })
+
+  it('in-range membership is stable across two different categoryMaps (simulating a board change) — only the tier changes', () => {
+    const htmlBoardA = renderToStaticMarkup(
+      <PokerRangeGrid range={['AKs']} mode="category" categoryMap={{ AKs: 'overcards' }} />,
+    )
+    const htmlBoardB = renderToStaticMarkup(
+      <PokerRangeGrid range={['AKs']} mode="category" categoryMap={{ AKs: 'top_pair' }} />,
+    )
+    // Same hand, same range, different board -> both renders agree it's in range...
+    expect(categoryCellHtmlFor(htmlBoardA, 'AKs')).toContain('Preflop: In range')
+    expect(categoryCellHtmlFor(htmlBoardB, 'AKs')).toContain('Preflop: In range')
+    // ...but the interaction tier legitimately differs.
+    expect(categoryCellHtmlFor(htmlBoardA, 'AKs')).toContain('bg-slate-500/35')
+    expect(categoryCellHtmlFor(htmlBoardB, 'AKs')).toContain('bg-sky-500/60')
+  })
+
+  it('the legend always explains "Not in range" and "In range" regardless of which categories are present', () => {
+    const html = renderToStaticMarkup(
+      <PokerRangeGrid range={['AA']} mode="category" categoryMap={{ AA: 'overpair' }} />,
+    )
+    expect(html).toContain('Not in range')
+    expect(html).toContain('>In range<')
+  })
+
+  it('the legend only lists interaction tiers actually present (or explicitly emphasized), never invents one', () => {
+    const html = renderToStaticMarkup(
+      <PokerRangeGrid range={['AA']} mode="category" categoryMap={{ AA: 'overpair' }} />,
+    )
+    expect(html).toContain('Made hand')
+    expect(html).not.toContain('Marginal')
+    expect(html).not.toContain('Connected')
+  })
+
+  it('never uses Equity Bucket vocabulary (Strong/Good/Weak/Trash) to describe board-interaction tiers', () => {
+    const html = renderToStaticMarkup(
+      <PokerRangeGrid
+        range={['AA', 'KQo', '76s', '22']}
+        mode="category"
+        categoryMap={{ AA: 'overpair', KQo: 'top_pair', '76s': 'weak_pair', '22': 'underpair' }}
+      />,
+    )
+    // The four tier labels rendered anywhere on the grid/legend must never equal an
+    // Equity Bucket name — those words are reserved for verified equity-bucket data
+    // (see handBoardInteraction.ts's HandBoardInteractionTier doc comment).
+    expect(html).not.toContain('>Strong<')
+    expect(html).not.toContain('>Good<')
+    expect(html).not.toContain('>Weak<')
+    expect(html).not.toContain('>Trash<')
+    expect(html).not.toContain('Strong interaction')
+    expect(html).not.toContain('Good interaction')
+    expect(html).not.toContain('Weak interaction')
+    expect(html).not.toContain('Trash interaction')
+  })
+
+  it('every cell (in-range or not) exposes a tooltip so "why is this dark?" always has an answer', () => {
+    const html = renderToStaticMarkup(<PokerRangeGrid range={['AA']} mode="category" categoryMap={{}} />)
+    const outOfRangeCell = categoryCellHtmlFor(html, '72o')
+    expect(outOfRangeCell).toContain('role="tooltip"')
+  })
+})

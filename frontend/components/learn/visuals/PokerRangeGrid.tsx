@@ -6,22 +6,54 @@ import type { ChartDiffEntry } from '@/lib/learn/mttRfiRanges'
 import type { ActionId, RangeStrategyMap, StrategyMix } from '@/lib/learn/rangeStrategy'
 import { classifyMix, pruneMix } from '@/lib/learn/rangeStrategy'
 import { actionCssColor, actionLabel, actionStyle } from '@/lib/learn/actionStyles'
-import { HAND_BOARD_CATEGORY_LABEL, type HandBoardCategory } from '@/lib/learn/handBoardInteraction'
+import {
+  HAND_BOARD_CATEGORY_LABEL,
+  HAND_BOARD_INTERACTION_TIER,
+  HAND_BOARD_INTERACTION_TIER_LABEL,
+  type HandBoardCategory,
+  type HandBoardInteractionTier,
+} from '@/lib/learn/handBoardInteraction'
 
-/** 'category' mode palette — deliberately distinct bg color AND border style per tier
- *  (never color alone): solid ring = a made hand, dashed ring = a draw, so the
- *  distinction survives grayscale/colorblind viewing too. */
-const CATEGORY_STYLE: Record<HandBoardCategory, { bg: string; ring: string }> = {
-  set: { bg: 'bg-emerald-500/80 text-white', ring: 'ring-1 ring-emerald-200/60' },
-  straight: { bg: 'bg-emerald-500/80 text-white', ring: 'ring-1 ring-emerald-200/60' },
-  two_pair: { bg: 'bg-emerald-600/70 text-white', ring: 'ring-1 ring-emerald-200/50' },
-  overpair: { bg: 'bg-sky-500/70 text-white', ring: 'ring-1 ring-sky-200/50' },
-  top_pair: { bg: 'bg-sky-500/60 text-white', ring: 'ring-1 ring-sky-200/40' },
-  straight_draw: { bg: 'bg-amber-500/60 text-white', ring: 'ring-1 ring-dashed ring-amber-200/50' },
-  weak_pair: { bg: 'bg-amber-500/40 text-white', ring: '' },
-  underpair: { bg: 'bg-amber-500/30 text-white', ring: '' },
-  overcards: { bg: 'bg-secondary/50 text-muted-foreground/30', ring: '' },
-  none: { bg: 'bg-secondary/30 text-muted-foreground/15', ring: '' },
+/**
+ * 'category' mode palette — THREE layers, never collapsed into two:
+ *   1. Out of range              -> dark/disabled, the darkest state on the grid.
+ *   2. In range, 'unconnected'   -> a muted slate/blue fill, clearly BRIGHTER than
+ *      out-of-range but clearly LESS saturated than any connected tier below. This is the
+ *      fix for the "can't tell in-range-but-irrelevant from out-of-range" problem: a hand
+ *      can be in the preflop range and still show no meaningful board interaction, and that
+ *      must stay visually distinct from simply not being in the range at all.
+ *   3. In range, made/connected/marginal -> increasingly saturated color, per
+ *      HAND_BOARD_INTERACTION_TIER (handBoardInteraction.ts — the single source of truth,
+ *      never redefined here).
+ * Every tier also carries its own ring/border style (not color alone), so the distinction
+ * survives grayscale/colorblind viewing too.
+ *
+ * NAMING NOTE: this is a board-INTERACTION tiering, not an Equity Bucket (Strong >=75% /
+ * Good 50-<75% / Weak 33-<50% / Trash <33%, see `flopClassifier.ts`'s `equityBucket()`).
+ * Neither the tier ids nor these labels use "strong"/"good"/"weak"/"trash" — see
+ * handBoardInteraction.ts's `HandBoardInteractionTier` doc comment for why that overlap is
+ * deliberately avoided everywhere in this module.
+ */
+const OUT_OF_RANGE_STYLE = 'bg-secondary/20 text-muted-foreground/15 border border-transparent'
+
+const TIER_STYLE: Record<HandBoardInteractionTier, { bg: string; ring: string }> = {
+  unconnected: { bg: 'bg-slate-500/35 text-slate-100/80', ring: 'ring-1 ring-slate-400/25' },
+  marginal: { bg: 'bg-amber-500/40 text-amber-50', ring: 'ring-1 ring-amber-300/30' },
+  connected: { bg: 'bg-sky-500/60 text-white', ring: 'ring-1 ring-sky-200/40' },
+  made: { bg: 'bg-emerald-500/80 text-white', ring: 'ring-1 ring-emerald-200/60' },
+}
+
+/** Draws get a dashed ring instead of their tier's default solid one — a made hand and a
+ *  draw can share a tier's color (both 'connected', say) but must never look identical. */
+const DASHED_RING_CATEGORIES: HandBoardCategory[] = ['straight_draw']
+
+function categoryCellStyle(category: HandBoardCategory): { bg: string; ring: string } {
+  const tier = HAND_BOARD_INTERACTION_TIER[category]
+  const base = TIER_STYLE[tier]
+  if (DASHED_RING_CATEGORIES.includes(category)) {
+    return { bg: base.bg, ring: base.ring.replace('ring-1', 'ring-1 ring-dashed') }
+  }
+  return base
 }
 
 type PreflopAction = 'raise' | 'limp' | 'shove' | 'fold'
@@ -168,6 +200,21 @@ export function PokerRangeGrid({
   const pct = ((combos / TOTAL_COMBOS) * 100).toFixed(1)
   const diffByHand = new Map((actionDiff ?? []).map((d) => [d.hand, d]))
   const strategyOrder = mode === 'strategy' ? resolveActionOrder(strategies ?? {}, strategyActionOrder) : []
+  // 'category' mode legend: which interaction tiers are actually worth explaining right now —
+  // every tier present among the range's real categories, unioned with whatever this specific
+  // lesson step asked to emphasize (`categoryLegend`), so the legend never shows a tier with
+  // zero cells on the current board while still guaranteeing an authored emphasis always appears.
+  const presentCategoryTiers =
+    mode === 'category'
+      ? Array.from(
+          new Set(
+            [...Object.values(categoryMap ?? {}), ...(categoryLegend ?? [])].map(
+              (c) => HAND_BOARD_INTERACTION_TIER[c],
+            ),
+          ),
+        ).filter((t): t is Exclude<HandBoardInteractionTier, 'unconnected'> => t !== 'unconnected')
+      : []
+  const TIER_LEGEND_ORDER: Exclude<HandBoardInteractionTier, 'unconnected'>[] = ['made', 'connected', 'marginal']
 
   function cellClasses(hand: string, isPair: boolean, isSuited: boolean): string {
     if (mode === 'action_diff') {
@@ -235,42 +282,53 @@ export function PokerRangeGrid({
                 const isSuited = rowIdx < colIdx
 
                 if (mode === 'category') {
+                  // LAYER 1 (range membership) is checked first and independently of LAYER 2/3
+                  // (board interaction) — an in-range hand ALWAYS gets in-range styling, even
+                  // when its category is 'none'/'overcards' (no meaningful board interaction).
+                  // Board interaction only ever adds emphasis on top of range membership; it
+                  // never demotes an in-range hand down to the out-of-range style.
                   const inR = inRange.has(hand)
-                  const category = inR ? categoryMap?.[hand] ?? 'none' : undefined
-                  const style = category ? CATEGORY_STYLE[category] : undefined
-                  const label = category ? HAND_BOARD_CATEGORY_LABEL[category] : undefined
+                  const category: HandBoardCategory = categoryMap?.[hand] ?? 'none'
+                  const tier = HAND_BOARD_INTERACTION_TIER[category]
+                  const style = inR ? categoryCellStyle(category) : undefined
+                  const tierLabel = HAND_BOARD_INTERACTION_TIER_LABEL[tier]
+                  const categoryLabel = HAND_BOARD_CATEGORY_LABEL[category]
 
                   return (
                     <div
                       key={colIdx}
                       tabIndex={0}
                       role="group"
-                      aria-label={inR ? `${hand}${label ? `: ${label}` : ''}` : `${hand}: not in range`}
-                      title={inR ? `${hand}${label ? ` — ${label}` : ''}` : hand}
+                      aria-label={
+                        inR ? `${hand}: in range, ${categoryLabel.toLowerCase()}` : `${hand}: not in range`
+                      }
+                      title={inR ? `${hand} — In range — ${categoryLabel}` : `${hand} — Not in range`}
                       className={cn(
                         'group relative flex-1 min-w-0 aspect-square flex items-center justify-center',
                         'm-px rounded-[3px] select-none text-[10px] sm:text-[8px] font-bold leading-none cursor-default',
                         'focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:z-20',
-                        inR ? (style?.bg ?? 'bg-violet-500/60 text-white') : cellClasses(hand, isPair, isSuited),
-                        inR && style?.ring,
+                        inR ? style!.bg : OUT_OF_RANGE_STYLE,
+                        inR && style!.ring,
                         highlightHand === hand && 'ring-2 ring-white ring-offset-1 ring-offset-background z-10 relative',
                       )}
                     >
                       <span className="truncate px-0.5">{hand}</span>
-                      {inR && label && (
-                        <div
-                          role="tooltip"
-                          className={cn(
-                            'pointer-events-none absolute bottom-full left-1/2 z-30 mb-1 w-max max-w-[9rem] -translate-x-1/2',
-                            'rounded-md border border-border/30 bg-popover px-2 py-1 text-left text-[9px] font-medium leading-tight text-popover-foreground shadow-lg',
-                            'opacity-0 scale-95 transition-all duration-100',
-                            'group-hover:opacity-100 group-hover:scale-100 group-focus:opacity-100 group-focus:scale-100 group-focus-within:opacity-100 group-focus-within:scale-100',
-                          )}
-                        >
-                          <p className="font-bold">{hand}</p>
-                          <p className="text-muted-foreground">{label}</p>
-                        </div>
-                      )}
+                      {/* Hover/focus/tap detail — always in the DOM, shown via CSS only, present
+                          for EVERY cell (in-range or not) so "why is this dark?" always has an
+                          answer instead of only the in-range cells getting a rich tooltip. */}
+                      <div
+                        role="tooltip"
+                        className={cn(
+                          'pointer-events-none absolute bottom-full left-1/2 z-30 mb-1 w-max max-w-[10rem] -translate-x-1/2',
+                          'rounded-md border border-border/30 bg-popover px-2 py-1 text-left text-[9px] font-medium leading-tight text-popover-foreground shadow-lg',
+                          'opacity-0 scale-95 transition-all duration-100',
+                          'group-hover:opacity-100 group-hover:scale-100 group-focus:opacity-100 group-focus:scale-100 group-focus-within:opacity-100 group-focus-within:scale-100',
+                        )}
+                      >
+                        <p className="font-bold">{hand}</p>
+                        <p className="text-muted-foreground">Preflop: {inR ? 'In range' : 'Not in range'}</p>
+                        {inR && <p className="text-muted-foreground">Board: {categoryLabel}{tier !== 'unconnected' ? ` (${tierLabel})` : ''}</p>}
+                      </div>
                     </div>
                   )
                 }
@@ -337,16 +395,20 @@ export function PokerRangeGrid({
       {/* Legend / stats */}
       {mode === 'category' ? (
         <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] sm:text-[10px] text-muted-foreground/40">
-          {(categoryLegend ?? Array.from(new Set(Object.values(categoryMap ?? {})))).map((cat) => (
-            <div key={cat} className="flex items-center gap-1.5">
-              <div className={cn('h-2.5 w-2.5 rounded-[2px]', CATEGORY_STYLE[cat].bg)} />
-              <span>{HAND_BOARD_CATEGORY_LABEL[cat]}</span>
+          <div className="flex items-center gap-1.5">
+            <div className={cn('h-2.5 w-2.5 rounded-[2px]', OUT_OF_RANGE_STYLE)} />
+            <span>Not in range</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className={cn('h-2.5 w-2.5 rounded-[2px]', TIER_STYLE.unconnected.bg)} />
+            <span>In range</span>
+          </div>
+          {TIER_LEGEND_ORDER.filter((t) => presentCategoryTiers.includes(t)).map((tier) => (
+            <div key={tier} className="flex items-center gap-1.5">
+              <div className={cn('h-2.5 w-2.5 rounded-[2px]', TIER_STYLE[tier].bg)} />
+              <span>{HAND_BOARD_INTERACTION_TIER_LABEL[tier]}</span>
             </div>
           ))}
-          <div className="flex items-center gap-1.5">
-            <div className="h-2.5 w-2.5 rounded-[2px] bg-secondary/30" />
-            <span>Out of range</span>
-          </div>
         </div>
       ) : mode === 'strategy' ? (
         <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] sm:text-[10px] text-muted-foreground/40">
