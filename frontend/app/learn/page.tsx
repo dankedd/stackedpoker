@@ -21,12 +21,13 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { StreakBadge } from "@/components/learn/StreakBadge";
 import { AchievementsPanel } from "@/components/learn/AchievementBadge";
+import { MasteryRing } from "@/components/learn/MasteryRing";
 import { useAuth } from "@/hooks/useAuth";
 import { useLearnProgress } from "@/contexts/LearnProgressContext";
 import { LESSONS_BY_ID, LEARNING_MODULES, LESSONS, LEARNING_PATHS } from "@/lib/learn/curriculum";
 import { ACHIEVEMENTS } from "@/lib/learn/types";
 import { xpToNextLevel } from "@/lib/learn/types";
-import type { ModuleDisplayStatus } from "@/lib/learn/journey";
+import type { MasteryLevel } from "@/lib/learn/types";
 import {
   JOURNEY_STAGES,
   getCompletedModuleIds,
@@ -63,23 +64,38 @@ function LoadingSkeleton() {
 }
 
 // ── Journey status styling ───────────────────────────────────────────────────
+//
+// Display-only status, distinct from journey.ts's ModuleDisplayStatus
+// ('complete' | 'available' | 'coming_soon'). The journey isn't gated — more
+// than one module can be 'available' (unlocked, not completed) at once — but
+// the spec calls for exactly ONE visible "current" module at a time, so this
+// row-level status splits 'available' into the single next-lesson-target
+// module ('current') vs every other unlocked-but-untouched module ('upcoming').
 
-const MODULE_STATUS_ICON: Record<ModuleDisplayStatus, typeof Circle> = {
+type ModuleRowStatus = "complete" | "current" | "upcoming" | "coming_soon";
+
+const MODULE_STATUS_ICON: Record<ModuleRowStatus, typeof Circle> = {
   complete: CheckCircle,
-  available: Circle,
+  current: Circle,
+  upcoming: Circle,
   coming_soon: ClockIcon,
 };
 
-const MODULE_STATUS_STYLE: Record<ModuleDisplayStatus, { badge: string; icon: string; row: string }> = {
+const MODULE_STATUS_STYLE: Record<ModuleRowStatus, { badge: string; icon: string; row: string }> = {
   complete: {
     badge: "bg-emerald-500/10 border-emerald-500/25 text-emerald-400",
     icon: "text-emerald-400",
     row: "border-emerald-500/20 bg-emerald-500/[0.03] hover:border-emerald-500/35",
   },
-  available: {
+  current: {
     badge: "bg-violet-500/10 border-violet-500/25 text-violet-400",
     icon: "text-violet-400",
     row: "border-violet-500/25 bg-violet-500/[0.03] hover:border-violet-500/40",
+  },
+  upcoming: {
+    badge: "bg-secondary/25 border-border/25 text-muted-foreground/60",
+    icon: "text-muted-foreground/40",
+    row: "border-border/25 bg-card/30 hover:border-border/40",
   },
   coming_soon: {
     badge: "bg-secondary/20 border-border/20 text-muted-foreground/50",
@@ -88,9 +104,10 @@ const MODULE_STATUS_STYLE: Record<ModuleDisplayStatus, { badge: string; icon: st
   },
 };
 
-const MODULE_STATUS_LABEL: Record<ModuleDisplayStatus, string> = {
+const MODULE_STATUS_LABEL: Record<ModuleRowStatus, string> = {
   complete: "Completed",
-  available: "Available",
+  current: "Current",
+  upcoming: "Available",
   coming_soon: "Coming Soon",
 };
 
@@ -101,6 +118,66 @@ const SEVERITY_STYLE: Record<string, string> = {
   moderate: "bg-orange-500/10 border-orange-500/25 text-orange-400",
   severe:   "bg-red-500/10 border-red-500/25 text-red-400",
 };
+
+// ── Concept mastery (folded in from the old /progress page) ─────────────────
+
+const CONCEPT_IDS = [
+  "pot_odds",
+  "mdf",
+  "alpha",
+  "position_value",
+  "value_betting",
+  "bluff_basics",
+  "hand_ranges",
+  "board_texture",
+  "range_advantage",
+  "nut_advantage",
+  "cbet_theory",
+  "equity_real",
+  "spr_theory",
+  "blockers",
+  "polarized",
+  "geometric_sizing",
+];
+
+const CONCEPT_DOMAIN: Record<string, string> = {
+  pot_odds: "game_theory",
+  mdf: "game_theory",
+  alpha: "game_theory",
+  equity_real: "game_theory",
+  geometric_sizing: "game_theory",
+  position_value: "strategy",
+  value_betting: "strategy",
+  bluff_basics: "strategy",
+  hand_ranges: "ranges",
+  range_advantage: "ranges",
+  blockers: "ranges",
+  polarized: "ranges",
+  board_texture: "postflop",
+  nut_advantage: "postflop",
+  cbet_theory: "postflop",
+  spr_theory: "postflop",
+};
+
+const DOMAIN_BADGE: Record<string, string> = {
+  game_theory: "border-violet-500/30 bg-violet-500/10 text-violet-400",
+  strategy: "border-blue-500/30 bg-blue-500/10 text-blue-400",
+  ranges: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
+  postflop: "border-amber-500/30 bg-amber-500/10 text-amber-400",
+};
+
+function toTitleCase(str: string) {
+  return str.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function formatConceptDate(iso?: string) {
+  if (!iso) return "Never";
+  return new Date(iso).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 // ── XP level ring ─────────────────────────────────────────────────────────────
 
@@ -134,6 +211,7 @@ export default function LearnPage() {
   const { user } = useAuth();
   const { progress } = useLearnProgress();
   const [showAchievements, setShowAchievements] = useState(false);
+  const [showConceptMastery, setShowConceptMastery] = useState(false);
   const [expandedStageId, setExpandedStageId] = useState<string | null>(null);
 
   const loading = progress.loading;
@@ -274,6 +352,35 @@ export default function LearnPage() {
                   retry automatically.
                 </div>
               )}
+
+              {/* ── Your Learning Path summary ── */}
+              <div className="mb-8 rounded-2xl border border-border/50 bg-card/60 p-5 sm:p-6">
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-1">
+                  Your Learning Path
+                </p>
+                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-4">
+                  <h2 className="text-lg font-bold text-foreground">Poker Journey</h2>
+                  <p className="text-xs text-muted-foreground">
+                    13 stages · 28 modules
+                  </p>
+                </div>
+                <div className="h-1.5 rounded-full bg-white/[0.05] overflow-hidden mb-2">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-blue-400 transition-all duration-700"
+                    style={{
+                      width: `${
+                        journeyOverview.availableModules
+                          ? Math.round((journeyOverview.availableCompleted / journeyOverview.availableModules) * 100)
+                          : 0
+                      }%`,
+                    }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {journeyOverview.availableCompleted} of {journeyOverview.availableModules} available modules complete
+                  · {journeyOverview.totalRoadmapModules} planned in total
+                </p>
+              </div>
 
               {/* ── Stats row: Level ring + daily XP + streak ── */}
               {user && (
@@ -442,38 +549,15 @@ export default function LearnPage() {
                 )}
               </div>
 
-              {/* ── Poker Journey (stage-grouped roadmap) ── */}
+              {/* ── Stages (grouped roadmap) ── */}
               <div className="mb-10">
-                <div className="flex items-end justify-between mb-4">
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-1">
-                      Poker Journey
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {journeyOverview.availableCompleted} of {journeyOverview.availableModules} available modules
-                      complete · {journeyOverview.totalRoadmapModules} planned in total
-                    </p>
-                  </div>
-                  <Link
-                    href="/learn/journey"
-                    className="text-xs text-violet-400/70 hover:text-violet-300 transition-colors whitespace-nowrap"
-                  >
-                    Full roadmap →
-                  </Link>
-                </div>
-
-                {/* Overall progress bar (based only on released content) */}
-                <div className="h-1.5 rounded-full bg-white/[0.05] overflow-hidden mb-6">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-violet-500 to-blue-400 transition-all duration-700"
-                    style={{
-                      width: `${
-                        journeyOverview.availableModules
-                          ? Math.round((journeyOverview.availableCompleted / journeyOverview.availableModules) * 100)
-                          : 0
-                      }%`,
-                    }}
-                  />
+                <div className="mb-4">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-1">
+                    The Stages
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    13 stages, one straight line — no branches, no skill tree.
+                  </p>
                 </div>
 
                 <div className="space-y-3">
@@ -513,7 +597,14 @@ export default function LearnPage() {
                               {stage.order}
                             </span>
                             <div className="min-w-0">
-                              <p className="text-sm font-semibold text-foreground truncate">{stage.title}</p>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="text-sm font-semibold text-foreground truncate">{stage.title}</p>
+                                {stageStatus === "current" && (
+                                  <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border border-violet-500/30 bg-violet-500/10 text-violet-400 whitespace-nowrap">
+                                    You are here
+                                  </span>
+                                )}
+                              </div>
                               {stage.subtitle && (
                                 <p className="text-xs text-muted-foreground/70 truncate">{stage.subtitle}</p>
                               )}
@@ -535,7 +626,13 @@ export default function LearnPage() {
                         {isOpen && (
                           <div className="px-5 pb-4 space-y-2">
                             {stageModules.map((mod) => {
-                              const status = getModuleDisplayStatus(mod, completedModuleIds);
+                              const rawStatus = getModuleDisplayStatus(mod, completedModuleIds);
+                              const status: ModuleRowStatus =
+                                rawStatus === "available"
+                                  ? mod.id === nextLessonTarget?.module.id
+                                    ? "current"
+                                    : "upcoming"
+                                  : rawStatus;
                               const styles = MODULE_STATUS_STYLE[status];
                               const StatusIcon = MODULE_STATUS_ICON[status];
                               const clickable = status !== "coming_soon";
@@ -660,12 +757,94 @@ export default function LearnPage() {
                 )}
               </div>
 
+              {/* ── Concept Mastery (folded in from the old /progress page) ── */}
+              {user && (
+                <div className="mb-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-base font-semibold text-foreground">Concept mastery</h2>
+                    <button
+                      type="button"
+                      onClick={() => setShowConceptMastery((v) => !v)}
+                      className="text-xs text-violet-400/70 hover:text-violet-300 transition-colors"
+                    >
+                      {showConceptMastery ? "Show less" : "Show all"}
+                    </button>
+                  </div>
+
+                  {showConceptMastery && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {CONCEPT_IDS.map((cid) => {
+                        const m = progress.concepts[cid];
+                        const lvl = (m?.mastery_level ?? 0) as MasteryLevel;
+                        const domain = CONCEPT_DOMAIN[cid] ?? "strategy";
+
+                        return (
+                          <div
+                            key={cid}
+                            className="flex flex-col gap-3 rounded-xl border border-border/40 bg-card/60 p-4 hover:border-violet-500/20 transition-colors"
+                          >
+                            <div className="space-y-1.5">
+                              <p className="text-sm font-semibold text-foreground leading-tight">
+                                {toTitleCase(cid)}
+                              </p>
+                              <span
+                                className={cn(
+                                  "inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full border capitalize",
+                                  DOMAIN_BADGE[domain]
+                                )}
+                              >
+                                {domain.replace(/_/g, " ")}
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <MasteryRing level={lvl} concept_id={cid} size="md" />
+                              <div className="min-w-0">
+                                <p className="text-xs font-semibold text-foreground truncate">
+                                  {lvl === 0 ? "Unseen" : lvl === 5 ? "Mastered" : `Level ${lvl}`}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">
+                                  {m?.last_tested ? formatConceptDate(m.last_tested) : "Not tested"}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {!showConceptMastery && (
+                    <div className="rounded-2xl border border-border/50 bg-card/60 p-5 flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10 border border-violet-500/20">
+                        <Brain className="h-5 w-5 text-violet-400/70" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">
+                          {Object.values(progress.concepts).filter((c) => (c.mastery_level ?? 0) > 0).length} of {CONCEPT_IDS.length} concepts tracked
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          See mastery level per concept across the curriculum.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowConceptMastery(true)}
+                        className="ml-auto text-xs text-violet-400/70 hover:text-violet-300 transition-colors whitespace-nowrap"
+                      >
+                        View all →
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* ── Weak Spots Panel ── */}
               {user && progress.leaks.length > 0 && (
                 <div className="mb-8">
                   <h2 className="text-base font-semibold text-foreground mb-4">Your weak spots</h2>
                   <div className="rounded-2xl border border-border/50 bg-card/60 divide-y divide-border/30">
-                    {progress.leaks.slice(0, 3).map((leak) => (
+                    {progress.leaks.map((leak) => (
                       <div
                         key={leak.id}
                         className="flex items-center justify-between gap-4 px-5 py-4"

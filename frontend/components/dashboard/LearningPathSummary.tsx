@@ -35,7 +35,7 @@ export function LearningPathSummary() {
           </p>
         </div>
         <Link
-          href="/learn/journey"
+          href="/learn"
           className="flex items-center gap-1 text-xs text-violet-400/70 hover:text-violet-300 transition-colors whitespace-nowrap"
         >
           Full roadmap

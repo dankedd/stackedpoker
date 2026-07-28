@@ -28,9 +28,8 @@ interface DevNavItem {
 // Learn dominates. Ranges is the one other reliable tool. Everything still
 // being rebuilt lives in the separate "in development" cluster below.
 const NAV_ITEMS: NavItem[] = [
-  { label: "Learn",    href: "/learn", primary: true },
-  { label: "Progress", href: "/progress" },
-  { label: "Ranges",   href: "/train/ranges" },
+  { label: "Learn",  href: "/learn", primary: true },
+  { label: "Ranges", href: "/train/ranges" },
 ];
 
 const DEV_ITEMS: DevNavItem[] = [

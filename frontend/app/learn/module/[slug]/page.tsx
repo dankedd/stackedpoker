@@ -213,8 +213,6 @@ export default function ModulePage() {
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
               <Link href="/learn" className="hover:text-foreground transition-colors">Learn</Link>
               <ChevronRight className="h-3.5 w-3.5 opacity-40" />
-              <Link href="/learn/journey" className="hover:text-foreground transition-colors">Poker Journey</Link>
-              <ChevronRight className="h-3.5 w-3.5 opacity-40" />
               <span className="text-foreground">{module.title}</span>
             </div>
 
@@ -276,11 +274,11 @@ export default function ModulePage() {
             </div>
 
             <Link
-              href="/learn/journey"
+              href="/learn"
               className="mt-6 inline-flex items-center gap-1.5 text-sm text-violet-400 hover:text-violet-300 transition-colors"
             >
               <ChevronLeft className="h-4 w-4" />
-              Back to the full journey
+              Back to the learning path
             </Link>
           </div>
         </main>

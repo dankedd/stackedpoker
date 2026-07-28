@@ -88,7 +88,7 @@ export function CurriculumPreview() {
 
       <div className="mt-10 text-center">
         <Link
-          href="/learn/journey"
+          href="/learn"
           className="inline-flex items-center gap-2 text-[14px] font-medium text-violet-400 hover:text-violet-300 transition-colors"
         >
           See the full roadmap

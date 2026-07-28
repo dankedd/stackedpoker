@@ -281,7 +281,7 @@ function CoachPageContent() {
                   </p>
                 )}
                 <Link
-                  href="/progress"
+                  href="/learn"
                   className="flex items-center gap-1 text-xs text-violet-400/70 hover:text-violet-300 transition-colors mt-3.5 font-medium"
                 >
                   View all leaks <ChevronRight className="h-3 w-3" />
@@ -327,7 +327,6 @@ function CoachPageContent() {
                 <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/50 mb-3">Quick links</p>
                 {[
                   { label: "Learning Hub", href: "/learn" },
-                  { label: "Progress Dashboard", href: "/progress" },
                   { label: "Range Trainer", href: "/train/ranges" },
                 ].map(({ label, href }) => (
                   <Link
