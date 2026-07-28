@@ -24,59 +24,53 @@ interface RangeCollisionViewerProps {
 
 /**
  * The Range Collision Viewer — two full 13x13 ranges rendered against a board.
- * Desktop/tablet (`sm:` and up): three-column composition (range A | board | range B).
- * Mobile: board stays visible up top, then both full-width grids stack vertically via the
- * shared RangeComparisonLayout — each keeps its own label and legend, rather than shrinking
- * both matrices to illegibility side-by-side. Per-cell "does this hand connect with the board"
- * coloring is always LIVE (handBoardInteraction.ts's deterministic classifier) — categorical,
- * never a fabricated equity number.
+ * The board sits centered on top of the whole comparison (never squeezed between the
+ * two grids as a third column — that wasted horizontal width and visually split the
+ * comparison in two), with both range grids treated as one symmetric unit below it:
+ * side-by-side from `sm:` up, full-width stacked (A then B) on mobile via the shared
+ * RangeComparisonLayout. Per-cell "does this hand connect with the board" coloring is
+ * always LIVE (handBoardInteraction.ts's deterministic classifier) — categorical, never
+ * a fabricated equity number.
  */
 export function RangeCollisionViewer({ a, b, board, emphasizeCategories, className }: RangeCollisionViewerProps) {
   const categoryMapA = useMemo(() => classifyRangeVsBoard(a.range, board), [a.range, board])
   const categoryMapB = useMemo(() => classifyRangeVsBoard(b.range, board), [b.range, board])
 
   const boardPanel = (
-    <div className="flex flex-col items-center gap-2 shrink-0">
+    <div className="flex flex-col items-center gap-1.5">
+      <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/30">Board</p>
       <div className="flex items-center gap-1.5">
         {board.map((c, i) => (
-          <PlayingCardMini key={i} card={c} size="md" />
+          <PlayingCardMini key={i} card={c} size="lg" />
         ))}
       </div>
-      <p className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/30">Board</p>
     </div>
   )
 
   const gridA = (
-    <div className="flex-1 min-w-0 space-y-1.5">
+    <div className="min-w-0 space-y-1.5">
       <p className="text-center text-xs font-bold text-violet-300">{a.label}</p>
       <PokerRangeGrid range={a.range} mode="category" categoryMap={categoryMapA} categoryLegend={emphasizeCategories} />
     </div>
   )
 
   const gridB = (
-    <div className="flex-1 min-w-0 space-y-1.5">
+    <div className="min-w-0 space-y-1.5">
       <p className="text-center text-xs font-bold text-blue-300">{b.label}</p>
       <PokerRangeGrid range={b.range} mode="category" categoryMap={categoryMapB} categoryLegend={emphasizeCategories} />
     </div>
   )
 
   return (
-    <div className={cn('space-y-3', className)}>
-      {/* Desktop / tablet: three-column composition */}
-      <div className="hidden sm:flex items-start gap-4">
-        {gridA}
-        <div className="pt-6">{boardPanel}</div>
-        {gridB}
-      </div>
+    <div className={cn('space-y-4', className)}>
+      {/* Board — centered above the entire comparison, on every breakpoint */}
+      <div className="flex justify-center">{boardPanel}</div>
 
-      {/* Mobile: board stays visible, both full-width grids stack vertically below it */}
-      <div className="sm:hidden space-y-3">
-        {boardPanel}
-        <RangeComparisonLayout>
-          {gridA}
-          {gridB}
-        </RangeComparisonLayout>
-      </div>
+      {/* CO vs BB — one symmetric unit: side-by-side from `sm:` up, stacked full-width on mobile */}
+      <RangeComparisonLayout gapClassName="gap-5 sm:gap-3" className="sm:max-w-3xl sm:mx-auto">
+        {gridA}
+        {gridB}
+      </RangeComparisonLayout>
     </div>
   )
 }
