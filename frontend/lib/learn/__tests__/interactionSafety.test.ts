@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import { getNeutralSliderStart, shuffleBySeed } from '../interactionSafety'
+import {
+  getNeutralSliderStart,
+  shuffleBySeed,
+  canonicalPokerAction,
+  isCanonicalActionSet,
+  orderStepOptions,
+} from '../interactionSafety'
+import type { StepOption } from '../types'
 
 describe('getNeutralSliderStart', () => {
   it('never returns the exact correct answer', () => {
@@ -82,5 +89,160 @@ describe('shuffleBySeed', () => {
       expect(count).toBeGreaterThan(20) // well above chance-of-zero; loose bound to avoid flakiness
       expect(count).toBeLessThan(140)   // well below "always this position"
     }
+  })
+})
+
+// ── Canonical poker-action ordering ───────────────────────────────────────────
+// Fold -> Check -> Call -> Raise -> All-in must be the fixed, global visual order
+// for standard poker-action decision spots everywhere in Learn, so learners build
+// spatial muscle memory for button position. See interactionSafety.ts's
+// `orderStepOptions` / `isCanonicalActionSet` / `canonicalPokerAction`.
+
+function opt(id: string, label: string): StepOption {
+  return { id, label, quality: 'perfect', feedback: '' }
+}
+
+describe('canonicalPokerAction', () => {
+  it('recognizes the five canonical actions case-insensitively', () => {
+    expect(canonicalPokerAction('Fold')).toBe('fold')
+    expect(canonicalPokerAction('CHECK')).toBe('check')
+    expect(canonicalPokerAction('call')).toBe('call')
+    expect(canonicalPokerAction('Raise')).toBe('raise')
+    expect(canonicalPokerAction('ALL-IN')).toBe('all_in')
+  })
+
+  it('recognizes all-in formatting variants', () => {
+    expect(canonicalPokerAction('All-in')).toBe('all_in')
+    expect(canonicalPokerAction('All in')).toBe('all_in')
+    expect(canonicalPokerAction('Allin')).toBe('all_in')
+    expect(canonicalPokerAction('ALLIN')).toBe('all_in')
+  })
+
+  it('allows a sizing/annotation suffix on raise', () => {
+    expect(canonicalPokerAction('Raise to 3x')).toBe('raise')
+    expect(canonicalPokerAction('RAISE (semi-bluff)')).toBe('raise')
+  })
+
+  it('rejects action vocabulary outside the canonical five (jam/limp/shove/bet/3bet)', () => {
+    expect(canonicalPokerAction('Jam')).toBeNull()
+    expect(canonicalPokerAction('Limp')).toBeNull()
+    expect(canonicalPokerAction('Shove')).toBeNull()
+    expect(canonicalPokerAction('Bet')).toBeNull()
+    expect(canonicalPokerAction('3bet')).toBeNull()
+  })
+
+  it('never classifies a full sentence merely mentioning an action word', () => {
+    expect(canonicalPokerAction('Raise now, planning to fold to real resistance')).toBeNull()
+    expect(canonicalPokerAction('Calling is profitable, but not the best action')).toBeNull()
+  })
+})
+
+describe('isCanonicalActionSet', () => {
+  it('is true for clean canonical action sets', () => {
+    expect(isCanonicalActionSet(['Fold', 'Raise'])).toBe(true)
+    expect(isCanonicalActionSet(['Call', 'Check'])).toBe(true)
+    expect(isCanonicalActionSet(['All-in', 'Call', 'Raise'])).toBe(true)
+  })
+
+  it('is false when any option is not a clean canonical action', () => {
+    expect(isCanonicalActionSet(['Fold', 'Limp'])).toBe(false)
+    expect(isCanonicalActionSet(['Fold', 'Raise now, planning to fold to real resistance'])).toBe(false)
+    expect(isCanonicalActionSet(['Bet A', 'Bet B'])).toBe(false)
+  })
+
+  it('is false for an empty set', () => {
+    expect(isCanonicalActionSet([])).toBe(false)
+  })
+})
+
+describe('orderStepOptions — canonical action ordering', () => {
+  it('[Raise, Fold] -> [Fold, Raise]', () => {
+    const result = orderStepOptions([opt('raise', 'Raise'), opt('fold', 'Fold')], 'seed-a')
+    expect(result.map((o) => o.label)).toEqual(['Fold', 'Raise'])
+  })
+
+  it('[All-in, Call, Raise] -> [Call, Raise, All-in]', () => {
+    const result = orderStepOptions(
+      [opt('allin', 'All-in'), opt('call', 'Call'), opt('raise', 'Raise')],
+      'seed-b',
+    )
+    expect(result.map((o) => o.label)).toEqual(['Call', 'Raise', 'All-in'])
+  })
+
+  it('[Raise, Check] -> [Check, Raise]', () => {
+    const result = orderStepOptions([opt('raise', 'Raise'), opt('check', 'Check')], 'seed-c')
+    expect(result.map((o) => o.label)).toEqual(['Check', 'Raise'])
+  })
+
+  it('[All-in, Fold, Raise] -> [Fold, Raise, All-in]', () => {
+    const result = orderStepOptions(
+      [opt('allin', 'All-in'), opt('fold', 'Fold'), opt('raise', 'Raise')],
+      'seed-d',
+    )
+    expect(result.map((o) => o.label)).toEqual(['Fold', 'Raise', 'All-in'])
+  })
+
+  it('[Call, Check] -> [Check, Call]', () => {
+    const result = orderStepOptions([opt('call', 'Call'), opt('check', 'Check')], 'seed-e')
+    expect(result.map((o) => o.label)).toEqual(['Check', 'Call'])
+  })
+
+  it('is stable regardless of authoring/seed order and never flips for the same set', () => {
+    const forward = orderStepOptions(
+      [opt('fold', 'Fold'), opt('check', 'Check'), opt('call', 'Call'), opt('raise', 'Raise'), opt('allin', 'All-in')],
+      'lesson-3-step-7',
+    )
+    const reversed = orderStepOptions(
+      [opt('allin', 'All-in'), opt('raise', 'Raise'), opt('call', 'Call'), opt('check', 'Check'), opt('fold', 'Fold')],
+      'lesson-3-step-7',
+    )
+    const expected = ['Fold', 'Check', 'Call', 'Raise', 'All-in']
+    expect(forward.map((o) => o.label)).toEqual(expected)
+    expect(reversed.map((o) => o.label)).toEqual(expected)
+  })
+
+  it('produces the same logical order regardless of seed — desktop and mobile share one array, so CSS wrapping can never reverse it', () => {
+    const seeds = ['step-1', 'step-2', 'a-totally-different-seed', 'zzz']
+    for (const seed of seeds) {
+      const result = orderStepOptions([opt('raise', 'Raise'), opt('fold', 'Fold'), opt('allin', 'All-in')], seed)
+      expect(result.map((o) => o.label)).toEqual(['Fold', 'Raise', 'All-in'])
+    }
+  })
+
+  it('preserves correct-answer identity (id/quality/feedback) after reordering', () => {
+    const fold = { id: 'fold', label: 'Fold', quality: 'mistake' as const, feedback: 'wrong' }
+    const raise = { id: 'raise', label: 'Raise', quality: 'perfect' as const, feedback: 'right' }
+    const result = orderStepOptions([raise, fold], 'seed-f')
+    expect(result.map((o) => o.label)).toEqual(['Fold', 'Raise'])
+    const raiseAfter = result.find((o) => o.label === 'Raise')
+    const foldAfter = result.find((o) => o.label === 'Fold')
+    expect(raiseAfter).toEqual(raise)
+    expect(foldAfter).toEqual(fold)
+  })
+
+  it('does NOT reorder conceptual/theoretical option sets — falls back to the existing seeded shuffle', () => {
+    const items = [
+      opt('profitable_not_best', 'Calling is profitable, but not the best action'),
+      opt('profitable_and_best', 'Calling is profitable AND the best action'),
+      opt('not_profitable', 'Calling is not profitable'),
+    ]
+    const viaOrderStepOptions = orderStepOptions(items, 'ev-s7')
+    const viaShuffleBySeed = shuffleBySeed(items, 'ev-s7')
+    expect(viaOrderStepOptions).toEqual(viaShuffleBySeed)
+  })
+
+  it('does NOT reorder non-canonical action vocabulary (e.g. Raise/Limp/Jam/Fold) — keeps existing randomized behavior', () => {
+    const items = [opt('raise', 'Raise'), opt('limp', 'Limp'), opt('jam', 'Jam'), opt('fold', 'Fold')]
+    const viaOrderStepOptions = orderStepOptions(items, 'mtt-rfi-seed')
+    const viaShuffleBySeed = shuffleBySeed(items, 'mtt-rfi-seed')
+    expect(viaOrderStepOptions).toEqual(viaShuffleBySeed)
+  })
+
+  it('remains a true permutation — same items in, same items out, just reordered', () => {
+    const items = [opt('raise', 'Raise'), opt('fold', 'Fold'), opt('call', 'Call')]
+    const result = orderStepOptions(items, 'seed-g')
+    expect(result.slice().sort((a, b) => a.id.localeCompare(b.id))).toEqual(
+      items.slice().sort((a, b) => a.id.localeCompare(b.id)),
+    )
   })
 })

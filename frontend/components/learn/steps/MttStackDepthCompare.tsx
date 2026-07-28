@@ -6,7 +6,7 @@ import type { LessonStep } from '@/lib/learn/types'
 import { MTT_RFI_CHARTS, type MttStackBB } from '@/lib/learn/mttRfiBaselines'
 import { chartToDisplayActionMap, computeChartDiff } from '@/lib/learn/mttRfiRanges'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { orderStepOptions } from '@/lib/learn/interactionSafety'
 
 interface MttStackDepthCompareProps {
   step: LessonStep
@@ -47,7 +47,7 @@ export function MttStackDepthCompare({ step, onAnswer, disabled = false }: MttSt
   const referenceChart = MTT_RFI_CHARTS[referenceChartKey]
 
   const rawOptions = step.options ?? []
-  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
+  const options = useMemo(() => orderStepOptions(rawOptions, step.id), [rawOptions, step.id])
 
   function handleSelect(optionId: string) {
     if (disabled || selected) return

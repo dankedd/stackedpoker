@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
-import { shuffleBySeed, isPokerActionSet } from '@/lib/learn/interactionSafety'
+import { orderStepOptions, isPokerActionSet } from '@/lib/learn/interactionSafety'
 import { PreflopTable } from '@/components/learn/visuals/PreflopTable'
 
 interface DecisionSpotProps {
@@ -32,9 +32,11 @@ export function DecisionSpot({ step, onAnswer, disabled = false }: DecisionSpotP
   const rawOptions = step.options ?? []
   // bet_size_choose options are a natural small-to-large spectrum — shuffling
   // that ordering would hurt usability without closing any real leak, so only
-  // shuffle the free-form decision_spot choices where order carries no meaning.
+  // reorder the free-form decision_spot choices. `orderStepOptions` enforces the
+  // global Fold->Check->Call->Raise->All-in order whenever the choices ARE a
+  // clean poker-action set, falling back to the existing seeded shuffle otherwise.
   const options = useMemo(
-    () => (step.type === 'bet_size_choose' ? rawOptions : shuffleBySeed(rawOptions, step.id)),
+    () => (step.type === 'bet_size_choose' ? rawOptions : orderStepOptions(rawOptions, step.id)),
     [rawOptions, step.id, step.type],
   )
   const gridCols =

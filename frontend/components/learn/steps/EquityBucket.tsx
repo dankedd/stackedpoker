@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { orderStepOptions } from '@/lib/learn/interactionSafety'
 import { equityBucket, type EquityBucketId } from '@/lib/learn/flopClassifier'
 
 interface EquityBucketProps {
@@ -38,7 +38,7 @@ export function EquityBucket({ step, onAnswer, disabled = false }: EquityBucketP
     setPicked(null)
   }, [step.id])
 
-  const options = useMemo(() => shuffleBySeed(step.options ?? [], step.id), [step.options, step.id])
+  const options = useMemo(() => orderStepOptions(step.options ?? [], step.id), [step.options, step.id])
 
   function pick(id: string) {
     if (disabled || picked) return

@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { classifyHandDNA, type DNALevel } from '@/lib/learn/handDNA'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { orderStepOptions } from '@/lib/learn/interactionSafety'
 
 interface HandDNAProps {
   step: LessonStep
@@ -63,7 +63,7 @@ export function HandDNA({ step, onAnswer, disabled = false }: HandDNAProps) {
   const hand = step.hand_dna_subject ?? step.hero_hand?.join('') ?? 'A5s'
   const dna = classifyHandDNA(hand)
   const rawOptions = step.options ?? []
-  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
+  const options = useMemo(() => orderStepOptions(rawOptions, step.id), [rawOptions, step.id])
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">

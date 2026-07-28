@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { orderStepOptions } from '@/lib/learn/interactionSafety'
 import { RangeCollisionViewer } from '@/components/learn/visuals/RangeCollisionViewer'
 import { RangeEquityMeter } from '@/components/learn/visuals/RangeEquityMeter'
 import { ShowMeWhy } from '@/components/learn/ShowMeWhy'
@@ -45,7 +45,7 @@ export function RangeCollision({ step, onAnswer, disabled = false }: RangeCollis
   }, [step.id])
 
   const rawOptions = step.options ?? []
-  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
+  const options = useMemo(() => orderStepOptions(rawOptions, step.id), [rawOptions, step.id])
 
   const activeBoard = useMemo(
     () => boards?.find((bd) => bd.id === activeBoardId) ?? boards?.[0],

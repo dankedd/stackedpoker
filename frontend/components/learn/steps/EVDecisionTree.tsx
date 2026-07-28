@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { orderStepOptions } from '@/lib/learn/interactionSafety'
 
 interface EVDecisionTreeProps {
   step: LessonStep
@@ -38,7 +38,7 @@ export function EVDecisionTree({ step, onAnswer, disabled = false, reviewMode = 
   const branches = step.ev_tree_branches ?? []
   const total = branches.reduce((sum, b) => sum + b.probability * b.payoff, 0)
   const rawOptions = step.options ?? []
-  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
+  const options = useMemo(() => orderStepOptions(rawOptions, step.id), [rawOptions, step.id])
   const rootLabel = step.ev_tree_root_label ?? 'ACTION'
   // A step with `options` is asking the learner to classify the EV — showing
   // the pre-computed contributions/total here would hand them the answer.

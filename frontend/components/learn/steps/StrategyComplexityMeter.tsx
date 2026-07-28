@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { orderStepOptions } from '@/lib/learn/interactionSafety'
 
 interface StrategyComplexityMeterProps {
   step: LessonStep
@@ -40,7 +40,7 @@ export function StrategyComplexityMeter({ step, onAnswer, disabled = false }: St
   }
 
   const rawOptions = step.options ?? []
-  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
+  const options = useMemo(() => orderStepOptions(rawOptions, step.id), [rawOptions, step.id])
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">

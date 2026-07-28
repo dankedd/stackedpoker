@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { orderStepOptions } from '@/lib/learn/interactionSafety'
 
 interface EquityBalanceProps {
   step: LessonStep
@@ -36,7 +36,7 @@ export function EquityBalance({ step, onAnswer, disabled = false, reviewMode = f
   // until the learner has actually chosen, not be color-coded for them.
   const showSolution = selected !== null || reviewMode
   const rawOptions = step.options ?? []
-  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
+  const options = useMemo(() => orderStepOptions(rawOptions, step.id), [rawOptions, step.id])
   const maxVal = Math.max(required, actual, 1)
 
   return (

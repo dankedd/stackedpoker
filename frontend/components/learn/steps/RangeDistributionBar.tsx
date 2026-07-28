@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { orderStepOptions } from '@/lib/learn/interactionSafety'
 
 interface RangeDistributionBarProps {
   step: LessonStep
@@ -68,7 +68,7 @@ export function RangeDistributionBar({ step, onAnswer, disabled = false }: Range
   }, [step.id])
 
   const rawOptions = step.options ?? []
-  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
+  const options = useMemo(() => orderStepOptions(rawOptions, step.id), [rawOptions, step.id])
 
   function handleSelect(optionId: string) {
     if (disabled || selected) return

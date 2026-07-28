@@ -137,3 +137,54 @@ const POKER_ACTION_LABEL_RE =
 export function isPokerActionSet(labels: readonly string[]): boolean {
   return labels.length > 0 && labels.every((l) => POKER_ACTION_LABEL_RE.test(l.trim()))
 }
+
+// ── Canonical poker-action ordering ───────────────────────────────────────────
+// Global rule: Fold -> Check -> Call -> Raise -> All-in must appear in that exact
+// left-to-right / top-to-bottom order in every decision spot across every module
+// and lesson, so learners build spatial muscle memory for button position ("Fold
+// is always leftmost"). This is intentionally narrower than `isPokerActionSet`
+// above (which also matches shove/jam/limp/3bet/check-raise/etc. purely to decide
+// a heading) — only labels that ARE exactly fold/check/call/raise/all-in (up to a
+// sizing/annotation suffix) participate in the fixed order. Any other option set —
+// full-sentence conceptual answers, or action vocabulary outside this list (jam,
+// limp, shove, 3bet, squeeze, bet-size buckets, ...) — keeps its existing seeded
+// shuffle untouched, so authored/randomized behavior for theory questions never
+// changes. `orderStepOptions` is the single call site every decision-style step
+// component should use instead of calling `shuffleBySeed` on `options` directly.
+
+export const POKER_ACTION_ORDER = ['fold', 'check', 'call', 'raise', 'all_in'] as const
+export type CanonicalPokerAction = (typeof POKER_ACTION_ORDER)[number]
+
+const CANONICAL_ACTION_LABEL_RE =
+  /^(fold|check|call|raise|all[\s-]?in)(\s*\(.*\))?(\s+(to|for)?\s*[~\d.]+%?(bb|x)?\.?)?$/i
+
+/** Maps a label to its canonical bucket, or null if it isn't a clean canonical
+ *  action (up to an optional sizing/annotation suffix, e.g. "Raise to 3x"). */
+export function canonicalPokerAction(label: string): CanonicalPokerAction | null {
+  const match = CANONICAL_ACTION_LABEL_RE.exec(label.trim())
+  if (!match) return null
+  const root = match[1].toLowerCase().replace(/[\s-]/g, '')
+  return root === 'allin' ? 'all_in' : (root as CanonicalPokerAction)
+}
+
+/** True only if every label is a clean canonical action — never a sentence that merely mentions one. */
+export function isCanonicalActionSet(labels: readonly string[]): boolean {
+  return labels.length > 0 && labels.every((l) => canonicalPokerAction(l) !== null)
+}
+
+/**
+ * Orders `options` for display. When they form a clean canonical poker-action
+ * set, always returns them Fold -> Check -> Call -> Raise -> All-in, regardless
+ * of authoring order or seed — ties (e.g. two differently-sized raises) keep
+ * their relative input order. Otherwise falls back to the existing per-step
+ * seeded shuffle so conceptual/theory option sets keep their current randomized
+ * behavior. Never mutates `options`; never changes correctness, ids, or feedback.
+ */
+export function orderStepOptions<T extends { label: string }>(options: readonly T[], seed: string): T[] {
+  const labels = options.map((o) => o.label)
+  if (!isCanonicalActionSet(labels)) return shuffleBySeed(options, seed)
+  return options
+    .map((item, index) => ({ item, index, rank: POKER_ACTION_ORDER.indexOf(canonicalPokerAction(item.label)!) }))
+    .sort((a, b) => a.rank - b.rank || a.index - b.index)
+    .map((entry) => entry.item)
+}

@@ -5,7 +5,7 @@ import { ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { orderStepOptions } from '@/lib/learn/interactionSafety'
 
 interface SuitIsomorphismProps {
   step: LessonStep
@@ -31,7 +31,7 @@ export function SuitIsomorphism({ step, onAnswer, onComplete, disabled = false }
   }, [step.id])
 
   const rawOptions = step.options ?? []
-  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
+  const options = useMemo(() => orderStepOptions(rawOptions, step.id), [rawOptions, step.id])
 
   function handleSelect(id: string) {
     if (disabled || selected) return

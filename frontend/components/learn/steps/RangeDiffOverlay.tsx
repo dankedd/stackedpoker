@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { orderStepOptions } from '@/lib/learn/interactionSafety'
 
 interface RangeDiffOverlayProps {
   step: LessonStep
@@ -33,7 +33,7 @@ export function RangeDiffOverlay({ step, onAnswer, disabled = false }: RangeDiff
   const baseline = step.range_diff_baseline ?? []
   const example = step.range_diff_example ?? []
   const rawOptions = step.options ?? []
-  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
+  const options = useMemo(() => orderStepOptions(rawOptions, step.id), [rawOptions, step.id])
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">

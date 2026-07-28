@@ -289,15 +289,19 @@ describe('Scored vs unscored — isScoredStep behaves as designed for every new 
   })
 })
 
-describe('New components use shuffleBySeed wherever they render step.options (house style guard)', () => {
+describe('New components use orderStepOptions wherever they render step.options (house style guard)', () => {
   const componentsWithOptions = [
     'SuitIsomorphism.tsx', 'BoardVolatility.tsx', 'RangeBoardCollision.tsx', 'EquityBucket.tsx',
   ]
 
-  it('every listed component imports and calls shuffleBySeed', () => {
+  // `orderStepOptions` (interactionSafety.ts) is the single source of truth for option display
+  // order: it enforces the global Fold->Check->Call->Raise->All-in order for clean poker-action
+  // sets and otherwise falls back to the existing `shuffleBySeed` seeded shuffle internally — so
+  // components must call it (not `shuffleBySeed` directly) wherever they render `step.options`.
+  it('every listed component imports and calls orderStepOptions', () => {
     for (const file of componentsWithOptions) {
       const src = readFileSync(join(__dirname, '..', '..', '..', 'components', 'learn', 'steps', file), 'utf8')
-      expect(src.includes('shuffleBySeed'), `${file} does not reference shuffleBySeed`).toBe(true)
+      expect(src.includes('orderStepOptions'), `${file} does not reference orderStepOptions`).toBe(true)
       expect(src.includes("from '@/lib/learn/interactionSafety'"), `${file} does not import from interactionSafety`).toBe(true)
     }
   })

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { orderStepOptions } from '@/lib/learn/interactionSafety'
 import type { FlopDimensionKey } from '@/lib/learn/flopClassifier'
 
 interface FlopClassifyDrillProps {
@@ -66,7 +66,7 @@ export function FlopClassifyDrill({ step, onAnswer, disabled = false }: FlopClas
   }, [step.id])
 
   const rawOptions = dimension ? DIMENSION_OPTIONS[dimension] : []
-  const options = useMemo(() => shuffleBySeed(rawOptions, `${step.id}-${index}`), [rawOptions, step.id, index])
+  const options = useMemo(() => orderStepOptions(rawOptions, `${step.id}-${index}`), [rawOptions, step.id, index])
 
   if (boards.length === 0 || !dimension) {
     return <p className="text-center text-sm text-muted-foreground/40 italic">No drill configured.</p>

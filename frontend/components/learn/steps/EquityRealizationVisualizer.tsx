@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { calculateSimpleEqR } from '@/lib/theory/math'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
-import { shuffleBySeed, bindVisualOptions } from '@/lib/learn/interactionSafety'
+import { orderStepOptions, bindVisualOptions } from '@/lib/learn/interactionSafety'
 
 interface EquityRealizationVisualizerProps {
   step: LessonStep
@@ -51,7 +51,7 @@ export function EquityRealizationVisualizer({ step, onAnswer, disabled = false }
 
   const mode = step.equity_realization_mode ?? 'meters'
   const rawOptions = step.options ?? []
-  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
+  const options = useMemo(() => orderStepOptions(rawOptions, step.id), [rawOptions, step.id])
   const isChallenge = step.equity_realization_correct != null
 
   // 'card_compare': when every hand names the option that identifies it, bind hand +

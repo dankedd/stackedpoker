@@ -6,7 +6,7 @@ import type { LessonStep } from '@/lib/learn/types'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 import { RangeComparisonLayout } from '@/components/learn/visuals/RangeComparisonLayout'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
-import { shuffleBySeed, bindVisualOptions } from '@/lib/learn/interactionSafety'
+import { orderStepOptions, bindVisualOptions } from '@/lib/learn/interactionSafety'
 
 interface RangeCompareProps {
   step: LessonStep
@@ -33,7 +33,7 @@ export function RangeCompare({ step, onAnswer, disabled = false }: RangeCompareP
   const a = step.range_compare_a
   const b = step.range_compare_b
   const rawOptions = step.options ?? []
-  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
+  const options = useMemo(() => orderStepOptions(rawOptions, step.id), [rawOptions, step.id])
   const heroHand = step.hero_hand ?? []
   const board = step.board ?? []
 

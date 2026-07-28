@@ -10,7 +10,7 @@ import {
 import { THREEBET_DEEP, THREEBET_MEDIUM, THREEBET_SHALLOW, type ThreebetMatchup } from '@/lib/learn/threebetBaselines'
 import { DEFEND_DEEP, DEFEND_MEDIUM, DEFEND_SHALLOW, type DefendMatchup } from '@/lib/learn/defendBaselines'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { orderStepOptions } from '@/lib/learn/interactionSafety'
 import { rangeEntriesToStrategyMap } from '@/lib/learn/rangeStrategy'
 
 interface StackDepthRangeMorphProps {
@@ -40,7 +40,7 @@ export function StackDepthRangeMorph({ step, onAnswer, disabled = false }: Stack
   const dataset = step.stack_depth_morph_dataset ?? 'rfi'
   const world = WORLDS[worldIndex].world
   const rawOptions = step.options ?? []
-  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
+  const options = useMemo(() => orderStepOptions(rawOptions, step.id), [rawOptions, step.id])
 
   function handleSelect(optionId: string) {
     if (disabled || selected) return

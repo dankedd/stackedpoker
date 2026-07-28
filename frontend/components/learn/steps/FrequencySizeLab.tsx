@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { orderStepOptions } from '@/lib/learn/interactionSafety'
 
 interface FrequencySizeLabProps {
   step: LessonStep
@@ -31,11 +31,11 @@ export function FrequencySizeLab({ step, onAnswer, disabled = false }: Frequency
   const rawFrequencyOptions = step.cbet_frequency_size_frequency_options ?? []
   const rawSizingOptions = step.cbet_frequency_size_sizing_options ?? []
   const frequencyOptions = useMemo(
-    () => shuffleBySeed(rawFrequencyOptions, `${step.id}-freq`),
+    () => orderStepOptions(rawFrequencyOptions, `${step.id}-freq`),
     [rawFrequencyOptions, step.id],
   )
   const sizingOptions = useMemo(
-    () => shuffleBySeed(rawSizingOptions, `${step.id}-size`),
+    () => orderStepOptions(rawSizingOptions, `${step.id}-size`),
     [rawSizingOptions, step.id],
   )
 

@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 import { RangeRevealComparison } from '@/components/learn/visuals/RangeRevealComparison'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { orderStepOptions } from '@/lib/learn/interactionSafety'
 import { diagnoseMorphologyBuild, type MorphologyPanelDiagnostic } from '@/lib/learn/evaluator'
 
 interface MorphologyBuilderProps {
@@ -70,7 +70,7 @@ export function MorphologyBuilder({ step, onAnswer, disabled = false }: Morpholo
   // never depends on `mode` — this component instance persists across
   // consecutive morphology_builder steps regardless of their mode.
   const rawOptions = step.options ?? []
-  const shuffledOptions = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
+  const shuffledOptions = useMemo(() => orderStepOptions(rawOptions, step.id), [rawOptions, step.id])
 
   if (mode === 'classify') {
     const range = step.morphology_builder_range ?? []

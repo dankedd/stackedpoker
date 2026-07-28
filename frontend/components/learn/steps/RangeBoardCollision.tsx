@@ -6,7 +6,7 @@ import type { LessonStep } from '@/lib/learn/types'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 import { RangeComparisonLayout } from '@/components/learn/visuals/RangeComparisonLayout'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { orderStepOptions } from '@/lib/learn/interactionSafety'
 import { totalBlockedCombos } from '@/lib/learn/combos'
 
 interface RangeBoardCollisionProps {
@@ -41,7 +41,7 @@ export function RangeBoardCollision({ step, onAnswer, disabled = false }: RangeB
   const b = step.range_board_collision_b
   const board = step.board ?? []
   const rawOptions = step.options ?? []
-  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
+  const options = useMemo(() => orderStepOptions(rawOptions, step.id), [rawOptions, step.id])
   const hasSelected = selected !== null
 
   const statsA = a ? totalBlockedCombos(a.range, board) : null

@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 import { canonicalCombo, rangeBlockerBreakdown, totalBlockedCombos } from '@/lib/learn/combos'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { orderStepOptions } from '@/lib/learn/interactionSafety'
 
 interface BlockerLabProps {
   step: LessonStep
@@ -20,7 +20,7 @@ export function BlockerLab({ step, onAnswer, disabled = false }: BlockerLabProps
   const candidates = step.blocker_lab_candidates ?? []
   const villainRange = step.blocker_lab_villain_range ?? []
   const rawOptions = step.options ?? []
-  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
+  const options = useMemo(() => orderStepOptions(rawOptions, step.id), [rawOptions, step.id])
 
   const [activeCandidate, setActiveCandidate] = useState(candidates[0] ?? '')
   const [selected, setSelected] = useState<string | null>(null)

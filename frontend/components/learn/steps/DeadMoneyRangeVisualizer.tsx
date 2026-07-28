@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PotDisplay } from '@/components/learn/steps/PotDisplay'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { orderStepOptions } from '@/lib/learn/interactionSafety'
 
 interface DeadMoneyRangeVisualizerProps {
   step: LessonStep
@@ -27,7 +27,7 @@ export function DeadMoneyRangeVisualizer({ step, onAnswer, disabled = false }: D
   const ante = step.dead_money_ante_bb ?? 0.6
   const pot = anteOn ? basePot + ante : basePot
   const rawOptions = step.options ?? []
-  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
+  const options = useMemo(() => orderStepOptions(rawOptions, step.id), [rawOptions, step.id])
 
   function handleSelect(optionId: string) {
     if (disabled || selected) return

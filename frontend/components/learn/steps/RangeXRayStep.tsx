@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { orderStepOptions } from '@/lib/learn/interactionSafety'
 import { RangeXRay } from '@/components/learn/visuals/RangeXRay'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 
@@ -21,7 +21,7 @@ export function RangeXRayStep({ step, onAnswer, disabled = false }: RangeXRaySte
   const board = step.range_xray_board ?? step.board
 
   const rawOptions = step.options ?? []
-  const options = useMemo(() => shuffleBySeed(rawOptions, step.id), [rawOptions, step.id])
+  const options = useMemo(() => orderStepOptions(rawOptions, step.id), [rawOptions, step.id])
 
   function handleSelect(optionId: string) {
     if (disabled || selected) return

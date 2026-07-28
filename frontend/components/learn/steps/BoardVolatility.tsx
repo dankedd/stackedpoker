@@ -5,7 +5,7 @@ import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
-import { shuffleBySeed } from '@/lib/learn/interactionSafety'
+import { shuffleBySeed, orderStepOptions } from '@/lib/learn/interactionSafety'
 
 interface BoardVolatilityProps {
   step: LessonStep
@@ -117,7 +117,7 @@ function CompareMode({ step, onAnswer, disabled, mountTime }: BoardVolatilityPro
   const [selected, setSelected] = useState<string | null>(null)
   const a = step.board_volatility_compare_a ?? []
   const b = step.board_volatility_compare_b ?? []
-  const options = useMemo(() => shuffleBySeed(step.options ?? [], step.id), [step.options, step.id])
+  const options = useMemo(() => orderStepOptions(step.options ?? [], step.id), [step.options, step.id])
 
   useEffect(() => setSelected(null), [step.id])
 
