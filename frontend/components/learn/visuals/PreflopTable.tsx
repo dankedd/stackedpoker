@@ -71,7 +71,11 @@ export const DESKTOP_LAYOUT: TableLayoutConfig = {
  *  gentler chip-pull factor (keeps blind/bet chips clear of the wider center
  *  column), and Hero's pod centered rather than rail-anchored. */
 export const MOBILE_LAYOUT: TableLayoutConfig = {
-  aspectRatio: '3 / 4',
+  // Slightly taller than a strict 3:4 — buys the extra vertical clearance the
+  // center column (orientation/ante line, status, cards, result badge, HERO box,
+  // action pill) needs between the top/bottom seats without over-elongating into
+  // a narrow "egg" shape.
+  aspectRatio: '3 / 4.3',
   ellipseRadius: 38,
   railOuterRadius: 36,
   railInnerRadius: 33.5,
@@ -83,7 +87,7 @@ export const MOBILE_LAYOUT: TableLayoutConfig = {
   // action pill) can run tall and its cards row alone is ~55% of the felt width —
   // wide/tall enough that a plain toward-center lerp would carry a blind/bet chip
   // straight through it. Tuned against 320-430px screenshots, not guessed.
-  protectedZone: { halfWidthPct: 22, halfHeightPct: 30 },
+  protectedZone: { halfWidthPct: 24, halfHeightPct: 33 },
 }
 
 /** Rescales a seat's anchor point (on the `ellipseRadius` circle) onto the rail
@@ -197,7 +201,10 @@ function towardCenter(
     const enter = Math.max(txEnter, tyEnter, 0)
     const exit = Math.min(txExit, tyExit, t)
 
-    if (enter <= exit) clampedT = enter
+    // Stop a hair short of the rectangle's exact edge rather than flush against it —
+    // otherwise the chip's own rendered size (not just its anchor point) still
+    // visually touches the text it was supposed to clear.
+    if (enter <= exit) clampedT = Math.max(0, enter - 0.05)
   }
 
   return { left: `${x + dx * clampedT}%`, top: `${y + dy * clampedT}%` }
@@ -382,13 +389,20 @@ export function PreflopTable({
           {isMobile && anteBb != null && ` · ANTE ${formatAnte(anteBb)}BB`}
         </span>
       )}
-      {state && state.potBb > 0 && (
+      {/* Desktop only — mobile's center column is already at its vertical budget with
+          the orientation/ante line, status line, cards, and Hero pod; adding a 5th line
+          here is what was pushing the whole column up into the top-seat labels. */}
+      {!isMobile && state && state.potBb > 0 && (
         <span className="flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/8 px-2 py-0.5 text-[9px] font-bold text-amber-300/80 tabular-nums whitespace-nowrap">
           POT {formatBb(state.potBb)}BB
         </span>
       )}
+      {/* nowrap: a wrapped 2nd line grows the whole center column's height, which is
+          exactly what was pushing it up into the top-seat labels on mobile — a long
+          status (e.g. "UTG RAISE → BTN 3-BET") instead just overflows horizontally
+          into the empty rail space on either side, which has clearance to spare. */}
       {centerStatus && (
-        <span className="text-[12px] font-black tracking-[0.08em] text-violet-300">{centerStatus}</span>
+        <span className="text-[12px] font-black tracking-[0.08em] text-violet-300 whitespace-nowrap">{centerStatus}</span>
       )}
     </>
   )

@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react'
 
-const MOBILE_BREAKPOINT_QUERY = '(max-width: 640px)'
+const MOBILE_BREAKPOINT_QUERY = '(max-width: 767px)'
 
-/** True on narrow (<=640px, Tailwind's `sm`) viewports. Defaults to `false` so
+/** True on narrow (<768px, Tailwind's `md`) viewports. Defaults to `false` so
  *  server-rendered and pre-hydration markup always matches the desktop layout —
  *  the mobile layout only takes over once the media query resolves client-side. */
 export function useIsMobile(): boolean {
