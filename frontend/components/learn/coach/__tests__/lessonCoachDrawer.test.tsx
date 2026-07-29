@@ -107,8 +107,22 @@ describe('LessonCoachDrawer — quick actions by pedagogical state', () => {
     // Desktop right-side panel override
     expect(html).toMatch(/md:w-\[420px\]/)
     expect(html).toMatch(/md:right-0/)
-    // Backdrop only below the content-pushing xl breakpoint
-    expect(html).toMatch(/xl:hidden/)
+    // Backdrop only on the mobile near-fullscreen sheet — the panel is a
+    // pure overlay at every desktop/tablet width, never dimmed, since the
+    // lesson never reflows to make room for it (see LessonPlayer.tsx).
+    expect(html).toMatch(/md:hidden/)
+  })
+
+  it('never applies a coach-dependent width/margin class to anything outside the drawer itself', () => {
+    // Regression guard for the lesson-shrink bug: the drawer's own panel may
+    // freely carry width classes, but nothing it renders should express an
+    // xl:mr-*, xl:w-*, or grid-template-columns style hook a host page could
+    // mistake for "make room for me" layout wiring.
+    const html = renderToStaticMarkup(
+      <LessonCoachDrawer open onClose={noop} context={baseContext} token="t" />,
+    )
+    expect(html).not.toMatch(/mr-\[/)
+    expect(html).not.toMatch(/grid-template-columns/)
   })
 
   it('shows the authored hint note (not a quick-action label) when authoredHint is provided', () => {

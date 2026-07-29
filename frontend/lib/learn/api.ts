@@ -381,14 +381,53 @@ export async function evaluateRange(
 // CoachChat can treat it identically to a locally-constructed user message.
 export type CoachAction = 'hint' | 'explain_concept' | 'walkthrough' | 'why_wrong' | 'why_correct' | 'key_takeaway'
 
+// Daily AI Coach message quota — server-authoritative (see
+// backend/app/engines/learn/coach_usage.py). `limit`/`used`/`remaining` are
+// never computed client-side; this is always exactly what the backend last
+// reported. Field names mirror the backend's wire shape 1:1.
+export interface CoachUsage {
+  limit: number
+  used: number
+  remaining: number
+  resetAt: string
+}
+
+interface CoachUsageWire {
+  limit: number
+  used: number
+  remaining: number
+  reset_at: string
+}
+
+function normalizeUsage(wire: CoachUsageWire): CoachUsage {
+  return { limit: wire.limit, used: wire.used, remaining: wire.remaining, resetAt: wire.reset_at }
+}
+
+/** The shape of a 429 quota-exceeded error's `detail` — checked via
+ *  `err.detail.code`, never string-matched, per the "no string parsing"
+ *  requirement. `learnFetch` already attaches the raw `detail` value
+ *  (which may be an object, not just a string) to the thrown Error. */
+export interface CoachQuotaExceededDetail extends CoachUsageWire {
+  code: 'AI_COACH_DAILY_LIMIT_REACHED'
+}
+
+export function isCoachQuotaExceeded(detail: unknown): detail is CoachQuotaExceededDetail {
+  return !!detail && typeof detail === 'object' && (detail as { code?: unknown }).code === 'AI_COACH_DAILY_LIMIT_REACHED'
+}
+
+export async function getCoachUsage(token: string): Promise<CoachUsage> {
+  const res = await learnFetch<{ usage: CoachUsageWire }>('/api/coach/usage', token)
+  return normalizeUsage(res.usage)
+}
+
 export async function sendCoachMessage(
   sessionId: string | null,
   message: string,
   context: Record<string, unknown>,
   token: string,
   action?: CoachAction,
-): Promise<{ session_id: string; reply: CoachMessage }> {
-  const res = await learnFetch<{ session_id: string; reply: string; message_count: number }>(
+): Promise<{ session_id: string; reply: CoachMessage; usage: CoachUsage }> {
+  const res = await learnFetch<{ session_id: string; reply: string; message_count: number; usage: CoachUsageWire }>(
     '/api/coach/message',
     token,
     { method: 'POST', body: JSON.stringify({ session_id: sessionId, message, context, action }) },
@@ -397,6 +436,7 @@ export async function sendCoachMessage(
   return {
     session_id: res.session_id,
     reply: { role: 'coach', content: res.reply, timestamp: new Date().toISOString() },
+    usage: normalizeUsage(res.usage),
   }
 }
 

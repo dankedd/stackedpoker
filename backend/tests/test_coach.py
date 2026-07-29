@@ -16,6 +16,7 @@ from fastapi import HTTPException
 from app.api.routes import coach as coach_module
 from app.engines.learn import ai_coach as ai_coach_module
 from app.engines.learn import coach_context
+from app.engines.learn import coach_usage as coach_usage_module
 
 
 def run(coro):
@@ -79,6 +80,32 @@ class FakeSupabase:
             if _row_matches(row, filters):
                 row.update(data)
 
+    # ── ai_coach_usage RPCs — mirrors reserve_coach_usage/release_coach_usage's
+    #    real SQL semantics (see supabase_ai_coach_usage_schema.sql). Since this
+    #    runs as a single synchronous Python call with no `await` inside, two
+    #    "concurrent" asyncio tasks calling it can never interleave mid-check —
+    #    exactly the atomicity the real DB's row lock provides.
+    def reserve_coach_usage(self, user_id: str, daily_limit: int) -> dict:
+        from datetime import datetime, timezone
+        today = datetime.now(timezone.utc).date().isoformat()
+        rows = self._table("ai_coach_usage")
+        row = next((r for r in rows if r["user_id"] == user_id and r["usage_date"] == today), None)
+        if row is None:
+            row = {"user_id": user_id, "usage_date": today, "message_count": 1}
+            rows.append(row)
+            return {"message_count": 1, "usage_date": today, "allowed": True}
+        if row["message_count"] < daily_limit:
+            row["message_count"] += 1
+            return {"message_count": row["message_count"], "usage_date": today, "allowed": True}
+        return {"message_count": row["message_count"], "usage_date": today, "allowed": False}
+
+    def release_coach_usage(self, user_id: str) -> None:
+        from datetime import datetime, timezone
+        today = datetime.now(timezone.utc).date().isoformat()
+        for row in self._table("ai_coach_usage"):
+            if row["user_id"] == user_id and row["usage_date"] == today:
+                row["message_count"] = max(row["message_count"] - 1, 0)
+
 
 class FakeAsyncClient:
     def __init__(self, db: FakeSupabase, *args, **kwargs):
@@ -105,6 +132,14 @@ class FakeAsyncClient:
 
     async def post(self, url, headers=None, json=None):
         path, _ = self._split(url)
+        if path == "rpc/reserve_coach_usage":
+            # The real RPC always returns exactly one row (allowed true or
+            # false) via RETURN QUERY in both IF branches — never zero rows.
+            result = self.db.reserve_coach_usage(json["p_user_id"], json["p_daily_limit"])
+            return FakeResponse([result])
+        if path == "rpc/release_coach_usage":
+            self.db.release_coach_usage(json["p_user_id"])
+            return FakeResponse([])
         return FakeResponse([self.db.insert(path, json)])
 
     async def patch(self, url, headers=None, json=None):
@@ -710,6 +745,140 @@ def test_action_instructions_never_ask_for_exact_frequencies_beyond_hierarchy():
         instruction = ai_coach_module.ACTION_INSTRUCTIONS[key]
         assert "%" not in instruction
         assert "frequency" not in instruction.lower()
+
+
+# ── Daily quota (10 msgs/UTC day, server-authoritative, concurrency-safe) ──────
+
+
+def test_first_message_reports_1_of_10_used(fake_db, captured_reply):
+    user = {"sub": "user-quota-1"}
+    body = coach_module.CoachMessageBody(message="hi", context={})
+    result = run(coach_module.coach_message(body, FakeRequest(), user))
+    assert result["usage"] == {"limit": 10, "used": 1, "remaining": 9, "reset_at": result["usage"]["reset_at"]}
+
+
+def test_tenth_message_allowed_eleventh_rejected(fake_db, captured_reply):
+    # Distinct IP per multi-request test — the per-IP rate limiter (20/60s,
+    # separate from this daily quota) is a global in-memory window shared
+    # across the whole test process, not reset per-test.
+    req = FakeRequest(ip="10.0.1.1")
+    user = {"sub": "user-quota-2"}
+    last_result = None
+    for _ in range(10):
+        body = coach_module.CoachMessageBody(message="hi", context={})
+        last_result = run(coach_module.coach_message(body, req, user))
+    assert last_result["usage"]["used"] == 10
+    assert last_result["usage"]["remaining"] == 0
+
+    body = coach_module.CoachMessageBody(message="one more", context={})
+    with pytest.raises(HTTPException) as exc_info:
+        run(coach_module.coach_message(body, req, user))
+    assert exc_info.value.status_code == 429
+    assert exc_info.value.detail["code"] == "AI_COACH_DAILY_LIMIT_REACHED"
+    assert exc_info.value.detail["used"] == 10
+    assert exc_info.value.detail["remaining"] == 0
+
+
+def test_quota_rejection_never_reaches_the_llm(fake_db, captured_reply):
+    """The 11th request must be rejected before generate_coach_reply is ever
+    called — a rejected request costs nothing and never touches the AI."""
+    req = FakeRequest(ip="10.0.1.2")
+    user = {"sub": "user-quota-3"}
+    for _ in range(10):
+        run(coach_module.coach_message(
+            coach_module.CoachMessageBody(message="hi", context={}), req, user,
+        ))
+    assert len(captured_reply) == 10
+
+    with pytest.raises(HTTPException):
+        run(coach_module.coach_message(
+            coach_module.CoachMessageBody(message="one more", context={}), req, user,
+        ))
+    assert len(captured_reply) == 10  # unchanged — the 11th never reached the stub
+
+
+def test_concurrent_requests_at_9_of_10_only_one_succeeds(fake_db, captured_reply):
+    """The core concurrency-safety guarantee: two simultaneous requests when
+    the user is at 9/10 must not both succeed (which would allow 11/10)."""
+    req = FakeRequest(ip="10.0.1.3")
+    user = {"sub": "user-quota-concurrent"}
+    for _ in range(9):
+        run(coach_module.coach_message(
+            coach_module.CoachMessageBody(message="hi", context={}), req, user,
+        ))
+
+    async def _race():
+        return await asyncio.gather(
+            coach_module.coach_message(coach_module.CoachMessageBody(message="a", context={}), req, user),
+            coach_module.coach_message(coach_module.CoachMessageBody(message="b", context={}), req, user),
+            return_exceptions=True,
+        )
+
+    results = run(_race())
+    successes = [r for r in results if not isinstance(r, Exception)]
+    failures = [r for r in results if isinstance(r, HTTPException)]
+    assert len(successes) == 1
+    assert len(failures) == 1
+    assert failures[0].status_code == 429
+    assert successes[0]["usage"]["used"] == 10
+
+
+def test_llm_failure_releases_the_reserved_slot(fake_db, monkeypatch):
+    """A request that passes the quota gate but then fails at the LLM call
+    itself must cost 0 — the reservation is rolled back."""
+    async def _boom(*a, **kw):
+        raise ai_coach_module.CoachUnavailableError("boom")
+
+    monkeypatch.setattr(coach_module, "generate_coach_reply", _boom)
+    user = {"sub": "user-quota-release"}
+    body = coach_module.CoachMessageBody(message="hi", context={})
+
+    with pytest.raises(HTTPException) as exc_info:
+        run(coach_module.coach_message(body, FakeRequest(), user))
+    assert exc_info.value.status_code == 503
+
+    usage_row = fake_db.tables["ai_coach_usage"][0]
+    assert usage_row["message_count"] == 0  # reserved (1) then released back to 0
+
+
+def test_get_usage_endpoint_has_no_side_effects(fake_db, captured_reply):
+    user = {"sub": "user-quota-get"}
+    run(coach_module.coach_message(coach_module.CoachMessageBody(message="hi", context={}), FakeRequest(), user))
+
+    first = run(coach_module.coach_usage(user))
+    second = run(coach_module.coach_usage(user))
+    assert first["usage"]["used"] == 1
+    assert second["usage"]["used"] == 1  # calling GET twice doesn't increment anything
+
+
+def test_get_usage_reflects_zero_before_any_message(fake_db):
+    user = {"sub": "user-quota-fresh"}
+    result = run(coach_module.coach_usage(user))
+    assert result["usage"] == {"limit": 10, "used": 0, "remaining": 10, "reset_at": result["usage"]["reset_at"]}
+
+
+def test_reset_at_is_next_utc_midnight(fake_db):
+    from datetime import datetime, timezone
+    reset_at = coach_usage_module.compute_reset_at()
+    parsed = datetime.fromisoformat(reset_at)
+    assert parsed.tzinfo is not None
+    assert parsed.utcoffset().total_seconds() == 0  # UTC, not server-local time
+    assert parsed.hour == 0 and parsed.minute == 0 and parsed.second == 0
+    assert parsed.date() > datetime.now(timezone.utc).date()
+
+
+def test_quota_isolated_per_user(fake_db, captured_reply):
+    """Two different users' daily usage must never share a counter."""
+    req = FakeRequest(ip="10.0.1.4")
+    for _ in range(10):
+        run(coach_module.coach_message(
+            coach_module.CoachMessageBody(message="hi", context={}), req, {"sub": "user-quota-a"},
+        ))
+    # A different user starts fresh at 0/10, unaffected by user A being maxed out.
+    result = run(coach_module.coach_message(
+        coach_module.CoachMessageBody(message="hi", context={}), req, {"sub": "user-quota-b"},
+    ))
+    assert result["usage"]["used"] == 1
 
 
 def test_session_isolated_per_user(fake_db, captured_reply):

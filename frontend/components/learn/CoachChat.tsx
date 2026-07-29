@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useImperativeHandle, forwardRef, type Reac
 import { Send, Bot, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CoachMessage } from '@/lib/learn/types'
-import { sendCoachMessage, type CoachAction } from '@/lib/learn/api'
+import { sendCoachMessage, getCoachUsage, isCoachQuotaExceeded, type CoachAction, type CoachUsage } from '@/lib/learn/api'
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 
@@ -29,6 +29,13 @@ interface CoachChatProps {
    *  authored-first-hint short-circuit) before deciding whether to actually
    *  hit the LLM. Ignored if `quickActions` is omitted. */
   onQuickAction?: (id: CoachAction, label: string) => void
+  /** Shown as a "Continue lesson" action on the daily-limit-reached panel.
+   *  Omitted on the full-page Coach, where there's no lesson to return to. */
+  onLimitReachedContinue?: () => void
+  /** Seeds the usage indicator/limit-reached state immediately instead of
+   *  waiting on the mount-time fetch — avoids a flash-of-no-indicator each
+   *  time this component remounts (e.g. a fresh thread per lesson step). */
+  initialUsage?: CoachUsage
 }
 
 export interface CoachChatHandle {
@@ -45,6 +52,16 @@ const STARTERS = [
   'When is it correct to fold to a pot-sized bet?',
   'How do I balance my bluffs?',
 ]
+
+// ── Reset-time helper ──────────────────────────────────────────────────────────
+// The backend always computes reset_at as the next UTC midnight (see
+// coach_usage.py's compute_reset_at) — displayed here in the learner's own
+// local time so "resets at 00:00 UTC" doesn't show up as a confusing raw
+// timestamp to a non-technical user.
+
+function formatResetTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+}
 
 // ── Relative time helper ──────────────────────────────────────────────────────
 
@@ -156,11 +173,19 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
   banner,
   quickActions,
   onQuickAction,
+  onLimitReachedContinue,
+  initialUsage,
 }, ref) {
   const [messages, setMessages] = useState<CoachMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(initSessionId)
+  // Daily usage — server-authoritative (see lib/learn/api.ts's CoachUsage).
+  // Seeded from `initialUsage` when the caller already has it (avoids a
+  // flash-of-no-indicator on remount); otherwise fetched once on mount so
+  // the limit shows correctly even before any message is sent this session
+  // (e.g. after a refresh). Refreshed from every send() response either way.
+  const [usage, setUsage] = useState<CoachUsage | null>(initialUsage ?? null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const autoStarted = useRef(false)
@@ -176,6 +201,17 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
 
+  // Best-effort — a failed usage fetch never blocks the chat itself; the
+  // limit is still enforced server-side regardless of whether this
+  // informational number loaded. Skipped when the caller already seeded
+  // `initialUsage` (e.g. LessonCoachDrawer already has a fresh value from
+  // the previous step) — no point in an extra request every remount.
+  useEffect(() => {
+    if (initialUsage) return
+    getCoachUsage(token).then(u => { if (mountedRef.current) setUsage(u) }).catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token])
+
   function handleInputChange(val: string) {
     setInput(val)
     const ta = textareaRef.current
@@ -184,9 +220,11 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
     ta.style.height = `${Math.min(ta.scrollHeight, 96)}px`
   }
 
+  const limitReached = usage != null && usage.remaining <= 0
+
   const send = async (text?: string, action?: CoachAction) => {
     const msg = (text ?? input).trim()
-    if (!msg || loading) return
+    if (!msg || loading || limitReached) return
 
     const userMsg: CoachMessage = {
       role: 'user',
@@ -200,15 +238,26 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
     setLoading(true)
 
     try {
-      const { session_id, reply } = await sendCoachMessage(currentSessionId, msg, context, token, action)
+      const { session_id, reply, usage: newUsage } = await sendCoachMessage(currentSessionId, msg, context, token, action)
       if (!mountedRef.current) return
       setCurrentSessionId(session_id)
+      setUsage(newUsage)
       setMessages(prev => [
         ...prev,
         reply.content.trim() ? reply : { ...reply, content: "Hmm, I didn't catch that — could you rephrase?" },
       ])
     } catch (err) {
       if (!mountedRef.current) return
+      const detail = (err as { detail?: unknown } | undefined)?.detail
+      if (isCoachQuotaExceeded(detail)) {
+        // This request was never processed by the AI — it doesn't belong in
+        // the transcript as if it had been asked. Roll back the optimistic
+        // user message and switch to the limit-reached state instead of
+        // adding a generic error bubble.
+        setUsage({ limit: detail.limit, used: detail.used, remaining: detail.remaining, resetAt: detail.reset_at })
+        setMessages(prev => prev.slice(0, -1))
+        return
+      }
       const status = (err as { status?: number } | undefined)?.status
       let content = "Sorry, I couldn't connect right now. Please try again in a moment."
       if (status === 401) content = 'Your session expired — please sign in again to keep chatting.'
@@ -256,17 +305,19 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
       <div className="flex-1 overflow-y-auto min-h-0 p-4 space-y-4">
         {banner && <div className="mb-1">{banner}</div>}
 
-        {noMessages && !initialMessage && quickActions && quickActions.length > 0 && (
+        {noMessages && !initialMessage && !limitReached && quickActions && quickActions.length > 0 && (
           <div className="space-y-2 py-2">
             {quickActions.map(qa => (
               <button
                 key={qa.id}
                 type="button"
+                disabled={loading}
                 onClick={() => (onQuickAction ? onQuickAction(qa.id, qa.label) : send(qa.label, qa.id))}
                 className={cn(
                   'w-full text-left text-sm px-4 py-3 rounded-xl border',
                   'border-violet-500/20 bg-violet-500/5 text-foreground/80',
                   'hover:border-violet-500/40 hover:bg-violet-500/10',
+                  'disabled:opacity-40 disabled:pointer-events-none',
                   'transition-all duration-150'
                 )}
               >
@@ -276,7 +327,7 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
           </div>
         )}
 
-        {noMessages && !initialMessage && !quickActions && (
+        {noMessages && !initialMessage && !limitReached && !quickActions && (
           <div className="space-y-3 py-4">
             <p className="text-center text-xs text-muted-foreground/50">
               Ask your AI coach anything about poker strategy
@@ -310,43 +361,76 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
         <div ref={bottomRef} />
       </div>
 
-      {/* Input area */}
+      {/* Input area — replaced by a calm limit-reached panel once the daily
+          quota is exhausted (spec: disable input/send/quick-actions, no
+          alarming banner, no subscription upsell). */}
       <div className="border-t border-border/40 p-3 shrink-0">
-        <div className="flex gap-2 items-end">
-          <textarea
-            ref={textareaRef}
-            rows={1}
-            value={input}
-            onChange={e => handleInputChange(e.target.value)}
-            onKeyDown={onKey}
-            placeholder="Ask your coach anything..."
-            disabled={loading}
-            className={cn(
-              'flex-1 resize-none rounded-xl px-3.5 py-2.5 text-sm text-foreground',
-              'bg-secondary/30 border border-border/50 outline-none',
-              'placeholder:text-muted-foreground/35',
-              'focus:border-violet-500/50 transition-colors',
-              'min-h-[42px] max-h-[96px]',
-              loading && 'opacity-50'
+        {limitReached ? (
+          <div className="rounded-xl border border-border/40 bg-secondary/20 px-4 py-3.5 text-center space-y-2">
+            <p className="text-sm font-medium text-foreground/80">Daily Coach limit reached</p>
+            <p className="text-xs text-muted-foreground/60 leading-relaxed">
+              You've used your {usage!.limit} Coach questions for today. Your questions reset at{' '}
+              {formatResetTime(usage!.resetAt)}.
+            </p>
+            {onLimitReachedContinue && (
+              <button
+                type="button"
+                onClick={onLimitReachedContinue}
+                className="mt-1 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors"
+              >
+                Continue lesson
+              </button>
             )}
-          />
-          <button
-            type="button"
-            onClick={() => send()}
-            disabled={!input.trim() || loading}
-            className={cn(
-              'flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl',
-              'bg-gradient-to-r from-violet-600 to-blue-500 text-white',
-              'disabled:opacity-35 hover:opacity-90 transition-opacity'
+          </div>
+        ) : (
+          <>
+            <div className="flex gap-2 items-end">
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                value={input}
+                onChange={e => handleInputChange(e.target.value)}
+                onKeyDown={onKey}
+                placeholder="Ask your coach anything..."
+                disabled={loading}
+                className={cn(
+                  'flex-1 resize-none rounded-xl px-3.5 py-2.5 text-sm text-foreground',
+                  'bg-secondary/30 border border-border/50 outline-none',
+                  'placeholder:text-muted-foreground/35',
+                  'focus:border-violet-500/50 transition-colors',
+                  'min-h-[42px] max-h-[96px]',
+                  loading && 'opacity-50'
+                )}
+              />
+              <button
+                type="button"
+                onClick={() => send()}
+                disabled={!input.trim() || loading}
+                className={cn(
+                  'flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-xl',
+                  'bg-gradient-to-r from-violet-600 to-blue-500 text-white',
+                  'disabled:opacity-35 hover:opacity-90 transition-opacity'
+                )}
+                aria-label="Send message"
+              >
+                <Send className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="text-[10px] text-muted-foreground/25 text-center mt-1.5">
+              Enter to send · Shift+Enter for new line
+            </p>
+            {usage && (
+              <p
+                className={cn(
+                  'text-[10px] text-center mt-1',
+                  usage.used >= 8 ? 'text-amber-400/60' : 'text-muted-foreground/35',
+                )}
+              >
+                {usage.used} of {usage.limit} questions used today
+              </p>
             )}
-            aria-label="Send message"
-          >
-            <Send className="h-4 w-4" />
-          </button>
-        </div>
-        <p className="text-[10px] text-muted-foreground/25 text-center mt-1.5">
-          Enter to send · Shift+Enter for new line
-        </p>
+          </>
+        )}
       </div>
     </div>
   )

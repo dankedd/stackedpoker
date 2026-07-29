@@ -21,6 +21,7 @@ from app.engines.learn.coach_context import (
     resolve_coaching_mode,
     sanitize_context,
 )
+from app.engines.learn.coach_usage import get_coach_usage, release_coach_usage, reserve_coach_usage
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["coach"])
@@ -150,6 +151,18 @@ async def coach_message(
         )
 
     try:
+        # ── Daily quota gate (server-authoritative, concurrency-safe) ───────────
+        # Checked before any session/DB work: a rejected request creates no
+        # session and never reaches the LLM, so it costs the user nothing.
+        # reserve_coach_usage does the check-and-increment atomically in a
+        # single SQL statement — see supabase_ai_coach_usage_schema.sql.
+        usage, allowed = await reserve_coach_usage(user_id, settings)
+        if not allowed:
+            raise HTTPException(
+                status_code=429,
+                detail={"code": "AI_COACH_DAILY_LIMIT_REACHED", **usage.to_dict()},
+            )
+
         now = datetime.now(timezone.utc).isoformat()
 
         # ── Resolve or create session ─────────────────────────────────────────
@@ -253,11 +266,16 @@ async def coach_message(
             "session_id": session_id,
             "reply": reply,
             "message_count": len(messages),
+            "usage": usage.to_dict(),
         }
 
     except HTTPException:
         raise
     except CoachUnavailableError as e:
+        # The reserved slot was never actually processed by the AI — release
+        # it so a genuinely failed request costs the user nothing. Best-effort:
+        # release_coach_usage already swallows its own errors internally.
+        await release_coach_usage(user_id, settings)
         # The LLM request itself failed (quota/timeout/rate limit/auth/provider
         # error) — surface this as a real, distinguishable failure rather than
         # persisting a canned string into the session as if the coach had
@@ -275,6 +293,23 @@ async def coach_message(
     except Exception as e:
         logger.exception("coach_unhandled_error req_id=%s user=%s exc_type=%s", req_id, user_id, type(e).__name__)
         raise HTTPException(status_code=500, detail="Coach unavailable. Please try again.")
+
+
+# ── GET /coach/usage ──────────────────────────────────────────────────────────
+
+@router.get("/coach/usage")
+async def coach_usage(current_user: dict = Depends(get_current_user)) -> dict:
+    """Read-only current-usage lookup — no side effects (does not reserve a
+    slot). Lets the frontend show correct usage on page load/drawer open,
+    before any message has been sent this session, and after a refresh."""
+    settings = get_settings()
+    user_id: str = current_user.get("sub", "")
+    try:
+        usage = await get_coach_usage(user_id, settings)
+        return {"usage": usage.to_dict()}
+    except httpx.HTTPError:
+        logger.error("coach_usage_lookup_failed user=%s", user_id)
+        raise HTTPException(status_code=502, detail="Could not load usage.")
 
 
 # ── GET /coach/session/{session_id} ──────────────────────────────────────────

@@ -920,7 +920,7 @@ export function LessonPlayer({
 
   return (
     <>
-    <div className={cn('flex flex-col gap-5 transition-[margin] duration-300', coachOpen && 'xl:mr-[420px]')}>
+    <div className="flex flex-col gap-5">
       {/* Chapter progress */}
       {lesson.chapters && lesson.chapters.length > 0 && (
         <ChapterProgress chapters={lesson.chapters} currentStepId={currentStep.id} />

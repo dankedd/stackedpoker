@@ -106,13 +106,18 @@ export function LessonCoachDrawer({
 
   return (
     <div className={cn('fixed inset-0 z-50', !open && 'pointer-events-none')}>
-      {/* Backdrop — only below the xl breakpoint, where the panel overlays
-          instead of the lesson content shifting to make room for it. */}
+      {/* Backdrop — mobile only. The panel is a pure overlay at every width
+          (it never shifts/shrinks the lesson — see LessonPlayer.tsx, which
+          carries no coach-dependent class at all); tablet/desktop show the
+          lesson beside/behind the drawer with no dimming, matching the
+          "recognizable lesson next to the drawer" requirement. Only the
+          near-fullscreen mobile sheet (below `md`) gets a backdrop, since it
+          covers almost the entire viewport the way a sheet/modal would. */}
       <div
         aria-hidden
         onClick={onClose}
         className={cn(
-          'absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 xl:hidden',
+          'absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 md:hidden',
           open ? 'opacity-100' : 'opacity-0 pointer-events-none',
         )}
       />
@@ -194,6 +199,7 @@ export function LessonCoachDrawer({
             context={apiContext}
             quickActions={quickActions}
             onQuickAction={handleQuickAction}
+            onLimitReachedContinue={onClose}
             className="flex-1 min-h-0"
           />
         )}
