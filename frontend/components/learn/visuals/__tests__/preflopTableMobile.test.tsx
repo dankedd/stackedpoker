@@ -17,8 +17,16 @@ describe('mobile layout config — a dedicated map, not a scaled-down desktop', 
     expect(MOBILE_LAYOUT.aspectRatio).not.toBe(DESKTOP_LAYOUT.aspectRatio)
     expect(MOBILE_LAYOUT.ellipseRadius).not.toBe(DESKTOP_LAYOUT.ellipseRadius)
     expect(MOBILE_LAYOUT.chipPullFactor).not.toBe(DESKTOP_LAYOUT.chipPullFactor)
-    expect(MOBILE_LAYOUT.heroPodAnchor).toBe('center')
-    expect(DESKTOP_LAYOUT.heroPodAnchor).toBe('seat')
+  })
+
+  it('both breakpoints use the SAME structural principle — a protected center zone for pot + Hero cards, not a Hero-only pod anchor', () => {
+    expect(MOBILE_LAYOUT.protectedZone.halfWidthPct).toBeGreaterThan(0)
+    expect(MOBILE_LAYOUT.protectedZone.halfHeightPct).toBeGreaterThan(0)
+    expect(DESKTOP_LAYOUT.protectedZone.halfWidthPct).toBeGreaterThan(0)
+    expect(DESKTOP_LAYOUT.protectedZone.halfHeightPct).toBeGreaterThan(0)
+    // potYPct sits above cardZoneYPct on both — pot readout, then Hero's cards below it.
+    expect(MOBILE_LAYOUT.potYPct).toBeLessThan(MOBILE_LAYOUT.cardZoneYPct)
+    expect(DESKTOP_LAYOUT.potYPct).toBeLessThan(DESKTOP_LAYOUT.cardZoneYPct)
   })
 
   it('mobile is taller (aspect-ratio < 1) than desktop (aspect-ratio > 1)', () => {

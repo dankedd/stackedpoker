@@ -148,36 +148,12 @@ export const ROADMAP_MODULES: LearningModule[] = [
   // promoted entry reflects that honestly and grows with each checkpoint.
 
   // ── Stage 5 — Game Theory ────────────────────────────────────────────────────
-  {
-    ...ROADMAP_DEFAULTS,
-    id: 'game-theory-foundations-module',
-    path_id: 'intermediate',
-    slug: 'game-theory-foundations-module',
-    title: 'Game Theory Foundations',
-    subtitle: 'Understand what it means to build a strategy that cannot be easily exploited.',
-    description: 'Introduce game-theoretic poker without turning the module into an abstract mathematics course.',
-    learningObjectives: [
-      'Explain exploitation and counter-exploitation in plain terms',
-      'Understand indifference and why mixed strategies exist',
-      'Connect minimum defense frequency to an intuitive sense of equilibrium',
-    ],
-    difficulty: 'intermediate',
-    stageId: 'game-theory',
-    order: 10,
-    prerequisiteModuleId: 'blockers-module',
-    plannedLessons: [
-      { title: 'What Is Game Theory?' },
-      { title: 'Exploitation' },
-      { title: 'Counter-Exploitation' },
-      { title: 'Balanced Strategy' },
-      { title: 'Indifference' },
-      { title: 'Mixed Strategies' },
-      { title: 'Frequencies' },
-      { title: 'Minimum Defense Frequency' },
-      { title: 'Equilibrium Intuition' },
-      { title: 'GTO Decision Lab' },
-    ],
-  },
+  // game-theory-foundations-module has been promoted to real content — see
+  // `LEARNING_MODULES` in ./curriculum.ts (same pattern as Modules 1-9). Its
+  // 10 lessons diverge from this stub's original placeholder titles below
+  // (built around an interactive strategy-manipulation engine rather than a
+  // vocabulary-first "What Is Game Theory?" progression) — same judgment-call
+  // precedent as Module 7's rename. All 10 lessons are built (not phased).
   {
     ...ROADMAP_DEFAULTS,
     id: 'polarized-module',

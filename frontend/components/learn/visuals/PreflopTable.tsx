@@ -23,36 +23,36 @@ export interface SeatLayoutEntry {
  * Every geometric constant the table needs, bundled per breakpoint. Desktop and
  * mobile are two independent, hand-tuned maps — mobile is NOT a scaled-down
  * desktop (no transform: scale() anywhere), it has its own radius, rail
- * thickness, dealer-chip gaps, and Hero anchor strategy. See `heroPodAnchor`.
+ * thickness, and dealer-chip gap. Both breakpoints share the SAME structural
+ * principle: every seat (Hero included) anchors its label on the rail
+ * centerline, and Hero's cards/pot live in one fixed protected zone at table
+ * center — see `ScenarioComparison`/`PreflopTable` below for how that's used.
  */
 interface TableLayoutConfig {
   /** CSS `aspect-ratio` (width / height) for the table's outer container. */
   aspectRatio: string
-  /** % radius (from table center) at which every seat's anchor point sits. */
+  /** % radius (from table center) at which every seat's anchor point sits —
+   *  drives BOTH the label's rail-centerline projection and the chip's
+   *  seat-to-center vector. Never changed by this redesign (outer shape). */
   ellipseRadius: number
   /** % radius of the outer rail ring — drives the outer ring's `inset-[]`. */
   railOuterRadius: number
   /** % radius of the inner felt ring — drives the felt's `inset-[]`. */
   railInnerRadius: number
-  /** Fixed px gap between a non-hero seat's rail point and its dealer chip. */
+  /** Fixed px gap between a seat's rail point and its dealer chip — the SAME
+   *  for every seat, Hero included (no more Hero-only special case). */
   dealerLabelGapPx: number
-  /** Fixed px gap for Hero's own dealer chip — only meaningful when
-   *  `heroPodAnchor` is `'seat'`; unused when it's `'center'` (see below). */
-  heroDealerGapPx: number
   /** How far (0-1) a bet/blind chip is pulled from its seat toward table center. */
   chipPullFactor: number
-  /** `'seat'` — Hero's cards/badge/stack render at Hero's own rail point, like
-   *  every other seat (desktop, unchanged). `'center'` — Hero's entire pod,
-   *  plus the PREFLOP·BB/status lines, renders as one unified column at the
-   *  table's true center, fully decoupled from the rail (mobile only): this is
-   *  what gives mobile its fixed, non-overlapping central vertical hierarchy. */
-  heroPodAnchor: 'seat' | 'center'
-  /** Half-width/half-height (in the same %-of-container units as seat x/y) of a
-   *  protected rectangle around dead-center that bet/blind chips must never enter
-   *  — only meaningful when `heroPodAnchor` is `'center'`, since that's the only
-   *  mode with a wide/tall central column for chips to collide with. `undefined`
-   *  on desktop: chips there just lerp straight toward (50,50) as before. */
-  protectedZone?: { halfWidthPct: number; halfHeightPct: number }
+  /** Vertical center (% of container height) of the pot readout. */
+  potYPct: number
+  /** Vertical center (% of container height) of Hero's protected card zone. */
+  cardZoneYPct: number
+  /** A protected rectangle bet/blind chips must never enter — sized and CENTERED
+   *  (explicitly — never assumed to be the container's true 50/50 center, since
+   *  the pot readout and Hero's card zone don't straddle it symmetrically) to
+   *  cover both the pot readout and Hero's card zone with margin. */
+  protectedZone: { cxPct: number; cyPct: number; halfWidthPct: number; halfHeightPct: number }
 }
 
 export const DESKTOP_LAYOUT: TableLayoutConfig = {
@@ -61,39 +61,43 @@ export const DESKTOP_LAYOUT: TableLayoutConfig = {
   railOuterRadius: 40,
   railInnerRadius: 37.5,
   dealerLabelGapPx: 22,
-  heroDealerGapPx: 68,
   chipPullFactor: 0.4,
-  heroPodAnchor: 'seat',
+  potYPct: 36,
+  cardZoneYPct: 59,
+  // Covers 30%-74% vertically (pot's own span ~32-40, card zone's own span
+  // ~46-72, both comfortably inside) and 34%-66% horizontally (114px card row
+  // plus margin).
+  protectedZone: { cxPct: 50, cyPct: 52, halfWidthPct: 16, halfHeightPct: 22 },
 }
 
 /** Mobile: ~92-96% width (see the root div below), a taller/more-oval shape,
- *  a smaller seat radius (more edge clearance for labels at 320-430px), a
- *  gentler chip-pull factor (keeps blind/bet chips clear of the wider center
- *  column), and Hero's pod centered rather than rail-anchored. */
+ *  a smaller seat radius (more edge clearance for labels at 320-430px), and a
+ *  gentler chip-pull factor (keeps blind/bet chips clear of the protected
+ *  center column). */
 export const MOBILE_LAYOUT: TableLayoutConfig = {
   // Slightly taller than a strict 3:4 — buys the extra vertical clearance the
-  // center column (orientation/ante line, status, cards, result badge, HERO box,
-  // action pill) needs between the top/bottom seats without over-elongating into
-  // a narrow "egg" shape.
+  // protected center column (pot + hole cards + result badge + action pill)
+  // needs between the top/bottom seats.
   aspectRatio: '3 / 4.3',
   ellipseRadius: 38,
   railOuterRadius: 36,
   railInnerRadius: 33.5,
   dealerLabelGapPx: 22,
-  heroDealerGapPx: 22, // unused — heroPodAnchor is 'center', so Hero's dealer chip always takes the non-hero branch below
   chipPullFactor: 0.2,
-  heroPodAnchor: 'center',
-  // The central column (orientation lines + hole cards + result badge + HERO box +
-  // action pill) can run tall and its cards row alone is ~55% of the felt width —
-  // wide/tall enough that a plain toward-center lerp would carry a blind/bet chip
-  // straight through it. Tuned against 320-430px screenshots, not guessed.
-  protectedZone: { halfWidthPct: 24, halfHeightPct: 33 },
+  potYPct: 35,
+  cardZoneYPct: 57,
+  // Tuned against 320-430px screenshots historically for a taller column than
+  // desktop needs (narrower container, same absolute card size) — kept
+  // generously sized here since the column now holds LESS content than before
+  // (Hero's position/stack moved out to the rail, same as every other seat).
+  protectedZone: { cxPct: 50, cyPct: 49, halfWidthPct: 24, halfHeightPct: 28 },
 }
 
 /** Rescales a seat's anchor point (on the `ellipseRadius` circle) onto the rail
- *  centerline circle, preserving its angle exactly — used only for centering the
- *  non-hero position label text. Hero's own anchor, and the bet-chip/dealer-marker
- *  anchors (which still read the original `seat.x`/`seat.y`), are unaffected. */
+ *  centerline circle, preserving its angle exactly — this is THE generic
+ *  seat-anchor system every position label (Hero included) is centered on. The
+ *  bet-chip/dealer-marker anchors (which still read the original `seat.x`/
+ *  `seat.y`) are unaffected. */
 export function railCenterlinePoint(
   xPct: string,
   yPct: string,
@@ -129,7 +133,9 @@ function ellipseSeatCoords(
 /**
  * Rotates `POSITIONS_BY_SIZE[tableSize]` (clockwise-from-BTN order) so `heroPosition`'s index
  * lands on slot 0, then zips it index-for-index with a symmetrical ellipse's coordinates
- * (slot 0 = hero, bottom-center). Exported for unit testing.
+ * (slot 0 = hero, bottom-center). Exported for unit testing. UNCHANGED by this redesign —
+ * this is the outer geometry ("de buitenrand blijft hetzelfde") every seat, including Hero,
+ * still reads its anchor point from.
  */
 export function computeHeroRotatedSeats(
   tableSize: number,
@@ -170,12 +176,14 @@ function actionVerb(action: ParsedSeatAction): string {
 
 /** A point `t` of the way from a seat's percentage coordinate toward table center (50%, 50%) —
  *  used to place the dealer button and blind/bet chip markers just inside the rail, near
- *  their seat, using the same seat-to-center positioning system for both. */
+ *  their seat, using the same seat-to-center positioning system for both. Every seat, Hero
+ *  included, derives its bet/chip position from this SAME function — there is no separate
+ *  per-position pixel coordinate anywhere in this file. */
 function towardCenter(
   xPct: string,
   yPct: string,
   t: number,
-  protectedZone?: { halfWidthPct: number; halfHeightPct: number },
+  protectedZone?: { cxPct: number; cyPct: number; halfWidthPct: number; halfHeightPct: number },
 ): { left: string; top: string } {
   const x = parseFloat(xPct)
   const y = parseFloat(yPct)
@@ -187,11 +195,13 @@ function towardCenter(
     // Same seat point → center segment as always, but stopped at the edge of the
     // protected rectangle (a standard ray/AABB slab test) instead of running
     // through it — the segment's t-interval inside the rect is [enter, exit];
-    // if that interval falls within [0, t], clamp to its entry point.
-    const xLo = 50 - protectedZone.halfWidthPct
-    const xHi = 50 + protectedZone.halfWidthPct
-    const yLo = 50 - protectedZone.halfHeightPct
-    const yHi = 50 + protectedZone.halfHeightPct
+    // if that interval falls within [0, t], clamp to its entry point. The
+    // rectangle is centered on its OWN cx/cy (the pot/card-zone column), not
+    // assumed to be the container's 50/50 center.
+    const xLo = protectedZone.cxPct - protectedZone.halfWidthPct
+    const xHi = protectedZone.cxPct + protectedZone.halfWidthPct
+    const yLo = protectedZone.cyPct - protectedZone.halfHeightPct
+    const yHi = protectedZone.cyPct + protectedZone.halfHeightPct
 
     const txEnter = dx === 0 ? -Infinity : Math.min((xLo - x) / dx, (xHi - x) / dx)
     const txExit = dx === 0 ? Infinity : Math.max((xLo - x) / dx, (xHi - x) / dx)
@@ -210,7 +220,12 @@ function towardCenter(
   return { left: `${x + dx * clampedT}%`, top: `${y + dy * clampedT}%` }
 }
 
-function BetChip({
+type ChipTone = 'blind' | 'bet' | 'allin'
+
+/** A compact chip-stack glyph (two offset rings + the amount) rather than a plain text pill —
+ *  "onmiddellijk duidelijk: deze speler heeft chips ingezet." Positioned purely from the same
+ *  seat-anchor → towardCenter vector every other geometric element in this file uses. */
+function ChipStack({
   x,
   y,
   amount,
@@ -221,22 +236,33 @@ function BetChip({
   x: string
   y: string
   amount: number
-  tone: 'blind' | 'bet'
+  tone: ChipTone
   pullFactor: number
-  protectedZone?: { halfWidthPct: number; halfHeightPct: number }
+  protectedZone?: { cxPct: number; cyPct: number; halfWidthPct: number; halfHeightPct: number }
 }) {
   const pos = towardCenter(x, y, pullFactor, protectedZone)
+  const ring =
+    tone === 'allin'
+      ? 'border-red-400/50 bg-red-500/25'
+      : tone === 'bet'
+      ? 'border-sky-400/40 bg-sky-500/25'
+      : 'border-white/25 bg-white/10'
+  const label = tone === 'allin' ? 'text-red-200' : tone === 'bet' ? 'text-sky-200' : 'text-white/65'
+
   return (
     <div
-      className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
+      className="absolute z-20 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-[3px]"
       style={{ left: pos.left, top: pos.top }}
     >
+      {/* Two stacked chip rings — compact, not photorealistic, but unmistakably "chips". */}
+      <div className="relative h-[13px] w-[13px]" aria-hidden>
+        <span className={cn('absolute inset-0 rounded-full border', ring)} />
+        <span className={cn('absolute inset-0 -translate-y-[3px] rounded-full border', ring)} />
+      </div>
       <span
         className={cn(
-          'flex items-center justify-center rounded-full border px-1.5 py-0.5 text-[8px] font-bold tabular-nums whitespace-nowrap shadow-sm',
-          tone === 'blind'
-            ? 'border-white/15 bg-white/10 text-white/60'
-            : 'border-sky-400/30 bg-sky-500/20 text-sky-200',
+          'rounded-full px-1 text-[8px] font-bold tabular-nums whitespace-nowrap leading-none',
+          label,
         )}
       >
         {formatBb(amount)}
@@ -267,7 +293,7 @@ export interface PreflopTableProps {
   /** Hero's 2 concrete cards, e.g. ['As','Kh']. Omit for 2 face-down placeholders. */
   heroHand?: string[]
   effectiveStackBb?: number
-  /** Rendered once near table center — antes aren't seat-specific. */
+  /** Rendered once in the below-table status bar — antes aren't seat-specific. */
   anteBb?: number
   /** The existing action_before_hero field, parsed internally — never fabricated when absent. */
   actionBeforeHero?: string[]
@@ -282,8 +308,18 @@ export interface PreflopTableProps {
  * Shared preflop table used by every preflop Learn decision (RFI table decisions, position
  * mastery, facing-open, squeeze, defend). An information visualization, not decorative casino
  * imagery: Hero always anchors bottom-center regardless of real position (camera rotates, real
- * poker order is preserved), other seats show only position/stack/action state, and the center
- * carries a one-line orientation summary — never a hand-history paragraph.
+ * poker order is preserved).
+ *
+ * Three non-overlapping layers, in the same DOM order they're described here:
+ *  1. RAIL    — every seat's position label (Hero included, identical geometry), its
+ *               action/stack line, and the dealer button. All anchored on the rail
+ *               centerline via `railCenterlinePoint` — never a per-position pixel offset.
+ *  2. FIELD   — the green felt itself, chip-stack markers for every seat's current
+ *               commitment (derived from `seat.committedBb`, seat-anchor → center vector),
+ *               the pot readout, and Hero's protected hole-card zone.
+ *  3. STATUS  — a compact bar BELOW the table (street/effective-stack/ante/center-status
+ *               text) — nothing that isn't a position, card, chip, pot, or dealer marker
+ *               is allowed to render inside the table itself.
  */
 export function PreflopTable({
   tableSize,
@@ -310,62 +346,42 @@ export function PreflopTable({
   })
   const centerStatus = state ? deriveCenterStatus(state) : undefined
   const seatState = new Map<string, PreflopSeatState>(state?.seats.map((s) => [s.position, s]))
-  // Hero's own already-completed action (e.g. an opening raise now facing a
-  // 3-bet) — read once here so both the shared hero pod (stack line) and the
-  // per-seat loop (bet-chip marker) agree on the same underlying fact.
-  const heroSeatInfo = seatState.get(seats[0].position)
-  const heroOwnAction = heroSeatInfo?.action && heroSeatInfo.action.kind !== 'fold' ? heroSeatInfo.action : undefined
-  const heroStackBehindBb = heroOwnAction && heroSeatInfo?.stackBehindBb != null ? heroSeatInfo.stackBehindBb : undefined
 
-  // Hero's pod — cards, result badge, HERO·position + stack, action pill. Shared
-  // between the desktop branch (rendered at Hero's own rail point below) and the
-  // mobile branch (folded into the unified center column) so the two never drift.
-  const heroPod = (
-    <div className="flex flex-col items-center gap-2.5">
-      {/* Hero cards — one centered, fixed-width wrapper (2 cards + exact gap,
-          nothing implicit). Its midpoint is mathematically the wrapper's own
-          center, and the wrapper itself is centered by the parent flex column
-          — the same axis the HERO badge below centers on, so cards and badge
-          always share one exact vertical stack, never nudged apart. */}
-      <div className="flex w-[114px] items-center justify-between">
+  // ── LAYER 2 (field) content that isn't per-seat: pot + Hero's protected card zone ──
+  // Hero's cards/result/own-action pill live in ONE fixed screen position regardless of
+  // Hero's actual seat — this is what lets Hero use the exact same rail-anchor geometry
+  // as every other seat for their POSITION LABEL (below) without cards dragging that
+  // anchor around the table.
+  const heroCardZone = (
+    <div
+      className="absolute left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1.5"
+      style={{ top: `${layout.cardZoneYPct}%` }}
+    >
+      {/* Subtle violet glow — one of Hero's "visueel herkenbaar" accents; purely decorative,
+          never shifts layout (absolutely positioned behind the cards). */}
+      <div aria-hidden className="pointer-events-none absolute h-16 w-28 rounded-full bg-violet-500/10 blur-xl" />
+
+      <div className="relative flex w-[114px] items-center justify-between">
         <PlayingCardMini card={cards[0]} size="lg" />
         <PlayingCardMini card={cards[1]} size="lg" />
       </div>
 
-      {/* Result badge — directly under the cards, above the HERO box. Always
-          rendered (a non-breaking space in place of real text when there's no
-          result yet) so this row's height never changes between "no answer
-          yet" and "answered" — nothing below it (the HERO box, the action
-          pill) ever shifts when the badge appears. */}
+      {/* Result badge — always mounted (invisible placeholder when there's no result yet)
+          so nothing below it ever shifts when an answer lands. */}
       <span
         role="status"
         className={cn(
-          'text-[10px] font-black tracking-wide',
+          'relative text-[10px] font-black tracking-wide',
           result === 'correct' ? 'text-emerald-400' : result === 'incorrect' ? 'text-red-400' : 'invisible',
         )}
       >
         {result === 'correct' ? '✓ CORRECT' : result === 'incorrect' ? '✕ INCORRECT' : ' '}
       </span>
 
-      {/* One compact seat box — not several floating labels. Active Hero is
-          indicated purely through this box's violet styling (no "YOUR TURN" text). */}
-      <div className="flex flex-col items-center gap-0.5 rounded-xl border border-violet-400/30 bg-violet-500/10 px-3 py-1.5">
-        <span className="text-[11px] font-bold text-violet-200 whitespace-nowrap">
-          HERO · {seats[0].position}
-        </span>
-        {effectiveStackBb != null && (
-          <span className="text-[10px] font-semibold tabular-nums text-violet-200/60">
-            {formatBb(heroStackBehindBb ?? effectiveStackBb)} BB
-          </span>
-        )}
-      </div>
-
-      {/* Same reserved-space treatment as the result badge above — this pill
-          and the result badge always appear together (both derive from the
-          same post-answer state), so both must be shift-proof. */}
+      {/* Hero's own freshly-chosen action pill — same reserved-space treatment. */}
       <span
         className={cn(
-          'rounded-full border px-2 py-0.5 text-[9px] font-bold whitespace-nowrap',
+          'relative rounded-full border px-2 py-0.5 text-[9px] font-bold whitespace-nowrap',
           heroAction ? 'border-violet-400/30 bg-violet-500/20 text-violet-200' : 'invisible border-transparent',
         )}
       >
@@ -374,37 +390,16 @@ export function PreflopTable({
     </div>
   )
 
-  // PREFLOP·BB / center-status lines — desktop renders these alone (Hero's pod
-  // sits on the rail); mobile prepends them to the unified Hero column instead.
-  // Mobile also folds the ante into this line (spec: "PREFLOP · 60BB · ANTE
-  // 0.125BB") rather than floating a separate badge along the top rail — at
-  // mobile widths that badge collides with the top seats' labels and this same
-  // center text. Desktop keeps its own floating ante tag, which has room to sit
-  // cleanly clear of both.
-  const orientationLines = (
-    <>
-      {effectiveStackBb != null && (
-        <span className="text-[10px] font-medium tracking-[0.08em] text-white/35 tabular-nums whitespace-nowrap">
-          PREFLOP · {formatBb(effectiveStackBb)}BB
-          {isMobile && anteBb != null && ` · ANTE ${formatAnte(anteBb)}BB`}
-        </span>
-      )}
-      {/* Desktop only — mobile's center column is already at its vertical budget with
-          the orientation/ante line, status line, cards, and Hero pod; adding a 5th line
-          here is what was pushing the whole column up into the top-seat labels. */}
-      {!isMobile && state && state.potBb > 0 && (
-        <span className="flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/8 px-2 py-0.5 text-[9px] font-bold text-amber-300/80 tabular-nums whitespace-nowrap">
-          POT {formatBb(state.potBb)}BB
-        </span>
-      )}
-      {/* nowrap: a wrapped 2nd line grows the whole center column's height, which is
-          exactly what was pushing it up into the top-seat labels on mobile — a long
-          status (e.g. "UTG RAISE → BTN 3-BET") instead just overflows horizontally
-          into the empty rail space on either side, which has clearance to spare. */}
-      {centerStatus && (
-        <span className="text-[12px] font-black tracking-[0.08em] text-violet-300 whitespace-nowrap">{centerStatus}</span>
-      )}
-    </>
+  const potReadout = state && state.potBb > 0 && (
+    <div
+      className="absolute left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5"
+      style={{ top: `${layout.potYPct}%` }}
+    >
+      <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-amber-300/50">Pot</span>
+      <span className="text-[13px] font-black tabular-nums text-amber-200 whitespace-nowrap">
+        {formatBb(state.potBb)} BB
+      </span>
+    </div>
   )
 
   return (
@@ -413,7 +408,7 @@ export function PreflopTable({
         className={cn('relative mx-auto', isMobile ? 'w-[94%]' : 'w-full max-w-2xl')}
         style={{ aspectRatio: layout.aspectRatio }}
       >
-        {/* Outer rail — a thin premium border ring, distinct from the inner playing surface */}
+        {/* LAYER 1 — rail: a thin premium border ring, distinct from the inner felt */}
         <div
           className={cn('absolute rounded-[999px]', isMobile ? 'inset-[14%]' : 'inset-[10%]')}
           style={{
@@ -421,160 +416,167 @@ export function PreflopTable({
             boxShadow: '0 18px 44px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.04) inset',
           }}
         />
-        {/* Inner felt — very dark desaturated navy, subtly lighter than the rail */}
+        {/* LAYER 2 — playing field: dark, professional poker-green felt (not casino-bright) */}
         <div
-          className={cn('absolute rounded-[999px] border border-white/[0.05]', isMobile ? 'inset-[16.5%]' : 'inset-[12.5%]')}
+          className={cn('absolute rounded-[999px] border border-emerald-950/40', isMobile ? 'inset-[16.5%]' : 'inset-[12.5%]')}
           style={{
-            background: 'radial-gradient(ellipse at 50% 42%, rgba(42,45,61,0.85) 0%, rgba(23,25,36,0.92) 62%, rgba(15,16,24,0.95) 100%)',
-            boxShadow: 'inset 0 0 46px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.025)',
+            background:
+              'radial-gradient(ellipse at 50% 40%, rgba(21,63,46,0.92) 0%, rgba(13,44,32,0.95) 55%, rgba(7,26,20,0.97) 100%)',
+            boxShadow: 'inset 0 0 46px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03)',
           }}
         />
 
-        {/* Ante — a small independent tag along the top rail, kept out of the main center
-            stack. Desktop only: mobile folds this into the orientation line instead (see
-            `orientationLines` above) since there's no clear top-rail space for it there. */}
-        {!isMobile && anteBb != null && (
-          <div className="absolute left-1/2 top-[15%] z-10 -translate-x-1/2">
-            <span className="rounded-full border border-amber-500/20 bg-amber-500/8 px-2 py-0.5 text-[8px] font-semibold text-amber-300/70 whitespace-nowrap">
-              ANTE {formatAnte(anteBb)}BB
-            </span>
-          </div>
-        )}
-
-        {layout.heroPodAnchor === 'seat' ? (
-          // Desktop — large clean empty space; the orientation line is subtle, the
-          // status line (when present) is the more prominent one, and neither
-          // competes with the hero cards since hero sits near the rail, well
-          // clear of dead-center.
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1 text-center px-3">
-            {orientationLines}
-          </div>
-        ) : (
-          // Mobile — the full central vertical hierarchy (orientation lines, hole
-          // cards, HERO·position, stack) as ONE fixed-gap column at the table's
-          // true center. Hero has no separate rail-anchored pod on mobile, so
-          // this is the only place any of it renders.
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-2 text-center px-3">
-            {orientationLines}
-            {heroPod}
-          </div>
-        )}
+        {potReadout}
+        {heroCardZone}
 
         {seats.map((seat, i) => {
           const isHero = i === 0
           const seatInfo = seatState.get(seat.position)
           const isDealer = seatInfo?.isDealer ?? seat.position === 'BTN'
-          // Hero's own already-completed action (e.g. an opening raise now being
-          // 3-bet) is a real fact about this hand, not something to hide just
-          // because Hero also has a dedicated pod — only a genuine fold is
-          // impossible pre-decision, so that's the only kind actually excluded.
-          const ownAction = seatInfo?.action
-          const folded = !isHero && ownAction?.kind === 'fold'
+          const stateAction = seatInfo?.action
+          const folded = !isHero && stateAction?.kind === 'fold'
 
-          // Bet/blind chip marker: raises/all-ins show their real size; an un-acted blind
-          // seat shows its posted blind. Never both, and never fabricated when absent.
-          const actedRaiseOrAllin = ownAction && (ownAction.kind === 'raise' || ownAction.kind === 'allin')
-          const markerAmount =
-            isHero
-              ? heroAction?.betBb ?? (actedRaiseOrAllin ? ownAction!.betBb : undefined)
-              : actedRaiseOrAllin
-              ? ownAction!.betBb
-              : !ownAction && seatInfo?.postedBlindBb != null
-              ? seatInfo.postedBlindBb
+          // Hero's own already-completed PRIOR action (e.g. an opening raise now facing a
+          // 3-bet) reads from table state exactly like any other seat. Hero's FRESH
+          // post-answer action (heroAction prop) is a separate, later fact and always wins
+          // when present — it hasn't been folded into action_before_hero/committedBb.
+          const priorHeroAction = isHero && stateAction && stateAction.kind !== 'fold' ? stateAction : undefined
+          const heroFreshAction = isHero ? heroAction : undefined
+
+          const verbText = heroFreshAction
+            ? heroFreshAction.label
+            : !isHero && stateAction && !folded
+            ? actionVerb(stateAction)
+            : priorHeroAction
+            ? actionVerb(priorHeroAction)
+            : undefined
+          const hasVerb = verbText != null
+
+          const stackBehindBb = isHero
+            ? heroFreshAction || priorHeroAction
+              ? seatInfo?.stackBehindBb
               : undefined
-          const markerTone: 'blind' | 'bet' = (isHero ? heroAction != null || actedRaiseOrAllin : !!ownAction) ? 'bet' : 'blind'
+            : seatInfo?.stackBehindBb
 
-          // Non-hero position labels anchor on the rail centerline, not the wider seat
-          // ellipse — the label's own geometric center (not the label+stack block's
-          // center) lands exactly on the rail. Hero, bet chips, and the dealer marker
-          // all keep reading the original seat.x/seat.y anchor, unchanged.
+          // Chip in front of the seat: the seat's real current-street commitment — this
+          // is what keeps a FOLDED seat's earlier blind/raise visibly in the pot (spec
+          // item 8) instead of vanishing, since committedBb is preserved through a fold.
+          // Hero's fresh post-answer bet size (not yet reflected in committedBb, a
+          // UI-only concern) overrides when present.
+          const chipAmount = heroFreshAction?.betBb ?? (seatInfo?.committedBb ? seatInfo.committedBb : undefined)
+          const committedBeyondBlind = (seatInfo?.committedBb ?? 0) > (seatInfo?.postedBlindBb ?? 0)
+          const chipTone: ChipTone = heroFreshAction
+            ? 'bet'
+            : stateAction?.kind === 'allin'
+            ? 'allin'
+            : committedBeyondBlind
+            ? 'bet'
+            : 'blind'
+
+          // Every label anchors on the SAME rail-centerline point — Hero included. This
+          // (not a separate pod) is what makes Hero's position geometrically identical to
+          // every other seat's.
           const railPoint = railCenterlinePoint(seat.x, seat.y, layout.ellipseRadius, railCenterlineRadius)
 
           return (
             <div key={`${seat.position}-${i}`}>
-              {markerAmount != null && (
-                <BetChip
+              {chipAmount != null && (
+                <ChipStack
                   x={seat.x}
                   y={seat.y}
-                  amount={markerAmount}
-                  tone={markerTone}
+                  amount={chipAmount}
+                  tone={chipTone}
                   pullFactor={layout.chipPullFactor}
                   protectedZone={layout.protectedZone}
                 />
               )}
-              {/* Dealer chip sits beside the seat as its own element — never reads as a
-                  single "D BTN"/"D HERO" run-on, never overlaps a label, stack line, or
-                  (for Hero, desktop only) the hole cards/badge/action-pill column. Both
-                  branches use the same seat-relative system: anchor on that seat's own
-                  rail point, then offset a fixed screen-space gap to the right. Desktop's
-                  Hero-is-BTN case uses a wider gap to clear its rail-anchored card row;
-                  mobile has nothing rendered at Hero's rail point (the pod lives in the
-                  center column instead), so it always takes the normal small-gap branch. */}
+
               {isDealer && (
-                layout.heroPodAnchor === 'seat' && isHero ? (
-                  <DealerMarker
-                    style={{ left: `calc(${railPoint.x} + ${layout.heroDealerGapPx}px)`, top: railPoint.y, transform: 'translateY(-50%)' }}
-                  />
-                ) : (
-                  <DealerMarker
-                    style={{ left: `calc(${railPoint.x} + ${layout.dealerLabelGapPx}px)`, top: railPoint.y, transform: 'translateY(-50%)' }}
-                  />
-                )
+                <DealerMarker
+                  style={{ left: `calc(${railPoint.x} + ${layout.dealerLabelGapPx}px)`, top: railPoint.y, transform: 'translateY(-50%)' }}
+                />
               )}
-              {isHero ? (
-                layout.heroPodAnchor === 'seat' && (
-                  <div
-                    className="absolute z-10"
-                    style={{ left: seat.x, top: seat.y, transform: `translate(${seat.tx}, ${seat.ty})` }}
+
+              <div
+                aria-label={`${seat.position}${folded ? ', folded' : hasVerb ? `, ${verbText}` : ''}`}
+              >
+                {isHero && (
+                  <span
+                    aria-hidden
+                    className="absolute z-10 -translate-x-1/2 text-center text-[7px] font-black uppercase tracking-[0.15em] text-violet-300/70 whitespace-nowrap"
+                    style={{ left: railPoint.x, top: `calc(${railPoint.y} - 11px)` }}
                   >
-                    {heroPod}
-                  </div>
-                )
-              ) : (
-                // The position label's own geometric center — not the label+stack block's
-                // center — sits on the rail centerline. The stack/action line is a fully
-                // independent element rendered directly below it, so its presence or
-                // content can never shift where the position label itself sits.
-                <div
-                  aria-label={`${seat.position}${folded ? ', folded' : ownAction ? `, ${actionVerb(ownAction)}` : ''}`}
+                    Hero
+                  </span>
+                )}
+
+                {/* Row 1 — position label, dead center on the rail. */}
+                <span
+                  className={cn(
+                    'absolute z-10 -translate-x-1/2 -translate-y-1/2 text-center text-[13px] font-extrabold whitespace-nowrap transition-opacity duration-300',
+                    isHero ? 'text-violet-200' : 'text-foreground',
+                    folded && 'opacity-35',
+                  )}
+                  style={{ left: railPoint.x, top: railPoint.y }}
                 >
+                  {seat.position}
+                </span>
+
+                {/* Row 2 — FOLD, the action verb, or (if neither) the plain effective stack.
+                    Mobile hides a folded seat's row 2 entirely (dimmed position label only)
+                    to cut clutter — its rail position never changes either way. */}
+                {!(isMobile && folded) && (folded || hasVerb || effectiveStackBb != null) && (
                   <span
                     className={cn(
-                      'absolute z-10 -translate-x-1/2 -translate-y-1/2 text-center text-[13px] font-extrabold text-foreground whitespace-nowrap transition-opacity duration-300',
-                      folded && 'opacity-35',
+                      'absolute z-10 -translate-x-1/2 text-center whitespace-nowrap transition-opacity duration-300',
+                      folded
+                        ? 'text-[10px] font-semibold text-muted-foreground/40 opacity-35'
+                        : hasVerb
+                        ? cn('text-[10px] font-semibold', isHero ? 'text-violet-300/90' : 'text-sky-300/80')
+                        : 'text-[10px] font-medium text-muted-foreground/45',
                     )}
-                    style={{ left: railPoint.x, top: railPoint.y }}
+                    style={{ left: railPoint.x, top: `calc(${railPoint.y} + 12px)` }}
                   >
-                    {seat.position}
+                    {folded ? 'FOLD' : hasVerb ? verbText : `${formatBb(effectiveStackBb!)} BB`}
                   </span>
-                  {/* Mobile information reduction: a folded seat shows only its dimmed
-                      position label above, nothing else — no "FOLD" text, no stack.
-                      Desktop keeps the single FOLD line (never paired with a stack, so
-                      it's not "clutter" by the same rule). */}
-                  {!(isMobile && folded) && (ownAction || effectiveStackBb != null) && (
-                    <span
-                      className={cn(
-                        'absolute z-10 -translate-x-1/2 text-center whitespace-nowrap transition-opacity duration-300',
-                        ownAction
-                          ? cn('text-[10px] font-semibold', folded ? 'text-muted-foreground/40' : 'text-sky-300/80')
-                          : 'text-[10px] font-medium text-muted-foreground/45',
-                        folded && 'opacity-35',
-                      )}
-                      style={{ left: railPoint.x, top: `calc(${railPoint.y} + 12px)` }}
-                    >
-                      {ownAction
-                        ? ownAction.kind === 'fold' || seatInfo?.stackBehindBb == null
-                          ? actionVerb(ownAction)
-                          : `${actionVerb(ownAction)} · ${formatBb(seatInfo.stackBehindBb)} BB`
-                        : `${formatBb(effectiveStackBb!)} BB`}
-                    </span>
-                  )}
-                </div>
-              )}
+                )}
+
+                {/* Row 3 — stack BEHIND, only alongside a real action, and always labeled
+                    "behind" so it can never read as the raise/bet amount itself (that
+                    number lives ONLY on the chip stack below). */}
+                {hasVerb && !folded && stackBehindBb != null && (
+                  <span
+                    className="absolute z-10 -translate-x-1/2 text-center whitespace-nowrap text-[9px] font-medium text-muted-foreground/40"
+                    style={{ left: railPoint.x, top: `calc(${railPoint.y} + 24px)` }}
+                  >
+                    {formatBb(stackBehindBb)} BB behind
+                  </span>
+                )}
+              </div>
             </div>
           )
         })}
       </div>
+
+      {/* LAYER 3 — status: everything that doesn't physically belong ON a poker table
+          (street, effective stack, ante, and the abstract action-sequence summary) lives
+          in one compact bar BELOW it — same content, same position, on every breakpoint. */}
+      {(effectiveStackBb != null || anteBb != null || centerStatus) && (
+        <div className="rounded-xl border border-border/20 bg-secondary/10 px-3 py-2 text-center">
+          {(effectiveStackBb != null || anteBb != null) && (
+            <p className="text-[10px] font-medium tracking-[0.06em] text-white/40 tabular-nums whitespace-nowrap">
+              {effectiveStackBb != null && `PREFLOP · ${formatBb(effectiveStackBb)}BB EFFECTIVE`}
+              {effectiveStackBb != null && anteBb != null && ' · '}
+              {anteBb != null && `ANTE ${formatAnte(anteBb)}BB`}
+            </p>
+          )}
+          {centerStatus && (
+            <p className="mt-0.5 text-[11px] font-black tracking-[0.06em] text-violet-300 whitespace-nowrap">
+              {centerStatus}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Screen-reader summary — the visual table can be complex; this is concise text. */}
       <p className="sr-only">

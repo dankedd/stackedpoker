@@ -31,7 +31,8 @@ describe('ScenarioComparison — renders through the shared PreflopTable pipelin
   it('defaults to Scenario 1 (scenario_a) and shows its real table state', () => {
     const html = renderToStaticMarkup(<ScenarioComparison scenarioA={scenarioA} scenarioB={scenarioB} />)
     expect(html).toContain('preflop-table-root')
-    expect(html).toContain('HERO · BB')
+    expect(html).toContain('>BB<')
+    expect(html).toMatch(/text-violet-300\/70[^<]*>Hero</)
     // Scenario A's opener is SB — the center-status line names it as the opener.
     expect(html).toContain('SB OPEN')
     expect(html).not.toContain('CO OPEN')
@@ -41,7 +42,7 @@ describe('ScenarioComparison — renders through the shared PreflopTable pipelin
     const html = renderToStaticMarkup(
       <ScenarioComparison scenarioA={scenarioA} scenarioB={scenarioB} initialScenario="b" />,
     )
-    expect(html).toContain('HERO · BB')
+    expect(html).toContain('>BB<')
     expect(html).toContain('CO OPEN')
     expect(html).not.toContain('SB OPEN')
     // SB folded in scenario B — not the opener.
@@ -107,7 +108,7 @@ describe('DecisionSpot — scenario comparison integration', () => {
     const html = renderToStaticMarkup(<DecisionSpot step={partialStep} onAnswer={noop} />)
     expect(html).not.toContain('Compare Scenarios')
     expect(html).toContain('preflop-table-root')
-    expect(html).toContain('HERO · BB')
+    expect(html).toContain('>BB<')
   })
 
   it('does not affect a normal non-comparison decision spot (no switcher rendered)', () => {
@@ -149,8 +150,11 @@ describe('"Position and Equity Realization" — every scenario-comparison step i
         <ScenarioComparison scenarioA={step.scenario_a!} scenarioB={step.scenario_b!} initialScenario="b" />,
       )
       expect(a).not.toEqual(b)
-      expect(a).toContain(`HERO · ${step.scenario_a!.hero_position}`)
-      expect(b).toContain(`HERO · ${step.scenario_b!.hero_position}`)
+      expect(a).toContain(`>${step.scenario_a!.hero_position}<`)
+      expect(b).toContain(`>${step.scenario_b!.hero_position}<`)
+      // Hero's rail caption is present in both renders — same geometry, every scenario.
+      expect(a).toMatch(/text-violet-300\/70[^<]*>Hero</)
+      expect(b).toMatch(/text-violet-300\/70[^<]*>Hero</)
     })
   }
 

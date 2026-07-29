@@ -1485,6 +1485,33 @@
         "hmd-s6": 15,
         "hmd-s7": 8
       }
+    },
+    "mdf-is-not-a-commandment": {
+      "xp_reward": 150,
+      "steps": {
+        "nc-s1": 8,
+        "nc-s2": 12,
+        "nc-s3": 18,
+        "nc-s4": 12,
+        "nc-s5": 10,
+        "nc-s6": 8
+      }
+    },
+    "equilibrium-lab": {
+      "xp_reward": 260,
+      "steps": {
+        "el-s1": 8,
+        "el-s2": 6,
+        "el-s3": 20,
+        "el-s4": 25,
+        "el-s5": 20,
+        "el-s6": 30,
+        "el-s7": 20,
+        "el-s8": 18,
+        "el-s9": 15,
+        "el-s10": 15,
+        "el-s11": 12
+      }
     }
   },
   "modules": {
@@ -1497,7 +1524,7 @@
     "cbetting-fundamentals-module": 950,
     "range-vs-range-module": 1000,
     "blockers-module": 1000,
-    "game-theory-foundations-module": 0,
+    "game-theory-foundations-module": 1000,
     "polarized-module": 0,
     "bet-sizing-language-module": 0,
     "defending-bets-module": 0,

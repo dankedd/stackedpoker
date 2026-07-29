@@ -36,7 +36,8 @@ const postflopStep: LessonStep = {
 describe('DecisionSpot — preflop table gating', () => {
   it('renders the shared PreflopTable for a preflop step (hero_position, no board)', () => {
     const html = renderToStaticMarkup(<DecisionSpot step={preflopStep} onAnswer={noop} />)
-    expect(html).toContain('HERO · CO')
+    expect(html).toContain('>CO<')
+    expect(html).toMatch(/text-violet-300\/70[^<]*>Hero</) // Hero's rail caption
     expect(html).toContain('FOLD') // UTG/HJ folded seats
   })
 
