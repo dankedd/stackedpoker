@@ -41,7 +41,7 @@ function usePrefersReducedMotion(): boolean {
 // (network, 5xx, timeout) degrades silently to the generic CTA; it must
 // never block or break the level-up modal itself.
 
-interface RankPreviewState {
+export interface RankPreviewState {
   allTimeRank: number | null
   last24hRank: number | null
   loaded: boolean
@@ -244,8 +244,6 @@ export function LevelUpModal({ event, onContinue, onDismiss, token }: LevelUpMod
     setTimeout(onDismiss, reducedMotion ? 0 : 200)
   }
 
-  const hasRealRank = rank.loaded && (rank.allTimeRank !== null || rank.last24hRank !== null)
-
   return (
     <div
       className={cn(
@@ -352,33 +350,11 @@ export function LevelUpModal({ event, onContinue, onDismiss, token }: LevelUpMod
           </div>
 
           {/* Rank preview — real data only, never estimated */}
-          <div className="mb-6 rounded-xl border border-border/40 bg-white/[0.02] p-3.5">
-            {hasRealRank ? (
-              <>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 mb-2.5">
-                  Your Rank
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-[10px] text-muted-foreground/50 mb-0.5">All time</p>
-                    <p className="text-lg font-black text-foreground tabular-nums">
-                      {rank.allTimeRank !== null ? `#${rank.allTimeRank}` : '—'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-muted-foreground/50 mb-0.5">Last 24 hours</p>
-                    <p className="text-lg font-black text-foreground tabular-nums">
-                      {rank.last24hRank !== null ? `#${rank.last24hRank}` : '—'}
-                    </p>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <p className="text-xs text-muted-foreground/60">
-                See how you rank on the leaderboard.
-              </p>
-            )}
-          </div>
+          <RankPreviewSection
+            allTimeRank={rank.allTimeRank}
+            last24hRank={rank.last24hRank}
+            loaded={rank.loaded}
+          />
 
           {/* Actions */}
           <div className="flex flex-col gap-2.5">

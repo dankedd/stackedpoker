@@ -1394,6 +1394,97 @@
         "bl-report": 15,
         "bl-close": 10
       }
+    },
+    "your-move-changes-mine": {
+      "xp_reward": 130,
+      "steps": {
+        "ymcm-s1": 8,
+        "ymcm-s2": 15,
+        "ymcm-s3": 15,
+        "ymcm-s4": 10,
+        "ymcm-s5": 12,
+        "ymcm-s6": 8
+      }
+    },
+    "find-the-best-response": {
+      "xp_reward": 140,
+      "steps": {
+        "fbr-s1": 10,
+        "fbr-s2": 20,
+        "fbr-s3": 10,
+        "fbr-s4": 15,
+        "fbr-s5": 20,
+        "fbr-s6": 8
+      }
+    },
+    "the-exploit-has-a-cost": {
+      "xp_reward": 140,
+      "steps": {
+        "ehc-s1": 10,
+        "ehc-s2": 25,
+        "ehc-s3": 10,
+        "ehc-s4": 15,
+        "ehc-s5": 8
+      }
+    },
+    "the-strategy-loop": {
+      "xp_reward": 150,
+      "steps": {
+        "sl-s1": 10,
+        "sl-s2": 30,
+        "sl-s3": 20,
+        "sl-s4": 8
+      }
+    },
+    "when-neither-player-can-improve": {
+      "xp_reward": 160,
+      "steps": {
+        "npi-s1": 8,
+        "npi-s2": 20,
+        "npi-s3": 8,
+        "npi-s4": 20,
+        "npi-s5": 12,
+        "npi-s6": 8,
+        "npi-s7": 20,
+        "npi-s8": 10
+      }
+    },
+    "make-them-indifferent": {
+      "xp_reward": 150,
+      "steps": {
+        "mti-s1": 8,
+        "mti-s2": 20,
+        "mti-s3": 12,
+        "mti-s4": 10,
+        "mti-s5": 10,
+        "mti-s6": 15,
+        "mti-s7": 8
+      }
+    },
+    "the-clairvoyance-game": {
+      "xp_reward": 220,
+      "steps": {
+        "cvg-s1": 10,
+        "cvg-s2": 15,
+        "cvg-s3": 10,
+        "cvg-s4": 15,
+        "cvg-s5": 10,
+        "cvg-s6": 35,
+        "cvg-s7": 15,
+        "cvg-s8": 8
+      }
+    },
+    "how-much-must-you-defend": {
+      "xp_reward": 180,
+      "steps": {
+        "hmd-s1": 8,
+        "hmd-s2": 20,
+        "hmd-s3": 15,
+        "hmd-s4": 20,
+        "hmd-s5": 12,
+        "hmd-s6": 15,
+        "hmd-s7": 8
+      }
     }
   },
   "modules": {
