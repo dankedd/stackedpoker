@@ -2,6 +2,17 @@ import { describe, it, expect } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { PreflopTable, computeHeroRotatedSeats, railCenterlinePoint, DESKTOP_LAYOUT } from '../PreflopTable'
 
+/** A seat's Row-1 label now nests the position inside a child <span> (and, for
+ *  Hero, an extra "HERO ·" <span> before it) rather than being the outer
+ *  span's direct text — so matches must tolerate that nesting instead of
+ *  requiring POSITION immediately after the outer span's '>'. */
+function railLabelMatch(html: string, position: string) {
+  const escaped = position.replace('+', '\\+')
+  // Wide enough to span past Hero's extra "HERO ·" prefix span (~190 chars of
+  // markup) before reaching the position text itself.
+  return html.match(new RegExp(`left:([\\d.]+)%;top:([\\d.]+)%">[\\s\\S]{0,260}?>${escaped}<`))
+}
+
 describe('PreflopTable — A. Hero UTG', () => {
   it('Hero sits bottom-center (slot 0), is labeled UTG, and no "folds to Hero" text appears', () => {
     const seats = computeHeroRotatedSeats(9, 'UTG')
@@ -57,14 +68,14 @@ describe('PreflopTable — D. Hero BTN', () => {
 })
 
 describe('PreflopTable — E. Hero SB', () => {
-  it('BTN dealer marker is correct (not on Hero) and SB/BB blinds show as in-table chip markers, not a fake stack', () => {
+  it('BTN dealer marker is correct (not on Hero) and SB/BB blinds show as real chip-pile markers, not a fake stack', () => {
     const html = renderToStaticMarkup(
       <PreflopTable tableSize={9} heroPosition="SB" effectiveStackBb={100} actionBeforeHero={['Everyone folds']} />,
     )
     expect(html).toContain('Dealer button')
-    // BB's posted blind (1bb) renders as a small chip marker — every seat, including
-    // blinds, still shows its real effective stack on its own rail label.
-    expect(html).toMatch(/text-white\/65[^<]*>1</)
+    // BB's posted blind (1bb) renders as a neutral-tone chip-pile amount label — every
+    // seat, including blinds, still shows its real effective stack on its own rail label.
+    expect(html).toMatch(/text-slate-200[^<]*>1</)
     expect(html).toContain('100 BB') // BB's real stack, unchanged by having posted a blind
   })
 })
@@ -79,7 +90,7 @@ describe('PreflopTable — F. Hero BB', () => {
 })
 
 describe('PreflopTable — G. Facing an open', () => {
-  it("the opener's action verb is on their own seat, and the real bet size renders as a chip-stack marker (not text)", () => {
+  it("the opener's action verb is on their own seat, and the real bet size renders as a chip-pile marker (aggressor tone, not text)", () => {
     const html = renderToStaticMarkup(
       <PreflopTable
         tableSize={9}
@@ -90,10 +101,12 @@ describe('PreflopTable — G. Facing an open', () => {
       />,
     )
     expect(html).toContain('aria-label="CO, RAISE"')
-    // The bet size (2.3bb) is a chip-stack marker (aggressor tone) positioned between
+    // The bet size (2.3bb) is a chip-pile marker (aggressor "bet" tone) positioned between
     // CO's seat and the table center, not appended to CO's own action label.
-    expect(html).toMatch(/text-sky-200[^<]*>2\.3</)
-    expect(html).toContain('border-sky-400/40 bg-sky-500/25')
+    expect(html).toMatch(/text-sky-100[^<]*>2\.3</)
+    // The chip's rim uses the sky edge-color wedge pattern (repeating-conic-gradient), not
+    // a plain thin ring — this is the actual "poker chip" visual, not a hollow outline.
+    expect(html).toContain('repeating-conic-gradient(#bae6fd 0deg 18deg, #0c4a6e 18deg 36deg)')
     expect(html).toContain('CO OPEN')
   })
 })
@@ -110,7 +123,7 @@ describe('PreflopTable — H. Facing open + call (squeeze context)', () => {
       />,
     )
     expect(html).toContain('aria-label="CO, RAISE"')
-    expect(html).toMatch(/text-sky-200[^<]*>2\.3</)
+    expect(html).toMatch(/text-sky-100[^<]*>2\.3</)
     expect(html).toContain('aria-label="BTN, CALL"')
     expect(html).toContain('CO OPEN · BTN CALL')
   })
@@ -128,9 +141,9 @@ describe('PreflopTable — I. Hero opens, then faces a 3-bet (the reported table
       />,
     )
     // Hero's own 2.5bb open is visible as a chip marker, not hidden.
-    expect(html).toMatch(/text-sky-200[^<]*>2\.5</)
+    expect(html).toMatch(/text-sky-100[^<]*>2\.5</)
     // BTN's re-raise is visible with its real size too.
-    expect(html).toMatch(/text-sky-200[^<]*>8</)
+    expect(html).toMatch(/text-sky-100[^<]*>8</)
     // The center status correctly frames this as a 3-bet, not a second "open"/"raise".
     expect(html).toContain('CO OPEN · BTN 3-BET')
     // Hero's displayed stack-BEHIND (100 - 2.5 = 97.5) is explicitly labeled "behind" —
@@ -157,16 +170,16 @@ describe('PreflopTable — J. Folded players keep their already-invested chips v
     // SB/BB are dimmed + labeled FOLD...
     expect(html).toContain('aria-label="SB, folded"')
     expect(html).toContain('aria-label="BB, folded"')
-    // ...but their posted-blind chips (0.5 / 1) are still visible on the felt, in
+    // ...but their posted-blind chip PILES (0.5 / 1) are still visible on the felt, in
     // NEUTRAL "blind" tone (they never voluntarily bet beyond the forced blind).
-    expect(html).toMatch(/text-white\/65[^<]*>0\.5</)
-    expect(html).toMatch(/text-white\/65[^<]*>1</)
+    expect(html).toMatch(/text-slate-200[^<]*>0\.5</)
+    expect(html).toMatch(/text-slate-200[^<]*>1</)
     // CO's call (2.3, beyond no forced blind) and BTN's 3-bet (8) show in the
     // aggressor/"bet" tone.
-    expect(html).toMatch(/text-sky-200[^<]*>2\.3</)
-    expect(html).toMatch(/text-sky-200[^<]*>8</)
+    expect(html).toMatch(/text-sky-100[^<]*>2\.3</)
+    expect(html).toMatch(/text-sky-100[^<]*>8</)
     // HJ folded WITHOUT ever committing anything (no blind, no call) — no chip at all.
-    const chipCount = (html.match(/-translate-y-1\/2 flex flex-col items-center gap-\[3px\]"/g) || []).length
+    const chipCount = (html.match(/-translate-y-1\/2 flex flex-col items-center gap-\[2px\]"/g) || []).length
     expect(chipCount).toBe(5) // UTG(hero), CO, BTN, SB, BB — not HJ
     // Pot = 2.3 (UTG) + 2.3 (CO call) + 8 (BTN) + 0.5 (SB) + 1 (BB) = 14.1
     expect(html).toContain('14.1 BB')
@@ -281,7 +294,7 @@ describe('PreflopTable — hero cards are mathematically centered (fixed-width w
   })
 })
 
-describe('PreflopTable — Hero uses the IDENTICAL rail-anchor geometry as every other seat', () => {
+describe('PreflopTable — Hero label is ONE integrated anchor (no more overlapping "Hero" caption)', () => {
   it("Hero's position-label coordinates equal the same railCenterlinePoint formula applied to Hero's own seat entry — no separate pod offset", () => {
     const seats = computeHeroRotatedSeats(6, 'CO', DESKTOP_LAYOUT.ellipseRadius)
     const heroSeat = seats[0]
@@ -290,7 +303,7 @@ describe('PreflopTable — Hero uses the IDENTICAL rail-anchor geometry as every
     const expected = railCenterlinePoint(heroSeat.x, heroSeat.y, DESKTOP_LAYOUT.ellipseRadius, railCenterlineRadius)
 
     const html = renderToStaticMarkup(<PreflopTable tableSize={6} heroPosition="CO" effectiveStackBb={100} actionBeforeHero={[]} />)
-    const m = html.match(/left:([\d.]+)%;top:([\d.]+)%">CO</)
+    const m = railLabelMatch(html, 'CO')
     expect(m).toBeTruthy()
     expect(parseFloat(m![1])).toBeCloseTo(parseFloat(expected.x), 1)
     expect(parseFloat(m![2])).toBeCloseTo(parseFloat(expected.y), 1)
@@ -304,19 +317,56 @@ describe('PreflopTable — Hero uses the IDENTICAL rail-anchor geometry as every
     )
     for (const seat of seats.slice(1)) {
       const expected = railCenterlinePoint(seat.x, seat.y, DESKTOP_LAYOUT.ellipseRadius, railCenterlineRadius)
-      const re = new RegExp(`left:([\\d.]+)%;top:([\\d.]+)%">${seat.position.replace('+', '\\+')}<`)
-      const m = html.match(re)
+      const m = railLabelMatch(html, seat.position)
       expect(m, `expected a rail-anchored label for ${seat.position}`).toBeTruthy()
       expect(parseFloat(m![1])).toBeCloseTo(parseFloat(expected.x), 1)
       expect(parseFloat(m![2])).toBeCloseTo(parseFloat(expected.y), 1)
     }
   })
 
-  it('Hero gets a small violet "Hero" caption in addition to (not instead of) the same position label', () => {
+  it('Hero\'s "HERO ·" prefix and position share the SAME single absolutely-positioned anchor — only one left/top pair for the whole label', () => {
     const html = renderToStaticMarkup(<PreflopTable tableSize={6} heroPosition="CO" effectiveStackBb={100} />)
-    expect(html).toMatch(/text-violet-300\/70[^<]*>Hero</)
+    // The "HERO ·" prefix text exists...
+    expect(html).toMatch(/text-violet-300\/80[^<]*>HERO ·</)
     expect(html).toContain('>CO<')
+    // ...but there is only ONE absolutely-positioned, top/left-styled element for Hero's
+    // row-1 label (not two independent anchors that could drift apart and overlap) — the
+    // "HERO ·" span itself carries no left/top style of its own.
+    const heroPrefixSpan = html.match(/<span class="mr-\[3px\][^"]*">HERO ·<\/span>/)
+    expect(heroPrefixSpan).toBeTruthy()
+    expect(heroPrefixSpan![0]).not.toMatch(/style=/)
   })
+
+  it('regression guard: the old standalone "Hero" caption (its own left/top anchor, "- 11px" offset) is gone', () => {
+    const html = renderToStaticMarkup(<PreflopTable tableSize={6} heroPosition="CO" effectiveStackBb={100} />)
+    expect(html).not.toMatch(/top:calc\([\d.]+% - 11px\)/)
+    // "Hero" (capitalized only) no longer appears as an independent word — it's always
+    // part of the literal "HERO ·" prefix now.
+    expect(html).not.toMatch(/>Hero</)
+  })
+})
+
+describe('PreflopTable — Hero at every position, 6/9-max: label always integrated, never a bare "Hero" text node', () => {
+  const positions6 = ['UTG', 'HJ', 'CO', 'BTN', 'SB', 'BB']
+  const positions9 = ['UTG', 'UTG+1', 'UTG+2', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB']
+
+  for (const pos of positions6) {
+    it(`6-max, Hero ${pos}`, () => {
+      const html = renderToStaticMarkup(<PreflopTable tableSize={6} heroPosition={pos} effectiveStackBb={100} actionBeforeHero={[]} />)
+      expect(html).toMatch(/text-violet-300\/80[^<]*>HERO ·</)
+      const m = railLabelMatch(html, pos)
+      expect(m, `Hero (${pos}) should have an integrated rail label`).toBeTruthy()
+    })
+  }
+
+  for (const pos of positions9) {
+    it(`9-max, Hero ${pos}`, () => {
+      const html = renderToStaticMarkup(<PreflopTable tableSize={9} heroPosition={pos} effectiveStackBb={100} actionBeforeHero={[]} />)
+      expect(html).toMatch(/text-violet-300\/80[^<]*>HERO ·</)
+      const m = railLabelMatch(html, pos)
+      expect(m, `Hero (${pos}) should have an integrated rail label`).toBeTruthy()
+    })
+  }
 })
 
 describe('PreflopTable — dealer marker uses the same seat-anchor + fixed gap for every seat, Hero included', () => {
@@ -324,7 +374,7 @@ describe('PreflopTable — dealer marker uses the same seat-anchor + fixed gap f
     const html = renderToStaticMarkup(
       <PreflopTable tableSize={9} heroPosition="SB" effectiveStackBb={100} actionBeforeHero={['Everyone folds']} />,
     )
-    const btnLabelMatch = html.match(/left:([\d.]+)%;top:([\d.]+)%">BTN</)
+    const btnLabelMatch = railLabelMatch(html, 'BTN')
     expect(btnLabelMatch).toBeTruthy()
     const [, bx, by] = btnLabelMatch!
     expect(html).toContain(`left:calc(${bx}% + 22px);top:${by}%`)
@@ -334,7 +384,7 @@ describe('PreflopTable — dealer marker uses the same seat-anchor + fixed gap f
     const html = renderToStaticMarkup(
       <PreflopTable tableSize={9} heroPosition="BTN" effectiveStackBb={100} actionBeforeHero={['Everyone folds']} />,
     )
-    const btnLabelMatch = html.match(/left:([\d.]+)%;top:([\d.]+)%">BTN</)
+    const btnLabelMatch = railLabelMatch(html, 'BTN')
     expect(btnLabelMatch).toBeTruthy()
     const [, bx, by] = btnLabelMatch!
     expect(html).toContain(`left:calc(${bx}% + 22px);top:${by}%`)
@@ -345,7 +395,7 @@ describe('PreflopTable — dealer marker uses the same seat-anchor + fixed gap f
 })
 
 describe('PreflopTable — chip markers geometrically avoid the protected pot/card zone (no text ever hidden behind cards)', () => {
-  it('every rendered chip stack lands strictly outside the protected rectangle, across a busy multi-way pot', () => {
+  it('every rendered chip pile lands strictly outside the protected rectangle, across a busy multi-way pot (desktop)', () => {
     const html = renderToStaticMarkup(
       <PreflopTable
         tableSize={9}
@@ -365,7 +415,7 @@ describe('PreflopTable — chip markers geometrically avoid the protected pot/ca
       />,
     )
     const matches = [
-      ...html.matchAll(/-translate-y-1\/2 flex flex-col items-center gap-\[3px\]" style="left:([\d.]+)%;top:([\d.]+)%"/g),
+      ...html.matchAll(/-translate-y-1\/2 flex flex-col items-center gap-\[2px\]" style="left:([\d.]+)%;top:([\d.]+)%"/g),
     ]
     expect(matches.length).toBeGreaterThanOrEqual(5)
     const { cxPct, cyPct, halfWidthPct, halfHeightPct } = DESKTOP_LAYOUT.protectedZone
@@ -375,6 +425,35 @@ describe('PreflopTable — chip markers geometrically avoid the protected pot/ca
       const inside = x > cxPct - halfWidthPct && x < cxPct + halfWidthPct && y > cyPct - halfHeightPct && y < cyPct + halfHeightPct
       expect(inside, `chip at (${x}%, ${y}%) must land outside the protected zone`).toBe(false)
     }
+  })
+})
+
+describe('PreflopTable — chip visual is a real poker-chip glyph, not a hollow ring', () => {
+  it('renders TWO overlapping chip discs (a pile) per commitment, each with an edge-wedge rim, solid face gradient, and inner ring', () => {
+    const html = renderToStaticMarkup(
+      <PreflopTable tableSize={9} heroPosition="CO" effectiveStackBb={40} actionBeforeHero={['UTG raises to 2.2bb']} />,
+    )
+    // 2 discs for the one chip pile (UTG's raise).
+    const discCount = (html.match(/repeating-conic-gradient\(#bae6fd 0deg 18deg, #0c4a6e 18deg 36deg\)/g) || []).length
+    expect(discCount).toBe(2)
+    // Each disc has a solid gradient face (not transparent) and a thin inner ring.
+    expect(html).toContain('linear-gradient(155deg, #38bdf8 0%, #0284c7 65%, #075985 100%)')
+    expect(html).toContain('border border-white/10')
+    // The amount is legible at 10px (up from the old 8px pill text).
+    expect(html).toContain('text-[10px] font-bold tabular-nums')
+  })
+
+  it('a neutral (never-raised) blind uses the slate palette; a raise uses sky; an all-in uses red — color is supportive only, amount/shape/verb never depend on it alone', () => {
+    const blindHtml = renderToStaticMarkup(
+      <PreflopTable tableSize={9} heroPosition="BTN" effectiveStackBb={100} actionBeforeHero={['Everyone folds']} />,
+    )
+    expect(blindHtml).toContain('repeating-conic-gradient(#cbd5e1 0deg 18deg, #3f4b5f 18deg 36deg)')
+
+    const allinHtml = renderToStaticMarkup(
+      <PreflopTable tableSize={6} heroPosition="BB" effectiveStackBb={20} actionBeforeHero={['UTG raises all-in to 20bb']} />,
+    )
+    expect(allinHtml).toContain('repeating-conic-gradient(#fecaca 0deg 18deg, #7f1d1d 18deg 36deg)')
+    expect(allinHtml).toMatch(/text-red-100[^<]*>20</)
   })
 })
 

@@ -32,7 +32,7 @@ describe('ScenarioComparison — renders through the shared PreflopTable pipelin
     const html = renderToStaticMarkup(<ScenarioComparison scenarioA={scenarioA} scenarioB={scenarioB} />)
     expect(html).toContain('preflop-table-root')
     expect(html).toContain('>BB<')
-    expect(html).toMatch(/text-violet-300\/70[^<]*>Hero</)
+    expect(html).toMatch(/text-violet-300\/80[^<]*>HERO ·</)
     // Scenario A's opener is SB — the center-status line names it as the opener.
     expect(html).toContain('SB OPEN')
     expect(html).not.toContain('CO OPEN')
@@ -152,9 +152,10 @@ describe('"Position and Equity Realization" — every scenario-comparison step i
       expect(a).not.toEqual(b)
       expect(a).toContain(`>${step.scenario_a!.hero_position}<`)
       expect(b).toContain(`>${step.scenario_b!.hero_position}<`)
-      // Hero's rail caption is present in both renders — same geometry, every scenario.
-      expect(a).toMatch(/text-violet-300\/70[^<]*>Hero</)
-      expect(b).toMatch(/text-violet-300\/70[^<]*>Hero</)
+      // Hero's "HERO ·" prefix is present in both renders — same integrated
+      // label geometry, every scenario.
+      expect(a).toMatch(/text-violet-300\/80[^<]*>HERO ·</)
+      expect(b).toMatch(/text-violet-300\/80[^<]*>HERO ·</)
     })
   }
 

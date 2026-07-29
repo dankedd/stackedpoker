@@ -44,6 +44,10 @@ interface TableLayoutConfig {
   dealerLabelGapPx: number
   /** How far (0-1) a bet/blind chip is pulled from its seat toward table center. */
   chipPullFactor: number
+  /** Diameter (px) of a single poker-chip disc — the chip PILE (2 diagonally
+   *  overlapping discs) renders somewhat wider/taller than this. Drives sizing
+   *  entirely from config, never a per-breakpoint literal scattered in JSX. */
+  chipSizePx: number
   /** Vertical center (% of container height) of the pot readout. */
   potYPct: number
   /** Vertical center (% of container height) of Hero's protected card zone. */
@@ -62,12 +66,14 @@ export const DESKTOP_LAYOUT: TableLayoutConfig = {
   railInnerRadius: 37.5,
   dealerLabelGapPx: 22,
   chipPullFactor: 0.4,
+  chipSizePx: 20,
   potYPct: 36,
   cardZoneYPct: 59,
   // Covers 30%-74% vertically (pot's own span ~32-40, card zone's own span
   // ~46-72, both comfortably inside) and 34%-66% horizontally (114px card row
-  // plus margin).
-  protectedZone: { cxPct: 50, cyPct: 52, halfWidthPct: 16, halfHeightPct: 22 },
+  // plus margin). A couple points larger than the bare minimum to also clear
+  // the bigger chip-pile glyph (~24px) plus its amount label.
+  protectedZone: { cxPct: 50, cyPct: 52, halfWidthPct: 17, halfHeightPct: 23 },
 }
 
 /** Mobile: ~92-96% width (see the root div below), a taller/more-oval shape,
@@ -83,14 +89,25 @@ export const MOBILE_LAYOUT: TableLayoutConfig = {
   railOuterRadius: 36,
   railInnerRadius: 33.5,
   dealerLabelGapPx: 22,
-  chipPullFactor: 0.2,
+  // Was 0.2 historically (tuned for the old 13px chip pill) — too shallow for
+  // the bigger chip-pile glyph, which visually landed on top of the SB/BB
+  // rail labels instead of clearing them (confirmed via screenshot QA). Mobile's
+  // rail-band-to-seat-radius ratio (34.75/38 ≈ 0.91) is nearly identical to
+  // desktop's (38.75/42.5 ≈ 0.91), so it needs essentially the SAME pull
+  // fraction as desktop to clear the rail band by a comparable margin.
+  chipPullFactor: 0.38,
+  chipSizePx: 15,
   potYPct: 35,
   cardZoneYPct: 57,
-  // Tuned against 320-430px screenshots historically for a taller column than
-  // desktop needs (narrower container, same absolute card size) — kept
-  // generously sized here since the column now holds LESS content than before
-  // (Hero's position/stack moved out to the rail, same as every other seat).
-  protectedZone: { cxPct: 50, cyPct: 49, halfWidthPct: 24, halfHeightPct: 28 },
+  // Narrower than earlier tuning (was halfWidthPct 25/halfHeightPct 29) — that
+  // size was safe for the card zone itself (which only needs ~16 halfWidthPct /
+  // ~17.5 halfHeightPct) but, for seats near the ellipse's side/bottom (SB/BB
+  // especially — BB sits close to the card zone's own corner), clamped the
+  // chip's travel-toward-center path SO early that it landed back on top of
+  // the seat's own rail label — confirmed via screenshot QA. Shrunk to the
+  // smallest size that still comfortably covers pot + cards with margin,
+  // freeing up room for chipPullFactor to actually clear the rail band.
+  protectedZone: { cxPct: 50, cyPct: 49, halfWidthPct: 19, halfHeightPct: 20 },
 }
 
 /** Rescales a seat's anchor point (on the `ellipseRadius` circle) onto the rail
@@ -211,10 +228,10 @@ function towardCenter(
     const enter = Math.max(txEnter, tyEnter, 0)
     const exit = Math.min(txExit, tyExit, t)
 
-    // Stop a hair short of the rectangle's exact edge rather than flush against it —
-    // otherwise the chip's own rendered size (not just its anchor point) still
-    // visually touches the text it was supposed to clear.
-    if (enter <= exit) clampedT = Math.max(0, enter - 0.05)
+    // Stop noticeably short of the rectangle's exact edge rather than flush against it —
+    // otherwise the chip pile's own rendered footprint (not just its anchor point) still
+    // visually touches the content it was supposed to clear.
+    if (enter <= exit) clampedT = Math.max(0, enter - 0.09)
   }
 
   return { left: `${x + dx * clampedT}%`, top: `${y + dy * clampedT}%` }
@@ -222,9 +239,72 @@ function towardCenter(
 
 type ChipTone = 'blind' | 'bet' | 'allin'
 
-/** A compact chip-stack glyph (two offset rings + the amount) rather than a plain text pill —
+/** Per-tone palette for the poker-chip glyph — color is supportive only (spec item 6): shape,
+ *  amount, and the seat's own action label already carry the meaning without it. */
+const CHIP_PALETTE: Record<ChipTone, { edgeA: string; edgeB: string; face: string; ringColor: string; text: string }> = {
+  blind: {
+    edgeA: '#cbd5e1', // slate-300
+    edgeB: '#3f4b5f',
+    face: 'linear-gradient(155deg, #64748b 0%, #334155 65%, #1e293b 100%)',
+    ringColor: 'rgba(226,232,240,0.35)',
+    text: 'text-slate-200',
+  },
+  bet: {
+    edgeA: '#bae6fd', // sky-200
+    edgeB: '#0c4a6e',
+    face: 'linear-gradient(155deg, #38bdf8 0%, #0284c7 65%, #075985 100%)',
+    ringColor: 'rgba(224,242,254,0.45)',
+    text: 'text-sky-100',
+  },
+  allin: {
+    edgeA: '#fecaca', // red-200
+    edgeB: '#7f1d1d',
+    face: 'linear-gradient(155deg, #f87171 0%, #dc2626 65%, #7f1d1d 100%)',
+    ringColor: 'rgba(254,226,226,0.45)',
+    text: 'text-red-100',
+  },
+}
+
+/** One poker-chip disc: an alternating-wedge edge band (a `repeating-conic-gradient` — the
+ *  "contrasterende edge markings", no extra DOM nodes needed for it), a solid gradient face,
+ *  and a thin inner ring — a compact but genuinely chip-shaped glyph, not a hollow outline. */
+function PokerChip({
+  tone,
+  sizePx,
+  style,
+}: {
+  tone: ChipTone
+  sizePx: number
+  style?: React.CSSProperties
+}) {
+  const p = CHIP_PALETTE[tone]
+  const faceInset = Math.max(2, Math.round(sizePx * 0.17))
+  return (
+    <div
+      aria-hidden
+      className="absolute rounded-full"
+      style={{
+        width: sizePx,
+        height: sizePx,
+        background: `repeating-conic-gradient(${p.edgeA} 0deg 18deg, ${p.edgeB} 18deg 36deg)`,
+        boxShadow: '0 2px 3px rgba(0,0,0,0.55), inset 0 1px 1px rgba(255,255,255,0.2)',
+        ...style,
+      }}
+    >
+      <div
+        className="absolute rounded-full border"
+        style={{ inset: faceInset, background: p.face, borderColor: p.ringColor }}
+      >
+        <div className="absolute inset-[2px] rounded-full border border-white/10" />
+      </div>
+    </div>
+  )
+}
+
+/** A small 2-chip pile (a diagonal overlap, not a flat stack) plus the commitment amount —
  *  "onmiddellijk duidelijk: deze speler heeft chips ingezet." Positioned purely from the same
- *  seat-anchor → towardCenter vector every other geometric element in this file uses. */
+ *  seat-anchor → towardCenter vector every other geometric element in this file uses; `sizePx`
+ *  comes from the layout config, never a hardcoded/per-breakpoint JSX literal. */
 function ChipStack({
   x,
   y,
@@ -232,6 +312,7 @@ function ChipStack({
   tone,
   pullFactor,
   protectedZone,
+  sizePx,
 }: {
   x: string
   y: string
@@ -239,30 +320,24 @@ function ChipStack({
   tone: ChipTone
   pullFactor: number
   protectedZone?: { cxPct: number; cyPct: number; halfWidthPct: number; halfHeightPct: number }
+  sizePx: number
 }) {
   const pos = towardCenter(x, y, pullFactor, protectedZone)
-  const ring =
-    tone === 'allin'
-      ? 'border-red-400/50 bg-red-500/25'
-      : tone === 'bet'
-      ? 'border-sky-400/40 bg-sky-500/25'
-      : 'border-white/25 bg-white/10'
-  const label = tone === 'allin' ? 'text-red-200' : tone === 'bet' ? 'text-sky-200' : 'text-white/65'
+  const spread = Math.max(3, Math.round(sizePx * 0.22))
 
   return (
     <div
-      className="absolute z-20 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-[3px]"
+      className="absolute z-20 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-[2px]"
       style={{ left: pos.left, top: pos.top }}
     >
-      {/* Two stacked chip rings — compact, not photorealistic, but unmistakably "chips". */}
-      <div className="relative h-[13px] w-[13px]" aria-hidden>
-        <span className={cn('absolute inset-0 rounded-full border', ring)} />
-        <span className={cn('absolute inset-0 -translate-y-[3px] rounded-full border', ring)} />
+      <div className="relative" style={{ width: sizePx + spread, height: sizePx + spread }}>
+        <PokerChip tone={tone} sizePx={sizePx} style={{ left: 0, top: spread, opacity: 0.65 }} />
+        <PokerChip tone={tone} sizePx={sizePx} style={{ left: spread, top: 0 }} />
       </div>
       <span
         className={cn(
-          'rounded-full px-1 text-[8px] font-bold tabular-nums whitespace-nowrap leading-none',
-          label,
+          'text-[10px] font-bold tabular-nums leading-none whitespace-nowrap',
+          CHIP_PALETTE[tone].text,
         )}
       >
         {formatBb(amount)}
@@ -488,6 +563,7 @@ export function PreflopTable({
                   tone={chipTone}
                   pullFactor={layout.chipPullFactor}
                   protectedZone={layout.protectedZone}
+                  sizePx={layout.chipSizePx}
                 />
               )}
 
@@ -500,26 +576,32 @@ export function PreflopTable({
               <div
                 aria-label={`${seat.position}${folded ? ', folded' : hasVerb ? `, ${verbText}` : ''}`}
               >
-                {isHero && (
-                  <span
-                    aria-hidden
-                    className="absolute z-10 -translate-x-1/2 text-center text-[7px] font-black uppercase tracking-[0.15em] text-violet-300/70 whitespace-nowrap"
-                    style={{ left: railPoint.x, top: `calc(${railPoint.y} - 11px)` }}
-                  >
-                    Hero
-                  </span>
-                )}
-
-                {/* Row 1 — position label, dead center on the rail. */}
+                {/* Row 1 — position label, dead center on the rail. Hero is NOT a second,
+                    independently-positioned element anymore (that's what caused "Hero"
+                    to visually collide with the position text below/behind it) — the
+                    "HERO ·" prefix is now part of THIS SAME text line, sharing the exact
+                    same anchor and baseline as the position itself. One anchor, one line,
+                    structurally impossible to overlap with itself. */}
                 <span
                   className={cn(
-                    'absolute z-10 -translate-x-1/2 -translate-y-1/2 text-center text-[13px] font-extrabold whitespace-nowrap transition-opacity duration-300',
-                    isHero ? 'text-violet-200' : 'text-foreground',
+                    'absolute z-10 -translate-x-1/2 -translate-y-1/2 text-center whitespace-nowrap transition-opacity duration-300',
                     folded && 'opacity-35',
                   )}
                   style={{ left: railPoint.x, top: railPoint.y }}
                 >
-                  {seat.position}
+                  {isHero && (
+                    <span className="mr-[3px] align-middle text-[9px] font-black uppercase tracking-[0.1em] text-violet-300/80">
+                      HERO ·
+                    </span>
+                  )}
+                  <span
+                    className={cn(
+                      'align-middle text-[13px] font-extrabold',
+                      isHero ? 'text-violet-200' : 'text-foreground',
+                    )}
+                  >
+                    {seat.position}
+                  </span>
                 </span>
 
                 {/* Row 2 — FOLD, the action verb, or (if neither) the plain effective stack.
