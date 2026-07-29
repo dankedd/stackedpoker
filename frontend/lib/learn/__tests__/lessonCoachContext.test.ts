@@ -157,6 +157,36 @@ describe('buildLessonCoachContext — concept ids fallback', () => {
   })
 })
 
+describe('buildLessonCoachContext — step/lesson change isolation', () => {
+  it('produces a distinct stepId/lessonId identity for a different step in the same lesson', () => {
+    const step2: LessonStep = { ...decisionStep, id: 'step-2', decision_spot_question: 'A different question' }
+    const ctxA = buildLessonCoachContext(lesson, decisionStep, 0, null, undefined, 0)
+    const ctxB = buildLessonCoachContext(lesson, step2, 1, null, undefined, 0)
+    // This is exactly what LessonCoachDrawer keys its CoachChat thread on
+    // (`${lessonId}:${stepId}`) — a differing identity is what forces a
+    // fresh conversation instead of leaking the previous step's context.
+    expect(`${ctxA.lessonId}:${ctxA.stepId}`).not.toBe(`${ctxB.lessonId}:${ctxB.stepId}`)
+    expect(ctxB.question).toBe('A different question')
+  })
+
+  it('produces a distinct identity for the same step id in a different lesson', () => {
+    const otherLesson: Lesson = { ...lesson, id: 'lesson-2', title: 'A Different Lesson' }
+    const ctxA = buildLessonCoachContext(lesson, decisionStep, 0, null, undefined, 0)
+    const ctxB = buildLessonCoachContext(otherLesson, decisionStep, 0, null, undefined, 0)
+    expect(`${ctxA.lessonId}:${ctxA.stepId}`).not.toBe(`${ctxB.lessonId}:${ctxB.stepId}`)
+  })
+})
+
+describe('buildLessonCoachContext — no fabricated data', () => {
+  it('never invents an equity/frequency-shaped field when the step carries none', () => {
+    const ctx = buildLessonCoachContext(lesson, decisionStep, 0, null, undefined, 0)
+    const api = toCoachApiContext(ctx)
+    const serialized = JSON.stringify(api)
+    expect(serialized).not.toMatch(/equity|frequency|%/i)
+    expect(ctx.rangeContext).toBeUndefined()
+  })
+})
+
 describe('toCoachApiContext — hint level', () => {
   it('omits hint_level when zero (falsy), includes it when set', () => {
     const noHint = buildLessonCoachContext(lesson, decisionStep, 0, null, undefined, 0)

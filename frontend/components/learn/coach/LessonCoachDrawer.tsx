@@ -180,8 +180,13 @@ export function LessonCoachDrawer({
           </div>
         )}
 
-        {/* Conversation */}
-        {open && context && (
+        {/* Conversation — mounted whenever there's a step context, regardless
+            of `open`: the drawer's own transform/opacity is what hides it
+            when closed. Only remounting on a genuine step/lesson change
+            (`key={threadKey}`) is what makes conversation survive toggling
+            the drawer shut and back open (spec: closing must not lose the
+            thread), while still starting fresh on a new question. */}
+        {context && (
           <CoachChat
             key={threadKey}
             ref={chatRef}

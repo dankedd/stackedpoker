@@ -77,6 +77,40 @@ describe('LessonCoachDrawer — quick actions by pedagogical state', () => {
     expect(html).toMatch(/Range vs Range/)
   })
 
+  it('is closed by default when open=false, still present in the DOM (hidden via transform, not unmounted)', () => {
+    const html = renderToStaticMarkup(
+      <LessonCoachDrawer open={false} onClose={noop} context={baseContext} token="t" />,
+    )
+    // Still rendered (so conversation state survives a close) — just carries
+    // the closed-state transform classes instead of being absent from markup.
+    expect(html).toMatch(/translate-y-full/)
+    expect(html).toMatch(/Give me a hint/)
+  })
+
+  it('exposes dialog accessibility attributes', () => {
+    const html = renderToStaticMarkup(
+      <LessonCoachDrawer open onClose={noop} context={baseContext} token="t" />,
+    )
+    expect(html).toMatch(/role="dialog"/)
+    expect(html).toMatch(/aria-modal="true"/)
+    expect(html).toMatch(/aria-label="AI Coach"/)
+    expect(html).toMatch(/aria-label="Close AI Coach"/)
+    expect(html).toMatch(/aria-label="Back to question"/)
+  })
+
+  it('wires both mobile (bottom-sheet) and desktop (side-panel) responsive classes together', () => {
+    const html = renderToStaticMarkup(
+      <LessonCoachDrawer open onClose={noop} context={baseContext} token="t" />,
+    )
+    // Mobile-first bottom sheet
+    expect(html).toMatch(/rounded-t-2xl/)
+    // Desktop right-side panel override
+    expect(html).toMatch(/md:w-\[420px\]/)
+    expect(html).toMatch(/md:right-0/)
+    // Backdrop only below the content-pushing xl breakpoint
+    expect(html).toMatch(/xl:hidden/)
+  })
+
   it('shows the authored hint note (not a quick-action label) when authoredHint is provided', () => {
     const html = renderToStaticMarkup(
       <LessonCoachDrawer open onClose={noop} context={baseContext} token="t" authoredHint="Look at the range advantage first." />,

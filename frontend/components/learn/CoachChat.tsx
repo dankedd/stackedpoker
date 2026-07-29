@@ -164,6 +164,12 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const autoStarted = useRef(false)
+  // Guards state updates after unmount — e.g. the in-lesson Coach drawer
+  // unmounts this component entirely on close, which can happen while a
+  // request is still in flight. No AbortController: the fetch is left to
+  // resolve/reject naturally, we just stop acting on it once unmounted.
+  const mountedRef = useRef(true)
+  useEffect(() => () => { mountedRef.current = false }, [])
 
   // Auto-scroll on new messages or typing indicator
   useEffect(() => {
@@ -195,12 +201,14 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
 
     try {
       const { session_id, reply } = await sendCoachMessage(currentSessionId, msg, context, token, action)
+      if (!mountedRef.current) return
       setCurrentSessionId(session_id)
       setMessages(prev => [
         ...prev,
         reply.content.trim() ? reply : { ...reply, content: "Hmm, I didn't catch that — could you rephrase?" },
       ])
     } catch (err) {
+      if (!mountedRef.current) return
       const status = (err as { status?: number } | undefined)?.status
       let content = "Sorry, I couldn't connect right now. Please try again in a moment."
       if (status === 401) content = 'Your session expired — please sign in again to keep chatting.'
@@ -212,7 +220,7 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
         { role: 'coach', content, timestamp: new Date().toISOString() },
       ])
     } finally {
-      setLoading(false)
+      if (mountedRef.current) setLoading(false)
     }
   }
 
