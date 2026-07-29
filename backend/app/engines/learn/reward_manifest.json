@@ -859,7 +859,12 @@
         "bbd-s8c": 6,
         "bbd-s8d": 6,
         "bbd-s8e": 6,
-        "bbd-s8f": 6
+        "bbd-s8f": 6,
+        "bbd-s8g": 8,
+        "bbd-s8h": 8,
+        "bbd-s8i": 8,
+        "bbd-s8j": 8,
+        "bbd-s8k": 8
       }
     },
     "the-small-blind-problem": {
