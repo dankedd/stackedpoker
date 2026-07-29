@@ -9,8 +9,9 @@
  * The same action on the same step always produces the same result.
  */
 
-import type { LessonStep, StepResult, ActionQuality, AnswerReveal, ScenarioOutcome } from './types'
+import type { LessonStep, StepResult, ActionQuality, AnswerReveal, ScenarioOutcome, ReasoningStageResult } from './types'
 import { levelForXP } from './types'
+import { expandHandClass, expandGenericUnpaired, getRemainingCombos, getBlockedCombos, comboKey, flushTiers } from './combos'
 import { RANGE_TARGETS } from './ranges'
 import { MTT_RFI_CHARTS, type MttAction, type MttRfiChart } from './mttRfiBaselines'
 import { THREEBET_RESPONSE_CHARTS, type ThreebetResponseAction, type ThreebetResponseChart } from './threebetResponseBaselines'
@@ -58,6 +59,8 @@ interface EvalCore {
    *  set when the response wasn't fully correct; left undefined for step types
    *  whose own component already renders a richer item-by-item reveal. */
   answer_reveal?: AnswerReveal
+  /** Optional multi-stage reasoning breakdown — see `ReasoningStageResult` in types.ts. */
+  reasoning_stages?: ReasoningStageResult[]
 }
 
 /** The single, shared "unscored" sentinel — same shape everywhere so the router
@@ -98,6 +101,9 @@ export function isScoredStep(step: LessonStep): boolean {
     // Mode-gated: scored only in their quiz/challenge/classify mode
     case 'combo_visualizer':
       return step.combo_visualizer_mode === 'quiz'
+    case 'combo_removal':
+    case 'flush_pyramid':
+      return true
     case 'spr_visualizer':
       return step.spr_visualizer_mode !== 'worlds'
     case 'morphology_builder':
@@ -1000,6 +1006,105 @@ function evalStraightDetective(step: LessonStep, response: unknown): EvalCore {
   })
 }
 
+function expandComboRemovalSubject(subject: string): [string, string][] {
+  const isPair = subject.length === 2 && subject[0] === subject[1]
+  const isClassed = subject.length === 3 && (subject[2] === 's' || subject[2] === 'o')
+  return isPair || isClassed ? expandHandClass(subject) : expandGenericUnpaired(subject[0], subject[1])
+}
+
+/** combo_removal — expand `combo_removal_subject` (a pair like 'AA'/'33', a single
+ *  suited/offsuit class like 'AKs', or a generic two-rank hand like 'AK' meaning
+ *  suited+offsuit combined) OR `combo_removal_range` (multiple hand classes
+ *  flattened into one tile set) into concrete combos, compute which ones the
+ *  known cards (`combo_removal_known_cards` and/or `_board_cards`/`_hero_cards`)
+ *  actually eliminate, and grade the learner's tapped set against that ground truth. */
+function evalComboRemoval(step: LessonStep, response: unknown): EvalCore {
+  const subject = step.combo_removal_subject ?? ''
+  const range = step.combo_removal_range
+  const known = [
+    ...(step.combo_removal_known_cards ?? []),
+    ...(step.combo_removal_board_cards ?? []),
+    ...(step.combo_removal_hero_cards ?? []),
+  ]
+
+  let allCombos: [string, string][]
+  if (range && range.length > 0) {
+    const seen = new Set<string>()
+    allCombos = []
+    for (const hand of range) {
+      for (const combo of expandComboRemovalSubject(hand)) {
+        const key = comboKey(combo)
+        if (!seen.has(key)) {
+          seen.add(key)
+          allCombos.push(combo)
+        }
+      }
+    }
+  } else {
+    allCombos = expandComboRemovalSubject(subject)
+  }
+
+  const label = range && range.length > 0 ? 'these' : subject
+  const remaining = getRemainingCombos(allCombos, known)
+  const remainingKeys = new Set(remaining.map(comboKey))
+  const correctIds = new Set(allCombos.map(comboKey).filter((k) => !remainingKeys.has(k)))
+  const selectedIds = new Set(Array.isArray(response) ? (response as string[]) : [])
+
+  const core = evalIdSetSelection(correctIds, selectedIds, {
+    unit: 'combo',
+    correctFeedback:
+      step.combo_removal_explanation
+        ?? (correctIds.size > 0
+          ? `Correct — ${correctIds.size} of ${allCombos.length} ${label} combinations are impossible given the known cards. ${remaining.length} remain.`
+          : `Correct — none of ${label} combinations are affected by the known cards.`),
+    noneFeedback: `Correct — none of ${label} combinations are affected by the known cards.`,
+  })
+
+  return {
+    ...core,
+    reasoning_stages: [{
+      stage: 'combo_removal',
+      label: 'Combo removal',
+      correct: core.quality === 'perfect',
+      detail: core.feedback,
+    }],
+  }
+}
+
+/** flush_pyramid — derive the tier breakdown live (never authored), compute
+ *  which tiers `flush_pyramid_known_cards` actually touches, and grade the
+ *  learner's tapped tier set against that ground truth. */
+function evalFlushPyramid(step: LessonStep, response: unknown): EvalCore {
+  const suit = step.flush_pyramid_suit ?? 'h'
+  const deadRanks = step.flush_pyramid_dead_ranks ?? []
+  const known = step.flush_pyramid_known_cards ?? []
+  const tiers = flushTiers(suit, deadRanks)
+
+  const correctIds = new Set(
+    tiers.filter((t) => getBlockedCombos(t.combos, known).length > 0).map((t) => t.tierLabel),
+  )
+  const selectedIds = new Set(Array.isArray(response) ? (response as string[]) : [])
+
+  const core = evalIdSetSelection(correctIds, selectedIds, {
+    unit: 'tier',
+    correctFeedback:
+      correctIds.size === 1 && correctIds.has('nut')
+        ? "Correct — Hero's card removes the nut-flush tier entirely. Every other tier is completely untouched: Villain's range now contains zero of the hands that could trap Hero for the biggest pot."
+        : `Correct — ${Array.from(correctIds).join(', ')} tier(s) lose combos to Hero's known card.`,
+    noneFeedback: "Correct — none of Villain's flush tiers are affected by Hero's known card.",
+  })
+
+  return {
+    ...core,
+    reasoning_stages: [{
+      stage: 'blocker_classification',
+      label: 'Blocker classification',
+      correct: core.quality === 'perfect',
+      detail: core.feedback,
+    }],
+  }
+}
+
 function evalBoardVolatility(step: LessonStep, response: unknown): EvalCore {
   if (step.board_volatility_mode === 'compare') {
     return evalOptionBased(step, response)
@@ -1417,6 +1522,14 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
         term: 'Correct combo count',
       })
 
+    // Combo removal overlay (Module 9) — tap the concrete combos a known card eliminates
+    case 'combo_removal':
+      return evalComboRemoval(step, response)
+
+    // Flush pyramid (Module 9) — tap the tiers a known card affects
+    case 'flush_pyramid':
+      return evalFlushPyramid(step, response)
+
     // Action sequence — notation translation / classification, option-based
     case 'action_sequence':
       return evalOptionBased(step, response)
@@ -1727,6 +1840,7 @@ export function evaluateStepLocally(
     concept_explanation: core.concept_explanation,
     structured_points: core.structured_points,
     answer_reveal: core.answer_reveal,
+    reasoning_stages: core.reasoning_stages,
     xp_earned,
     level_before,
     level_after,

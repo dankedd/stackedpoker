@@ -138,41 +138,14 @@ export const ROADMAP_MODULES: LearningModule[] = [
   // continuation-bet lens, so the two were not built as separate modules.
 
   // ── Stage 4 — Range Thinking ─────────────────────────────────────────────────
-  // range-vs-range-module has been promoted to real content — see
-  // `LEARNING_MODULES` in ./curriculum.ts (same pattern as Modules 1-7). Its
-  // detailed build spec used different lesson titles than this stub's original
-  // placeholders, so the promoted entry's content replaces rather than reuses
-  // `plannedLessons` below (same judgment call precedent as Module 7's rename).
-  {
-    ...ROADMAP_DEFAULTS,
-    id: 'blockers-module',
-    path_id: 'intermediate',
-    slug: 'blockers-module',
-    title: 'Blockers & Card Removal',
-    subtitle: 'Learn how the cards you hold change what your opponent can have.',
-    description: 'Take the introductory blocker concept from Module 1 and turn it into a strategic tool.',
-    learningObjectives: [
-      'Use card removal to judge which value hands and bluffs a blocker supports',
-      'Apply blocker logic separately preflop and on the river',
-      'Recognize when blockers matter less than raw hand strength',
-    ],
-    difficulty: 'intermediate',
-    stageId: 'range-thinking',
-    order: 9,
-    prerequisiteModuleId: 'range-vs-range-module',
-    plannedLessons: [
-      { title: 'Card Removal Revisited' },
-      { title: 'Blocking Value Hands' },
-      { title: 'Blocking Bluffs' },
-      { title: 'Unblocking Folds' },
-      { title: 'Bluff Blockers' },
-      { title: 'Bluff-Catching Blockers' },
-      { title: 'Preflop Blockers' },
-      { title: 'River Blockers' },
-      { title: 'When Blockers Matter Less' },
-      { title: 'Blocker Decision Lab' },
-    ],
-  },
+  // range-vs-range-module AND blockers-module have both been promoted to real
+  // content — see `LEARNING_MODULES` in ./curriculum.ts (same pattern as
+  // Modules 1-8). blockers-module's build spec used different lesson titles
+  // than this stub's original placeholders (compare the promoted entry's
+  // content to the plannedLessons this comment used to sit above), same
+  // judgment-call precedent as Module 7's rename. Only 2 of 10 lessons are
+  // built so far (a phased, in-progress delivery) — `estimatedLessons` on the
+  // promoted entry reflects that honestly and grows with each checkpoint.
 
   // ── Stage 5 — Game Theory ────────────────────────────────────────────────────
   {

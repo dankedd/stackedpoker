@@ -82,31 +82,49 @@ export function ComboVisualizer({ step, onAnswer, disabled = false }: ComboVisua
   }
 
   // ── Unpaired visual: rank1 x rank2 suit grid ────────────────────────────────
-  function UnpairedGrid({ hand }: { hand: string }) {
+  // `only` restricts to just the suited diagonal (4 cells) or just the offsuit
+  // cells (12) — the "explode the square" progression before recombining as
+  // the full 16-cell 'unpaired' view. Known cards (Hero's hand / the board)
+  // strike out any cell they collide with, same visual language as PairFan.
+  function UnpairedGrid({ hand, only }: { hand: string; only?: 'suited' | 'offsuit' }) {
     const r1 = hand[0]
     const r2 = hand[1]
+    const cells = SUITS.flatMap((sa) => SUITS.map((sb) => ({ sa, sb, suited: sa === sb })))
+      .filter((c) => (only === 'suited' ? c.suited : only === 'offsuit' ? !c.suited : true))
+
+    let removedCount = 0
+    const rendered = cells.map(({ sa, sb, suited }) => {
+      const cardA = `${r1}${sa}`
+      const cardB = `${r2}${sb}`
+      const isRemoved = known.has(cardA.toLowerCase()) || known.has(cardB.toLowerCase())
+      if (isRemoved) removedCount++
+      return { sa, sb, suited, cardA, cardB, isRemoved }
+    })
+    const remaining = cells.length - removedCount
+
     return (
       <div className="flex flex-col items-center gap-4">
         <div className="inline-grid grid-cols-4 gap-1.5">
-          {SUITS.map((sa) =>
-            SUITS.map((sb) => {
-              const suited = sa === sb
-              return (
-                <div
-                  key={`${sa}-${sb}`}
-                  className={cn(
-                    'flex items-center gap-0.5 rounded-md border px-1 py-1',
-                    suited ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-border/30 bg-secondary/20',
-                  )}
-                >
-                  <PlayingCardMini card={`${r1}${sa}`} size="xs" />
-                  <PlayingCardMini card={`${r2}${sb}`} size="xs" />
+          {rendered.map(({ sa, sb, suited, cardA, cardB, isRemoved }) => (
+            <div
+              key={`${sa}-${sb}`}
+              className={cn(
+                'relative flex items-center gap-0.5 rounded-md border px-1 py-1 transition-all duration-300',
+                suited ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-border/30 bg-secondary/20',
+                isRemoved && 'opacity-25 grayscale',
+              )}
+            >
+              <PlayingCardMini card={cardA} size="xs" />
+              <PlayingCardMini card={cardB} size="xs" />
+              {isRemoved && (
+                <div aria-hidden className="absolute inset-0 flex items-center justify-center">
+                  <div className="h-[2px] w-[130%] rotate-45 bg-rose-500/70" />
                 </div>
-              )
-            }),
-          )}
+              )}
+            </div>
+          ))}
         </div>
-        {!isQuiz && (
+        {!isQuiz && !only && (
           <div className="flex items-center gap-4 text-sm">
             <span className="text-emerald-300 font-bold">4 suited</span>
             <span className="text-muted-foreground/40">+</span>
@@ -115,11 +133,24 @@ export function ComboVisualizer({ step, onAnswer, disabled = false }: ComboVisua
             <span className="text-violet-300 font-bold">16 total</span>
           </div>
         )}
+        {!isQuiz && only && (
+          <p className="text-sm text-muted-foreground text-center">
+            <span className="font-bold text-violet-300">{cells.length} combination{cells.length !== 1 ? 's' : ''}</span>
+            {' '}({only})
+          </p>
+        )}
+        {!isQuiz && removedCount > 0 && (
+          <p className="text-sm text-muted-foreground text-center">
+            {remaining} of {cells.length} remain ({removedCount} removed by known cards)
+          </p>
+        )}
       </div>
     )
   }
 
   const isPairLike = kind === 'pair' || kind === 'removal'
+  const isSuitedOnly = kind === 'suited'
+  const isOffsuitOnly = kind === 'offsuit'
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -132,7 +163,11 @@ export function ComboVisualizer({ step, onAnswer, disabled = false }: ComboVisua
       {step.combo_visualizer_correct_feedback && !isQuiz && null}
 
       <div className="rounded-2xl border border-border/30 bg-secondary/10 px-4 py-6">
-        {isPairLike ? <PairFan rank={subject[0]} /> : <UnpairedGrid hand={subject} />}
+        {isPairLike ? (
+          <PairFan rank={subject[0]} />
+        ) : (
+          <UnpairedGrid hand={subject} only={isSuitedOnly ? 'suited' : isOffsuitOnly ? 'offsuit' : undefined} />
+        )}
       </div>
 
       {isQuiz ? (

@@ -38,6 +38,8 @@ export function BoardRankSort({ step, onAnswer, disabled = false, reviewMode = f
   )
   const target = step.board_rank_sort_target ?? []
   const boardById = useMemo(() => new Map(boards.map((b) => [b.id, b])), [boards])
+  const highLabel = step.board_rank_sort_high_label ?? 'bets most'
+  const lowLabel = step.board_rank_sort_low_label ?? 'bets least'
 
   useEffect(() => {
     mountTime.current = Date.now()
@@ -76,7 +78,7 @@ export function BoardRankSort({ step, onAnswer, disabled = false, reviewMode = f
       )}
 
       <p className="text-center text-sm font-semibold text-foreground">
-        {step.board_rank_sort_prompt ?? 'Tap the boards in order — bets most first, bets least last.'}
+        {step.board_rank_sort_prompt ?? `Tap the boards in order — ${highLabel} first, ${lowLabel} last.`}
       </p>
 
       {phase === 'arrange' && (
@@ -112,8 +114,8 @@ export function BoardRankSort({ step, onAnswer, disabled = false, reviewMode = f
           </div>
 
           <div className="flex items-center justify-center gap-4 text-[9px] text-muted-foreground/40">
-            <span>1 = bets most</span>
-            <span>{boards.length} = bets least</span>
+            <span>1 = {highLabel}</span>
+            <span>{boards.length} = {lowLabel}</span>
           </div>
 
           <button
@@ -166,7 +168,7 @@ export function BoardRankSort({ step, onAnswer, disabled = false, reviewMode = f
           {correctCount < reveal.length && (
             <div className="rounded-xl border border-border/40 bg-secondary/20 p-4">
               <p className="mb-2.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">
-                Correct order — bets most to bets least
+                Correct order — {highLabel} to {lowLabel}
               </p>
               <ol className="space-y-1.5">
                 {target.map((id, i) => {

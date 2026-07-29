@@ -72,8 +72,16 @@ export type StepType =
   | 'range_collision'       // Range Collision Viewer: two full 13x13 ranges + a board, in 'reveal'/'predict'/'morph'/'archaeology' modes
   | 'range_equity_predict'  // slider estimate of a range-vs-range equity split, then reveal vs a book-cited number
   | 'range_xray'            // Strong/Good/Weak/Trash equity-bucket bar(s); numeric where book-supported, else qualitative
+  // ── Blockers & Card Removal (Module 9) ──
+  | 'combo_removal'         // tap individual concrete 2-card combo tiles to mark them impossible given known cards; scored against actual card-removal math
+  | 'flush_pyramid'         // a monotone-heavy board's flush combos split into tiers by high card (derived via flushTiers, never authored); tap the tiers a known card affects
   // ── Cross-step tendency summary (reusable capstone pattern) ──
   | 'tendency_summary'      // reads this playthrough's actual results from `summary_source_step_ids`, grouped by `tendency_tag` — a genuinely personalized "here's the pattern in what you just did" closer, unscored
+  // ── Game Theory Foundations (Module 10) ─────────────────────────────────────
+  | 'strategy_response_lab'    // A→B→A strategy feedback loop: intro/best_response/counter_exploit/iterate modes, powered by gameTheoryEngine.ts
+  | 'clairvoyance_lab'         // the AA/QQ-vs-KK polarized toy game — a three-frequency tug of war, exact_derived from gameTheoryEngine.ts's clairvoyanceEV
+  | 'ev_indifference_balance'  // two-action EV bars + opponent-frequency slider; the learner searches for EV(A) = EV(B)
+  | 'unilateral_deviation_test' // "can this player improve by changing strategy alone?" — the Nash-equilibrium test, one player at a time
 
 export type ActionQuality = 'perfect' | 'good' | 'acceptable' | 'mistake' | 'punt'
 export type LessonType = 'micro' | 'range_trainer' | 'puzzle_drill' | 'concept_reveal' | 'simulation'
@@ -116,9 +124,32 @@ export interface ScenarioNode {
 
 // ── A single interactive step within a lesson ─────────────────────────────────
 
+/** How confidently a step's poker claim is grounded — see LEARN_QUESTION_QA.md's
+ *  data-authenticity rules. 'exact_derived' = computed from cards/ranges at
+ *  runtime (a combo count). 'source_reconstructed' = a specific book example,
+ *  traceable to a section/example name. 'pedagogical_model' = a simplified
+ *  range we built to isolate a concept, explicitly labeled as such on-screen. */
+export type SourceEvidenceType = 'exact_derived' | 'source_reconstructed' | 'pedagogical_model'
+
+/** Internal traceability metadata for a step's poker-theory content. Not
+ *  necessarily rendered verbatim in the learner UI — see `combo_removal_explanation`
+ *  and similar on-screen captions for the human-facing version. This is what a
+ *  content audit (e.g. section 39/40-style theory QA) walks to verify claims. */
+export interface LessonSource {
+  book: string
+  author?: string
+  /** Book section/theme this step's claim comes from, e.g. "Blocker Effects". */
+  section: string
+  /** Named example within that section, e.g. "Blocker Example 1", when applicable. */
+  example?: string
+  type: SourceEvidenceType
+}
+
 export interface LessonStep {
   id: string
   type: StepType
+  /** Traceability for this step's poker-theory claim — see `LessonSource`. */
+  source?: LessonSource
   concept_ids?: string[]
   // Poker context
   board?: string[]
@@ -258,7 +289,9 @@ export interface LessonStep {
   /** 'reveal' = informational visualization, unscored. 'quiz' = numeric combo-count question. */
   combo_visualizer_mode?: 'reveal' | 'quiz'
   /** Which visual to render: a pocket-pair fan, an unpaired suited/offsuit split, or a removal/blocker board. */
-  combo_visualizer_kind?: 'pair' | 'unpaired' | 'removal'
+  /** 'suited'/'offsuit' isolate one class of an unpaired hand (4 / 12 combos) — the
+   *  "explode the square" progression before recombining into 'unpaired' (all 16). */
+  combo_visualizer_kind?: 'pair' | 'unpaired' | 'removal' | 'suited' | 'offsuit'
   /** Cards already known (hero hand + board) that remove combos from the deck. */
   combo_visualizer_known_cards?: string[]
   /** Rank or hand notation the visual/question is about, e.g. 'A' or 'AK'. */
@@ -564,6 +597,11 @@ export interface LessonStep {
   board_rank_sort_layout?: 'list' | 'spectrum'
   board_rank_sort_spectrum_low_label?: string
   board_rank_sort_spectrum_high_label?: string
+  /** 'list' layout only — overrides the default "bets most"/"bets least" captions
+   *  so the same generic tap-to-order UI can rank things other than c-bet
+   *  frequency (e.g. Module 9's "best blocker" → "worst blocker" ranking). */
+  board_rank_sort_high_label?: string
+  board_rank_sort_low_label?: string
   // ── Range vs Range (Module 8) ───────────────────────────────────────────────
   // Range Collision Viewer — two full 13x13 ranges rendered against a board, in one
   // of four modes. Per-cell "does this hand connect with the board" highlighting is
@@ -615,6 +653,44 @@ export interface LessonStep {
   range_xray_grid?: { label: string; range: string[] }
   range_xray_board?: string[]
   range_xray_source_ref?: string
+  // ── Blockers & Card Removal (Module 9) ──────────────────────────────────────
+  /** combo_removal: hand-class notation whose full combo set renders as tappable
+   *  tiles, e.g. 'AA' (6 tiles) or 'AK' (16 tiles, suited+offsuit combined —
+   *  see `expandGenericUnpaired` in combos.ts; anything containing a letter
+   *  followed by 's'/'o' stays single-suited-class instead). */
+  combo_removal_subject?: string
+  /** Alternative to `combo_removal_subject` — multiple hand-class notations
+   *  (e.g. a river value region: ['99','44','76s']) flattened into ONE tile
+   *  set, for exercises about a whole named region of a range rather than a
+   *  single hand class. When both are set, this one wins. */
+  combo_removal_range?: string[]
+  /** Cards already known (Hero's hand and/or the board) that make some of the
+   *  subject's combos physically impossible — the ground truth the learner's
+   *  taps are graded against, computed live via combos.ts, never hard-coded.
+   *  Use this when the board/Hero distinction doesn't matter to the exercise;
+   *  use the two fields below when it does (they render distinct badges). */
+  combo_removal_known_cards?: string[]
+  /** Board cards making some combos impossible — rendered with a distinct
+   *  "B" badge from Hero-card removal, per section 11's requirement that the
+   *  two removal sources stay visually distinguishable, not just color-coded. */
+  combo_removal_board_cards?: string[]
+  /** Hero's hole cards making some combos impossible — rendered with an "H"
+   *  badge. Combines with `combo_removal_board_cards`; either or both may be set. */
+  combo_removal_hero_cards?: string[]
+  combo_removal_prompt?: string
+  /** Shown after submit regardless of correctness — the causal explanation of
+   *  *why* the flagged combos are impossible (which known card collides). */
+  combo_removal_explanation?: string
+  // ── Flush pyramid (Module 9 — "The Nut Blocker") ────────────────────────────
+  /** The flush suit this pyramid is built on, e.g. 'h'. */
+  flush_pyramid_suit?: string
+  /** Ranks of `flush_pyramid_suit` already dead (on the board) — the ONLY input
+   *  the tier breakdown is derived from; see combos.ts's `flushTiers`. */
+  flush_pyramid_dead_ranks?: string[]
+  /** Cards (in `flush_pyramid_suit`) Hero is shown holding — determines which
+   *  tier(s) the learner should tap as "affected," computed live, never authored. */
+  flush_pyramid_known_cards?: string[]
+  flush_pyramid_prompt?: string
   // ── Cross-step tendency summary ─────────────────────────────────────────────
   /** Any step can carry this: a machine id grouping it into a later `tendency_summary`
    *  step (e.g. 'offsuit_broadway'). Purely descriptive metadata — never read by this
@@ -635,6 +711,72 @@ export interface LessonStep {
   summary_source_step_ids?: string[]
   /** Optional lead-in shown above the synthesized tendency breakdown. */
   tendency_summary_intro?: string
+  // ── Game Theory Foundations (Module 10) ─────────────────────────────────────
+  // Strategy Response Lab — A→B→A strategy feedback loop. All EV math routes through
+  // gameTheoryEngine.ts's evOfBetting/evOfChecking on a one-street toy bet/check game
+  // (pot/bet/equity below), never hand-authored per-frequency EV numbers.
+  /** 'intro' = pick between two labeled pure strategies, see the fixed opposing response (10.1).
+   *  'best_response' = Villain's call frequency is fixed/locked; learner searches Hero's bet-frequency
+   *  slider for the MES (10.2). 'counter_exploit' = FREEZE/UNFREEZE Villain; the learner's exploit
+   *  found while frozen gets re-evaluated after Villain adjusts (10.3). 'iterate' = step through a fixed
+   *  sequence of source-cited push/fold states via a "Best Respond" button (10.4). */
+  strategy_response_lab_mode?: 'intro' | 'best_response' | 'counter_exploit' | 'iterate'
+  strategy_response_lab_prompt?: string
+  /** The underlying toy game's pot/bet/equity. Falls back to PRESSURE_GAME_DEFAULT (gameTheoryContent.ts). */
+  strategy_response_lab_pot?: number
+  strategy_response_lab_bet?: number
+  strategy_response_lab_equity_when_called?: number
+  strategy_response_lab_equity_when_checked?: number
+  /** 'intro' mode: two pure strategies Player A can pick between (uses `options`; option ids must match). */
+  strategy_response_lab_intro_strategies?: { id: string; label: string; heroFreq: number }[]
+  /** 'best_response' mode: Villain's fixed, already-revealed call frequency (0-1). */
+  strategy_response_lab_fixed_villain_freq?: number
+  /** 'counter_exploit' mode: Villain's call frequency before and after the learner hits UNFREEZE. */
+  strategy_response_lab_villain_freq_before?: number
+  strategy_response_lab_villain_freq_after?: number
+  /** 'iterate' mode: PUSH_FOLD_ITERATION (gameTheoryContent.ts) step ids to walk through, in order. */
+  strategy_response_lab_iteration_ids?: string[]
+  /** Tolerance (as a 0-1 frequency fraction) for scoring 'best_response'/'counter_exploit' slider answers. Default 0.05. */
+  strategy_response_lab_tolerance?: number
+
+  // Clairvoyance Lab — the AA/QQ-vs-KK polarized toy game (10.7-10.8). `board`/`pot_bb` are not
+  // used here; see CLAIRVOYANCE_GAME in gameTheoryContent.ts for the fixed pot/bet/board.
+  clairvoyance_lab_prompt?: string
+  /** 'explore' = free sliders, unscored, for building intuition. 'find_equilibrium' = adjust the
+   *  editable frequencies until neither side can improve — scored against clairvoyanceEquilibrium(). */
+  clairvoyance_lab_mode?: 'explore' | 'find_equilibrium'
+  /** Which frequency slider(s) the learner controls this step; any other frequency is held at
+   *  `clairvoyance_lab_locked`'s value (or the true equilibrium value if unspecified there). */
+  clairvoyance_lab_editable?: ('aa_bet' | 'qq_bet' | 'kk_call')[]
+  clairvoyance_lab_locked?: { aa_bet?: number; qq_bet?: number; kk_call?: number }
+  /** Tolerance (0-1 frequency fraction) for the 'find_equilibrium' scoring. Default 0.05. */
+  clairvoyance_lab_tolerance?: number
+
+  // EV Indifference Balance — two action bars (e.g. BET/CHECK or CALL/FOLD) whose EVs respond to
+  // an opponent-frequency slider the learner controls. Same underlying toy game as strategy_response_lab.
+  ev_indifference_balance_prompt?: string
+  ev_indifference_balance_action_a_label?: string
+  ev_indifference_balance_action_b_label?: string
+  ev_indifference_balance_pot?: number
+  ev_indifference_balance_bet?: number
+  ev_indifference_balance_equity_when_called?: number
+  ev_indifference_balance_equity_when_checked?: number
+  /** Tolerance (0-1 frequency fraction) for the "found indifference" check. Default 0.03. */
+  ev_indifference_balance_tolerance?: number
+
+  // Unilateral Deviation Test — "can this player improve by changing strategy alone?" One control
+  // (the tested player's own frequency), everything else fixed at the candidate-equilibrium value.
+  unilateral_deviation_test_prompt?: string
+  /** Which side the learner is testing this step — the OTHER side's frequency is held fixed. */
+  unilateral_deviation_test_player?: 'A' | 'B'
+  unilateral_deviation_test_pot?: number
+  unilateral_deviation_test_bet?: number
+  /** The candidate equilibrium both players are AT before the learner tries deviating —
+   *  `heroFreq` is the tested player's own candidate-equilibrium frequency (their starting
+   *  point / the "no deviation" baseline), `villainFreq` is the fixed other side. */
+  unilateral_deviation_test_equilibrium?: { heroFreq: number; villainFreq: number }
+  unilateral_deviation_test_tolerance?: number
+
   // Visual
   visual?: 'table' | 'range_grid' | 'equity_bar' | 'heatmap' | 'pressure_chart'
   // ── Adaptive system (remediation) ───────────────────────────────────────────
@@ -814,6 +956,20 @@ export interface AnswerReveal {
 
 // ── Step evaluation result from API ──────────────────────────────────────────
 
+/** One stage of a multi-stage reasoning exercise (Module 9 spec section 15) —
+ *  e.g. "did the learner read the range correctly" is tracked separately from
+ *  "did they make the right final decision". Purely additive: existing step
+ *  types that never populate this see `undefined` and render exactly as before. */
+export interface ReasoningStageResult {
+  /** Machine id, e.g. 'range_identification' | 'combo_removal' | 'blocker_classification' | 'final_decision'. */
+  stage: string
+  /** Human-readable label shown in the stage-by-stage breakdown, e.g. "Range read". */
+  label: string
+  correct: boolean
+  /** Optional one-line explanation of what was right/wrong at this stage. */
+  detail?: string
+}
+
 export interface StepResult {
   score: number
   quality: ActionQuality
@@ -843,6 +999,11 @@ export interface StepResult {
    *  are meaningless placeholders and `xp_earned` is always 0 — the UI must never render
    *  a graded result screen ("Perfect Play"/"Score: X/100") for these, only advance. */
   unscored: boolean
+  /** Present only for steps whose evaluator populated a multi-stage reasoning
+   *  breakdown (see `ReasoningStageResult`) — e.g. Module 9's range→combo→
+   *  removal→blocker→decision chain. Absent for every ordinary single-stage
+   *  step; existing modules never see this field change. */
+  reasoning_stages?: ReasoningStageResult[]
 }
 
 // ── Sentinel: explicit failed result (no fake scores/XP) ─────────────────────

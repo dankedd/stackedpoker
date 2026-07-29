@@ -46,6 +46,8 @@ import { RangeDiffOverlay } from '@/components/learn/steps/RangeDiffOverlay'
 import { RangeBucketSort } from '@/components/learn/steps/RangeBucketSort'
 import { MorphologyBuilder } from '@/components/learn/steps/MorphologyBuilder'
 import { BlockerLab } from '@/components/learn/steps/BlockerLab'
+import { ComboRemovalOverlay } from '@/components/learn/steps/ComboRemovalOverlay'
+import { FlushPyramid } from '@/components/learn/steps/FlushPyramid'
 import { ReraiseSizingSlider } from '@/components/learn/steps/ReraiseSizingSlider'
 import { DefenseLens } from '@/components/learn/steps/DefenseLens'
 import { FlopScanner } from '@/components/learn/steps/FlopScanner'
@@ -334,6 +336,16 @@ function StepRenderer({
 
   if (step.type === 'blocker_lab') {
     return <BlockerLab step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
+  }
+
+  // ── Blockers & Card Removal (Module 9) ────────────────────────────────────
+
+  if (step.type === 'combo_removal') {
+    return <ComboRemovalOverlay step={step} onAnswer={(keys, ms) => evaluate(keys, ms)} />
+  }
+
+  if (step.type === 'flush_pyramid') {
+    return <FlushPyramid step={step} onAnswer={(tiers, ms) => evaluate(tiers, ms)} />
   }
 
   if (step.type === 'sizing_slider') {
