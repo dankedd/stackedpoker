@@ -42,6 +42,14 @@ interface TableLayoutConfig {
   /** Fixed px gap between a seat's rail point and its dealer chip — the SAME
    *  for every seat, Hero included (no more Hero-only special case). */
   dealerLabelGapPx: number
+  /** Extra px added to `dealerLabelGapPx` ONLY when the dealer marker's own
+   *  seat is ALSO Hero's seat (i.e. Hero is on the button) — driven purely by
+   *  seat ROLE (isHero && isDealer), never by position identity, so it's not
+   *  a reintroduction of per-position/BTN-only geometry. Needed because that
+   *  seat's label is "HERO · BTN" (wider than every other seat's plain
+   *  3-letter label), and the dealer marker used to sit close enough to clip
+   *  the position text's own tail end. */
+  heroDealerExtraGapPx: number
   /** How far (0-1) a bet/blind chip is pulled from its seat toward table center. */
   chipPullFactor: number
   /** Diameter (px) of a single poker-chip disc — the chip PILE (2 diagonally
@@ -65,6 +73,7 @@ export const DESKTOP_LAYOUT: TableLayoutConfig = {
   railOuterRadius: 40,
   railInnerRadius: 37.5,
   dealerLabelGapPx: 22,
+  heroDealerExtraGapPx: 30,
   chipPullFactor: 0.4,
   chipSizePx: 20,
   potYPct: 36,
@@ -89,6 +98,7 @@ export const MOBILE_LAYOUT: TableLayoutConfig = {
   railOuterRadius: 36,
   railInnerRadius: 33.5,
   dealerLabelGapPx: 22,
+  heroDealerExtraGapPx: 26,
   // Was 0.2 historically (tuned for the old 13px chip pill) — too shallow for
   // the bigger chip-pile glyph, which visually landed on top of the SB/BB
   // rail labels instead of clearing them (confirmed via screenshot QA). Mobile's
@@ -569,7 +579,11 @@ export function PreflopTable({
 
               {isDealer && (
                 <DealerMarker
-                  style={{ left: `calc(${railPoint.x} + ${layout.dealerLabelGapPx}px)`, top: railPoint.y, transform: 'translateY(-50%)' }}
+                  style={{
+                    left: `calc(${railPoint.x} + ${layout.dealerLabelGapPx + (isHero ? layout.heroDealerExtraGapPx : 0)}px)`,
+                    top: railPoint.y,
+                    transform: 'translateY(-50%)',
+                  }}
                 />
               )}
 

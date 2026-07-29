@@ -54,15 +54,19 @@ describe('PreflopTable — C. Hero HJ', () => {
 })
 
 describe('PreflopTable — D. Hero BTN', () => {
-  it('correct earlier positions folded, dealer button associated with Hero, standard 22px gap (no more Hero-only special case)', () => {
+  it('correct earlier positions folded, dealer button associated with Hero, widened gap clears the "HERO ·" prefix', () => {
     const html = renderToStaticMarkup(
       <PreflopTable tableSize={9} heroPosition="BTN" effectiveStackBb={60} actionBeforeHero={['Everyone folds']} />,
     )
     expect(html).toContain('Dealer button')
     // Only one dealer marker should render (on Hero's own seat, not duplicated elsewhere)
     expect((html.match(/Dealer button/g) || []).length).toBe(1)
-    // Hero-is-BTN now uses the SAME 22px gap as every other seat — no more 68px special case.
-    expect(html).toContain('+ 22px)')
+    // Hero-is-BTN's label is "HERO · BTN" — visibly wider than a plain 3-letter
+    // label — so the dealer marker needs dealerLabelGapPx (22) PLUS
+    // heroDealerExtraGapPx (30) = 52px to clear it (previously this used the
+    // same flat 22px as every other seat, which visually clipped the "N" in
+    // "BTN" behind the dealer marker — confirmed via screenshot QA).
+    expect(html).toContain('+ 52px)')
     expect(html).not.toContain('+ 68px)')
   })
 })
@@ -380,17 +384,31 @@ describe('PreflopTable — dealer marker uses the same seat-anchor + fixed gap f
     expect(html).toContain(`left:calc(${bx}% + 22px);top:${by}%`)
   })
 
-  it('hero-is-BTN: SAME 22px gap off Hero\'s own rail point — never renders "D BTN" as one run-on', () => {
+  it('hero-is-BTN: WIDER gap off Hero\'s own rail point (clears the "HERO ·" prefix) — never renders "D BTN" as one run-on', () => {
     const html = renderToStaticMarkup(
       <PreflopTable tableSize={9} heroPosition="BTN" effectiveStackBb={100} actionBeforeHero={['Everyone folds']} />,
     )
     const btnLabelMatch = railLabelMatch(html, 'BTN')
     expect(btnLabelMatch).toBeTruthy()
     const [, bx, by] = btnLabelMatch!
-    expect(html).toContain(`left:calc(${bx}% + 22px);top:${by}%`)
+    // 22 (dealerLabelGapPx) + 30 (heroDealerExtraGapPx, hero-is-dealer only) = 52.
+    expect(html).toContain(`left:calc(${bx}% + 52px);top:${by}%`)
     expect(html).toContain('Dealer button')
     expect(html).not.toContain('>D BTN<')
     expect(html).not.toContain('>D HERO')
+  })
+
+  it('Hero elsewhere (CO/BB/UTG): the dealer marker sits on the DIFFERENT, non-hero BTN seat, so BTN keeps the plain 22px gap unaffected', () => {
+    for (const heroPosition of ['CO', 'BB', 'UTG']) {
+      const html = renderToStaticMarkup(
+        <PreflopTable tableSize={9} heroPosition={heroPosition} effectiveStackBb={100} actionBeforeHero={heroPosition === 'UTG' ? [] : ['Everyone folds']} />,
+      )
+      expect(html).toMatch(new RegExp(`>${heroPosition}<`))
+      const btnLabelMatch = railLabelMatch(html, 'BTN')
+      expect(btnLabelMatch).toBeTruthy()
+      const [, bx, by] = btnLabelMatch!
+      expect(html).toContain(`left:calc(${bx}% + 22px);top:${by}%`)
+    }
   })
 })
 

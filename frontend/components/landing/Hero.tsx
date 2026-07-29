@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import { getJourneyOverview } from "@/lib/learn/journey";
 import { LESSONS } from "@/lib/learn/curriculum";
-import { ILLUSTRATIVE_OPENER_RANGE } from "@/lib/learn/rangeVsRangeContent";
+import { RANGE_TARGETS } from "@/lib/learn/ranges";
 import { PokerRangeGrid } from "@/components/learn/visuals/PokerRangeGrid";
 import { useCursorGlow } from "@/hooks/useCursorGlow";
 import { MarketingGridBackground } from "@/components/landing/shared/MarketingGridBackground";
@@ -18,6 +18,12 @@ import { MarketingDecisionSpot, type MarketingDecisionOption } from "@/component
 import { CoachPreviewCard } from "@/components/landing/shared/CoachPreviewCard";
 
 const journeyOverview = getJourneyOverview({});
+
+// Hero's real, complete continuing (call-or-3-bet) range vs a CO open — the
+// same canonical 100bb data + label ("BTN call vs CO") already used in the
+// real Module-8 "Range Board Collision" lesson step (curriculum.ts). Not a
+// CO opening range, not an invented marketing range.
+const BTN_CALL_VS_CO_RANGE = RANGE_TARGETS["BTN_call_vs_CO_100bb"] ?? [];
 
 const HERO_OPTIONS: MarketingDecisionOption[] = [
   { id: "fold", label: "Fold" },
@@ -77,11 +83,11 @@ function HeroComposition() {
           <AmbientFloat durationS={12} delayS={1.5} distancePx={5}>
             <MarketingGlassCard className="p-4">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-300/80 mb-2.5">
-                CO opening range
+                BTN call vs CO
               </p>
-              <PokerRangeGrid range={ILLUSTRATIVE_OPENER_RANGE} size="compact" mode="membership" highlightHand="KQs" />
+              <PokerRangeGrid range={BTN_CALL_VS_CO_RANGE} size="compact" mode="membership" highlightHand="KQs" />
               <p className="mt-2.5 text-[11px] text-muted-foreground/60 leading-relaxed">
-                See the range behind the raise — not just the one hand in front of you.
+                See Hero's whole continuing range — not just KQs.
               </p>
             </MarketingGlassCard>
           </AmbientFloat>
