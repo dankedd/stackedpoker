@@ -126,8 +126,15 @@ export function ComboRemovalOverlay({ step, onAnswer, disabled = false }: ComboR
         <p className="text-center text-base font-semibold text-foreground">{step.combo_removal_prompt}</p>
       )}
 
-      {/* Combo tiles */}
-      <div className="flex flex-wrap items-center justify-center gap-2.5" role="group" aria-label={`${subject} combinations`}>
+      {/* Combo tiles — 2 cols x N rows on mobile, 3 cols x N rows from sm up
+          (so 6-combo exercises like AA land on a centered 3x2 grid on desktop/
+          tablet and 2x3 on mobile), centered and width-capped so it never
+          needs horizontal scroll inside the lesson card. */}
+      <div
+        className="mx-auto grid w-full max-w-md grid-cols-2 justify-items-stretch gap-3 sm:max-w-xl sm:grid-cols-3 sm:gap-4"
+        role="group"
+        aria-label={`${subject} combinations`}
+      >
         {tiles.map((combo) => {
           const key = comboKey(combo)
           const isMarked = marked.has(key)
@@ -163,7 +170,7 @@ export function ComboRemovalOverlay({ step, onAnswer, disabled = false }: ComboR
               aria-pressed={isMarked}
               aria-label={`${combo[0]} ${combo[1]}, ${stateLabel}${removalSourceBadge && (state === 'correct' || state === 'missed') ? `, impossible because of ${removalSourceLabel}` : ''}`}
               className={cn(
-                'relative flex items-center gap-0.5 rounded-lg border-2 px-1.5 py-1.5 transition-all duration-200',
+                'relative flex w-full items-center justify-center gap-2 rounded-xl border-2 px-3 py-4 transition-all duration-200 sm:gap-2.5 sm:px-4 sm:py-5',
                 state === 'available' && 'border-border/40 bg-secondary/20 hover:border-violet-500/40 hover:bg-secondary/40',
                 state === 'selected' && 'border-violet-500/70 bg-violet-500/15 shadow-md shadow-violet-900/20',
                 state === 'correct' && 'border-emerald-500/60 bg-emerald-500/10 opacity-60',
@@ -171,8 +178,8 @@ export function ComboRemovalOverlay({ step, onAnswer, disabled = false }: ComboR
                 state === 'missed' && 'border-amber-500/60 bg-amber-500/10',
               )}
             >
-              <PlayingCardMini card={combo[0]} size="xs" className={cn((state === 'correct') && 'grayscale')} />
-              <PlayingCardMini card={combo[1]} size="xs" className={cn((state === 'correct') && 'grayscale')} />
+              <PlayingCardMini card={combo[0]} size="sm" className={cn((state === 'correct') && 'grayscale')} />
+              <PlayingCardMini card={combo[1]} size="sm" className={cn((state === 'correct') && 'grayscale')} />
               {state === 'selected' && (
                 <span aria-hidden className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-violet-500 text-[9px] font-black text-white">−</span>
               )}
