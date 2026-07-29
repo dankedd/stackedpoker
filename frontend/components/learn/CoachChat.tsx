@@ -186,6 +186,11 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
   // the limit shows correctly even before any message is sent this session
   // (e.g. after a refresh). Refreshed from every send() response either way.
   const [usage, setUsage] = useState<CoachUsage | null>(initialUsage ?? null)
+  // Honest degraded state: a failed usage fetch must never be silently
+  // presented as "0 of 10" (that would look like healthy quota when we
+  // actually just don't know) — only shown when we truly have no usage
+  // number at all, never overriding a real (even if stale) value.
+  const [usageLoadFailed, setUsageLoadFailed] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const autoStarted = useRef(false)
@@ -208,7 +213,9 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
   // the previous step) — no point in an extra request every remount.
   useEffect(() => {
     if (initialUsage) return
-    getCoachUsage(token).then(u => { if (mountedRef.current) setUsage(u) }).catch(() => {})
+    getCoachUsage(token)
+      .then(u => { if (mountedRef.current) setUsage(u) })
+      .catch(() => { if (mountedRef.current) setUsageLoadFailed(true) })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
 
@@ -242,6 +249,7 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
       if (!mountedRef.current) return
       setCurrentSessionId(session_id)
       setUsage(newUsage)
+      setUsageLoadFailed(false)
       setMessages(prev => [
         ...prev,
         reply.content.trim() ? reply : { ...reply, content: "Hmm, I didn't catch that — could you rephrase?" },
@@ -260,7 +268,10 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
       }
       const status = (err as { status?: number } | undefined)?.status
       let content = "Sorry, I couldn't connect right now. Please try again in a moment."
+      // Auth failures are never described as "temporarily unavailable" —
+      // that phrasing implies retrying will help, which it won't here.
       if (status === 401) content = 'Your session expired — please sign in again to keep chatting.'
+      else if (status === 403) content = "You don't have access to the coach right now — please sign in again."
       else if (status === 429) content = "You're sending messages a bit fast — give it a few seconds and try again."
       else if (status === 0) content = 'That took too long to respond. Please try again.'
       else if (status && status >= 500) content = 'The coach is temporarily unavailable. Please try again shortly.'
@@ -419,7 +430,7 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
             <p className="text-[10px] text-muted-foreground/25 text-center mt-1.5">
               Enter to send · Shift+Enter for new line
             </p>
-            {usage && (
+            {usage ? (
               <p
                 className={cn(
                   'text-[10px] text-center mt-1',
@@ -428,7 +439,15 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
               >
                 {usage.used} of {usage.limit} questions used today
               </p>
-            )}
+            ) : usageLoadFailed ? (
+              // Honest degraded state — never silently shown as "0 of 10"
+              // (which would look like healthy quota) when it's actually
+              // just unknown. The daily limit is still enforced server-side
+              // regardless of whether this number loaded.
+              <p className="text-[10px] text-center mt-1 text-muted-foreground/30">
+                Usage unavailable right now
+              </p>
+            ) : null}
           </>
         )}
       </div>

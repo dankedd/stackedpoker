@@ -113,7 +113,7 @@ async def release_coach_usage(user_id: str, settings) -> None:
     try:
         await _supabase_post("rpc/release_coach_usage", {"p_user_id": user_id}, settings)
     except Exception:
-        logger.exception("coach_usage_release_failed user=%s", user_id)
+        logger.exception("coach_usage_release_failed stage=QUOTA_RELEASE user=%s", user_id)
 
 
 async def get_coach_usage(user_id: str, settings) -> CoachUsage:

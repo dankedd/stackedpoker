@@ -150,6 +150,14 @@ async def coach_message(
             headers={"Retry-After": str(retry_after)},
         )
 
+    # Tracks which stage of the pipeline is in progress when something
+    # throws, so backend logs can say exactly where a failure happened
+    # (AUTH already passed via Depends(get_current_user) by this point) —
+    # without this, a QUOTA_RESERVATION-layer bug and a genuine SESSION save
+    # failure both surfaced as an indistinguishable "coach_db_error" line,
+    # which is exactly what let the ambiguous-column RPC bug go undiagnosed
+    # from logs alone.
+    stage = "QUOTA_RESERVATION"
     try:
         # ── Daily quota gate (server-authoritative, concurrency-safe) ───────────
         # Checked before any session/DB work: a rejected request creates no
@@ -163,6 +171,7 @@ async def coach_message(
                 detail={"code": "AI_COACH_DAILY_LIMIT_REACHED", **usage.to_dict()},
             )
 
+        stage = "SESSION"
         now = datetime.now(timezone.utc).isoformat()
 
         # ── Resolve or create session ─────────────────────────────────────────
@@ -211,6 +220,7 @@ async def coach_message(
         except Exception:
             pass  # non-critical — fall back to level 1
 
+        stage = "CONTEXT"
         # ── Resolve coaching mode + sanitize context (server-enforced) ─────────
         # Merge stored context with the context sent in this request. The mode
         # and answer-key visibility are then derived here — never trusted from
@@ -238,11 +248,13 @@ async def coach_message(
             req_id, user_id, mode, body.action, lesson_id, step_id, [t["id"] for t in theory], bool(canonical),
         )
 
+        stage = "LLM"
         # ── Generate coach reply ──────────────────────────────────────────────
         reply = await generate_coach_reply(
             messages, llm_context, user_level, mode=mode, theory=theory, action=body.action,
         )
 
+        stage = "SESSION"
         # ── Append assistant reply ────────────────────────────────────────────
         reply_ts = datetime.now(timezone.utc).isoformat()
         messages.append({"role": "assistant", "content": reply, "ts": reply_ts})
@@ -274,24 +286,29 @@ async def coach_message(
     except CoachUnavailableError as e:
         # The reserved slot was never actually processed by the AI — release
         # it so a genuinely failed request costs the user nothing. Best-effort:
-        # release_coach_usage already swallows its own errors internally.
+        # release_coach_usage already swallows its own errors internally, and
+        # tags its own log line with stage=QUOTA_RELEASE if that fails too.
         await release_coach_usage(user_id, settings)
         # The LLM request itself failed (quota/timeout/rate limit/auth/provider
         # error) — surface this as a real, distinguishable failure rather than
         # persisting a canned string into the session as if the coach had
         # actually replied. Logged already inside generate_coach_reply.
-        logger.error("coach_llm_unavailable req_id=%s user=%s exc_type=%s", req_id, user_id, type(e).__name__)
+        logger.error("coach_llm_unavailable req_id=%s user=%s stage=%s exc_type=%s", req_id, user_id, stage, type(e).__name__)
         raise HTTPException(status_code=503, detail="The coach is temporarily unavailable. Please try again shortly.")
     except httpx.HTTPError as e:
         status_code = getattr(getattr(e, "response", None), "status_code", None)
-        body = getattr(getattr(e, "response", None), "text", None)
+        upstream_body = getattr(getattr(e, "response", None), "text", None)
         logger.error(
-            "coach_db_error req_id=%s user=%s exc_type=%s upstream_status=%s upstream_body=%s",
-            req_id, user_id, type(e).__name__, status_code, (body or "")[:500],
+            "coach_db_error req_id=%s user=%s stage=%s exc_type=%s upstream_status=%s upstream_body=%s",
+            req_id, user_id, stage, type(e).__name__, status_code, (upstream_body or "")[:500],
         )
-        raise HTTPException(status_code=502, detail="Could not save session.")
+        # Generic on purpose: this branch now covers failures from several
+        # distinct stages (quota reservation, session lookup/save, ...) — the
+        # `stage` tag above is what makes it diagnosable server-side; the
+        # client only needs to know "try again", not which internal call failed.
+        raise HTTPException(status_code=502, detail="Something went wrong processing your message. Please try again.")
     except Exception as e:
-        logger.exception("coach_unhandled_error req_id=%s user=%s exc_type=%s", req_id, user_id, type(e).__name__)
+        logger.exception("coach_unhandled_error req_id=%s user=%s stage=%s exc_type=%s", req_id, user_id, stage, type(e).__name__)
         raise HTTPException(status_code=500, detail="Coach unavailable. Please try again.")
 
 
@@ -308,7 +325,7 @@ async def coach_usage(current_user: dict = Depends(get_current_user)) -> dict:
         usage = await get_coach_usage(user_id, settings)
         return {"usage": usage.to_dict()}
     except httpx.HTTPError:
-        logger.error("coach_usage_lookup_failed user=%s", user_id)
+        logger.error("coach_usage_lookup_failed stage=USAGE_LOOKUP user=%s", user_id)
         raise HTTPException(status_code=502, detail="Could not load usage.")
 
 

@@ -47,18 +47,35 @@ CREATE POLICY "ai_coach_usage_select_own" ON public.ai_coach_usage
 -- this function has no opinion on what the limit should be, which is what
 -- lets a future subscription-tier lookup change the limit without ever
 -- touching this SQL.
+--
+-- BUGFIX (post-deploy): the original version of this function declared
+-- `RETURNS TABLE(message_count integer, usage_date date, allowed boolean)`.
+-- In PL/pgSQL, every column named in RETURNS TABLE becomes an implicitly
+-- declared variable in the function's own scope — so `usage_date` was
+-- simultaneously "the OUT parameter" and "the ai_coach_usage table column",
+-- and the unqualified `usage_date` reference in the fallback SELECT's WHERE
+-- clause became ambiguous (Postgres error 42702). PL/pgSQL resolves every
+-- statement's identifiers at first-call compile time, including inside
+-- untaken IF branches — so this failed on every single call, not just the
+-- "already at the limit" case, which is why the Coach was completely broken
+-- rather than only breaking near the daily limit. Fixed by dropping the
+-- unused `usage_date` output column entirely (the backend never reads it)
+-- and fully qualifying every remaining table-column reference with an
+-- explicit alias, so no output-parameter name can ever shadow a column
+-- again. CREATE OR REPLACE is idempotent — re-running this file safely
+-- replaces the broken function in place.
 CREATE OR REPLACE FUNCTION public.reserve_coach_usage(p_user_id uuid, p_daily_limit integer)
-RETURNS TABLE(message_count integer, usage_date date, allowed boolean)
+RETURNS TABLE(message_count integer, allowed boolean)
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_date date := (now() AT TIME ZONE 'utc')::date;
+  v_today date := (now() AT TIME ZONE 'utc')::date;
   v_count integer;
 BEGIN
   INSERT INTO ai_coach_usage AS u (user_id, usage_date, message_count, updated_at)
-  VALUES (p_user_id, v_date, 1, now())
+  VALUES (p_user_id, v_today, 1, now())
   ON CONFLICT (user_id, usage_date) DO UPDATE
     SET message_count = u.message_count + 1, updated_at = now()
     WHERE u.message_count < p_daily_limit
@@ -67,12 +84,12 @@ BEGIN
   IF v_count IS NULL THEN
     -- Blocked (or, in principle, a same-row concurrent insert this
     -- statement lost to) — read back the authoritative current count.
-    SELECT ai_coach_usage.message_count INTO v_count
-    FROM ai_coach_usage
-    WHERE user_id = p_user_id AND usage_date = v_date;
-    RETURN QUERY SELECT COALESCE(v_count, 0), v_date, false;
+    SELECT u.message_count INTO v_count
+    FROM ai_coach_usage u
+    WHERE u.user_id = p_user_id AND u.usage_date = v_today;
+    RETURN QUERY SELECT COALESCE(v_count, 0), false;
   ELSE
-    RETURN QUERY SELECT v_count, v_date, true;
+    RETURN QUERY SELECT v_count, true;
   END IF;
 END;
 $$;

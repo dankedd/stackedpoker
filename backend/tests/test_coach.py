@@ -86,6 +86,11 @@ class FakeSupabase:
     #    "concurrent" asyncio tasks calling it can never interleave mid-check —
     #    exactly the atomicity the real DB's row lock provides.
     def reserve_coach_usage(self, user_id: str, daily_limit: int) -> dict:
+        # Return shape mirrors the REAL RPC exactly (message_count, allowed) —
+        # `usage_date` was removed from RETURNS TABLE by the ambiguous-column
+        # bugfix (see supabase_ai_coach_usage_schema.sql); it's still tracked
+        # in the internal row dict below, just never part of what the RPC
+        # hands back to the caller.
         from datetime import datetime, timezone
         today = datetime.now(timezone.utc).date().isoformat()
         rows = self._table("ai_coach_usage")
@@ -93,11 +98,11 @@ class FakeSupabase:
         if row is None:
             row = {"user_id": user_id, "usage_date": today, "message_count": 1}
             rows.append(row)
-            return {"message_count": 1, "usage_date": today, "allowed": True}
+            return {"message_count": 1, "allowed": True}
         if row["message_count"] < daily_limit:
             row["message_count"] += 1
-            return {"message_count": row["message_count"], "usage_date": today, "allowed": True}
-        return {"message_count": row["message_count"], "usage_date": today, "allowed": False}
+            return {"message_count": row["message_count"], "allowed": True}
+        return {"message_count": row["message_count"], "allowed": False}
 
     def release_coach_usage(self, user_id: str) -> None:
         from datetime import datetime, timezone
