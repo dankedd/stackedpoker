@@ -65,7 +65,7 @@ export function RangeBoardCollision({ step, onAnswer, disabled = false }: RangeB
         <RangeComparisonLayout>
           <div className="space-y-1.5">
             <p className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-violet-400/70">{a.label}</p>
-            <PokerRangeGrid range={a.range} />
+            <PokerRangeGrid range={a.range} size="compact" />
             {statsA && (
               <p className="text-center text-[10px] text-muted-foreground/50">
                 {statsA.total} combos → <span className="text-violet-300/80 font-semibold">{statsA.remaining}</span> remain after removal
@@ -75,7 +75,7 @@ export function RangeBoardCollision({ step, onAnswer, disabled = false }: RangeB
           </div>
           <div className="space-y-1.5">
             <p className="text-center text-[10px] font-bold uppercase tracking-[0.15em] text-blue-400/70">{b.label}</p>
-            <PokerRangeGrid range={b.range} />
+            <PokerRangeGrid range={b.range} size="compact" />
             {statsB && (
               <p className="text-center text-[10px] text-muted-foreground/50">
                 {statsB.total} combos → <span className="text-blue-300/80 font-semibold">{statsB.remaining}</span> remain after removal

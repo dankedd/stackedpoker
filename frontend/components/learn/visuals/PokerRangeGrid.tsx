@@ -177,6 +177,18 @@ interface PokerRangeGridProps {
   strategyActionOrder?: ActionId[]
   /** Rings exactly one cell (e.g. the just-tested hand) without touching its existing color. */
   highlightHand?: string
+  /** 'standard' (default) = a solo grid's own comfortable cap (520px) — never sprawls to
+   *  fill an oversized ancestor container. 'compact' = one half of a two-grid comparison
+   *  (480px) — sized so two of them plus a realistic gap fit inside the widened lesson
+   *  container's actual content width. Either way this is a MAX-width, not a fixed width:
+   *  it only ever shrinks what an oversized parent offers, never forces overflow into a
+   *  smaller one — see PokerRangeGrid's own outer wrapper below. */
+  size?: 'standard' | 'compact'
+}
+
+const SIZE_MAX_WIDTH: Record<'standard' | 'compact', string> = {
+  standard: 'max-w-[520px]',
+  compact: 'max-w-[480px]',
 }
 
 /** Read-only 13x13 range-grid display — membership, frequency-shaded, 3-4 action colored, a
@@ -193,6 +205,7 @@ export function PokerRangeGrid({
   highlightHand,
   categoryMap,
   categoryLegend,
+  size = 'standard',
 }: PokerRangeGridProps) {
   const inRange = new Set(range)
   const inComparison = new Set(comparisonRange ?? [])
@@ -256,6 +269,11 @@ export function PokerRangeGrid({
   }
 
   return (
+    // Outer cap — a genuine max-width, so a lone grid (or one half of a stacked-on-mobile
+    // comparison) can never sprawl to fill an oversized ancestor container, no matter how
+    // wide the lesson container itself gets for a given step type. `mx-auto` centers it
+    // whenever the cap actually binds; it's a no-op once the parent is already narrower.
+    <div className={cn('mx-auto w-full', SIZE_MAX_WIDTH[size])}>
     <div className={cn('space-y-2 w-full min-w-0', className)}>
       {/* No horizontal scroll container here on purpose — the whole 13x13 matrix must always
        *  be visible without scrolling or clipped columns. `min-w-0` on this block (and every
@@ -473,6 +491,7 @@ export function PokerRangeGrid({
           </span>
         </div>
       )}
+    </div>
     </div>
   )
 }

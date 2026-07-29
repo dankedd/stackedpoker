@@ -90,6 +90,56 @@ MODE_INSTRUCTIONS: dict[str, str] = {
 }
 
 
+ACTION_INSTRUCTIONS: dict[str, str] = {
+    "hint": (
+        "ACTION: HINT REQUESTED.\n"
+        "Give ONE progressive hint — direct attention toward what to compare or "
+        "look at first, without naming the answer. If a 'Hint request #N' line "
+        "appears below, make this hint meaningfully more specific than a lower- "
+        "numbered one you already gave earlier in this conversation (look at your "
+        "own prior replies above) — never repeat an earlier hint verbatim. Keep it "
+        "to 1-2 sentences."
+    ),
+    "explain_concept": (
+        "ACTION: EXPLAIN THE CONCEPT.\n"
+        "Step away from solving this exact spot and explain the underlying lesson "
+        "concept(s) in general terms first, grounded only in the VALIDATED THEORY "
+        "and lesson context given below. Then connect it back to the current board/"
+        "spot in one closing sentence."
+    ),
+    "walkthrough": (
+        "ACTION: WALK ME THROUGH IT.\n"
+        "For THIS thread only, override the core 'answer first' rule: teach through "
+        "guided questioning instead of immediately explaining. Ask ONE targeted "
+        "question at a time that helps the learner identify what to compare or "
+        "notice next, then wait for their reply before asking the next one. The "
+        "moment the learner says they don't know, gives a second unclear/confused "
+        "answer in a row, or directly asks for the answer, STOP asking questions and "
+        "teach the concept and reasoning directly instead — never a third open "
+        "question in a row."
+    ),
+    "why_wrong": (
+        "ACTION: WHY WAS MY ANSWER WRONG.\n"
+        "Do not just restate the correct answer. Explain what assumption likely led "
+        "toward the learner's choice, which concept changes that conclusion, and "
+        "what to look for in similar spots — using the evaluator feedback and "
+        "concepts provided below."
+    ),
+    "why_correct": (
+        "ACTION: WHY WAS MY ANSWER CORRECT.\n"
+        "Don't just congratulate — explain the strategic mechanism: what changes "
+        "what, which makes the learner's choice preferable. Aim for transferable "
+        "understanding, not just confirmation."
+    ),
+    "key_takeaway": (
+        "ACTION: WHAT SHOULD I REMEMBER.\n"
+        "Distill this spot into ONE crisp, memorable rule or pattern the learner can "
+        "carry to similar future spots — 1-2 sentences, no restating the full "
+        "explanation again."
+    ),
+}
+
+
 def _build_theory_block(theory: list[dict[str, str]]) -> str:
     if not theory:
         return ""
@@ -140,6 +190,7 @@ async def generate_coach_reply(
     user_level: int = 1,
     mode: str = "general",
     theory: list[dict[str, str]] | None = None,
+    action: str | None = None,
 ) -> str:
     """
     Generate a coaching response.
@@ -149,13 +200,16 @@ async def generate_coach_reply(
         context: sanitized context — see app.engines.learn.coach_context.
                  May include board, hero_position, villain_position, street,
                  pot_bb, effective_stack_bb, user_action, concept_ids,
-                 active_leaks, lesson_title, step_type, lessonReview, and
-                 (only in post_submission/lesson_review mode) answer-key
+                 active_leaks, lesson_title, step_type, lessonReview, hint_level,
+                 and (only in post_submission/lesson_review mode) answer-key
                  fields such as correctAnswer/evaluatorFeedback.
         user_level: 1-30
         mode: "pre_submission" | "post_submission" | "lesson_review" | "general"
               — see app.engines.learn.coach_context.resolve_coaching_mode
         theory: grounded Acevedo concepts relevant to this context, if any
+        action: "hint" | "explain_concept" | "walkthrough" | "why_wrong" |
+                "why_correct" | None — which quick-action (if any) triggered
+                this turn; see ACTION_INSTRUCTIONS. None means plain free-text.
     """
     client = AsyncOpenAI(api_key=settings.openai_api_key, timeout=20.0)
 
@@ -193,6 +247,8 @@ async def generate_coach_reply(
         ctx_parts.append(f"Known leaks: {', '.join(leaks)}")
     if context.get("concept_ids"):
         ctx_parts.append(f"Concepts in focus: {', '.join(context['concept_ids'])}")
+    if context.get("hint_level"):
+        ctx_parts.append(f"Hint request #{context['hint_level']} for this step.")
     # Answer-key fields — only ever present here when coach_context.sanitize_context
     # allowed them through (post_submission / lesson_review modes).
     if context.get("correctAnswer") or context.get("correct_answer"):
@@ -210,6 +266,7 @@ async def generate_coach_reply(
 
     context_str = "\n".join(ctx_parts) if ctx_parts else "General coaching session."
     mode_instruction = MODE_INSTRUCTIONS.get(mode, MODE_INSTRUCTIONS["general"])
+    action_instruction = ACTION_INSTRUCTIONS.get(action or "", "")
     theory_block = _build_theory_block(theory or [])
     canonical_block = _build_canonical_range_block(context)
 
@@ -217,6 +274,7 @@ async def generate_coach_reply(
         part for part in [
             COACH_SYSTEM,
             mode_instruction,
+            action_instruction,
             f"CURRENT SESSION CONTEXT:\n{context_str}\n{level_hint}",
             theory_block,
             canonical_block,

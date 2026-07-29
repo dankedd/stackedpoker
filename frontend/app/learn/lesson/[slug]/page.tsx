@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { LessonPlayer } from "@/components/learn/LessonPlayer";
 import { LessonCompletionCard } from "@/components/learn/LessonCompletionCard";
+import { LevelUpModal } from "@/components/learn/LevelUpModal";
 import { useAuth } from "@/hooks/useAuth";
 import { useLearnProgress } from "@/contexts/LearnProgressContext";
 import {
@@ -73,7 +74,14 @@ function HeaderDots({ total, current }: { total: number; current: number }) {
 export default function LessonPage() {
   const { slug } = useParams<{ slug: string }>();
   const { session } = useAuth();
-  const { progress, recordStepResult, recordLessonComplete, recordModuleComplete } = useLearnProgress();
+  const { progress, recordStepResult, recordLessonComplete, recordModuleComplete, dismissLevelUp } = useLearnProgress();
+
+  // Tracks LessonPlayer's internal phase so the level-up modal never renders
+  // while a per-step answer's feedback/explanation is on screen (section 7:
+  // the learning moment is never interrupted) — only once the learner has
+  // moved on ('step'/'summary'), which is also where it lands after a lesson
+  // or module completion since LessonPlayer settles into 'summary' first.
+  const [lessonPlayerPhase, setLessonPlayerPhase] = useState<"intro" | "step" | "feedback" | "summary">("intro");
 
   const rawLesson = LESSONS_BY_SLUG[slug];
   const userKey = session?.user?.id ?? "guest";
@@ -386,6 +394,15 @@ export default function LessonPage() {
             </LessonCompletionCard>
           </div>
         </div>
+
+        {progress.pendingLevelUp && (
+          <LevelUpModal
+            event={progress.pendingLevelUp}
+            onContinue={dismissLevelUp}
+            onDismiss={dismissLevelUp}
+            token={session?.access_token}
+          />
+        )}
       </div>
     );
   }
@@ -447,6 +464,9 @@ export default function LessonPage() {
               onLessonFinished={handleLessonFinished}
               isCompletionPending={isPersistingCompletion}
               completionError={completionError}
+              authToken={session.access_token}
+              moduleTitle={module?.title}
+              onPhaseChange={setLessonPlayerPhase}
             />
           ) : (
             <div className="space-y-6">
@@ -477,6 +497,15 @@ export default function LessonPage() {
           )}
         </div>
       </div>
+
+      {progress.pendingLevelUp && lessonPlayerPhase !== "feedback" && (
+        <LevelUpModal
+          event={progress.pendingLevelUp}
+          onContinue={dismissLevelUp}
+          onDismiss={dismissLevelUp}
+          token={session?.access_token}
+        />
+      )}
     </div>
   );
 }

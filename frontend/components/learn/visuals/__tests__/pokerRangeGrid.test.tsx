@@ -316,3 +316,33 @@ describe('PokerRangeGrid — never introduces horizontal scrolling', () => {
     expect(html).not.toContain('text-[11px] sm:text-[9px]')
   })
 })
+
+describe('PokerRangeGrid — size prop: a self-owned max-width cap, independent of the ancestor container', () => {
+  it('defaults to "standard" (520px) when size is omitted', () => {
+    const html = renderToStaticMarkup(<PokerRangeGrid range={['AA']} />)
+    expect(html).toContain('max-w-[520px]')
+    expect(html).not.toContain('max-w-[480px]')
+  })
+
+  it('size="compact" caps at 480px instead — for one half of a two-grid comparison', () => {
+    const html = renderToStaticMarkup(<PokerRangeGrid range={['AA']} size="compact" />)
+    expect(html).toContain('max-w-[480px]')
+    expect(html).not.toContain('max-w-[520px]')
+  })
+
+  it('the cap applies regardless of mode (strategy/category/diff all still get a cap)', () => {
+    for (const mode of ['membership', 'strategy', 'category', 'diff'] as const) {
+      const html = renderToStaticMarkup(
+        <PokerRangeGrid
+          range={['AA']}
+          mode={mode}
+          size="compact"
+          categoryMap={{ AA: 'overpair' }}
+          comparisonRange={['AA']}
+          strategies={{ AA: { raise: 1 } }}
+        />,
+      )
+      expect(html).toContain('max-w-[480px]')
+    }
+  })
+})

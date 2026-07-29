@@ -28,7 +28,7 @@ describe('RangeCollisionViewer — layout (no horizontal scrolling)', () => {
     expect(html).not.toContain('min-w-full')
   })
 
-  it('does not cap its own width with an inner max-width — only the outer lesson container decides', () => {
+  it('each grid caps at PokerRangeGrid\'s own compact width (480px) so a stacked single grid never balloons to fill the widened lesson container', () => {
     const html = renderToStaticMarkup(
       <RangeCollisionViewer
         a={{ label: 'IP', range: ['AA'] }}
@@ -36,7 +36,10 @@ describe('RangeCollisionViewer — layout (no horizontal scrolling)', () => {
         board={['Ad', '7h', '6c']}
       />,
     )
-    expect(html).not.toContain('max-w-3xl')
+    // Both grids are size="compact" — the cap is a max-width (never a fixed width), so it
+    // only ever shrinks an oversized ancestor's offer, it can't force overflow into a
+    // narrower one.
+    expect((html.match(/max-w-\[480px\]/g) ?? []).length).toBe(2)
   })
 
   it('both grids render with identical structure (same number of cells) for a fair visual comparison', () => {

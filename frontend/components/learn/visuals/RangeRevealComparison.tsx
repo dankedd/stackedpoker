@@ -1,6 +1,7 @@
 'use client'
 
-import { CheckCircle2, XCircle } from 'lucide-react'
+import { useState } from 'react'
+import { CheckCircle2, XCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PokerRangeGrid } from './PokerRangeGrid'
 import { RangeComparisonLayout } from './RangeComparisonLayout'
@@ -31,10 +32,13 @@ interface RangeRevealComparisonProps {
 }
 
 /**
- * Reusable post-submit reveal for any range-construction exercise: shows the learner's own
- * range and the target/reference range side by side, then a single highlighted diff grid
- * (correct / missing / extra), a compact hand-count summary, and an optional structural
- * checklist + explanation. Used by RangeBuild and MorphologyBuilder (build mode) so later
+ * Reusable post-submit reveal for any range-construction exercise: a single highlighted
+ * diff grid (correct / missing / extra) plus a compact hand-count summary is the primary,
+ * always-visible feedback; the learner's own range and the target/reference range side by
+ * side is supporting detail, collapsed behind a "Compare full ranges" toggle (it's two more
+ * full grids on top of the diff grid already shown — see the module's range-comparison UX
+ * spec on progressive disclosure). Also renders an optional structural checklist +
+ * explanation. Used by RangeBuild and MorphologyBuilder (build mode) so later
  * range-construction steps get the same treatment automatically.
  */
 export function RangeRevealComparison({
@@ -52,21 +56,13 @@ export function RangeRevealComparison({
   const correctCount = targetRange.filter((h) => yourSet.has(h)).length
   const missingCount = targetRange.filter((h) => !yourSet.has(h)).length
   const extraCount = yourRange.filter((h) => !targetSet.has(h)).length
+  // The Diff grid + counts below is the primary, denser feedback for this exercise — the
+  // raw "Your Range"/"Target Range" pair is supporting detail, so it starts collapsed.
+  const [rawPairOpen, setRawPairOpen] = useState(false)
 
   return (
     <div className={cn('space-y-3', className)}>
       {title && <p className="text-center text-xs font-bold uppercase tracking-wide text-muted-foreground/60">{title}</p>}
-
-      <RangeComparisonLayout gapClassName="gap-3">
-        <div className="space-y-1.5">
-          <p className="text-center text-[11px] font-semibold text-foreground/80">Your Range</p>
-          <PokerRangeGrid range={yourRange} />
-        </div>
-        <div className="space-y-1.5">
-          <p className="text-center text-[11px] font-semibold text-foreground/80">{targetLabel}</p>
-          <PokerRangeGrid range={targetRange} />
-        </div>
-      </RangeComparisonLayout>
 
       <div className="space-y-1.5">
         <p className="text-center text-[11px] font-semibold text-foreground/80">Differences</p>
@@ -78,6 +74,30 @@ export function RangeRevealComparison({
         <span className="text-amber-400">Missing: {missingCount}</span>
         <span className="text-red-400">Extra: {extraCount}</span>
       </div>
+
+      <div className="flex justify-center">
+        <button
+          type="button"
+          onClick={() => setRawPairOpen((v) => !v)}
+          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-muted-foreground/70 hover:text-foreground hover:bg-secondary/40 transition-colors"
+        >
+          {rawPairOpen ? 'Hide full ranges' : 'Compare full ranges'}
+          {rawPairOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+        </button>
+      </div>
+
+      {rawPairOpen && (
+        <RangeComparisonLayout gapClassName="gap-3" className="animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="space-y-1.5">
+            <p className="text-center text-[11px] font-semibold text-foreground/80">Your Range</p>
+            <PokerRangeGrid range={yourRange} size="compact" />
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-center text-[11px] font-semibold text-foreground/80">{targetLabel}</p>
+            <PokerRangeGrid range={targetRange} size="compact" />
+          </div>
+        </RangeComparisonLayout>
+      )}
 
       {multipleValid && (
         <p className="text-center text-[11px] text-muted-foreground/50 italic">

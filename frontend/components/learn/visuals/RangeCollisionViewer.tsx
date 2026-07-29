@@ -50,14 +50,14 @@ export function RangeCollisionViewer({ a, b, board, emphasizeCategories, classNa
   const gridA = (
     <div className="min-w-0 space-y-1.5">
       <p className="text-center text-xs font-bold text-violet-300">{a.label}</p>
-      <PokerRangeGrid range={a.range} mode="category" categoryMap={categoryMapA} categoryLegend={emphasizeCategories} />
+      <PokerRangeGrid range={a.range} mode="category" categoryMap={categoryMapA} categoryLegend={emphasizeCategories} size="compact" />
     </div>
   )
 
   const gridB = (
     <div className="min-w-0 space-y-1.5">
       <p className="text-center text-xs font-bold text-blue-300">{b.label}</p>
-      <PokerRangeGrid range={b.range} mode="category" categoryMap={categoryMapB} categoryLegend={emphasizeCategories} />
+      <PokerRangeGrid range={b.range} mode="category" categoryMap={categoryMapB} categoryLegend={emphasizeCategories} size="compact" />
     </div>
   )
 
@@ -69,9 +69,9 @@ export function RangeCollisionViewer({ a, b, board, emphasizeCategories, classNa
       {/*
         One symmetric unit: side-by-side once there's real room for two complete 13x13
         grids (`lg:`, 1024px — see RangeComparisonLayout's doc comment), full-width stacked
-        below that. No inner max-width cap here — the outer lesson container (widened for
-        this exact step type, see app/learn/lesson/[slug]/page.tsx) is the only width
-        constraint, so this can actually use the extra room instead of re-shrinking itself.
+        below that. Each grid is `size="compact"` (PokerRangeGrid's own 480px cap) so
+        neither one balloons to fill the widened lesson container (see
+        app/learn/lesson/[slug]/page.tsx) when this stacks to a single column below `lg:`.
       */}
       <RangeComparisonLayout gapClassName="gap-5 lg:gap-4" sideBySideFrom="lg">
         {gridA}

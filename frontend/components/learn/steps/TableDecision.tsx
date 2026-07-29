@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { CheckCircle2, AlertTriangle, XCircle } from 'lucide-react'
+import { CheckCircle2, AlertTriangle, XCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { QUALITY_LABELS, QUALITY_COLORS } from '@/lib/learn/types'
@@ -54,38 +54,47 @@ function InlineReveal({ evaluation, chartKey, hand, onContinue }: InlineRevealPr
   const chart = MTT_RFI_CHARTS[chartKey]
   const strategies = chartToStrategyMap(chart)
   const confusion = evaluation.stackConfusion
+  // The two-grid comparison is supporting evidence for the one-sentence explanation right
+  // above it, not the step's own learning objective (that's the decision itself) — so it
+  // starts collapsed and the learner opts in, per the shared progressive-disclosure pattern.
+  const [comparisonOpen, setComparisonOpen] = useState(false)
 
   return (
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      <div
-        className={cn(
-          'flex items-start gap-3 rounded-xl border px-4 py-3.5',
-          evaluation.quality === 'perfect' || evaluation.quality === 'good'
-            ? 'border-emerald-500/30 bg-emerald-500/8'
-            : evaluation.quality === 'acceptable'
-            ? 'border-amber-500/30 bg-amber-500/8'
-            : 'border-red-500/30 bg-red-500/8',
-        )}
-      >
-        <QualityIcon quality={evaluation.quality} />
-        <div className="space-y-1">
-          <p className={cn('text-sm font-bold', QUALITY_COLORS[evaluation.quality])}>
-            {QUALITY_LABELS[evaluation.quality]}
-          </p>
-          <p className="text-sm text-muted-foreground leading-relaxed">{evaluation.feedback}</p>
+      {/* Prose/controls stay at a normal reading width even when the outer lesson
+       *  container is widened for this step type — only the visualization below should
+       *  use the extra room. */}
+      <div className="max-w-2xl mx-auto w-full space-y-4">
+        <div
+          className={cn(
+            'flex items-start gap-3 rounded-xl border px-4 py-3.5',
+            evaluation.quality === 'perfect' || evaluation.quality === 'good'
+              ? 'border-emerald-500/30 bg-emerald-500/8'
+              : evaluation.quality === 'acceptable'
+              ? 'border-amber-500/30 bg-amber-500/8'
+              : 'border-red-500/30 bg-red-500/8',
+          )}
+        >
+          <QualityIcon quality={evaluation.quality} />
+          <div className="space-y-1">
+            <p className={cn('text-sm font-bold', QUALITY_COLORS[evaluation.quality])}>
+              {QUALITY_LABELS[evaluation.quality]}
+            </p>
+            <p className="text-sm text-muted-foreground leading-relaxed">{evaluation.feedback}</p>
+          </div>
         </div>
-      </div>
 
-      <div className="space-y-1.5">
-        <p className="text-center text-[11px] font-semibold text-foreground/80">
-          {chart.position} — {chart.stackBB}bb
-        </p>
-        <PokerRangeGrid
-          range={chart.cells.map((c) => c.hand)}
-          mode="strategy"
-          strategies={strategies}
-          highlightHand={hand}
-        />
+        <div className="space-y-1.5">
+          <p className="text-center text-[11px] font-semibold text-foreground/80">
+            {chart.position} — {chart.stackBB}bb
+          </p>
+          <PokerRangeGrid
+            range={chart.cells.map((c) => c.hand)}
+            mode="strategy"
+            strategies={strategies}
+            highlightHand={hand}
+          />
+        </div>
       </div>
 
       {confusion && (
@@ -95,39 +104,56 @@ function InlineReveal({ evaluation, chartKey, hand, onContinue }: InlineRevealPr
             {evaluation.chosenAction} is the baseline strategy&apos;s own choice for {hand} at {confusion.stackBB}bb
             ({Math.round(confusion.frequency * 100)}%) — just not at {chart.stackBB}bb.
           </p>
-          {/* Two complete 13x13 grids need more room than the sm: breakpoint gives them
-           *  within this card's width — sideBySideFrom="lg" stacks them full-width until
-           *  there's real room, instead of shrinking both to illegibility side by side. */}
-          <RangeComparisonLayout gapClassName="gap-3" sideBySideFrom="lg">
-            <div className="space-y-1">
-              <p className="text-center text-[10px] font-semibold text-muted-foreground/60">{chart.stackBB}bb (this spot)</p>
-              <PokerRangeGrid
-                range={chart.cells.map((c) => c.hand)}
-                mode="strategy"
-                strategies={strategies}
-                highlightHand={hand}
-              />
-            </div>
-            <div className="space-y-1">
-              <p className="text-center text-[10px] font-semibold text-muted-foreground/60">{confusion.stackBB}bb</p>
-              <PokerRangeGrid
-                range={MTT_RFI_CHARTS[confusion.chartKey].cells.map((c) => c.hand)}
-                mode="strategy"
-                strategies={chartToStrategyMap(MTT_RFI_CHARTS[confusion.chartKey])}
-                highlightHand={hand}
-              />
-            </div>
-          </RangeComparisonLayout>
+          <button
+            type="button"
+            onClick={() => setComparisonOpen((v) => !v)}
+            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 -mx-2 text-xs font-semibold text-sky-300 hover:text-sky-200 hover:bg-sky-500/10 transition-colors"
+          >
+            {comparisonOpen ? 'Hide ranges' : 'Compare ranges'}
+            {comparisonOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </button>
+          {comparisonOpen && (
+            // Two complete 13x13 grids need more room than the sm: breakpoint gives them
+            // within this card's width — sideBySideFrom="lg" stacks them full-width until
+            // there's real room, instead of shrinking both to illegibility side by side.
+            // Deliberately NOT inside the max-w-2xl prose wrapper above — these two
+            // size="compact" grids need the wide outer container's room to reach their
+            // own 480px cap side by side.
+            <RangeComparisonLayout gapClassName="gap-3" sideBySideFrom="lg" className="animate-in fade-in slide-in-from-top-1 duration-200">
+              <div className="space-y-1">
+                <p className="text-center text-[10px] font-semibold text-muted-foreground/60">{chart.stackBB}bb (this spot)</p>
+                <PokerRangeGrid
+                  range={chart.cells.map((c) => c.hand)}
+                  mode="strategy"
+                  strategies={strategies}
+                  highlightHand={hand}
+                  size="compact"
+                />
+              </div>
+              <div className="space-y-1">
+                <p className="text-center text-[10px] font-semibold text-muted-foreground/60">{confusion.stackBB}bb</p>
+                <PokerRangeGrid
+                  range={MTT_RFI_CHARTS[confusion.chartKey].cells.map((c) => c.hand)}
+                  mode="strategy"
+                  strategies={chartToStrategyMap(MTT_RFI_CHARTS[confusion.chartKey])}
+                  highlightHand={hand}
+                  size="compact"
+                />
+              </div>
+            </RangeComparisonLayout>
+          )}
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={onContinue}
-        className="group relative w-full inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden bg-gradient-to-r from-violet-600 to-blue-500"
-      >
-        Continue
-      </button>
+      <div className="max-w-2xl mx-auto w-full">
+        <button
+          type="button"
+          onClick={onContinue}
+          className="group relative w-full inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden bg-gradient-to-r from-violet-600 to-blue-500"
+        >
+          Continue
+        </button>
+      </div>
     </div>
   )
 }
@@ -173,33 +199,40 @@ export function TableDecision({ step, onAnswer, disabled = false }: TableDecisio
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      {step.narrative && (
-        <p className="text-sm text-muted-foreground leading-relaxed text-center">{step.narrative}</p>
-      )}
+      {/* Narrative/table/decision buttons stay at a normal reading width even when this
+       *  step type widens the outer lesson container — only InlineReveal's comparison
+       *  visualization (below) needs the extra room. */}
+      <div className="max-w-2xl mx-auto w-full space-y-5">
+        {step.narrative && (
+          <p className="text-sm text-muted-foreground leading-relaxed text-center">{step.narrative}</p>
+        )}
 
-      <PreflopTable
-        tableSize={step.table_size ?? 9}
-        heroPosition={step.hero_position ?? chart.position}
-        heroHand={heroCards}
-        effectiveStackBb={step.effective_stack_bb ?? chart.stackBB}
-        anteBb={step.ante_bb}
-        actionBeforeHero={step.action_before_hero}
-        heroAction={answered && evaluation ? { label: evaluation.chosenAction.toUpperCase() } : undefined}
-        result={evaluation ? (evaluation.quality === 'perfect' || evaluation.quality === 'good' ? 'correct' : 'incorrect') : undefined}
-      />
-
-      {!answered ? (
-        <DecisionSpot
-          // hero_position is intentionally cleared here — TableDecision already
-          // renders the shared table above; the nested DecisionSpot only supplies
-          // the action buttons, never a second copy of the table.
-          step={{ ...step, narrative: undefined, hero_position: undefined, options }}
-          onAnswer={handleInnerAnswer}
-          disabled={disabled}
+        <PreflopTable
+          tableSize={step.table_size ?? 9}
+          heroPosition={step.hero_position ?? chart.position}
+          heroHand={heroCards}
+          effectiveStackBb={step.effective_stack_bb ?? chart.stackBB}
+          anteBb={step.ante_bb}
+          actionBeforeHero={step.action_before_hero}
+          heroAction={answered && evaluation ? { label: evaluation.chosenAction.toUpperCase() } : undefined}
+          result={evaluation ? (evaluation.quality === 'perfect' || evaluation.quality === 'good' ? 'correct' : 'incorrect') : undefined}
         />
-      ) : evaluation ? (
+
+        {!answered && (
+          <DecisionSpot
+            // hero_position is intentionally cleared here — TableDecision already
+            // renders the shared table above; the nested DecisionSpot only supplies
+            // the action buttons, never a second copy of the table.
+            step={{ ...step, narrative: undefined, hero_position: undefined, options }}
+            onAnswer={handleInnerAnswer}
+            disabled={disabled}
+          />
+        )}
+      </div>
+
+      {answered && evaluation && (
         <InlineReveal evaluation={evaluation} chartKey={chartKey} hand={hand} onContinue={handleContinue} />
-      ) : null}
+      )}
     </div>
   )
 }

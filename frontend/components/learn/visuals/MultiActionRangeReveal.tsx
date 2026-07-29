@@ -54,11 +54,11 @@ export function MultiActionRangeReveal({ yourAssignments, chart, className }: Mu
       <RangeComparisonLayout gapClassName="gap-3">
         <div className="space-y-1.5">
           <p className="text-center text-[11px] font-semibold text-foreground/80">Your Strategy</p>
-          <PokerRangeGrid range={yourRangeHands} mode="strategy" strategies={yourStrategies} />
+          <PokerRangeGrid range={yourRangeHands} mode="strategy" strategies={yourStrategies} size="compact" />
         </div>
         <div className="space-y-1.5">
           <p className="text-center text-[11px] font-semibold text-foreground/80">Baseline Strategy</p>
-          <PokerRangeGrid range={bookRangeHands} mode="strategy" strategies={bookStrategies} />
+          <PokerRangeGrid range={bookRangeHands} mode="strategy" strategies={bookStrategies} size="compact" />
         </div>
       </RangeComparisonLayout>
 

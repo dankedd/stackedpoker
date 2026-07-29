@@ -7,6 +7,7 @@ import { QUALITY_LABELS, QUALITY_COLORS } from '@/lib/learn/types'
 import { XPGain } from './XPGain'
 import { EvaluationFailed } from './EvaluationFailed'
 import { PreviousButton } from './PreviousButton'
+import { AskCoachTrigger } from './coach/AskCoachTrigger'
 
 interface StepFeedbackProps {
   result: StepResult
@@ -15,7 +16,14 @@ interface StepFeedbackProps {
   isLast: boolean
   /** Undefined/omitted on step 1, where there's nothing to go back to. */
   onPrevious?: () => void
+  /** Opens the AI Coach drawer, already scoped to this step's post-answer
+   *  context — omitted (e.g. no signed-in session) simply hides the trigger. */
+  onAskCoach?: () => void
 }
+
+/** 'perfect'/'good' read as "correct enough to ask a deeper question";
+ *  'acceptable'/'mistake'/'punt' read as "wrong enough to ask why". */
+const CORRECT_ENOUGH_QUALITIES = new Set(['perfect', 'good'])
 
 // ── Quality-based colour tokens ───────────────────────────────────────────────
 
@@ -157,7 +165,7 @@ function ContinueButton({ onClick, isLast }: { onClick: () => void; isLast: bool
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function StepFeedback({ result, onContinue, onRetry, isLast, onPrevious }: StepFeedbackProps) {
+export function StepFeedback({ result, onContinue, onRetry, isLast, onPrevious, onAskCoach }: StepFeedbackProps) {
   // ── Failed state: no score, no XP, honest message ─────────────────────────
   if (!result.evaluation_valid) {
     return (
@@ -212,6 +220,19 @@ export function StepFeedback({ result, onContinue, onRetry, isLast, onPrevious }
             {result.structured_points && result.structured_points.length > 0 && (
               <StructuredFeedbackList items={result.structured_points} />
             )}
+            {onAskCoach && (
+              <div className="mt-3">
+                <AskCoachTrigger
+                  variant="inline"
+                  onClick={onAskCoach}
+                  label={
+                    CORRECT_ENOUGH_QUALITIES.has(result.quality)
+                      ? 'Ask Coach why'
+                      : 'Not sure why? Ask Coach'
+                  }
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -231,13 +252,12 @@ export function StepFeedback({ result, onContinue, onRetry, isLast, onPrevious }
         </div>
       )}
 
-      {/* XP gain */}
+      {/* XP gain — the confirmed level-up celebration (if any) is handled
+          separately by LevelUpModal, driven by the server-confirmed total
+          in LearnProgressContext, not by this step's local/optimistic
+          result.leveled_up (see evaluator.ts's module docstring). */}
       <div className="flex justify-center">
-        <XPGain
-          xp={result.xp_earned}
-          leveled_up={result.leveled_up}
-          new_level={result.leveled_up ? result.level_after : undefined}
-        />
+        <XPGain xp={result.xp_earned} />
       </div>
 
       <div className="flex items-center gap-3">

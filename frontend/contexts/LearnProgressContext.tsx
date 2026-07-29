@@ -12,6 +12,7 @@ import {
 import { useAuth } from '@/hooks/useAuth'
 import type { StepResult, UserLeak } from '@/lib/learn/types'
 import { levelForXP } from '@/lib/learn/types'
+import { mergeLevelUpDetection, type LevelUpEvent } from '@/lib/learn/levelUpDetection'
 import {
   fetchFullProgress,
   submitStepResult,
@@ -66,6 +67,12 @@ export interface LearnProgressState {
    *  failed" state instead of silently pretending the save succeeded. */
   unsyncedLessonIds: Set<string>
   continueTarget: ContinueLearningTarget | null
+  /** Set the instant a CONFIRMED server response shows total_xp crossing a
+   *  level boundary — never derived from optimistic/local XP math. Cleared
+   *  only by `dismissLevelUp()`. Consuming UI decides WHEN it's safe to
+   *  actually render a celebration for this (e.g. not mid-answer-feedback);
+   *  this flag only says THAT one is owed. */
+  pendingLevelUp: LevelUpEvent | null
 }
 
 export interface StepCompletionContext {
@@ -107,6 +114,8 @@ interface LearnProgressContextType {
     ctx: ModuleCompleteContext,
   ) => Promise<{ bonusXp: number; leveledUp: boolean; newLevel: number }>
   resolveLeak: (leakId: string) => void
+  /** Marks the currently pending level-up as delivered/acknowledged. */
+  dismissLevelUp: () => void
 }
 
 const EMPTY_STATE: LearnProgressState = {
@@ -124,6 +133,7 @@ const EMPTY_STATE: LearnProgressState = {
   pendingLessonCompletions: new Set(),
   unsyncedLessonIds: new Set(),
   continueTarget: null,
+  pendingLevelUp: null,
 }
 
 const LearnProgressContext = createContext<LearnProgressContextType>({
@@ -132,6 +142,7 @@ const LearnProgressContext = createContext<LearnProgressContextType>({
   recordLessonComplete: async () => ({ bonusXp: 0, leveledUp: false, newLevel: 1 }),
   recordModuleComplete: async () => ({ bonusXp: 0, leveledUp: false, newLevel: 1 }),
   resolveLeak: () => {},
+  dismissLevelUp: () => {},
 })
 
 /**
@@ -254,6 +265,7 @@ export function LearnProgressProvider({ children }: { children: React.ReactNode 
       pendingLessonCompletions: new Set(),
       unsyncedLessonIds: new Set(),
       continueTarget: computeContinueTarget(lessons),
+      pendingLevelUp: null,
     })
   }, [])
 
@@ -291,6 +303,7 @@ export function LearnProgressProvider({ children }: { children: React.ReactNode 
         pendingLessonCompletions: new Set(),
         unsyncedLessonIds: new Set(),
         continueTarget: full.continue,
+        pendingLevelUp: null,
       })
     } catch (e) {
       // Hydration failed — do NOT mark hydrated. Authenticated saves stay
@@ -433,6 +446,9 @@ export function LearnProgressProvider({ children }: { children: React.ReactNode 
             achievementIds: res.newly_unlocked_achievement_ids.length
               ? new Set([...prev.achievementIds, ...res.newly_unlocked_achievement_ids])
               : prev.achievementIds,
+            pendingLevelUp: mergeLevelUpDetection(
+              prev.pendingLevelUp, prev.skill.level, prev.skill.total_xp, res.new_total_xp,
+            ),
           }))
         }
       })
@@ -592,6 +608,9 @@ export function LearnProgressProvider({ children }: { children: React.ReactNode 
             achievementIds: res.newly_unlocked_achievement_ids.length
               ? new Set([...prev.achievementIds, ...res.newly_unlocked_achievement_ids])
               : prev.achievementIds,
+            pendingLevelUp: mergeLevelUpDetection(
+              prev.pendingLevelUp, prev.skill.level, prev.skill.total_xp, res.new_total_xp,
+            ),
           }
         })
         return { bonusXp: res.bonus_xp_earned, leveledUp: res.leveled_up, newLevel: res.new_level }
@@ -637,6 +656,9 @@ export function LearnProgressProvider({ children }: { children: React.ReactNode 
           achievementIds: res.newly_unlocked_achievement_ids.length
             ? new Set([...prev.achievementIds, ...res.newly_unlocked_achievement_ids])
             : prev.achievementIds,
+          pendingLevelUp: mergeLevelUpDetection(
+            prev.pendingLevelUp, prev.skill.level, prev.skill.total_xp, res.new_total_xp,
+          ),
         }))
         return { bonusXp: res.bonus_xp_earned, leveledUp: res.leveled_up, newLevel: res.new_level }
       })
@@ -660,9 +682,15 @@ export function LearnProgressProvider({ children }: { children: React.ReactNode 
     [user, token],
   )
 
+  const dismissLevelUp = useCallback(() => {
+    setProgress((prev) => (prev.pendingLevelUp ? { ...prev, pendingLevelUp: null } : prev))
+  }, [])
+
   const value = useMemo(
-    () => ({ progress, recordStepResult, recordLessonComplete, recordModuleComplete, resolveLeak }),
-    [progress, recordStepResult, recordLessonComplete, recordModuleComplete, resolveLeak],
+    () => ({
+      progress, recordStepResult, recordLessonComplete, recordModuleComplete, resolveLeak, dismissLevelUp,
+    }),
+    [progress, recordStepResult, recordLessonComplete, recordModuleComplete, resolveLeak, dismissLevelUp],
   )
 
   return <LearnProgressContext.Provider value={value}>{children}</LearnProgressContext.Provider>

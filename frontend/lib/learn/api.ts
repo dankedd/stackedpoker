@@ -379,16 +379,19 @@ export async function evaluateRange(
 // /coach/session/{id}). The backend returns { session_id, reply, message_count }
 // where `reply` is a plain string — normalized into a CoachMessage here so
 // CoachChat can treat it identically to a locally-constructed user message.
+export type CoachAction = 'hint' | 'explain_concept' | 'walkthrough' | 'why_wrong' | 'why_correct' | 'key_takeaway'
+
 export async function sendCoachMessage(
   sessionId: string | null,
   message: string,
   context: Record<string, unknown>,
   token: string,
+  action?: CoachAction,
 ): Promise<{ session_id: string; reply: CoachMessage }> {
   const res = await learnFetch<{ session_id: string; reply: string; message_count: number }>(
     '/api/coach/message',
     token,
-    { method: 'POST', body: JSON.stringify({ session_id: sessionId, message, context }) },
+    { method: 'POST', body: JSON.stringify({ session_id: sessionId, message, context, action }) },
     45_000, // LLM calls run longer than typical CRUD endpoints
   )
   return {

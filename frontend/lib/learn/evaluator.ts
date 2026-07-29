@@ -18,6 +18,11 @@ import { THREEBET_RESPONSE_CHARTS, type ThreebetResponseAction, type ThreebetRes
 import { diagnoseRangeShape } from './threebetResponseRanges'
 import { evaluateTableDecision } from './tableDecisionEngine'
 import {
+  evOfBetting, evOfChecking, bestResponse, isIndifferent, testUnilateralDeviation,
+  clairvoyanceEV, clairvoyanceEquilibrium, type ActionEV,
+} from './gameTheoryEngine'
+import { PRESSURE_GAME_DEFAULT } from './gameTheoryContent'
+import {
   classifyFlop, dimensionValue, equityBucket, estimateVolatility, turnImpact,
   type FlopClassification, type VolatilityLevel,
 } from './flopClassifier'
@@ -104,6 +109,16 @@ export function isScoredStep(step: LessonStep): boolean {
     case 'combo_removal':
     case 'flush_pyramid':
       return true
+
+    // Game Theory Foundations (Module 10) — mode-gated: 'intro' and 'iterate' are guided
+    // walkthroughs with nothing to grade (same pattern as pot_win_intro/tendency_summary);
+    // 'best_response' and 'counter_exploit' are real graded decisions. clairvoyance_lab's
+    // 'explore' mode is free-form investigation; 'find_equilibrium' is the graded challenge.
+    case 'strategy_response_lab':
+      return step.strategy_response_lab_mode === 'best_response' || step.strategy_response_lab_mode === 'counter_exploit'
+    case 'clairvoyance_lab':
+      return step.clairvoyance_lab_mode === 'find_equilibrium'
+
     case 'spr_visualizer':
       return step.spr_visualizer_mode !== 'worlds'
     case 'morphology_builder':
@@ -1421,6 +1436,202 @@ function evalBuildFirstHand(step: LessonStep, response: unknown): EvalCore {
 
 // ── Step-type router ──────────────────────────────────────────────────────────
 
+// ── Game Theory Foundations (Module 10) ───────────────────────────────────────
+// Every EV number graded below is recomputed live from gameTheoryEngine.ts —
+// never a hand-authored "correct answer" — so a step's grading can never
+// drift from the exact same math its component displayed to the learner.
+
+function toyGameFromStep(step: LessonStep) {
+  return {
+    pot: step.strategy_response_lab_pot ?? PRESSURE_GAME_DEFAULT.pot,
+    bet: step.strategy_response_lab_bet ?? PRESSURE_GAME_DEFAULT.bet,
+    equityWhenCalled: step.strategy_response_lab_equity_when_called ?? PRESSURE_GAME_DEFAULT.equityWhenCalled,
+    equityWhenChecked: step.strategy_response_lab_equity_when_checked ?? PRESSURE_GAME_DEFAULT.equityWhenChecked,
+  }
+}
+
+function evalStrategyResponseLab(step: LessonStep, response: unknown): EvalCore {
+  const mode = step.strategy_response_lab_mode ?? 'best_response'
+  const r = (response ?? {}) as Record<string, unknown>
+
+  if (mode === 'best_response') {
+    const game = toyGameFromStep(step)
+    const villainFreq = step.strategy_response_lab_fixed_villain_freq ?? 0.5
+    const heroFreqPct = Number(r.heroFreqPct ?? response ?? 0)
+    const evBetFull = evOfBetting(game, villainFreq)
+    const evCheckFull = evOfChecking(game)
+    const actions: ActionEV[] = [
+      { id: 'bet', label: 'Bet 100%', ev: evBetFull },
+      { id: 'check', label: 'Check 100%', ev: evCheckFull },
+    ]
+    const best = bestResponse(actions)
+    const wantsBet = best.some((a) => a.id === 'bet')
+    const wantsCheck = best.some((a) => a.id === 'check')
+    const tolerance = (step.strategy_response_lab_tolerance ?? 0.05) * 100
+
+    let onCorrectSide: boolean
+    if (wantsBet && wantsCheck) {
+      onCorrectSide = true // genuinely indifferent — any frequency is a best response
+    } else if (wantsBet) {
+      onCorrectSide = heroFreqPct >= 100 - tolerance
+    } else {
+      onCorrectSide = heroFreqPct <= tolerance
+    }
+
+    const correctLabel = wantsBet && wantsCheck ? 'any frequency (indifferent)' : wantsBet ? 'bet 100%' : 'check 100%'
+    return onCorrectSide
+      ? {
+          quality: 'perfect',
+          score: 100,
+          feedback: `Correct — the Maximally Exploitative Strategy against this exact fixed opponent is to ${correctLabel}. Against a fixed strategy, the best response is a single pure action, not a mix.`,
+          ev_loss_bb: 0,
+        }
+      : {
+          quality: 'mistake',
+          score: QUALITY_SCORES.mistake,
+          feedback: `Against this exact fixed Villain, the highest-EV response is to ${correctLabel} — a mixed frequency leaves EV on the table because Villain isn't adjusting.`,
+          ev_loss_bb: 0,
+          answer_reveal: { term: 'Most profitable response', correct: correctLabel, yours: `${heroFreqPct.toFixed(0)}%` },
+        }
+  }
+
+  if (mode === 'counter_exploit') {
+    const optionId = String(r.optionId ?? '')
+    return evalOptionBased(step, optionId)
+  }
+
+  return { ...UNSCORED_CORE }
+}
+
+function evalClairvoyanceLab(step: LessonStep, response: unknown): EvalCore {
+  const r = (response ?? {}) as Record<string, unknown>
+  const pot = 100
+  const bet = 100
+  const eq = clairvoyanceEquilibrium(pot, bet)
+  const editable = step.clairvoyance_lab_editable ?? ['aa_bet', 'qq_bet', 'kk_call']
+  const tolerance = (step.clairvoyance_lab_tolerance ?? 0.05) * 100
+
+  const submitted = {
+    aa_bet: Number(r.aaBetFreqPct ?? eq.aaBetFreq * 100),
+    qq_bet: Number(r.qqBetFreqPct ?? eq.qqBetFreq * 100),
+    kk_call: Number(r.kkCallFreqPct ?? eq.kkCallFreq * 100),
+  }
+  const target = { aa_bet: eq.aaBetFreq * 100, qq_bet: eq.qqBetFreq * 100, kk_call: eq.kkCallFreq * 100 }
+
+  const deltas = editable.map((key) => Math.abs(submitted[key] - target[key]))
+  const maxDelta = deltas.length > 0 ? Math.max(...deltas) : 0
+
+  const { evP1, evP2 } = clairvoyanceEV({
+    pot, bet,
+    aaBetFreq: submitted.aa_bet / 100,
+    qqBetFreq: submitted.qq_bet / 100,
+    kkCallFreq: submitted.kk_call / 100,
+  })
+
+  if (maxDelta <= tolerance) {
+    return {
+      quality: 'perfect',
+      score: 100,
+      feedback: `Equilibrium found — AA bets 100%, QQ bets 50%, KK calls 50%. Neither player can improve alone from here. Game EV: P1 $${evP1.toFixed(0)}, P2 $${evP2.toFixed(0)}.`,
+      ev_loss_bb: 0,
+    }
+  }
+  if (maxDelta <= tolerance * 3) {
+    return {
+      quality: 'good',
+      score: QUALITY_SCORES.good,
+      feedback: `Close. The exact equilibrium is AA 100% / QQ 50% / KK 50% — every frequency away from that leaves one player a profitable unilateral deviation.`,
+      ev_loss_bb: 0,
+    }
+  }
+  return {
+    quality: 'acceptable',
+    score: QUALITY_SCORES.acceptable,
+    feedback: `Not yet at equilibrium — try adjusting further. Target: AA bets 100%, QQ bets 50%, KK calls 50%.`,
+    ev_loss_bb: 0,
+    answer_reveal: { term: 'Equilibrium', correct: 'AA 100% / QQ 50% / KK 50%' },
+  }
+}
+
+function evalEVIndifferenceBalance(step: LessonStep, response: unknown): EvalCore {
+  const pot = step.ev_indifference_balance_pot ?? 100
+  const bet = step.ev_indifference_balance_bet ?? 100
+  const equityWhenCalled = step.ev_indifference_balance_equity_when_called ?? 0
+  const equityWhenChecked = step.ev_indifference_balance_equity_when_checked ?? 0
+  const tolerance = step.ev_indifference_balance_tolerance ?? 0.03
+
+  const oppFreqPct = Number(response ?? 50)
+  const evA = evOfBetting({ pot, bet, equityWhenCalled }, oppFreqPct / 100)
+  const evB = evOfChecking({ pot, equityWhenChecked })
+  const found = isIndifferent(evA, evB, tolerance * (pot + bet))
+
+  return found
+    ? {
+        quality: 'perfect',
+        score: 100,
+        feedback: `Indifferent — at ${oppFreqPct.toFixed(0)}%, both actions earn the same EV ($${evA.toFixed(2)} vs $${evB.toFixed(2)}). This is exactly the frequency the opponent's strategy has to hold for a mixed strategy to make sense here.`,
+        ev_loss_bb: 0,
+      }
+    : {
+        quality: evA > evB ? 'mistake' : 'acceptable',
+        score: QUALITY_SCORES.acceptable,
+        feedback: `Not indifferent yet — one action still earns more ($${evA.toFixed(2)} vs $${evB.toFixed(2)}). Keep moving the slider toward the crossover.`,
+        ev_loss_bb: 0,
+      }
+}
+
+/** Player A = the bettor (a zero-equity bluff hand); Player B = the defender (call frequency). */
+function deviationTestEV(step: LessonStep, player: 'A' | 'B', heroFreqPct: number, villainFreqPct: number): number {
+  const pot = step.unilateral_deviation_test_pot ?? 100
+  const bet = step.unilateral_deviation_test_bet ?? 100
+  if (player === 'A') {
+    const betEV = evOfBetting({ pot, bet, equityWhenCalled: 0 }, villainFreqPct / 100)
+    const checkEV = evOfChecking({ pot, equityWhenChecked: 0 })
+    return (heroFreqPct / 100) * betEV + (1 - heroFreqPct / 100) * checkEV
+  }
+  const callFreq = heroFreqPct / 100
+  const bettorFreq = villainFreqPct / 100
+  const callEV = pot - evOfBetting({ pot, bet, equityWhenCalled: 0 }, 1)
+  return bettorFreq * (callFreq * callEV + (1 - callFreq) * 0)
+}
+
+function evalUnilateralDeviationTest(step: LessonStep, response: unknown): EvalCore {
+  const r = (response ?? {}) as Record<string, unknown>
+  const player = step.unilateral_deviation_test_player ?? 'A'
+  const equilibrium = step.unilateral_deviation_test_equilibrium ?? { heroFreq: 50, villainFreq: 50 }
+  const tolerance = step.unilateral_deviation_test_tolerance ?? 1
+
+  const baselineEV = deviationTestEV(step, player, equilibrium.heroFreq, equilibrium.villainFreq)
+  const alternatives: ActionEV[] = [0, 10, 25, 40, 60, 75, 90, 100].map((f) => ({
+    id: `f${f}`,
+    label: `${f}%`,
+    ev: deviationTestEV(step, player, f, equilibrium.villainFreq),
+  }))
+  const test = testUnilateralDeviation(baselineEV, alternatives, tolerance)
+  const truth: 'can_improve' | 'no_improvement' = test.canImprove ? 'can_improve' : 'no_improvement'
+  const verdict = String(r.verdict ?? '')
+
+  const correct = verdict === truth
+  return correct
+    ? {
+        quality: 'perfect',
+        score: 100,
+        feedback: truth === 'no_improvement'
+          ? `Correct — no frequency change for this player alone improves on $${baselineEV.toFixed(2)}. This is exactly Acevedo's Nash-equilibrium test: no profitable unilateral deviation.`
+          : `Correct — this player CAN improve alone here (best alternative gains $${test.gain.toFixed(2)}), which means this is NOT an equilibrium yet.`,
+        ev_loss_bb: 0,
+      }
+    : {
+        quality: 'mistake',
+        score: QUALITY_SCORES.mistake,
+        feedback: truth === 'no_improvement'
+          ? `Not quite — every alternative frequency you could try actually earns less than $${baselineEV.toFixed(2)}. No profitable unilateral deviation exists here.`
+          : `Not quite — this player CAN improve by changing strategy alone (best alternative gains $${test.gain.toFixed(2)}), so this isn't a stable equilibrium yet.`,
+        ev_loss_bb: 0,
+        answer_reveal: { term: 'Can this player improve alone?', correct: truth === 'can_improve' ? 'Yes' : 'No' },
+      }
+}
+
 function resolveCore(step: LessonStep, response: unknown): EvalCore {
   if (!isScoredStep(step)) {
     return step.type === 'concept_reveal'
@@ -1529,6 +1740,16 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
     // Flush pyramid (Module 9) — tap the tiers a known card affects
     case 'flush_pyramid':
       return evalFlushPyramid(step, response)
+
+    // ── Game Theory Foundations (Module 10) ─────────────────────────────────
+    case 'strategy_response_lab':
+      return evalStrategyResponseLab(step, response)
+    case 'clairvoyance_lab':
+      return evalClairvoyanceLab(step, response)
+    case 'ev_indifference_balance':
+      return evalEVIndifferenceBalance(step, response)
+    case 'unilateral_deviation_test':
+      return evalUnilateralDeviationTest(step, response)
 
     // Action sequence — notation translation / classification, option-based
     case 'action_sequence':

@@ -74,31 +74,35 @@ export function RangeCollision({ step, onAnswer, disabled = false }: RangeCollis
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      {step.narrative && (
-        <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-4">
-          <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>
-        </div>
-      )}
+      {/* Prose/controls stay at a normal reading width even though this step type widens
+       *  the outer lesson container — only RangeCollisionViewer (below) needs the room. */}
+      <div className="max-w-2xl mx-auto w-full space-y-5">
+        {step.narrative && (
+          <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-4">
+            <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>
+          </div>
+        )}
 
-      {mode === 'morph' && boards && boards.length > 1 && (
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          {boards.map((bd) => (
-            <button
-              key={bd.id}
-              type="button"
-              onClick={() => setActiveBoardId(bd.id)}
-              className={cn(
-                'rounded-lg px-3 py-1.5 text-xs font-bold transition-colors border',
-                bd.id === activeBoardId
-                  ? 'border-violet-500/40 bg-violet-500/15 text-violet-200'
-                  : 'border-border/40 bg-secondary/30 text-muted-foreground/50 hover:text-muted-foreground',
-              )}
-            >
-              {bd.label}
-            </button>
-          ))}
-        </div>
-      )}
+        {mode === 'morph' && boards && boards.length > 1 && (
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {boards.map((bd) => (
+              <button
+                key={bd.id}
+                type="button"
+                onClick={() => setActiveBoardId(bd.id)}
+                className={cn(
+                  'rounded-lg px-3 py-1.5 text-xs font-bold transition-colors border',
+                  bd.id === activeBoardId
+                    ? 'border-violet-500/40 bg-violet-500/15 text-violet-200'
+                    : 'border-border/40 bg-secondary/30 text-muted-foreground/50 hover:text-muted-foreground',
+                )}
+              >
+                {bd.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       <RangeCollisionViewer
         a={a}
@@ -107,82 +111,84 @@ export function RangeCollision({ step, onAnswer, disabled = false }: RangeCollis
         emphasizeCategories={step.range_collision_emphasize_categories}
       />
 
-      {mode === 'predict' && !revealed && (
-        <div className="rounded-2xl border border-border/40 bg-card/60 p-4 space-y-3">
-          <p className="text-center text-xs font-semibold text-foreground">
-            {step.range_collision_prompt ?? 'Which range does this flop favor?'}
-          </p>
-          <div className={cn('grid gap-2', options.length > 3 ? 'grid-cols-5' : 'grid-cols-3')}>
-            {options.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => handleSelect(opt.id)}
-                className="rounded-lg border border-border/40 bg-secondary/30 px-2 py-2.5 text-[10px] font-semibold text-foreground hover:border-violet-500/40 hover:bg-violet-500/10 transition-colors"
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {mode === 'archaeology' && !revealed && (
-        <div className="rounded-2xl border border-border/40 bg-card/60 p-4 space-y-3">
-          <p className="text-center text-xs font-semibold text-foreground">
-            {step.range_collision_prompt ?? 'Which range is more likely to belong to the preflop raiser?'}
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {options.map((opt) => (
-              <button
-                key={opt.id}
-                type="button"
-                onClick={() => handleSelect(opt.id)}
-                className="rounded-xl border border-border/50 bg-secondary/40 px-4 py-3 text-sm font-semibold text-foreground hover:bg-secondary/70 hover:border-violet-500/30 transition-all text-left"
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {revealed && (preflopEquity || postflopEquity) && (
-        <div className="rounded-2xl border border-border/40 bg-card/60 p-5 space-y-4 animate-in fade-in duration-300">
-          {preflopEquity && (
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground/40">Preflop</p>
-              <RangeEquityMeter aLabel={a.label} bLabel={b.label} aEquity={preflopEquity.a} />
+      <div className="max-w-2xl mx-auto w-full space-y-5">
+        {mode === 'predict' && !revealed && (
+          <div className="rounded-2xl border border-border/40 bg-card/60 p-4 space-y-3">
+            <p className="text-center text-xs font-semibold text-foreground">
+              {step.range_collision_prompt ?? 'Which range does this flop favor?'}
+            </p>
+            <div className={cn('grid gap-2', options.length > 3 ? 'grid-cols-5' : 'grid-cols-3')}>
+              {options.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => handleSelect(opt.id)}
+                  className="rounded-lg border border-border/40 bg-secondary/30 px-2 py-2.5 text-[10px] font-semibold text-foreground hover:border-violet-500/40 hover:bg-violet-500/10 transition-colors"
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
-          )}
-          {postflopEquity && (
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground/40">
-                On this board
-              </p>
-              <RangeEquityMeter aLabel={a.label} bLabel={b.label} aEquity={postflopEquity.a} />
+          </div>
+        )}
+
+        {mode === 'archaeology' && !revealed && (
+          <div className="rounded-2xl border border-border/40 bg-card/60 p-4 space-y-3">
+            <p className="text-center text-xs font-semibold text-foreground">
+              {step.range_collision_prompt ?? 'Which range is more likely to belong to the preflop raiser?'}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {options.map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => handleSelect(opt.id)}
+                  className="rounded-xl border border-border/50 bg-secondary/40 px-4 py-3 text-sm font-semibold text-foreground hover:bg-secondary/70 hover:border-violet-500/30 transition-all text-left"
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
 
-      {mode === 'archaeology' && revealed && step.range_collision_reveal_labels && (
-        <p className="text-center text-sm text-foreground">
-          <span className="font-bold text-violet-300">{a.label}</span> is actually{' '}
-          <span className="font-bold">{step.range_collision_reveal_labels.a}</span>
-          {' · '}
-          <span className="font-bold text-blue-300">{b.label}</span> is actually{' '}
-          <span className="font-bold">{step.range_collision_reveal_labels.b}</span>
-        </p>
-      )}
+        {revealed && (preflopEquity || postflopEquity) && (
+          <div className="rounded-2xl border border-border/40 bg-card/60 p-5 space-y-4 animate-in fade-in duration-300">
+            {preflopEquity && (
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground/40">Preflop</p>
+                <RangeEquityMeter aLabel={a.label} bLabel={b.label} aEquity={preflopEquity.a} />
+              </div>
+            )}
+            {postflopEquity && (
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground/40">
+                  On this board
+                </p>
+                <RangeEquityMeter aLabel={a.label} bLabel={b.label} aEquity={postflopEquity.a} />
+              </div>
+            )}
+          </div>
+        )}
 
-      {revealed && step.range_collision_show_me_why && (
-        <ShowMeWhy layers={step.range_collision_show_me_why} />
-      )}
+        {mode === 'archaeology' && revealed && step.range_collision_reveal_labels && (
+          <p className="text-center text-sm text-foreground">
+            <span className="font-bold text-violet-300">{a.label}</span> is actually{' '}
+            <span className="font-bold">{step.range_collision_reveal_labels.a}</span>
+            {' · '}
+            <span className="font-bold text-blue-300">{b.label}</span> is actually{' '}
+            <span className="font-bold">{step.range_collision_reveal_labels.b}</span>
+          </p>
+        )}
 
-      {(mode === 'reveal' || mode === 'morph') && (
-        <ReviewContinueButton onClick={handleContinue} disabled={disabled} />
-      )}
+        {revealed && step.range_collision_show_me_why && (
+          <ShowMeWhy layers={step.range_collision_show_me_why} />
+        )}
+
+        {(mode === 'reveal' || mode === 'morph') && (
+          <ReviewContinueButton onClick={handleContinue} disabled={disabled} />
+        )}
+      </div>
     </div>
   )
 }

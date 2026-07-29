@@ -3,6 +3,7 @@
 import logging
 import uuid
 from datetime import datetime, timezone
+from typing import Literal
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -69,10 +70,26 @@ async def _supabase_patch(table: str, query: str, data: dict, settings) -> None:
 
 # ── Request body ──────────────────────────────────────────────────────────────
 
+# Quick-action id -> the user-facing label stored/sent as the message when the
+# client triggers the action via a button rather than typing free text (see
+# LessonCoachDrawer.tsx) — keeps the transcript reading naturally either way.
+ACTION_LABELS: dict[str, str] = {
+    "hint": "Give me a hint",
+    "explain_concept": "Explain the concept",
+    "walkthrough": "Walk me through it",
+    "why_wrong": "Why was my answer wrong?",
+    "why_correct": "Why is this correct?",
+    "key_takeaway": "What should I remember?",
+}
+
+
 class CoachMessageBody(BaseModel):
     session_id: str | None = None
-    message: str
+    message: str = ""
     context: dict = {}
+    action: Literal[
+        "hint", "explain_concept", "walkthrough", "why_wrong", "why_correct", "key_takeaway",
+    ] | None = None
 
     @field_validator("message")
     @classmethod
@@ -117,7 +134,11 @@ async def coach_message(
     user_id: str = current_user.get("sub", "")
     req_id = uuid.uuid4().hex[:8]  # correlates this request's log lines without exposing anything sensitive
 
-    if not body.message.strip():
+    # A quick-action click (LessonCoachDrawer's Hint/Explain/Walkthrough/Why
+    # buttons) sends no typed text — synthesize the stored/sent message from
+    # its label so the transcript reads naturally either way.
+    effective_message = body.message.strip() or ACTION_LABELS.get(body.action or "", "")
+    if not effective_message:
         raise HTTPException(status_code=422, detail="Message cannot be empty.")
 
     allowed, retry_after = _check_rate_limit(_get_ip(request), "/api/coach/message")
@@ -162,7 +183,7 @@ async def coach_message(
             )
 
         # ── Append user message ───────────────────────────────────────────────
-        messages.append({"role": "user", "content": body.message, "ts": now})
+        messages.append({"role": "user", "content": effective_message, "ts": now})
 
         # ── Determine user skill level from progress ──────────────────────────
         user_level = 1
@@ -200,12 +221,14 @@ async def coach_message(
         llm_context = {**safe_context, **canonical} if canonical else safe_context
 
         logger.info(
-            "coach_request req_id=%s user=%s mode=%s lesson_id=%s step_id=%s theory_ids=%s canonical=%s",
-            req_id, user_id, mode, lesson_id, step_id, [t["id"] for t in theory], bool(canonical),
+            "coach_request req_id=%s user=%s mode=%s action=%s lesson_id=%s step_id=%s theory_ids=%s canonical=%s",
+            req_id, user_id, mode, body.action, lesson_id, step_id, [t["id"] for t in theory], bool(canonical),
         )
 
         # ── Generate coach reply ──────────────────────────────────────────────
-        reply = await generate_coach_reply(messages, llm_context, user_level, mode=mode, theory=theory)
+        reply = await generate_coach_reply(
+            messages, llm_context, user_level, mode=mode, theory=theory, action=body.action,
+        )
 
         # ── Append assistant reply ────────────────────────────────────────────
         reply_ts = datetime.now(timezone.utc).isoformat()

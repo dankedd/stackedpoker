@@ -35,17 +35,22 @@ export function RangeXRayStep({ step, onAnswer, disabled = false }: RangeXRaySte
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      {step.narrative && (
-        <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-4">
-          <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>
-        </div>
-      )}
+      {/* Prose/controls stay at a normal reading width even though this step type widens
+       *  the outer lesson container — only the RangeXRay box (below) needs the room, and
+       *  its own mini grid self-caps via PokerRangeGrid's size prop regardless. */}
+      <div className="max-w-2xl mx-auto w-full space-y-5">
+        {step.narrative && (
+          <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-4">
+            <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>
+          </div>
+        )}
 
-      {board && board.length > 0 && (
-        <div className="flex items-center justify-center gap-1.5">
-          {board.map((c, i) => <PlayingCardMini key={i} card={c} size="md" />)}
-        </div>
-      )}
+        {board && board.length > 0 && (
+          <div className="flex items-center justify-center gap-1.5">
+            {board.map((c, i) => <PlayingCardMini key={i} card={c} size="md" />)}
+          </div>
+        )}
+      </div>
 
       <div className="rounded-2xl border border-border/40 bg-card/60 p-5">
         <RangeXRay
@@ -55,36 +60,38 @@ export function RangeXRayStep({ step, onAnswer, disabled = false }: RangeXRaySte
         />
       </div>
 
-      {step.range_xray_prompt && (
-        <p className="text-center text-base font-semibold text-foreground">{step.range_xray_prompt}</p>
-      )}
+      <div className="max-w-2xl mx-auto w-full space-y-5">
+        {step.range_xray_prompt && (
+          <p className="text-center text-base font-semibold text-foreground">{step.range_xray_prompt}</p>
+        )}
 
-      {options.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          {options.map((opt) => {
-            const isSelected = selected === opt.id
-            const hasSelected = selected !== null
-            return (
-              <button
-                key={opt.id}
-                type="button"
-                disabled={disabled || (hasSelected && !isSelected)}
-                onClick={() => handleSelect(opt.id)}
-                className={cn(
-                  'relative rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-150 active:scale-[0.97] border text-left overflow-hidden',
-                  isSelected
-                    ? 'border-violet-500/50 bg-violet-500/15 text-violet-200 shadow-lg shadow-violet-900/20'
-                    : hasSelected
-                    ? 'border-border/20 bg-secondary/15 text-muted-foreground/30 cursor-default opacity-50'
-                    : 'border-border/50 bg-secondary/40 text-foreground hover:bg-secondary/70 hover:border-violet-500/30',
-                )}
-              >
-                {opt.label}
-              </button>
-            )
-          })}
-        </div>
-      )}
+        {options.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {options.map((opt) => {
+              const isSelected = selected === opt.id
+              const hasSelected = selected !== null
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  disabled={disabled || (hasSelected && !isSelected)}
+                  onClick={() => handleSelect(opt.id)}
+                  className={cn(
+                    'relative rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-150 active:scale-[0.97] border text-left overflow-hidden',
+                    isSelected
+                      ? 'border-violet-500/50 bg-violet-500/15 text-violet-200 shadow-lg shadow-violet-900/20'
+                      : hasSelected
+                      ? 'border-border/20 bg-secondary/15 text-muted-foreground/30 cursor-default opacity-50'
+                      : 'border-border/50 bg-secondary/40 text-foreground hover:bg-secondary/70 hover:border-violet-500/30',
+                  )}
+                >
+                  {opt.label}
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

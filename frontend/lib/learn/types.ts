@@ -122,6 +122,34 @@ export interface ScenarioNode {
   outcome?: ScenarioOutcome
 }
 
+// ── Scenario comparison (paired poker states for a comparative question) ──────
+
+/**
+ * One side of a two-scenario comparison — see `LessonStep.scenario_a`/`scenario_b`.
+ * A strict subset of `LessonStep`'s own poker-context fields so it feeds the SAME
+ * `buildPreflopTableRenderState`/`PreflopTable` pipeline every other preflop step
+ * uses (see ScenarioComparison.tsx) — never a second table-state engine. Nothing
+ * here is derived at runtime; every field must be authored explicitly, matching
+ * this codebase's "never fabricate poker state" rule for `action_before_hero`.
+ */
+export interface ComparisonScenario {
+  /** Concise poker description for the switcher button, e.g. "CO opens". Prefer
+   *  short_description-style specificity over a generic "Scenario 1"/"Scenario 2". */
+  label: string
+  /** Optional secondary line under `label`, e.g. "BTN vs CO Open" — the Hero
+   *  relationship, when it adds clarity beyond `label` alone. */
+  short_description?: string
+  hero_position?: string
+  villain_position?: string
+  hero_hand?: string[]
+  board?: string[]
+  pot_bb?: number
+  effective_stack_bb?: number
+  table_size?: number
+  ante_bb?: number
+  action_before_hero?: string[]
+}
+
 // ── A single interactive step within a lesson ─────────────────────────────────
 
 /** How confidently a step's poker claim is grounded — see LEARN_QUESTION_QA.md's
@@ -169,6 +197,21 @@ export interface LessonStep {
   players_behind?: number
   /** Action already taken before Hero, in order, e.g. ["UTG folds", "HJ folds"]. */
   action_before_hero?: string[]
+  /** Paired with `scenario_b`: the question compares two distinct poker states
+   *  (two opener positions, two stack depths, two action sequences, ...), so
+   *  `decision_spot`/`table_decision` render a ScenarioComparison switcher —
+   *  ONE shared table plus a segmented control — instead of a single static
+   *  PreflopTable. Both fields must be present together; a step with only one
+   *  falls back to normal single-table rendering. Only add these when the
+   *  authored narrative genuinely names two concrete scenarios — never invent
+   *  a second scenario to fill this in. See ScenarioComparison.tsx. */
+  scenario_a?: ComparisonScenario
+  scenario_b?: ComparisonScenario
+  /** One short authored line shown under the scenario switcher describing what's
+   *  held constant vs. what differs, e.g. "Same Hero seat. Different opener
+   *  position." Always authored, never generated from scenario_a/scenario_b at
+   *  runtime — omit rather than guess at a comparison's framing. */
+  scenario_comparison_context?: string
   // Content
   narrative?: string
   /** decision_spot only: the exact question being tested, shown as the prominent

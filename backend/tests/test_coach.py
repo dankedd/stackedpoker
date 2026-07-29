@@ -138,9 +138,9 @@ def captured_reply(monkeypatch):
     needing a real (or mocked-at-the-SDK-level) OpenAI client."""
     calls: list[dict] = []
 
-    async def _fake_generate_coach_reply(messages, context, user_level, mode="general", theory=None):
+    async def _fake_generate_coach_reply(messages, context, user_level, mode="general", theory=None, action=None):
         calls.append({"messages": messages, "context": context, "user_level": user_level,
-                       "mode": mode, "theory": theory})
+                       "mode": mode, "theory": theory, "action": action})
         return "stubbed coach reply"
 
     monkeypatch.setattr(coach_module, "generate_coach_reply", _fake_generate_coach_reply)
@@ -614,6 +614,102 @@ def test_rate_limit_returns_429(fake_db, monkeypatch):
     with pytest.raises(HTTPException) as exc_info:
         run(coach_module.coach_message(body, FakeRequest(), user))
     assert exc_info.value.status_code == 429
+
+
+# ── Quick actions (Hint / Explain concept / Walkthrough / Why wrong / Why correct) ──
+
+
+def test_quick_action_with_blank_message_uses_label_fallback(fake_db, captured_reply):
+    """A quick-action button click sends no typed text — the route must
+    synthesize a natural-reading stored/sent message from ACTION_LABELS
+    instead of rejecting it as empty."""
+    user = {"sub": "user-hint"}
+    body = coach_module.CoachMessageBody(message="", context={}, action="hint")
+    result = run(coach_module.coach_message(body, FakeRequest(), user))
+
+    assert captured_reply[0]["action"] == "hint"
+    session_row = fake_db.tables["training_sessions"][0]
+    assert session_row["messages"][0]["content"] == "Give me a hint"
+    assert result["reply"] == "stubbed coach reply"
+
+
+def test_action_forwarded_to_generate_coach_reply(fake_db, captured_reply):
+    user = {"sub": "user-action"}
+    body = coach_module.CoachMessageBody(
+        message="", context={"lessonId": "l1", "stepId": "s1"}, action="walkthrough",
+    )
+    run(coach_module.coach_message(body, FakeRequest(), user))
+    assert captured_reply[0]["action"] == "walkthrough"
+
+
+def test_invalid_action_value_rejected():
+    with pytest.raises(Exception):
+        coach_module.CoachMessageBody(message="hi", context={}, action="not_a_real_action")
+
+
+def test_why_wrong_action_cannot_leak_answer_for_unattempted_step(fake_db, captured_reply):
+    """Combining a post-answer quick action with an unverified step must not
+    bypass the existing answer-leak guardrail — sanitize_context/mode
+    resolution run identically regardless of `action`."""
+    user = {"sub": "user-why-wrong"}
+    body = coach_module.CoachMessageBody(
+        message="",
+        context={"lessonId": "lesson-a", "stepId": "step-1", "correctAnswer": "FORGED"},
+        action="why_wrong",
+    )
+    run(coach_module.coach_message(body, FakeRequest(), user))
+
+    assert captured_reply[0]["mode"] == "pre_submission"
+    assert captured_reply[0]["action"] == "why_wrong"
+    assert "correctAnswer" not in captured_reply[0]["context"]
+
+
+def test_hint_level_reaches_context_string():
+    """hint_level travels through context like any other field — no new
+    server-side plumbing needed, it's just read by the context-string builder."""
+    context = {"hint_level": 2}
+    # Directly exercise the context-string assembly via a stubbed OpenAI call.
+    async def fake_create(*args, **kwargs):
+        sent_system["content"] = kwargs["messages"][0]["content"]
+        class Msg: content = "..."
+        class Choice: message = Msg()
+        class Usage: prompt_tokens = 1; completion_tokens = 1
+        class Resp: choices = [Choice()]; usage = Usage()
+        return Resp()
+
+    sent_system: dict = {}
+
+    class FakeOpenAIClient:
+        def __init__(self, *a, **kw):
+            self.chat = type("C", (), {"completions": type("D", (), {"create": staticmethod(fake_create)})()})()
+
+    old_client_cls = ai_coach_module.AsyncOpenAI
+    ai_coach_module.AsyncOpenAI = FakeOpenAIClient
+    try:
+        run(ai_coach_module.generate_coach_reply(
+            [{"role": "user", "content": "hint please"}], context, 1, action="hint",
+        ))
+    finally:
+        ai_coach_module.AsyncOpenAI = old_client_cls
+
+    assert "Hint request #2" in sent_system["content"]
+    assert "HINT REQUESTED" in sent_system["content"]
+
+
+def test_walkthrough_action_overrides_answer_first_for_its_own_thread():
+    instruction = ai_coach_module.ACTION_INSTRUCTIONS["walkthrough"].lower()
+    assert "override" in instruction
+    assert "one targeted question" in instruction
+    assert "stop asking questions" in instruction
+
+
+def test_action_instructions_never_ask_for_exact_frequencies_beyond_hierarchy():
+    """None of the new action instructions should encourage inventing numbers
+    — they lean on the existing COACH_SYSTEM knowledge hierarchy instead."""
+    for key in ("hint", "explain_concept", "walkthrough", "why_wrong", "why_correct", "key_takeaway"):
+        instruction = ai_coach_module.ACTION_INSTRUCTIONS[key]
+        assert "%" not in instruction
+        assert "frequency" not in instruction.lower()
 
 
 def test_session_isolated_per_user(fake_db, captured_reply):

@@ -48,6 +48,10 @@ import { MorphologyBuilder } from '@/components/learn/steps/MorphologyBuilder'
 import { BlockerLab } from '@/components/learn/steps/BlockerLab'
 import { ComboRemovalOverlay } from '@/components/learn/steps/ComboRemovalOverlay'
 import { FlushPyramid } from '@/components/learn/steps/FlushPyramid'
+import { StrategyResponseLab } from '@/components/learn/steps/StrategyResponseLab'
+import { ClairvoyanceLab } from '@/components/learn/steps/ClairvoyanceLab'
+import { EVIndifferenceBalance } from '@/components/learn/steps/EVIndifferenceBalance'
+import { UnilateralDeviationTest } from '@/components/learn/steps/UnilateralDeviationTest'
 import { ReraiseSizingSlider } from '@/components/learn/steps/ReraiseSizingSlider'
 import { DefenseLens } from '@/components/learn/steps/DefenseLens'
 import { FlopScanner } from '@/components/learn/steps/FlopScanner'
@@ -72,10 +76,12 @@ import { RangeEquityPredict } from '@/components/learn/steps/RangeEquityPredict'
 import { RangeXRayStep } from '@/components/learn/steps/RangeXRayStep'
 import { TendencySummary } from '@/components/learn/steps/TendencySummary'
 import type { ActionQuality } from '@/lib/learn/types'
-import { LevelUpOverlay } from '@/components/learn/LevelUpOverlay'
 import { ConceptTagRow } from '@/components/learn/ConceptPopover'
 import { LessonCompletionScreen } from '@/components/learn/LessonCompletionScreen'
 import { recordConceptResult, pickInjectedStep } from '@/lib/learn/adaptiveEngine'
+import { buildLessonCoachContext } from '@/lib/learn/lessonCoachContext'
+import { LessonCoachDrawer } from '@/components/learn/coach/LessonCoachDrawer'
+import { AskCoachTrigger } from '@/components/learn/coach/AskCoachTrigger'
 
 // ── Phase type ────────────────────────────────────────────────────────────────
 
@@ -352,6 +358,24 @@ function StepRenderer({
     return <ReraiseSizingSlider step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
   }
 
+  // ── Game Theory Foundations (Module 10) ───────────────────────────────────
+
+  if (step.type === 'strategy_response_lab') {
+    return <StrategyResponseLab step={step} onAnswer={(answer, ms) => evaluate(answer, ms)} />
+  }
+
+  if (step.type === 'clairvoyance_lab') {
+    return <ClairvoyanceLab step={step} onAnswer={(answer, ms) => evaluate(answer, ms)} />
+  }
+
+  if (step.type === 'ev_indifference_balance') {
+    return <EVIndifferenceBalance step={step} onAnswer={(freq, ms) => evaluate(freq, ms)} />
+  }
+
+  if (step.type === 'unilateral_deviation_test') {
+    return <UnilateralDeviationTest step={step} onAnswer={(answer, ms) => evaluate(answer, ms)} />
+  }
+
   // ── Understanding the Flop (Module 6) ─────────────────────────────────────
 
   if (step.type === 'flop_scanner') {
@@ -548,6 +572,16 @@ interface LessonPlayerProps {
    *  navigation, which never touches onStepResult. Purely cosmetic (e.g. a
    *  header progress-dot indicator); never used for persistence. */
   onStepIndexChange?: (stepIndex: number) => void
+  /** Signed-in user's access token — enables the in-lesson AI Coach drawer.
+   *  Omitted (or absent session) simply hides the Coach trigger; the lesson
+   *  itself is fully usable without it. */
+  authToken?: string
+  /** Shown in the Coach drawer's compact context line ("Module X · Lesson"). */
+  moduleTitle?: string
+  /** Fired whenever the internal phase changes — lets the caller know when
+   *  it's safe to show an overlay like the level-up modal (never during
+   *  'feedback', where the learner is reading their answer's explanation). */
+  onPhaseChange?: (phase: 'intro' | 'step' | 'feedback' | 'summary') => void
 }
 
 /** Same "exclude passive/invalid steps" rule used by the completion screen —
@@ -577,9 +611,17 @@ export function LessonPlayer({
   completionError,
   onStepResult,
   onStepIndexChange,
+  authToken,
+  moduleTitle,
+  onPhaseChange,
 }: LessonPlayerProps) {
   const clampedInitialIndex = Math.min(Math.max(initialStepIndex, 0), Math.max(lesson.steps.length - 1, 0))
   const [phase, setPhase] = useState<Phase>('intro')
+
+  useEffect(() => {
+    onPhaseChange?.(phase)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase])
   const [currentStepIndex, setCurrentStepIndex] = useState(clampedInitialIndex)
   const [results, setResults] = useState<StepResult[]>([])
   const [latestResult, setLatestResult] = useState<StepResult | null>(null)
@@ -614,14 +656,36 @@ export function LessonPlayer({
     return map
   }, [answeredSteps, dynamicSteps])
 
-  // Level-up overlay state
-  const [showLevelUp, setShowLevelUp] = useState(false)
-  const [levelUpData, setLevelUpData] = useState<{ level: number; xp: number } | null>(null)
+  // AI Coach drawer — closed by default (spec §3); a pure overlay that only
+  // reads state LessonPlayer already owns, so opening/closing it never
+  // touches phase/results/XP/answeredSteps.
+  const [coachOpen, setCoachOpen] = useState(false)
 
   const steps = dynamicSteps
   const currentStep: LessonStep | undefined = steps[currentStepIndex]
   const isLastStep = currentStepIndex === steps.length - 1
   const canGoPrevious = currentStepIndex > 0
+
+  // AI Coach context — built fresh from state LessonPlayer already owns
+  // (never a second/duplicated notion of "answered"). `answeredEntry` is the
+  // same source `resultsByStepId` and backward-navigation redisplay use.
+  // Computed here (before any early return below) so this hook always runs
+  // in the same order regardless of phase/currentStep — see Rules of Hooks.
+  const answeredEntry = answeredSteps.get(currentStepIndex)
+  const coachContext = useMemo(
+    () =>
+      currentStep
+        ? buildLessonCoachContext(
+            lesson,
+            currentStep,
+            currentStepIndex,
+            answeredEntry?.result ?? null,
+            answeredEntry?.userResponse,
+            0,
+          )
+        : null,
+    [lesson, currentStep, currentStepIndex, answeredEntry],
+  )
 
   const handleStart = useCallback(() => {
     setPhase('step')
@@ -687,14 +751,14 @@ export function LessonPlayer({
       })
 
       if (currentStep) {
+        // Persisting this step's result (via onStepResult -> recordStepResult)
+        // is what eventually confirms whether a level-up actually happened —
+        // LearnProgressContext derives that from the server's response, not
+        // from result.leveled_up here (that field is only this step's LOCAL,
+        // optimistic evaluation — see evaluator.ts's module docstring — and
+        // is never used to decide whether to celebrate anything).
         onStepResult?.(currentStep, currentStepIndex, result, userResponse, timeMs)
         recordConceptResult(currentStep.concept_ids?.[0], result.quality)
-      }
-
-      // Trigger level-up overlay
-      if (result.leveled_up && result.level_after) {
-        setLevelUpData({ level: result.level_after, xp: result.xp_earned })
-        setShowLevelUp(true)
       }
     }
 
@@ -781,20 +845,6 @@ export function LessonPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStepIndex])
 
-  // ── Level-up overlay ───────────────────────────────────────────────────────
-  if (showLevelUp && levelUpData) {
-    return (
-      <LevelUpOverlay
-        newLevel={levelUpData.level}
-        xpEarned={levelUpData.xp}
-        onDismiss={() => {
-          setShowLevelUp(false)
-          setLevelUpData(null)
-        }}
-      />
-    )
-  }
-
   // ── Intro ──────────────────────────────────────────────────────────────────
   if (phase === 'intro') {
     return <IntroScreen lesson={lesson} onStart={handleStart} />
@@ -847,11 +897,15 @@ export function LessonPlayer({
   // matching DecisionSpot.tsx's own `!board` gate exactly. Every other step type is
   // untouched.
   const rendersOwnPreflopTable =
-    (currentStep.type === 'decision_spot' ||
+    // A ScenarioComparison step supplies its poker state via scenario_a/scenario_b
+    // rather than the top-level hero_position field, so it must be recognized
+    // here independently of the hero_position check below (see DecisionSpot.tsx).
+    (!!currentStep.scenario_a && !!currentStep.scenario_b) ||
+    ((currentStep.type === 'decision_spot' ||
       currentStep.type === 'table_decision' ||
       (currentStep.type === 'concept_reveal' && currentStep.visual === 'table')) &&
     !!currentStep.hero_position &&
-    !currentStep.board?.length
+    !currentStep.board?.length)
 
   const hasContext =
     !rendersOwnPreflopTable &&
@@ -865,7 +919,8 @@ export function LessonPlayer({
       (currentStep.action_before_hero?.length ?? 0) > 0)
 
   return (
-    <div className="flex flex-col gap-5">
+    <>
+    <div className={cn('flex flex-col gap-5 transition-[margin] duration-300', coachOpen && 'xl:mr-[420px]')}>
       {/* Chapter progress */}
       {lesson.chapters && lesson.chapters.length > 0 && (
         <ChapterProgress chapters={lesson.chapters} currentStepId={currentStep.id} />
@@ -874,10 +929,16 @@ export function LessonPlayer({
       {/* Progress — measured against the lesson's authored step count, not the dynamically
           extended one, so an injected remediation/reinforcement step doesn't make the bar
           jump backward in perceived percentage. */}
-      <ProgressBar
-        current={Math.min(currentStepIndex, Math.max(lesson.steps.length - 1, 0))}
-        total={lesson.steps.length}
-      />
+      <div className="flex items-center justify-between gap-3">
+        <ProgressBar
+          current={Math.min(currentStepIndex, Math.max(lesson.steps.length - 1, 0))}
+          total={lesson.steps.length}
+          className="flex-1"
+        />
+        {authToken && phase === 'step' && (
+          <AskCoachTrigger onClick={() => setCoachOpen(true)} className="mb-0.5" />
+        )}
+      </div>
 
       {/* Context bar */}
       {hasContext && (
@@ -936,6 +997,7 @@ export function LessonPlayer({
             onRetry={handleRetry}
             isLast={isLastStep}
             onPrevious={canGoPrevious ? handlePrevious : undefined}
+            onAskCoach={authToken ? () => setCoachOpen(true) : undefined}
           />
         )}
       </div>
@@ -949,5 +1011,17 @@ export function LessonPlayer({
         </div>
       )}
     </div>
+
+    {authToken && (
+      <LessonCoachDrawer
+        open={coachOpen}
+        onClose={() => setCoachOpen(false)}
+        context={coachContext}
+        authoredHint={currentStep.range_hint}
+        token={authToken}
+        moduleTitle={moduleTitle}
+      />
+    )}
+    </>
   )
 }

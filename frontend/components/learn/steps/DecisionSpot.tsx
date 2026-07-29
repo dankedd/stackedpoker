@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { orderStepOptions, isPokerActionSet } from '@/lib/learn/interactionSafety'
 import { PreflopTable } from '@/components/learn/visuals/PreflopTable'
+import { ScenarioComparison } from '@/components/learn/visuals/ScenarioComparison'
 
 interface DecisionSpotProps {
   step: LessonStep
@@ -21,6 +22,17 @@ export function DecisionSpot({ step, onAnswer, disabled = false }: DecisionSpotP
     mountTime.current = Date.now()
     setSelected(null)
   }, [step.id])
+
+  // A comparison needs BOTH scenarios to render — one alone falls back to the
+  // normal single-table branch below rather than guessing the other half.
+  const hasFullScenarioComparison = !!step.scenario_a && !!step.scenario_b
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production') return
+    if ((step.scenario_a || step.scenario_b) && !hasFullScenarioComparison) {
+      // eslint-disable-next-line no-console
+      console.warn(`[DecisionSpot] step "${step.id}" has only one of scenario_a/scenario_b — both are required for a comparison; rendering the single-table fallback instead.`)
+    }
+  }, [step.id, step.scenario_a, step.scenario_b, hasFullScenarioComparison])
 
   function handleSelect(optionId: string) {
     if (disabled || selected) return
@@ -69,14 +81,28 @@ export function DecisionSpot({ step, onAnswer, disabled = false }: DecisionSpotP
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      {/* Comparative questions (two positions/stacks/action-sequences/ranges) get a
+          ONE-table scenario switcher instead of a single static table — see
+          ScenarioComparison.tsx. Both scenario_a and scenario_b must be authored
+          together; a step with only one silently falls through to the normal
+          single-table branch below (dev-only warning above, never a guessed table). */}
+      {hasFullScenarioComparison && (
+        <ScenarioComparison
+          scenarioA={step.scenario_a!}
+          scenarioB={step.scenario_b!}
+          comparisonContext={step.scenario_comparison_context}
+        />
+      )}
+
       {/* Shared preflop table — replaces the old text-pill context bar for any
           PREFLOP decision spot (RFI, facing-open, squeeze, defend). The table alone
           communicates position/cards/stack/action-before-Hero, so the narrative
           below can stay focused on genuine reasoning rather than restating facts
           already visible on the table. Gated on the absence of `board`: steps that
           also carry a flop/turn board are postflop spots (this codebase reuses
-          hero_position there for framing) and must never show a preflop table. */}
-      {step.hero_position && !step.board?.length && (
+          hero_position there for framing) and must never show a preflop table.
+          Also gated on the absence of a full scenario comparison — handled above. */}
+      {!hasFullScenarioComparison && step.hero_position && !step.board?.length && (
         <PreflopTable
           tableSize={step.table_size ?? 9}
           heroPosition={step.hero_position}

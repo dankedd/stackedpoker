@@ -1,0 +1,209 @@
+/**
+ * Game Theory Foundations (Module 10) — pure calculation engine.
+ *
+ * Every function here is a small, deterministic, framework-independent piece
+ * of math applied to EXPLICITLY supplied game rules (a pot, a bet, a hand's
+ * equity when called). Nothing in this file is a poker solver, a real
+ * equity model, or a source of invented frequencies — it only evaluates the
+ * consequences of numbers the caller already decided (a slider position, a
+ * scenario's stated pot/bet). See LEARN_QUESTION_QA.md's data-authenticity
+ * rules and types.ts's `SourceEvidenceType` for how callers must label the
+ * inputs they feed in.
+ *
+ * ── The one-street toy bet/check game ─────────────────────────────────────
+ * `evOfBetting` / `evOfChecking` model a single betting round: Hero acts
+ * first (bet `bet` or check), Villain responds (call or fold, only when
+ * facing a bet). Money already in the pot is treated as unattributed —
+ * whoever wins the confrontation wins it; `equityWhenCalled` /
+ * `equityWhenChecked` are Hero's win probability in each branch (0 = Hero's
+ * hand always loses that showdown, 1 = Hero's hand always wins it).
+ *
+ * Net-EV derivation (verified by hand, reproduces every source-cited number
+ * this module cites — see gameTheoryEngine.test.ts's "source lock" suite):
+ *   - Hero bets, Villain folds  → Hero nets +pot (their own bet returns to them)
+ *   - Hero bets, Villain calls  → Hero nets  equity·(pot+bet) − (1−equity)·bet
+ *   - Hero checks                → Hero nets  equityWhenChecked · pot (no money at risk)
+ * Villain's own net EV in every branch is exactly `pot − Hero's net EV for
+ * that branch` — betting/calling money the loser puts in always finishes
+ * inside the winner's stack, so the two players' branch EVs always sum to
+ * the original pot. This conservation identity is asserted in the test file.
+ */
+
+// ── Alpha / MDF ──────────────────────────────────────────────────────────────
+//
+// Standard formulas (Acevedo, "Modern Poker Theory", Ch.2 — The Elements of
+// Game Theory): a bet of size `bet` into a pot of size `pot` requires Villain
+// to fold at least `alpha` of the time for a zero-equity bluff to break even,
+// and Villain must continue (call/raise) with at least `mdf` of their range
+// to prevent that bluff from being automatically profitable. Locked against
+// the book's own half-pot example (33.33% / 66.67%) in the test suite.
+
+export function alpha(pot: number, bet: number): number {
+  if (pot < 0 || bet < 0) throw new Error('alpha: pot and bet must be non-negative')
+  if (pot + bet === 0) return 0
+  return bet / (pot + bet)
+}
+
+export function mdf(pot: number, bet: number): number {
+  return 1 - alpha(pot, bet)
+}
+
+// ── The one-street toy bet/check game ─────────────────────────────────────────
+
+export interface ToyBetGame {
+  pot: number
+  bet: number
+  /** Hero's probability of winning the showdown when Villain calls the bet. 0-1. */
+  equityWhenCalled: number
+}
+
+export interface ToyCheckGame {
+  pot: number
+  /** Hero's probability of winning the showdown after a check (no further money risked). 0-1. */
+  equityWhenChecked: number
+}
+
+/** Hero's net expected $ from betting, given Villain calls with probability `villainCallFreq` (0-1). */
+export function evOfBetting(game: ToyBetGame, villainCallFreq: number): number {
+  const { pot, bet, equityWhenCalled: e } = game
+  const calledEV = e * (pot + bet) - (1 - e) * bet
+  const foldedEV = pot
+  return villainCallFreq * calledEV + (1 - villainCallFreq) * foldedEV
+}
+
+/** Hero's net expected $ from checking. Independent of Villain's strategy — no bet is in flight. */
+export function evOfChecking(game: ToyCheckGame): number {
+  return game.equityWhenChecked * game.pot
+}
+
+/** Villain's net expected $ from calling a bet — always `pot − Hero's called-branch EV`. */
+export function evOfCalling(game: ToyBetGame): number {
+  const { pot, bet, equityWhenCalled: e } = game
+  const heroCalledEV = e * (pot + bet) - (1 - e) * bet
+  return pot - heroCalledEV
+}
+
+/** Villain's net expected $ from folding — always 0 (forfeits any share of the pot). */
+export function evOfFolding(): number {
+  return 0
+}
+
+// ── Generic decision-theory helpers ────────────────────────────────────────────
+
+export interface ActionEV {
+  id: string
+  label: string
+  ev: number
+}
+
+/** Default absolute-$ tolerance for treating two EVs as "equal" — small floating-point slack only. */
+export const DEFAULT_EV_TOLERANCE = 0.01
+
+/** Returns every action tied for the maximum EV (within tolerance) — a singleton array
+ *  for a clear best response, 2+ entries when the learner has found genuine indifference. */
+export function bestResponse(actions: ActionEV[], tolerance = DEFAULT_EV_TOLERANCE): ActionEV[] {
+  if (actions.length === 0) return []
+  const maxEV = Math.max(...actions.map((a) => a.ev))
+  return actions.filter((a) => maxEV - a.ev <= tolerance)
+}
+
+/** Whether two actions' EVs are equal within tolerance — the Indifference Principle's test. */
+export function isIndifferent(evA: number, evB: number, tolerance = DEFAULT_EV_TOLERANCE): boolean {
+  return Math.abs(evA - evB) <= tolerance
+}
+
+export interface DeviationTestResult {
+  /** True if some alternative strictly beats the current strategy's EV by more than tolerance. */
+  canImprove: boolean
+  currentEV: number
+  bestAlternative?: ActionEV
+  /** How much EV the best alternative gains over the current strategy (0 or negative if none). */
+  gain: number
+}
+
+/** The Unilateral Deviation Test: can a player improve strictly by switching strategy alone,
+ *  holding the opponent's strategy fixed? This is literally Acevedo's Nash-equilibrium test —
+ *  no profitable unilateral deviation for EITHER player, tested one player at a time. */
+export function testUnilateralDeviation(
+  currentEV: number,
+  alternatives: ActionEV[],
+  tolerance = DEFAULT_EV_TOLERANCE,
+): DeviationTestResult {
+  let best: ActionEV | undefined
+  for (const alt of alternatives) {
+    if (alt.ev - currentEV > tolerance) {
+      if (!best || alt.ev > best.ev) best = alt
+    }
+  }
+  return {
+    canImprove: !!best,
+    currentEV,
+    bestAlternative: best,
+    gain: best ? best.ev - currentEV : 0,
+  }
+}
+
+// ── The Clairvoyance Game (Acevedo's polarized-range toy game) ────────────────
+//
+// P1 holds AA or QQ (each 6 unblocked combos on the board 3♠3♥3♣2♦2♠ — no ace
+// or queen removed — so the 50/50 combo-weighted prior below is itself
+// EXACT_DERIVED from the stated board, not an assumption). P2 holds KK always.
+// Hand strength on this board is a fixed, explicit ranking: AA beats KK beats
+// QQ. P1 acts first (bet `bet` or check); P2 responds (call/fold vs a bet).
+// When P1 checks, the hand goes straight to showdown (this toy game does not
+// model a reverse bet from P2 — Acevedo's own worked example only exercises
+// the bet/call/fold node, so no further action branch is invented here).
+//
+// EV_P1 = P(AA)·(pot + aaBetFreq·kkCallFreq·bet) + P(QQ)·qqBetFreq·(pot − kkCallFreq·(pot+bet))
+// — derived directly from evOfBetting/evOfChecking above (AA: equityWhenCalled=1,
+// equityWhenChecked=1; QQ: equityWhenCalled=0, equityWhenChecked=0), then
+// probability-weighted over P1's two possible holdings. Verified in the test
+// suite to reproduce Acevedo's own solution (AA bets 100%, QQ bets 50%, KK
+// calls 50%, EV split $75/$25) exactly at pot=bet=$100.
+
+export interface ClairvoyanceInputs {
+  pot: number
+  bet: number
+  /** P1's frequency of betting AA (the value hand). 0-1. */
+  aaBetFreq: number
+  /** P1's frequency of betting QQ (the bluff — QQ always loses to KK at showdown). 0-1. */
+  qqBetFreq: number
+  /** P2's frequency of calling with KK when facing a bet. 0-1. */
+  kkCallFreq: number
+  /** P1's prior probability of holding AA vs QQ. Defaults to the board-derived 0.5/0.5 combo split. */
+  probAA?: number
+}
+
+export interface ClairvoyanceResult {
+  evP1: number
+  evP2: number
+}
+
+export function clairvoyanceEV(inputs: ClairvoyanceInputs): ClairvoyanceResult {
+  const { pot, bet, aaBetFreq: x, qqBetFreq: y, kkCallFreq: c } = inputs
+  const probAA = inputs.probAA ?? 0.5
+  const probQQ = 1 - probAA
+
+  const aaGame: ToyBetGame = { pot, bet, equityWhenCalled: 1 }
+  const aaCheckGame: ToyCheckGame = { pot, equityWhenChecked: 1 }
+  const qqGame: ToyBetGame = { pot, bet, equityWhenCalled: 0 }
+  const qqCheckGame: ToyCheckGame = { pot, equityWhenChecked: 0 }
+
+  const aaBranchEV = x * evOfBetting(aaGame, c) + (1 - x) * evOfChecking(aaCheckGame)
+  const qqBranchEV = y * evOfBetting(qqGame, c) + (1 - y) * evOfChecking(qqCheckGame)
+
+  const evP1 = probAA * aaBranchEV + probQQ * qqBranchEV
+  return { evP1, evP2: pot - evP1 }
+}
+
+/** The Clairvoyance Game's Nash equilibrium — derived, not authored: QQ's equilibrium
+ *  bet frequency IS `alpha(pot,bet)` (the fold frequency that makes the bluff break
+ *  even), and KK's equilibrium call frequency IS `mdf(pot,bet)`. AA always bets (a
+ *  hand that never loses has nothing to gain by ever checking). */
+export function clairvoyanceEquilibrium(pot: number, bet: number) {
+  return {
+    aaBetFreq: 1,
+    qqBetFreq: alpha(pot, bet),
+    kkCallFreq: mdf(pot, bet),
+  }
+}

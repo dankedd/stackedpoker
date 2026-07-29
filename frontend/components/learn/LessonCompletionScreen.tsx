@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import {
   Sparkles, Trophy, Star, BookOpen, Zap, ChevronRight,
-  RotateCcw, TrendingUp, Brain, Target,
+  RotateCcw, Brain, Target,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Lesson, StepResult } from '@/lib/learn/types'
@@ -352,8 +352,6 @@ export function LessonCompletionScreen({
   const cfg = GRADE[grade]
   const GradeIcon = cfg.Icon
 
-  const leveledUp = results.some(r => r.leveled_up)
-  const newLevel = results.findLast?.(r => r.leveled_up)?.level_after
   const strongDecisions = validResults.filter(r => r.score >= 80).length
 
   // Best / worst valid step indices
@@ -474,45 +472,28 @@ export function LessonCompletionScreen({
           />
         </div>
 
-        {/* Level-up OR stats */}
+        {/* Performance stats — the confirmed level-up celebration (if any)
+            is shown separately by LevelUpModal once the server confirms it,
+            not here (this screen's data is still a same-session, unconfirmed
+            preview — see computeAvgScore's caller). */}
         <div className="rounded-2xl border border-border/50 bg-card/60 p-4">
-          {leveledUp && newLevel ? (
-            <>
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="h-3.5 w-3.5 text-violet-400" />
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
-                  Level Up!
-                </span>
-              </div>
-              <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-3xl font-black text-violet-400 tabular-nums">
-                  {newLevel}
-                </span>
-                <span className="text-xs text-muted-foreground/40">reached</span>
-              </div>
-              <p className="text-[10px] text-violet-400/60 font-semibold">New level unlocked</p>
-            </>
-          ) : (
-            <>
-              <div className="flex items-center gap-2 mb-2">
-                <Target className="h-3.5 w-3.5 text-violet-400/70" />
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
-                  Performance
-                </span>
-              </div>
-              <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-3xl font-black text-foreground tabular-nums">
-                  {strongDecisions}
-                </span>
-                <span className="text-xs text-muted-foreground/40">/ {validResults.length} strong</span>
-              </div>
-              <p className="text-[10px] text-muted-foreground/40">
-                {strongDecisions === validResults.length && validResults.length > 0
-                  ? 'All decisions were strong'
-                  : `${validResults.length - strongDecisions} decision${validResults.length - strongDecisions !== 1 ? 's' : ''} to refine`}
-              </p>
-            </>
-          )}
+          <div className="flex items-center gap-2 mb-2">
+            <Target className="h-3.5 w-3.5 text-violet-400/70" />
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50">
+              Performance
+            </span>
+          </div>
+          <div className="flex items-baseline gap-1 mb-1">
+            <span className="text-3xl font-black text-foreground tabular-nums">
+              {strongDecisions}
+            </span>
+            <span className="text-xs text-muted-foreground/40">/ {validResults.length} strong</span>
+          </div>
+          <p className="text-[10px] text-muted-foreground/40">
+            {strongDecisions === validResults.length && validResults.length > 0
+              ? 'All decisions were strong'
+              : `${validResults.length - strongDecisions} decision${validResults.length - strongDecisions !== 1 ? 's' : ''} to refine`}
+          </p>
         </div>
       </div>
 

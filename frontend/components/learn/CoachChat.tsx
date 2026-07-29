@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useImperativeHandle, forwardRef, type Reac
 import { Send, Bot, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CoachMessage } from '@/lib/learn/types'
-import { sendCoachMessage } from '@/lib/learn/api'
+import { sendCoachMessage, type CoachAction } from '@/lib/learn/api'
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 
@@ -19,12 +19,23 @@ interface CoachChatProps {
   /** Rendered above the message list instead of the "ask anything" empty
    *  state — used for the Coach Review banner. */
   banner?: ReactNode
+  /** When present, replaces the generic "ask anything" STARTERS block in the
+   *  empty state with these contextual buttons (used by the in-lesson Coach
+   *  drawer's Hint/Explain/Walkthrough/Why quick actions). Omitted entirely
+   *  by the full-page Coach, which keeps its existing STARTERS behavior. */
+  quickActions?: { id: CoachAction; label: string }[]
+  /** When provided, a quickActions click calls this instead of sending
+   *  immediately — lets the caller intercept (e.g. LessonCoachDrawer's
+   *  authored-first-hint short-circuit) before deciding whether to actually
+   *  hit the LLM. Ignored if `quickActions` is omitted. */
+  onQuickAction?: (id: CoachAction, label: string) => void
 }
 
 export interface CoachChatHandle {
   /** Sends a message as if the learner typed it — used by external
-   *  "suggested question" buttons that live outside this component. */
-  sendMessage: (text: string) => void
+   *  "suggested question" buttons that live outside this component.
+   *  `action` tags it as a quick-action request (see backend ACTION_INSTRUCTIONS). */
+  sendMessage: (text: string, action?: CoachAction) => void
 }
 
 // ── Suggested starters ────────────────────────────────────────────────────────
@@ -143,6 +154,8 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
   className,
   initialMessage,
   banner,
+  quickActions,
+  onQuickAction,
 }, ref) {
   const [messages, setMessages] = useState<CoachMessage[]>([])
   const [input, setInput] = useState('')
@@ -165,7 +178,7 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
     ta.style.height = `${Math.min(ta.scrollHeight, 96)}px`
   }
 
-  const send = async (text?: string) => {
+  const send = async (text?: string, action?: CoachAction) => {
     const msg = (text ?? input).trim()
     if (!msg || loading) return
 
@@ -181,7 +194,7 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
     setLoading(true)
 
     try {
-      const { session_id, reply } = await sendCoachMessage(currentSessionId, msg, context, token)
+      const { session_id, reply } = await sendCoachMessage(currentSessionId, msg, context, token, action)
       setCurrentSessionId(session_id)
       setMessages(prev => [
         ...prev,
@@ -203,7 +216,7 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
     }
   }
 
-  useImperativeHandle(ref, () => ({ sendMessage: (text: string) => { void send(text) } }))
+  useImperativeHandle(ref, () => ({ sendMessage: (text: string, action?: CoachAction) => { void send(text, action) } }))
 
   // Auto-send the opening message once (e.g. Coach Review's lesson recap) —
   // the ref guard keeps this from double-firing under StrictMode's double-invoke.
@@ -235,7 +248,27 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
       <div className="flex-1 overflow-y-auto min-h-0 p-4 space-y-4">
         {banner && <div className="mb-1">{banner}</div>}
 
-        {noMessages && !initialMessage && (
+        {noMessages && !initialMessage && quickActions && quickActions.length > 0 && (
+          <div className="space-y-2 py-2">
+            {quickActions.map(qa => (
+              <button
+                key={qa.id}
+                type="button"
+                onClick={() => (onQuickAction ? onQuickAction(qa.id, qa.label) : send(qa.label, qa.id))}
+                className={cn(
+                  'w-full text-left text-sm px-4 py-3 rounded-xl border',
+                  'border-violet-500/20 bg-violet-500/5 text-foreground/80',
+                  'hover:border-violet-500/40 hover:bg-violet-500/10',
+                  'transition-all duration-150'
+                )}
+              >
+                {qa.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {noMessages && !initialMessage && !quickActions && (
           <div className="space-y-3 py-4">
             <p className="text-center text-xs text-muted-foreground/50">
               Ask your AI coach anything about poker strategy
