@@ -76,7 +76,7 @@ try:
     from app.api.routes import (
         health, parse, analyze, image_analyze, image_extract,
         session, stripe_routes, history, tournament, learn,
-        coach, train, debug,
+        coach, train, debug, leaderboard,
     )
     from app.api.routes import pipeline as pipeline_routes
 
@@ -90,6 +90,7 @@ try:
     app.include_router(history.router, prefix="/api")
     app.include_router(tournament.router, prefix="/api")
     app.include_router(learn.router, prefix="/api")
+    app.include_router(leaderboard.router, prefix="/api")
     app.include_router(coach.router, prefix="/api")
     app.include_router(train.router, prefix="/api")
     app.include_router(pipeline_routes.router, prefix="/api")

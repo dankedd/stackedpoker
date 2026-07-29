@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import httpx
 import pytest
@@ -19,10 +19,59 @@ from fastapi import HTTPException
 
 from app.api.routes import learn as learn_module
 from app.engines.learn import achievements as achievements_module
+from app.engines.learn import reward_resolver as reward_resolver_module
 
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+# ── Fake canonical reward manifest ────────────────────────────────────────────
+# reward_resolver.py now resolves XP server-side from reward_manifest.json
+# (generated from curriculum.ts) instead of trusting client-submitted amounts
+# (see learn.py's module docstring). Tests need a manifest entry for every
+# fixture lesson/step/module id they use — base_xp values below are chosen so
+# that `round(base_xp * QUALITY_XP_MULTIPLIER[quality])` reproduces the exact
+# xp_earned each test already exercises (quality "good"=0.8x, "acceptable"=
+# 0.5x, "mistake"=0.2x, "perfect"=1.0x), so every pre-existing idempotency/
+# race assertion keeps testing exactly what it always tested. The three
+# "-cap" fixtures deliberately use a SMALL real value distinct from the huge
+# amount the test's tampered client claims — proving resolution, not merely
+# clamping, is what defeats the claim.
+FAKE_REWARD_MANIFEST = {
+    "lessons": {
+        "lesson-a": {"xp_reward": 0, "steps": {"step-1": 62, "step-4": 12}},
+        "lesson-b": {"xp_reward": 200, "steps": {}},
+        "lesson-c": {"xp_reward": 200, "steps": {}},
+        "lesson-cb": {"xp_reward": 100, "steps": {}},
+        "lesson-d": {"xp_reward": 0, "steps": {"s1": 25}},
+        "lesson-e": {"xp_reward": 0, "steps": {f"s{i}": 10 for i in range(1, 6)}},
+        "lesson-f": {"xp_reward": 150, "steps": {"step-1": 20, "step-2": 20, "step-3": 20}},
+        "lesson-g": {"xp_reward": 0, "steps": {"step-1": 30}},
+        "lesson-h": {"xp_reward": 0, "steps": {"step-5": 12, "step-2": 12}},
+        "lesson-hb": {"xp_reward": 100, "steps": {"step-10": 10}},
+        "lesson-3": {"xp_reward": 0, "steps": {"step-3": 10}},
+        "lesson-race": {"xp_reward": 0, "steps": {"step-a": 30, "step-b": 40}},
+        "lesson-cap": {"xp_reward": 0, "steps": {"step-1": 20}},
+        "lesson-repro-y": {"xp_reward": 200, "steps": {}},
+        "lesson-cap-2": {"xp_reward": 50, "steps": {}},
+        "lesson-race-2": {"xp_reward": 200, "steps": {}},
+        "lesson-lb-cap": {"xp_reward": 0, "steps": {"step-1": 20}},
+        "lesson-lb-race": {"xp_reward": 200, "steps": {}},
+        "lesson-lb-replay": {"xp_reward": 150, "steps": {}},
+        # Adversarial-suite fixtures (test_reward_integrity.py)
+        "lesson-adv": {
+            "xp_reward": 80,
+            "steps": {"step-canon": 20, "step-cheap": 5, "step-expensive": 50},
+        },
+    },
+    "modules": {
+        "module-1": 100,
+        "module-2": 100,
+        "module-3": 50,
+        "module-cap": 30,
+    },
+}
 
 
 # ── Fake Supabase REST layer ──────────────────────────────────────────────────
@@ -122,6 +171,25 @@ class FakeSupabase:
     def count(self, table: str, query: str) -> int:
         return len(self.select(table, query))
 
+    # Real Postgres primary keys — mirrors supabase_learning_persistence_migration.sql
+    # / supabase_module_completion_migration.sql. A plain INSERT violating one
+    # of these fails with a unique_violation in production; the fake must
+    # reproduce that (via would_conflict below) for concurrency tests to be
+    # meaningful — otherwise two racing "first completion" inserts would both
+    # silently succeed here even though Postgres would reject the second one.
+    _PRIMARY_KEYS: dict[str, tuple[str, ...]] = {
+        "user_step_progress": ("user_id", "lesson_id", "step_id"),
+        "user_lesson_progress": ("user_id", "lesson_id"),
+        "user_module_progress": ("user_id", "module_id"),
+        "user_skill_progress": ("user_id",),
+    }
+
+    def would_conflict(self, table: str, data: dict) -> bool:
+        pk = self._PRIMARY_KEYS.get(table)
+        if not pk:
+            return False
+        return any(all(row.get(c) == data.get(c) for c in pk) for row in self._table(table))
+
     def insert(self, table: str, data: dict) -> dict:
         row = dict(data)
         if table == "user_leaks" and "id" not in row:
@@ -151,11 +219,20 @@ class FakeSupabase:
                 return row
         return self.insert(table, data)
 
-    def increment_user_xp(self, user_id: str, xp_delta: int) -> int:
-        """Mirrors supabase_xp_atomic_increment.sql's increment_user_xp RPC:
-        a single atomic `total_xp = total_xp + delta` update, returning the
-        new total. The row must already exist (learn.py always calls
-        _get_skill_row — which creates it if missing — before awarding)."""
+    def increment_user_xp(
+        self, user_id: str, xp_delta: int, source_type: str = "unknown", source_id: str | None = None,
+    ) -> int:
+        """Mirrors supabase_xp_leaderboard_schema.sql's increment_user_xp RPC:
+        a single atomic `total_xp = total_xp + delta` update PLUS an xp_events
+        ledger row, returning the new total. The row must already exist
+        (learn.py always calls _get_skill_row — which creates it if missing —
+        before awarding)."""
+        if xp_delta > 0:
+            self._table("xp_events").append({
+                "user_id": user_id, "amount": xp_delta,
+                "source_type": source_type, "source_id": source_id,
+                "earned_at": _now_iso(),
+            })
         for row in self._table("user_skill_progress"):
             if row.get("user_id") == user_id:
                 row["total_xp"] = row.get("total_xp", 0) + xp_delta
@@ -178,10 +255,101 @@ class FakeSupabase:
         self._table("user_achievements").append({
             "user_id": user_id, "achievement_id": achievement_id, "earned_at": _now_iso(),
         })
+        xp_bonus = catalog[achievement_id]["xp_bonus"]
         for row in self._table("user_skill_progress"):
             if row.get("user_id") == user_id:
-                row["total_xp"] = row.get("total_xp", 0) + catalog[achievement_id]["xp_bonus"]
+                row["total_xp"] = row.get("total_xp", 0) + xp_bonus
+        if xp_bonus > 0:
+            self._table("xp_events").append({
+                "user_id": user_id, "amount": xp_bonus,
+                "source_type": "achievement", "source_id": achievement_id,
+                "earned_at": _now_iso(),
+            })
         return True
+
+    # ── Leaderboard ranking RPCs (mirrors supabase_xp_leaderboard_schema.sql) ──
+    # Tie-break: XP DESC, profiles.created_at ASC, user_id ASC — see the SQL
+    # file's own comment for why this exact rule was chosen.
+
+    def _username(self, user_id: str) -> str | None:
+        for row in self._table("profiles"):
+            if row.get("id") == user_id:
+                return row.get("username")
+        return None
+
+    def _row_order_key(self, user_id: str, xp: int) -> tuple:
+        """Row ORDER for pagination only — never the displayed rank. XP
+        descending, then username/user_id purely to keep tied rows in a
+        stable, deterministic order across requests."""
+        username = self._username(user_id)
+        return (-xp, username is None, username or "", user_id)
+
+    def leaderboard_all_time(self, limit: int, offset: int) -> list[dict]:
+        eligible = [r for r in self._table("user_skill_progress") if r.get("total_xp", 0) > 0]
+        ordered = sorted(eligible, key=lambda r: self._row_order_key(r["user_id"], r["total_xp"]))
+        # Competition ranking: ties share a rank, with a gap afterward
+        # (12500->1, 11900->2, 11900->2, 10800->4) — computed from XP alone.
+        ranked = [
+            {
+                "user_id": r["user_id"],
+                "username": self._username(r["user_id"]),
+                "total_xp": r["total_xp"],
+                "rank": 1 + sum(1 for other in eligible if other["total_xp"] > r["total_xp"]),
+            }
+            for r in ordered
+        ]
+        return ranked[offset:offset + limit]
+
+    def leaderboard_24h(self, limit: int, offset: int, now: datetime | None = None) -> list[dict]:
+        now = now or datetime.now(timezone.utc)
+        cutoff = now - timedelta(hours=24)
+        totals: dict[str, int] = {}
+        for ev in self._table("xp_events"):
+            earned_at = datetime.fromisoformat(ev["earned_at"])
+            if earned_at >= cutoff:
+                totals[ev["user_id"]] = totals.get(ev["user_id"], 0) + ev["amount"]
+        skill_by_user = {r["user_id"]: r for r in self._table("user_skill_progress")}
+        ordered = sorted(totals.items(), key=lambda kv: self._row_order_key(kv[0], kv[1]))
+        ranked = [
+            {
+                "user_id": user_id,
+                "username": self._username(user_id),
+                "total_xp": skill_by_user.get(user_id, {}).get("total_xp", 0),
+                "period_xp": period_xp,
+                "rank": 1 + sum(1 for xp in totals.values() if xp > period_xp),
+            }
+            for user_id, period_xp in ordered
+        ]
+        return ranked[offset:offset + limit]
+
+    def leaderboard_my_rank_all_time(self, user_id: str) -> list[dict]:
+        skill = next((r for r in self._table("user_skill_progress") if r["user_id"] == user_id), None)
+        if not skill or skill.get("total_xp", 0) <= 0:
+            return []
+        rank = 1 + sum(
+            1 for r in self._table("user_skill_progress")
+            if r.get("total_xp", 0) > skill["total_xp"]
+        )
+        return [{"username": self._username(user_id), "total_xp": skill["total_xp"], "rank": rank}]
+
+    def leaderboard_my_rank_24h(self, user_id: str, now: datetime | None = None) -> list[dict]:
+        now = now or datetime.now(timezone.utc)
+        cutoff = now - timedelta(hours=24)
+        totals: dict[str, int] = {}
+        for ev in self._table("xp_events"):
+            earned_at = datetime.fromisoformat(ev["earned_at"])
+            if earned_at >= cutoff:
+                totals[ev["user_id"]] = totals.get(ev["user_id"], 0) + ev["amount"]
+        my_period_xp = totals.get(user_id, 0)
+        if my_period_xp <= 0:
+            return []
+        rank = 1 + sum(1 for xp in totals.values() if xp > my_period_xp)
+        skill = next((r for r in self._table("user_skill_progress") if r["user_id"] == user_id), None)
+        total_xp = skill.get("total_xp", 0) if skill else 0
+        return [{
+            "username": self._username(user_id), "total_xp": total_xp,
+            "period_xp": my_period_xp, "rank": rank,
+        }]
 
 
 class FakeAsyncClient:
@@ -238,8 +406,19 @@ class FakeAsyncClient:
         if path == "rpc/award_achievement":
             return FakeResponse(self.db.award_achievement(json["p_user_id"], json["p_achievement_id"]))
         if path == "rpc/increment_user_xp":
-            new_total = self.db.increment_user_xp(json["p_user_id"], json["p_xp_delta"])
+            new_total = self.db.increment_user_xp(
+                json["p_user_id"], json["p_xp_delta"],
+                json.get("p_source_type", "unknown"), json.get("p_source_id"),
+            )
             return FakeResponse([{"total_xp": new_total}])
+        if path == "rpc/leaderboard_all_time":
+            return FakeResponse(self.db.leaderboard_all_time(json["p_limit"], json["p_offset"]))
+        if path == "rpc/leaderboard_24h":
+            return FakeResponse(self.db.leaderboard_24h(json["p_limit"], json["p_offset"]))
+        if path == "rpc/leaderboard_my_rank_all_time":
+            return FakeResponse(self.db.leaderboard_my_rank_all_time(json["p_user_id"]))
+        if path == "rpc/leaderboard_my_rank_24h":
+            return FakeResponse(self.db.leaderboard_my_rank_24h(json["p_user_id"]))
         prefer = (headers or {}).get("Prefer", "")
         if "resolution=merge-duplicates" in prefer:
             on_conflict = ""
@@ -248,6 +427,19 @@ class FakeAsyncClient:
                     on_conflict = part.split("=", 1)[1]
             cols = on_conflict.split(",") if on_conflict else list(json.keys())
             return FakeResponse([self.db.upsert(path, json, cols)])
+        if self.db.would_conflict(path, json):
+            request = httpx.Request("POST", url)
+            response = httpx.Response(
+                409,
+                request=request,
+                json={
+                    "code": "23505",
+                    "details": None,
+                    "hint": None,
+                    "message": f"duplicate key value violates unique constraint on {path}",
+                },
+            )
+            raise httpx.HTTPStatusError(f"duplicate key on '{path}'", request=request, response=response)
         return FakeResponse([self.db.insert(path, json)])
 
     async def patch(self, url, headers=None, json=None):
@@ -273,6 +465,10 @@ def fake_db(monkeypatch):
     monkeypatch.setattr(learn_module.httpx, "AsyncClient", _factory)
     monkeypatch.setattr(achievements_module.httpx, "AsyncClient", _factory)
     monkeypatch.setattr(learn_module, "get_settings", lambda: FakeSettings())
+    # Server-resolved XP (reward_resolver.py) must not depend on the real
+    # reward_manifest.json (curriculum content) in tests — replace its data
+    # source with a small, fully-controlled fake manifest instead.
+    monkeypatch.setattr(reward_resolver_module, "_load_manifest", lambda: FAKE_REWARD_MANIFEST)
     return db
 
 
@@ -285,9 +481,17 @@ def run_concurrently(*coros):
     `asyncio.gather(...)` must be constructed while a loop is already
     running (or ensure_future has nothing to schedule onto) — so the gather
     call itself is wrapped in a coroutine and handed to run(), rather than
-    calling asyncio.gather directly at module/test scope."""
+    calling asyncio.gather directly at module/test scope.
+
+    `return_exceptions=True`: a genuine race can legitimately produce a real
+    exception for the LOSING side in production (e.g. a raw INSERT racing
+    against user_step_progress's primary key — see would_conflict), which
+    surfaces here as an HTTPException in the results list rather than
+    aborting the whole gather. Callers that expect both sides to succeed can
+    simply not encounter one; callers testing the race itself can assert on
+    it directly."""
     async def _gather():
-        return await asyncio.gather(*coros)
+        return await asyncio.gather(*coros, return_exceptions=True)
     return run(_gather())
 
 
@@ -901,39 +1105,44 @@ def test_duplicate_concurrent_completion_requests_award_once(fake_db):
     assert lesson_rows[0]["status"] == "completed"
 
 
-# ── Server-side sanity ceiling on client-supplied XP amounts ──────────────────
+# ── Server-resolved XP: client-submitted amounts are never trusted ────────────
+# (Superseded the old "clamped to a generic ceiling" behavior — the server
+# now resolves the REAL canonical amount for the specific step/lesson/module,
+# via reward_resolver.py, and the client's claim is irrelevant, not just
+# capped. See tests/test_reward_integrity.py for the full adversarial suite.)
 
 
-def test_step_xp_award_is_capped_regardless_of_client_claim(fake_db):
+def test_step_xp_award_is_server_resolved_not_client_claimed(fake_db):
     """A tampered client (e.g. via DevTools) claiming an absurd xp_earned on
-    a genuinely-first completion must still only be credited up to the
-    server's sanity ceiling, never the raw client-supplied number."""
+    a genuinely-first completion is credited the step's REAL canonical
+    amount (20, per FAKE_REWARD_MANIFEST) — the claim is irrelevant, not
+    merely clamped to a generic ceiling."""
     user = {"sub": "user-cap-1"}
     body = learn_module.StepResultBody(
         score=100, quality="perfect", xp_earned=999_999, concept_ids=[], step_index=0, total_steps=1,
     )
     result = run(learn_module.submit_step_result("lesson-cap", "step-1", body, user))
 
-    assert result["xp_awarded_this_call"] == learn_module.MAX_STEP_XP_AWARD
-    assert result["new_total_xp"] == learn_module.MAX_STEP_XP_AWARD
+    assert result["xp_awarded_this_call"] == 20
+    assert result["new_total_xp"] == 20
 
     skill_rows = fake_db.select("user_skill_progress", "user_id=eq.user-cap-1")
-    assert skill_rows[0]["total_xp"] == learn_module.MAX_STEP_XP_AWARD
+    assert skill_rows[0]["total_xp"] == 20
 
 
-def test_lesson_bonus_xp_is_capped_regardless_of_client_claim(fake_db):
+def test_lesson_bonus_xp_is_server_resolved_not_client_claimed(fake_db):
     user = {"sub": "user-cap-2"}
     body = learn_module.LessonCompleteBody(score=100, lesson_xp_reward=999_999, path_lesson_ids=[])
     result = run(learn_module.complete_lesson("lesson-cap-2", body, user))
-    assert result["bonus_xp_earned"] == learn_module.MAX_LESSON_BONUS_XP
+    assert result["bonus_xp_earned"] == 50  # FAKE_REWARD_MANIFEST's real lesson-cap-2 reward
 
 
-def test_module_bonus_xp_is_capped_regardless_of_client_claim(fake_db):
+def test_module_bonus_xp_is_server_resolved_not_client_claimed(fake_db):
     user = {"sub": "user-cap-3"}
     fake_db.insert("user_lesson_progress", {"user_id": "user-cap-3", "lesson_id": "m-cap-l1", "status": "completed"})
     body = learn_module.ModuleCompleteBody(module_xp_reward=999_999, lesson_ids=["m-cap-l1"])
     result = run(learn_module.complete_module("module-cap", body, user))
-    assert result["bonus_xp_earned"] == learn_module.MAX_MODULE_BONUS_XP
+    assert result["bonus_xp_earned"] == 30  # FAKE_REWARD_MANIFEST's real module-cap reward
 
 
 # ── Level is always re-derived from total_xp, never trusted from a stale cache ──

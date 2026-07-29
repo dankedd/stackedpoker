@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Brain,
@@ -39,6 +39,8 @@ import {
   getJourneyOverview,
 } from "@/lib/learn/journey";
 import type { ModuleRowStatus } from "@/lib/learn/journey";
+import { fetchLeaderboard, fetchMyLeaderboardRank } from "@/lib/leaderboard/api";
+import type { LeaderboardRow, MyRankResponse } from "@/lib/leaderboard/api";
 import { cn } from "@/lib/utils";
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
@@ -202,11 +204,73 @@ function LevelRing({ level, pct }: { level: number; pct: number }) {
   );
 }
 
+// ── Leaderboard preview (compact — the dedicated /leaderboard page is the
+// real destination, this is just a hook to get there) ─────────────────────
+
+function LeaderboardPreviewCard({ token }: { token: string }) {
+  const [top, setTop] = useState<LeaderboardRow[] | null>(null);
+  const [mine, setMine] = useState<MyRankResponse | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    Promise.all([fetchLeaderboard("all", 3, 0, token), fetchMyLeaderboardRank("all", token)])
+      .then(([board, me]) => {
+        if (cancelled) return;
+        setTop(board.rows);
+        setMine(me);
+      })
+      .catch(() => {
+        if (!cancelled) setTop([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  if (top === null) return null; // still loading — no skeleton flash for a secondary card
+  if (top.length === 0) return null; // nobody ranked yet — nothing worth previewing
+
+  return (
+    <div className="mb-10 rounded-2xl border border-border/50 bg-card/60 p-5">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-violet-400/60">
+          Leaderboard
+        </p>
+        <Link
+          href="/leaderboard"
+          className="flex items-center gap-1 text-[12px] font-semibold text-violet-400 hover:text-violet-300 transition-colors"
+        >
+          View leaderboard
+          <ChevronRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        {top.map((row) => (
+          <div key={row.rank} className="flex items-center gap-3 text-sm">
+            <span className="w-5 shrink-0 text-[12px] font-bold text-muted-foreground">#{row.rank}</span>
+            <span className="min-w-0 flex-1 truncate font-medium text-foreground">{row.username}</span>
+            <span className="shrink-0 font-bold tabular-nums text-foreground/90">
+              {row.total_xp.toLocaleString()} XP
+            </span>
+          </div>
+        ))}
+      </div>
+      {mine && (
+        <div className="mt-3 border-t border-border/30 pt-2.5 text-[12px] text-muted-foreground">
+          You: {mine.rank !== null ? `#${mine.rank}` : "Unranked — complete a lesson to join"}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function LearnPage() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const { progress } = useLearnProgress();
+  const authToken = session?.access_token ?? "";
   const [showAchievements, setShowAchievements] = useState(false);
   const [showConceptMastery, setShowConceptMastery] = useState(false);
   const [expandedStageId, setExpandedStageId] = useState<string | null>(null);
@@ -483,6 +547,8 @@ export default function LearnPage() {
                   </div>
                 </div>
               )}
+
+              {user && authToken && <LeaderboardPreviewCard token={authToken} />}
 
               {/* ── Continue Learning ── */}
               <div className="mb-10">

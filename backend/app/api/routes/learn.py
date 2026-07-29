@@ -1,9 +1,21 @@
 """Learning API routes — progress persistence, XP, mastery, leaks, achievements.
 
-ARCHITECTURE RULE: answer evaluation (score/quality/xp_earned) happens entirely
-client-side in frontend/lib/learn/evaluator.ts (evaluateStepLocally). Nothing
-here re-scores an answer. This module's job is durable storage of that result
-plus bookkeeping that depends on server-held state: aggregate XP/level totals,
+ARCHITECTURE RULE: answer *correctness* (which quality tier a response earns)
+is judged entirely client-side in frontend/lib/learn/evaluator.ts
+(evaluateStepLocally) — re-deriving that for every interactive step type
+(range grids, drag-and-drop sorts, sliders, ...) server-side is a much larger
+project, explicitly out of scope here. Nothing here re-judges an answer.
+
+XP *amount*, however, is server-authoritative: the client submits a
+lesson/step identifier and a quality tier, and the server resolves the
+canonical reward via app.engines.learn.reward_resolver (backed by
+reward_manifest.json, generated from frontend/lib/learn/curriculum.ts — see
+that module's docstring for the full architecture). The client's own
+xp_earned/lesson_xp_reward/module_xp_reward fields are never trusted for the
+awarded amount — see MAX_*_AWARD below for why they still exist.
+
+This module's other job is durable storage of the step result plus
+bookkeeping that depends on server-held state: aggregate XP/level totals,
 SM-2 spaced-repetition scheduling, leak aggregation, streaks, and idempotent
 achievement unlocking.
 """
@@ -19,6 +31,11 @@ from pydantic import BaseModel
 from app.config import get_settings
 from app.middleware.auth import get_current_user
 from app.engines.learn.xp_calculator import level_for_xp
+from app.engines.learn.reward_resolver import (
+    resolve_step_xp,
+    resolve_lesson_bonus_xp,
+    resolve_module_bonus_xp,
+)
 from app.engines.learn.srs_engine import compute_next_review
 from app.engines.learn.leak_detector import detect_leaks_from_step
 from app.engines.learn.achievements import check_and_award_achievements
@@ -26,17 +43,13 @@ from app.engines.learn.achievements import check_and_award_achievements
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["learn"])
 
-# ── Server-side sanity ceilings ────────────────────────────────────────────────
-# Answer evaluation (score/quality/xp_earned) is computed client-side (see the
-# module docstring) because it depends on curriculum content
-# (frontend/lib/learn/curriculum.ts) the backend doesn't have loaded. That
-# means the exact "correct" XP for a given step/lesson/module can't be fully
-# re-derived here without duplicating the curriculum server-side (out of
-# scope for this change). As defense-in-depth against a client sending an
-# arbitrary inflated amount (e.g. via DevTools), every award is still clamped
-# to a generous ceiling well above any real authored value (max authored step
-# xp is 28, max lesson xp_reward ~320, max module xp_reward 1000 as of this
-# writing) — a legitimate award is never affected, but "999999 XP" is.
+# ── Defense-in-depth ceilings ───────────────────────────────────────────────
+# The PRIMARY protection is now reward_resolver's server-derived amounts —
+# the client's xp_earned/lesson_xp_reward/module_xp_reward fields are never
+# read for the awarded amount at all. These caps are a SECONDARY safety net
+# purely against a corrupted/stale reward_manifest.json (e.g. a bad
+# regeneration producing an absurd number) — not the primary defense they
+# used to be, back when the client's claimed amount was clamped and trusted.
 MAX_STEP_XP_AWARD = 100
 MAX_LESSON_BONUS_XP = 500
 MAX_MODULE_BONUS_XP = 2000
@@ -206,22 +219,41 @@ async def _get_skill_row(user_id: str, settings) -> dict:
     return await _supabase_upsert("user_skill_progress", new_row, settings, on_conflict="user_id")
 
 
-async def _award_xp(user_id: str, current_xp: int, delta: int, settings) -> tuple[int, int, bool]:
+async def _award_xp(
+    user_id: str,
+    current_xp: int,
+    delta: int,
+    settings,
+    source_type: str = "unknown",
+    source_id: str | None = None,
+) -> tuple[int, int, bool]:
     """Atomically increments the user's total XP by `delta` (a no-op if
-    delta<=0) via a single SQL UPDATE (the `increment_user_xp` RPC —
-    supabase_xp_atomic_increment.sql), so two simultaneous awards for the
-    same user can never lose an update to a race the way a
-    read-current-then-PATCH-absolute-value pattern would. Level is derived
-    from the DB-returned total afterward (never computed from the
-    possibly-stale `current_xp` passed in) and is the ONLY thing ever cached
-    back onto `level` — that column is a display convenience, never a second
-    source of truth. Returns (new_total_xp, new_level, leveled_up).
+    delta<=0) via a single SQL statement (the `increment_user_xp` RPC —
+    supabase_xp_atomic_increment.sql / supabase_xp_leaderboard_schema.sql),
+    so two simultaneous awards for the same user can never lose an update to
+    a race the way a read-current-then-PATCH-absolute-value pattern would.
+    The same RPC call also appends a timestamped row to the `xp_events`
+    ledger (source_type/source_id identify WHICH award this was — 'step',
+    'lesson_completion', 'module_completion', or 'guest_merge') — the
+    leaderboard's rolling-24h ranking is a pure aggregate over this ledger,
+    so it can never drift from total_xp: both are written by one statement.
+    Level is derived from the DB-returned total afterward (never computed
+    from the possibly-stale `current_xp` passed in) and is the ONLY thing
+    ever cached back onto `level` — that column is a display convenience,
+    never a second source of truth. Returns (new_total_xp, new_level, leveled_up).
     """
     if delta <= 0:
         return current_xp, level_for_xp(current_xp), False
 
     result = await _supabase_post(
-        "rpc/increment_user_xp", {"p_user_id": user_id, "p_xp_delta": delta}, settings,
+        "rpc/increment_user_xp",
+        {
+            "p_user_id": user_id,
+            "p_xp_delta": delta,
+            "p_source_type": source_type,
+            "p_source_id": source_id,
+        },
+        settings,
     )
     new_total_xp = result.get("total_xp", current_xp + delta)
     old_level = level_for_xp(current_xp)
@@ -491,47 +523,88 @@ async def submit_step_result(
             f"user_id=eq.{user_id}&lesson_id=eq.{lesson_id}&step_id=eq.{step_id}&select=*",
             settings,
         )
-        is_first_completion = not existing_step_rows
 
         skill = await _get_skill_row(user_id, settings)
         current_xp = skill.get("total_xp", 0)
-        xp_awarded_this_call = (
-            min(max(0, body.xp_earned), MAX_STEP_XP_AWARD) if is_first_completion else 0
-        )
-        new_total_xp, new_level, leveled_up = await _award_xp(user_id, current_xp, xp_awarded_this_call, settings)
 
-        if is_first_completion:
-            await _supabase_post(
+        won_first_completion = False
+        xp_awarded_this_call = 0
+
+        if not existing_step_rows:
+            canonical_xp = resolve_step_xp(lesson_id, step_id, body.quality)
+            claimed_xp = min(canonical_xp, MAX_STEP_XP_AWARD)
+            if body.xp_earned > canonical_xp:
+                # Never trusted for the award itself — logged only as a
+                # tamper-detection signal (a legitimate client always sends
+                # exactly what evaluator.ts computed, which equals this).
+                logger.warning(
+                    "submit_step_result: client-claimed xp_earned=%s exceeds canonical=%s "
+                    "lesson=%s step=%s user=%s (ignored — canonical amount was awarded)",
+                    body.xp_earned, canonical_xp, lesson_id, step_id, user_id,
+                )
+
+            # This INSERT's real (user_id, lesson_id, step_id) primary key is
+            # the ACTUAL atomic gate for "am I genuinely the first
+            # completion" — two concurrent inserts for the same triple can
+            # never both succeed. XP is only awarded AFTER this succeeds:
+            # awarding it BEFORE the insert (the previous bug here) would let
+            # a losing racer's XP land before its own insert's failure was
+            # even known, double-crediting the step.
+            try:
+                await _supabase_post(
+                    "user_step_progress",
+                    {
+                        "user_id": user_id,
+                        "lesson_id": lesson_id,
+                        "step_id": step_id,
+                        "attempts": 1,
+                        "best_score": body.score,
+                        "last_score": body.score,
+                        "last_quality": body.quality,
+                        "xp_awarded": claimed_xp,
+                        "last_response": body.response,
+                        "concept_ids": body.concept_ids,
+                    },
+                    settings,
+                )
+                won_first_completion = True
+                xp_awarded_this_call = claimed_xp
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code != 409:
+                    raise
+                # Someone else's insert won the race in between our read and
+                # our write — fall through to the replay-update path below.
+
+        if not won_first_completion:
+            # Either a genuine replay (existing_step_rows was non-empty), or
+            # we just lost a first-completion race — either way, re-read
+            # fresh (a racing winner may have just created the row) and only
+            # update attempt bookkeeping, never XP.
+            current_rows = existing_step_rows or await _supabase_get(
                 "user_step_progress",
-                {
-                    "user_id": user_id,
-                    "lesson_id": lesson_id,
-                    "step_id": step_id,
-                    "attempts": 1,
-                    "best_score": body.score,
-                    "last_score": body.score,
-                    "last_quality": body.quality,
-                    "xp_awarded": xp_awarded_this_call,
-                    "last_response": body.response,
-                    "concept_ids": body.concept_ids,
-                },
+                f"user_id=eq.{user_id}&lesson_id=eq.{lesson_id}&step_id=eq.{step_id}&select=*",
                 settings,
             )
-        else:
-            prev = existing_step_rows[0]
-            await _supabase_patch(
-                "user_step_progress",
-                f"user_id=eq.{user_id}&lesson_id=eq.{lesson_id}&step_id=eq.{step_id}",
-                {
-                    "attempts": prev.get("attempts", 1) + 1,
-                    "best_score": max(prev.get("best_score", 0), body.score),
-                    "last_score": body.score,
-                    "last_quality": body.quality,
-                    "last_response": body.response,
-                    "last_attempted_at": datetime.now(timezone.utc).isoformat(),
-                },
-                settings,
-            )
+            if current_rows:
+                prev = current_rows[0]
+                await _supabase_patch(
+                    "user_step_progress",
+                    f"user_id=eq.{user_id}&lesson_id=eq.{lesson_id}&step_id=eq.{step_id}",
+                    {
+                        "attempts": prev.get("attempts", 1) + 1,
+                        "best_score": max(prev.get("best_score", 0), body.score),
+                        "last_score": body.score,
+                        "last_quality": body.quality,
+                        "last_response": body.response,
+                        "last_attempted_at": datetime.now(timezone.utc).isoformat(),
+                    },
+                    settings,
+                )
+
+        new_total_xp, new_level, leveled_up = await _award_xp(
+            user_id, current_xp, xp_awarded_this_call, settings,
+            source_type="step", source_id=f"{lesson_id}:{step_id}",
+        )
 
         new_streak, today_str, streak_changed = _apply_streak(
             skill.get("last_active"), skill.get("streak_days", 0),
@@ -567,7 +640,14 @@ async def submit_step_result(
         else:
             lesson_patch["current_step_index"] = body.step_index
             lesson_patch["current_step_id"] = step_id
-            await _supabase_post(
+            # Upsert, not a plain insert: two concurrent step submissions for
+            # DIFFERENT steps of the SAME never-before-touched lesson can
+            # both read "no lesson row yet" and both attempt to create it —
+            # upsert merges harmlessly instead of one side 409ing on
+            # user_lesson_progress's (user_id, lesson_id) primary key. No XP
+            # is involved here, so unlike the step-insert race above, a
+            # simple merge (rather than a strict win/lose) is safe.
+            await _supabase_upsert(
                 "user_lesson_progress",
                 {
                     "user_id": user_id,
@@ -577,6 +657,7 @@ async def submit_step_result(
                     **lesson_patch,
                 },
                 settings,
+                on_conflict="user_id,lesson_id",
             )
 
         mastery_updates = []
@@ -689,11 +770,20 @@ async def complete_lesson(
 
         bonus_xp = 0
         if won_first_completion:
-            score_pct = max(0, min(100, body.score)) / 100
-            reward = min(max(0, body.lesson_xp_reward), MAX_LESSON_BONUS_XP)
-            bonus_xp = int(round(reward * score_pct))
+            canonical_bonus = resolve_lesson_bonus_xp(lesson_id, body.score)
+            bonus_xp = min(canonical_bonus, MAX_LESSON_BONUS_XP)
+            client_claim = int(round(min(max(0, body.lesson_xp_reward), MAX_LESSON_BONUS_XP) * (max(0, min(100, body.score)) / 100)))
+            if client_claim > canonical_bonus:
+                logger.warning(
+                    "complete_lesson: client-claimed bonus=%s exceeds canonical=%s lesson=%s user=%s "
+                    "(ignored — canonical amount was awarded)",
+                    client_claim, canonical_bonus, lesson_id, user_id,
+                )
 
-        new_total_xp, new_level, leveled_up = await _award_xp(user_id, current_xp, bonus_xp, settings)
+        new_total_xp, new_level, leveled_up = await _award_xp(
+            user_id, current_xp, bonus_xp, settings,
+            source_type="lesson_completion", source_id=lesson_id,
+        )
         # total_xp/level (when bonus_xp > 0) were already persisted atomically by _award_xp above.
 
         newly_unlocked = await check_and_award_achievements(
@@ -776,8 +866,18 @@ async def complete_module(
 
         bonus_xp = 0
         if not already_completed and eligible:
-            bonus_xp = min(max(0, body.module_xp_reward), MAX_MODULE_BONUS_XP)
-            new_total_xp, new_level, leveled_up = await _award_xp(user_id, current_xp, bonus_xp, settings)
+            canonical_bonus = resolve_module_bonus_xp(module_id)
+            bonus_xp = min(canonical_bonus, MAX_MODULE_BONUS_XP)
+            if body.module_xp_reward > canonical_bonus:
+                logger.warning(
+                    "complete_module: client-claimed reward=%s exceeds canonical=%s module=%s user=%s "
+                    "(ignored — canonical amount was awarded)",
+                    body.module_xp_reward, canonical_bonus, module_id, user_id,
+                )
+            new_total_xp, new_level, leveled_up = await _award_xp(
+                user_id, current_xp, bonus_xp, settings,
+                source_type="module_completion", source_id=module_id,
+            )
 
             await _supabase_post(
                 "user_module_progress",
@@ -914,6 +1014,10 @@ async def merge_guest_progress(
                 )
                 if already:
                     continue  # account already has this exact step recorded — never double-credit XP
+                # Same server-authoritative resolution as submit_step_result —
+                # guest localStorage data is just as client-controlled as any
+                # request body, so step.xp_earned is never trusted here either.
+                canonical_xp = resolve_step_xp(guest_lesson.lesson_id, step.step_id, step.quality)
                 await _supabase_post(
                     "user_step_progress",
                     {
@@ -924,13 +1028,13 @@ async def merge_guest_progress(
                         "best_score": step.score,
                         "last_score": step.score,
                         "last_quality": step.quality,
-                        "xp_awarded": step.xp_earned,
+                        "xp_awarded": canonical_xp,
                         "last_response": step.response,
                         "concept_ids": step.concept_ids,
                     },
                     settings,
                 )
-                total_xp += step.xp_earned
+                total_xp += canonical_xp
                 for cid in step.concept_ids:
                     await _upsert_concept_mastery(user_id, cid, step.score, step.quality, settings)
 
@@ -972,7 +1076,9 @@ async def merge_guest_progress(
         guest_delta = total_xp - starting_xp
         final_total_xp = total_xp
         if guest_delta > 0:
-            final_total_xp, _new_level, _leveled_up = await _award_xp(user_id, starting_xp, guest_delta, settings)
+            final_total_xp, _new_level, _leveled_up = await _award_xp(
+                user_id, starting_xp, guest_delta, settings, source_type="guest_merge",
+            )
 
         newly_unlocked = await check_and_award_achievements(user_id, settings)
         return {

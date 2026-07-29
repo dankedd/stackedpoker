@@ -1,0 +1,1430 @@
+{
+  "lessons": {
+    "how-poker-works": {
+      "xp_reward": 220,
+      "steps": {
+        "l1-s1": 2,
+        "l1-s2": 3,
+        "l1-s3": 4,
+        "l1-s4": 3,
+        "l1-s5": 5,
+        "l1-s6": 3,
+        "l1-s7": 3,
+        "l1-s8": 4,
+        "l1-s9": 3,
+        "l1-s10": 5,
+        "l1-s11": 10,
+        "l1-s12": 5,
+        "l1-s13": 5,
+        "l1-s14": 3,
+        "l1-s15": 2,
+        "l1-s16": 2,
+        "l1-s17": 6,
+        "l1-s18": 3,
+        "l1-s19": 6,
+        "l1-s20": 3,
+        "l1-s21": 7
+      }
+    },
+    "your-seat-at-the-table": {
+      "xp_reward": 230,
+      "steps": {
+        "l2-s1": 2,
+        "l2-s2": 5,
+        "l2-s3": 4,
+        "l2-s4": 5,
+        "l2-s5": 6,
+        "l2-s6": 5,
+        "l2-s7": 3,
+        "l2-s8": 3,
+        "l2-s9": 5,
+        "l2-s10": 5,
+        "l2-s11": 7,
+        "l2-s12": 4,
+        "l2-s13": 7,
+        "l2-s14": 5,
+        "l2-s15": 3,
+        "l2-s16": 6,
+        "l2-s17": 4,
+        "l2-s18": 8
+      }
+    },
+    "speak-the-language": {
+      "xp_reward": 230,
+      "steps": {
+        "l3-s1": 2,
+        "l3-s2": 5,
+        "l3-s3": 2,
+        "l3-s4": 2,
+        "l3-s5": 5,
+        "l3-s6": 6,
+        "l3-s7": 2,
+        "l3-s8": 5,
+        "l3-s9": 2,
+        "l3-s10": 6,
+        "l3-s11": 7,
+        "l3-s12": 5,
+        "l3-s13": 3,
+        "l3-s14": 6,
+        "l3-s15": 2,
+        "l3-s16": 6,
+        "l3-s17": 2,
+        "l3-s18": 6,
+        "l3-s19": 3
+      }
+    },
+    "hands-boards-and-what-can-change": {
+      "xp_reward": 240,
+      "steps": {
+        "l4-s1": 3,
+        "l4-s2": 3,
+        "l4-s3": 3,
+        "l4-s4": 6,
+        "l4-s5": 5,
+        "l4-s6": 6,
+        "l4-s7": 5,
+        "l4-s8": 3,
+        "l4-s9": 3,
+        "l4-s10": 6,
+        "l4-s11": 6,
+        "l4-s12": 3,
+        "l4-s13": 8,
+        "l4-s14": 3,
+        "l4-s15": 7,
+        "l4-s16": 4,
+        "l4-s17": 4,
+        "l4-s18": 8,
+        "l4-s19": 4
+      }
+    },
+    "think-in-ranges": {
+      "xp_reward": 260,
+      "steps": {
+        "l5-s1": 3,
+        "l5-s2": 3,
+        "l5-s3": 4,
+        "l5-s4": 2,
+        "l5-s5": 6,
+        "l5-s6": 4,
+        "l5-s7": 2,
+        "l5-s8": 5,
+        "l5-s9": 4,
+        "l5-s10": 10,
+        "l5-s11": 3,
+        "l5-s12": 8,
+        "l5-s13": 4,
+        "l5-s14": 9,
+        "l5-s15": 9,
+        "l5-s16": 4,
+        "l5-s17": 10,
+        "l5-s18": 3,
+        "l5-s19": 15,
+        "l5-s20": 4
+      }
+    },
+    "foundation-lab": {
+      "xp_reward": 320,
+      "steps": {
+        "fl-s1": 12,
+        "fl-s2": 12,
+        "fl-s3": 13,
+        "fl-s4": 13,
+        "fl-s5": 12,
+        "fl-s6": 12,
+        "fl-s7": 12,
+        "fl-s8": 14,
+        "fl-s9": 13,
+        "fl-s10": 12,
+        "fl-s11": 12,
+        "fl-s12": 14,
+        "fl-s13": 13,
+        "fl-s14": 16,
+        "fl-s15": 8
+      }
+    },
+    "the-price-of-a-call": {
+      "xp_reward": 150,
+      "steps": {
+        "poc-s1": 5,
+        "poc-s2": 5,
+        "poc-s3": 8,
+        "poc-s4": 6,
+        "poc-s5": 6,
+        "poc-s6a": 8,
+        "poc-s6b": 8,
+        "poc-s6c": 8,
+        "poc-s7": 5,
+        "poc-s8": 10
+      }
+    },
+    "count-your-ways-to-win": {
+      "xp_reward": 170,
+      "steps": {
+        "cyw-s1": 8,
+        "cyw-s2": 5,
+        "cyw-s3": 8,
+        "cyw-s4": 6,
+        "cyw-s5": 5,
+        "cyw-s6": 6,
+        "cyw-s7a": 6,
+        "cyw-s7b": 6,
+        "cyw-s7c": 6,
+        "cyw-s8": 10,
+        "cyw-s9": 6,
+        "cyw-s10": 8,
+        "cyw-f1": 8,
+        "cyw-f2": 8,
+        "cyw-f3": 10
+      }
+    },
+    "your-share-of-the-pot": {
+      "xp_reward": 160,
+      "steps": {
+        "ysp-s1": 5,
+        "ysp-s2": 6,
+        "ysp-s3": 8,
+        "ysp-s4": 10,
+        "ysp-s5": 10,
+        "ysp-s6": 8,
+        "ysp-s7": 10,
+        "ysp-s8": 8
+      }
+    },
+    "think-in-expected-value": {
+      "xp_reward": 220,
+      "steps": {
+        "ev-s1": 8,
+        "ev-s2": 5,
+        "ev-s3a": 6,
+        "ev-s3b": 6,
+        "ev-s3c": 6,
+        "ev-s4": 8,
+        "ev-s5": 6,
+        "ev-s6": 8,
+        "ev-s7": 8,
+        "ev-s8a": 6,
+        "ev-s8b": 6,
+        "ev-s8c": 6,
+        "ev-s9": 5,
+        "ev-lab1": 6,
+        "ev-lab2": 6,
+        "ev-lab3": 8,
+        "ev-lab4": 8,
+        "ev-lab5": 6
+      }
+    },
+    "winning-without-showdown": {
+      "xp_reward": 190,
+      "steps": {
+        "wws-s1": 5,
+        "wws-s2": 5,
+        "wws-s3": 10,
+        "wws-s4": 6,
+        "wws-s5": 8,
+        "wws-s6": 10,
+        "wws-s7": 10,
+        "wws-s8": 5,
+        "wws-s9a": 8,
+        "wws-s9b": 8,
+        "wws-s9c": 8,
+        "wws-s10": 10
+      }
+    },
+    "equity-isnt-everything": {
+      "xp_reward": 260,
+      "steps": {
+        "eqr-s1": 8,
+        "eqr-s2": 6,
+        "eqr-s3": 8,
+        "eqr-s4": 8,
+        "eqr-s5": 5,
+        "eqr-s6": 8,
+        "eqr-s7": 8,
+        "eqr-s8": 8,
+        "eqr-s9": 10,
+        "eqr-s10": 10,
+        "eqr-s11": 6,
+        "eqr-s12": 10,
+        "eqr-s13": 8,
+        "eqr-s14": 8,
+        "eqr-f1": 8,
+        "eqr-f2": 8,
+        "eqr-f3": 8,
+        "eqr-f4": 8
+      }
+    },
+    "decision-lab": {
+      "xp_reward": 300,
+      "steps": {
+        "lab-h1-intro": 4,
+        "lab-h1-q1": 8,
+        "lab-h1-q2": 8,
+        "lab-h1-q3": 10,
+        "lab-h1-q4": 8,
+        "lab-h1-q5": 10,
+        "lab-h1-q6": 6,
+        "lab-h1-breakdown": 6,
+        "lab-h2-intro": 4,
+        "lab-h2-q1": 8,
+        "lab-h2-q2": 8,
+        "lab-h2-q3": 10,
+        "lab-h2-breakdown": 6,
+        "lab-h3-intro": 4,
+        "lab-h3-q1": 8,
+        "lab-h3-q2": 10,
+        "lab-h3-breakdown": 6,
+        "lab-complete": 10
+      }
+    },
+    "first-in": {
+      "xp_reward": 150,
+      "steps": {
+        "fi-intro-theory": 3,
+        "fi-intro-example": 3,
+        "fi-check-situation": 6,
+        "fi-three-states": 3,
+        "fi-contrast-a": 5,
+        "fi-contrast-b": 5,
+        "fi-contrast-c": 5,
+        "fi-s2": 5,
+        "fi-s3": 6,
+        "fi-pby-1": 6,
+        "fi-pby-2": 8,
+        "fi-pby-3": 6,
+        "fi-s4": 8,
+        "fi-s5": 8,
+        "fi-plan-1": 6,
+        "fi-plan-2": 8,
+        "fi-s6": 5,
+        "fi-s7": 15
+      }
+    },
+    "more-than-two-cards": {
+      "xp_reward": 170,
+      "steps": {
+        "mtc-s1": 8,
+        "mtc-s2": 5,
+        "mtc-s3": 8,
+        "mtc-s4": 8,
+        "mtc-s5": 6,
+        "mtc-s6": 8,
+        "mtc-s7": 6,
+        "mtc-s8": 8,
+        "mtc-s9": 15
+      }
+    },
+    "stacks-change-the-range": {
+      "xp_reward": 170,
+      "steps": {
+        "scr-s1": 8,
+        "scr-s2": 6,
+        "scr-s3": 10,
+        "scr-s4": 6,
+        "scr-s5": 8,
+        "scr-s6": 6,
+        "scr-s7": 6,
+        "scr-s8": 10,
+        "scr-s9": 8,
+        "scr-s10": 10
+      }
+    },
+    "utg-mastery": {
+      "xp_reward": 220,
+      "steps": {
+        "utg-s1": 8,
+        "utg-s2": 4,
+        "utg-s3": 4,
+        "utg-s4": 4,
+        "utg-s5": 4,
+        "utg-s6": 24,
+        "utg-s7": 10,
+        "utg-s8": 22,
+        "utg-drill-1": 8,
+        "utg-drill-2": 8,
+        "utg-drill-3": 8,
+        "utg-drill-4": 8,
+        "utg-drill-5": 8,
+        "utg-drill-6": 8,
+        "utg-drill-7": 8,
+        "utg-drill-8": 8,
+        "utg-drill-9": 8,
+        "utg-drill-10": 8,
+        "utg-drill-11": 8,
+        "utg-drill-12": 8,
+        "utg-review": 10
+      }
+    },
+    "utg1-mastery": {
+      "xp_reward": 220,
+      "steps": {
+        "utg1-mastery-understand": 8,
+        "utg1-mastery-predict-1": 4,
+        "utg1-mastery-predict-2": 4,
+        "utg1-mastery-predict-3": 4,
+        "utg1-mastery-predict-4": 4,
+        "utg1-mastery-build": 24,
+        "utg1-mastery-compare": 10,
+        "utg1-mastery-transform": 22,
+        "utg1-mastery-drill-1": 8,
+        "utg1-mastery-drill-2": 8,
+        "utg1-mastery-drill-3": 8,
+        "utg1-mastery-drill-4": 8,
+        "utg1-mastery-drill-5": 8,
+        "utg1-mastery-drill-6": 8,
+        "utg1-mastery-drill-7": 8,
+        "utg1-mastery-drill-8": 8,
+        "utg1-mastery-drill-9": 8,
+        "utg1-mastery-drill-10": 8,
+        "utg1-mastery-drill-11": 8,
+        "utg1-mastery-drill-12": 8,
+        "utg1-mastery-review": 10
+      }
+    },
+    "utg2-mastery": {
+      "xp_reward": 220,
+      "steps": {
+        "utg2-mastery-understand": 8,
+        "utg2-mastery-predict-1": 4,
+        "utg2-mastery-predict-2": 4,
+        "utg2-mastery-predict-3": 4,
+        "utg2-mastery-predict-4": 4,
+        "utg2-mastery-build": 24,
+        "utg2-mastery-compare": 10,
+        "utg2-mastery-transform": 22,
+        "utg2-mastery-drill-1": 8,
+        "utg2-mastery-drill-2": 8,
+        "utg2-mastery-drill-3": 8,
+        "utg2-mastery-drill-4": 8,
+        "utg2-mastery-drill-5": 8,
+        "utg2-mastery-drill-6": 8,
+        "utg2-mastery-drill-7": 8,
+        "utg2-mastery-drill-8": 8,
+        "utg2-mastery-drill-9": 8,
+        "utg2-mastery-drill-10": 8,
+        "utg2-mastery-drill-11": 8,
+        "utg2-mastery-drill-12": 8,
+        "utg2-mastery-review": 10
+      }
+    },
+    "lj-mastery": {
+      "xp_reward": 220,
+      "steps": {
+        "lj-mastery-understand": 8,
+        "lj-mastery-predict-1": 4,
+        "lj-mastery-predict-2": 4,
+        "lj-mastery-predict-3": 4,
+        "lj-mastery-predict-4": 4,
+        "lj-mastery-build": 24,
+        "lj-mastery-compare": 10,
+        "lj-mastery-transform": 22,
+        "lj-mastery-drill-1": 8,
+        "lj-mastery-drill-2": 8,
+        "lj-mastery-drill-3": 8,
+        "lj-mastery-drill-4": 8,
+        "lj-mastery-drill-5": 8,
+        "lj-mastery-drill-6": 8,
+        "lj-mastery-drill-7": 8,
+        "lj-mastery-drill-8": 8,
+        "lj-mastery-drill-9": 8,
+        "lj-mastery-drill-10": 8,
+        "lj-mastery-drill-11": 8,
+        "lj-mastery-drill-12": 8,
+        "lj-mastery-review": 10
+      }
+    },
+    "hj-mastery": {
+      "xp_reward": 220,
+      "steps": {
+        "hj-mastery-understand": 8,
+        "hj-mastery-predict-1": 4,
+        "hj-mastery-predict-2": 4,
+        "hj-mastery-predict-3": 4,
+        "hj-mastery-predict-4": 4,
+        "hj-mastery-build": 24,
+        "hj-mastery-compare": 10,
+        "hj-mastery-transform": 22,
+        "hj-mastery-drill-1": 8,
+        "hj-mastery-drill-2": 8,
+        "hj-mastery-drill-3": 8,
+        "hj-mastery-drill-4": 8,
+        "hj-mastery-drill-5": 8,
+        "hj-mastery-drill-6": 8,
+        "hj-mastery-drill-7": 8,
+        "hj-mastery-drill-8": 8,
+        "hj-mastery-drill-9": 8,
+        "hj-mastery-drill-10": 8,
+        "hj-mastery-drill-11": 8,
+        "hj-mastery-drill-12": 8,
+        "hj-mastery-review": 10
+      }
+    },
+    "cutoff-ranges": {
+      "xp_reward": 220,
+      "steps": {
+        "cutoff-ranges-understand": 8,
+        "cutoff-ranges-predict-1": 4,
+        "cutoff-ranges-predict-2": 4,
+        "cutoff-ranges-predict-3": 4,
+        "cutoff-ranges-predict-4": 4,
+        "cutoff-ranges-build": 24,
+        "cutoff-ranges-compare": 10,
+        "cutoff-ranges-transform": 22,
+        "cutoff-ranges-drill-1": 8,
+        "cutoff-ranges-drill-2": 8,
+        "cutoff-ranges-drill-3": 8,
+        "cutoff-ranges-drill-4": 8,
+        "cutoff-ranges-drill-5": 8,
+        "cutoff-ranges-drill-6": 8,
+        "cutoff-ranges-drill-7": 8,
+        "cutoff-ranges-drill-8": 8,
+        "cutoff-ranges-drill-9": 8,
+        "cutoff-ranges-drill-10": 8,
+        "cutoff-ranges-drill-11": 8,
+        "cutoff-ranges-drill-12": 8,
+        "cutoff-ranges-review": 10
+      }
+    },
+    "button-ranges": {
+      "xp_reward": 220,
+      "steps": {
+        "button-ranges-understand": 8,
+        "button-ranges-predict-1": 4,
+        "button-ranges-predict-2": 4,
+        "button-ranges-predict-3": 4,
+        "button-ranges-predict-4": 4,
+        "button-ranges-build": 24,
+        "button-ranges-compare": 10,
+        "button-ranges-transform": 22,
+        "button-ranges-drill-1": 8,
+        "button-ranges-drill-2": 8,
+        "button-ranges-drill-3": 8,
+        "button-ranges-drill-4": 8,
+        "button-ranges-drill-5": 8,
+        "button-ranges-drill-6": 8,
+        "button-ranges-drill-7": 8,
+        "button-ranges-drill-8": 8,
+        "button-ranges-drill-9": 8,
+        "button-ranges-drill-10": 8,
+        "button-ranges-drill-11": 8,
+        "button-ranges-drill-12": 8,
+        "button-ranges-review": 10
+      }
+    },
+    "the-small-blind-is-different": {
+      "xp_reward": 240,
+      "steps": {
+        "sb-understand": 8,
+        "sb-predict-1": 4,
+        "sb-predict-2": 4,
+        "sb-predict-3": 4,
+        "sb-predict-4": 4,
+        "sb-build": 26,
+        "sb-compare": 10,
+        "sb-transform": 24,
+        "sb-drill-1": 8,
+        "sb-drill-2": 8,
+        "sb-drill-3": 8,
+        "sb-drill-4": 8,
+        "sb-drill-5": 8,
+        "sb-drill-6": 8,
+        "sb-drill-7": 8,
+        "sb-drill-8": 8,
+        "sb-drill-9": 8,
+        "sb-drill-10": 8,
+        "sb-drill-11": 8,
+        "sb-drill-12": 8,
+        "sb-drill-13": 8,
+        "sb-drill-14": 8,
+        "sb-drill-15": 8,
+        "sb-review": 10
+      }
+    },
+    "preflop-foundation-lab": {
+      "xp_reward": 400,
+      "steps": {
+        "pool-fund-4": 6,
+        "pool-fund-8": 6,
+        "pool-fund-7": 6,
+        "pool-fund-2": 6,
+        "pool-fund-5": 6,
+        "pool-ep-cmp-2": 10,
+        "pool-ep-hd-7": 8,
+        "pool-ep-cmp-3": 10,
+        "pool-poscmp-0": 10,
+        "pool-ep-hd-14": 8,
+        "pool-ep-hd-13": 8,
+        "pool-ep-hd-2": 8,
+        "pool-mp-hd-5": 8,
+        "pool-mp-hd-13": 8,
+        "pool-poscmp-2": 10,
+        "pool-mp-cmp-0": 10,
+        "pool-mp-hd-9": 8,
+        "pool-poscmp-3": 10,
+        "pool-cb-hd-4": 8,
+        "pool-cb-hd-12": 8,
+        "pool-cb-hd-14": 8,
+        "pool-poscmp-4": 10,
+        "pool-cb-hd-3": 8,
+        "pool-cb-hd-1": 8,
+        "pool-cb-cmp-0": 10,
+        "pool-sb-hd-6": 8,
+        "pool-sb-hd-1": 8,
+        "pool-sb-hd-4": 8,
+        "pool-sb-hd-7": 8,
+        "pool-sb-hd-5": 8,
+        "pool-stack-1": 12,
+        "pool-stack-4": 12,
+        "pool-stack-7": 12,
+        "pool-stack-2": 12,
+        "pool-stack-3": 12,
+        "pool-recon-1": 26,
+        "pool-recon-5": 26,
+        "pool-recon-2": 26,
+        "pool-recon-3": 26,
+        "pool-recon-4": 26
+      }
+    },
+    "the-3-bet": {
+      "xp_reward": 140,
+      "steps": {
+        "tb-s1": 8,
+        "tb-s2": 10,
+        "tb-s3": 8,
+        "tb-s4": 10,
+        "tb-s5": 8,
+        "tb-s6a": 10,
+        "tb-s6b": 10,
+        "tb-s6c": 10,
+        "tb-s7": 12
+      }
+    },
+    "building-a-3bet-range": {
+      "xp_reward": 160,
+      "steps": {
+        "bar-s1": 10,
+        "bar-s2": 6,
+        "bar-s3": 6,
+        "bar-s4": 22,
+        "bar-s5": 10,
+        "bar-s6a": 6,
+        "bar-s6b": 8,
+        "bar-s7": 22
+      }
+    },
+    "linear-vs-polarized": {
+      "xp_reward": 170,
+      "steps": {
+        "lvp-s1": 6,
+        "lvp-s2": 6,
+        "lvp-s3": 10,
+        "lvp-s4": 8,
+        "lvp-s5": 20,
+        "lvp-s6": 10,
+        "lvp-s7a": 10,
+        "lvp-s7b": 10,
+        "lvp-s7c": 10,
+        "lvp-s7d": 10
+      }
+    },
+    "position-and-equity-realization": {
+      "xp_reward": 160,
+      "steps": {
+        "pce-s1": 8,
+        "pce-s2": 6,
+        "pce-s3": 6,
+        "pce-s4": 6,
+        "pce-s5a": 10,
+        "pce-s5b": 10,
+        "pce-s6": 8,
+        "pce-s7a": 8,
+        "pce-s7b": 8,
+        "pce-s7c": 8,
+        "pce-s7d": 8
+      }
+    },
+    "block-the-continue": {
+      "xp_reward": 170,
+      "steps": {
+        "btc-s1": 8,
+        "btc-s2": 8,
+        "btc-s3": 7,
+        "btc-s4": 16,
+        "btc-s5": 8,
+        "btc-s6a": 6,
+        "btc-s6b": 6,
+        "btc-s6c": 6,
+        "btc-s7": 20
+      }
+    },
+    "size-the-pressure": {
+      "xp_reward": 160,
+      "steps": {
+        "stp-s1": 7,
+        "stp-s2": 7,
+        "stp-s3": 14,
+        "stp-s4": 8,
+        "stp-s5": 8,
+        "stp-s6": 10,
+        "stp-s7": 16
+      }
+    },
+    "the-squeeze": {
+      "xp_reward": 250,
+      "steps": {
+        "sqz-s1": 8,
+        "sqz-s1b": 5,
+        "sqz-s1c": 5,
+        "sqz-s1d": 6,
+        "sqz-s2": 10,
+        "sqz-s3": 8,
+        "sqz-s4": 7,
+        "sqz-s4b": 8,
+        "sqz-s5": 18,
+        "sqz-s5b": 8,
+        "sqz-s5c": 8,
+        "sqz-s6": 6,
+        "sqz-s7a": 20,
+        "sqz-s7b": 10,
+        "sqz-s8": 8
+      }
+    },
+    "they-raised-back": {
+      "xp_reward": 326,
+      "steps": {
+        "trb-s0-problem": 8,
+        "trb-s1": 6,
+        "trb-s2a": 5,
+        "trb-s2b": 5,
+        "trb-s2c": 5,
+        "trb-s3": 10,
+        "trb-s4": 10,
+        "trb-s5": 7,
+        "trb-s6": 10,
+        "trb-s7a": 10,
+        "trb-s7b": 10,
+        "trb-range-lab": 28,
+        "trb-range-lab-rule": 6,
+        "trb-flip-predict": 10,
+        "trb-flip-reveal": 16,
+        "trb-flip-rule": 6,
+        "trb-repair-diagnose": 12,
+        "trb-repair-fix": 24,
+        "trb-final-1": 8,
+        "trb-final-2": 8,
+        "trb-final-3": 8,
+        "trb-final-4": 8,
+        "trb-final-5": 8,
+        "trb-final-6": 8,
+        "trb-final-7": 8,
+        "trb-final-summary": 10
+      }
+    },
+    "raise-again": {
+      "xp_reward": 190,
+      "steps": {
+        "ra-s1": 6,
+        "ra-s2": 8,
+        "ra-s3": 6,
+        "ra-s4": 10,
+        "ra-s5": 16,
+        "ra-s6": 14,
+        "ra-s7": 10,
+        "ra-s8": 10,
+        "ra-s9a": 8,
+        "ra-s9b": 7,
+        "ra-s10a": 8,
+        "ra-s10b": 14
+      }
+    },
+    "attack-the-leak": {
+      "xp_reward": 200,
+      "steps": {
+        "atl-s1": 6,
+        "atl-s2": 10,
+        "atl-s3": 14,
+        "atl-s4": 14,
+        "atl-s5": 10,
+        "atl-s6": 10,
+        "atl-s7": 10,
+        "atl-s8a": 8,
+        "atl-s8b": 8,
+        "atl-s8c": 8,
+        "atl-s9": 10,
+        "atl-s10a": 6,
+        "atl-s10b": 6,
+        "atl-s10c": 6,
+        "atl-s10d": 6
+      }
+    },
+    "preflop-aggression-lab": {
+      "xp_reward": 400,
+      "steps": {
+        "lab-r1a": 6,
+        "lab-r1b": 6,
+        "lab-r1c": 6,
+        "lab-r1d": 6,
+        "lab-r1e": 6,
+        "lab-r2a": 8,
+        "lab-r2b": 8,
+        "lab-r3a": 18,
+        "lab-r3b": 18,
+        "lab-r4a": 8,
+        "lab-r4b": 8,
+        "lab-r4c": 8,
+        "lab-r5": 14,
+        "lab-r6a": 12,
+        "lab-r6b": 14,
+        "lab-r7a": 8,
+        "lab-r7b": 8,
+        "lab-r7c": 8,
+        "lab-r8a": 8,
+        "lab-r8b": 8,
+        "lab-r8c": 8,
+        "lab-r8d": 8,
+        "lab-r9": 16,
+        "lab-r10a": 6,
+        "lab-r10b": 6,
+        "lab-r10c": 6,
+        "lab-fb1": 8,
+        "lab-fb2": 6,
+        "lab-fb3": 6,
+        "lab-fb4": 10,
+        "lab-fb5": 8,
+        "lab-fb6": 8,
+        "lab-fb7": 8,
+        "lab-fb8": 8,
+        "lab-fb9": 10
+      }
+    },
+    "someone-opened": {
+      "xp_reward": 170,
+      "steps": {
+        "so-s1": 8,
+        "so-s2": 6,
+        "so-s3": 12,
+        "so-s4": 8,
+        "so-s5": 8,
+        "so-s6": 8,
+        "so-s7a": 6,
+        "so-s7b": 6,
+        "so-s7c": 6,
+        "so-s7d": 8,
+        "so-s8": 10
+      }
+    },
+    "the-price": {
+      "xp_reward": 180,
+      "steps": {
+        "tp-s1": 8,
+        "tp-s2": 14,
+        "tp-s3": 10,
+        "tp-s4": 10,
+        "tp-s5": 8,
+        "tp-s6": 8,
+        "tp-s7": 10,
+        "tp-s8a": 8,
+        "tp-s8b": 8,
+        "tp-s8c": 8
+      }
+    },
+    "realizing-equity": {
+      "xp_reward": 190,
+      "steps": {
+        "re-s1": 8,
+        "re-s2": 8,
+        "re-s3": 10,
+        "re-s4": 10,
+        "re-s5": 8,
+        "re-s6": 10,
+        "re-s7": 10,
+        "re-s8a": 6,
+        "re-s8b": 6,
+        "re-s8c": 6,
+        "re-s8d": 6,
+        "re-s9": 20
+      }
+    },
+    "the-big-blind-discount": {
+      "xp_reward": 200,
+      "steps": {
+        "bbd-s1": 6,
+        "bbd-s2": 10,
+        "bbd-s3": 10,
+        "bbd-s4": 10,
+        "bbd-s5": 10,
+        "bbd-s6": 12,
+        "bbd-s7": 10,
+        "bbd-s8a": 6,
+        "bbd-s8b": 6,
+        "bbd-s8c": 6,
+        "bbd-s8d": 6,
+        "bbd-s8e": 6,
+        "bbd-s8f": 6
+      }
+    },
+    "the-small-blind-problem": {
+      "xp_reward": 190,
+      "steps": {
+        "sbp-s1": 8,
+        "sbp-s2": 10,
+        "sbp-s3": 8,
+        "sbp-s4": 10,
+        "sbp-s5": 10,
+        "sbp-s6": 12,
+        "sbp-s7": 18,
+        "sbp-s8a": 8,
+        "sbp-s8b": 10
+      }
+    },
+    "position-changes-everything-defense": {
+      "xp_reward": 190,
+      "steps": {
+        "dip-s1": 6,
+        "dip-s2": 8,
+        "dip-s3": 8,
+        "dip-s4": 10,
+        "dip-s5": 10,
+        "dip-s6": 8,
+        "dip-s7": 8,
+        "dip-s8a-action": 6,
+        "dip-s8a-reason": 6,
+        "dip-s8b-action": 6,
+        "dip-s8b-reason": 6
+      }
+    },
+    "same-hand-different-stack": {
+      "xp_reward": 210,
+      "steps": {
+        "shd-s1": 8,
+        "shd-s2": 6,
+        "shd-s3": 6,
+        "shd-s4": 6,
+        "shd-s5": 7,
+        "shd-s6": 12,
+        "shd-s7": 10,
+        "shd-s8a": 6,
+        "shd-s8b": 6,
+        "shd-s8c": 6,
+        "shd-s8d": 6,
+        "shd-s9a": 6,
+        "shd-s9b": 6,
+        "shd-s9c": 6,
+        "shd-s9d": 6
+      }
+    },
+    "range-architect-defense": {
+      "xp_reward": 230,
+      "steps": {
+        "rad-s1": 7,
+        "rad-s2": 16,
+        "rad-s3": 24,
+        "rad-s4": 14,
+        "rad-s5": 10,
+        "rad-s6": 10,
+        "rad-s7": 10,
+        "rad-s8a": 10,
+        "rad-s8b": 16,
+        "rad-s9a": 22,
+        "rad-s9b": 8,
+        "rad-s9c": 8
+      }
+    },
+    "defense-room": {
+      "xp_reward": 400,
+      "steps": {
+        "lab5-a1": 6,
+        "lab5-a2": 6,
+        "lab5-a3": 6,
+        "lab5-b": 20,
+        "lab5-c": 12,
+        "lab5-d1": 10,
+        "lab5-d2": 14,
+        "lab5-e": 12,
+        "lab5-f": 18,
+        "lab5-g": 10,
+        "lab5-h-action": 8,
+        "lab5-h-reason": 8,
+        "lab5-i": 12,
+        "lab5-fb1": 24,
+        "lab5-fb2": 8,
+        "lab5-fb3": 8,
+        "lab5-fb4": 8,
+        "lab5-fb5": 12
+      }
+    },
+    "the-flop-has-a-language": {
+      "xp_reward": 90,
+      "steps": {
+        "fl1-s1": 2,
+        "fl1-s2": 6,
+        "fl1-s3": 2,
+        "fl1-s4": 6,
+        "fl1-s5": 2,
+        "fl1-s6": 3,
+        "fl1-s7": 6,
+        "fl1-s8": 2
+      }
+    },
+    "board-structure": {
+      "xp_reward": 95,
+      "steps": {
+        "fl2-s1": 2,
+        "fl2-s2": 10,
+        "fl2-s3": 2,
+        "fl2-s4": 6,
+        "fl2-s5": 6,
+        "fl2-s6": 8,
+        "fl2-s7": 8,
+        "fl2-s8": 3,
+        "fl2-s9": 10
+      }
+    },
+    "read-the-suits": {
+      "xp_reward": 100,
+      "steps": {
+        "fl3-s1": 2,
+        "fl3-s2": 10,
+        "fl3-s3": 2,
+        "fl3-s4": 10,
+        "fl3-s5": 8,
+        "fl3-s6": 8,
+        "fl3-s7": 8,
+        "fl3-s8": 2,
+        "fl3-s9": 3,
+        "fl3-s10": 10
+      }
+    },
+    "read-the-ranks": {
+      "xp_reward": 110,
+      "steps": {
+        "fl4-s1": 2,
+        "fl4-s2": 6,
+        "fl4-s3": 2,
+        "fl4-s4": 10,
+        "fl4-s5": 3,
+        "fl4-s6": 10,
+        "fl4-s7": 10,
+        "fl4-s8": 10,
+        "fl4-s9": 10,
+        "fl4-s10": 12
+      }
+    },
+    "will-this-board-stay-the-same": {
+      "xp_reward": 105,
+      "steps": {
+        "fl5-s1": 2,
+        "fl5-s2": 8,
+        "fl5-s3": 2,
+        "fl5-s4": 10,
+        "fl5-s5": 10,
+        "fl5-s6": 2,
+        "fl5-s7": 8,
+        "fl5-s8": 12
+      }
+    },
+    "the-board-doesnt-play-alone": {
+      "xp_reward": 105,
+      "steps": {
+        "fl6-s1": 2,
+        "fl6-s2": 8,
+        "fl6-s3": 8,
+        "fl6-s4": 2,
+        "fl6-s5": 8
+      }
+    },
+    "how-strong-is-strong": {
+      "xp_reward": 115,
+      "steps": {
+        "fl7-s1": 3,
+        "fl7-s2": 6,
+        "fl7-s3": 6,
+        "fl7-s4": 6,
+        "fl7-s5": 6,
+        "fl7-s6": 8,
+        "fl7-s7": 10,
+        "fl7-s8": 10,
+        "fl7-s9": 8,
+        "fl7-s10": 2
+      }
+    },
+    "the-flop-scanner": {
+      "xp_reward": 120,
+      "steps": {
+        "fl8-s1": 2,
+        "fl8-s2": 4,
+        "fl8-s3": 8,
+        "fl8-s4": 2,
+        "fl8-s5": 6,
+        "fl8-s6": 6,
+        "fl8-s7": 12,
+        "fl8-s8": 12,
+        "fl8-s9": 3,
+        "fl8-s10": 8
+      }
+    },
+    "flop-laboratory": {
+      "xp_reward": 220,
+      "steps": {
+        "flab-r1": 8,
+        "flab-r2": 8,
+        "flab-r3": 8,
+        "flab-r4": 8,
+        "flab-r5": 10,
+        "flab-r6": 10,
+        "flab-r7": 10,
+        "flab-r8": 10,
+        "flab-r9": 10,
+        "flab-r10": 10,
+        "flab-r11": 8,
+        "flab-r12": 8,
+        "flab-cap-intro": 3,
+        "flab-cap1": 6,
+        "flab-cap2": 6,
+        "flab-cap3": 6,
+        "flab-cap4": 8,
+        "flab-cap5": 8,
+        "flab-cap6": 10,
+        "flab-cap7": 8,
+        "flab-cap8": 10,
+        "flab-cap9": 10,
+        "flab-cap10": 10,
+        "flab-cap-outro": 5
+      }
+    },
+    "cbet-not-automatic": {
+      "xp_reward": 170,
+      "steps": {
+        "cna-s1": 6,
+        "cna-s2": 7,
+        "cna-s3": 8,
+        "cna-s4": 8,
+        "cna-s5": 10,
+        "cna-s6": 10,
+        "cna-s7": 10,
+        "cna-s8": 10
+      }
+    },
+    "read-the-battlefield": {
+      "xp_reward": 170,
+      "steps": {
+        "rtb-s1": 6,
+        "rtb-s2": 6,
+        "rtb-s3": 8,
+        "rtb-s4": 8,
+        "rtb-s5": 8,
+        "rtb-s6": 10,
+        "rtb-s7": 8
+      }
+    },
+    "range-advantage-not-enough": {
+      "xp_reward": 210,
+      "steps": {
+        "ran-s1": 8,
+        "ran-s2": 6,
+        "ran-s3": 6,
+        "ran-s4a": 8,
+        "ran-s4b": 10,
+        "ran-s4c": 10,
+        "ran-s5": 16,
+        "ran-s6": 8,
+        "ran-s7": 12
+      }
+    },
+    "high-frequency-cbets": {
+      "xp_reward": 190,
+      "steps": {
+        "hfc-s1": 8,
+        "hfc-s2": 7,
+        "hfc-s3": 10,
+        "hfc-s4": 10,
+        "hfc-s5": 10,
+        "hfc-s6": 10,
+        "hfc-s7": 8
+      }
+    },
+    "cbet-slows-down": {
+      "xp_reward": 200,
+      "steps": {
+        "csd-s1": 8,
+        "csd-s2": 8,
+        "csd-s3": 16,
+        "csd-s4": 10,
+        "csd-s5a": 8,
+        "csd-s5b": 12,
+        "csd-s6": 8
+      }
+    },
+    "small-bet-or-big-bet": {
+      "xp_reward": 230,
+      "steps": {
+        "sbb-s1": 8,
+        "sbb-s2": 8,
+        "sbb-s3": 8,
+        "sbb-s4": 8,
+        "sbb-s5": 20,
+        "sbb-s6": 20,
+        "sbb-s7": 12,
+        "sbb-s8": 8
+      }
+    },
+    "what-does-my-hand-do": {
+      "xp_reward": 210,
+      "steps": {
+        "wdm-s1": 8,
+        "wdm-s2": 8,
+        "wdm-s3": 22,
+        "wdm-s4": 12,
+        "wdm-s5": 8
+      }
+    },
+    "position-changes-everything": {
+      "xp_reward": 200,
+      "steps": {
+        "pce-s1": 8,
+        "pce-s2": 12,
+        "pce-s3": 12,
+        "pce-s4": 8
+      }
+    },
+    "cbet-decision-lab": {
+      "xp_reward": 450,
+      "steps": {
+        "cdl-s1a": 10,
+        "cdl-s1b": 16,
+        "cdl-s2a": 10,
+        "cdl-s2b": 10,
+        "cdl-s3": 14,
+        "cdl-s4": 16,
+        "cdl-s5": 16,
+        "cdl-s6": 22,
+        "cdl-s7a": 10,
+        "cdl-s7b": 10,
+        "cdl-fb1": 10,
+        "cdl-fb2": 8,
+        "cdl-fb3": 16,
+        "cdl-fb4": 12,
+        "cdl-fb5": 12
+      }
+    },
+    "stop-thinking-hand-vs-hand": {
+      "xp_reward": 130,
+      "steps": {
+        "sthh-s1": 10,
+        "sthh-s2": 15,
+        "sthh-s3": 10,
+        "sthh-s4": 15,
+        "sthh-s5": 10
+      }
+    },
+    "who-owns-this-flop": {
+      "xp_reward": 150,
+      "steps": {
+        "wotf-s1": 10,
+        "wotf-s2": 10,
+        "wotf-s3": 10,
+        "wotf-s4": 10,
+        "wotf-s5": 10,
+        "wotf-s6": 10
+      }
+    },
+    "range-advantage": {
+      "xp_reward": 140,
+      "steps": {
+        "ra-s1": 10,
+        "ra-s2": 20,
+        "ra-s3": 20,
+        "ra-s4": 15,
+        "ra-s5": 10,
+        "ra-s6": 10
+      }
+    },
+    "x-ray-the-range": {
+      "xp_reward": 150,
+      "steps": {
+        "xr-s1": 12,
+        "xr-s2": 10,
+        "xr-s3": 10,
+        "xr-s4": 10,
+        "xr-s5": 15,
+        "xr-s6": 10
+      }
+    },
+    "why-strategy-changes": {
+      "xp_reward": 170,
+      "steps": {
+        "wsc-s1": 10,
+        "wsc-s2": 15,
+        "wsc-s3": 15,
+        "wsc-s4": 12,
+        "wsc-s5": 12,
+        "wsc-s6": 12,
+        "wsc-s7": 10,
+        "wsc-s8": 10,
+        "wsc-s9": 10
+      }
+    },
+    "the-range-lab": {
+      "xp_reward": 420,
+      "steps": {
+        "rl-intro": 10,
+        "rl-a76-predict": 10,
+        "rl-a76-magnitude": 10,
+        "rl-a76-composition": 10,
+        "rl-a76-effect": 10,
+        "rl-654-predict": 10,
+        "rl-654-magnitude": 10,
+        "rl-654-composition": 10,
+        "rl-654-effect": 10,
+        "rl-aa-recognize": 10,
+        "rl-aa-composition": 10,
+        "rl-aa-effect": 10,
+        "rl-report": 15,
+        "rl-close": 10
+      }
+    },
+    "from-hands-to-combos": {
+      "xp_reward": 120,
+      "steps": {
+        "fhtc-s1": 10,
+        "fhtc-s2": 10,
+        "fhtc-s3": 10,
+        "fhtc-s4": 10,
+        "fhtc-s5": 10,
+        "fhtc-s6": 15,
+        "fhtc-s7": 15,
+        "fhtc-s8": 15,
+        "fhtc-s9": 10
+      }
+    },
+    "the-range-after-removal": {
+      "xp_reward": 150,
+      "steps": {
+        "trar-s1": 10,
+        "trar-s2": 15,
+        "trar-s3": 10,
+        "trar-s4": 15,
+        "trar-s5": 15,
+        "trar-s6": 10,
+        "trar-s7": 10
+      }
+    },
+    "block-the-value": {
+      "xp_reward": 130,
+      "steps": {
+        "btv-s1": 10,
+        "btv-s2": 15,
+        "btv-s3": 15,
+        "btv-s4": 15,
+        "btv-s5": 10
+      }
+    },
+    "leave-the-bluffs-alive": {
+      "xp_reward": 130,
+      "steps": {
+        "ltba-s1": 10,
+        "ltba-s2": 15,
+        "ltba-s3": 15,
+        "ltba-s4": 15,
+        "ltba-s5": 10
+      }
+    },
+    "same-strength-different-cards": {
+      "xp_reward": 140,
+      "steps": {
+        "ssdc-s1": 10,
+        "ssdc-s2": 20,
+        "ssdc-s3": 10,
+        "ssdc-s4": 15,
+        "ssdc-s5": 10
+      }
+    },
+    "the-nut-blocker": {
+      "xp_reward": 160,
+      "steps": {
+        "tnb-s1": 10,
+        "tnb-s2": 10,
+        "tnb-s3": 20,
+        "tnb-s4": 10,
+        "tnb-s5": 15
+      }
+    },
+    "a-blocker-is-not-always-good": {
+      "xp_reward": 150,
+      "steps": {
+        "bnag-s1": 10,
+        "bnag-s2": 20,
+        "bnag-s3": 10,
+        "bnag-s4": 15,
+        "bnag-s5": 10
+      }
+    },
+    "blockers-when-calling": {
+      "xp_reward": 140,
+      "steps": {
+        "bwc-s1": 10,
+        "bwc-s2": 10,
+        "bwc-s3": 10,
+        "bwc-s4": 15,
+        "bwc-s5": 10
+      }
+    },
+    "read-the-removal": {
+      "xp_reward": 150,
+      "steps": {
+        "rtr-s1": 10,
+        "rtr-s2": 15,
+        "rtr-s3": 15,
+        "rtr-s4": 15,
+        "rtr-s5": 15,
+        "rtr-s6": 15,
+        "rtr-s7": 15,
+        "rtr-s8": 10
+      }
+    },
+    "blocker-lab": {
+      "xp_reward": 200,
+      "steps": {
+        "bl-s1": 10,
+        "bl-s2": 15,
+        "bl-s3": 15,
+        "bl-s4": 10,
+        "bl-s5": 20,
+        "bl-s6": 15,
+        "bl-s7": 15,
+        "bl-report": 15,
+        "bl-close": 10
+      }
+    }
+  },
+  "modules": {
+    "poker-fundamentals-module": 350,
+    "math-foundations-module": 600,
+    "preflop-foundation-module": 700,
+    "preflop-aggression-module": 800,
+    "defending-the-open-module": 850,
+    "flop-fundamentals-module": 900,
+    "cbetting-fundamentals-module": 950,
+    "range-vs-range-module": 1000,
+    "blockers-module": 1000,
+    "game-theory-foundations-module": 0,
+    "polarized-module": 0,
+    "bet-sizing-language-module": 0,
+    "defending-bets-module": 0,
+    "flop-strategy-module": 0,
+    "turn-strategy-module": 0,
+    "river-strategy-module": 0,
+    "multistreet-planning-module": 0,
+    "three-bet-pots-module": 0,
+    "four-bet-pots-module": 0,
+    "blind-vs-blind-module": 0,
+    "short-stack-strategy-module": 0,
+    "deep-stack-strategy-module": 0,
+    "tournament-foundations-module": 0,
+    "icm-module": 0,
+    "population-exploits-module": 0,
+    "player-exploitation-module": 0,
+    "think-like-solver-module": 0,
+    "range-reconstruction-module": 0,
+    "elite-decision-making-module": 0
+  }
+}
