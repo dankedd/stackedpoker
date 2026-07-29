@@ -432,7 +432,7 @@ export const LESSONS: Lesson[] = [
             feedback: 'There is nothing yet to win, and folding costs nothing — so risking chips on an ordinary hand has no edge to justify it. Blinds are what create that missing incentive: they force money into the pot before anyone acts.',
           },
           {
-            id: 'no_reason', label: 'They usually shouldn’t — with nothing already in the pot to win, there is no reason to risk chips without a sufficiently strong advantage.', quality: 'perfect',
+            id: 'no_reason', label: 'They usually shouldn’t — there’s nothing in the pot yet to win.', quality: 'perfect',
             feedback: 'Correct. Blinds create something worth competing for before anyone acts. Without forced money, players could keep folding weak and ordinary hands at no cost, destroying much of the incentive to enter pots. Blinds force the game into action.',
           },
         ],
@@ -626,6 +626,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BB',
         villain_position: 'BTN',
         hero_hand: ['Ah', 'Kd'],
+        action_before_hero: ['UTG folds', 'UTG+1 folds', 'UTG+2 folds', 'LJ folds', 'HJ folds', 'CO folds', 'BTN raises to 2.5bb', 'SB folds', 'Hero calls'],
         street: 'preflop',
         pot_bb: 6,
         options: [
@@ -1177,7 +1178,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'The pot is 100 chips. Villain bets 50 chips.',
         decision_spot_question: 'What is this bet as a fraction of the pot?',
         options: [
-          { id: 'half', label: '50% pot (half pot)', quality: 'perfect', feedback: 'Correct — 50 into a 100 pot is exactly half the pot.' },
+          { id: 'half', label: 'Half pot', quality: 'perfect', feedback: 'Correct — 50 into a 100 pot is exactly half the pot.' },
           { id: 'full', label: 'Pot-sized', quality: 'mistake', feedback: 'A pot-sized bet on a 100 pot would be 100 chips — this bet is half that.' },
           { id: 'quarter', label: '25% pot', quality: 'mistake', feedback: 'A 25% pot bet on a 100 pot would be 25 chips — this bet is double that.' },
         ],
@@ -1200,7 +1201,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'How would you describe this bet size?',
         options: [
           {
-            id: 'overbet', label: 'An overbet — more than the size of the pot', quality: 'perfect',
+            id: 'overbet', label: 'An overbet', quality: 'perfect',
             feedback: 'Correct — 30bb into a 20bb pot is 150% pot, bigger than the pot itself, which is exactly what "overbet" describes.',
           },
           {
@@ -1549,7 +1550,7 @@ export const LESSONS: Lesson[] = [
         board: ['Qh', 'Jh', '3c', '3d'],
         options: [
           {
-            id: 'draw', label: 'A draw — no made hand of real strength yet', quality: 'perfect',
+            id: 'draw', label: 'A draw — no made hand yet', quality: 'perfect',
             feedback: 'Correct. Ace-high with no pair isn’t a meaningful made hand on its own — everything valuable about this hand right now (the flush draw, the gutshot) is a DRAW, not something already complete.',
           },
           {
@@ -2022,7 +2023,7 @@ export const LESSONS: Lesson[] = [
         board: ['Kd', 'Td', '4c', '2c'],
         options: [
           {
-            id: 'draw_only', label: 'A draw — Hero has no made hand yet, just live draws', quality: 'perfect',
+            id: 'draw_only', label: 'A draw — no made hand yet', quality: 'perfect',
             feedback: 'Correct. Queen-Jack doesn’t pair anything on this board, so there’s no made hand at all right now — the straight draw and flush draw are exactly that: draws, not something already complete.',
           },
           {
@@ -3109,7 +3110,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'Hero has 35% raw equity in a hand that is still being played out of position.',
         decision_spot_question: 'Does 35% raw equity guarantee winning 35% of the pot?',
         options: [
-          { id: 'no', label: 'No — Hero can own equity and still be forced to give it up', quality: 'perfect', feedback: 'Correct. If Hero checks OOP, faces a bet, and cannot continue, those future cards are never seen — the raw 35% never gets the chance to matter.' },
+          { id: 'no', label: 'No — owning equity doesn\'t guarantee winning the pot', quality: 'perfect', feedback: 'Correct. If Hero checks OOP, faces a bet, and cannot continue, those future cards are never seen — the raw 35% never gets the chance to matter.' },
           { id: 'yes', label: 'Yes — Hero will capture exactly 35%', quality: 'mistake', feedback: 'Raw equity is a showdown-only number. Betting and folding can prevent Hero from ever reaching showdown at all.' },
         ],
         xp: 8,
@@ -3272,7 +3273,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['equity_realization'],
         narrative:
           'Position, suitedness, connectedness, a strong range context, good nut potential, and the ability to see future cards all typically HELP equity realization.',
-        decision_spot_question: 'Which situation has the BEST equity realization?',
+        decision_spot_question: 'Which situation has the WORST equity realization?',
         options: [
           { id: 'oop_disconnected', label: 'Being out of position with a disconnected offsuit hand', quality: 'perfect', feedback: 'Correct — OOP plus a disconnected offsuit structure is one of the clearest combinations that HURTS realization: it is hard to see future cards and there are few ways to improve.' },
           { id: 'suited_connector_ip', label: 'A suited connector, in position', quality: 'mistake', feedback: 'That combination helps realization — it is the opposite of what hurts it.' },
@@ -3812,7 +3813,7 @@ export const LESSONS: Lesson[] = [
         action_before_hero: [],
         decision_spot_question: 'Which plan is most realistic for a speculative blocker hand like this, opened from early position?',
         options: [
-          { id: 'raise_fold', label: 'Raise now, planning to fold to real resistance — the blocker and playability were worth a shot, not a stack', quality: 'perfect', feedback: 'Correct. A5s opens for its blocker value and playability, not because it wants to play a big pot from early position against real aggression — raise-and-fold-to-resistance is the honest plan here.' },
+          { id: 'raise_fold', label: 'Raise now, planning to fold to real resistance', quality: 'perfect', feedback: 'Correct. A5s opens for its blocker value and playability, not because it wants to play a big pot from early position against real aggression — raise-and-fold-to-resistance is the honest plan here.' },
           { id: 'raise_call_off', label: 'Raise now, planning to call off any 3-bet no matter the size', quality: 'mistake', feedback: 'Committing a full stack with a speculative suited blocker hand from early position, out of position, against real aggression is exactly the kind of plan that turns a cheap open into an expensive mistake.' },
           { id: 'no_plan', label: "Raise now, decide later if someone re-raises", quality: 'mistake', feedback: 'This is the autopilot trap — deciding under pressure, with chips already committed, instead of before you ever raised.' },
         ],
@@ -4084,7 +4085,7 @@ export const LESSONS: Lesson[] = [
           "Real MTT solver data for UTG's K8s: raised 40% of the time at 15bb, 100% at 25bb, then back down to 65% at 40bb and 60% at 60bb. It gets WIDER then NARROWER as the stack gets deeper — never simply \"tighter = shallower, wider = deeper.\"",
         decision_spot_question: 'What best explains why K8s peaks in the middle instead of climbing forever?',
         options: [
-          { id: 'shifting_priority', label: 'The hand’s value comes from raw equity/blockers at some depths and from playability at others, and K8s is mediocre at both', quality: 'perfect', feedback: 'Correct. At 25bb, hands with decent raw equity and a king blocker get pushed harder because the game is closer to a raise/jam binary. At 60bb, there’s more postflop play, and K8s’ poor postflop playability (easily dominated, weak kicker) starts to outweigh its blocker value again.' },
+          { id: 'shifting_priority', label: 'Its value shifts between raw equity/blockers and playability, and it’s mediocre at both', quality: 'perfect', feedback: 'Correct. At 25bb, hands with decent raw equity and a king blocker get pushed harder because the game is closer to a raise/jam binary. At 60bb, there’s more postflop play, and K8s’ poor postflop playability (easily dominated, weak kicker) starts to outweigh its blocker value again.' },
           { id: 'data_error', label: 'This must be a mistake — real strategies always widen monotonically with stack depth', quality: 'mistake', feedback: 'This is real solver output, not an error. Stack depth changes WHICH properties of a hand matter (raw equity vs. blockers vs. playability), not just how wide the range is — so non-monotonic patterns like this are common and expected.' },
         ],
         xp: 10,
@@ -4208,8 +4209,8 @@ export const LESSONS: Lesson[] = [
         mtt_stack_depth_compare_reference_bb: 60,
         mtt_stack_depth_compare_prompt: 'True or false: UTG’s opening frequency increases steadily as the stack gets deeper.',
         options: [
-          { id: 'false', label: 'False — it actually peaks around 25bb and edges back down', quality: 'perfect', feedback: 'Correct. UTG opens 14.1% at 15bb, 16.8% at 25bb, then 15.8% at 40bb and 15.2% at 60bb — a peak-then-recede pattern, not steady growth.' },
-          { id: 'true', label: 'True — deeper stacks always open wider', quality: 'mistake', feedback: 'Not for UTG. Its frequency actually peaks around 25bb (16.8%) and edges back down at 40bb/60bb — "deeper = wider" does not hold here.' },
+          { id: 'false', label: 'False', quality: 'perfect', feedback: 'Correct. UTG opens 14.1% at 15bb, 16.8% at 25bb, then 15.8% at 40bb and 15.2% at 60bb — a peak-then-recede pattern, not steady growth.' },
+          { id: 'true', label: 'True', quality: 'mistake', feedback: 'Not for UTG. Its frequency actually peaks around 25bb (16.8%) and edges back down at 40bb/60bb — "deeper = wider" does not hold here.' },
         ],
         xp: 10,
       },
@@ -4256,8 +4257,8 @@ export const LESSONS: Lesson[] = [
     predictHands: ['QQ', 'KJo', '76s', '44'],
     comparePrompt: 'True or false: UTG+1’s range keeps getting wider as the stack gets deeper, all the way to 60bb.',
     compareOptions: [
-      { id: 'false', label: 'False — it peaks around 25bb, then actually narrows', correct: true, feedback: 'Correct. UTG+1 peaks at 18.6% VPIP around 25bb, then narrows at 40bb and 60bb as weaker broadways/connectors lose value against 3-bets and deeper post-flop play.' },
-      { id: 'true', label: 'True — deeper stacks always open wider', correct: false, feedback: 'Not for UTG+1. It peaks around 25bb (18.6%) and actually narrows at 40bb/60bb — "deeper = wider" does not hold here.' },
+      { id: 'false', label: 'False', correct: true, feedback: 'Correct. UTG+1 peaks at 18.6% VPIP around 25bb, then narrows at 40bb and 60bb as weaker broadways/connectors lose value against 3-bets and deeper post-flop play.' },
+      { id: 'true', label: 'True', correct: false, feedback: 'Not for UTG+1. It peaks around 25bb (18.6%) and actually narrows at 40bb/60bb — "deeper = wider" does not hold here.' },
     ],
     reviewContent:
       'UTG+1 plays close to a straight line from 15bb to 25bb, then reverses course — narrowing at 40bb and 60bb as weaker broadways and speculative suited hands lose their edge against deeper, more aggressive post-flop play. You can now reconstruct its baseline strategy at any depth and recognize its real boundary hands.',
@@ -4280,8 +4281,8 @@ export const LESSONS: Lesson[] = [
     predictHands: ['QQ', 'KJo', 'K6s', 'JTo'],
     comparePrompt: 'True or false: UTG+2 keeps a meaningful open-jam (all-in) component at every stack depth studied here.',
     compareOptions: [
-      { id: 'false', label: 'False — only a tiny 2.2% at 15bb, then it disappears by 17bb', correct: true, feedback: 'Correct. UTG+2’s all-in range is only 2.2% of hands at 15bb, and it vanishes completely by 17bb — from 25bb on, UTG+2 plays a pure raise/fold game.' },
-      { id: 'true', label: 'True — it always has a real all-in range', correct: false, feedback: 'Not for UTG+2. Its all-in range is only a tiny 2.2% at 15bb and disappears entirely by 17bb.' },
+      { id: 'false', label: 'False', correct: true, feedback: 'Correct. UTG+2’s all-in range is only 2.2% of hands at 15bb, and it vanishes completely by 17bb — from 25bb on, UTG+2 plays a pure raise/fold game.' },
+      { id: 'true', label: 'True', correct: false, feedback: 'Not for UTG+2. Its all-in range is only a tiny 2.2% at 15bb and disappears entirely by 17bb.' },
     ],
     reviewContent:
       'UTG+2 caps off early position: tight everywhere, with its already-small open-jam range fading out almost immediately as stacks deepen past 15bb. You can now reconstruct its baseline strategy at any depth and recognize its real boundary hands.',
@@ -4304,8 +4305,8 @@ export const LESSONS: Lesson[] = [
     predictHands: ['QQ', 'QJo', '65s', 'J8s'],
     comparePrompt: 'True or false: at 15bb, the Lojack should never go all-in — only raise or fold.',
     compareOptions: [
-      { id: 'false', label: 'False — LJ keeps a real (if small) open-shoving range at 15bb', correct: true, feedback: 'Correct. At 15bb, LJ jams hands like 77-55, AQo, AJo, A9s/A8s and JTs+ — they want to realize their equity immediately rather than face a post-flop decision. By 17bb, LJ is too deep to jam and moves to raise/fold.' },
-      { id: 'true', label: 'True — LJ only ever raises or folds', correct: false, feedback: 'Not at 15bb. LJ keeps a real open-shoving range there (77-55, AQo, AJo, A9s/A8s, JTs+) — the jam disappears only once stacks reach about 17bb.' },
+      { id: 'false', label: 'False', correct: true, feedback: 'Correct. At 15bb, LJ jams hands like 77-55, AQo, AJo, A9s/A8s and JTs+ — they want to realize their equity immediately rather than face a post-flop decision. By 17bb, LJ is too deep to jam and moves to raise/fold.' },
+      { id: 'true', label: 'True', correct: false, feedback: 'Not at 15bb. LJ keeps a real open-shoving range there (77-55, AQo, AJo, A9s/A8s, JTs+) — the jam disappears only once stacks reach about 17bb.' },
     ],
     reviewContent:
       'Lojack is Hijack’s slightly tighter neighbor, with a real (if narrow) 15bb jamming range that disappears once stacks pass about 17bb. You can now reconstruct its baseline strategy at any depth and recognize its real boundary hands.',
@@ -4328,8 +4329,8 @@ export const LESSONS: Lesson[] = [
     predictHands: ['JJ', 'K4s', 'T9o', '22'],
     comparePrompt: 'True or false: HJ’s range shape changes dramatically between 25bb and 40bb.',
     compareOptions: [
-      { id: 'false', label: 'False — it barely changes; only a few hands like 33, 96s and 54s get added', correct: true, feedback: 'Correct. HJ’s range shape is nearly identical from 25bb to 40bb — the bigger transition happened earlier, between 15bb (min-raise dominant, all-in fading) and 20bb+ (pure raise/fold).' },
-      { id: 'true', label: 'True — 40bb opens up substantially more than 25bb', correct: false, feedback: 'Not really — only a few hands (33, 96s, 54s) get added at 40bb. HJ’s bigger transition happens earlier, between 15bb and 20bb+.' },
+      { id: 'false', label: 'False', correct: true, feedback: 'Correct. HJ’s range shape is nearly identical from 25bb to 40bb — the bigger transition happened earlier, between 15bb (min-raise dominant, all-in fading) and 20bb+ (pure raise/fold).' },
+      { id: 'true', label: 'True', correct: false, feedback: 'Not really — only a few hands (33, 96s, 54s) get added at 40bb. HJ’s bigger transition happens earlier, between 15bb and 20bb+.' },
     ],
     reviewContent:
       'Hijack is the widest true middle-position seat, with most of its structural change happening early (15bb to 20bb) rather than between 25bb and 40bb, where the shape barely moves. You can now reconstruct its baseline strategy at any depth and recognize its real boundary hands.',
@@ -4352,8 +4353,8 @@ export const LESSONS: Lesson[] = [
     predictHands: ['AA', 'J6s', 'Q9o', '32o'],
     comparePrompt: 'True or false: like UTG and the middle-position seats, CO’s opening frequency peaks around 25bb and then flattens or recedes.',
     compareOptions: [
-      { id: 'false', label: 'False — CO keeps widening steadily all the way to 60bb+', correct: true, feedback: 'Correct. Unlike UTG/UTG+1/UTG+2/LJ/HJ, CO’s VPIP keeps climbing with stack depth (similar to the Button) — roughly 31% at 10bb up toward 37-38% at 80bb — rather than peaking and receding.' },
-      { id: 'true', label: 'True — CO follows the same peak-then-recede pattern as earlier positions', correct: false, feedback: 'Not for CO. It keeps widening steadily with depth, much like the Button — the peak-then-recede pattern belongs to UTG through HJ, not CO or BTN.' },
+      { id: 'false', label: 'False', correct: true, feedback: 'Correct. Unlike UTG/UTG+1/UTG+2/LJ/HJ, CO’s VPIP keeps climbing with stack depth (similar to the Button) — roughly 31% at 10bb up toward 37-38% at 80bb — rather than peaking and receding.' },
+      { id: 'true', label: 'True', correct: false, feedback: 'Not for CO. It keeps widening steadily with depth, much like the Button — the peak-then-recede pattern belongs to UTG through HJ, not CO or BTN.' },
     ],
     reviewContent:
       'The Cutoff is the first seat where "deeper = wider" genuinely holds — VPIP climbs steadily rather than peaking and receding, and the all-in option fades out entirely by 20bb in favor of a clean raise/fold game. You can now reconstruct its baseline strategy at any depth and recognize its real boundary hands.',
@@ -4376,8 +4377,8 @@ export const LESSONS: Lesson[] = [
     predictHands: ['AA', 'Q7o', '97o', '32o'],
     comparePrompt: 'True or false: even from the Button, true disconnected trash (like 32o) still folds at every stack depth studied here.',
     compareOptions: [
-      { id: 'true', label: 'True — BTN is the widest range at the table, but "wide" still has a real edge', correct: true, feedback: 'Correct. Even at 60bb, hands like 32o still fold outright from the Button. Almost half the deck opens here, but "any two cards" is a myth even at the widest seat in the game.' },
-      { id: 'false', label: 'False — from the Button, any two cards are profitable to open', correct: false, feedback: 'Not true — disconnected junk like 32o still folds outright from the Button at every depth studied, even though BTN is by far the widest non-blind range at the table.' },
+      { id: 'true', label: 'True', correct: true, feedback: 'Correct. Even at 60bb, hands like 32o still fold outright from the Button. Almost half the deck opens here, but "any two cards" is a myth even at the widest seat in the game.' },
+      { id: 'false', label: 'False', correct: false, feedback: 'Not true — disconnected junk like 32o still folds outright from the Button at every depth studied, even though BTN is by far the widest non-blind range at the table.' },
     ],
     reviewContent:
       'The Button is the logical endpoint of the position ladder: guaranteed position on every street produces the widest non-blind range in the game, growing further with stack depth. But even here the range has a real, learnable edge — not "any two cards." You can now reconstruct its baseline strategy at any depth and recognize its real boundary hands.',
@@ -4506,8 +4507,8 @@ export const LESSONS: Lesson[] = [
         mtt_stack_depth_compare_reference_bb: 60,
         mtt_stack_depth_compare_prompt: 'True or false: SB plays the same three actions (jam, limp, fold) at every stack depth in this module.',
         options: [
-          { id: 'false', label: 'False — the all-in option shrinks and disappears as stacks deepen, replaced by a real raise size', quality: 'perfect', feedback: 'Correct. At 15bb it’s jam/limp/fold. Past ~17bb a real non-all-in raise appears and grows; by 30bb the all-in option is gone completely, replaced by a raise/limp/fold game that gets more mixed the deeper it goes.' },
-          { id: 'true', label: 'True — jam/limp/fold is the whole story at every depth', quality: 'mistake', feedback: 'Not quite. The all-in option only exists at shallow depths — by 30bb it disappears entirely, replaced by a real raise size, and by 60bb almost the whole range is a raise/limp blend.' },
+          { id: 'false', label: 'False', quality: 'perfect', feedback: 'Correct. At 15bb it’s jam/limp/fold. Past ~17bb a real non-all-in raise appears and grows; by 30bb the all-in option is gone completely, replaced by a raise/limp/fold game that gets more mixed the deeper it goes.' },
+          { id: 'true', label: 'True', quality: 'mistake', feedback: 'Not quite. The all-in option only exists at shallow depths — by 30bb it disappears entirely, replaced by a real raise size, and by 60bb almost the whole range is a raise/limp blend.' },
         ],
         xp: 10,
       },
@@ -4617,7 +4618,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'Which of these best explains why players 3-bet — beyond simply "I have a great hand"?',
         options: [
           {
-            id: 'comprehensive', label: 'It can build a pot with strong hands, generate fold equity, deny equity, isolate the opener, shrink the SPR, and pressure a wide range — often several of these at once', quality: 'perfect',
+            id: 'comprehensive', label: 'Several purposes at once — building a pot, generating fold equity, and applying pressure', quality: 'perfect',
             feedback: 'Correct. BUILD A POT with hands that want to play a bigger pot. GENERATE FOLD EQUITY — sometimes Villain just folds. DENY EQUITY — a made hand or drawing hand gets no free look. ISOLATE the opener out of a crowded pot. CHANGE THE SPR — a smaller stack-to-pot ratio simplifies postflop. PUNISH a wide range that can\'t continue profitably. A single 3-bet is often doing more than one of these jobs simultaneously.',
           },
           {
@@ -4814,7 +4815,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'Suppose Hero\'s entire 3-betting strategy, from every seat, is: "3-bet AA. Nothing else." What happens over time?',
         options: [
           {
-            id: 'comprehensive', label: 'Opponents learn to play perfectly against it, the range becomes completely transparent, and Hero never pressures any of their weaker opens', quality: 'perfect',
+            id: 'comprehensive', label: 'The range becomes readable, and every weaker open Villain has goes unpunished', quality: 'perfect',
             feedback: "Correct on all three counts. Anyone paying attention folds everything except AA-beating hands and premium pairs, so the 3-bet stops winning pots outright. There are no bluffs to make marginal continues uncomfortable. And every one of Villain's weaker, exploitable opens goes completely unpunished, forever.",
           },
           {
@@ -4991,7 +4992,7 @@ export const LESSONS: Lesson[] = [
           'Before the explanation: why might a polarized strategy deliberately skip many medium-strength hands when 3-betting, rather than 3-betting them too?',
         options: [
           {
-            id: 'comprehensive', label: 'Those hands have enough value to want to keep playing, but not enough to want to 3-bet/fold to a 4-bet — so they perform better preserved as calls', quality: 'perfect',
+            id: 'comprehensive', label: 'They\'re worth continuing with, but not worth risking against a 4-bet', quality: 'perfect',
             feedback: "Exactly right. A hand like a medium pocket pair or a suited broadway often does better calling and seeing a flop than reraising into a range that can 4-bet it off its equity. That's the hole in the middle of a polarized range — and it's not wasted, it lives in the flatting range instead.",
           },
           {
@@ -5306,7 +5307,7 @@ export const LESSONS: Lesson[] = [
         table_size: 9,
         options: [
           {
-            id: 'depends', label: 'It depends on the seat — absolute position alone doesn\'t answer this; count who is actually left to act', quality: 'perfect',
+            id: 'depends', label: 'It depends on the seat — count who is actually left to act', quality: 'perfect',
             feedback: "Correct. Hero's own seat is not enough information by itself — what matters is how many live players remain between Hero and the button. Two different Hero seats can have very different numbers of players still able to wake up behind them.",
           },
           {
@@ -5542,7 +5543,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'Which is automatically more important when selecting a bluff: blockers, or playability?',
         options: [
           {
-            id: 'neither', label: 'Neither, universally — it depends on calling value, fold equity, domination, position, stack depth, and Villain\'s continuing range', quality: 'perfect',
+            id: 'neither', label: 'Neither, always — it depends on the full spot', quality: 'perfect',
             feedback: 'Correct. Sometimes a strong blocker with poor playability is still the better choice; sometimes great playability with no blocker at all wins out. There is no universal ranking between them — it depends on the full picture in front of Hero.',
           },
           {
@@ -5709,7 +5710,7 @@ export const LESSONS: Lesson[] = [
         sizing_slider_prompt: 'As the size increases, what happens?',
         options: [
           {
-            id: 'worse_price_bigger_pot', label: 'Villain gets a worse price to continue, and the resulting pot and SPR both grow if called', quality: 'perfect',
+            id: 'worse_price_bigger_pot', label: 'Villain\'s price gets worse, and the pot and SPR both grow if called', quality: 'perfect',
             feedback: 'Correct — every increment down the slider both raises the cost of continuing for Villain and increases how much is already committed if the hand goes on, which lowers the resulting SPR.',
           },
           {
@@ -5736,7 +5737,7 @@ export const LESSONS: Lesson[] = [
         action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN folds', 'SB folds'],
         options: [
           {
-            id: 'great_price', label: 'Villain receives a strong price and can profitably continue with much more of their range', quality: 'perfect',
+            id: 'great_price', label: 'Villain gets a much better price to continue with more hands', quality: 'perfect',
             feedback: "Correct — a reraise this small barely raises the cost of continuing. Villain can call or 4-bet a far wider range than they could against a standard-sized 3-bet, undermining the whole point of reraising.",
           },
           {
@@ -5759,7 +5760,7 @@ export const LESSONS: Lesson[] = [
         action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN folds', 'SB folds'],
         options: [
           {
-            id: 'effectively_commits', label: 'This effectively commits Hero without actually being all-in — jamming would be a cleaner version of the same idea', quality: 'perfect',
+            id: 'effectively_commits', label: 'It commits Hero without actually being all-in', quality: 'perfect',
             feedback: "Correct. At 25bb effective, a non-all-in raise to 20bb leaves only 5bb behind — Hero is committed in all but name, with none of the fold equity a genuine shove would add. If the money is going in anyway, jamming is the more efficient way to do it.",
           },
           {
@@ -5898,7 +5899,7 @@ export const LESSONS: Lesson[] = [
         action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN calls'],
         options: [
           {
-            id: 'comprehensive', label: 'There is more dead money to win, two separate ranges are involved, the caller may be somewhat capped or condensed (though not always), and Hero must get through more than one continuing player, with real multiway consequences if called', quality: 'perfect',
+            id: 'comprehensive', label: 'More dead money to win, two ranges involved, and more players who can continue', quality: 'perfect',
             feedback: 'Correct on every point. MORE MONEY — CO\'s open plus BTN\'s call are both already in the pot. TWO RANGES — Hero has to account for both the opener\'s and the caller\'s holdings. CALLER CONDENSED — a flat often (not always) excludes the caller\'s very strongest and weakest hands. MORE RESISTANCE — either player can continue. MULTIWAY RISK — if called, this can become a 3-way pot with different equity dynamics than heads-up.',
           },
           {
@@ -6079,7 +6080,7 @@ export const LESSONS: Lesson[] = [
           'Compare the squeeze range you just built to Hero\'s normal heads-up SB 3-betting range versus a plain BTN open (from earlier lessons). What changed, and why?',
         options: [
           {
-            id: 'tighter_and_why', label: 'It\'s narrower and more polarized — the extra dead money and the extra continuing range both call for more caution and a size that reflects the bigger pot already in play', quality: 'perfect',
+            id: 'tighter_and_why', label: 'It\'s narrower and more polarized than the plain heads-up 3-bet range', quality: 'perfect',
             feedback: 'Correct. Squeeze ranges are generally tighter and more value-and-blocker-driven than a plain heads-up 3-bet range from the same seat, precisely because there is more resistance to get through and more already invested that needs to be accounted for.',
           },
           {
@@ -6135,7 +6136,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: "What should Hero's overall strategy look like against this 3-bet?",
         options: [
           {
-            id: 'depends', label: "It depends on the hand — some hands 4-bet, some call, and some fold", quality: 'perfect',
+            id: 'depends', label: "It depends on the hand, not one blanket plan", quality: 'perfect',
             feedback: "Right instinct. Folding every non-premium hand is exploitable — Villain could 3-bet almost anything and get away with it. Continuing with everything is just as wrong — plenty of hands are too weak to defend profitably. The real answer is a full range response, and which hands land where depends on position, sizing, and the shape of Villain's 3-betting range.",
           },
           {
@@ -6384,7 +6385,7 @@ export const LESSONS: Lesson[] = [
         range_compare_prompt: 'What is the strategic story these two ranges tell?',
         options: [
           {
-            id: 'ip_call_oop_aggro', label: 'In position, Hero leans heavily on calling; out of position, that same kind of hand leans toward 4-betting or folding instead', quality: 'perfect',
+            id: 'ip_call_oop_aggro', label: 'In position Hero leans on calling; out of position, on 4-betting or folding', quality: 'perfect',
             feedback: "Exactly. Position buys you calls — losing it trades a chunk of that calling range for more aggression (the better hands become 4-bets) and more folding (hands that called fine IP just aren't profitable OOP anymore).",
           },
           {
@@ -6416,7 +6417,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: "What's the core problem with this range?",
         options: [
           {
-            id: 'composition', label: 'The composition is backwards in several places: calling with dominated offsuit broadways, folding hands that actually realize equity well, turning medium pairs into 4-bets instead of calls, and building a 4-bet range with no blockers at all', quality: 'perfect',
+            id: 'composition', label: 'It\'s not about width — the composition itself is backwards', quality: 'perfect',
             feedback: 'Right. Every one of these is a real, nameable leak: KQo/KJo/QJo get dominated too often to be good calls here; 87s/76s/65s have exactly the playability and equity realization that should make them calls, not folds; JJ/TT usually play better as calls than forced 4-bets; and a 4-bet range built only from premiums, with no blocker-driven hands like A5s/A4s, is missing a whole category of good aggressive candidates.',
           },
           {
@@ -6642,7 +6643,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'Which of these best captures why players 4-bet?',
         options: [
           {
-            id: 'comprehensive', label: 'For value, for fold equity, to deny equity, to punish excessive 3-betting, to reduce a positional disadvantage, and to make use of blockers — not always the same motive twice', quality: 'perfect',
+            id: 'comprehensive', label: 'Several different motives — value, fold equity, and denying equity, among others', quality: 'perfect',
             feedback: 'Correct. A 4-bet with AA is mostly about value. A 4-bet with A5s against an over-3-bettor is mostly about fold equity and blockers. A 4-bet from the blinds can be partly about reducing how often Hero plays a big pot OOP. Different 4-bets are doing different jobs.',
           },
           {
@@ -6713,8 +6714,8 @@ export const LESSONS: Lesson[] = [
         stack_depth_morph_prompt: 'Which pattern best matches how re-aggression shifts across these depths?',
         options: [
           {
-            id: 'comprehensive', label: 'Shallow: all-in re-aggression is prominent. 25-40bb: non-all-in 3-bets are often answered with an all-in 4-bet rather than a smaller one. 60-80bb: non-all-in 4-betting becomes more relevant, and calling 3-bets grows more attractive, especially in position', quality: 'perfect',
-            feedback: "Correct — and this is a baseline tournament pattern, not a fixed rule for every rake/ante/sizing configuration. As stacks get deeper, there is simply more room for a non-all-in 4-bet or a call to make sense instead of everything resolving to a jam.",
+            id: 'comprehensive', label: 'It shifts from all-in jams shallow toward non-all-in 4-bets and calls as stacks deepen', quality: 'perfect',
+            feedback: "Correct — and this is a baseline tournament pattern, not a fixed rule for every rake/ante/sizing configuration. Shallow, all-in re-aggression is prominent; at 25-40bb, non-all-in 3-bets are often answered with an all-in 4-bet rather than a smaller one; by 60-80bb, non-all-in 4-betting becomes more relevant and calling 3-bets grows more attractive, especially in position. As stacks get deeper, there is simply more room for a non-all-in 4-bet or a call to make sense instead of everything resolving to a jam.",
           },
           {
             id: 'identical', label: 'The right response is identical at every depth shown', quality: 'mistake',
@@ -6814,7 +6815,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'Hero 4-bets. Villain jams (a 5-bet shove). What actually matters now?',
         options: [
           {
-            id: 'comprehensive', label: 'Pot odds, Hero\'s equity against the jamming range, the remaining stacks, any tournament risk premium, and how the original hand interacts with everything that has happened so far', quality: 'perfect',
+            id: 'comprehensive', label: 'The same all-in checklist as any other spot — pot odds, equity, and stack depth', quality: 'perfect',
             feedback: 'Correct — this is the same full checklist as any other all-in decision, just arriving later in the hand. There is no shortcut that skips straight to an answer without these factors.',
           },
           {
@@ -6959,7 +6960,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'Villain opens wide, calls 3-bets excessively, and rarely 4-bets. How should Hero\'s 3-betting range change?',
         options: [
           {
-            id: 'linear', label: 'Shift toward a more linear, value-heavy expansion — use hands that dominate Villain\'s calls', quality: 'perfect',
+            id: 'linear', label: 'Shift toward a more linear, value-heavy range', quality: 'perfect',
             feedback: "Correct. Against a Villain who calls too much and rarely punishes with a 4-bet, blocker bluffs earn little — Villain isn't folding. Hands with strong raw equity and good playability that beat those calls gain the most.",
           },
           {
@@ -6976,7 +6977,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'Villain attacks Hero\'s 3-bets aggressively with too many 4-bets. Which combination of adjustments makes sense?',
         options: [
           {
-            id: 'comprehensive', label: '3-bet fewer bluffs, 3-bet/call with more of the stronger hands, flat some hands that hate a 4-bet/fold decision, and punish Villain\'s wide 4-betting with appropriate value', quality: 'perfect',
+            id: 'comprehensive', label: 'Shift the range toward fewer bluffs and more hands that can continue', quality: 'perfect',
             feedback: 'Correct — several adjustments work together here: fewer bluffs (which just get 4-bet off their equity), a stronger continuing range against the 4-bet, some hands rerouted into calls instead of 3-bets, and a value range that is ready to profit from Villain\'s over-wide 4-bets.',
           },
           {
@@ -6997,7 +6998,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'Villain\'s 3-bet range is extremely tight. Hero opened and now faces Villain\'s 3-bet. Should Hero defend according to a balanced baseline anyway?',
         options: [
           {
-            id: 'no', label: 'No — fold more marginal bluff-catchers and dominated continues, since the evidence says this range is far from balanced', quality: 'perfect',
+            id: 'no', label: 'No — fold more marginal continues; this range is far from balanced', quality: 'perfect',
             feedback: "Correct. Defending as if Villain were balanced when there is reliable evidence of severe under-bluffing just donates chips to a range that is, in reality, mostly premiums. Marginal continuing hands should fold more here, not hold the theoretical baseline frequency.",
           },
           {
@@ -7082,7 +7083,7 @@ export const LESSONS: Lesson[] = [
         narrative:
           'PLAYER B — RFI from the BTN: high. Fold to 3-bet: low. 4-bet: low. What is the leak, and the broad adjustment?',
         options: [
-          { id: 'overcall', label: 'Overcalling 3-bets with a wide open — shift toward a more linear, value-heavy 3-betting range against them', quality: 'perfect', feedback: 'Correct. A wide opener who neither folds nor 4-bets much to a 3-bet is simply calling too wide — hands that dominate those calls gain the most, more than blocker bluffs would.' },
+          { id: 'overcall', label: 'Overcalling 3-bets — shift toward a more linear, value-heavy range', quality: 'perfect', feedback: 'Correct. A wide opener who neither folds nor 4-bets much to a 3-bet is simply calling too wide — hands that dominate those calls gain the most, more than blocker bluffs would.' },
           { id: 'overfold', label: 'Overfolding to 3-bets — bluff them relentlessly', quality: 'mistake', feedback: 'Low fold-to-3-bet is the opposite of overfolding — this player is calling, not folding.' },
           { id: 'over4bet', label: 'Over-4-betting — tighten up the 3-betting range', quality: 'mistake', feedback: 'Their 4-bet frequency is described as low, not high — over-4-betting isn\'t the leak this profile shows.' },
         ],
@@ -7175,6 +7176,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BB',
         villain_position: 'HJ',
         effective_stack_bb: 15,
+        action_before_hero: ['UTG folds', 'HJ raises to 2bb', 'CO folds', 'BTN folds', 'SB folds', 'Hero raises all-in to 15bb'],
         options: [
           { id: 'rejam', label: 'A rejam', quality: 'perfect', feedback: 'Correct — an all-in reraise at a shallow stack depth like this is a rejam. There is little room for a smaller, non-all-in reraise to make sense.' },
           { id: 'squeeze', label: 'A squeeze', quality: 'mistake', feedback: 'No call happened before Hero\'s all-in — this is heads-up against the opener, an all-in reraise, i.e. a rejam.' },
@@ -7239,7 +7241,7 @@ export const LESSONS: Lesson[] = [
         morphology_builder_range: ['AA', 'KK', 'QQ', 'AKs', 'AKo', 'A5s', 'A4s', '76s', '65s'],
         morphology_builder_prompt: 'Shape, and why?',
         options: [
-          { id: 'polarized', label: 'Polarized — premium value plus a separate blocker/connector bluff cluster, with a gap between them', quality: 'perfect', feedback: 'Correct — JJ through A6s and most of the broadways are missing even though both ends of the range are present. That gap-with-two-clusters shape is polarized.' },
+          { id: 'polarized', label: 'Polarized — premium value plus a separate bluff cluster, with a gap', quality: 'perfect', feedback: 'Correct — JJ through A6s and most of the broadways are missing even though both ends of the range are present. That gap-with-two-clusters shape is polarized.' },
           { id: 'linear', label: 'Linear — it runs top-down with no gap', quality: 'mistake', feedback: 'There is a large gap between AKo and A5s — a linear range would not skip that much material in the middle.' },
         ],
         xp: 8,
@@ -7378,7 +7380,7 @@ export const LESSONS: Lesson[] = [
         sizing_slider_sizes: [7, 8, 9, 10, 11],
         sizing_slider_prompt: 'Pick a reasonable 3-bet size for this spot, then note the resulting pot and SPR.',
         options: [
-          { id: 'reasonable', label: 'Any size in the 7-11bb range is reasonable here — there\'s no single correct number, just a range that prices HJ appropriately without overcommitting Hero', quality: 'perfect', feedback: 'Correct approach — sizing lives in a reasonable band determined by the price offered and the resulting SPR, not one memorized number.' },
+          { id: 'reasonable', label: 'Any size in the 7-11bb range works — there\'s no single correct number', quality: 'perfect', feedback: 'Correct approach — sizing lives in a reasonable band determined by the price offered and the resulting SPR, not one memorized number.' },
           { id: 'must_be_exact', label: 'There is exactly one correct size and every other size is a mistake', quality: 'mistake', feedback: 'Sizing has a reasonable range, not one exact right answer — several sizes in the neighborhood accomplish the same strategic goal.' },
         ],
         xp: 12,
@@ -7607,7 +7609,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BTN',
         villain_position: 'CO',
         options: [
-          { id: 'sb_bb', label: 'The SB and the BB — two players', quality: 'perfect', feedback: 'Correct — from the BTN, only the two blinds remain live behind Hero.' },
+          { id: 'sb_bb', label: 'The SB and the BB', quality: 'perfect', feedback: 'Correct — from the BTN, only the two blinds remain live behind Hero.' },
           { id: 'three_players', label: 'Three players remain behind', quality: 'mistake', feedback: 'From the Button, only the SB and BB are left to act — that\'s two players, not three.' },
         ],
         xp: 6,
@@ -7621,7 +7623,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BTN',
         villain_position: 'CO',
         options: [
-          { id: 'yes', label: 'Yes — Hero is last to act on every postflop street', quality: 'perfect', feedback: 'Correct — the Button has position on every remaining player for the rest of the hand.' },
+          { id: 'yes', label: 'Yes — Hero is last to act', quality: 'perfect', feedback: 'Correct — the Button has position on every remaining player for the rest of the hand.' },
           { id: 'no', label: 'No', quality: 'mistake', feedback: 'The Button acts last postflop against every other player still in the hand — this is about as good as position gets.' },
         ],
         xp: 6,
@@ -7660,7 +7662,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['three_bet_sizing', 'facing_three_bet'],
         narrative: 'What is a reasonable 3-bet size here, and what should the plan be if CO 4-bets?',
         options: [
-          { id: 'standard_fold_most', label: 'A standard in-position 3-bet size, and mostly give up the hand if CO 4-bets — KJs was a speculative 3-bet, not a hand built to stack off', quality: 'perfect', feedback: "Correct on both counts. A normal-sized in-position 3-bet does the job here, and since KJs is 3-betting as a semi-bluff rather than for pure value, it should fold to real additional resistance from a 4-bet most of the time." },
+          { id: 'standard_fold_most', label: 'A standard in-position 3-bet size, planning to fold to a 4-bet', quality: 'perfect', feedback: "Correct on both counts. A normal-sized in-position 3-bet does the job here, and since KJs is 3-betting as a semi-bluff rather than for pure value, it should fold to real additional resistance from a 4-bet most of the time." },
           { id: 'huge_call_off', label: 'An oversized 3-bet, planning to call off any 4-bet regardless of size', quality: 'mistake', feedback: 'KJs is not strong enough on its own to justify committing the stack against a 4-bet — the plan from the start should include giving the hand up if real resistance appears.' },
         ],
         xp: 8,
@@ -7688,7 +7690,7 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 40,
         hero_hand: ['Ks', 'Js'],
         options: [
-          { id: 'no', label: 'No — Hero will be out of position, and the BB is also still live behind', quality: 'perfect', feedback: 'Correct. Moving from BTN to SB flips Hero from full position to out of position, and unlike the BTN spot, the BB is still there to wake up as well.' },
+          { id: 'no', label: 'No — Hero is out of position now', quality: 'perfect', feedback: 'Correct. Moving from BTN to SB flips Hero from full position to out of position, and unlike the BTN spot, the BB is still there to wake up as well.' },
           { id: 'yes', label: 'Yes — position hasn\'t changed', quality: 'mistake', feedback: 'The seat change from BTN to SB is precisely a change from full position to out of position for the rest of the hand.' },
         ],
         xp: 8,
@@ -7912,7 +7914,7 @@ export const LESSONS: Lesson[] = [
         villain_position: 'HJ',
         options: [
           {
-            id: 'comprehensive', label: 'Villain\'s position, Hero\'s position, players behind, stack depth, open size, AND Hero\'s hand — together', quality: 'perfect',
+            id: 'comprehensive', label: 'Every factor together — position, players behind, stack depth, and hand', quality: 'perfect',
             feedback: 'Correct — every one of these is a real strategic variable, and none of them decide the spot alone. Defense is a range problem, not a card-ranking problem.',
           },
           {
@@ -7949,7 +7951,7 @@ export const LESSONS: Lesson[] = [
         action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.2bb', 'SB folds'],
         options: [
           {
-            id: 'comprehensive', label: 'BTN (the open), the SB (dead blind), and Hero\'s own BB', quality: 'perfect',
+            id: 'comprehensive', label: 'BTN, the SB, and Hero\'s own BB', quality: 'perfect',
             feedback: 'Correct — Hero\'s own blind is already in the middle. Calling only costs the DIFFERENCE between the open and what Hero already posted, which is exactly why BB gets a discount other seats don\'t.',
           },
           {
@@ -7985,7 +7987,7 @@ export const LESSONS: Lesson[] = [
         hero_hand: ['8c', '4c'],
         options: [
           {
-            id: 'comprehensive', label: 'BB already has a blind invested, action closes with no one left to wake up, and the price on offer is attractive', quality: 'perfect',
+            id: 'comprehensive', label: 'A blind already invested, closed action, and a good price — together', quality: 'perfect',
             feedback: 'Correct — but a good price only means the hand QUALIFIES to be considered. It does not guarantee 84s realizes enough equity to actually turn a profit once the flop comes — that\'s next.',
           },
           {
@@ -8086,6 +8088,7 @@ export const LESSONS: Lesson[] = [
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'BTN',
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.0bb', 'SB folds'],
         options: [
           { id: 'more', label: 'Defend more', quality: 'perfect', feedback: 'Correct — a smaller open offers a better price, so more of Hero\'s range clears the required-equity bar.' },
           { id: 'same', label: 'Defend the same', quality: 'mistake', feedback: 'The size directly changes the price on offer — a smaller open should widen the defending range, not leave it fixed.' },
@@ -8101,6 +8104,7 @@ export const LESSONS: Lesson[] = [
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'BTN',
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 3.5bb', 'SB folds'],
         options: [
           { id: 'less', label: 'Defend less', quality: 'perfect', feedback: 'Correct — a larger open worsens the price, so fewer hands clear the bar and the defending range should contract.' },
           { id: 'same', label: 'Defend the same', quality: 'mistake', feedback: 'A meaningfully larger open changes the price enough that the defending range should respond, not stay fixed.' },
@@ -8116,6 +8120,7 @@ export const LESSONS: Lesson[] = [
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'BTN',
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.5bb', 'SB folds'],
         options: [
           { id: 'same', label: 'Defend the same — this IS the baseline', quality: 'perfect', feedback: "Correct — with nothing unusual about the size, Hero's standard baseline defending range applies directly. There's no reason to widen or tighten from here." },
           { id: 'more', label: 'Defend more', quality: 'mistake', feedback: 'Nothing has changed relative to the baseline this range was built around — there\'s no reason to widen from here.' },
@@ -8194,7 +8199,7 @@ export const LESSONS: Lesson[] = [
         hand_dna_subject: 'KJo',
         hand_dna_prompt: 'What is the biggest structural risk with this hand against a range this strong?',
         options: [
-          { id: 'domination', label: 'Domination — a tight range is dense with Kx and Jx combos that dominate this exact hand', quality: 'perfect', feedback: 'Correct. KJo looks like a reasonable broadway, but a strong, narrow opening range is disproportionately full of AK, AJ, KQ and big pairs — all of which have KJo in serious trouble when they connect.' },
+          { id: 'domination', label: 'Domination — a tight range is dense with Kx/Jx combos', quality: 'perfect', feedback: 'Correct. KJo looks like a reasonable broadway, but a strong, narrow opening range is disproportionately full of AK, AJ, KQ and big pairs — all of which have KJo in serious trouble when they connect.' },
           { id: 'no_suit', label: 'Simply that it is offsuit, with no flush potential', quality: 'mistake', feedback: 'Losing flush potential is real, but it is not the sharpest description of the danger here — domination by a concentration of stronger broadway combos is the bigger structural risk.' },
         ],
         xp: 10,
@@ -8224,7 +8229,7 @@ export const LESSONS: Lesson[] = [
         equity_realization_prompt: 'What does the suited version add — and is suited automatically better regardless of the rest of the hand?',
         options: [
           {
-            id: 'comprehensive', label: 'It adds flush potential, backdoor potential, and better realization — but suitedness alone does not rescue every weak hand', quality: 'perfect',
+            id: 'comprehensive', label: 'It adds flush potential, backdoor potential, and better realization', quality: 'perfect',
             feedback: "Correct. A5s gains a real, concrete edge over A5o — but that edge is additive, not magic. A truly weak, disconnected offsuit hand doesn't become a strong holding just by making it suited; suitedness is one property among several, not a trump card.",
           },
           {
@@ -8243,7 +8248,7 @@ export const LESSONS: Lesson[] = [
         hand_dna_prompt: 'Is a small pocket pair like this an automatic call whenever the implied odds "look" set-mine-able?',
         options: [
           {
-            id: 'depends', label: 'No — its value depends on price, stack depth, position, opener range strength, and what happens if someone raises behind', quality: 'perfect',
+            id: 'depends', label: 'No — its value depends on price, stack depth, and position', quality: 'perfect',
             feedback: 'Correct. A small pair\'s whole case rests on flopping a well-disguised set and getting paid — which needs real implied odds (enough effective stack), a reasonable price, and a plan for what happens if the action gets more expensive. None of that is guaranteed just because the pair exists.',
           },
           {
@@ -8261,6 +8266,8 @@ export const LESSONS: Lesson[] = [
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'BTN',
+        effective_stack_bb: 100,
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds'],
         hero_hand: ['Ac', 'Jd'],
         options: [
           { id: 'harder', label: 'Harder to realize', quality: 'perfect', feedback: 'Correct — AJo is offsuit and disconnected, easily dominated by the stronger Ax combos in Villain\'s range, and plays a difficult, one-dimensional postflop game despite having real raw equity on paper.' },
@@ -8276,6 +8283,8 @@ export const LESSONS: Lesson[] = [
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'BTN',
+        effective_stack_bb: 100,
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds'],
         hero_hand: ['As', '5s'],
         options: [
           { id: 'easier', label: 'Easier to realize', quality: 'perfect', feedback: 'Correct — the Ace blocker, suitedness (flush potential) and straight-drawing shape all give A5s real, flexible ways to continue and grow the pot after the flop.' },
@@ -8291,6 +8300,8 @@ export const LESSONS: Lesson[] = [
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'BTN',
+        effective_stack_bb: 100,
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds'],
         hero_hand: ['7s', '6s'],
         options: [
           { id: 'easier', label: 'Easier to realize', quality: 'perfect', feedback: 'Correct — suited AND connected gives 76s flush and straight potential together, with no domination risk to worry about at all. It plays comfortably across a wide range of flops.' },
@@ -8306,6 +8317,8 @@ export const LESSONS: Lesson[] = [
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'BTN',
+        effective_stack_bb: 100,
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds'],
         hero_hand: ['4c', '4d'],
         options: [
           { id: 'harder', label: 'Harder to realize', quality: 'perfect', feedback: 'Correct — a tiny pair has essentially one plan (flop a set) and folds to most other textures. Compared to 76s or A5s, it has far fewer ways to develop a hand across different flops.' },
@@ -8373,6 +8386,7 @@ export const LESSONS: Lesson[] = [
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'BTN',
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds'],
         options: [
           { id: 'call', label: 'Call', quality: 'perfect', feedback: 'Correct. The combination of a great price and closing the action (no squeeze risk) lets BB profitably call far more hands than it 3-bets or folds — calling is typically the largest single piece of a sound BB continuing range.' },
           { id: '3bet', label: '3-Bet', quality: 'mistake', feedback: '3-betting is a real and important part of BB\'s range, but it is typically the smaller slice — the price and closing action make calling the dominant piece.' },
@@ -8431,7 +8445,7 @@ export const LESSONS: Lesson[] = [
         ante_bb: 0.125,
         options: [
           {
-            id: 'comprehensive', label: 'BTN opens much wider, so BB can both call AND 3-bet substantially more against it; UTG\'s much stronger range forces far more folds', quality: 'perfect',
+            id: 'comprehensive', label: 'BTN opens wider, so BB calls and 3-bets more; UTG forces far more folds', quality: 'perfect',
             feedback: 'Correct. Notice the fold rate more than doubles against UTG (18.1% → 44.1%) while the 3-bet frequency roughly triples against BTN (5.3% → 16.8%) — both calling and aggression expand together against the weaker range, and folding absorbs almost all of the difference against the stronger one.',
           },
           {
@@ -8455,7 +8469,7 @@ export const LESSONS: Lesson[] = [
         stack_depth_morph_prompt: 'What actually changes as the stack gets shallower — just the width, or something more?',
         options: [
           {
-            id: 'comprehensive', label: 'Both the width AND the composition change — shallower stacks lean toward call-or-jam with fewer speculative implied-odds hands, not simply "call less of everything"', quality: 'perfect',
+            id: 'comprehensive', label: 'Both the width AND the composition change as stacks get shallower', quality: 'perfect',
             feedback: 'Correct. It is not just a shrinking circle around the same shape — some medium hands that were comfortable calls at 60bb become better suited to jamming at 15bb, while speculative suited connectors that relied on implied odds lose much of their appeal as the stack gets shallow.',
           },
           {
@@ -8489,6 +8503,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BB',
         villain_position: 'CO',
         effective_stack_bb: 100,
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN folds', 'SB folds'],
         hero_hand: ['Ks', 'Ts'],
         options: [
           { id: 'call', label: 'Call', quality: 'perfect', feedback: 'Good price closing the action, suited and connected enough to play well postflop against a reasonably wide CO open — a clean call.' },
@@ -8505,6 +8520,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BB',
         villain_position: 'UTG',
         effective_stack_bb: 100,
+        action_before_hero: ['UTG raises to 2.5bb', 'HJ folds', 'CO folds', 'BTN folds', 'SB folds'],
         hero_hand: ['Ks', '9h'],
         options: [
           { id: 'fold', label: 'Fold', quality: 'perfect', feedback: 'Correct — K9o is dominated by a large share of UTG\'s tight, strong range, and even the BB price doesn\'t rescue a hand this exposed to domination here.' },
@@ -8521,6 +8537,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BB',
         villain_position: 'BTN',
         effective_stack_bb: 60,
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.2bb', 'SB folds'],
         hero_hand: ['7s', '6s'],
         options: [
           { id: 'call', label: 'Call', quality: 'perfect', feedback: 'A great price against one of the widest possible opens, with a suited connector that plays well multiway or heads-up — a comfortable call.' },
@@ -8537,6 +8554,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BB',
         villain_position: 'SB',
         effective_stack_bb: 40,
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN folds', 'SB raises to 2.5bb'],
         hero_hand: ['As', '4s'],
         options: [
           { id: '3bet', label: '3-Bet', quality: 'perfect', feedback: 'A wide, weak SB steal range combined with a suited Ace blocker and decent playability makes this a strong spot to apply pressure rather than just call.' },
@@ -8554,6 +8572,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BB',
         villain_position: 'BTN',
         effective_stack_bb: 15,
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 3bb', 'SB folds'],
         hero_hand: ['Qs', 'Qh'],
         options: [
           { id: 'jam', label: 'Jam (all-in)', quality: 'perfect', feedback: 'At 15bb, a premium pocket pair like QQ wants to get the money in now rather than play a shallow, awkward postflop pot — jamming is the clean, structurally correct play.' },
@@ -8571,6 +8590,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BB',
         villain_position: 'HJ',
         effective_stack_bb: 100,
+        action_before_hero: ['UTG folds', 'HJ raises to 2.3bb', 'CO folds', 'BTN folds', 'SB folds'],
         hero_hand: ['9s', '2h'],
         options: [
           { id: 'fold', label: 'Fold', quality: 'perfect', feedback: 'A clean fold — 92o has neither the raw equity, playability, nor blocker value to justify continuing against HJ\'s range, even with the BB discount.' },
@@ -8617,7 +8637,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'SB',
         options: [
           {
-            id: 'comprehensive', label: 'BB could just call (creating a multiway pot), OR BB could squeeze — reraising over both the open and Hero\'s call', quality: 'perfect',
+            id: 'comprehensive', label: 'BB could call (a multiway pot) or squeeze over the open and Hero\'s call', quality: 'perfect',
             feedback: 'Correct. A flat from the SB leaves the door open for BB to either flatten it further into a multiway pot with different equity dynamics, or to squeeze and put Hero in a tough spot facing a reraise with a call already in. Neither risk applies once action reaches BB — squeeze construction itself is covered elsewhere, but the exposure is real here.',
           },
           {
@@ -8646,7 +8666,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'Hero (SB) has already posted 0.5bb. Does that discount mean SB should call extremely wide, the way BB sometimes can?',
         options: [
           {
-            id: 'no_three_forces', label: 'No — the discount encourages continuing, but being OOP discourages calling, and the BB still behind adds extra risk. The strategy is the result of all three forces together', quality: 'perfect',
+            id: 'no_three_forces', label: 'No — being OOP and the BB still behind both discourage calling wide', quality: 'perfect',
             feedback: 'Correct. Unlike the BB, the SB\'s partial discount is fighting against two real headwinds at once: no position for the rest of the hand, and a live player still to act. Those competing forces are why SB calling ranges look nothing like BB calling ranges despite the shared "blind discount" idea.',
           },
           {
@@ -8688,7 +8708,7 @@ export const LESSONS: Lesson[] = [
         ante_bb: 0.125,
         options: [
           {
-            id: 'comprehensive', label: 'The opener\'s range strength changes both the fold equity available to a rejam AND the profitability of rejamming itself — and against the stronger range, some hands shift toward calling instead of jamming, since calling can behave better multiway/against a tighter range', quality: 'perfect',
+            id: 'comprehensive', label: 'The opener\'s range strength changes both fold equity and rejam profitability', quality: 'perfect',
             feedback: 'Correct. Against BTN, jamming is both more likely to fold out worse hands AND favored to win when called — hence 28.2% all-in and essentially no calling. Against UTG, a jam runs into a much scarier calling range, so the aggression frequency collapses — and calling picks up some of that slack instead of folding everything.',
           },
           {
@@ -8734,6 +8754,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'SB',
         villain_position: 'BTN',
         effective_stack_bb: 100,
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb'],
         hero_hand: ['As', 'Js'],
         options: [
           { id: '3bet', label: '3-Bet', quality: 'perfect', feedback: 'A strong suited Ax against a wide BTN open, with only the BB left to worry about — a clear spot to apply pressure rather than just call and leave BB a cheap look.' },
@@ -8798,7 +8819,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'Compare two callers of the same open: Hero calling on the BTN, versus Hero calling from the SB. Who sees Villain act first on every postflop street?',
         table_size: 6,
         options: [
-          { id: 'btn_caller', label: 'The BTN caller — Hero acts last', quality: 'perfect', feedback: 'Correct. The BTN caller watches Villain act first on every street and reacts with full information. The SB caller is the one acting first instead, against everyone remaining in the hand.' },
+          { id: 'btn_caller', label: 'The BTN caller', quality: 'perfect', feedback: 'Correct. The BTN caller watches Villain act first on every street and reacts with full information. The SB caller is the one acting first instead, against everyone remaining in the hand.' },
           { id: 'sb_caller', label: 'The SB caller', quality: 'mistake', feedback: 'It\'s the reverse — the SB caller acts first against the field, while the BTN caller enjoys full position for the whole hand.' },
         ],
         xp: 8,
@@ -8824,7 +8845,7 @@ export const LESSONS: Lesson[] = [
           'Common in-position calling candidates include mid/small pocket pairs, suited Ax, suited broadways, strong suited connectors, and some offsuit broadways depending on the exact spot. What do many of these hands genuinely have in common?',
         options: [
           {
-            id: 'comprehensive', label: 'Real playability, raw equity, nut potential, and the ability to keep continuing across a wide variety of board textures', quality: 'perfect',
+            id: 'comprehensive', label: 'Real playability and the ability to keep continuing across many textures', quality: 'perfect',
             feedback: "Correct — it isn't just \"they're suited.\" These hands share the ability to make strong hands or credible draws on many different flops, which is exactly what a calling range (rather than a raising range) wants: broad board coverage and genuine playability.",
           },
           {
@@ -8907,7 +8928,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['btn_defense'],
         narrative: 'What is the MAIN reason that call is correct?',
         options: [
-          { id: 'hand_properties', label: 'Hand properties — QJs has strong playability, suitedness and board coverage', quality: 'perfect', feedback: 'Correct — this spot is decided primarily by what QJs does well as a hand: suited, connected, good coverage across textures.' },
+          { id: 'hand_properties', label: 'Hand properties — QJs plays well across many textures', quality: 'perfect', feedback: 'Correct — this spot is decided primarily by what QJs does well as a hand: suited, connected, good coverage across textures.' },
           { id: 'players_behind', label: 'Players behind', quality: 'mistake', feedback: 'Players behind is real (SB, BB) but it is not the deciding factor here — the hand\'s own properties are doing the heavy lifting in this specific decision.' },
           { id: 'price', label: 'Price', quality: 'mistake', feedback: 'Price matters in every spot, but it is not the standout reason this particular hand calls — its playability and board coverage are.' },
         ],
@@ -8935,7 +8956,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['players_behind_aggression'],
         narrative: 'What is the MAIN reason this is closer to a fold than the previous BTN spot with a similar hand?',
         options: [
-          { id: 'players_behind', label: 'Players behind — BTN, SB and BB are all still live, adding real squeeze exposure', quality: 'perfect', feedback: "Correct — three players still to act is a much heavier resistance load than the BTN's two, and that alone meaningfully tightens what's worth calling from the CO." },
+          { id: 'players_behind', label: 'Players behind — three opponents are still live to act', quality: 'perfect', feedback: "Correct — three players still to act is a much heavier resistance load than the BTN's two, and that alone meaningfully tightens what's worth calling from the CO." },
           { id: 'hand_properties', label: 'Hand properties — 87s is a much worse hand than QJs', quality: 'mistake', feedback: '87s and QJs are both perfectly playable suited hands with real board coverage — the deciding difference here is the seat and the players left behind, not the hand itself.' },
           { id: 'price', label: 'Price', quality: 'mistake', feedback: 'The price is essentially the same open size as the BTN spot — the real difference is the extra player left to act behind the CO.' },
         ],
@@ -9017,7 +9038,7 @@ export const LESSONS: Lesson[] = [
         stack_depth_morph_position: 'BB',
         stack_depth_morph_prompt: 'Does A5s play the same role in this range at every depth shown?',
         options: [
-          { id: 'no_role_changes', label: 'No — its role shifts: more of an implied-odds/blocker play deep, less clearly worth it very shallow where there\'s no room to realize that implied odds plan', quality: 'perfect', feedback: "Correct. A5s's case leans on suitedness, a blocker, and the ability to flop well and get paid across multiple streets — exactly the kind of value that shrinks as the stack gets shallow and there's no room left to realize it." },
+          { id: 'no_role_changes', label: 'No — its role shifts from an implied-odds play deep to a weak play shallow', quality: 'perfect', feedback: "Correct. A5s's case leans on suitedness, a blocker, and the ability to flop well and get paid across multiple streets — exactly the kind of value that shrinks as the stack gets shallow and there's no room left to realize it." },
           { id: 'yes_same', label: 'Yes — it belongs in the range identically at every depth', quality: 'mistake', feedback: "A5s's value is tied to suitedness, blockers and multi-street playability — assets that matter less and less as the stack gets too shallow to use them." },
         ],
         xp: 12,
@@ -9030,7 +9051,7 @@ export const LESSONS: Lesson[] = [
           'A medium suited connector shifts from a comfortable call at 60bb to a clear fold at 15bb against the same open. Which of these plausibly explains the shift?',
         options: [
           {
-            id: 'comprehensive', label: 'Worse postflop realization at a shallow depth, less room for implied odds/playability to pay off, and the alternative (folding or jamming instead) becomes cleaner than a speculative call', quality: 'perfect',
+            id: 'comprehensive', label: 'Several factors together — worse realization, less implied odds, and a cleaner fold', quality: 'perfect',
             feedback: "Correct — several factors move together here. A shallow stack removes most of the implied-odds upside a suited connector relies on, realization gets worse without room to maneuver, and the hand's speculative nature stops being worth the risk when there's no depth left to exploit if it connects.",
           },
           {
@@ -9297,7 +9318,7 @@ export const LESSONS: Lesson[] = [
         range_diff_prompt: 'What should happen to the range as the opener widens from UTG to CO?',
         options: [
           {
-            id: 'expand_marginal', label: 'It should expand — mostly by adding marginal suited hands and some offsuit broadways that only become profitable once the opener\'s range weakens', quality: 'perfect',
+            id: 'expand_marginal', label: 'It should expand — mostly marginal suited hands and offsuit broadways', quality: 'perfect',
             feedback: 'Correct. The added region is exactly the marginal, speculative material that needed a weaker opener to become worth continuing — nothing about the premium core changes.',
           },
           {
@@ -9336,7 +9357,7 @@ export const LESSONS: Lesson[] = [
         villain_position: 'BTN',
         options: [
           {
-            id: 'widen_call', label: 'It should widen again, this time mostly through calling — BB gets a better price and closes the action, both advantages SB lacked', quality: 'perfect',
+            id: 'widen_call', label: 'It should widen again, mostly through calling', quality: 'perfect',
             feedback: 'Correct. The BB regains the two things that were missing from the SB: a full blind\'s worth of discount and a closed action with no squeeze risk. That combination pulls the range back open, primarily through calling rather than through aggression.',
           },
           {
@@ -9353,7 +9374,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'Freeze the seats and the opener. The effective stack changes from 40bb to 15bb. How should Hero\'s action buckets shift?',
         options: [
           {
-            id: 'jam_or_fold', label: 'Toward jam-or-fold — many of the calls and non-all-in raises lose their appeal, while some marginal hands become clean jams instead', quality: 'perfect',
+            id: 'jam_or_fold', label: 'Toward jam-or-fold — calls and small raises lose their appeal', quality: 'perfect',
             feedback: 'Correct. At 15bb there is little room for the calling and non-all-in-raising game that worked at 40bb — the strategy compresses toward all-in-or-fold, with some hands moving from "awkward call" straight to "clean jam."',
           },
           {
@@ -9374,7 +9395,7 @@ export const LESSONS: Lesson[] = [
         villain_position: 'BTN',
         options: [
           {
-            id: 'overfold', label: 'Big Blind Overfolding — this gives up profitable suited hands, small pairs and connectors that the price and closed action make worth continuing', quality: 'perfect',
+            id: 'overfold', label: 'Big Blind Overfolding — folding profitable suited hands and small pairs', quality: 'perfect',
             feedback: 'Correct. Against a wide BTN open, the BB\'s price and closed action make many small pairs, suited connectors and suited Ax profitable calls — folding all of them regardless of suitedness or connectedness leaves real value on the table.',
           },
           {
@@ -9587,7 +9608,7 @@ export const LESSONS: Lesson[] = [
         range_diff_prompt: 'Which hands should change, and in which direction?',
         options: [
           {
-            id: 'widen_speculative', label: 'The range should widen slightly — SB\'s steal range is wider than CO\'s open, so a few more speculative hands become worth continuing', quality: 'perfect',
+            id: 'widen_speculative', label: 'It should widen slightly — SB\'s steal range is wider than CO\'s', quality: 'perfect',
             feedback: 'Correct. SB opens wider than CO does, so the added region picks up more marginal, speculative continuations — the core premium calls don\'t need to move at all.',
           },
           {
@@ -9610,7 +9631,7 @@ export const LESSONS: Lesson[] = [
         villain_position: 'BTN',
         options: [
           {
-            id: 'backwards', label: 'It has the priorities backwards — suited hands (flush potential, better realization, more playability) are exactly the hands the BB price makes worth continuing, and this player is folding almost all of them', quality: 'perfect',
+            id: 'backwards', label: 'It has the priorities backwards — suited hands deserve more credit than offsuit broadways', quality: 'perfect',
             feedback: 'Correct. Suited hands are disproportionately good BB continues — they realize equity well and play across many boards. A strategy that keeps offsuit broadways but dumps suited hands below KQs is folding some of the most profitable material in the whole range.',
           },
           {
@@ -9655,7 +9676,7 @@ export const LESSONS: Lesson[] = [
         hero_hand: ['Ac', 'Td'],
         options: [
           {
-            id: 'comprehensive', label: 'There is more squeeze exposure from the CO (an extra live player), and worse position relative to the field — both push the CO toward folding what the BTN can comfortably call', quality: 'perfect',
+            id: 'comprehensive', label: 'More squeeze exposure from the CO, and worse position relative to the field', quality: 'perfect',
             feedback: 'Correct. The extra player behind the CO is real squeeze risk the BTN doesn\'t face, and the BTN also has better position relative to the remaining field. Both factors point the same direction: the same hand can profitably call from the BTN and prefer folding from the CO.',
           },
           {
@@ -9705,7 +9726,7 @@ export const LESSONS: Lesson[] = [
         villain_position: 'BTN',
         options: [
           {
-            id: 'marginal', label: 'The marginal edge — weak suited hands, small pairs and offsuit hands that only worked at the better 2x price', quality: 'perfect',
+            id: 'marginal', label: 'The marginal edge — weak suited hands and small pairs at the old price', quality: 'perfect',
             feedback: 'Correct. The premium core barely notices the size change — it\'s the hands that were only barely profitable at the cheaper price that stop clearing the bar first as the required equity rises.',
           },
           {
@@ -9739,7 +9760,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['defending_opens'],
         narrative: 'What is the single MOST important reason behind that call?',
         options: [
-          { id: 'suitedness_price', label: 'Suitedness and price together — the flush/backdoor potential plus BB\'s discount outweigh the modest domination risk', quality: 'perfect', feedback: 'Correct — this is a hand-properties-plus-price decision, not a domination-dominated one; K9s has just enough going for it against a CO open at this price.' },
+          { id: 'suitedness_price', label: 'Suitedness and price together — both favor continuing here', quality: 'perfect', feedback: 'Correct — this is a hand-properties-plus-price decision, not a domination-dominated one; K9s has just enough going for it against a CO open at this price.' },
           { id: 'players_behind', label: 'Players behind', quality: 'mistake', feedback: 'Players behind isn\'t the deciding factor here — this decision hinges on the hand\'s own properties and the price, not resistance from other seats.' },
           { id: 'stack_depth', label: 'Stack depth', quality: 'mistake', feedback: 'At a standard 100bb, stack depth isn\'t the differentiator here — suitedness and price are doing the real work in this specific decision.' },
         ],
@@ -9758,7 +9779,7 @@ export const LESSONS: Lesson[] = [
         villain_position: 'BTN',
         options: [
           {
-            id: 'comprehensive', label: 'Any of: the opener moving earlier (UTG instead of BTN), the open size increasing, Hero moving out of the BB into the SB, the stack getting much shallower, or a player behind becoming a known aggressive squeezer', quality: 'perfect',
+            id: 'comprehensive', label: 'Any change that weakens price, position, or stack depth for this call', quality: 'perfect',
             feedback: "Correct — all five genuinely move the decision the wrong way: a stronger opener raises domination risk, a bigger size worsens price, losing the BB's discount/closed-action removes the very things that made the call attractive, a shallow stack removes the implied odds the hand needed, and a live aggressive squeezer adds real risk behind. This is exactly why the same call can be right in one configuration and wrong in a nearly identical one.",
           },
           {
@@ -9854,7 +9875,7 @@ export const LESSONS: Lesson[] = [
           'Across everything in this module: what is the one thing a sound defending strategy must get right, regardless of the exact combos in any single cell?',
         options: [
           {
-            id: 'relational', label: 'That every action is relational — decided by the opener\'s range, the price, position, players behind, stack depth and hand properties together, never by hand strength read in isolation', quality: 'perfect',
+            id: 'relational', label: 'Every action is relational — decided by range, price, and position together', quality: 'perfect',
             feedback: 'Correct. That is the single idea this entire module has been building toward: "is my hand good?" is never a complete question on its own. The right question is always how this hand performs, in this range environment, right now.',
           },
           {
@@ -9904,7 +9925,7 @@ export const LESSONS: Lesson[] = [
         suit_isomorphism_board_b: ['Ac', 'Kc', '7s'],
         suit_isomorphism_prompt: 'Do these two boards share the same suit pattern?',
         options: [
-          { id: 'same', label: 'Same pattern — the top two cards share a suit on both', quality: 'perfect', feedback: 'Correct. Board A has hearts on the Ace and King; Board B has clubs on the Ace and King. Different physical suits, identical relationship.' },
+          { id: 'same', label: 'Same pattern', quality: 'perfect', feedback: 'Correct. Board A has hearts on the Ace and King; Board B has clubs on the Ace and King. Different physical suits, identical relationship.' },
           { id: 'different', label: 'Different pattern', quality: 'mistake', feedback: 'Look at WHICH cards share a suit, not which suit it is. On both boards, the two highest cards are suited together and the low card stands alone — that is the same pattern.' },
         ],
         xp: 6,
@@ -9929,7 +9950,7 @@ export const LESSONS: Lesson[] = [
         suit_isomorphism_prompt: 'Do these two boards share the same suit pattern?',
         options: [
           { id: 'same', label: 'Same pattern', quality: 'mistake', feedback: 'Board A has three different suits — no two cards share one. Board B has the Ace and King sharing a suit. Those are genuinely different patterns, even though the ranks match.' },
-          { id: 'different', label: 'Different pattern — one has two cards sharing a suit, the other has none', quality: 'perfect', feedback: 'Correct. Board A is rainbow (three different suits); Board B has two suited cards. Matching ranks does not mean matching pattern — you have to check the suits independently.' },
+          { id: 'different', label: 'Different pattern', quality: 'perfect', feedback: 'Correct. Board A is rainbow (three different suits); Board B has two suited cards. Matching ranks does not mean matching pattern — you have to check the suits independently.' },
         ],
         xp: 6,
       },
@@ -10177,7 +10198,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'Q♦ 8♦ 8♣ again. What is this board\'s two-tone SUBTYPE?',
         board: ['Qd', '8d', '8c'],
         options: [
-          { id: 'na', label: 'Not defined — this board is paired, and the subtype only exists for unpaired two-tone boards', quality: 'perfect', feedback: 'Correct. The subtype (high-mid / mid-low / high-low) depends on ranking the "off" card against the two suited cards — that comparison breaks down when two of the three cards share a rank. Structure and texture stay separate; subtype needs BOTH unpaired structure AND two-tone texture.' },
+          { id: 'na', label: 'Not defined — this board is paired, not unpaired', quality: 'perfect', feedback: 'Correct. The subtype (high-mid / mid-low / high-low) depends on ranking the "off" card against the two suited cards — that comparison breaks down when two of the three cards share a rank. Structure and texture stay separate; subtype needs BOTH unpaired structure AND two-tone texture.' },
           { id: 'high_mid', label: 'High-Mid', quality: 'mistake', feedback: 'This board is paired, not unpaired — the two-tone subtype isn\'t defined here at all. Check structure first.' },
           { id: 'mid_low', label: 'Mid-Low', quality: 'mistake', feedback: 'This board is paired, not unpaired — the two-tone subtype isn\'t defined here at all. Check structure first.' },
         ],
@@ -11088,9 +11109,9 @@ export const LESSONS: Lesson[] = [
         equity_bucket_distribution_data: { '87s': 100, '87o': 100, '33': 100, QJo: 0, AKo: 0 },
         equity_bucket_prompt: 'How many of these five hand types currently land in the Strong bucket?',
         options: [
-          { id: '3', label: '3 — the two-pair and set combinations (87s, 87o, 33)', quality: 'perfect', feedback: 'Correct. Both two-pair versions of 8-7 and the flopped set of 3s currently beat every pocket pair in this villain range; the two overcard hands (QJo, AKo) have no pair yet and currently trail all of them.' },
+          { id: '3', label: '3', quality: 'perfect', feedback: 'Correct. Both two-pair versions of 8-7 and the flopped set of 3s currently beat every pocket pair in this villain range; the two overcard hands (QJo, AKo) have no pair yet and currently trail all of them.' },
           { id: '2', label: '2', quality: 'mistake', feedback: 'Check all three made hands — 87s, 87o, AND 33 all currently beat a range of unpaired pocket pairs KK–TT.' },
-          { id: '5', label: '5 — all of them', quality: 'mistake', feedback: 'QJo and AKo haven\'t made a pair on this board at all — they currently trail every pocket pair in the villain range.' },
+          { id: '5', label: '5', quality: 'mistake', feedback: 'QJo and AKo haven\'t made a pair on this board at all — they currently trail every pocket pair in the villain range.' },
         ],
         xp: 10,
       },
@@ -11113,7 +11134,7 @@ export const LESSONS: Lesson[] = [
         board: ['8h', '7h', '3d'],
         options: [
           {
-            id: 'full_picture', label: 'A dynamic, two-tone, straight-free board where BB\'s wider, more connected range collides well with it — exactly the kind of spot where range advantage and c-bet strategy will matter a lot',
+            id: 'full_picture', label: 'A dynamic, two-tone board where BB\'s wider range collides well with it',
             quality: 'perfect',
             feedback: 'Correct. That sentence uses everything from this scan — structure, texture, volatility, and range interaction — without jumping ahead to a betting decision the next module hasn\'t taught yet.',
           },
@@ -11183,7 +11204,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'If the preflop raiser checked back literally every single flop, no matter the hand or board, what would go wrong?',
         options: [
           {
-            id: 'comprehensive', label: 'Villain would realize far too much equity for free, and the raiser would never apply pressure on the large part of Villain\'s range that missed the flop', quality: 'perfect',
+            id: 'comprehensive', label: 'Villain realizes free equity, with no pressure on the hands that missed', quality: 'perfect',
             feedback: 'Correct. Checking back unconditionally hands the entire field a free card and gives up every opportunity to make a wide, weak calling range pay for continuing. A pure-check strategy is just as broken as a pure-bet one.',
           },
           {
@@ -11200,7 +11221,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'So should the preflop raiser just bet 100% of flops instead, to avoid that problem?',
         options: [
           {
-            id: 'depends', label: 'No — some boards and range match-ups make a check-heavy strategy correct instead; it depends on how the two ranges interact with that specific flop', quality: 'perfect',
+            id: 'depends', label: 'No — some boards make a check-heavy strategy correct instead', quality: 'perfect',
             feedback: 'Correct — and this is the whole subject of this module. Neither "always bet" nor "always check" is a strategy. The right frequency comes from reading how Hero\'s range and Villain\'s range actually interact with the flop in front of you.',
           },
           {
@@ -11482,7 +11503,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'Same two cards, K♥K♦, both times. Why did its strategic value swing from Strong to Trash?',
         options: [
           {
-            id: 'environment', label: 'The cards never changed — the board and the range in front of them changed what those cards are actually worth', quality: 'perfect',
+            id: 'environment', label: 'The cards never changed — the board and range changed their value', quality: 'perfect',
             feedback: 'Correct. This is the whole point of range-vs-range thinking: a hand has no fixed strategic value by itself. Its value is entirely relative to the specific board and the specific range it is facing at that moment.',
           },
           {
@@ -11538,7 +11559,7 @@ export const LESSONS: Lesson[] = [
         range_distribution_prompt: 'Same range both times. Why does its distribution look so different depending on the board?',
         options: [
           {
-            id: 'connects', label: 'BB\'s calling range is built from different hands than the raiser\'s opening range — it connects much better with low, connected boards than with high-card boards', quality: 'perfect',
+            id: 'connects', label: 'BB\'s calling range simply connects better with low, connected boards', quality: 'perfect',
             feedback: 'Correct. BB\'s range contains plenty of small pairs and low suited connectors that rarely show up in a raiser\'s range — those hands come alive on low connected boards and mostly whiff on high-card ones. Same range, wildly different composition depending on what the board asks of it.',
           },
           {
@@ -11599,7 +11620,7 @@ export const LESSONS: Lesson[] = [
           { id: 'low', label: 'Low', quality: 'mistake', feedback: 'This board supports far more aggression than a low frequency implies — BTN\'s range advantage here is substantial.' },
           { id: 'medium', label: 'Medium', quality: 'acceptable', feedback: 'Directionally reasonable, but this board\'s combination of range advantage, strong-hand concentration, and BB\'s heavy trash concentration supports going higher than medium.' },
           { id: 'high', label: 'High', quality: 'good', feedback: 'Correct direction — this is a genuinely high-frequency spot for BTN.' },
-          { id: 'near_range', label: 'Near-range bet (almost the whole range)', quality: 'perfect', feedback: 'Correct. Every ingredient lines up: BTN\'s range is loaded with Ax relative to BB\'s, the board is dry enough that BB rarely has a strong continuing hand, BB\'s wide range is heavy with trash that must fold, and BB has little ability to raise back effectively. That combination supports betting nearly the entire range.' },
+          { id: 'near_range', label: 'Near-range bet', quality: 'perfect', feedback: 'Correct. Every ingredient lines up: BTN\'s range is loaded with Ax relative to BB\'s, the board is dry enough that BB rarely has a strong continuing hand, BB\'s wide range is heavy with trash that must fold, and BB has little ability to raise back effectively. That combination supports betting nearly the entire range.' },
         ],
         xp: 10,
       },
@@ -11610,7 +11631,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'What is actually driving that near-range betting frequency on A93r?',
         options: [
           {
-            id: 'comprehensive', label: 'BTN\'s range is concentrated with more of the strong hands this board rewards, BB\'s wide range is heavy with hands that must fold, and BB has limited ability to raise back effectively', quality: 'perfect',
+            id: 'comprehensive', label: 'BTN\'s range is stronger here, and BB has limited ability to raise back', quality: 'perfect',
             feedback: 'Correct — it\'s the combination of BTN\'s concentrated strength, BB\'s trash-heavy range, and BB\'s weak raising resistance that supports this frequency, not any single fact alone.',
           },
           {
@@ -11653,7 +11674,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'What is driving the lower frequency on KQT compared to A93r, even though both are "high-card" boards?',
         options: [
           {
-            id: 'comprehensive', label: 'The connectivity gives BB far more strong hands and draws to continue with, and a much more credible ability to raise back — both cut into BTN\'s incentive to bet as often or as purely', quality: 'perfect',
+            id: 'comprehensive', label: 'The extra connectivity gives BB more strong hands and real raise-back potential', quality: 'perfect',
             feedback: 'Correct. The label "high-card" was never the real driver — connectivity changed how much of BB\'s range can genuinely fight back, and that is what pulled the frequency down.',
           },
           {
@@ -11733,7 +11754,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'What is actually driving 654r to the bottom of that ranking?',
         options: [
           {
-            id: 'comprehensive', label: 'BB\'s calling range connects with this specific board (suited low connectors, small pairs) at least as well as BTN\'s raising range does — the ranges become close to symmetric, and BB has real check-raise potential', quality: 'perfect',
+            id: 'comprehensive', label: 'BB\'s calling range connects with this board about as well as BTN\'s does', quality: 'perfect',
             feedback: "Correct. It isn't that low boards are inherently bad for BTN — it's that THIS particular board is one where BB's actual calling hands connect unusually well, closing the range-advantage gap that supported aggression everywhere else.",
           },
           {
@@ -11930,7 +11951,7 @@ export const LESSONS: Lesson[] = [
           'Compare the two labs: A93r was HIGH FREQUENCY + SMALL SIZE. Q72r (as a 3-bet pot) was LOWER FREQUENCY + BIG SIZE. What does each combination actually mean strategically?',
         options: [
           {
-            id: 'comprehensive', label: 'HIGH FREQUENCY + SMALL = a merged range betting almost everything cheaply to deny equity; LOWER FREQUENCY + BIG = a polarized range betting less often but extracting more from real value while still folding out the same air', quality: 'perfect',
+            id: 'comprehensive', label: 'Frequency and sizing both reflect the SAME underlying range shape', quality: 'perfect',
             feedback: "Correct. Frequency and sizing are not chosen independently — they describe the SAME underlying range shape from two different angles. A merged range wants to bet a lot, cheaply. A polarized range wants to bet less often, but bigger, when it does.",
           },
           {
@@ -12026,7 +12047,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'Why does BTN\'s checking range need CHECK-PROTECT hands like A♣T♣ and T♠9♠ at all, instead of only checking back the worst trash?',
         options: [
           {
-            id: 'comprehensive', label: 'If the checking range were pure air, BB could attack it profitably on every later street — some real equity in the checking range is what makes those future bets and raises credible', quality: 'perfect',
+            id: 'comprehensive', label: 'A pure-air checking range would be profitably exploited every time', quality: 'perfect',
             feedback: 'Correct. A checking range that is 100% air gets exploited the moment Villain notices — betting into it always shows a profit. Keeping some genuine equity and playability in the checking range is what protects it.',
           },
           {
@@ -12084,7 +12105,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'Hero checks back this marginal hand. What does that check actually accomplish, given BTN acts last on this street?',
         options: [
           {
-            id: 'comprehensive', label: 'The betting round is over the moment Hero checks — Hero sees the turn for free and still gets to realize whatever equity K♦J♦ has', quality: 'perfect',
+            id: 'comprehensive', label: 'It closes the street immediately — Hero still sees the turn for free', quality: 'perfect',
             feedback: "Correct. Because BTN acts last, a BTN check closes the street immediately — nobody else gets to act. Hero loses nothing by checking here except the (small) chance of winning the pot right now with a bluff.",
           },
           {
@@ -12108,7 +12129,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'Hero is considering checking this same marginal hand from OUT of position. What is genuinely different here compared to the BTN spot above?',
         options: [
           {
-            id: 'comprehensive', label: 'Checking here does NOT close the street — BTN still gets to act, with the extra information that Hero checked, and can bet into a range that just showed weakness', quality: 'perfect',
+            id: 'comprehensive', label: 'Checking here does NOT close the street — BTN still gets to act', quality: 'perfect',
             feedback: "Correct. Out of position, Hero's check hands the initiative to Villain, who acts with the benefit of seeing Hero check first. IP, that same check ends the street with no such cost.",
           },
           {
@@ -12160,7 +12181,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'What does this board do to the range interaction between these two ranges?',
         options: [
           {
-            id: 'comprehensive', label: 'BTN\'s range keeps far more Aces and strong broadway holdings than BB\'s calling range, which is dense with unpaired, non-Ace trash here', quality: 'perfect',
+            id: 'comprehensive', label: 'BTN\'s range keeps far more Aces than BB\'s calling range does', quality: 'perfect',
             feedback: 'Correct — this is the same range-advantage read from Lessons 3-4: BTN\'s opening range simply contains more of what this specific board rewards.',
           },
           {
@@ -12210,7 +12231,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'What changed about the range interaction on this board compared to A93r?',
         options: [
           {
-            id: 'comprehensive', label: 'BB\'s calling range now connects with this low, connected texture (suited connectors, small pairs) at least as well as BTN\'s range does — the advantage BTN had on A93r has largely evaporated', quality: 'perfect',
+            id: 'comprehensive', label: 'BB\'s calling range now connects with this board about as well as BTN\'s does', quality: 'perfect',
             feedback: 'Correct — this is the 654r read from Lesson 5: the same two ranges, a very different board, and a much more symmetric interaction.',
           },
           {
@@ -12352,7 +12373,7 @@ export const LESSONS: Lesson[] = [
         board: ['Js', '7d', '2c'],
         decision_spot_question: 'Hero checks back this hand. What does that check cost Hero?',
         options: [
-          { id: 'comprehensive', label: 'Very little — the street closes immediately, and Hero still gets to see the turn and realize AQ\'s equity for free', quality: 'perfect', feedback: 'Correct — the in-position check is close to free, same logic as Lesson 8.' },
+          { id: 'comprehensive', label: 'Very little — the street closes immediately, for free', quality: 'perfect', feedback: 'Correct — the in-position check is close to free, same logic as Lesson 8.' },
           { id: 'gives_initiative', label: 'It hands the betting initiative to BB for the rest of the street', quality: 'mistake', feedback: "BB already acted before Hero's check ends the street — there's no further action for BB to take this street." },
         ],
         xp: 10,
@@ -12370,7 +12391,7 @@ export const LESSONS: Lesson[] = [
         board: ['Js', '7d', '2c'],
         decision_spot_question: 'Hero is considering checking this same hand from out of position. What is different here?',
         options: [
-          { id: 'comprehensive', label: 'The street does not close — BTN still gets to act, now with the information that Hero checked, and may bet into it', quality: 'perfect', feedback: 'Correct — out of position, the same check hands the initiative to Villain instead of ending the street for free.' },
+          { id: 'comprehensive', label: 'The street does not close — BTN still gets to act', quality: 'perfect', feedback: 'Correct — out of position, the same check hands the initiative to Villain instead of ending the street for free.' },
           { id: 'identical', label: 'Nothing is different — a check always accomplishes the same thing', quality: 'mistake', feedback: 'Whether a check ends the street depends entirely on whether someone still has to act after it — out of position, someone always does.' },
         ],
         xp: 10,
@@ -12405,7 +12426,7 @@ export const LESSONS: Lesson[] = [
         villain_position: 'BB',
         board: ['Ks', '9d', '4c'],
         options: [
-          { id: 'comprehensive', label: 'BTN\'s range keeps more Kings and strong overpairs; BB\'s calling range is heavy with unpaired, non-King trash on this dry a texture', quality: 'perfect', feedback: 'Correct — the same range-advantage read that supports a high-frequency approach here, independent of Hero\'s specific hand.' },
+          { id: 'comprehensive', label: 'BTN\'s range keeps more Kings than BB\'s calling range does', quality: 'perfect', feedback: 'Correct — the same range-advantage read that supports a high-frequency approach here, independent of Hero\'s specific hand.' },
           { id: 'no_advantage', label: 'There is no meaningful range advantage on this board', quality: 'mistake', feedback: 'A dry King-high board with BTN\'s range containing far more Kings than BB\'s calling range is a clear range-advantage spot.' },
         ],
         xp: 8,
@@ -12457,7 +12478,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'Zoom back out. What is the one idea underneath every scenario in this lab?',
         options: [
           {
-            id: 'comprehensive', label: 'A c-bet decision is never about "I raised, so I bet" — it is always about how the two full ranges interact with this specific board, and where Hero\'s exact hand fits inside that resulting strategy', quality: 'perfect',
+            id: 'comprehensive', label: 'It\'s never "I raised, so I bet" — it\'s always about range interaction', quality: 'perfect',
             feedback: 'Correct. This is the thesis of the entire module — frequency, sizing, hand selection, and position all flow from range interaction, never from the preflop label alone.',
           },
           {
@@ -12586,7 +12607,7 @@ export const LESSONS: Lesson[] = [
         options: [
           {
             id: 'individual_vs_range',
-            label: 'Individual hand strength and range strength are different questions — AA itself crushes BB\'s range, but most of the REST of CO\'s range does not, so CO\'s strategy can\'t be built as if every hand were AA',
+            label: 'Individual hand strength and range strength are two different questions',
             quality: 'perfect',
             feedback: 'Correct — this is the core distinction of the whole module. A player\'s exact hand and a player\'s whole range can tell two different stories on the same flop.',
           },
@@ -12776,7 +12797,7 @@ export const LESSONS: Lesson[] = [
         options: [
           {
             id: 'composition_shift',
-            label: 'The two ranges are built from very different hand types — a board that rewards one set of hand types (Ax, broadways) does not reward the other (small/middle pairs, low connectors) equally, and these two boards reward opposite sets',
+            label: 'The two ranges are built from very different hand types, and these boards reward opposite ones',
             quality: 'perfect',
             feedback: 'Correct. IP\'s range is dense with big, mostly-unpaired cards; BB\'s range is dense with the whole spectrum down to small/middle cards. A76r hits IP\'s strength directly; 654r hits BB\'s instead.',
           },
@@ -12918,7 +12939,7 @@ export const LESSONS: Lesson[] = [
         options: [
           {
             id: 'relative',
-            label: 'A hand\'s equity bucket is relative — it depends on the specific board and the specific opponent range, never a fixed property of the hand class alone',
+            label: 'A hand\'s equity bucket is relative — it depends on the board and opponent range',
             quality: 'perfect',
             feedback: 'Correct — this is the whole point of the Equity Bucket framework. "Top pair" is a description of hand structure, not a promise of a specific bucket.',
           },
@@ -12967,7 +12988,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'Is it accurate to say "A76r is always a 100% c-bet" as a general poker rule?',
         options: [
           {
-            id: 'config_specific', label: 'No — the solver c-bets A76r at 100% in this specific analyzed BB-vs-IP configuration; that is not a universal law for every A76r flop in every game', quality: 'perfect',
+            id: 'config_specific', label: 'No — that\'s the frequency in this one analyzed configuration, not a universal law', quality: 'perfect',
             feedback: 'Correct. The transferable idea is that strategy emerges from ranges + board + position + stack/SPR together — not a memorized frequency attached to a board texture in isolation.',
           },
           {
@@ -12986,7 +13007,7 @@ export const LESSONS: Lesson[] = [
         board: LESSON1_SCENARIO.board,
         options: [
           {
-            id: 'individual_not_range', label: 'It treats individual-hand strength as if it were range strength — AA can have huge equity on its own while CO\'s overall range performs worse than BB\'s on this exact texture (875ss)', quality: 'perfect',
+            id: 'individual_not_range', label: 'It treats individual-hand strength as if it were range strength', quality: 'perfect',
             feedback: `Correct — this is Lesson 1's scenario. AA has ≈${LESSON1_SCENARIO.heroHandEquity}% equity here, yet CO's whole range trails BB's (${LESSON1_SCENARIO.postflopEquity.co}% to ${LESSON1_SCENARIO.postflopEquity.bb}%) on this flop.`,
           },
           {
@@ -13004,7 +13025,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'What is the flawed logical step?',
         options: [
           {
-            id: 'no_persistence', label: 'A preflop edge is a preflop-only fact — each flop independently revalues both ranges, so there is no rule that the preflop favorite keeps the edge on every board', quality: 'perfect',
+            id: 'no_persistence', label: 'A preflop edge is a preflop-only fact — each flop revalues both ranges', quality: 'perfect',
             feedback: 'Correct — you saw this directly: CO led preflop 58.5/41.5, yet trailed BB on 875ss. No board is guaranteed to preserve a preflop edge.',
           },
           {
@@ -13022,7 +13043,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'What is the flawed logical step?',
         options: [
           {
-            id: 'depends_on_ranges', label: 'It skips straight to a conclusion about the board alone — whether a low board actually favors BB depends on which hands are really in both ranges, not the board category by itself', quality: 'perfect',
+            id: 'depends_on_ranges', label: 'It jumps to a conclusion about the board without checking both ranges', quality: 'perfect',
             feedback: 'Correct — 654r happened to favor BB given THESE specific ranges. A different pair of ranges (say, if BB\'s range were unusually tight) could see the same low board favor the other side instead.',
           },
           {
@@ -13040,7 +13061,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'What is the flawed logical step?',
         options: [
           {
-            id: 'composition_matters', label: 'Range composition — how that equity is distributed across Strong/Good/Weak/Trash — can matter more than the raw equity number itself', quality: 'perfect',
+            id: 'composition_matters', label: 'Range composition can matter more than the raw equity number itself', quality: 'perfect',
             feedback: 'Correct — this is X-Ray the Range\'s whole lesson. Two ranges can carry similar raw equity with very different strong-hand density, and that difference drives real strategic decisions.',
           },
           {
@@ -13150,7 +13171,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'Which part of the ranges causes this gap?',
         options: [
           {
-            id: 'ax_density', label: 'IP\'s abundance of Ax combos making top pair or better on an ace-high board, against BB\'s comparative shortage of hands that connect with it', quality: 'perfect',
+            id: 'ax_density', label: 'IP\'s abundance of Ax combos, against BB\'s shortage of connecting hands', quality: 'perfect',
             feedback: 'Correct — the Strong-bucket gap traces directly to how many Ax/broadway combos each range actually carries.',
           },
           {
@@ -13219,7 +13240,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'Which part of the ranges causes this?',
         options: [
           {
-            id: 'low_card_density', label: 'BB\'s wide range carries far more small/middle pairs, two-pair-capable, and straight-relevant combos on a low board — while IP\'s range, built around big unpaired cards, mostly misses it', quality: 'perfect',
+            id: 'low_card_density', label: 'BB\'s wide range carries far more small pairs and straight-relevant combos here', quality: 'perfect',
             feedback: 'Correct — the same structural gap as A76r, just reversed: whichever range actually holds the board-relevant hand types wins the Strong-bucket battle.',
           },
           {
@@ -13254,7 +13275,7 @@ export const LESSONS: Lesson[] = [
         hero_hand: LESSON1_SCENARIO.heroHand,
         options: [
           {
-            id: 'range_not_hand', label: 'CO\'s betting strategy on this board should be built around what CO\'s WHOLE range can support — not around the fact that this particular hand (AA) happens to be very strong', quality: 'perfect',
+            id: 'range_not_hand', label: 'CO\'s strategy should be built around what the WHOLE range can support', quality: 'perfect',
             feedback: 'Correct — this is the module\'s central lesson, applied to the scenario it started with.',
           },
           {
@@ -13274,7 +13295,7 @@ export const LESSONS: Lesson[] = [
         board: LESSON1_SCENARIO.board,
         options: [
           {
-            id: 'sets_twopair_straights', label: 'BB\'s sets (88/77/55), two pair (87s/85s/75s-type combos), and straight-completing hands (96s/64s) — all real holdings inside BB\'s wide calling range', quality: 'perfect',
+            id: 'sets_twopair_straights', label: 'BB\'s sets, two pair, and straight-completing hands inside its wide range', quality: 'perfect',
             feedback: 'Correct — this low, connected texture is exactly where a wide calling range\'s bottom-to-middle cards turn into real made hands.',
           },
           {
@@ -13293,7 +13314,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'Given all of that —',
         decision_spot_question: 'What general strategic effect should this have on CO\'s approach with the WHOLE range on this flop (not the AA hand specifically)?',
         options: [
-          { id: 'more_caution_range', label: 'More caution across the range as a whole — even though this specific hand (AA) still continues for value', quality: 'perfect', feedback: 'Correct — the individual decision with AA and the range-wide strategy are related but separate questions, and this module is about the second one.' },
+          { id: 'more_caution_range', label: 'More caution across the range as a whole, even though AA itself still continues', quality: 'perfect', feedback: 'Correct — the individual decision with AA and the range-wide strategy are related but separate questions, and this module is about the second one.' },
           { id: 'irrelevant', label: 'None — Hero\'s own action never depends on what the rest of the range does', quality: 'mistake', feedback: 'A range-wide strategy exists precisely because opponents react to a RANGE of possible holdings, not to Hero\'s one true hand — what the rest of the range does absolutely matters.' },
         ],
       },
@@ -13478,7 +13499,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: "Which of Villain's continuing hands does Hero's K♦ actually affect?",
         options: [
           {
-            id: 'king_hands', label: 'Hands that contain a king — AK, KK, and every King-x combination', quality: 'perfect',
+            id: 'king_hands', label: 'Hands that contain a king', quality: 'perfect',
             feedback: "Correct. A card can only collide with combinations that physically contain that same card — hands with no king in them are completely untouched by Hero's K♦.",
           },
           {
@@ -13763,7 +13784,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'Why does A♣6♣ make the worst bluff-catcher of the three?',
         options: [
           {
-            id: 'double_removal', label: "It sits on two different bluff classes at once (76s and 65s), removing more of Villain's bluffs than the other two", quality: 'perfect',
+            id: 'double_removal', label: "It removes more of Villain's bluffs than the other two hands", quality: 'perfect',
             feedback: "Correct. A♣6♣'s six touches BOTH 76s and 65s — one card, two different bluff classes reduced. That's strictly more collateral damage to the bluffs than A♣7♣ (touches only 76s) or A♣T♦ (touches neither).",
           },
           {
@@ -13852,7 +13873,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: "Why does removing just 9 of Villain's 45 combos change Hero's whole strategy?",
         options: [
           {
-            id: 'trap_removal', label: "Those 9 specifically were the only combos that could ever beat or trap Hero's bet — WHICH combos matters, not how many", quality: 'perfect',
+            id: 'trap_removal', label: "Those 9 were the only combos that could ever beat Hero's bet", quality: 'perfect',
             feedback: "Correct. It was never about how many combos got removed — it's about which ones. Those 9 nut-flush combos were the only hands in Villain's whole range that could check-raise Hero's bet for the win. Everything else was already strictly worse than what Hero represents.",
           },
           {
@@ -14164,7 +14185,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'What is the general form of this idea, beyond just this one hand?',
         options: [
           {
-            id: 'scales', label: 'A single held card can reduce a range built from hundreds of combinations, not just the six combos of one pocket pair', quality: 'perfect',
+            id: 'scales', label: 'A single held card can reduce a range of hundreds of combinations', quality: 'perfect',
             feedback: 'Correct — this lesson used KK as one visible slice, but the same mechanic applies to every hand class in the range simultaneously.',
           },
           { id: 'pairs_only', label: 'Blockers only matter for pocket pairs', quality: 'mistake', feedback: 'AK, KQ, and every other king-containing class are affected the same way — this has nothing to do with pairs specifically.' },
@@ -15112,7 +15133,7 @@ export const LESSONS: Lesson[] = [
         options: [
           {
             id: 'rough_benchmark',
-            label: "No — the assumptions Alpha/MDF are built on don't hold here; treat it only as a rough benchmark, not an exact requirement",
+            label: "No — treat it as a rough benchmark here, not an exact requirement",
             quality: 'perfect',
             feedback: "This is the correct, calibrated answer. MDF isn't wrong or useless on the flop — it's just no longer an EXACT answer, because the model it came from doesn't match this spot's actual EV structure. Use it as a reference point, not a target to hit precisely.",
           },
@@ -15310,7 +15331,7 @@ export const LESSONS: Lesson[] = [
         options: [
           {
             id: 'benchmark_only',
-            label: 'No — treat it as a rough benchmark; the equity and future-street assumptions behind the formula don\'t hold on the turn',
+            label: 'No — treat it as a rough benchmark, not an exact number',
             quality: 'perfect',
             feedback: "Correct, and the same reasoning as Lesson 10.9 — a hand with real outs and a river still to come simply isn't the zero-equity, no-more-cards model MDF was derived from.",
           },

@@ -287,7 +287,7 @@ function genStackComparison(
   let correctId: string
   if (bestA[0] !== bestB[0] && nonFoldA > 0.05 && nonFoldB > 0.05) {
     correctId = 'action_changes'
-    correctLabel = `The action itself changes (${ACTION_LABEL[bestA[0]]} at ${chartA.stackBB}bb -> ${ACTION_LABEL[bestB[0]]} at ${chartB.stackBB}bb), not just the width`
+    correctLabel = `The action itself changes, not just the width`
   } else if (nonFoldB - nonFoldA > 0.15) {
     correctId = 'widens'
     correctLabel = `Hero plays ${hand} more often at ${chartB.stackBB}bb than at ${chartA.stackBB}bb`
@@ -443,7 +443,7 @@ const FUNDAMENTALS: LabPoolQuestion[] = [
       narrative: 'At 15bb, many strong hands take a JAM action instead of a plain RAISE that exists at deeper stacks.',
       decision_spot_question: 'What is the main strategic reason jamming replaces raising at shallow depths?',
       options: [
-        { id: 'deny_rejam', label: 'A small raise gives opponents a good price to rejam; jamming denies that option and realizes equity immediately', quality: 'perfect', feedback: 'Correct — with little stack left behind a raise, opponents can profitably rejam. Jamming skips that awkward spot entirely.' },
+        { id: 'deny_rejam', label: 'A small raise gives a good rejam price; jamming denies that and realizes equity now', quality: 'perfect', feedback: 'Correct — with little stack left behind a raise, opponents can profitably rejam. Jamming skips that awkward spot entirely.' },
         { id: 'weak_hands', label: 'Jamming hands are actually weaker than raising hands', quality: 'mistake', feedback: 'Many hands that jam at 15bb are pure, profitable raises at deeper stacks — jamming is about stack dynamics, not hand weakness.' },
       ],
       xp: 6,
@@ -469,7 +469,7 @@ const FUNDAMENTALS: LabPoolQuestion[] = [
       narrative: 'A9o and A9s share the same high-card value and the same connectedness.',
       decision_spot_question: 'Why might a tight, high-resistance range include A9s but exclude A9o?',
       options: [
-        { id: 'blocker_playability', label: 'A9s keeps the same Ace blocker but adds flush potential and better equity realization', quality: 'perfect', feedback: 'Correct — the suit is the only real difference, and it adds enough playability/realized equity to justify opening where the offsuit version can’t.' },
+        { id: 'blocker_playability', label: 'A9s keeps the Ace blocker and adds flush potential', quality: 'perfect', feedback: 'Correct — the suit is the only real difference, and it adds enough playability/realized equity to justify opening where the offsuit version can’t.' },
         { id: 'no_diff', label: 'There is no meaningful difference — they should be treated identically', quality: 'mistake', feedback: 'The shared suit is a meaningful, measurable difference — it’s exactly why solvers routinely split suited and offsuit versions of the same hand.' },
       ],
       xp: 6,
