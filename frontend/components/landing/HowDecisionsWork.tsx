@@ -7,6 +7,7 @@ import { PokerRangeGrid } from "@/components/learn/visuals/PokerRangeGrid";
 import { MarketingSectionHeader } from "@/components/landing/shared/MarketingSectionHeader";
 import { MarketingGlassCard } from "@/components/landing/shared/MarketingGlassCard";
 import { CoachPreviewCard } from "@/components/landing/shared/CoachPreviewCard";
+import { RevealOnScroll } from "@/components/landing/shared/RevealOnScroll";
 
 const QUIZ_OPTIONS = [
   { label: "Check", correct: false },
@@ -87,30 +88,34 @@ export function HowDecisionsWork() {
   return (
     <section id="how-it-works" className="relative py-20 md:py-28 bg-background scroll-mt-24">
       <div className="container mx-auto max-w-6xl px-4 sm:px-6">
-        <MarketingSectionHeader
-          eyebrow="Built for understanding"
-          heading={
-            <>
-              Don't just memorize charts.
-              <br />
-              Learn how poker decisions actually work.
-            </>
-          }
-        />
+        <RevealOnScroll>
+          <MarketingSectionHeader
+            eyebrow="Built for understanding"
+            heading={
+              <>
+                Don't just memorize charts.
+                <br />
+                Learn how poker decisions actually work.
+              </>
+            }
+          />
+        </RevealOnScroll>
 
         <div className="grid md:grid-cols-3 gap-5">
-          {SURFACES.map(({ eyebrow, title, body, content }) => (
-            <MarketingGlassCard key={title} className="p-5 flex flex-col">
-              <div className="flex items-center gap-2 mb-3">
-                <GraduationCap className="h-4 w-4 text-violet-400" />
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-violet-300/70">
-                  {eyebrow}
-                </span>
-              </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">{title}</h3>
-              <p className="text-sm text-muted-foreground/70 leading-relaxed mb-4">{body}</p>
-              <div className="mt-auto rounded-xl border border-border/30 bg-black/20 p-3.5">{content}</div>
-            </MarketingGlassCard>
+          {SURFACES.map(({ eyebrow, title, body, content }, i) => (
+            <RevealOnScroll key={title} delayMs={i * 100}>
+              <MarketingGlassCard interactive className="p-5 flex flex-col h-full">
+                <div className="flex items-center gap-2 mb-3">
+                  <GraduationCap className="h-4 w-4 text-violet-400" />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-violet-300/70">
+                    {eyebrow}
+                  </span>
+                </div>
+                <h3 className="text-lg font-bold text-foreground mb-2">{title}</h3>
+                <p className="text-sm text-muted-foreground/70 leading-relaxed mb-4">{body}</p>
+                <div className="mt-auto rounded-xl border border-border/30 bg-black/20 p-3.5">{content}</div>
+              </MarketingGlassCard>
+            </RevealOnScroll>
           ))}
         </div>
       </div>

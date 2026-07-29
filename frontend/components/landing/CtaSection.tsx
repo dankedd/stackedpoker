@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Zap } from "lucide-react";
-import { useInView } from "@/hooks/useInView";
+import { RevealOnScroll } from "@/components/landing/shared/RevealOnScroll";
 
 const TRUST = [
   "Free to start",
@@ -12,8 +12,6 @@ const TRUST = [
 ];
 
 export function CtaSection() {
-  const { ref, visible } = useInView(0.2);
-
   return (
     <section className="relative py-24 sm:py-32 overflow-hidden bg-secondary/10">
       {/* Background radial */}
@@ -27,10 +25,7 @@ export function CtaSection() {
       />
 
       <div className="relative mx-auto max-w-4xl px-4 sm:px-6">
-        <div
-          ref={ref}
-          className={`relative scroll-reveal ${visible ? "visible" : ""}`}
-        >
+        <RevealOnScroll threshold={0.2} className="relative">
           {/* Pulsing glow ring */}
           <div
             aria-hidden
@@ -81,7 +76,7 @@ export function CtaSection() {
               ))}
             </div>
           </div>
-        </div>
+        </RevealOnScroll>
       </div>
     </section>
   );
