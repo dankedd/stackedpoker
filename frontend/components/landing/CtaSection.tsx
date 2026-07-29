@@ -44,16 +44,15 @@ export function CtaSection() {
             </div>
 
             <h2 className="mb-5 text-3xl sm:text-4xl lg:text-[3.25rem] font-black text-foreground leading-[1.05] tracking-tight">
-              Start understanding{" "}
+              Your next decision can be{" "}
               <br className="hidden sm:block" />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-blue-300 to-violet-500 animate-gradient">
-                poker strategy.
+                better than your last.
               </span>
             </h2>
 
             <p className="mx-auto mb-9 max-w-lg text-lg text-muted-foreground/70 leading-relaxed">
               Start the Foundations path in seconds — no account, no credit card, no setup.
-              Just structured lessons that build real understanding.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
@@ -61,14 +60,14 @@ export function CtaSection() {
                 href="/learn"
                 className="group inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-[15px] font-semibold shadow-xl shadow-violet-500/40 hover:shadow-violet-500/60 hover:-translate-y-0.5 active:translate-y-px active:scale-[0.97] transition-all duration-200 btn-poker-hover will-change-transform"
               >
-                Start learning — free
+                Start learning
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
               </Link>
               <Link
-                href="/signup"
+                href="/learn/module/poker-fundamentals-module"
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl border border-border/60 bg-card/40 text-[15px] font-medium text-muted-foreground hover:text-foreground hover:bg-card/80 hover:border-border hover:-translate-y-0.5 active:translate-y-px active:scale-[0.97] transition-all duration-200 will-change-transform"
               >
-                Create free account
+                Explore Foundations
               </Link>
             </div>
 

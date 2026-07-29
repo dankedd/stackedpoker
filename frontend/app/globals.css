@@ -647,3 +647,71 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ── Marketing homepage: reduced motion covers the landing page's own
+   ambient/entrance animations too — previously only the preflop table
+   itself was covered above, leaving hero glows/reveals/floats unaffected. ── */
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-reveal-up,
+  .animate-gradient,
+  .animate-float,
+  .animate-drift-glow,
+  .animate-border-pulse,
+  .animate-deal,
+  .animate-count-in,
+  .scroll-reveal {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ── Marketing homepage: midnight/frosted-glass system ───────────────────
+   Additive only — new `sp-` prefixed classes, nothing existing changed.
+   Reinterprets DESIGN.md's frosted-glass principles (near-black canvas,
+   cool low-opacity hairlines, inset highlights instead of hard borders)
+   using StackedPoker's own violet/blue foundation — no new hue introduced. */
+
+.sp-hairline {
+  border: 1px solid rgba(186, 205, 247, 0.1);
+}
+
+.sp-glass {
+  background: rgba(180, 200, 240, 0.025);
+  border: 1px solid rgba(186, 205, 247, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(216, 230, 248, 0.08),
+    0 24px 48px rgba(4, 6, 16, 0.55);
+}
+
+.sp-glass-elevated {
+  background: rgba(180, 200, 240, 0.04);
+  border: 1px solid rgba(186, 205, 247, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(216, 230, 248, 0.14),
+    inset 0 24px 48px rgba(148, 178, 232, 0.04),
+    0 32px 64px rgba(4, 6, 16, 0.65);
+}
+
+.sp-grid-bg {
+  background-image:
+    linear-gradient(rgba(186, 215, 247, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(186, 215, 247, 0.05) 1px, transparent 1px);
+  background-size: 80px 80px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 90%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 90%);
+}
+
+.sp-spotlight {
+  background: conic-gradient(
+    from 180deg at 50% -5%,
+    transparent 45%,
+    rgba(124, 145, 182, 0.28) 49%,
+    rgba(124, 145, 182, 0.4) 50%,
+    rgba(124, 145, 182, 0.28) 51%,
+    transparent 55%
+  );
+}

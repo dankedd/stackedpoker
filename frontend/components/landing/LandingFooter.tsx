@@ -4,8 +4,9 @@ import { Spade } from "lucide-react";
 const LINKS = {
   Product: [
     { label: "Learn",         href: "/learn" },
-    { label: "Practice",      href: "/practice" },
-    { label: "Features",      href: "/#features" },
+    { label: "Ranges",        href: "/train/ranges" },
+    { label: "Leaderboard",   href: "/leaderboard" },
+    { label: "Curriculum",    href: "/#curriculum" },
     { label: "How It Works",  href: "/#how-it-works" },
   ],
   Account: [
