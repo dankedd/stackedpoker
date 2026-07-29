@@ -4,14 +4,14 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import {
-  RFI_SHALLOW, RFI_MEDIUM, RFI_DEEP, RFI_SHALLOW_ACTIONS,
+  RFI_SHALLOW, RFI_MEDIUM, RFI_DEEP, RFI_SHALLOW_ACTIONS, RFI_SEMANTICS,
   entriesToHandList, type StackWorld, type RangeEntry,
 } from '@/lib/learn/preflopBaselines'
-import { THREEBET_DEEP, THREEBET_MEDIUM, THREEBET_SHALLOW, type ThreebetMatchup } from '@/lib/learn/threebetBaselines'
-import { DEFEND_DEEP, DEFEND_MEDIUM, DEFEND_SHALLOW, type DefendMatchup } from '@/lib/learn/defendBaselines'
+import { THREEBET_DEEP, THREEBET_MEDIUM, THREEBET_SHALLOW, THREEBET_SEMANTICS, type ThreebetMatchup } from '@/lib/learn/threebetBaselines'
+import { resolveDefendEntries, DEFEND_SEMANTICS, type DefendMatchup } from '@/lib/learn/defendBaselines'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 import { orderStepOptions } from '@/lib/learn/interactionSafety'
-import { rangeEntriesToStrategyMap } from '@/lib/learn/rangeStrategy'
+import { rangeEntriesToStrategyMap, type RangeSemantics } from '@/lib/learn/rangeStrategy'
 
 interface StackDepthRangeMorphProps {
   step: LessonStep
@@ -63,23 +63,41 @@ export function StackDepthRangeMorph({ step, onAnswer, disabled = false }: Stack
         : world === 'medium' ? (threebetKey && THREEBET_MEDIUM[threebetKey]) ?? []
         : (threebetKey && THREEBET_DEEP[threebetKey]) ?? [])
       : dataset === 'defend'
-      ? (world === 'shallow' ? (defendKey && DEFEND_SHALLOW[defendKey]) ?? (defendKey && DEFEND_MEDIUM[defendKey]) ?? []
-        : world === 'medium' ? (defendKey && DEFEND_MEDIUM[defendKey]) ?? []
-        : (defendKey && DEFEND_DEEP[defendKey]) ?? [])
+      ? (defendKey ? resolveDefendEntries(defendKey, world) : [])
       : (world === 'shallow' ? RFI_SHALLOW[position] ?? RFI_MEDIUM[position] ?? []
         : world === 'medium' ? RFI_MEDIUM[position] ?? []
         : RFI_DEEP[position] ?? [])
 
+  const villain = step.villain_position ?? ''
+
+  // "defend"/"threebet_defense" charts each track ONE action in isolation (see
+  // strategySemantics below) — the header says so plainly (as "calling
+  // frequency" / "3-betting frequency", never "defending range" or "strategy",
+  // which would imply a complete Fold/Call/3-Bet breakdown this data doesn't
+  // actually contain) and spells out real position names instead of the raw
+  // 'BB_vs_BTN'-style internal key.
   const headerLabel =
-    dataset === 'threebet_defense' ? `${threebetKey ?? position} 3-bet range`
-    : dataset === 'defend' ? `${defendKey ?? position} defend range`
+    dataset === 'threebet_defense' ? `${position} 3-betting frequency vs ${villain} open`
+    : dataset === 'defend' ? `${position} calling frequency vs ${villain} open`
     : `${position} opening range`
 
-  // The action each dataset's RangeEntry.freq is "in" for — the fold complement
-  // is made explicit by rangeEntriesToStrategyMap so the grid can render an exact
-  // proportional split instead of an opacity approximation.
-  const primaryAction = dataset === 'threebet_defense' ? '3bet' : dataset === 'defend' ? 'call' : 'raise'
-  const strategies = useMemo(() => rangeEntriesToStrategyMap(entries, primaryAction), [entries, primaryAction])
+  // What each dataset's RangeEntry.freq actually PROVES — read off each
+  // dataset module's OWN exported semantics constant (RFI_SEMANTICS /
+  // DEFEND_SEMANTICS / THREEBET_SEMANTICS) rather than re-deciding the
+  // classification here, so a future dataset added to this component can't
+  // silently default to the wrong one. See each constant's doc comment (and
+  // `RangeSemantics` itself in rangeStrategy.ts) for why `defend`/
+  // `threebet_defense` are `action_slice` (one real action tracked in
+  // isolation, sibling action ported from a SEPARATE, independently-authored
+  // source file) while `rfi` is a genuine `binary` raise-or-fold.
+  const strategySemantics: RangeSemantics =
+    dataset === 'rfi' ? RFI_SEMANTICS
+    : dataset === 'defend' ? DEFEND_SEMANTICS
+    : THREEBET_SEMANTICS
+  const strategies = useMemo(
+    () => rangeEntriesToStrategyMap(entries, strategySemantics),
+    [entries, strategySemantics],
+  )
 
   const combos = entries.reduce((sum, e) => sum + (e.hand.length === 2 ? 6 : e.hand.endsWith('s') ? 4 : 12) * e.freq, 0)
   const pct = ((combos / 1326) * 100).toFixed(1)
@@ -106,7 +124,12 @@ export function StackDepthRangeMorph({ step, onAnswer, disabled = false }: Stack
         {showActions ? (
           <PokerRangeGrid range={[]} mode="three_action" actionMap={RFI_SHALLOW_ACTIONS[position]} />
         ) : (
-          <PokerRangeGrid range={entriesToHandList(entries)} mode="strategy" strategies={strategies} />
+          <PokerRangeGrid
+            range={entriesToHandList(entries)}
+            mode="strategy"
+            strategies={strategies}
+            strategySemantics={strategySemantics}
+          />
         )}
 
         <div className="space-y-1.5 pt-2 border-t border-border/20">
@@ -127,6 +150,12 @@ export function StackDepthRangeMorph({ step, onAnswer, disabled = false }: Stack
         <p className="text-center text-[9px] text-muted-foreground/30">
           Deep is ported from the app&apos;s baseline range data; medium/shallow are simplified, clearly pedagogical reductions — not solver output.
         </p>
+        {strategySemantics.kind === 'action_slice' && (
+          <p className="text-center text-[9px] text-muted-foreground/30">
+            This view shows the {dataset === 'defend' ? 'calling' : '3-betting'} component of Hero&apos;s strategy only.
+            &quot;Other action&quot; may include {dataset === 'defend' ? '3-bets' : 'calls'} as well as folds — not split out in this chart.
+          </p>
+        )}
       </div>
 
       {step.stack_depth_morph_prompt && (

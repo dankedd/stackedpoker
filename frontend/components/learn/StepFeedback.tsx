@@ -8,6 +8,7 @@ import { XPGain } from './XPGain'
 import { EvaluationFailed } from './EvaluationFailed'
 import { PreviousButton } from './PreviousButton'
 import { AskCoachTrigger } from './coach/AskCoachTrigger'
+import { RangeRevealCard } from './RangeRevealCard'
 
 interface StepFeedbackProps {
   result: StepResult
@@ -259,6 +260,12 @@ export function StepFeedback({ result, onContinue, onRetry, isLast, onPrevious, 
       <div className="flex justify-center">
         <XPGain xp={result.xp_earned} />
       </div>
+
+      {/* Full defending-strategy reveal for DEFEND decision_spot steps — only present
+          when defendRangeReveal.ts could resolve real canonical data for this exact
+          matchup/stack tier; never shown before this point (the answer + score above),
+          so it can never leak the answer ahead of time. */}
+      {result.range_reveal && <RangeRevealCard reveal={result.range_reveal} />}
 
       <div className="flex items-center gap-3">
         {onPrevious && <PreviousButton onClick={onPrevious} />}

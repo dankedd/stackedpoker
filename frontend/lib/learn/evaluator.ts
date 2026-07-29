@@ -17,6 +17,7 @@ import { MTT_RFI_CHARTS, type MttAction, type MttRfiChart } from './mttRfiBaseli
 import { THREEBET_RESPONSE_CHARTS, type ThreebetResponseAction, type ThreebetResponseChart } from './threebetResponseBaselines'
 import { diagnoseRangeShape } from './threebetResponseRanges'
 import { evaluateTableDecision } from './tableDecisionEngine'
+import { resolveDefendRangeReveal } from './defendRangeReveal'
 import {
   evOfBetting, evOfChecking, bestResponse, isIndifferent, testUnilateralDeviation,
   clairvoyanceEV, clairvoyanceEquilibrium, type ActionEV,
@@ -2062,6 +2063,9 @@ export function evaluateStepLocally(
     structured_points: core.structured_points,
     answer_reveal: core.answer_reveal,
     reasoning_stages: core.reasoning_stages,
+    // Resolved from `step` alone, independent of `core`/grading — see
+    // DecisionSpotRangeReveal's doc comment: this can never affect score/quality/xp_earned.
+    range_reveal: resolveDefendRangeReveal(step),
     xp_earned,
     level_before,
     level_after,

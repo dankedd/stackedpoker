@@ -43,10 +43,20 @@ export const ACTION_STYLES: Record<string, ActionStyle> = {
   '4bet':  { label: '4-Bet',  bg: 'bg-fuchsia-500',     text: 'text-white', swatch: 'bg-fuchsia-500' },
   squeeze: { label: 'Squeeze', bg: 'bg-purple-600',      text: 'text-white', swatch: 'bg-purple-600' },
   fold:    FOLD_STYLE,
+  // Explicit (not the generic unknown-action fallback) "known-active hand, but the
+  // remainder isn't decomposed in this chart" bucket — see rangeStrategy usage in
+  // StackDepthRangeMorph.tsx for `defend`/`threebet_defense` datasets: those source
+  // charts each track exactly ONE real action (call-only or 3bet-only) and their own
+  // provenance comments say so explicitly, so the complement of that one action is
+  // NOT "fold" (some of it is the sibling action the chart doesn't track) and must
+  // never render with fold's color/label. Deliberately same visual as
+  // `UNKNOWN_ACTION_STYLE` below (no new color introduced) — this just gives that
+  // meaning a documented, intentional home instead of an implicit fallback.
+  other:   { label: 'Other action', bg: 'bg-slate-500/70', text: 'text-white', swatch: 'bg-slate-500/70' },
 }
 
 const UNKNOWN_ACTION_STYLE: ActionStyle = {
-  label: 'Other',
+  label: 'Other action',
   bg: 'bg-slate-500/70',
   text: 'text-white',
   swatch: 'bg-slate-500/70',
@@ -74,6 +84,7 @@ export const ACTION_CSS_COLOR: Record<string, string> = {
   '4bet': '#d946ef',
   squeeze: '#9333ea',
   fold: 'rgba(148,163,184,0.35)',
+  other: 'rgba(100,116,139,0.7)',
 }
 
 const UNKNOWN_CSS_COLOR = 'rgba(100,116,139,0.7)'

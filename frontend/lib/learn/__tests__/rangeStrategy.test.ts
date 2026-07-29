@@ -16,6 +16,7 @@ import {
   dominantAction,
   dominantFrequency,
   classifyMix,
+  UNSPECIFIED_ACTION,
 } from '../rangeStrategy'
 
 describe('sumFreqs / isValidMix', () => {
@@ -53,16 +54,16 @@ describe('pruneMix', () => {
 
 describe('fromActionFold — RangeEntry-style single action + implicit fold complement', () => {
   it('A5s: call 70% -> { call: 0.7, fold: 0.3 } (the literal spec example)', () => {
-    expect(fromActionFold('call', 0.7)).toEqual({ call: 0.7, fold: 0.3 })
+    expect(fromActionFold('call', 0.7, 'fold')).toEqual({ call: 0.7, fold: 0.3 })
   })
 
   it('a pure (freq=1) hand has no fold entry at all', () => {
-    expect(fromActionFold('raise', 1)).toEqual({ raise: 1 })
+    expect(fromActionFold('raise', 1, 'fold')).toEqual({ raise: 1 })
   })
 
   it('clamps out-of-range frequencies defensively', () => {
-    expect(fromActionFold('raise', 1.4)).toEqual({ raise: 1 })
-    expect(fromActionFold('raise', -0.2)).toEqual({ raise: 0, fold: 1 })
+    expect(fromActionFold('raise', 1.4, 'fold')).toEqual({ raise: 1 })
+    expect(fromActionFold('raise', -0.2, 'fold')).toEqual({ raise: 0, fold: 1 })
   })
 
   it('supports a non-fold complement action (e.g. jam vs a raise mix)', () => {
@@ -83,10 +84,41 @@ describe('rangeEntriesToStrategyMap — preflopBaselines.ts/threebetBaselines.ts
         { hand: 'AA', freq: 1 },
         { hand: 'A5s', freq: 0.65 },
       ],
-      'raise',
+      { kind: 'binary', action: 'raise', complement: 'fold' },
     )
     expect(map.AA).toEqual({ raise: 1 })
     expect(map.A5s).toEqual({ raise: 0.65, fold: 0.35 })
+  })
+})
+
+describe('rangeEntriesToStrategyMap — `action_slice` kind (defendBaselines.ts/threebetBaselines.ts adapter, the "AA renders as Fold" fix)', () => {
+  it('routes the complement to the reserved UNSPECIFIED_ACTION, never a caller-supplied "fold"', () => {
+    const map = rangeEntriesToStrategyMap(
+      [{ hand: 'AA', freq: 0.2 }, { hand: 'QTs', freq: 1 }],
+      { kind: 'action_slice', action: 'call' },
+    )
+    expect(map.AA).toEqual({ call: 0.2, [UNSPECIFIED_ACTION]: 0.8 })
+    expect(map.AA.fold).toBeUndefined()
+    expect(map.QTs).toEqual({ call: 1 }) // pure — no complement segment at all
+  })
+
+  it('a hand entirely absent from `entries` is left OUT of the map (sparse, same shape as `binary`) — the caller must forward `strategySemantics` so the grid resolves it to UNSPECIFIED_ACTION, never fold', () => {
+    const map = rangeEntriesToStrategyMap([{ hand: 'AA', freq: 0.2 }], { kind: 'action_slice', action: 'call' })
+    expect(map.A5s).toBeUndefined()
+  })
+
+  it('UNSPECIFIED_ACTION is the literal string "other" (stable, since it is used as a rendering key elsewhere)', () => {
+    expect(UNSPECIFIED_ACTION).toBe('other')
+  })
+})
+
+describe('rangeEntriesToStrategyMap — refuses to guess for shapes it cannot safely build from RangeEntry[]', () => {
+  it('throws for `complete_strategy` (multi-action data needs fromActionDict instead)', () => {
+    expect(() => rangeEntriesToStrategyMap([{ hand: 'AA', freq: 1 }], { kind: 'complete_strategy' })).toThrow()
+  })
+
+  it('throws for `membership` (no per-hand frequency — needs membershipToStrategyMap instead)', () => {
+    expect(() => rangeEntriesToStrategyMap([{ hand: 'AA', freq: 1 }], { kind: 'membership', action: 'raise' })).toThrow()
   })
 })
 

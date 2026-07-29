@@ -150,6 +150,100 @@ describe('PokerRangeGrid — strategy mode: H. legend uses the centralized actio
   })
 })
 
+describe('PokerRangeGrid — strategy mode: I. an explicit non-fold complement action never renders as Fold', () => {
+  // Regression for the "AA renders as Fold" bug (Module 5, BB_vs_BTN defend range):
+  // datasets that track only ONE real action (defendBaselines.ts's call-only chart,
+  // threebetBaselines.ts's 3bet-only chart) must never have their remainder treated
+  // as fold — StackDepthRangeMorph.tsx now builds these mixes with an 'other'
+  // complement instead. This pins that the grid genuinely treats 'other' as its own
+  // action, not a relabeled fold.
+  it('AA at Call 20% / Other 80% is NOT rendered with fold\'s color', () => {
+    const strategies: RangeStrategyMap = { AA: { call: 0.2, other: 0.8 } }
+    const html = renderToStaticMarkup(<PokerRangeGrid range={['AA']} mode="strategy" strategies={strategies} />)
+    const stops = gradientStopsFor(html, 'AA')
+    expect(stops).not.toContain('rgba(148,163,184,0.35)') // fold's exact CSS color
+    expect(distinctColors(stops).size).toBe(2)
+  })
+
+  it('the hover/tap breakdown says "Other action 80%", never "Fold 80%"', () => {
+    const strategies: RangeStrategyMap = { AA: { call: 0.2, other: 0.8 } }
+    const html = renderToStaticMarkup(<PokerRangeGrid range={['AA']} mode="strategy" strategies={strategies} />)
+    expect(html).toContain('Call 20%')
+    expect(html).toContain('Other action 80%')
+    expect(html).not.toContain('Fold 80%')
+  })
+
+  it('dominant-action classification reads "MOSTLY OTHER ACTION", not "MOSTLY FOLD"', () => {
+    const strategies: RangeStrategyMap = { AA: { call: 0.2, other: 0.8 } }
+    const html = renderToStaticMarkup(<PokerRangeGrid range={['AA']} mode="strategy" strategies={strategies} />)
+    expect(html).toContain('MOSTLY OTHER ACTION')
+    expect(html).not.toContain('MOSTLY FOLD')
+  })
+})
+
+describe('PokerRangeGrid — strategy mode: J. `strategySemantics` governs a hand ABSENT from `strategies` (the "A5s bug")', () => {
+  // Regression for the SECOND bug the AA fix's own audit surfaced: a hand entirely
+  // missing from an action_slice source (e.g. A5s, which never appears in
+  // defendBaselines.ts's BB_vs_BTN calling chart because it is a pure 3-bet in the
+  // SEPARATE threebetBaselines.ts chart) must not silently collapse to the grid's
+  // historical `{ fold: 1 }` sparse-map default — that default is only valid for
+  // `complete_strategy`/`binary` sources, which genuinely prove fold for an absent
+  // hand. `strategySemantics` is what tells the grid which default applies.
+  it('action_slice: an absent hand (A5s) renders 100% "Other action", never Fold', () => {
+    // `strategies` deliberately has NO A5s key — matches how defendBaselines.ts's
+    // BB_vs_BTN calling chart genuinely omits it.
+    const strategies: RangeStrategyMap = { AA: { call: 0.2 } }
+    const html = renderToStaticMarkup(
+      <PokerRangeGrid
+        range={['AA']}
+        mode="strategy"
+        strategies={strategies}
+        strategySemantics={{ kind: 'action_slice', action: 'call' }}
+      />,
+    )
+    const stops = gradientStopsFor(html, 'A5s')
+    expect(stops).not.toContain('rgba(148,163,184,0.35)') // fold's exact CSS color
+    const cell = cellHtmlFor(html, 'A5s')
+    expect(cell).toContain('Other action 100%')
+    expect(cell).not.toMatch(/Fold \d+%/)
+  })
+
+  it('binary (default): an absent hand DOES render 100% Fold — the historical convention is unchanged for sources that genuinely prove it (e.g. RFI raise-or-fold)', () => {
+    const strategies: RangeStrategyMap = { AA: { raise: 1 } }
+    const html = renderToStaticMarkup(
+      <PokerRangeGrid
+        range={['AA']}
+        mode="strategy"
+        strategies={strategies}
+        strategySemantics={{ kind: 'binary', action: 'raise', complement: 'fold' }}
+      />,
+    )
+    const cell = cellHtmlFor(html, '72o')
+    expect(cell).toContain('Fold 100%')
+  })
+
+  it('omitting `strategySemantics` entirely still defaults to the historical fold-default (backwards compatible for every existing complete_strategy/membership caller)', () => {
+    const strategies: RangeStrategyMap = { AA: { raise: 1 } }
+    const html = renderToStaticMarkup(<PokerRangeGrid range={['AA']} mode="strategy" strategies={strategies} />)
+    const cell = cellHtmlFor(html, '72o')
+    expect(cell).toContain('Fold 100%')
+  })
+
+  it('a grid built entirely from action_slice data never shows a phantom "Fold" swatch in the legend when no cell actually uses it', () => {
+    const strategies: RangeStrategyMap = { AA: { call: 0.2 }, QTs: { call: 1 } }
+    const html = renderToStaticMarkup(
+      <PokerRangeGrid
+        range={['AA', 'QTs']}
+        mode="strategy"
+        strategies={strategies}
+        strategySemantics={{ kind: 'action_slice', action: 'call' }}
+      />,
+    )
+    expect(html).not.toContain('>Fold<')
+    expect(html).toContain('>Other action<')
+  })
+})
+
 describe('PokerRangeGrid — backwards compatibility: pure-action existing modes still render', () => {
   it('membership mode is unaffected by the strategy-mode addition', () => {
     const html = renderToStaticMarkup(<PokerRangeGrid range={['AA', 'AKs']} />)

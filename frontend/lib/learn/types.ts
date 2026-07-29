@@ -1013,6 +1013,32 @@ export interface ReasoningStageResult {
   detail?: string
 }
 
+/** Resolved (never learner-facing-computed) full Hero response strategy shown after a
+ *  DEFEND decision_spot is answered — see `defendRangeReveal.ts` for how this is derived.
+ *  Purely presentational: built from `step` alone, independent of grading, so its presence
+ *  can never influence `quality`/`score`/`xp_earned` above. */
+export interface DecisionSpotRangeReveal {
+  /** Hand -> action-frequency mix, ready for `PokerRangeGrid`'s `strategy` mode. */
+  strategies: RangeStrategyMap
+  /** What `strategies` actually proves — see `RangeSemantics` in rangeStrategy.ts. Always
+   *  `{ kind: 'action_slice', action: 'call' }` for a defend reveal: defendBaselines.ts only
+   *  ever tracks BB's calling frequency, never a complete fold/call/(3bet) strategy, so a hand
+   *  absent from `strategies` must render as the honest "untracked" bucket, never fold. */
+  strategySemantics: RangeSemantics
+  /** Hand list backing the resolved chart (required by `PokerRangeGrid`'s `range` prop;
+   *  unused for coloring in `strategy` mode, which reads `strategies` instead). */
+  range: string[]
+  /** The just-answered hand's class (e.g. 'K9o'), for `PokerRangeGrid`'s `highlightHand`. */
+  highlightHand: string
+  heroPosition: string
+  villainPosition: string
+  /** e.g. "BB CALLING RANGE vs UTG OPEN" — never "DEFENSE"/"DEFENDING STRATEGY", which
+   *  would overclaim a complete strategy this action-slice data doesn't have. */
+  label: string
+  /** e.g. "See where K9o sits in Hero's calling frequency." */
+  subtitle: string
+}
+
 export interface StepResult {
   score: number
   quality: ActionQuality
@@ -1031,6 +1057,10 @@ export interface StepResult {
    *  answer was fully correct, or when the step's own component already shows a
    *  richer item-by-item reveal. */
   answer_reveal?: AnswerReveal
+  /** Post-answer full defending-range reveal for DEFEND decision_spot steps — see
+   *  `DecisionSpotRangeReveal`. Undefined whenever the step isn't a defend spot, or the
+   *  canonical data can't back one (never fabricated to fill the gap). */
+  range_reveal?: DecisionSpotRangeReveal
   // Evaluation pipeline metadata — always present from v2 onwards
   evaluation_source: EvaluationSource
   confidence: EvaluationConfidence
@@ -1136,6 +1166,7 @@ export interface TrainingSession {
 
 export { levelForXP, getLevelProgress, type LevelProgress } from './levelCurve'
 import { getLevelProgress } from './levelCurve'
+import type { RangeStrategyMap, RangeSemantics } from './rangeStrategy'
 
 export function xpToNextLevel(xp: number): { current: number; needed: number; pct: number } {
   const p = getLevelProgress(xp)

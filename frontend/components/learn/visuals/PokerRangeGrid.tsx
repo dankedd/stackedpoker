@@ -3,8 +3,8 @@
 import { cn } from '@/lib/utils'
 import { RANKS, HAND_GRID, comboCount, TOTAL_COMBOS } from '@/lib/learn/handGrid'
 import type { ChartDiffEntry } from '@/lib/learn/mttRfiRanges'
-import type { ActionId, RangeStrategyMap, StrategyMix } from '@/lib/learn/rangeStrategy'
-import { classifyMix, pruneMix } from '@/lib/learn/rangeStrategy'
+import type { ActionId, RangeSemantics, RangeStrategyMap, StrategyMix } from '@/lib/learn/rangeStrategy'
+import { classifyMix, pruneMix, UNSPECIFIED_ACTION } from '@/lib/learn/rangeStrategy'
 import { actionCssColor, actionLabel, actionStyle } from '@/lib/learn/actionStyles'
 import {
   HAND_BOARD_CATEGORY_LABEL,
@@ -61,17 +61,17 @@ type PreflopAction = 'raise' | 'limp' | 'shove' | 'fold'
 /** Preferred left-to-right segment order so every cell (and the legend) orders
  *  actions the same way across the whole grid — aggression first, fold last.
  *  Any action id not in this list falls in afterward, in first-seen order. */
-const ACTION_PRIORITY = ['4bet', '3bet', 'squeeze', 'raise', 'jam', 'shove', 'limp', 'call', 'fold']
+const ACTION_PRIORITY = ['4bet', '3bet', 'squeeze', 'raise', 'jam', 'shove', 'limp', 'call', 'fold', UNSPECIFIED_ACTION]
 
 /** Stable, grid-wide action order derived from every mix actually present —
  *  so a hand's segments (and the shared legend) are always ordered the same
  *  way no matter which hands happen to be mixed. */
-function resolveActionOrder(strategies: RangeStrategyMap, explicit?: ActionId[]): ActionId[] {
+function resolveActionOrder(strategies: RangeStrategyMap, absentAction: ActionId, explicit?: ActionId[]): ActionId[] {
   if (explicit && explicit.length > 0) return explicit
-  // 'fold' is always a possible implicit action (any hand absent from `strategies`
-  // renders as 100% fold — see the component's own per-cell fallback), so it's
-  // always part of the order even when every explicit mix omits it entirely.
-  const seen = new Set<ActionId>(['fold'])
+  // `absentAction` (fold for complete/binary sources, `other` for an action
+  // slice — see `strategyAbsentMix`) is always a possible implicit action, so
+  // it's always part of the order even when every explicit mix omits it.
+  const seen = new Set<ActionId>([absentAction])
   for (const mix of Object.values(strategies)) {
     for (const action of Object.keys(mix)) seen.add(action)
   }
@@ -170,8 +170,18 @@ interface PokerRangeGridProps {
   /** 'action_diff' mode: precomputed per-hand diff (see mttRfiRanges.ts#computeChartDiff). */
   actionDiff?: ChartDiffEntry[]
   /** 'strategy' mode: hand -> full action-frequency mix (see rangeStrategy.ts). A hand absent from
-   *  this map renders as 100% fold, matching the sparse-chart convention used elsewhere. */
+   *  this map renders using `strategySemantics`' own absent-hand default — see below. */
   strategies?: RangeStrategyMap
+  /** 'strategy' mode: what `strategies` actually proves (see `RangeSemantics` in rangeStrategy.ts).
+   *  Governs the ONLY thing that's genuinely ambiguous about a hand absent from `strategies` —
+   *  HAND_GRID always renders all 169 hand classes regardless of `strategies`' coverage, so an
+   *  absent hand needs a well-defined fallback. `complete_strategy`/`binary` sources may safely
+   *  default an absent hand to 100% fold (matching the historical sparse-chart convention: an
+   *  RFI chart that omits 72o really does mean "72o folds"). `action_slice` sources must NEVER do
+   *  this — an absent hand there means "0% of the one tracked action," which is not proof of fold.
+   *  Defaults to `{ kind: 'complete_strategy' }` (i.e. the historical fold-default) when omitted,
+   *  so existing complete-strategy callers (MTT RFI charts, etc.) are unaffected. */
+  strategySemantics?: RangeSemantics
   /** 'strategy' mode: explicit left-to-right action order (defaults to a stable aggression-first
    *  order derived from every action actually present in `strategies`). */
   strategyActionOrder?: ActionId[]
@@ -202,6 +212,7 @@ export function PokerRangeGrid({
   actionDiff,
   strategies,
   strategyActionOrder,
+  strategySemantics = { kind: 'complete_strategy' },
   highlightHand,
   categoryMap,
   categoryLegend,
@@ -212,7 +223,12 @@ export function PokerRangeGrid({
   const combos = range.reduce((sum, h) => sum + comboCount(h), 0)
   const pct = ((combos / TOTAL_COMBOS) * 100).toFixed(1)
   const diffByHand = new Map((actionDiff ?? []).map((d) => [d.hand, d]))
-  const strategyOrder = mode === 'strategy' ? resolveActionOrder(strategies ?? {}, strategyActionOrder) : []
+  // The ONLY safe default for a hand HAND_GRID renders but `strategies` doesn't
+  // cover. 'action_slice' sources never get to claim fold here — see the prop doc.
+  const strategyAbsentMix: StrategyMix =
+    strategySemantics.kind === 'action_slice' ? { [UNSPECIFIED_ACTION]: 1 } : { fold: 1 }
+  const strategyOrder =
+    mode === 'strategy' ? resolveActionOrder(strategies ?? {}, Object.keys(strategyAbsentMix)[0], strategyActionOrder) : []
   // 'category' mode legend: which interaction tiers are actually worth explaining right now —
   // every tier present among the range's real categories, unioned with whatever this specific
   // lesson step asked to emphasize (`categoryLegend`), so the legend never shows a tier with
@@ -361,7 +377,7 @@ export function PokerRangeGrid({
               }
 
               if (mode === 'strategy') {
-                const mix = strategies?.[hand] ?? { fold: 1 }
+                const mix = strategies?.[hand] ?? strategyAbsentMix
                 const breakdown = formatMixBreakdown(mix, strategyOrder)
                 const mixInfo = classifyMix(mix, actionLabel)
 

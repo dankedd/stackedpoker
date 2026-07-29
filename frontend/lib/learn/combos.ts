@@ -127,6 +127,21 @@ export function allUnpairedClasses(): { suited: string[]; offsuit: string[] } {
   return { suited, offsuit }
 }
 
+/** Inverse of `expandHandClass` for exactly one dealt combo: two concrete cards (e.g.
+ *  ['Ks','9h']) -> their hand-class notation ('K9o'). Rank order in the input doesn't
+ *  matter — the higher rank always leads in the output, matching every other hand-class
+ *  string in this codebase. */
+export function cardsToHandClass(cards: [Card, Card] | Card[]): string {
+  const [c1, c2] = cards
+  const r1 = c1[0].toUpperCase()
+  const r2 = c2[0].toUpperCase()
+  const s1 = c1[1].toLowerCase()
+  const s2 = c2[1].toLowerCase()
+  if (r1 === r2) return `${r1}${r2}`
+  const [hi, lo] = RANKS.indexOf(r1) <= RANKS.indexOf(r2) ? [r1, r2] : [r2, r1]
+  return `${hi}${lo}${s1 === s2 ? 's' : 'o'}`
+}
+
 /** All 169 starting-hand class notations (13 pairs + 78 suited + 78 offsuit). */
 export function allHandClasses(): string[] {
   const { suited, offsuit } = allUnpairedClasses()

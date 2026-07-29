@@ -21,12 +21,23 @@
  * Combo weights: pair=6, suited=4, offsuit=12.
  */
 
-import { parseRangeList, type RangeEntry } from './preflopBaselines'
+import { parseRangeList, type RangeEntry, type StackWorld } from './preflopBaselines'
+import type { RangeSemantics } from './rangeStrategy'
 
 export type { RangeEntry }
 
 /** Key format: '<defender>_vs_<opener>', e.g. 'BB_vs_BTN' = BB defending (calling) a BTN open. */
 export type DefendMatchup = 'BB_vs_BTN' | 'BB_vs_CO' | 'BB_vs_SB' | 'BB_vs_UTG'
+
+/** What every `RangeEntry.freq` in this file actually proves — an `action_slice`
+ *  (BB's calling frequency only), never a complete or binary strategy. Any
+ *  consumer turning `DEFEND_DEEP`/`DEFEND_MEDIUM`/`DEFEND_SHALLOW` into a
+ *  `RangeStrategyMap` should import THIS constant rather than re-deciding the
+ *  classification at each call site — that's what makes it hard to accidentally
+ *  build these into a binary call/fold strategy (the historical "AA renders as
+ *  Fold" bug) instead of the `action_slice` these ranges actually are. See
+ *  `RangeSemantics`'s own doc comment in rangeStrategy.ts. */
+export const DEFEND_SEMANTICS: RangeSemantics = { kind: 'action_slice', action: 'call' }
 
 // ── DEEP (100bb) — ported from backend/app/ranges/preflop/cash_100bb/defend_ranges.py ──
 
@@ -152,4 +163,15 @@ export const DEFEND_SHALLOW: Partial<Record<DefendMatchup, RangeEntry[]>> = {
     'AKs', 'AQs', 'AJs', 'ATs', 'KQs', 'KJs',
     'AKo', 'AQo',
   ]),
+}
+
+/** Same shallow->medium->deep fallback chain StackDepthRangeMorph.tsx's slider has always
+ *  used, extracted so any OTHER consumer (e.g. the post-answer defend-range reveal) resolves
+ *  a matchup's entries identically instead of re-deriving its own fallback order. Shallow data
+ *  only exists for BB_vs_BTN/BB_vs_UTG (see DEFEND_SHALLOW above) — every other matchup falls
+ *  back to MEDIUM at the shallow tier, same as before this extraction. */
+export function resolveDefendEntries(matchup: DefendMatchup, world: StackWorld): RangeEntry[] {
+  if (world === 'shallow') return DEFEND_SHALLOW[matchup] ?? DEFEND_MEDIUM[matchup] ?? []
+  if (world === 'medium') return DEFEND_MEDIUM[matchup] ?? []
+  return DEFEND_DEEP[matchup] ?? []
 }

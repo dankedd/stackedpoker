@@ -22,6 +22,8 @@
  * 'AKo' (offsuit). Combo weights: pair=6, suited=4, offsuit=12.
  */
 
+import type { RangeSemantics } from './rangeStrategy'
+
 export interface RangeEntry {
   hand: string
   /** Mix frequency 0–1. 1.0 = always raise/act; below 1.0 = a "sometimes" hand. */
@@ -30,6 +32,16 @@ export interface RangeEntry {
 
 export type StackWorld = 'shallow' | 'medium' | 'deep'
 export type PreflopAction = 'raise' | 'limp' | 'shove' | 'fold'
+
+/** Maps a step's `effective_stack_bb` onto the same three worlds StackDepthRangeMorph's
+ *  slider already uses (labels: shallow ~15bb, medium ~25-40bb, deep ~60-100bb) — so any
+ *  consumer that only has a raw stack number (not a hand-picked slider position) resolves
+ *  the same tier a human reading that slider would. */
+export function stackBBToWorld(effectiveStackBb: number): StackWorld {
+  if (effectiveStackBb >= 60) return 'deep'
+  if (effectiveStackBb >= 20) return 'medium'
+  return 'shallow'
+}
 
 // ── Parsing helpers ────────────────────────────────────────────────────────────
 
@@ -115,6 +127,15 @@ export const RFI_DEEP: Record<string, RangeEntry[]> = {
   BTN: parseRangeList(BTN_OPEN_DEEP_RAW),
   SB: parseRangeList(SB_OPEN_DEEP_RAW),
 }
+
+/** What every `RangeEntry.freq` in RFI_DEEP/RFI_MEDIUM actually proves — a genuine
+ *  `binary` raise-or-fold decision: no sibling chart anywhere in this codebase
+ *  tracks a third action (limp/3bet) for these positions at these stack tiers, so
+ *  a hand's absence really does mean "folds" here, unlike the `action_slice`
+ *  charts in defendBaselines.ts/threebetBaselines.ts. (RFI_SHALLOW_ACTIONS is the
+ *  one real exception — see its own doc comment — and is never routed through
+ *  this constant.) See `RangeSemantics`'s own doc comment in rangeStrategy.ts. */
+export const RFI_SEMANTICS: RangeSemantics = { kind: 'binary', action: 'raise', complement: 'fold' }
 
 // ── MEDIUM (~25-40bb) — mechanically derived: only "always in" hands survive ──
 

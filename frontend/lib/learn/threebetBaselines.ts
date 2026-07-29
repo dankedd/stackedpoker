@@ -22,11 +22,20 @@
  */
 
 import { parseRangeList, type RangeEntry } from './preflopBaselines'
+import type { RangeSemantics } from './rangeStrategy'
 
 export type { RangeEntry }
 
 /** Key format: '<3bettor>_vs_<opener>', e.g. 'BB_vs_BTN' = BB 3-betting a BTN open. */
 export type ThreebetMatchup = 'SB_vs_BTN' | 'BB_vs_BTN' | 'BB_vs_CO' | 'BTN_vs_CO' | 'BTN_vs_SB' | 'CO_vs_BTN'
+
+/** What every `RangeEntry.freq` in this file actually proves — an `action_slice`
+ *  (3-bet frequency only; the backend source's own docstring: "Mixed frequencies
+ *  denote hands that are sometimes called, sometimes 3bet" — so the untracked
+ *  remainder here is NOT proven fold, some of it is a call tracked separately in
+ *  defendBaselines.ts). See `DEFEND_SEMANTICS` there for the mirror-image case,
+ *  and `RangeSemantics`'s own doc comment in rangeStrategy.ts. */
+export const THREEBET_SEMANTICS: RangeSemantics = { kind: 'action_slice', action: '3bet' }
 
 // ── DEEP (~100bb) — ported from backend/app/ranges/preflop/cash_100bb/threebet_ranges.py ──
 

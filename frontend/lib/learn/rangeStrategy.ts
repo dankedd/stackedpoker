@@ -21,6 +21,42 @@
  *  limp/raise/jam/fold, squeeze/call/fold, etc. */
 export type ActionId = string
 
+/**
+ * What a range dataset's per-hand frequency actually PROVES — there is no
+ * safe universal default, so every adapter that turns raw source data into a
+ * `RangeStrategyMap` must be told this explicitly (see `rangeEntriesToStrategyMap`
+ * below). This is the fix for the "AA call 20% -> AA fold 80%" bug: that bug
+ * was exactly a `binary` assumption silently applied to what was actually an
+ * `action_slice` source (defendBaselines.ts's BB-calling-only data, ported
+ * from a backend file whose own docstring says "these ranges represent BB
+ * CALLING ranges — not BB's full defend range").
+ *
+ *  - `complete_strategy` — every action is known; frequencies for one hand
+ *    already sum to ~1 (e.g. MTT_RFI_CHARTS's raise/limp/jam/fold cells).
+ *  - `binary`             — exactly two actions exist and the source proves
+ *    it (e.g. RFI: a position either raises or folds — nothing else is on
+ *    the table at that decision point). The complement IS the true fold rate.
+ *  - `action_slice`       — the source tracks ONE real action's frequency in
+ *    isolation; the remainder is genuinely UNKNOWN (could be fold, could be
+ *    another action tracked in a separate, independently-authored source, or
+ *    a mix of both) and must never be presented as fold.
+ *  - `membership`         — a plain hand list, no frequency data at all; a
+ *    listed hand is 100% one action, nothing is claimed about hands absent
+ *    from the list.
+ */
+export type RangeSemantics =
+  | { kind: 'complete_strategy' }
+  | { kind: 'binary'; action: ActionId; complement: ActionId }
+  | { kind: 'action_slice'; action: ActionId }
+  | { kind: 'membership'; action: ActionId }
+
+/** Reserved action id for an `action_slice`'s remainder. Deliberately NOT a
+ *  caller-supplied parameter (unlike `binary`'s `complement`) — that's what
+ *  makes it structurally impossible to accidentally relabel an action
+ *  slice's unknown remainder as "fold" (or anything else) at a call site.
+ *  Renders with its own distinct, non-fold style — see actionStyles.ts. */
+export const UNSPECIFIED_ACTION = 'other' as const
+
 /** Sparse action -> frequency (0-1) map for one hand. Missing keys are 0. */
 export type StrategyMix = Record<ActionId, number>
 
@@ -52,15 +88,19 @@ export function pruneMix(freqs: StrategyMix): StrategyMix {
 
 // ── Adapters from existing source shapes ─────────────────────────────────────
 
-/** A `RangeEntry`-style single-action-vs-fold entry (e.g. 'A5s: raise 0.65') ->
- *  a full mix, with the fold complement made explicit. */
-export function fromActionFold(action: ActionId, freq: number, foldAction: ActionId = 'fold'): StrategyMix {
+/** A single action's frequency -> a full mix, with an explicit complement
+ *  action carrying the remainder. Low-level primitive: it makes no claim
+ *  about what the complement action MEANS — that judgment call belongs to
+ *  the caller (see `rangeEntriesToStrategyMap`, which is the actual guarded
+ *  entry point every real data source should go through instead of calling
+ *  this directly with a hand-picked complement). */
+export function fromActionFold(action: ActionId, freq: number, complementAction: ActionId): StrategyMix {
   const clamped = Math.max(0, Math.min(1, freq))
   const mix: StrategyMix = { [action]: clamped }
   // Rounded to avoid binary floating-point noise (e.g. 1 - 0.7 = 0.30000000000000004)
   // leaking into displayed percentages or equality checks.
   const rest = Math.round((1 - clamped) * 1e6) / 1e6
-  if (rest > 1e-9) mix[foldAction] = (mix[foldAction] ?? 0) + rest
+  if (rest > 1e-9) mix[complementAction] = (mix[complementAction] ?? 0) + rest
   return mix
 }
 
@@ -69,14 +109,52 @@ export function fromPureAction(action: ActionId): StrategyMix {
   return { [action]: 1 }
 }
 
-/** `RangeEntry[]` (preflopBaselines.ts/threebetBaselines.ts/defendBaselines.ts) -> a full RangeStrategyMap. */
+/**
+ * `RangeEntry[]` (preflopBaselines.ts/threebetBaselines.ts/defendBaselines.ts) ->
+ * a full RangeStrategyMap — THE guarded entry point for that shape. `semantics`
+ * is mandatory (no default) precisely because the historical bug here was a
+ * silent default: treating every source's `1 - freq` as "fold" regardless of
+ * whether the source actually proved that. Only `binary` sources may name
+ * their own complement action (because they can prove it IS the true
+ * remainder); `action_slice` sources are routed to the reserved
+ * `UNSPECIFIED_ACTION` unconditionally — there is no parameter that could
+ * accidentally relabel an unknown remainder as fold.
+ */
 export function rangeEntriesToStrategyMap(
   entries: { hand: string; freq: number }[],
-  action: ActionId,
-  foldAction: ActionId = 'fold',
+  semantics: RangeSemantics,
 ): RangeStrategyMap {
   const map: RangeStrategyMap = {}
-  for (const e of entries) map[e.hand] = fromActionFold(action, e.freq, foldAction)
+  if (semantics.kind === 'binary') {
+    // Sparse on purpose: a `binary` source PROVES the complement is fold for
+    // every hand, including ones absent from `entries` — so leaving them out
+    // of the map and letting the grid's own `{ fold: 1 }` sparse-chart default
+    // handle them is correct, not a shortcut (matches MTT_RFI_CHARTS' existing,
+    // deliberately-sparse convention).
+    for (const e of entries) map[e.hand] = fromActionFold(semantics.action, e.freq, semantics.complement)
+  } else if (semantics.kind === 'action_slice') {
+    // Sparse, deliberately — same shape as `binary` above. A hand missing from
+    // `entries` is left OUT of the map on purpose; `PokerRangeGrid` reads
+    // `strategySemantics` itself (see `strategyAbsentMix` there) and resolves
+    // any hand absent from this map to the reserved `UNSPECIFIED_ACTION`
+    // bucket, never fold. That is what fixes the "A5s bug": an action slice's
+    // absence proves 0% of `action`, never proves fold, so the ONE place that
+    // decides what an absent hand renders as must know `semantics` — which is
+    // exactly why `strategySemantics` is a mandatory, forwarded field on
+    // `DecisionSpotRangeReveal` and a prop on `PokerRangeGrid`, not something
+    // baked into this map at build time.
+    for (const e of entries) map[e.hand] = fromActionFold(semantics.action, e.freq, UNSPECIFIED_ACTION)
+  } else {
+    // 'complete_strategy' has multiple actions per hand — RangeEntry[] (one
+    // action + one freq per hand) can't express that; use fromActionDict
+    // instead. 'membership' has no per-hand frequency at all — use
+    // membershipToStrategyMap. Both are programmer errors if hit here, not
+    // a possible real-data shape, so this fails loudly rather than silently
+    // guessing a fold complement.
+    throw new Error(
+      `rangeEntriesToStrategyMap: semantics.kind "${semantics.kind}" cannot be built from RangeEntry[] (one action + one frequency per hand) — use fromActionDict for a complete multi-action strategy, or membershipToStrategyMap for a plain hand list.`,
+    )
+  }
   return map
 }
 
