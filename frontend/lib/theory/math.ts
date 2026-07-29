@@ -163,6 +163,19 @@ export function requiredEquityFromPot(potBeforeCall: number, callAmount: number)
 }
 
 /**
+ * Canonical display formatter for poker chip/pot amounts (bb, chips, etc).
+ * Rounding through toFixed and back to Number collapses binary
+ * floating-point noise from upstream addition (e.g. 2.7 + 1.2 producing
+ * 3.9000000000000004) down to the intended value, and the trip through
+ * String() drops trailing zeros so whole numbers read as "5", not "5.00".
+ * This only affects presentation — callers must keep using the raw number
+ * for any actual math (pot odds, equity, answer validation, etc).
+ */
+export function formatPokerAmount(value: number, maxDecimals: number = 2): string {
+  return String(Number(value.toFixed(maxDecimals)));
+}
+
+/**
  * Exact probability (0-1) of hitting at least one out on the very next card.
  */
 export function drawProbabilityNextCard(outs: number, unseen: number = 47): number {

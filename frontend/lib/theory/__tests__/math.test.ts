@@ -6,6 +6,7 @@ import {
   calculateCallEV,
   bluffBreakEvenFrequency,
   calculateSimpleEqR,
+  formatPokerAmount,
 } from '../math'
 
 describe('requiredEquityFromPot', () => {
@@ -64,5 +65,24 @@ describe('calculateSimpleEqR', () => {
 
   it('returns 0 when raw equity is 0', () => {
     expect(calculateSimpleEqR(0, 10)).toBe(0)
+  })
+})
+
+describe('formatPokerAmount', () => {
+  it('collapses binary floating-point artifacts from addition', () => {
+    expect(formatPokerAmount(2.7 + 1.2)).toBe('3.9')
+    expect(formatPokerAmount(3.9000000000000004)).toBe('3.9')
+    expect(formatPokerAmount(2.7000000000000002)).toBe('2.7')
+    expect(formatPokerAmount(1.2000000000000002)).toBe('1.2')
+    expect(formatPokerAmount(5.000000000000001)).toBe('5')
+  })
+
+  it('drops trailing zeros on whole numbers', () => {
+    expect(formatPokerAmount(5)).toBe('5')
+    expect(formatPokerAmount(100)).toBe('100')
+  })
+
+  it('preserves real two-decimal precision', () => {
+    expect(formatPokerAmount(2.25)).toBe('2.25')
   })
 })

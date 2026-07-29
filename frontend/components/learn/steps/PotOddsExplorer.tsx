@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
-import { requiredEquityFromPot } from '@/lib/theory/math'
+import { requiredEquityFromPot, formatPokerAmount } from '@/lib/theory/math'
 import { getNeutralSliderStart } from '@/lib/learn/interactionSafety'
 import { PotDisplay } from '@/components/learn/steps/PotDisplay'
 
@@ -92,8 +92,8 @@ export function PotOddsExplorer({ step, onAnswer, disabled = false, reviewMode =
         />
 
         <div className="flex items-center gap-2.5 pt-1">
-          <StatTile label="Risk" value={String(call)} color="violet" />
-          <StatTile label="Reward" value={String(pot + bet)} color="slate" />
+          <StatTile label="Risk" value={formatPokerAmount(call)} color="violet" />
+          <StatTile label="Reward" value={formatPokerAmount(pot + bet)} color="slate" />
           {showRequiredEquity ? (
             <StatTile label="Required equity" value={`${requiredEquity.toFixed(1)}%`} color="amber" />
           ) : (
@@ -119,7 +119,7 @@ export function PotOddsExplorer({ step, onAnswer, disabled = false, reviewMode =
               ))}
             </div>
             <p className="text-center text-[11px] text-muted-foreground/50">
-              Villain&apos;s bet: <span className="font-bold text-foreground">{betOverride}</span> chips
+              Villain&apos;s bet: <span className="font-bold text-foreground">{formatPokerAmount(betOverride)}</span> chips
             </p>
           </div>
         )}

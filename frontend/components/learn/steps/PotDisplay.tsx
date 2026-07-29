@@ -1,6 +1,7 @@
 'use client'
 
 import { cn } from '@/lib/utils'
+import { formatPokerAmount } from '@/lib/theory/math'
 
 interface ChipStackProps {
   label: string
@@ -26,7 +27,7 @@ function ChipStack({ label, value, color, delayMs = 0 }: ChipStackProps) {
       style={{ animationDelay: `${delayMs}ms` }}
     >
       <span className="text-[9px] font-bold uppercase tracking-[0.18em] opacity-60">{label}</span>
-      <span className="text-lg font-black tabular-nums">{value}</span>
+      <span className="text-lg font-black tabular-nums">{formatPokerAmount(value)}</span>
     </div>
   )
 }
