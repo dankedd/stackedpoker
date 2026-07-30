@@ -1,12 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { LESSONS } from '../curriculum'
-import {
-  buildPreflopTableRenderState,
-  parseActionBeforeHero,
-  SB_BB,
-  BB_BB,
-} from '../preflopTableState'
-import { normalizePosition } from '@/lib/replay/positions'
+import { buildPreflopTableRenderState, BB_BB } from '../preflopTableState'
+import { isTableRenderingStep, validateAllLessons } from '../scenarioValidator'
 import type { LessonStep } from '../types'
 
 /**
@@ -28,22 +23,17 @@ import type { LessonStep } from '../types'
  */
 
 // ── All PreflopTable-rendering steps in the curriculum ──────────────────────
-// Matches the ACTUAL rendering gate exactly (confirmed by grepping which step
-// components import PreflopTable: only DecisionSpot.tsx, TableDecision.tsx,
-// and ConceptReveal.tsx — every other step type, e.g. range_bucket or
+// `isTableRenderingStep` (scenarioValidator.ts) is the ONE place this gate is
+// defined — confirmed by grepping every step component that imports
+// PreflopTable: DecisionSpot.tsx, TableDecision.tsx, ConceptReveal.tsx,
+// ScenarioComparison.tsx. Every other step type, e.g. range_bucket or
 // spr_visualizer, never renders a table even when hero_position is set, so
-// they're correctly out of scope for this invariant). A board means postflop —
+// they're correctly out of scope for this invariant. A board means postflop —
 // a different visualization path, also out of scope here.
-const TABLE_RENDERING_TYPES = new Set(['decision_spot', 'table_decision'])
 const allSteps: { lessonId: string; lessonTitle: string; step: LessonStep }[] = LESSONS.flatMap((lesson) =>
   lesson.steps.map((step) => ({ lessonId: lesson.id, lessonTitle: lesson.title, step })),
 )
-const tableSteps = allSteps.filter(
-  ({ step }) =>
-    !!step.hero_position &&
-    !(step.board?.length ?? 0) &&
-    (TABLE_RENDERING_TYPES.has(step.type) || (step.type === 'concept_reveal' && step.visual === 'table')),
-)
+const tableSteps = allSteps.filter(({ step }) => isTableRenderingStep(step))
 
 describe('Repo-wide sweep — every PreflopTable-rendering step exists and is non-trivial', () => {
   it('found a substantial number of steps to audit (sanity guard against an empty/broken sweep)', () => {
@@ -216,92 +206,39 @@ describe('"Realizing Equity" regression (re-s8a-d) — the exact reported bug', 
   })
 })
 
-describe('Repo-wide sweep — structural invariants that must hold for every authored step', () => {
-  for (const { lessonId, step } of tableSteps) {
-    if (!step.action_before_hero) continue
-
-    describe(`${lessonId} / ${step.id}`, () => {
-      it('action_before_hero parses without an unparseable entry (no silent syntax typo)', () => {
-        const parsed = parseActionBeforeHero(step.action_before_hero, step.hero_position!, step.table_size ?? 9)
-        expect(parsed, `action_before_hero has an entry the parser can't read: ${JSON.stringify(step.action_before_hero)}`).toBeDefined()
-      })
-
-      it('raise/all-in amounts strictly increase (a "raise" can never be <= the existing bet — catches sizing typos)', () => {
-        const parsed = parseActionBeforeHero(step.action_before_hero, step.hero_position!, step.table_size ?? 9)
-        if (!parsed) return // already covered by the parse test above
-        let currentBet = BB_BB
-        for (const entry of parsed) {
-          if (entry.kind === 'raise' || entry.kind === 'allin') {
-            expect(
-              entry.betBb!,
-              `${entry.position} "raises" to ${entry.betBb}bb, which does not exceed the existing bet of ${currentBet}bb`,
-            ).toBeGreaterThan(currentBet)
-            currentBet = entry.betBb!
-          }
-        }
-      })
-
-      it('Hero is never shown as already folded in their own action_before_hero (the decision being asked can\'t already be resolved)', () => {
-        const parsed = parseActionBeforeHero(step.action_before_hero, step.hero_position!, step.table_size ?? 9)
-        if (!parsed) return
-        const heroPos = normalizePosition(step.hero_position!)
-        const heroFolded = parsed.some((e) => e.position === heroPos && e.kind === 'fold')
-        expect(heroFolded, `Hero (${heroPos}) appears as a completed FOLD in their own action_before_hero`).toBe(false)
-      })
-
-      it('pot equals the sum of every seat\'s commitment plus antes — never a separately hardcoded figure', () => {
-        const state = buildPreflopTableRenderState({
-          hero_position: step.hero_position,
-          table_size: step.table_size,
-          action_before_hero: step.action_before_hero,
-          effective_stack_bb: step.effective_stack_bb,
-          ante_bb: step.ante_bb,
-        })!
-        const anteContribution = step.ante_bb ? step.ante_bb * (step.table_size ?? 9) : 0
-        const expectedPot = anteContribution + state.seats.reduce((sum, s) => sum + s.committedBb, 0)
-        expect(state.potBb).toBeCloseTo(expectedPot)
-      })
-    })
+// ── Repo-wide sweep: delegated to lib/learn/scenarioValidator.ts ───────────────
+// Structural invariants (parse validity, monotonic raises, Hero-not-folded, pot
+// consistency, authored pot_bb, villain_position-vs-last-aggressor), the
+// scenario_a/scenario_b top-level mirroring check, and every narrative-vs-data
+// cross-check (action claims, hole cards, stack sizes, antes) all live in
+// `scenarioValidator.ts`'s `validateStep`/`validateAllLessons` — the SAME
+// functions `scripts/validate-scenarios.ts`'s standalone report calls. This is
+// deliberately ONE implementation exercised from two call sites, not a second
+// copy of the same checks re-derived inline here (see
+// `__tests__/scenarioValidation.test.ts` for the full sweep assertion and the
+// per-check synthetic fixtures).
+describe('Repo-wide sweep — every authored PreflopTable/scenario-comparison step matches its scenario data', () => {
+  const report = validateAllLessons(LESSONS)
+  const byStep = new Map<string, typeof report.issues>()
+  for (const issue of report.issues) {
+    const key = `${issue.lessonId}/${issue.stepId}`
+    byStep.set(key, [...(byStep.get(key) ?? []), issue])
   }
-})
 
-// ── The permanent guard for the "Realizing Equity" bug CLASS ────────────────
-// Narrative is for the learner, never a runtime data source (see the module
-// docstring) — but a narrative that UNAMBIGUOUSLY names an opener's raise
-// size ("BTN opens to 2.3bb", "CO raises to 2.3bb") is a strong signal the
-// step's structured action_before_hero must contain that exact raise. This
-// lint only ever demands a curriculum-data fix — it is never used to drive
-// rendering.
-const NARRATIVE_RAISE_RE = /\b(UTG\+2|UTG\+1|UTG|LJ|HJ|CO|BTN|SB|BB)\s+(?:opens?|raises?)\s+to\s+([\d.]+)\s*bb/gi
-
-describe('Repo-wide sweep — narrative-described opens/raises must exist in the structured action data', () => {
-  for (const { lessonId, step } of tableSteps) {
-    const narrative = step.narrative
-    if (!narrative) continue
-    const matches = [...narrative.matchAll(NARRATIVE_RAISE_RE)]
-    if (matches.length === 0) continue
-
-    for (const [, rawPos, rawAmt] of matches) {
-      const pos = normalizePosition(rawPos)
-      const amt = parseFloat(rawAmt)
-
-      it(`${lessonId} / ${step.id}: narrative says "${rawPos} ... to ${rawAmt}bb" — action_before_hero must contain that raise`, () => {
-        expect(
-          step.action_before_hero,
-          `narrative describes "${pos} raises to ${amt}bb" but action_before_hero is entirely absent`,
-        ).toBeDefined()
-
-        const parsed = parseActionBeforeHero(step.action_before_hero, step.hero_position!, step.table_size ?? 9)
-        expect(parsed, 'action_before_hero exists but failed to parse').toBeDefined()
-
-        const found = parsed!.some(
-          (e) => e.position === pos && (e.kind === 'raise' || e.kind === 'allin') && Math.abs((e.betBb ?? -1) - amt) < 0.01,
-        )
-        expect(
-          found,
-          `no matching raise entry for ${pos} at ${amt}bb in action_before_hero: ${JSON.stringify(step.action_before_hero)}`,
-        ).toBe(true)
-      })
+  // tableSteps (rendering gate) UNION every scenario_a/b comparison step — the
+  // top-level mirroring check applies to the latter independent of whether it
+  // also renders a table (see scenarioValidator.ts check #0).
+  const auditedSteps = new Map(tableSteps.map((s) => [`${s.lessonId}/${s.step.id}`, s]))
+  for (const entry of allSteps) {
+    if (entry.step.scenario_a && entry.step.scenario_b && entry.step.hero_position) {
+      auditedSteps.set(`${entry.lessonId}/${entry.step.id}`, entry)
     }
+  }
+
+  for (const { lessonId, step } of auditedSteps.values()) {
+    const issues = byStep.get(`${lessonId}/${step.id}`) ?? []
+    it(`${lessonId} / ${step.id}: narrative, action_before_hero, and the rendered table all agree`, () => {
+      expect(issues, issues.map((i) => `[${i.field}] ${i.message}`).join('\n')).toEqual([])
+    })
   }
 })

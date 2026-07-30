@@ -121,6 +121,23 @@ export function latestActionBySeat(actions: ParsedSeatAction[]): Map<string, Par
   return byPosition
 }
 
+/** The most recent OPPONENT raise/all-in in the sequence — i.e. whoever set the current
+ *  bet Hero faces. Used by the scenario validator to cross-check an authored
+ *  `villain_position` against what the structured action data actually says Hero is
+ *  facing (catches an author naming the wrong seat as Villain). Skips entries flagged
+ *  `isHero` — a rejam spot's LAST entry is often Hero's own already-completed raise
+ *  ("Hero raises all-in to 15bb"), which is what Hero just DID, not who Hero is facing;
+ *  the real Villain is whoever Hero was reraising. `undefined` when there's no data or
+ *  no opponent raise yet (an unopened/limped pot has no "current aggressor"). */
+export function lastAggressorBeforeHero(actions: ParsedSeatAction[] | undefined): ParsedSeatAction | undefined {
+  if (!actions) return undefined
+  let last: ParsedSeatAction | undefined
+  for (const action of actions) {
+    if ((action.kind === 'raise' || action.kind === 'allin') && !action.isHero) last = action
+  }
+  return last
+}
+
 export interface PreflopSeatState {
   position: string
   isHero: boolean
@@ -275,4 +292,179 @@ export function deriveCenterStatus(state: PreflopTableRenderState): string | und
       return `${a.position} ${verb}`
     })
     .join(' · ')
+}
+
+// ── Scenario/text consistency helpers ───────────────────────────────────────
+// The functions below back the "narrative must never contradict the structured
+// scenario" invariant (see __tests__/tableStateIntegrity.test.ts's repo-wide
+// sweep). They only ever DETECT a mismatch between authored fields — never
+// infer/fabricate table state from prose, matching this module's existing
+// contract.
+
+const POSITION_TOKEN = 'UTG\\+2|UTG\\+1|UTG|LJ|HJ|CO|BTN|SB|BB'
+// Every raise-family verb this corpus's narratives actually use, including the
+// re-raise-count words (3-bet/4-bet/5-bet) — a plain "opens?|raises?" alone
+// missed "SB 3-bets to 9bb"/"CO 3-bets to a standard 8bb" entirely.
+const RAISE_VERB = '(?:opens?|raises?|re-?raises?|3-?bets?|4-?bets?|5-?bets?)'
+const JAM_VERB = '(?:jams?|shoves?|goes all-?in|raises? all-?in)'
+// Tolerates a short sizing caveat between the verb and the amount — "SB 3-bets
+// (non-all-in) to 7bb", "BB 3-bets large, to 13bb" — without opening the door
+// to matching across an entire unrelated sentence (bounded, non-greedy).
+const FILLER = '[^.]{0,25}?'
+
+/** One narrative sentence's action claim about a named seat — e.g. "SB folds."
+ *  parses to `{ position: 'SB', kind: 'fold' }`. Only matches a POSITION TOKEN
+ *  at the START of a sentence (start-of-string or right after `.`/`—`) directly
+ *  followed by the verb — the same short declarative-sentence shape this
+ *  corpus's own narratives already use ("BTN raises to 2.5bb. Hero calls.").
+ *  This deliberately does NOT match mid-sentence/hypothetical phrasing like
+ *  "if BTN folds here" — those aren't claims about what actually happened. */
+export interface NarrativeActionClaim {
+  position: string
+  kind: SeatActionKind
+  betBb?: number
+}
+
+interface ActionPattern {
+  re: RegExp
+  kind: SeatActionKind
+  /** Capture group holding the position name, or 'SELF' when the subject is
+   *  literally "Hero" with no seat name to read (resolved to the step's own
+   *  hero_position by the caller). */
+  positionGroup: number | 'SELF'
+  sizeGroup?: number
+}
+
+const NARRATIVE_ACTION_PATTERNS: ActionPattern[] = [
+  // Sized raise/3-bet/4-bet/5-bet — anchor-free: the explicit size is itself a
+  // strong enough disambiguator against hypothetical phrasing. "BTN opens to
+  // 2.3bb", "SB 3-bets (non-all-in) to 7bb", "BB 3-bets large, to 13bb".
+  { re: new RegExp(`\\b(${POSITION_TOKEN})\\s+${RAISE_VERB}\\b${FILLER}\\bto\\s+([\\d.]+)\\s*bb`, 'gi'), kind: 'raise', positionGroup: 1, sizeGroup: 2 },
+  // "Hero opens BTN to 2bb" — Hero's own seat restated after the verb.
+  { re: new RegExp(`\\bHero\\s+${RAISE_VERB}\\s+(${POSITION_TOKEN})\\s+to\\s+([\\d.]+)\\s*bb`, 'gi'), kind: 'raise', positionGroup: 1, sizeGroup: 2 },
+  // "Hero raises to 2.2bb" / "Hero opens to 2.5bb" — no seat named, it's Hero's own.
+  { re: new RegExp(`\\bHero\\s+${RAISE_VERB}\\b${FILLER}\\bto\\s+([\\d.]+)\\s*bb`, 'gi'), kind: 'raise', positionGroup: 'SELF', sizeGroup: 1 },
+  // Sized jam/shove — "BB jams all-in for 15bb", "BTN jams all-in for 100bb".
+  { re: new RegExp(`\\b(${POSITION_TOKEN})\\s+${JAM_VERB}\\b[^.]{0,20}?\\b(?:to|for)\\s+([\\d.]+)\\s*bb`, 'gi'), kind: 'allin', positionGroup: 1, sizeGroup: 2 },
+  { re: new RegExp(`\\bHero\\s+${JAM_VERB}\\b[^.]{0,20}?\\b(?:to|for)\\s+([\\d.]+)\\s*bb`, 'gi'), kind: 'allin', positionGroup: 'SELF', sizeGroup: 1 },
+  // Fold/call/limp/check/unsized-jam carry no numeric disambiguator, so — to
+  // avoid tripping on hypothetical/conditional prose ("if BTN folds here...")
+  // — these only match a SENTENCE-INITIAL seat+verb, the same short
+  // declarative shape this corpus's own narratives already use ("BTN raises
+  // to 2.5bb. Hero calls.").
+  { re: new RegExp(`(?:^|[.—]\\s+)(${POSITION_TOKEN})\\s+${JAM_VERB}\\b`, 'gi'), kind: 'allin', positionGroup: 1 },
+  { re: new RegExp(`(?:^|[.—]\\s+)Hero\\s+${JAM_VERB}\\b`, 'gi'), kind: 'allin', positionGroup: 'SELF' },
+  { re: new RegExp(`(?:^|[.—]\\s+)(${POSITION_TOKEN})\\s+folds?\\b`, 'gi'), kind: 'fold', positionGroup: 1 },
+  { re: new RegExp(`(?:^|[.—]\\s+)(${POSITION_TOKEN})\\s+calls?\\b`, 'gi'), kind: 'call', positionGroup: 1 },
+  { re: new RegExp(`(?:^|[.—]\\s+)(${POSITION_TOKEN})\\s+limps?\\b`, 'gi'), kind: 'limp', positionGroup: 1 },
+  { re: new RegExp(`(?:^|[.—]\\s+)(${POSITION_TOKEN})\\s+checks?\\b`, 'gi'), kind: 'check', positionGroup: 1 },
+  { re: new RegExp(`(?:^|[.—]\\s+)Hero\\s+folds?\\b`, 'gi'), kind: 'fold', positionGroup: 'SELF' },
+  { re: new RegExp(`(?:^|[.—]\\s+)Hero\\s+calls?\\b`, 'gi'), kind: 'call', positionGroup: 'SELF' },
+  { re: new RegExp(`(?:^|[.—]\\s+)Hero\\s+limps?\\b`, 'gi'), kind: 'limp', positionGroup: 'SELF' },
+  { re: new RegExp(`(?:^|[.—]\\s+)Hero\\s+checks?\\b`, 'gi'), kind: 'check', positionGroup: 'SELF' },
+]
+
+/** A handful of narrative shapes are deliberately covered by more than one
+ *  pattern above (e.g. "Hero opens BTN to 2bb" matches both the "Hero ... POS
+ *  to Nbb" pattern AND the plain "Hero ... to Nbb" self-attribution pattern,
+ *  which treats "BTN" as incidental filler text) — collapsing to duplicate or
+ *  redundant claims for the exact same fact. This keeps the patterns simple
+ *  (no pattern needs to know about the others) and removes the redundancy
+ *  after the fact instead: an unsized claim is dropped when a sized claim for
+ *  the same seat+kind exists, then exact duplicates are collapsed. */
+function dedupeClaims(claims: NarrativeActionClaim[]): NarrativeActionClaim[] {
+  const sizedKeys = new Set(claims.filter((c) => c.betBb != null).map((c) => `${c.position}|${c.kind}`))
+  const seen = new Set<string>()
+  const result: NarrativeActionClaim[] = []
+  for (const claim of claims) {
+    if (claim.betBb == null && sizedKeys.has(`${claim.position}|${claim.kind}`)) continue
+    const key = `${claim.position}|${claim.kind}|${claim.betBb ?? ''}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    result.push(claim)
+  }
+  return result
+}
+
+/** Extracts every "SEAT/Hero verb[s]..." action claim from a narrative string,
+ *  across every recognized verb kind (open/raise/3-bet/4-bet/5-bet/jam/shove/
+ *  fold/call/limp/check). `heroPosition` resolves a bare "Hero" subject to a
+ *  concrete seat, matching `parseActionBeforeHero`'s own convention. Used to
+ *  cross-check narrative prose against `action_before_hero` — see
+ *  `lib/learn/scenarioValidator.ts` and its repo-wide sweep test. */
+export function extractNarrativeActionClaims(narrative: string, heroPosition: string): NarrativeActionClaim[] {
+  const heroPos = normalizePosition(heroPosition)
+  const claims: NarrativeActionClaim[] = []
+  for (const { re, kind, positionGroup, sizeGroup } of NARRATIVE_ACTION_PATTERNS) {
+    for (const m of narrative.matchAll(re)) {
+      const position = positionGroup === 'SELF' ? heroPos : normalizePosition(m[positionGroup])
+      const betBb = sizeGroup !== undefined && m[sizeGroup] !== undefined ? parseFloat(m[sizeGroup]) : undefined
+      claims.push({ position, kind, betBb })
+    }
+  }
+  return dedupeClaims(claims)
+}
+
+/** A narrative's claim about a named seat's EFFECTIVE STACK — e.g. "100bb
+ *  effective", "the BB... has only 10bb left", "20bb deep". Returns one claim
+ *  per matched sentence; `position` is undefined for a table-wide claim not
+ *  attributed to any specific seat (e.g. "Cash game, 100bb effective."). */
+export interface NarrativeStackClaim {
+  position?: string
+  stackBb: number
+}
+
+const TABLE_WIDE_STACK_RE = /\b(\d+(?:\.\d+)?)\s*bb\s+(?:effective|deep)\b/gi
+const SEAT_STACK_AMOUNT_RE = /(\d+(?:\.\d+)?)\s*bb\b[^.]{0,20}?\b(?:left|remaining|behind|deep)\b/gi
+const POSITION_ONLY_RE = new RegExp(`\\b(${POSITION_TOKEN})\\b`, 'gi')
+
+export function extractNarrativeStackClaims(narrative: string): NarrativeStackClaim[] {
+  const claims: NarrativeStackClaim[] = []
+  for (const m of narrative.matchAll(TABLE_WIDE_STACK_RE)) {
+    claims.push({ stackBb: parseFloat(m[1]) })
+  }
+  // Per SENTENCE (not the whole narrative): find each qualifying "Nbb left/
+  // remaining/behind/deep" amount, then attribute it to the CLOSEST preceding
+  // position token in that same sentence — not just any earlier one. A naive
+  // "any position token within N chars before the number" match mis-attributes
+  // e.g. "Hero is in the SB — and the BB, still to act, has only 10bb left" to
+  // SB (the first token it finds), when BB is the seat the number is actually
+  // about.
+  for (const sentence of narrative.split(/(?<=[.!?])\s+/)) {
+    for (const m of sentence.matchAll(SEAT_STACK_AMOUNT_RE)) {
+      const amountIdx = m.index ?? 0
+      let closestPosition: string | undefined
+      for (const pm of sentence.matchAll(POSITION_ONLY_RE)) {
+        if ((pm.index ?? 0) >= amountIdx) break
+        closestPosition = pm[1]
+      }
+      if (closestPosition) claims.push({ position: normalizePosition(closestPosition), stackBb: parseFloat(m[1]) })
+    }
+  }
+  return claims
+}
+
+/** A narrative's claim about the ante — "no ante", "ante active", or an explicit
+ *  size ("0.125bb ante"/"ante of 0.125bb"). `present: false` claims come from
+ *  "no ante" phrasing; `present: true` with `anteBb` undefined means the
+ *  narrative asserts an ante exists without naming its size. */
+export interface NarrativeAnteClaim {
+  present: boolean
+  anteBb?: number
+}
+
+const NO_ANTE_RE = /\bno\s+ante\b/i
+const EXPLICIT_ANTE_RE = /\b(\d+(?:\.\d+)?)\s*bb\s+ante\b|\bante\s+(?:of\s+|at\s+)?(\d+(?:\.\d+)?)\s*bb\b/i
+const ANTE_ACTIVE_RE = /\bantes?\s+(?:active|on)\b/i
+
+export function extractNarrativeAnteClaims(narrative: string): NarrativeAnteClaim[] {
+  const claims: NarrativeAnteClaim[] = []
+  if (NO_ANTE_RE.test(narrative)) claims.push({ present: false })
+  const explicit = narrative.match(EXPLICIT_ANTE_RE)
+  if (explicit) {
+    claims.push({ present: true, anteBb: parseFloat(explicit[1] ?? explicit[2]) })
+  } else if (ANTE_ACTIVE_RE.test(narrative)) {
+    claims.push({ present: true })
+  }
+  return claims
 }
