@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
-import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
+import { PlayingCard } from '@/components/poker/PlayingCard'
 import { CardPicker } from '@/components/poker/CardPicker'
 import { SUITS } from '@/lib/learn/flopClassifier'
 
@@ -15,6 +15,10 @@ interface FlopBuilderProps {
 }
 
 const SUIT_SYMBOL: Record<string, string> = { s: '♠', h: '♥', d: '♦', c: '♣' }
+
+/** Shared across both builder modes so every board-building exercise renders
+ *  cards at the same, prominent size — bump this one constant to rescale both. */
+const BOARD_CARD_SIZE = 'xl'
 
 /**
  * Constructs a flop toward a described target (checked live against
@@ -63,11 +67,11 @@ export function FlopBuilder({ step, onAnswer, disabled = false }: FlopBuilderPro
           <p className="text-center text-sm font-semibold text-foreground">{step.flop_builder_prompt}</p>
         )}
 
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex items-center justify-center gap-2 sm:gap-5 overflow-x-auto">
           {fixedRanks.map((r, i) => (
             <div key={i} className="flex flex-col items-center gap-2">
-              <PlayingCardMini card={suits[i] ? `${r}${suits[i]}` : `${r}?`} size="md" />
-              <div className="flex gap-1">
+              <PlayingCard card={suits[i] ? `${r}${suits[i]}` : `${r}?`} size={BOARD_CARD_SIZE} />
+              <div className="flex flex-wrap justify-center gap-1 max-w-[100px] sm:max-w-none sm:flex-nowrap">
                 {SUITS.map((s) => (
                   <button
                     key={s}
@@ -121,7 +125,7 @@ export function FlopBuilder({ step, onAnswer, disabled = false }: FlopBuilderPro
         <p className="text-center text-sm font-semibold text-foreground">{step.flop_builder_prompt}</p>
       )}
 
-      <div className="flex items-center justify-center gap-3">
+      <div className="flex items-center justify-center gap-2 sm:gap-5 overflow-x-auto">
         {board.map((card, i) => (
           <CardPicker
             key={i}
@@ -133,6 +137,7 @@ export function FlopBuilder({ step, onAnswer, disabled = false }: FlopBuilderPro
             disabledCards={board}
             boardCards={board.filter((_, j) => j !== i)}
             disabled={disabled || submitted}
+            size={BOARD_CARD_SIZE}
           />
         ))}
       </div>

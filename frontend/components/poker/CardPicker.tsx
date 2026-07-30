@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PlayingCard, type CardSize } from "./PlayingCard";
 
 const RANKS = ["A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"];
 
@@ -96,44 +97,13 @@ interface CardPickerProps {
   className?: string;
   /** Locks the trigger — used once an answer has been submitted. */
   disabled?: boolean;
+  /** Trigger card face size, using the shared PlayingCard size tiers. Defaults to
+   *  the compact size used in dense forms (e.g. HandConfirmation's card grid). */
+  size?: CardSize;
 }
 
 function suitOf(card: string): SuitDef | undefined {
   return SUITS.find(s => s.key === card[1]?.toLowerCase());
-}
-
-function MiniCard({ card, dim }: { card: string; dim?: boolean }) {
-  if (!card || card.length < 2) {
-    return (
-      <div className={cn(
-        "h-[42px] w-[30px] rounded-[3px] border border-white/10 flex items-center justify-center",
-        "bg-white/5 text-white/20 text-xs font-bold select-none",
-        dim && "opacity-40 grayscale"
-      )}>?</div>
-    );
-  }
-  const rank = card[0].toUpperCase();
-  const suit = card[1].toLowerCase();
-  const isRed = suit === "h" || suit === "d";
-  const suitSymbol = suit === "h" ? "♥" : suit === "d" ? "♦" : suit === "s" ? "♠" : "♣";
-  return (
-    <div className={cn(
-      "h-[42px] w-[30px] rounded-[3px] flex flex-col items-start justify-between p-[3px] select-none font-black",
-      dim ? "opacity-40 grayscale" : "",
-    )}
-      style={{
-        background: "linear-gradient(160deg,#fff 0%,#f4f4f2 100%)",
-        boxShadow: "0 3px 8px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.9)",
-        border: "1px solid rgba(255,255,255,0.12)",
-      }}>
-      <span className={cn("text-[11px] leading-none", isRed ? "text-[#d40000]" : "text-[#0d0d0d]")}>
-        {rank}
-      </span>
-      <span className={cn("text-[9px] leading-none self-center", isRed ? "text-[#d40000]" : "text-[#0d0d0d]")}>
-        {suitSymbol}
-      </span>
-    </div>
-  );
 }
 
 /** Small colored rank+suit chip used for the "current board" context strip. */
@@ -147,7 +117,7 @@ function BoardChip({ card }: { card: string }) {
   );
 }
 
-export function CardPicker({ value, onChange, disabledCards = [], boardCards = [], className, disabled = false }: CardPickerProps) {
+export function CardPicker({ value, onChange, disabledCards = [], boardCards = [], className, disabled = false, size = "xs" }: CardPickerProps) {
   const [open, setOpen] = useState(false);
   const [suitFilter, setSuitFilter] = useState<string | null>(null);
   const [focusPos, setFocusPos] = useState({ row: 0, col: 0 });
@@ -239,7 +209,7 @@ export function CardPicker({ value, onChange, disabledCards = [], boardCards = [
         aria-expanded={open}
         aria-haspopup="grid"
       >
-        <MiniCard card={value} />
+        <PlayingCard card={value} size={size} />
         {!disabled && (
           <span className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-white/80 text-black text-[8px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow">✎</span>
         )}
