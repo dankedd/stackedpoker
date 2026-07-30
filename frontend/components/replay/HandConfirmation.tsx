@@ -97,6 +97,12 @@ export function HandConfirmation({ extraction, onConfirm, onReset, isAnalyzing }
     ].filter(Boolean);
   }, [heroCards, villainCards, flop, turn, river]);
 
+  // Board-only cards — shown inside every picker as context so the user never
+  // has to look back up at the table while choosing a card.
+  const boardOnly = useMemo(() => {
+    return [...flop, ...turn, ...river].filter(Boolean);
+  }, [flop, turn, river]);
+
   function setHeroCard(i: number, card: string) {
     setHeroCards(prev => { const n = [...prev]; n[i] = card; return n; });
   }
@@ -211,6 +217,7 @@ export function HandConfirmation({ extraction, onConfirm, onReset, isAnalyzing }
                     value={heroCards[i] ?? ""}
                     onChange={card => setHeroCard(i, card)}
                     disabledCards={allUsed}
+                    boardCards={boardOnly}
                   />
                 ))}
               </div>
@@ -234,6 +241,7 @@ export function HandConfirmation({ extraction, onConfirm, onReset, isAnalyzing }
                     value={flop[i] ?? ""}
                     onChange={card => setFlopCard(i, card)}
                     disabledCards={allUsed}
+                    boardCards={boardOnly}
                   />
                 ))}
               </div>
@@ -244,6 +252,7 @@ export function HandConfirmation({ extraction, onConfirm, onReset, isAnalyzing }
                 value={turn[0] ?? ""}
                 onChange={card => setTurn([card])}
                 disabledCards={allUsed}
+                boardCards={boardOnly}
               />
             </div>
             <div className="space-y-1">
@@ -252,6 +261,7 @@ export function HandConfirmation({ extraction, onConfirm, onReset, isAnalyzing }
                 value={river[0] ?? ""}
                 onChange={card => setRiver([card])}
                 disabledCards={allUsed}
+                boardCards={boardOnly}
               />
             </div>
             <div className="space-y-1">
@@ -292,6 +302,7 @@ export function HandConfirmation({ extraction, onConfirm, onReset, isAnalyzing }
                     value={villainCards[i] ?? ""}
                     onChange={card => setVillainCard(i, card)}
                     disabledCards={allUsed}
+                    boardCards={boardOnly}
                   />
                 ))}
               </div>
