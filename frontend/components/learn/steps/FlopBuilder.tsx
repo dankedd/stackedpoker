@@ -5,7 +5,8 @@ import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
-import { RANKS, SUITS } from '@/lib/learn/flopClassifier'
+import { CardPicker } from '@/components/poker/CardPicker'
+import { SUITS } from '@/lib/learn/flopClassifier'
 
 interface FlopBuilderProps {
   step: LessonStep
@@ -31,14 +32,12 @@ export function FlopBuilder({ step, onAnswer, disabled = false }: FlopBuilderPro
   // assign_suits: one suit choice per slot, starts unset (neutral).
   const [suits, setSuits] = useState<(string | null)[]>(fixedRanks.map(() => null))
   // swap_one_card: which slot (if any) has been overridden, and to what card.
-  const [editingSlot, setEditingSlot] = useState<number | null>(null)
   const [override, setOverride] = useState<{ slot: number; card: string } | null>(null)
   const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
     mountTime.current = Date.now()
     setSuits(fixedRanks.map(() => null))
-    setEditingSlot(null)
     setOverride(null)
     setSubmitted(false)
   }, [step.id, fixedRanks.length])
@@ -124,52 +123,22 @@ export function FlopBuilder({ step, onAnswer, disabled = false }: FlopBuilderPro
 
       <div className="flex items-center justify-center gap-3">
         {board.map((card, i) => (
-          <button
+          <CardPicker
             key={i}
-            type="button"
+            value={card}
+            onChange={(newCard) => {
+              if (!newCard) return
+              setOverride({ slot: i, card: newCard })
+            }}
+            disabledCards={board}
+            boardCards={board.filter((_, j) => j !== i)}
             disabled={disabled || submitted}
-            onClick={() => setEditingSlot((prev) => (prev === i ? null : i))}
-            className={cn('rounded-lg transition-transform', editingSlot === i ? 'ring-2 ring-violet-500/60 scale-105' : 'hover:scale-105')}
-          >
-            <PlayingCardMini card={card} size="md" />
-          </button>
+          />
         ))}
       </div>
-
-      {editingSlot !== null && (
-        <div className="rounded-xl border border-violet-500/25 bg-violet-500/5 p-3 space-y-2 animate-in fade-in duration-200">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-violet-300/70 text-center">Pick a replacement card</p>
-          <div className="grid grid-cols-1 gap-1">
-            {SUITS.map((s) => (
-              <div key={s} className="flex gap-1 justify-center">
-                {RANKS.map((r) => {
-                  const card = `${r}${s}`
-                  const isCurrent = card.toLowerCase() === baseBoard[editingSlot]?.toLowerCase()
-                  return (
-                    <button
-                      key={card}
-                      type="button"
-                      disabled={disabled || submitted || isCurrent}
-                      onClick={() => {
-                        setOverride({ slot: editingSlot, card })
-                        setEditingSlot(null)
-                      }}
-                      className={cn(
-                        'flex h-6 w-6 items-center justify-center rounded text-[10px] font-bold border transition-colors',
-                        isCurrent
-                          ? 'border-border/10 bg-secondary/10 text-muted-foreground/15 cursor-default'
-                          : 'border-border/40 bg-secondary/30 text-muted-foreground/70 hover:bg-violet-500/20 hover:border-violet-500/40',
-                      )}
-                    >
-                      {r === 'T' ? '10' : r}
-                    </button>
-                  )
-                })}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <p className="text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground/50">
+        Click a card to pick a replacement
+      </p>
 
       <button
         type="button"

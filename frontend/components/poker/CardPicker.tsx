@@ -94,6 +94,8 @@ interface CardPickerProps {
    *  user never has to look back up at the table while picking. */
   boardCards?: string[];
   className?: string;
+  /** Locks the trigger — used once an answer has been submitted. */
+  disabled?: boolean;
 }
 
 function suitOf(card: string): SuitDef | undefined {
@@ -145,7 +147,7 @@ function BoardChip({ card }: { card: string }) {
   );
 }
 
-export function CardPicker({ value, onChange, disabledCards = [], boardCards = [], className }: CardPickerProps) {
+export function CardPicker({ value, onChange, disabledCards = [], boardCards = [], className, disabled = false }: CardPickerProps) {
   const [open, setOpen] = useState(false);
   const [suitFilter, setSuitFilter] = useState<string | null>(null);
   const [focusPos, setFocusPos] = useState({ row: 0, col: 0 });
@@ -197,7 +199,7 @@ export function CardPicker({ value, onChange, disabledCards = [], boardCards = [
     requestAnimationFrame(() => triggerRef.current?.focus());
   }
 
-  const disabled = new Set(disabledCards.filter(c => c !== value));
+  const disabledSet = new Set(disabledCards.filter(c => c !== value));
 
   const handleGridKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
@@ -227,14 +229,20 @@ export function CardPicker({ value, onChange, disabledCards = [], boardCards = [
       <button
         ref={triggerRef}
         type="button"
+        disabled={disabled}
         onClick={() => setOpen(v => !v)}
-        className="group relative hover:scale-105 transition-transform duration-150 cursor-pointer"
-        title="Click to change card"
+        className={cn(
+          "group relative transition-transform duration-150",
+          disabled ? "cursor-default opacity-60" : "cursor-pointer hover:scale-105",
+        )}
+        title={disabled ? undefined : "Click to change card"}
         aria-expanded={open}
         aria-haspopup="grid"
       >
         <MiniCard card={value} />
-        <span className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-white/80 text-black text-[8px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow">✎</span>
+        {!disabled && (
+          <span className="absolute -bottom-1 -right-1 h-3.5 w-3.5 rounded-full bg-white/80 text-black text-[8px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow">✎</span>
+        )}
       </button>
 
       {open && (
@@ -301,7 +309,7 @@ export function CardPicker({ value, onChange, disabledCards = [], boardCards = [
                   <div className="flex gap-1 py-1.5 pr-2">
                     {RANKS.map((rank, colIdx) => {
                       const card = `${rank}${suit.key}`;
-                      const isDisabled = disabled.has(card);
+                      const isDisabled = disabledSet.has(card);
                       const isCurrent = card === value;
                       const isFocusable = rowIdx === focusPos.row && colIdx === focusPos.col;
                       const cellKey = `${suit.key}-${colIdx}`;
