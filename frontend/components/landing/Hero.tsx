@@ -5,7 +5,8 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import { getJourneyOverview } from "@/lib/learn/journey";
 import { LESSONS } from "@/lib/learn/curriculum";
-import { RANGE_TARGETS } from "@/lib/learn/ranges";
+import { CASH_100BB_OPEN_RESPONSE_CHARTS } from "@/lib/learn/cash100bbOpenResponseBaselines";
+import { fromActionDict, type RangeStrategyMap } from "@/lib/learn/rangeStrategy";
 import { PokerRangeGrid } from "@/components/learn/visuals/PokerRangeGrid";
 import { useCursorGlow } from "@/hooks/useCursorGlow";
 import { MarketingGridBackground } from "@/components/landing/shared/MarketingGridBackground";
@@ -19,11 +20,16 @@ import { CoachPreviewCard } from "@/components/landing/shared/CoachPreviewCard";
 
 const journeyOverview = getJourneyOverview({});
 
-// Hero's real, complete continuing (call-or-3-bet) range vs a CO open — the
-// same canonical 100bb data + label ("BTN call vs CO") already used in the
-// real Module-8 "Range Board Collision" lesson step (curriculum.ts). Not a
-// CO opening range, not an invented marketing range.
-const BTN_CALL_VS_CO_RANGE = RANGE_TARGETS["BTN_call_vs_CO_100bb"] ?? [];
+// Hero's real, complete fold/call/3-bet strategy vs a CO open — Modern Poker
+// Theory, Chapter 5, Hand Range 66 (p.228), the same canonical dataset used
+// wherever this exact matchup appears elsewhere in the app (see
+// cash100bbOpenResponseBaselines.ts). Not a CO opening range, not an invented
+// marketing range: every non-fold hand below comes from that one chart.
+const BTN_VS_CO_CHART = CASH_100BB_OPEN_RESPONSE_CHARTS.BN_vs_CO_100bb;
+const BTN_VS_CO_RANGE = BTN_VS_CO_CHART.cells.map((c) => c.hand);
+const BTN_VS_CO_STRATEGY: RangeStrategyMap = Object.fromEntries(
+  BTN_VS_CO_CHART.cells.map((c) => [c.hand, fromActionDict(c.actions as Record<string, number>)]),
+);
 
 const HERO_OPTIONS: MarketingDecisionOption[] = [
   { id: "fold", label: "Fold" },
@@ -83,11 +89,18 @@ function HeroComposition() {
           <AmbientFloat durationS={12} delayS={1.5} distancePx={5}>
             <MarketingGlassCard className="p-4">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-blue-300/80 mb-2.5">
-                BTN call vs CO
+                BTN vs CO — full strategy
               </p>
-              <PokerRangeGrid range={BTN_CALL_VS_CO_RANGE} size="compact" mode="membership" highlightHand="KQs" />
+              <PokerRangeGrid
+                range={BTN_VS_CO_RANGE}
+                size="compact"
+                mode="strategy"
+                strategies={BTN_VS_CO_STRATEGY}
+                strategyActionOrder={["3bet", "call", "fold"]}
+                highlightHand="KQs"
+              />
               <p className="mt-2.5 text-[11px] text-muted-foreground/60 leading-relaxed">
-                See Hero's whole continuing range — not just KQs.
+                Fold, call, or 3-bet by hand — not just membership. Same book chart used everywhere in Learn.
               </p>
             </MarketingGlassCard>
           </AmbientFloat>

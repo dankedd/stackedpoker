@@ -8,6 +8,7 @@
 
 import { entriesToHandList } from './preflopBaselines'
 import { THREEBET_MEDIUM } from './threebetBaselines'
+import { CASH_100BB_OPEN_RESPONSE_CHARTS } from './cash100bbOpenResponseBaselines'
 
 // ── BTN open (~40%) ──────────────────────────────────────────────────────────
 
@@ -119,23 +120,15 @@ const SB_OPEN_100BB: string[] = [
   '54s',
 ]
 
-// ── BTN call vs CO open (3-bet or call, ~25%) ────────────────────────────────
+// ── BTN continuing (3-bet or call) vs CO open, 100bb — derived from the real
+//    book strategy chart (CASH_100BB_OPEN_RESPONSE_CHARTS.BN_vs_CO_100bb, see
+//    cash100bbOpenResponseBaselines.ts) so this membership list can never drift
+//    from the canonical per-hand strategy data — one source of truth, not a
+//    hand-picked parallel array. ────────────────────────────────────────────
 
-const BTN_CALL_VS_CO_100BB: string[] = [
-  'AA', 'KK', 'QQ', 'JJ', 'TT', '99', '88', '77', '66', '55', '44', '33', '22',
-  'AKs', 'AQs', 'AJs', 'ATs', 'A9s', 'A8s', 'A5s', 'A4s', 'A3s',
-  'AKo', 'AQo', 'AJo',
-  'KQs', 'KJs', 'KTs', 'K9s',
-  'KQo', 'KJo',
-  'QJs', 'QTs', 'Q9s',
-  'QJo',
-  'JTs', 'J9s', 'J8s',
-  'T9s', 'T8s',
-  '98s', '97s',
-  '87s', '86s',
-  '76s', '75s',
-  '65s', '54s',
-]
+const BTN_CALL_VS_CO_100BB: string[] = CASH_100BB_OPEN_RESPONSE_CHARTS.BN_vs_CO_100bb.cells
+  .filter((c) => (c.actions['3bet'] ?? 0) + (c.actions.call ?? 0) > 0)
+  .map((c) => c.hand)
 
 // ── BB defend vs BTN open (~55%) ─────────────────────────────────────────────
 
