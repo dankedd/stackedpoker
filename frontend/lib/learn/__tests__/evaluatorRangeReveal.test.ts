@@ -29,7 +29,7 @@ describe('evaluateStepLocally — range_reveal on bbd-s8b ("The Big Blind Discou
     expect(result.xp_earned).toBe(6) // step.xp=6 * perfect mult 1.00
     expect(result.range_reveal).toBeDefined()
     expect(result.range_reveal!.highlightHand).toBe('K9o')
-    expect(result.range_reveal!.label).toBe('BB CALLING RANGE vs UTG OPEN')
+    expect(result.range_reveal!.label).toBe('BB DEFENSE vs UTG OPEN')
   })
 
   it('ALSO appears after the INCORRECT answer (call) — exactly where it matters most — with unchanged scoring', () => {
@@ -68,7 +68,7 @@ describe('evaluateStepLocally — second positional spot: lab5-h-action (CO open
   it('resolves the BB-vs-CO chart with correct highlight, distinct from the UTG spot', () => {
     const result = evaluateStepLocally(step, 'call', 0)
     expect(result.range_reveal).toBeDefined()
-    expect(result.range_reveal!.label).toBe('BB CALLING RANGE vs CO OPEN')
+    expect(result.range_reveal!.label).toBe('BB DEFENSE vs CO OPEN')
     expect(result.range_reveal!.highlightHand).toBe('K9s')
 
     const utgResult = evaluateStepLocally(findStep('bbd-s8b'), 'fold', 0)

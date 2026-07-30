@@ -7,6 +7,13 @@
  * mislabeling untracked complement frequencies as "Fold" (see
  * __tests__/defendBaselines.test.ts for the root-cause bug this must not
  * reintroduce).
+ *
+ * Both regression spots (bbd-s8b, lab5-h-action) are 100bb cash BB-vs-open
+ * spots, so since bbDefenseComplete.ts landed they now resolve through the
+ * book-verified `complete_strategy` source (Modern Poker Theory), not the
+ * calling-only `action_slice` fallback — see the "complete_strategy" describe
+ * blocks below. The action_slice fallback is still covered separately, via a
+ * 60bb spot the book data doesn't cover.
  */
 import { describe, it, expect } from 'vitest'
 import { resolveDefendRangeReveal } from '../defendRangeReveal'
@@ -61,35 +68,30 @@ describe('resolveDefendRangeReveal — regression case: "The Big Blind Discount"
     expect(reveal?.highlightHand).toBe('K9o')
   })
 
-  it('labels it as the HERO calling range, never the villain\'s opening range', () => {
-    expect(reveal?.label).toBe('BB CALLING RANGE vs UTG OPEN')
+  it('labels it as the HERO defending strategy — complete_strategy is genuinely known, so "DEFENSE" is correct here', () => {
+    expect(reveal?.label).toBe('BB DEFENSE vs UTG OPEN')
     expect(reveal?.label).not.toMatch(/UTG.*OPEN(ING)? RANGE/i)
     expect(reveal?.heroPosition).toBe('BB')
     expect(reveal?.villainPosition).toBe('UTG')
   })
 
-  it('K9o itself carries no explicit strategy entry (absent from the calling chart, per defendBaselines.ts)', () => {
-    // K9o never appears in DEFEND_DEEP.BB_vs_UTG. `strategySemantics` is
-    // forwarded as `action_slice`, so PokerRangeGrid renders an absent hand as
-    // the honest "untracked" bucket, never a fabricated pure fold — see
-    // strategySemantics assertion below.
-    expect(reveal?.strategies.K9o).toBeUndefined()
+  it('carries complete_strategy strategySemantics (100bb exactly matches the book\'s solved conditions)', () => {
+    expect(reveal?.strategySemantics).toEqual({ kind: 'complete_strategy' })
   })
 
-  it('carries action_slice strategySemantics (never defaults to a fold-implying complete_strategy)', () => {
-    expect(reveal?.strategySemantics).toEqual({ kind: 'action_slice', action: 'call' })
+  it('K9o resolves to a real, explicit pure-fold entry from the book data — matching the lesson\'s own "Fold" answer key', () => {
+    expect(reveal?.strategies.K9o).toEqual({ fold: 1 })
   })
 
-  it('every resolved hand has only call/other, never a fabricated "fold" key', () => {
+  it('every resolved hand sums to ~1 across fold/call/3bet (a genuine complete strategy)', () => {
     for (const [hand, mix] of Object.entries(reveal?.strategies ?? {})) {
-      expect(mix.fold, `${hand} should not carry a fold key`).toBeUndefined()
       const sum = Object.values(mix).reduce((s, f) => s + (f ?? 0), 0)
-      expect(sum, `${hand}: ${JSON.stringify(mix)} sums to ${sum}`).toBeCloseTo(1, 6)
+      expect(sum, `${hand}: ${JSON.stringify(mix)} sums to ${sum}`).toBeCloseTo(1, 2)
     }
   })
 
-  it('AA is present as call/other, never mislabeled fold (the exact prior bug class)', () => {
-    expect(reveal?.strategies.AA).toEqual({ call: 0.2, other: 0.8 })
+  it('AA is pure 3-bet — the book-verified complete strategy, not the old call-only chart\'s 20%/80% split', () => {
+    expect(reveal?.strategies.AA).toEqual({ '3bet': 1 })
   })
 })
 
@@ -105,13 +107,33 @@ describe('resolveDefendRangeReveal — second positional spot: lab5-h-action (CO
 
   it('resolves a reveal using the BB-vs-CO chart, not BB-vs-UTG', () => {
     expect(reveal).toBeDefined()
-    expect(reveal?.label).toBe('BB CALLING RANGE vs CO OPEN')
+    expect(reveal?.label).toBe('BB DEFENSE vs CO OPEN')
     expect(reveal?.highlightHand).toBe('K9s')
+    expect(reveal?.strategySemantics).toEqual({ kind: 'complete_strategy' })
+  })
+
+  it('K9s is a genuine call/3bet mix in this chart (matches lab5-h-action\'s own "close, real decision" framing)', () => {
+    expect(reveal?.strategies.K9s).toEqual({ '3bet': 0.224, call: 0.776 })
   })
 
   it('is a different strategy map from the UTG spot (proves this is not hardcoded to one matchup)', () => {
     const utgReveal = resolveDefendRangeReveal(findStep('bbd-s8b'))
     expect(reveal?.strategies).not.toEqual(utgReveal?.strategies)
+  })
+})
+
+describe('resolveDefendRangeReveal — action_slice fallback still applies off-100bb (bbd-s8c, BTN opens, Hero BB, 60bb)', () => {
+  const step = findStep('bbd-s8c')
+  const reveal = resolveDefendRangeReveal(step)
+
+  it('step fixture is 60bb, not 100bb — the book\'s complete-strategy data must not be stretched to this depth', () => {
+    expect(step.effective_stack_bb).toBe(60)
+  })
+
+  it('falls back to the calling-only action_slice source, not complete_strategy', () => {
+    expect(reveal).toBeDefined()
+    expect(reveal?.strategySemantics).toEqual({ kind: 'action_slice', action: 'call' })
+    expect(reveal?.label).toBe('BB CALLING RANGE vs BTN OPEN')
   })
 })
 
@@ -169,12 +191,27 @@ describe('resolveDefendRangeReveal — data-integrity gaps are reported as "no r
     expect(resolveDefendRangeReveal(step)).toBeUndefined()
   })
 
-  it('an unsupported hero/villain matchup (no canonical chart for that pair) -> undefined', () => {
+  it('BB vs HJ at 100bb now resolves via the book\'s complete_strategy data (HJ is no longer an unsupported matchup)', () => {
+    const step: LessonStep = {
+      id: 'fixture-hj-now-supported',
+      type: 'decision_spot',
+      hero_position: 'BB',
+      villain_position: 'HJ',
+      effective_stack_bb: 100,
+      hero_hand: ['9s', '2h'],
+    }
+    const reveal = resolveDefendRangeReveal(step)
+    expect(reveal).toBeDefined()
+    expect(reveal?.strategySemantics).toEqual({ kind: 'complete_strategy' })
+    expect(reveal?.label).toBe('BB DEFENSE vs HJ OPEN')
+  })
+
+  it('a genuinely unsupported villain position (no chart in either source) -> undefined', () => {
     const step: LessonStep = {
       id: 'fixture-unsupported-matchup',
       type: 'decision_spot',
       hero_position: 'BB',
-      villain_position: 'HJ', // DEFEND_DEEP only covers BTN/CO/SB/UTG
+      villain_position: 'MP', // not a modeled opener in either bbDefenseComplete.ts or defendBaselines.ts
       effective_stack_bb: 100,
       hero_hand: ['9s', '2h'],
     }
@@ -199,7 +236,7 @@ describe('resolveDefendRangeReveal — full curriculum sweep', () => {
     expect(resolvedIds.has('lab5-h-action')).toBe(true)
   })
 
-  it('every resolved reveal has internally consistent frequencies (no NaN, sums ~1, no stray fold key)', () => {
+  it('every resolved reveal has internally consistent frequencies (no NaN, sums ~1); action_slice reveals never carry a "fold" key', () => {
     for (const step of decisionSpots) {
       const reveal = resolveDefendRangeReveal(step)
       if (!reveal) continue
@@ -209,7 +246,11 @@ describe('resolveDefendRangeReveal — full curriculum sweep', () => {
           expect(freq, `${step.id}/${hand}/${action}`).toBeGreaterThan(0)
           expect(freq, `${step.id}/${hand}/${action}`).toBeLessThanOrEqual(1)
         }
-        expect(mix.fold, `${step.id}/${hand} carries a fabricated fold key`).toBeUndefined()
+        // A genuine complete_strategy (book data) legitimately has a fold key —
+        // only the calling-only action_slice fallback must never fabricate one.
+        if (reveal.strategySemantics.kind === 'action_slice') {
+          expect(mix.fold, `${step.id}/${hand} carries a fabricated fold key`).toBeUndefined()
+        }
       }
     }
   })

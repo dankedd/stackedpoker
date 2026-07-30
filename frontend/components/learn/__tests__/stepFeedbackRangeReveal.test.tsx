@@ -10,6 +10,7 @@ import type { StepResult, DecisionSpotRangeReveal } from '@/lib/learn/types'
 import type { RangeSemantics } from '@/lib/learn/rangeStrategy'
 
 const ACTION_SLICE_CALL: RangeSemantics = { kind: 'action_slice', action: 'call' }
+const COMPLETE_STRATEGY: RangeSemantics = { kind: 'complete_strategy' }
 
 function baseResult(overrides: Partial<StepResult>): StepResult {
   return {
@@ -86,6 +87,50 @@ describe('StepFeedback — range_reveal present (a defend decision_spot with can
 
   it('shows Previous/Continue navigation alongside the reveal', () => {
     expect(html).toContain('Continue')
+  })
+})
+
+describe('StepFeedback — complete_strategy reveal shows Fold/Call/3-Bet, never "Other action"', () => {
+  const result = baseResult({
+    range_reveal: fixtureReveal({
+      strategies: { AA: { '3bet': 1 }, JJ: { '3bet': 0.4534, call: 0.5466 }, K9o: { fold: 1 } },
+      strategySemantics: COMPLETE_STRATEGY,
+      label: 'BB DEFENSE vs UTG OPEN',
+      subtitle: 'See where K9o sits inside your full defending strategy — fold, call, and 3-bet.',
+    }),
+  })
+  const html = renderToStaticMarkup(
+    <StepFeedback result={result} onContinue={noop} onRetry={noop} isLast={false} />,
+  )
+
+  it('renders the "DEFENSE" label, not "CALLING RANGE"', () => {
+    expect(html).toContain('BB DEFENSE vs UTG OPEN')
+  })
+
+  it('legend shows Fold, Call and 3-Bet', () => {
+    expect(html).toContain('>Fold<')
+    expect(html).toContain('>Call<')
+    expect(html).toContain('>3-Bet<')
+  })
+
+  it('never shows "Other action" for a genuine complete strategy', () => {
+    expect(html).not.toContain('Other action')
+  })
+})
+
+describe('StepFeedback — action_slice reveal still shows "Other action", never a bare "Fold" legend entry', () => {
+  const result = baseResult({ range_reveal: fixtureReveal() }) // default fixture is action_slice
+  const html = renderToStaticMarkup(
+    <StepFeedback result={result} onContinue={noop} onRetry={noop} isLast={false} />,
+  )
+
+  it('legend shows Call and Other action', () => {
+    expect(html).toContain('>Call<')
+    expect(html).toContain('Other action')
+  })
+
+  it('shows the explanatory "not necessarily a fold" caption for action_slice data', () => {
+    expect(html).toMatch(/not necessarily a fold/)
   })
 })
 

@@ -62,3 +62,6 @@ htmlcov/
 
 # ── Tooling internals ─────────────────────────────────────────────────────────
 .claude/
+
+# ── Source book + derived extraction artifacts (large binaries, never commit) ─
+docs/

@@ -22,21 +22,31 @@
  * the canonical data can't actually back a reveal, so this returns `undefined`
  * and the step falls back to its existing text-only feedback (no fabrication):
  *   1. `hero_position` is a defender this app has real data for (currently BB,
- *      the only side `defendBaselines.ts` covers) AND `villain_position` is one
- *      of the four charted openers (BTN/CO/SB/UTG) — i.e. `${hero}_vs_${villain}`
- *      is a real `DefendMatchup` key.
+ *      the only side either data source covers) AND `villain_position` is one
+ *      of the charted openers (BTN/CO/SB/UTG/HJ).
  *   2. `hero_hand` is a concrete two-card holding (so a hand class can be derived).
- *   3. `effective_stack_bb` is set (needed to pick the shallow/medium/deep tier).
+ *   3. `effective_stack_bb` is set (needed to pick the right tier/source).
  *   4. `action_before_hero`, if authored at all, describes a clean single open
- *      (everyone else folds) — never a squeeze/4bet/limp sequence, which this
- *      calling-range chart does not represent. Steps that omit the field
+ *      (everyone else folds) — never a squeeze/4bet/limp sequence, which
+ *      neither data source below represents. Steps that omit the field
  *      entirely (common in Module 5 — the narrative already says "X opens,
  *      Hero is in the BB") are treated as the plain single-open case.
+ *
+ * TWO DATA SOURCES, deliberately not merged into one (see bbDefenseComplete.ts
+ * and defendBaselines.ts's own doc comments for why they never can be):
+ *   - `BB_DEFENSE_COMPLETE_100BB` (bbDefenseComplete.ts) — a genuine
+ *     `complete_strategy` (fold+call+3bet all known), sourced from Modern
+ *     Poker Theory's own solved diagrams, but ONLY valid at exactly 100bb —
+ *     preferred whenever the step's `effective_stack_bb` matches that exactly.
+ *   - `DEFEND_DEEP/MEDIUM/SHALLOW` (defendBaselines.ts) — calling-frequency-only
+ *     (`action_slice`), covering other stack tiers and matchups the book data
+ *     doesn't reach. Falls back to this whenever the complete source doesn't apply.
  */
 import type { LessonStep, DecisionSpotRangeReveal } from './types'
 import { cardsToHandClass } from './combos'
 import { stackBBToWorld } from './preflopBaselines'
 import { DEFEND_DEEP, DEFEND_SEMANTICS, resolveDefendEntries, type DefendMatchup } from './defendBaselines'
+import { BB_DEFENSE_COMPLETE_100BB, type BBOpenDefenseMatchup } from './bbDefenseComplete'
 import { rangeEntriesToStrategyMap } from './rangeStrategy'
 import { entriesToHandList } from './preflopBaselines'
 
@@ -54,6 +64,28 @@ export function resolveDefendRangeReveal(step: LessonStep): DecisionSpotRangeRev
   if (!heroPosition || !villainPosition || !heroHand || heroHand.length !== 2 || stackBb == null) return undefined
   if (!isCleanFacingOpen(step.action_before_hero)) return undefined
 
+  const highlightHand = cardsToHandClass(heroHand)
+
+  // Prefer the book-verified COMPLETE strategy, but only when the scenario is an
+  // exact match for the conditions it was solved under (100bb, 6-max cash) — never
+  // stretched across a different stack depth (see bbDefenseComplete.ts's SCOPE note).
+  const completeMatchup = `${heroPosition}_vs_${villainPosition}` as BBOpenDefenseMatchup
+  if (stackBb === 100 && completeMatchup in BB_DEFENSE_COMPLETE_100BB) {
+    const strategies = BB_DEFENSE_COMPLETE_100BB[completeMatchup]
+    return {
+      strategies,
+      strategySemantics: { kind: 'complete_strategy' },
+      range: Object.keys(strategies),
+      highlightHand,
+      heroPosition,
+      villainPosition,
+      // "DEFENSE", not "CALLING RANGE" — fold/call/3bet are all genuinely known here.
+      label: `${heroPosition} DEFENSE vs ${villainPosition} OPEN`,
+      subtitle: `See where ${highlightHand} sits inside your full defending strategy — fold, call, and 3-bet.`,
+    }
+  }
+
+  // Fall back to the calling-frequency-only chart for every other tier/matchup.
   const matchup = `${heroPosition}_vs_${villainPosition}` as DefendMatchup
   if (!(matchup in DEFEND_DEEP)) return undefined
 
@@ -61,7 +93,6 @@ export function resolveDefendRangeReveal(step: LessonStep): DecisionSpotRangeRev
   const entries = resolveDefendEntries(matchup, world)
   if (entries.length === 0) return undefined
 
-  const highlightHand = cardsToHandClass(heroHand)
   const strategies = rangeEntriesToStrategyMap(entries, DEFEND_SEMANTICS)
 
   return {
