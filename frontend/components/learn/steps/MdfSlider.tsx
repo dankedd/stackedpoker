@@ -213,7 +213,12 @@ export function MdfSlider({ step, onAnswer, disabled = false }: MdfSliderProps) 
         </div>
 
         {/* Formula display */}
-        <div className="rounded-xl bg-secondary/20 border border-border/20 px-4 py-3 space-y-1.5">
+        <div
+          className={cn(
+            'rounded-xl bg-secondary/20 border px-4 py-3 space-y-1.5',
+            step.mdf_slider_framing === 'flop' ? 'border-dashed border-amber-500/30' : 'border-border/20',
+          )}
+        >
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/40">
             Formula
           </p>
@@ -227,6 +232,17 @@ export function MdfSlider({ step, onAnswer, disabled = false }: MdfSliderProps) 
               α = 1 − MDF = <strong>{alpha.toFixed(1)}%</strong>
             </span>
           </div>
+          {/* Module 11, Lesson 4: on the flop, both of Alpha/MDF's underlying assumptions
+             (a checked-back hand's EV is exactly 0; a called bluff always loses everything)
+             are only approximately true — a "bluff" often keeps backdoor equity, so this
+             number is a well-informed starting point, not a hard target the way it is on
+             the river. The dashed border above is the same signal made visual. */}
+          {step.mdf_slider_framing === 'flop' && (
+            <p className="text-[10px] text-amber-400/70 italic pt-0.5">
+              Flop/turn: this line is an estimate, not a hard rule — a real "bluff" here often keeps some
+              backdoor equity, so the true number you need is usually a little lower than this.
+            </p>
+          )}
         </div>
       </div>
 

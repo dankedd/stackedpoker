@@ -637,6 +637,73 @@ function evalRangeBucket(step: LessonStep, response: unknown): EvalCore {
   }
 }
 
+// ── Range Surgery — protection verdict layer over range_bucket (Module 11, Lesson 5) ──
+// Reuses evalRangeBucket's own combo-weighted accuracy score UNCHANGED (so XP/mastery math
+// never drifts from the shared scoring every other range_bucket lesson already uses), then
+// layers a causal protection verdict on top by checking how much of the pool's authored
+// "strong hands" combo mass ended up in the CHECK pile. Additive only — dispatched from
+// evaluateStepLocally ONLY when step.range_bucket_protection_target is present (see
+// types.ts); every other range_bucket step (Modules 4+) is untouched and keeps calling
+// evalRangeBucket directly.
+
+function evalRangeSurgeryProtection(step: LessonStep, response: unknown): EvalCore {
+  const base = evalRangeBucket(step, response)
+  const target = step.range_bucket_protection_target
+  if (!target) return base // defensive — dispatch only routes here when target is authored
+
+  const assignments = response && typeof response === 'object' ? (response as Record<string, string>) : {}
+  const { check_category_id, strong_hands, min_check_strong_share, max_check_strong_share } = target
+
+  let totalStrongCombos = 0
+  let checkedStrongCombos = 0
+  for (const hand of strong_hands) {
+    const c = handCombos(hand)
+    totalStrongCombos += c
+    if (assignments[hand] === check_category_id) checkedStrongCombos += c
+  }
+  const checkShare = totalStrongCombos > 0 ? checkedStrongCombos / totalStrongCombos : 0
+  const checkPct = Math.round(checkShare * 100)
+  const minPct = Math.round(min_check_strong_share * 100)
+  const maxPct = Math.round(max_check_strong_share * 100)
+
+  let verdict: 'unprotected' | 'protected' | 'over_protected'
+  let verdictFeedback: string
+  if (checkShare < min_check_strong_share) {
+    verdict = 'unprotected'
+    verdictFeedback =
+      "You left every strong hand in the betting pile. That means your checking range is now provably " +
+      "capped and face-up — an aware opponent doesn't need to guess anything to profitably attack every " +
+      'check you make on this board, because there is no real strength left behind it to fear.'
+  } else if (checkShare > max_check_strong_share) {
+    verdict = 'over_protected'
+    verdictFeedback =
+      "You've protected the checking range — maybe too well. Stripping out this much strength leaves your " +
+      'betting range thin and unconvincing in the opposite direction: your bets no longer represent enough ' +
+      'real value to be credible, which is its own kind of transparency problem.'
+  } else {
+    verdict = 'protected'
+    verdictFeedback =
+      'You moved real strength into the checking pile — enough that an aware opponent cannot safely attack ' +
+      'every check you make, without stripping so much value out of your betting range that it stops being ' +
+      'credible. That balance is exactly what a protected checking range is after.'
+  }
+
+  return {
+    ...base,
+    feedback: verdictFeedback,
+    structured_points: [
+      {
+        term: 'Protection verdict',
+        description: verdict === 'protected' ? 'Protected' : verdict === 'unprotected' ? 'Unprotected (capped)' : 'Over-protected',
+      },
+      {
+        term: 'Strong-hand combos checked back',
+        description: `${checkPct}% (target ${minPct}–${maxPct}%)`,
+      },
+    ],
+  }
+}
+
 // ── Morphology builder — build mode (Module 4) ────────────────────────────────
 // The learner constructs a linear range (Range A) and a polarized range (Range B)
 // from the same strength-ordered pool. This checks *shape*, not exact solver
@@ -1912,9 +1979,14 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
 
     // ── Preflop Aggression (Module 4) ───────────────────────────────────────
 
-    // Range bucket — sort a hand pool into named buckets, combo-weighted scoring
+    // Range bucket — sort a hand pool into named buckets, combo-weighted scoring.
+    // Module 11, Lesson 5's Range Surgery opts into an additive protection-verdict layer
+    // by authoring `range_bucket_protection_target` — every other range_bucket lesson
+    // (Modules 4+) omits it and keeps calling evalRangeBucket exactly as before.
     case 'range_bucket':
-      return evalRangeBucket(step, response)
+      return step.range_bucket_protection_target
+        ? evalRangeSurgeryProtection(step, response)
+        : evalRangeBucket(step, response)
 
     // Morphology builder — 'build' scores range shape; 'classify' is a plain option choice
     case 'morphology_builder':

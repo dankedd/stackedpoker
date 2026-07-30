@@ -11,6 +11,7 @@ import {
   testUnilateralDeviation,
   clairvoyanceEV,
   clairvoyanceEquilibrium,
+  faceUpEV,
   type ActionEV,
 } from '../gameTheoryEngine'
 
@@ -234,5 +235,43 @@ describe('Clairvoyance Game — source lock (Modern Poker Theory, "The Clairvoya
     const skewed = clairvoyanceEV({ pot, bet, aaBetFreq: 1, qqBetFreq: 0.5, kkCallFreq: 0.5, probAA: 0.5 })
     const default_ = clairvoyanceEV({ pot, bet, aaBetFreq: 1, qqBetFreq: 0.5, kkCallFreq: 0.5 })
     expect(skewed.evP1).toBeCloseTo(default_.evP1, 6)
+  })
+})
+
+describe('faceUpEV — Module 11 "value of hidden information" comparison', () => {
+  const pot = 100
+
+  it('with both hands visible, P1 nets exactly their raw equity share of the pot (50/50 prior -> $50/$50)', () => {
+    const { evP1, evP2 } = faceUpEV({ pot })
+    expect(evP1).toBeCloseTo(50, 6)
+    expect(evP2).toBeCloseTo(50, 6)
+  })
+
+  it('evP1 + evP2 always equals the pot, at any probAA', () => {
+    for (const probAA of [0.1, 0.5, 0.9]) {
+      const { evP1, evP2 } = faceUpEV({ pot, probAA })
+      expect(evP1 + evP2).toBeCloseTo(pot, 6)
+    }
+  })
+
+  it('scales with probAA — the face-up game rewards raw equity, nothing else', () => {
+    expect(faceUpEV({ pot, probAA: 0.9 }).evP1).toBeCloseTo(90, 6)
+    expect(faceUpEV({ pot, probAA: 0.1 }).evP1).toBeCloseTo(10, 6)
+  })
+
+  it('is strictly less than the hidden-information equilibrium EV for the polarized player (the value of information is positive)', () => {
+    const bet = 100
+    const eq = clairvoyanceEquilibrium(pot, bet)
+    const hidden = clairvoyanceEV({ pot, bet, aaBetFreq: eq.aaBetFreq, qqBetFreq: eq.qqBetFreq, kkCallFreq: eq.kkCallFreq })
+    const faceUp = faceUpEV({ pot })
+    expect(hidden.evP1).toBeGreaterThan(faceUp.evP1)
+    // Reproduces the exact $25 gap Module 11's Lesson 1 is built around.
+    expect(hidden.evP1 - faceUp.evP1).toBeCloseTo(25, 6)
+  })
+
+  it('ignores bet-frequency fields entirely when present on the shared ClairvoyanceInputs shape', () => {
+    const withFreqs = faceUpEV({ pot, aaBetFreq: 1, qqBetFreq: 0.5, kkCallFreq: 0.5 } as never)
+    const withoutFreqs = faceUpEV({ pot })
+    expect(withFreqs.evP1).toBeCloseTo(withoutFreqs.evP1, 6)
   })
 })

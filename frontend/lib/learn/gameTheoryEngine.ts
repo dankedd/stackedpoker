@@ -196,6 +196,25 @@ export function clairvoyanceEV(inputs: ClairvoyanceInputs): ClairvoyanceResult {
   return { evP1, evP2: pot - evP1 }
 }
 
+/** The face-up (fully-revealed-information) variant of the same Clairvoyance Game —
+ *  Module 11's "value of hidden information" comparison. With both hands visible,
+ *  every decision becomes trivial: P2 folds to any bet from AA (can never win) and
+ *  never pays off a bet from QQ (already knows it beats it), so betting can extract
+ *  nothing beyond a hand's own raw showdown value. AA nets the full pot (whether bet
+ *  and folded to, or checked to showdown — both net +pot since P2 never calls a
+ *  visible AA and never needs to be shown a check). QQ nets 0 (loses at showdown;
+ *  betting it face-up would only add a needless loss, so the optimal face-up line
+ *  simply never bets it). The `aaBetFreq`/`qqBetFreq`/`kkCallFreq` fields of `inputs`
+ *  are accepted for call-site symmetry with `clairvoyanceEV` (so a caller can build
+ *  one `ClairvoyanceInputs` object and pass it to both functions) but are irrelevant
+ *  here — once information is public, those frequencies stop affecting the outcome,
+ *  which is itself the point being demonstrated. Only `pot` and `probAA` matter. */
+export function faceUpEV(inputs: Pick<ClairvoyanceInputs, 'pot' | 'probAA'>): ClairvoyanceResult {
+  const probAA = inputs.probAA ?? 0.5
+  const evP1 = probAA * inputs.pot
+  return { evP1, evP2: inputs.pot - evP1 }
+}
+
 /** The Clairvoyance Game's Nash equilibrium — derived, not authored: QQ's equilibrium
  *  bet frequency IS `alpha(pot,bet)` (the fold frequency that makes the bluff break
  *  even), and KK's equilibrium call frequency IS `mdf(pot,bet)`. AA always bets (a

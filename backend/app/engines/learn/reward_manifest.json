@@ -1522,6 +1522,67 @@
         "el-s10": 15,
         "el-s11": 12
       }
+    },
+    "why-we-bet": {
+      "xp_reward": 140,
+      "steps": {
+        "wwb-s1": 8,
+        "wwb-s2": 6,
+        "wwb-s3": 14,
+        "wwb-s4": 10,
+        "wwb-s5": 12,
+        "wwb-s6": 12,
+        "wwb-s7": 8
+      }
+    },
+    "the-same-range-two-faces": {
+      "xp_reward": 150,
+      "steps": {
+        "srtf-s1": 6,
+        "srtf-s2": 12,
+        "srtf-s3": 12,
+        "srtf-s4": 12,
+        "srtf-s5": 14,
+        "srtf-s6": 12,
+        "srtf-s7": 8
+      }
+    },
+    "composition-beats-equity": {
+      "xp_reward": 160,
+      "steps": {
+        "cbe-s1": 8,
+        "cbe-s2": 10,
+        "cbe-s3": 12,
+        "cbe-s4": 10,
+        "cbe-s5": 12,
+        "cbe-s6": 12,
+        "cbe-s7": 12,
+        "cbe-s8": 8
+      }
+    },
+    "bluffs-have-a-job": {
+      "xp_reward": 160,
+      "steps": {
+        "bhj-s1": 8,
+        "bhj-s2": 8,
+        "bhj-s3": 12,
+        "bhj-s4": 14,
+        "bhj-s5": 8,
+        "bhj-s6": 12,
+        "bhj-s7": 12,
+        "bhj-s8": 8
+      }
+    },
+    "protect-the-checking-range": {
+      "xp_reward": 170,
+      "steps": {
+        "ptcr-s1": 8,
+        "ptcr-s2": 8,
+        "ptcr-s3": 18,
+        "ptcr-s4": 12,
+        "ptcr-s5": 12,
+        "ptcr-s6": 8
+      }
     }
   },
   "modules": {
@@ -1535,7 +1596,7 @@
     "range-vs-range-module": 1000,
     "blockers-module": 1000,
     "game-theory-foundations-module": 1000,
-    "polarized-module": 0,
+    "polarized-module": 1000,
     "bet-sizing-language-module": 0,
     "defending-bets-module": 0,
     "flop-strategy-module": 0,

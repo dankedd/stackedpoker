@@ -154,36 +154,18 @@ export const ROADMAP_MODULES: LearningModule[] = [
   // (built around an interactive strategy-manipulation engine rather than a
   // vocabulary-first "What Is Game Theory?" progression) — same judgment-call
   // precedent as Module 7's rename. All 10 lessons are built (not phased).
-  {
-    ...ROADMAP_DEFAULTS,
-    id: 'polarized-module',
-    path_id: 'intermediate',
-    slug: 'polarized-module',
-    title: 'Polarization & Range Construction',
-    subtitle: 'Learn how value hands, bluffs and medium-strength hands form betting ranges.',
-    description: 'Teach the architecture of strategically sound betting ranges.',
-    learningObjectives: [
-      'Distinguish polarized, linear and merged betting range structures',
-      'Reason about bluff-to-value ratios inside a betting range',
-      'Match range structure to bet size across a hand',
-    ],
-    difficulty: 'intermediate',
-    stageId: 'game-theory',
-    order: 11,
-    prerequisiteModuleId: 'game-theory-foundations-module',
-    plannedLessons: [
-      { title: 'Polarization Revisited' },
-      { title: 'Value Regions' },
-      { title: 'Bluff Regions' },
-      { title: 'Medium-Strength Hands' },
-      { title: 'Bluff-to-Value Relationships' },
-      { title: 'Thin Value' },
-      { title: 'Merged / Linear Betting' },
-      { title: 'Polarized Betting' },
-      { title: 'Range Construction by Bet Size' },
-      { title: 'Build the Betting Range Lab' },
-    ],
-  },
+  //
+  // polarized-module (Module 11, "Polarization & Range Construction") has also
+  // been promoted to real content — see `LEARNING_MODULES` in ./curriculum.ts.
+  // Built from `docs/module-11-blueprint.md` (Part 1), `docs/module-11-lessons.md`
+  // (Part 2), and `docs/module-11-architecture.md` (Part 3A). Only 5 of its 10
+  // lessons are built so far (Lessons 1-5, a phased delivery per Part 3B's own
+  // explicit scope) — same "phased, in-progress delivery" precedent as
+  // blockers-module's own promotion once used. Lessons 1-5 diverge from this
+  // stub's original placeholder titles below (built around the six approved
+  // flagship interactions rather than a "Polarization Revisited"/"Value
+  // Regions" vocabulary progression) — same judgment-call precedent as Module
+  // 7/10's own renames.
 
   // ── Stage 6 — Bet Sizing & Defense ──────────────────────────────────────────
   {

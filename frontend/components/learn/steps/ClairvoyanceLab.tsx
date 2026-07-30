@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
-import { clairvoyanceEV, clairvoyanceEquilibrium } from '@/lib/learn/gameTheoryEngine'
+import { clairvoyanceEV, clairvoyanceEquilibrium, faceUpEV } from '@/lib/learn/gameTheoryEngine'
 import { CLAIRVOYANCE_GAME } from '@/lib/learn/gameTheoryContent'
 import { FrequencySlider } from '@/components/learn/visuals/FrequencySlider'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
@@ -67,6 +67,23 @@ export function ClairvoyanceLab({ step, onAnswer, disabled = false }: Clairvoyan
     probAA: CLAIRVOYANCE_GAME.probAA,
   })
 
+  // face_up_compare (Module 11, Lesson 1 "Why We Bet") — no sliders, nothing editable: a
+  // fixed, read-only comparison of this SAME game's equilibrium EV with hidden information
+  // against its EV if both hands were fully visible. The graded prediction happens in a
+  // separate, preceding decision_spot step; this step only renders what that prediction
+  // gets checked against, so it stays unscored (see isScoredStep's existing clairvoyance_lab
+  // gate — anything other than 'find_equilibrium' already falls through to unscored).
+  const hiddenEV = clairvoyanceEV({
+    pot,
+    bet,
+    aaBetFreq: trueEq.aaBetFreq,
+    qqBetFreq: trueEq.qqBetFreq,
+    kkCallFreq: trueEq.kkCallFreq,
+    probAA: CLAIRVOYANCE_GAME.probAA,
+  })
+  const faceUp = faceUpEV({ pot, probAA: CLAIRVOYANCE_GAME.probAA })
+  const infoValue = hiddenEV.evP1 - faceUp.evP1
+
   function submit() {
     if (disabled || submitted) return
     setSubmitted(true)
@@ -102,35 +119,64 @@ export function ClairvoyanceLab({ step, onAnswer, disabled = false }: Clairvoyan
         <p className="text-center text-base font-semibold text-foreground">{step.clairvoyance_lab_prompt}</p>
       )}
 
-      <div className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-600/8 via-card/60 to-blue-600/5 p-5 space-y-5">
-        {(['aa_bet', 'qq_bet', 'kk_call'] as const).map((key) => {
-          const meta = SLIDER_META[key]
-          const isEditable = editable.includes(key)
-          return (
-            <FrequencySlider
-              key={key}
-              label={meta.label + (isEditable ? '' : ' (fixed)')}
-              value={freqs[key]}
-              accent={meta.accent}
-              disabled={disabled || submitted || !isEditable}
-              onChange={(v) => !submitted && setFreqs((f) => ({ ...f, [key]: v }))}
-            />
-          )
-        })}
+      {mode !== 'face_up_compare' && (
+        <div className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-600/8 via-card/60 to-blue-600/5 p-5 space-y-5">
+          {(['aa_bet', 'qq_bet', 'kk_call'] as const).map((key) => {
+            const meta = SLIDER_META[key]
+            const isEditable = editable.includes(key)
+            return (
+              <FrequencySlider
+                key={key}
+                label={meta.label + (isEditable ? '' : ' (fixed)')}
+                value={freqs[key]}
+                accent={meta.accent}
+                disabled={disabled || submitted || !isEditable}
+                onChange={(v) => !submitted && setFreqs((f) => ({ ...f, [key]: v }))}
+              />
+            )
+          })}
 
-        <div className="h-px bg-gradient-to-r from-transparent via-violet-500/20 to-transparent" />
+          <div className="h-px bg-gradient-to-r from-transparent via-violet-500/20 to-transparent" />
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="rounded-xl bg-secondary/20 border border-border/20 px-4 py-3 text-center">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground/40">P1 EV</p>
-            <p className="text-lg font-black text-foreground tabular-nums">${evP1.toFixed(2)}</p>
-          </div>
-          <div className="rounded-xl bg-secondary/20 border border-border/20 px-4 py-3 text-center">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground/40">P2 EV</p>
-            <p className="text-lg font-black text-foreground tabular-nums">${evP2.toFixed(2)}</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-xl bg-secondary/20 border border-border/20 px-4 py-3 text-center">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground/40">P1 EV</p>
+              <p className="text-lg font-black text-foreground tabular-nums">${evP1.toFixed(2)}</p>
+            </div>
+            <div className="rounded-xl bg-secondary/20 border border-border/20 px-4 py-3 text-center">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground/40">P2 EV</p>
+              <p className="text-lg font-black text-foreground tabular-nums">${evP2.toFixed(2)}</p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {mode === 'face_up_compare' && (
+        <div className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-600/8 via-card/60 to-blue-600/5 p-5 space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="rounded-xl border border-border/20 bg-secondary/20 px-4 py-4 text-center space-y-1">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground/50">Hidden — P2 doesn't know which hand</p>
+              <p className="text-2xl font-black text-violet-300 tabular-nums">${hiddenEV.evP1.toFixed(0)}</p>
+              <p className="text-[10px] text-muted-foreground/40">P1's EV — AA bets 100%, QQ bluffs {Math.round(trueEq.qqBetFreq * 100)}%</p>
+            </div>
+            <div className="rounded-xl border border-border/20 bg-secondary/20 px-4 py-4 text-center space-y-1">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground/50">Face-up — P2 sees the exact hand</p>
+              <p className="text-2xl font-black text-foreground tabular-nums">${faceUp.evP1.toFixed(0)}</p>
+              <p className="text-[10px] text-muted-foreground/40">P1's EV — betting can no longer force a mistake</p>
+            </div>
+          </div>
+
+          <div className="h-px bg-gradient-to-r from-transparent via-violet-500/20 to-transparent" />
+
+          <div className="rounded-xl bg-secondary/10 border border-violet-500/20 px-4 py-3 text-center">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground/40">The gap</p>
+            <p className="text-xl font-black text-violet-300 tabular-nums">${infoValue.toFixed(0)}</p>
+            <p className="text-[10px] text-muted-foreground/40 mt-1">
+              The exact value of P2 not knowing which hand P1 holds — nothing about either hand changed.
+            </p>
+          </div>
+        </div>
+      )}
 
       {mode === 'find_equilibrium' && !submitted && (
         <p className="text-center text-xs text-muted-foreground/40 italic">

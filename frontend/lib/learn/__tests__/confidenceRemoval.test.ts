@@ -75,8 +75,11 @@ describe('confidence check removal — curriculum data', () => {
     // Back"'s trb-s8 (a range_bucket pool-sort with a 3-rung ladder) was subsequently
     // retired as part of that lesson's 3-bet-response redesign — replaced by a full-grid
     // Range Lab (range_build_multi) whose own diff-review + shape-diagnosis feedback
-    // covers the same remediation role without a ladder — leaving 4 intact.
-    expect(laddersFound.length).toBe(4)
+    // covers the same remediation role without a ladder — leaving 4 intact. Module 11
+    // (Part 3B, Lessons 1-5) added 4 more, each on that lesson's one flagship concept
+    // per docs/module-11-architecture.md Section 8's adaptive-flow table (wwb-s3,
+    // srtf-s5, bhj-s4, ptcr-s3) — bringing the total to 8.
+    expect(laddersFound.length).toBe(8)
   })
 })
 

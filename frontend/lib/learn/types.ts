@@ -325,6 +325,13 @@ export interface LessonStep {
   mdf_slider_target?: number
   /** Tolerance for correct answer (default 3) */
   mdf_slider_tolerance?: number
+  /** Module 11, Lesson 4 ("Bluffs Have a Job") — purely a rendering/caption variant, no change to
+   *  the underlying MDF/alpha computation. 'river' = the exact, hard target framing (both of
+   *  Alpha/MDF's underlying assumptions — a checked-back hand's EV is 0, a called bluff loses
+   *  everything — are literally true there). 'flop' = the same slider/formula, but captioned as an
+   *  approximation, since on earlier streets a "bluff" often keeps backdoor equity and a checked-back
+   *  hand often isn't truly EV-0. Omit for every existing (Module 10) use of this step type. */
+  mdf_slider_framing?: 'river' | 'flop'
   // Scenario tree
   scenario_root?: string
   scenario_nodes?: ScenarioNode[]
@@ -496,6 +503,32 @@ export interface LessonStep {
   /** Optional secondary acceptable categories per hand (full credit, not just partial). */
   range_bucket_acceptable?: Record<string, string[]>
   range_bucket_prompt?: string
+  /** Module 11, Lesson 5 ("Protect the Checking Range") — additive, opt-in. When present, the sort
+   *  is scored by `evalRangeSurgeryProtection` instead of the default `evalRangeBucket`: the SAME
+   *  combo-weighted accuracy against `range_bucket_correct`/`range_bucket_acceptable` still drives the
+   *  base score, but the feedback additionally names a protection verdict — whether the learner's
+   *  CHECK-pile combos include enough of the pool's genuinely strong hands to avoid being "capped and
+   *  face-up" (too few), too many (a thin, unconvincing bet-pile in the opposite direction), or a
+   *  sound protected split. Absent on every other `range_bucket` step (Modules 4+), which keeps
+   *  their existing scoring/feedback completely unchanged. */
+  range_bucket_protection_target?: {
+    /** The category id representing "bet"/"lead"/the aggressive pile. */
+    bet_category_id: string
+    /** The category id representing "check"/the passive pile. */
+    check_category_id: string
+    /** Which pool entries count as "genuinely strong" for protection purposes — a subset of
+     *  `range_bucket_pool`. Only these combos' pile placement drives the verdict; every other
+     *  pool entry still counts toward the ordinary accuracy score, just not toward the verdict. */
+    strong_hands: string[]
+    /** Minimum acceptable fraction (0-1, combo-weighted) of the strong-hand combo mass that should
+     *  land in the CHECK pile for the checking range to count as protected. Below this, the verdict
+     *  is 'unprotected' (a capped, face-up checking range). */
+    min_check_strong_share: number
+    /** Maximum acceptable fraction (0-1, combo-weighted) of the strong-hand combo mass that should
+     *  land in the CHECK pile. Above this, the verdict is 'over_protected' (the betting range has
+     *  been stripped of too much of its own strength to stay credible). */
+    max_check_strong_share: number
+  }
   // Morphology builder — construct linear/polarized ranges, or classify a shown range's shape
   /** 'build' = construct ranges from a pool. 'classify' = label a single shown range. */
   morphology_builder_mode?: 'build' | 'classify'
@@ -795,10 +828,16 @@ export interface LessonStep {
   // used here; see CLAIRVOYANCE_GAME in gameTheoryContent.ts for the fixed pot/bet/board.
   clairvoyance_lab_prompt?: string
   /** 'explore' = free sliders, unscored, for building intuition. 'find_equilibrium' = adjust the
-   *  editable frequencies until neither side can improve — scored against clairvoyanceEquilibrium(). */
-  clairvoyance_lab_mode?: 'explore' | 'find_equilibrium'
+   *  editable frequencies until neither side can improve — scored against clairvoyanceEquilibrium().
+   *  'face_up_compare' (Module 11, Lesson 1 "Why We Bet") = a read-only side-by-side of this SAME
+   *  game's equilibrium EV with hidden information versus its EV if both hands were fully visible
+   *  (gameTheoryEngine.ts's `faceUpEV`) — no sliders, unscored (the graded prediction is a separate,
+   *  preceding decision_spot step; this step only renders the reveal both sides of that prediction
+   *  are compared against). */
+  clairvoyance_lab_mode?: 'explore' | 'find_equilibrium' | 'face_up_compare'
   /** Which frequency slider(s) the learner controls this step; any other frequency is held at
-   *  `clairvoyance_lab_locked`'s value (or the true equilibrium value if unspecified there). */
+   *  `clairvoyance_lab_locked`'s value (or the true equilibrium value if unspecified there).
+   *  Not used in 'face_up_compare' mode (no sliders in that mode). */
   clairvoyance_lab_editable?: ('aa_bet' | 'qq_bet' | 'kk_call')[]
   clairvoyance_lab_locked?: { aa_bet?: number; qq_bet?: number; kk_call?: number }
   /** Tolerance (0-1 frequency fraction) for the 'find_equilibrium' scoring. Default 0.05. */
