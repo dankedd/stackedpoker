@@ -212,6 +212,7 @@ export function TableDecision({ step, onAnswer, disabled = false }: TableDecisio
           heroPosition={step.hero_position ?? chart.position}
           heroHand={heroCards}
           effectiveStackBb={step.effective_stack_bb ?? chart.stackBB}
+          stackOverridesBb={step.stack_overrides_bb}
           anteBb={step.ante_bb}
           actionBeforeHero={step.action_before_hero}
           heroAction={answered && evaluation ? { label: evaluation.chosenAction.toUpperCase() } : undefined}

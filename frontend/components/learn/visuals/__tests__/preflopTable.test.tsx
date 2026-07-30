@@ -488,6 +488,46 @@ describe('PreflopTable — dark green felt (not casino-bright), outer rail uncha
   })
 })
 
+describe('PreflopTable — stackOverridesBb: a short-stacked seat is visible on the table itself', () => {
+  it('the short seat shows its OWN stack (not the table-wide effectiveStackBb) in an amber badge', () => {
+    const html = renderToStaticMarkup(
+      <PreflopTable
+        tableSize={6}
+        heroPosition="SB"
+        effectiveStackBb={100}
+        stackOverridesBb={{ BB: 10 }}
+        actionBeforeHero={['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN calls']}
+      />,
+    )
+    // BB's own 10bb stack renders, badged distinctly from the plain-text stacks.
+    expect(html).toMatch(/text-amber-300[^<]*>10 BB · SHORT</)
+    // Every other seat still shows the table-wide 100bb, in the plain (non-badge) style.
+    expect(html).toContain('100 BB')
+    expect(html).not.toMatch(/text-amber-300[^<]*>100 BB/)
+  })
+
+  it('without an override, no seat is ever badged short — never a fabricated short-stack flag', () => {
+    const html = renderToStaticMarkup(
+      <PreflopTable tableSize={6} heroPosition="SB" effectiveStackBb={100} actionBeforeHero={['Everyone folds']} />,
+    )
+    expect(html).not.toContain('SHORT')
+    expect(html).not.toMatch(/text-amber-300[^<]*>\d/)
+  })
+
+  it('the short-stack fact is also present in the screen-reader summary', () => {
+    const html = renderToStaticMarkup(
+      <PreflopTable
+        tableSize={6}
+        heroPosition="SB"
+        effectiveStackBb={100}
+        stackOverridesBb={{ BB: 10 }}
+        actionBeforeHero={['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN calls']}
+      />,
+    )
+    expect(html).toContain('BB is short-stacked at 10 big blinds.')
+  })
+})
+
 describe('PreflopTable — status/context info lives below the table, not inside it', () => {
   it('the street/stack/ante summary and center-status text render in a status bar after the table container', () => {
     const html = renderToStaticMarkup(

@@ -9,6 +9,7 @@ import {
   dealerPosition,
   SB_BB,
   BB_BB,
+  SHORT_STACK_THRESHOLD_BB,
 } from '../preflopTableState'
 
 describe('preflopActionOrder — derived from canonical clockwise seat order, never hardcoded per size', () => {
@@ -236,6 +237,61 @@ describe('buildPreflopTableRenderState — full derivation entry point', () => {
     const state = buildPreflopTableRenderState({ hero_position: 'CO', table_size: 9 })!
     expect(state.actionsBeforeHero).toBeUndefined()
     expect(state.seats.every((s) => s.action === undefined)).toBe(true)
+  })
+})
+
+describe('stack_overrides_bb — per-seat effective stack (e.g. a short-stacked player behind Hero)', () => {
+  it('a seat with an override shows its OWN stack, not the table-wide effective_stack_bb', () => {
+    const state = buildPreflopTableRenderState({
+      hero_position: 'SB', table_size: 6, effective_stack_bb: 100,
+      stack_overrides_bb: { BB: 10 },
+      action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN calls'],
+    })!
+    expect(state.seats.find((s) => s.position === 'BB')?.effectiveStackBb).toBe(10)
+    expect(state.seats.find((s) => s.position === 'CO')?.effectiveStackBb).toBe(100)
+    expect(state.seats.find((s) => s.isHero)?.effectiveStackBb).toBe(100)
+  })
+
+  it('flags isShortStack only for the seat(s) at or below the threshold', () => {
+    const state = buildPreflopTableRenderState({
+      hero_position: 'SB', table_size: 6, effective_stack_bb: 100,
+      stack_overrides_bb: { BB: 10 },
+      action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN calls'],
+    })!
+    expect(state.seats.find((s) => s.position === 'BB')?.isShortStack).toBe(true)
+    expect(state.seats.find((s) => s.position === 'CO')?.isShortStack).toBe(false)
+    expect(state.seats.find((s) => s.isHero)?.isShortStack).toBe(false)
+  })
+
+  it('a seat exactly at SHORT_STACK_THRESHOLD_BB is flagged short; one bb above is not', () => {
+    const atThreshold = buildPreflopTableRenderState({
+      hero_position: 'BTN', table_size: 6, effective_stack_bb: 100,
+      stack_overrides_bb: { BB: SHORT_STACK_THRESHOLD_BB },
+    })!
+    expect(atThreshold.seats.find((s) => s.position === 'BB')?.isShortStack).toBe(true)
+
+    const aboveThreshold = buildPreflopTableRenderState({
+      hero_position: 'BTN', table_size: 6, effective_stack_bb: 100,
+      stack_overrides_bb: { BB: SHORT_STACK_THRESHOLD_BB + 1 },
+    })!
+    expect(aboveThreshold.seats.find((s) => s.position === 'BB')?.isShortStack).toBe(false)
+  })
+
+  it('an override also drives stackBehindBb for that seat', () => {
+    const state = buildPreflopTableRenderState({
+      hero_position: 'BTN', table_size: 6, effective_stack_bb: 100,
+      stack_overrides_bb: { BB: 10 },
+      action_before_hero: ['Everyone folds'],
+    })!
+    const bb = state.seats.find((s) => s.position === 'BB')!
+    expect(bb.committedBb).toBe(BB_BB)
+    expect(bb.stackBehindBb).toBe(9)
+  })
+
+  it('no override: every seat falls back to the table-wide effective_stack_bb, no short-stack flag fabricated', () => {
+    const state = buildPreflopTableRenderState({ hero_position: 'BTN', table_size: 6, effective_stack_bb: 100 })!
+    expect(state.seats.every((s) => s.effectiveStackBb === 100)).toBe(true)
+    expect(state.seats.every((s) => s.isShortStack === false)).toBe(true)
   })
 })
 

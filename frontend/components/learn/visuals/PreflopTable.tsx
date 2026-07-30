@@ -378,6 +378,11 @@ export interface PreflopTableProps {
   /** Hero's 2 concrete cards, e.g. ['As','Kh']. Omit for 2 face-down placeholders. */
   heroHand?: string[]
   effectiveStackBb?: number
+  /** Per-seat effective-stack override in bb, keyed by position (e.g. `{ BB: 10 }`) — a seat
+   *  with an entry here displays ITS OWN stack instead of `effectiveStackBb`, and is flagged
+   *  short-stacked (badge highlight) when at or below SHORT_STACK_THRESHOLD_BB. See
+   *  `LessonStep.stack_overrides_bb`. */
+  stackOverridesBb?: Record<string, number>
   /** Rendered once in the below-table status bar — antes aren't seat-specific. */
   anteBb?: number
   /** The existing action_before_hero field, parsed internally — never fabricated when absent. */
@@ -411,6 +416,7 @@ export function PreflopTable({
   heroPosition,
   heroHand,
   effectiveStackBb,
+  stackOverridesBb,
   anteBb,
   actionBeforeHero,
   heroAction,
@@ -428,6 +434,7 @@ export function PreflopTable({
     table_size: tableSize,
     action_before_hero: actionBeforeHero,
     effective_stack_bb: effectiveStackBb,
+    stack_overrides_bb: stackOverridesBb,
   })
   const centerStatus = state ? deriveCenterStatus(state) : undefined
   const seatState = new Map<string, PreflopSeatState>(state?.seats.map((s) => [s.position, s]))
@@ -543,6 +550,12 @@ export function PreflopTable({
               : undefined
             : seatInfo?.stackBehindBb
 
+          // This seat's OWN effective stack — a `stackOverridesBb[position]` entry (e.g. a
+          // short-stacked player) always wins over the table-wide `effectiveStackBb`, so a
+          // scenario's stack story is visible on the table itself, not just in prose.
+          const seatStackBb = seatInfo?.effectiveStackBb ?? effectiveStackBb
+          const seatIsShortStack = seatInfo?.isShortStack ?? false
+
           // Chip in front of the seat: the seat's real current-street commitment — this
           // is what keeps a FOLDED seat's earlier blind/raise visibly in the pot (spec
           // item 8) instead of vanishing, since committedBb is preserved through a fold.
@@ -618,10 +631,15 @@ export function PreflopTable({
                   </span>
                 </span>
 
-                {/* Row 2 — FOLD, the action verb, or (if neither) the plain effective stack.
-                    Mobile hides a folded seat's row 2 entirely (dimmed position label only)
-                    to cut clutter — its rail position never changes either way. */}
-                {!(isMobile && folded) && (folded || hasVerb || effectiveStackBb != null) && (
+                {/* Row 2 — FOLD, the action verb, or (if neither) this seat's own effective
+                    stack. A short seat (seatIsShortStack — its own effectiveStackBb, from
+                    stackOverridesBb when authored, at or below SHORT_STACK_THRESHOLD_BB) gets
+                    a compact amber badge instead of the plain muted text every other seat
+                    uses, so the stack story the narrative describes is visible on the table
+                    itself, not just in prose. Mobile hides a folded seat's row 2 entirely
+                    (dimmed position label only) to cut clutter — its rail position never
+                    changes either way. */}
+                {!(isMobile && folded) && (folded || hasVerb || seatStackBb != null) && (
                   <span
                     className={cn(
                       'absolute z-10 -translate-x-1/2 text-center whitespace-nowrap transition-opacity duration-300',
@@ -629,11 +647,24 @@ export function PreflopTable({
                         ? 'text-[10px] font-semibold text-muted-foreground/40 opacity-35'
                         : hasVerb
                         ? cn('text-[10px] font-semibold', isHero ? 'text-violet-300/90' : 'text-sky-300/80')
-                        : 'text-[10px] font-medium text-muted-foreground/45',
+                        : !seatIsShortStack && 'text-[10px] font-medium text-muted-foreground/45',
                     )}
                     style={{ left: railPoint.x, top: `calc(${railPoint.y} + 12px)` }}
                   >
-                    {folded ? 'FOLD' : hasVerb ? verbText : `${formatBb(effectiveStackBb!)} BB`}
+                    {folded ? (
+                      'FOLD'
+                    ) : hasVerb ? (
+                      verbText
+                    ) : seatIsShortStack ? (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full border border-amber-400/50 bg-amber-400/15 px-1.5 py-[1px] text-[9px] font-black uppercase tracking-wide text-amber-300"
+                        title="Short stack"
+                      >
+                        {formatBb(seatStackBb!)} BB · SHORT
+                      </span>
+                    ) : (
+                      `${formatBb(seatStackBb!)} BB`
+                    )}
                   </span>
                 )}
 
@@ -680,6 +711,10 @@ export function PreflopTable({
         {effectiveStackBb != null ? ` with ${formatBb(effectiveStackBb)} big blinds effective` : ''}.
         {centerStatus ? ` ${centerStatus}.` : ''}
         {heroHand && heroHand.length === 2 ? ` Hero holds ${heroHand.join(' and ')}.` : ''}
+        {state?.seats
+          .filter((s) => s.isShortStack)
+          .map((s) => ` ${s.position} is short-stacked at ${formatBb(s.effectiveStackBb!)} big blinds.`)
+          .join('')}
       </p>
     </div>
   )

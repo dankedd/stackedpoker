@@ -48,6 +48,11 @@ export function dealerPosition(): string {
 export const SB_BB = 0.5
 export const BB_BB = 1
 
+/** A seat at or below this depth is flagged `isShortStack` for the table's visual highlight —
+ *  matches the "≤20 BB" threshold used throughout the curriculum's own short-stack framing
+ *  (e.g. the "15-20bb" jam-threshold language in the-big-blind-discount lesson). */
+export const SHORT_STACK_THRESHOLD_BB = 20
+
 const ENTRY_PATTERNS: { re: RegExp; kind: SeatActionKind }[] = [
   { re: /^(.+?) raises all-in to ([\d.]+)\s*bb$/i, kind: 'allin' },
   { re: /^(.+?) raises to ([\d.]+)\s*bb$/i, kind: 'raise' },
@@ -130,9 +135,16 @@ export interface PreflopSeatState {
    *  hasn't posted a blind or acted. A folded seat keeps its last commitment —
    *  those chips already belong to the pot. */
   committedBb: number
+  /** This seat's own effective stack in bb — `stack_overrides_bb[position]` when
+   *  authored, otherwise the table's overall `effective_stack_bb`. Undefined when
+   *  neither is known (never fabricated). */
+  effectiveStackBb?: number
   /** effectiveStackBb - committedBb. Undefined when effectiveStackBb isn't known
    *  (never fabricated). */
   stackBehindBb?: number
+  /** True when effectiveStackBb is at or below SHORT_STACK_THRESHOLD_BB — drives
+   *  PreflopTable's short-stack badge. Always derived, never authored directly. */
+  isShortStack: boolean
 }
 
 export interface PreflopTableRenderState {
@@ -180,7 +192,7 @@ function computeCommitments(order: string[], actionsBeforeHero: ParsedSeatAction
 
 /** Full derivation entry point: turns a LessonStep's existing fields into
  *  render-ready seat state. Never fabricates data the step doesn't carry. */
-export function buildPreflopTableRenderState(step: Pick<LessonStep, 'hero_position' | 'table_size' | 'action_before_hero' | 'ante_bb' | 'effective_stack_bb'>): PreflopTableRenderState | undefined {
+export function buildPreflopTableRenderState(step: Pick<LessonStep, 'hero_position' | 'table_size' | 'action_before_hero' | 'ante_bb' | 'effective_stack_bb' | 'stack_overrides_bb'>): PreflopTableRenderState | undefined {
   const heroPosition = step.hero_position
   if (!heroPosition) return undefined
   const tableSize = step.table_size ?? 9
@@ -197,6 +209,7 @@ export function buildPreflopTableRenderState(step: Pick<LessonStep, 'hero_positi
 
   const seats: PreflopSeatState[] = order.map((position) => {
     const committedBb = commitments.get(position) ?? 0
+    const effectiveStackBb = step.stack_overrides_bb?.[position] ?? step.effective_stack_bb
     return {
       position,
       isHero: position === normalizePosition(heroPosition),
@@ -204,7 +217,9 @@ export function buildPreflopTableRenderState(step: Pick<LessonStep, 'hero_positi
       action: latest?.get(position),
       postedBlindBb: position === 'SB' ? SB_BB : position === 'BB' ? BB_BB : undefined,
       committedBb,
-      stackBehindBb: step.effective_stack_bb != null ? step.effective_stack_bb - committedBb : undefined,
+      effectiveStackBb,
+      stackBehindBb: effectiveStackBb != null ? effectiveStackBb - committedBb : undefined,
+      isShortStack: effectiveStackBb != null && effectiveStackBb <= SHORT_STACK_THRESHOLD_BB,
     }
   })
 

@@ -148,6 +148,9 @@ export interface ComparisonScenario {
   table_size?: number
   ante_bb?: number
   action_before_hero?: string[]
+  /** Per-seat effective-stack override in bb, keyed by position (e.g. `{ BB: 10 }`) — see
+   *  `LessonStep.stack_overrides_bb` for the full contract. */
+  stack_overrides_bb?: Record<string, number>
 }
 
 // ── A single interactive step within a lesson ─────────────────────────────────
@@ -186,6 +189,12 @@ export interface LessonStep {
   hero_hand?: string[]
   pot_bb?: number
   effective_stack_bb?: number
+  /** Per-seat effective-stack override in bb, keyed by position (e.g. `{ BB: 10 }`) — for a
+   *  scenario where one seat's stack genuinely diverges from `effective_stack_bb` (e.g. a
+   *  short-stacked player behind Hero). Only positions that diverge need an entry; every other
+   *  seat falls back to `effective_stack_bb`. Only set when the narrative explicitly states a
+   *  seat's stack differs — never fabricated to "spice up" a table. */
+  stack_overrides_bb?: Record<string, number>
   street?: 'preflop' | 'flop' | 'turn' | 'river'
   /** Table size (e.g. 6 for 6-max, 9 for full ring) — preflop context. */
   table_size?: number

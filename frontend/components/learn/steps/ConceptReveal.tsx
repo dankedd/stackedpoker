@@ -139,6 +139,7 @@ function resolveVisual(step: LessonStep, conceptId?: string) {
         heroPosition={step.hero_position}
         heroHand={step.hero_hand}
         effectiveStackBb={step.effective_stack_bb}
+        stackOverridesBb={step.stack_overrides_bb}
         anteBb={step.ante_bb}
         actionBeforeHero={step.action_before_hero}
       />

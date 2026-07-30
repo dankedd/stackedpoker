@@ -7448,6 +7448,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'SB',
         villain_position: 'CO',
         effective_stack_bb: 100,
+        stack_overrides_bb: { BB: 10 },
         players_behind: 1,
         action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN calls'],
         options: [

@@ -103,6 +103,7 @@ export function ScenarioComparison({
         heroPosition={scenario.hero_position!}
         heroHand={scenario.hero_hand}
         effectiveStackBb={scenario.effective_stack_bb}
+        stackOverridesBb={scenario.stack_overrides_bb}
         anteBb={scenario.ante_bb}
         actionBeforeHero={scenario.action_before_hero}
       />
