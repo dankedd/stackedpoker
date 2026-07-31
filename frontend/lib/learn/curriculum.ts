@@ -3903,6 +3903,15 @@ export const LESSONS: Lesson[] = [
         type: 'range_build',
         concept_ids: ['rfi', 'preflop_hand_selection'],
         narrative: "Build the hands you think Hero should open from the Button. There's no wrong answer here yet — build your instinct, and the module will sharpen it from here.",
+        // BTN_open_100bb (below) is the book's 100bb-effective Button opening
+        // chart — same depth as RFI_DEEP (~100bb, see preflopBaselines.ts)
+        // that fi-s6's CO baseline example draws from. Authored explicitly
+        // here (not parsed from the range_target string) so RangeBuild can
+        // display it, matching every other preflop step's own convention of
+        // pairing hero_position/effective_stack_bb/table_size together.
+        hero_position: 'BTN',
+        effective_stack_bb: 100,
+        table_size: 9,
         range_target: 'BTN_open_100bb',
         range_build_show_diff: true,
         range_prefilled_key: 'BTN_open_foundation',
