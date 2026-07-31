@@ -6,16 +6,11 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 import { shuffleBySeed, orderStepOptions } from '@/lib/learn/interactionSafety'
-import { estimateVolatility } from '@/lib/learn/flopClassifier'
-import { BoardOrderSpectrum, OrderedBoardRow, ReviewContinueButton, ReviewSummaryLine } from '@/components/learn/RevealKit'
-import { computeOrderReveal } from '@/lib/learn/revealHelpers'
 
 interface BoardVolatilityProps {
   step: LessonStep
   onAnswer: (response: unknown, timeMs: number) => void
   disabled?: boolean
-  /** Forces continuum_sort's post-submit reveal phase without a real submission — used by tests. */
-  reviewMode?: boolean
 }
 
 /**
@@ -25,7 +20,7 @@ interface BoardVolatilityProps {
  * 'compare' — which of two boards is more dynamic (uses `options`).
  * 'continuum_sort' — order several boards from most static to most dynamic.
  */
-export function BoardVolatility({ step, onAnswer, disabled = false, reviewMode = false }: BoardVolatilityProps) {
+export function BoardVolatility({ step, onAnswer, disabled = false }: BoardVolatilityProps) {
   const mountTime = useRef(Date.now())
   const mode = step.board_volatility_mode ?? 'runout_storm'
 
@@ -37,7 +32,7 @@ export function BoardVolatility({ step, onAnswer, disabled = false, reviewMode =
     return <CompareMode step={step} onAnswer={onAnswer} disabled={disabled} mountTime={mountTime} />
   }
   if (mode === 'continuum_sort') {
-    return <ContinuumSortMode step={step} onAnswer={onAnswer} disabled={disabled} mountTime={mountTime} reviewMode={reviewMode} />
+    return <ContinuumSortMode step={step} onAnswer={onAnswer} disabled={disabled} mountTime={mountTime} />
   }
   return <RunoutStormMode step={step} onAnswer={onAnswer} disabled={disabled} mountTime={mountTime} />
 }
@@ -184,58 +179,26 @@ function CompareMode({ step, onAnswer, disabled, mountTime }: BoardVolatilityPro
   )
 }
 
-/**
- * Two phases before `onAnswer` fires — same "arrange -> reviewed -> Continue"
- * contract as `BoardRankSort`/`StraightDetective`: 'arrange' (freely retap,
- * unscored) -> 'reviewed' (frozen; every slot shows correct/incorrect plus
- * the full correct order as a real low-to-high volatility spectrum, via the
- * shared `OrderedBoardRow`/`BoardOrderSpectrum` from RevealKit — never a
- * joined text string). `onAnswer` only fires on Continue, using the order
- * exactly as submitted — the reveal never changes what gets scored, which
- * still lives entirely in `evalBoardVolatility`'s inversion-count grading.
- */
-function ContinuumSortMode({
-  step, onAnswer, disabled, mountTime, reviewMode = false,
-}: BoardVolatilityProps & { mountTime: React.RefObject<number> }) {
+function ContinuumSortMode({ step, onAnswer, disabled, mountTime }: BoardVolatilityProps & { mountTime: React.RefObject<number> }) {
   const [order, setOrder] = useState<string[]>([])
-  const [phase, setPhase] = useState<'arrange' | 'reviewed'>(reviewMode ? 'reviewed' : 'arrange')
+  const [submitted, setSubmitted] = useState(false)
   const boards = useMemo(() => shuffleBySeed(step.board_volatility_continuum_boards ?? [], step.id), [step.board_volatility_continuum_boards, step.id])
-  const boardById = useMemo(() => new Map(boards.map((b) => [b.id, b])), [boards])
-
-  // Same ground truth `evalBoardVolatility` scores against — live-derived from
-  // `estimateVolatility`, never a hand-authored key, so this can't drift from
-  // what actually gets graded.
-  const correctOrder = useMemo(() => {
-    const scoreById = new Map(boards.map((b) => [b.id, estimateVolatility([b.board[0], b.board[1], b.board[2]]).score]))
-    return [...boards].sort((a, b) => (scoreById.get(a.id) ?? 0) - (scoreById.get(b.id) ?? 0)).map((b) => b.id)
-  }, [boards])
 
   useEffect(() => {
     setOrder([])
-    setPhase(reviewMode ? 'reviewed' : 'arrange')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setSubmitted(false)
   }, [step.id])
 
   function handleTap(id: string) {
-    if (disabled || phase === 'reviewed') return
+    if (disabled || submitted) return
     setOrder((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
   }
 
-  function handleCheckOrder() {
-    if (disabled || phase === 'reviewed' || order.length !== boards.length) return
-    setPhase('reviewed')
-  }
-
-  function handleContinue() {
-    if (disabled) return
+  function handleSubmit() {
+    if (disabled || submitted || order.length !== boards.length) return
+    setSubmitted(true)
     onAnswer(order, Date.now() - (mountTime.current ?? Date.now()))
   }
-
-  const reveal = useMemo(
-    () => (phase === 'reviewed' ? computeOrderReveal(order, correctOrder) : []),
-    [phase, order, correctOrder],
-  )
-  const correctCount = reveal.filter((r) => r.correct).length
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -249,78 +212,43 @@ function ContinuumSortMode({
         {step.board_volatility_prompt ?? 'Tap the boards in order, from most static to most dynamic.'}
       </p>
 
-      {phase === 'arrange' && (
-        <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {boards.map((b) => {
-              const position = order.indexOf(b.id)
-              const isPicked = position >= 0
-              return (
-                <button
-                  key={b.id}
-                  type="button"
-                  data-board-id={b.id}
-                  disabled={disabled}
-                  onClick={() => handleTap(b.id)}
-                  className={cn(
-                    'relative rounded-xl border p-2.5 transition-all duration-150',
-                    isPicked ? 'border-violet-500/50 bg-violet-500/10' : 'border-border/40 bg-secondary/30 hover:border-violet-500/20',
-                  )}
-                >
-                  {isPicked && (
-                    <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-[10px] font-bold text-white">
-                      {position + 1}
-                    </span>
-                  )}
-                  <div className="flex items-center justify-center gap-1">
-                    {b.board.map((c, i) => <PlayingCardMini key={i} card={c} size="sm" />)}
-                  </div>
-                </button>
-              )
-            })}
-          </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {boards.map((b) => {
+          const position = order.indexOf(b.id)
+          const isPicked = position >= 0
+          return (
+            <button
+              key={b.id}
+              type="button"
+              disabled={disabled || submitted}
+              onClick={() => handleTap(b.id)}
+              className={cn(
+                'relative rounded-xl border p-2.5 transition-all duration-150',
+                isPicked ? 'border-violet-500/50 bg-violet-500/10' : 'border-border/40 bg-secondary/30 hover:border-violet-500/20',
+              )}
+            >
+              {isPicked && (
+                <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-[10px] font-bold text-white">
+                  {position + 1}
+                </span>
+              )}
+              <div className="flex items-center justify-center gap-1">
+                {b.board.map((c, i) => <PlayingCardMini key={i} card={c} size="sm" />)}
+              </div>
+            </button>
+          )
+        })}
+      </div>
 
-          <div className="flex items-center justify-center gap-4 text-[9px] text-muted-foreground/40">
-            <span>1 = most static</span>
-            <span>{boards.length} = most dynamic</span>
-          </div>
-
-          <button
-            type="button"
-            disabled={disabled || order.length !== boards.length}
-            onClick={handleCheckOrder}
-            className="group relative w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden disabled:opacity-50"
-          >
-            <Check className="h-4 w-4" />
-            Check order
-          </button>
-        </>
-      )}
-
-      {phase === 'reviewed' && (
-        <div className="space-y-4 animate-in fade-in duration-300">
-          <ReviewSummaryLine correctCount={correctCount} total={reveal.length} />
-
-          {correctCount < reveal.length && (
-            <div className="space-y-2">
-              {reveal.map((r) => {
-                const b = boardById.get(r.id)
-                if (!b) return null
-                return <OrderedBoardRow key={r.id} id={r.id} position={r.position} item={b} correct={r.correct} />
-              })}
-            </div>
-          )}
-
-          <BoardOrderSpectrum
-            order={correctOrder}
-            itemsById={boardById}
-            startLabel="LOW VOLATILITY"
-            endLabel="HIGH VOLATILITY"
-          />
-
-          <ReviewContinueButton onClick={handleContinue} disabled={disabled} />
-        </div>
-      )}
+      <button
+        type="button"
+        disabled={disabled || submitted || order.length !== boards.length}
+        onClick={handleSubmit}
+        className="group relative w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden disabled:opacity-50"
+      >
+        <Check className="h-4 w-4" />
+        Submit Order
+      </button>
     </div>
   )
 }

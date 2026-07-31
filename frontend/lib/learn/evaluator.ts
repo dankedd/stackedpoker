@@ -266,8 +266,18 @@ function evalNumeric(opts: {
   unit?: string
   /** Terminology for the structured reveal, e.g. "Correct MDF", "Correct required equity". */
   term?: string
+  /** When true, populate `answer_reveal` even on a fully-correct answer — for
+   *  reference-value displays (solver equity, EV, GTO frequency, ...) where
+   *  showing the real number IS the pedagogical point, not just a "you were
+   *  wrong" comparison. Defaults to false, leaving every other numeric step
+   *  (pot odds, outs, MDF, SPR, bluff break-even, equity realization, ...)
+   *  byte-for-byte unchanged: a perfect answer there still gets no reveal. */
+  alwaysReveal?: boolean
+  /** One-line book/solver citation threaded straight into `answer_reveal.source` —
+   *  only ever a passthrough of a step's own authored source field. */
+  source?: string
 }): EvalCore {
-  const { actual, tolerance, response, correctFeedback, wrongFeedback, unit = '', term = 'Correct answer' } = opts
+  const { actual, tolerance, response, correctFeedback, wrongFeedback, unit = '', term = 'Correct answer', alwaysReveal = false, source } = opts
   const value = Number(response)
   const correctDisplay = `${actual}${unit}`
 
@@ -277,7 +287,7 @@ function evalNumeric(opts: {
       score: QUALITY_SCORES.punt,
       feedback: wrongFeedback,
       ev_loss_bb: 0,
-      answer_reveal: { term, correct: correctDisplay },
+      answer_reveal: { term, correct: correctDisplay, source },
     }
   }
 
@@ -288,24 +298,37 @@ function evalNumeric(opts: {
   // "your answer vs correct answer" reveal reaches every one of them.
   const yourAnswer = `You answered ${value}${unit}.`
   const yourDisplay = `${value}${unit}`
+  // Only computed/attached when a caller opts in (alwaysReveal) — signed
+  // distance from the reference value, e.g. "+0.3%" or "Exact match".
+  const signedDelta = Math.round((value - actual) * 10) / 10
+  const deltaLabel = signedDelta === 0 ? 'Exact match' : `${signedDelta > 0 ? '+' : ''}${signedDelta}${unit}`
   // Most callers' wrongFeedback already states the correct value as part of its
   // explanation (a formula, a WHY, or just "the correct answer is X") — appending
   // another "the correct/exact answer is X" sentence unconditionally produced the
   // literal doubled-up feedback reported for equity realization ("The correct
   // answer is 32%. The correct answer is 32%."). Only append the generic reveal
-  // sentence when wrongFeedback hasn't already surfaced the number itself.
+  // sentence when wrongFeedback/correctFeedback hasn't already surfaced the number.
   const wrongFeedbackStatesAnswer = wrongFeedback.includes(correctDisplay)
+  const correctFeedbackStatesAnswer = correctFeedback.includes(correctDisplay)
 
   if (delta <= tolerance) {
-    return { quality: 'perfect', score: 100, feedback: `${yourAnswer} ${correctFeedback}`, ev_loss_bb: 0 }
+    return {
+      quality: 'perfect',
+      score: 100,
+      feedback: `${yourAnswer} ${correctFeedback}`,
+      ev_loss_bb: 0,
+      ...(alwaysReveal ? { answer_reveal: { term, correct: correctDisplay, yours: yourDisplay, source, delta: deltaLabel } } : {}),
+    }
   }
   if (delta <= tolerance * 2) {
     return {
       quality: 'good',
       score: QUALITY_SCORES.good,
-      feedback: `${yourAnswer} ${correctFeedback} (close — exact answer is ${actual}${unit})`,
+      feedback: correctFeedbackStatesAnswer
+        ? `${yourAnswer} ${correctFeedback}`
+        : `${yourAnswer} ${correctFeedback} (close — exact answer is ${actual}${unit})`,
       ev_loss_bb: 0,
-      answer_reveal: { term, correct: correctDisplay, yours: yourDisplay },
+      answer_reveal: { term, correct: correctDisplay, yours: yourDisplay, ...(alwaysReveal ? { source, delta: deltaLabel } : {}) },
     }
   }
   if (delta <= tolerance * 3.5) {
@@ -316,7 +339,7 @@ function evalNumeric(opts: {
         ? `${yourAnswer} ${wrongFeedback}`
         : `${yourAnswer} ${wrongFeedback} The exact value is ${actual}${unit}.`,
       ev_loss_bb: 0,
-      answer_reveal: { term, correct: correctDisplay, yours: yourDisplay },
+      answer_reveal: { term, correct: correctDisplay, yours: yourDisplay, ...(alwaysReveal ? { source, delta: deltaLabel } : {}) },
     }
   }
   return {
@@ -326,7 +349,7 @@ function evalNumeric(opts: {
       ? `${yourAnswer} ${wrongFeedback}`
       : `${yourAnswer} ${wrongFeedback} The correct answer is ${actual}${unit}.`,
     ev_loss_bb: 0,
-    answer_reveal: { term, correct: correctDisplay, yours: yourDisplay },
+    answer_reveal: { term, correct: correctDisplay, yours: yourDisplay, ...(alwaysReveal ? { source, delta: deltaLabel } : {}) },
   }
 }
 
@@ -1258,13 +1281,13 @@ function evalBoardVolatility(step: LessonStep, response: unknown): EvalCore {
 
     if (inversions === 0) return { quality: 'perfect', score: 100, feedback: 'That ordering matches — low to high volatility.', ev_loss_bb: 0 }
 
-    // No `answer_reveal` here -- BoardVolatility's own ContinuumSortMode already
-    // renders a richer, item-by-item reveal (real board cards via
-    // OrderedBoardRow/BoardOrderSpectrum, never a joined text string). Same
-    // pattern as board_rank_sort below.
-    if (accuracy >= 0.75) return { quality: 'good', score: Math.max(QUALITY_SCORES.good, pct), feedback: 'Close — a couple of boards are out of order.', ev_loss_bb: 0 }
-    if (accuracy >= 0.5) return { quality: 'acceptable', score: Math.max(QUALITY_SCORES.acceptable, pct), feedback: 'Roughly right, but several boards are out of order.', ev_loss_bb: 0 }
-    return { quality: 'mistake', score: Math.max(15, pct), feedback: 'This ordering doesn\'t track static-to-dynamic. Review each board\'s texture and straight potential.', ev_loss_bb: 0 }
+    const boardById = new Map(boards.map((b) => [b.id, b.board]))
+    const correctOrderDisplay = correctOrder.map((id) => formatCards(boardById.get(id) ?? [])).join(' → ')
+    const reveal: AnswerReveal = { term: 'Correct order (low to high volatility)', correct: correctOrderDisplay }
+
+    if (accuracy >= 0.75) return { quality: 'good', score: Math.max(QUALITY_SCORES.good, pct), feedback: 'Close — a couple of boards are out of order.', ev_loss_bb: 0, answer_reveal: reveal }
+    if (accuracy >= 0.5) return { quality: 'acceptable', score: Math.max(QUALITY_SCORES.acceptable, pct), feedback: 'Roughly right, but several boards are out of order.', ev_loss_bb: 0, answer_reveal: reveal }
+    return { quality: 'mistake', score: Math.max(15, pct), feedback: 'This ordering doesn\'t track static-to-dynamic. Review each board\'s texture and straight potential.', ev_loss_bb: 0, answer_reveal: reveal }
   }
 
   // runout_storm (default)
@@ -2133,16 +2156,26 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
       return evalOptionBased(step, response)
 
     // Range equity predict — slider estimate of a range-vs-range equity split.
-    case 'range_equity_predict':
+    case 'range_equity_predict': {
+      // Showing the actual solver/book number is the pedagogical point of this
+      // step type, not just a "you were wrong" comparison — so unlike most
+      // evalNumeric callers, this one opts into alwaysReveal (see evalNumeric's
+      // doc comment) and threads the step's own authored source citation through
+      // rather than leaving the learner with only a vague "close to the book's
+      // figure" line.
+      const rangeEquityActual = step.range_equity_predict_correct ?? 50
       return evalNumeric({
-        actual: step.range_equity_predict_correct ?? 50,
+        actual: rangeEquityActual,
         tolerance: step.range_equity_predict_tolerance ?? 8,
         response,
-        correctFeedback: 'That\'s close to the book\'s figure for this exact matchup.',
-        wrongFeedback: 'Range-vs-range equity here is further off than it looks — inspect the ranges below.',
+        correctFeedback: `The solver equity for this exact range matchup is ${rangeEquityActual}%.`,
+        wrongFeedback: `The solver equity for this exact range matchup is ${rangeEquityActual}%. Range-vs-range equity here is further off than it looks — inspect the ranges below.`,
         unit: '%',
-        term: 'Book equity',
+        term: 'Solver equity',
+        alwaysReveal: true,
+        source: step.range_equity_predict_source_ref,
       })
+    }
 
     // Range X-Ray — scored only when a follow-up question was authored.
     case 'range_xray':

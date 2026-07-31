@@ -113,11 +113,14 @@ function StructuredFeedbackList({ items }: { items: { term: string; description:
 // ── Correct-answer reveal ─────────────────────────────────────────────────────
 // Sits between the score and the WHY explanation: RESULT -> SCORE -> CORRECT
 // ANSWER -> EXPLANATION. `result.answer_reveal` is only ever populated by
-// evaluator.ts (the same source of truth as scoring) and only when the
-// response wasn't fully correct, so a perfect answer never gets an
-// unnecessary "you were wrong" comparison here.
+// evaluator.ts (the same source of truth as scoring) and, for most step
+// types, only when the response wasn't fully correct, so a perfect answer
+// never gets an unnecessary "you were wrong" comparison here. A few step
+// types (e.g. range_equity_predict) opt into always showing it — see
+// evalNumeric's `alwaysReveal` option — because the reference value itself
+// (a book/solver figure) is the pedagogical point, not a right/wrong check.
 
-function AnswerRevealBlock({ term, correct, yours, alsoAccepted }: NonNullable<StepResult['answer_reveal']>) {
+function AnswerRevealBlock({ term, correct, yours, alsoAccepted, source, delta }: NonNullable<StepResult['answer_reveal']>) {
   return (
     <div className="my-3 rounded-xl border border-border/40 bg-secondary/30 px-4 py-3">
       {yours && (
@@ -128,10 +131,18 @@ function AnswerRevealBlock({ term, correct, yours, alsoAccepted }: NonNullable<S
       <p className="text-sm font-semibold text-foreground">
         {term}: <span className="text-violet-300">{correct}</span>
       </p>
+      {delta && (
+        <p className="text-xs text-muted-foreground/70 mt-1">
+          Difference from solver: <span className="font-medium text-foreground/70">{delta}</span>
+        </p>
+      )}
       {alsoAccepted && alsoAccepted.length > 0 && (
         <p className="text-xs text-muted-foreground/60 mt-1">
           Also accepted: {alsoAccepted.join(' · ')}
         </p>
+      )}
+      {source && (
+        <p className="text-[10px] text-muted-foreground/50 mt-2 italic">{source}</p>
       )}
     </div>
   )

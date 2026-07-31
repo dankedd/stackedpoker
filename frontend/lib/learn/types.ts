@@ -1097,8 +1097,7 @@ export type EvaluationConfidence = 'high' | 'medium' | 'low' | null
  * correct (so a perfect answer never gets an unnecessary comparison), and
  * omitted entirely for step types whose own component already renders a
  * richer item-by-item reveal (range_bucket, board_rank_sort, hand_ranking_order,
- * straight_detective, board_autopsy, range_build, range_heatmap,
- * board_volatility's continuum_sort mode).
+ * straight_detective, board_autopsy, range_build, range_heatmap).
  */
 export interface AnswerReveal {
   /** Terminology appropriate to the interaction, e.g. "Correct play", "Correct classification", "Correct answer". */
@@ -1109,6 +1108,16 @@ export interface AnswerReveal {
   yours?: string
   /** Other answers the evaluator also accepts as correct, distinct from the primary `correct` value (used for partial-credit "preferred vs also acceptable" cases). */
   alsoAccepted?: string[]
+  /** One-line book/solver citation for `correct` (chapter + page, ideally the exact
+   *  quoted line) — e.g. "Modern Poker Theory, Ch. 11, p.633". Only ever a direct
+   *  passthrough of a step's own authored source field, never fabricated here.
+   *  Reusable across any book-backed reference value (solver equity, EV, GTO
+   *  frequency, ...), not specific to one step type. */
+  source?: string
+  /** Signed distance between `yours` and `correct` as a short display value, e.g.
+   *  "+0.3%" or "Exact match" — only set by callers that opt into always showing
+   *  the reference value (see evaluator.ts's `evalNumeric` `alwaysReveal` option). */
+  delta?: string
 }
 
 // ── Step evaluation result from API ──────────────────────────────────────────
