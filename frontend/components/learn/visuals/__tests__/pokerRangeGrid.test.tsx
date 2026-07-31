@@ -360,6 +360,83 @@ describe('PokerRangeGrid — category mode: in-range-but-unconnected is visually
   })
 })
 
+// ── Mixed-frequency shading (category mode) ────────────────────────────────────
+// A hand that's only ever a MEMBERSHIP entry in `range` (e.g. AA:0.2 — calls 20% of the
+// time, mostly does something else) must never render identically to a hand that's in
+// `range` at 100%. `frequencyMap` is the real, sourced (never fabricated) per-hand
+// frequency that drives this — see PokerRangeGrid's `frequencyTier` doc comment.
+describe('PokerRangeGrid — category mode: mixed-frequency shading (frequencyMap)', () => {
+  it('a hand absent from frequencyMap (or when frequencyMap is omitted) renders exactly as before — no hatch, plain "In range"', () => {
+    const withMap = renderToStaticMarkup(
+      <PokerRangeGrid range={['KK']} mode="category" categoryMap={{ KK: 'overpair' }} frequencyMap={{}} />,
+    )
+    const withoutMap = renderToStaticMarkup(
+      <PokerRangeGrid range={['KK']} mode="category" categoryMap={{ KK: 'overpair' }} />,
+    )
+    for (const html of [withMap, withoutMap]) {
+      const cell = categoryCellHtmlFor(html, 'KK')
+      expect(cell).toContain('Preflop: In range')
+      expect(cell).not.toContain('backgroundImage')
+      expect(cell).not.toContain('%)')
+    }
+  })
+
+  it('a low-frequency hand (e.g. AA calling 20%) gets a denser hatch, reduced opacity, and states its exact percentage', () => {
+    const html = renderToStaticMarkup(
+      <PokerRangeGrid range={['AA']} mode="category" categoryMap={{ AA: 'overpair' }} frequencyMap={{ AA: 0.2 }} />,
+    )
+    const cell = categoryCellHtmlFor(html, 'AA')
+    expect(cell).toContain('rgba(0,0,0,0.5)') // low-frequency hatch density
+    expect(cell).toContain('opacity-75')
+    expect(cell).toContain('Preflop: In range — low frequency (20%)')
+    expect(cell).toContain('in range, overpair, low frequency 20%') // aria-label
+  })
+
+  it('a mixed-strategy hand (e.g. AK raising 35%) gets the lighter hatch, no opacity reduction, and states its percentage — distinct from the low-frequency case', () => {
+    const html = renderToStaticMarkup(
+      <PokerRangeGrid range={['AKs']} mode="category" categoryMap={{ AKs: 'overcards' }} frequencyMap={{ AKs: 0.35 }} />,
+    )
+    const cell = categoryCellHtmlFor(html, 'AKs')
+    expect(cell).toContain('rgba(0,0,0,0.28)') // mixed hatch density
+    expect(cell).not.toContain('rgba(0,0,0,0.5)')
+    expect(cell).not.toContain('opacity-75')
+    expect(cell).toContain('Preflop: In range — mixed strategy (35%)')
+  })
+
+  it('a pure hand (freq 1, or >= 0.99) renders identically to the no-frequencyMap case — no hatch, no percentage', () => {
+    const html = renderToStaticMarkup(
+      <PokerRangeGrid range={['QQ']} mode="category" categoryMap={{ QQ: 'overpair' }} frequencyMap={{ QQ: 1 }} />,
+    )
+    const cell = categoryCellHtmlFor(html, 'QQ')
+    expect(cell).toContain('Preflop: In range')
+    expect(cell).not.toContain('%)')
+    expect(cell).not.toContain('backgroundImage')
+  })
+
+  it('an out-of-range hand ignores frequencyMap entirely, even if a stray entry exists for it', () => {
+    const html = renderToStaticMarkup(
+      <PokerRangeGrid range={['AA']} mode="category" categoryMap={{}} frequencyMap={{ '72o': 0.1 }} />,
+    )
+    const cell = categoryCellHtmlFor(html, '72o')
+    expect(cell).toContain('Preflop: Not in range')
+    expect(cell).not.toContain('backgroundImage')
+  })
+
+  it('the legend only mentions "Mixed strategy" / "Low frequency" when at least one visible in-range hand actually uses that tier', () => {
+    const noMixedHtml = renderToStaticMarkup(
+      <PokerRangeGrid range={['AA', 'KK']} mode="category" categoryMap={{}} frequencyMap={{ AA: 1, KK: 1 }} />,
+    )
+    expect(noMixedHtml).not.toContain('Mixed strategy')
+    expect(noMixedHtml).not.toContain('Low frequency')
+
+    const mixedHtml = renderToStaticMarkup(
+      <PokerRangeGrid range={['AA', 'KK']} mode="category" categoryMap={{}} frequencyMap={{ AA: 0.2, KK: 0.5 }} />,
+    )
+    expect(mixedHtml).toContain('Low frequency (hatched)')
+    expect(mixedHtml).toContain('Mixed strategy (hatched)')
+  })
+})
+
 // ── The grid must never force horizontal scrolling ────────────────────────────
 // Regression coverage for the overflow/cropping bug: the old `overflow-x-auto` +
 // `inline-block min-w-full` wrapper let the grid's intrinsic (max-content) width

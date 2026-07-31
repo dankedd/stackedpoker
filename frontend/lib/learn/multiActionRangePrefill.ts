@@ -14,16 +14,19 @@ import {
   type ThreebetResponseChart,
 } from './threebetResponseBaselines'
 import { resolveThreebetResponsePrefilled } from './threebetResponseRanges'
+import { DEFEND_RESPONSE_CHARTS, type DefendResponseAction } from './defendResponseBaselines'
+import { BB_DEFENSE_COMPLETE_100BB, type BBOpenDefenseMatchup } from './bbDefenseComplete'
+import type { ActionId } from './rangeStrategy'
 import type { LessonStep } from './types'
 
 export const DEFAULT_MULTI_PREFILL_NOTE =
   "We've filled in the obvious core decisions. Now work out the rest of the strategy."
 
 /** Any action identifier this generalized paint UI supports, across every domain
- *  `range_build_multi_domain` can select — kept a plain string union of the two
+ *  `range_build_multi_domain` can select — kept a plain string union of the three
  *  domains' concrete actions rather than a fully generic `string` so authoring
  *  (curriculum.ts) and grading keep compile-time checking. */
-export type MultiRangeAction = MttAction | ThreebetResponseAction
+export type MultiRangeAction = MttAction | ThreebetResponseAction | DefendResponseAction
 
 /** The minimal shape MultiActionRangeBuild/Reveal actually need — both
  *  `MttRfiChart` and `ThreebetResponseChart` are sparse action-frequency-dict
@@ -36,10 +39,19 @@ export interface MultiActionChartLike {
 }
 
 /** Resolves a step's graded target chart — the single source of truth for scoring.
- *  Branches on `range_build_multi_domain` ('mtt_rfi' default, or 'threebet_response'). */
+ *  Branches on `range_build_multi_domain` ('mtt_rfi' default, 'threebet_response', or
+ *  'defend_response'). */
 export function resolveMultiActionTargetChart(step: LessonStep): MultiActionChartLike | undefined {
   if (step.range_build_multi_domain === 'threebet_response') {
     return THREEBET_RESPONSE_CHARTS[step.range_build_multi_chart ?? ''] as unknown as MultiActionChartLike | undefined
+  }
+  if (step.range_build_multi_domain === 'defend_response') {
+    return DEFEND_RESPONSE_CHARTS[step.range_build_multi_chart ?? ''] as unknown as MultiActionChartLike | undefined
+  }
+  if (step.range_build_multi_domain === 'bb_defense_complete') {
+    const map = BB_DEFENSE_COMPLETE_100BB[(step.range_build_multi_chart ?? '') as BBOpenDefenseMatchup]
+    if (!map) return undefined
+    return { cells: Object.entries(map).map(([hand, actions]) => ({ hand, actions: actions as Record<ActionId, number> })) }
   }
   return MTT_RFI_CHARTS[step.range_build_multi_chart ?? ''] as unknown as MultiActionChartLike | undefined
 }

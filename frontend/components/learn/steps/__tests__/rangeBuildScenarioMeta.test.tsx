@@ -59,11 +59,13 @@ describe('RangeBuild — scenario meta (position + effective stack depth)', () =
     expect(html).toContain('100BB EFFECTIVE')
   })
 
-  it('mtc-s9 ("What Makes a Hand Playable?") is untouched — still has no stack-depth data, so no meta line yet', () => {
+  it('mtc-s9 ("What Makes a Hand Playable?") now displays CO — 100BB Effective', () => {
     const step = LESSONS.flatMap((l) => l.steps).find((s) => s.id === 'mtc-s9')
     expect(step).toBeTruthy()
-    expect(step!.effective_stack_bb).toBeUndefined()
+    expect(step!.hero_position).toBe('CO')
+    expect(step!.effective_stack_bb).toBe(100)
     const html = renderToStaticMarkup(<RangeBuild step={step!} onAnswer={noop} />)
-    expect(html).not.toContain('EFFECTIVE')
+    expect(html).toContain('>CO<')
+    expect(html).toContain('100BB EFFECTIVE')
   })
 })

@@ -51,6 +51,17 @@ export const CO_RFI_40BB_SOURCE = { book: 'Modern Poker Theory' as const, chapte
  *  membership list, matching how this chart is consumed elsewhere in the app. */
 export const CO_OPEN_RANGE_40BB: string[] = chartHandsByAction(MTT_RFI_CHARTS.CO_RFI_40BB, 'raise')
 
+/** Real per-hand raise frequency (0-1) for every hand in `CO_OPEN_RANGE_40BB` — most cells in
+ *  the transcribed chart are a pure 1.0 raise, but a real minority are genuinely mixed (e.g.
+ *  K8o raises only 25% of the time, 22 only 15%) per the book's own chart image. Exported so
+ *  the grid can shade a "sometimes raises" hand differently from an "always raises" one —
+ *  never fabricated, read straight out of the same transcribed cells as the membership list. */
+export const CO_OPEN_FREQUENCY_40BB: Record<string, number> = Object.fromEntries(
+  MTT_RFI_CHARTS.CO_RFI_40BB.cells
+    .filter((c) => (c.actions.raise ?? 0) > 0)
+    .map((c) => [c.hand, c.actions.raise as number]),
+)
+
 function weightPct(hands: string[]): number {
   const combos = hands.reduce((sum, h) => sum + comboCount(h), 0)
   return (combos / TOTAL_COMBOS) * 100
@@ -98,11 +109,28 @@ export function deriveIllustrativeWidenedRange(core: string[], targetPct: number
 
 const BB_VS_CO_100BB_CASH_CORE: string[] = DEFEND_DEEP.BB_vs_CO.map((e: RangeEntry) => e.hand)
 
+/** Real per-hand calling frequency (0-1) for the 100bb-cash core — e.g. AA calls only 20% of
+ *  the time (mostly 3-bets instead, tracked in a separate, unmerged chart), while most of the
+ *  low/mid suited connectors call 100%. Read straight out of `DEFEND_DEEP.BB_vs_CO`'s own
+ *  `.freq` field, never re-derived. */
+const BB_VS_CO_100BB_CASH_FREQUENCY: Record<string, number> = Object.fromEntries(
+  DEFEND_DEEP.BB_vs_CO.map((e: RangeEntry) => [e.hand, e.freq]),
+)
+
 /** BB's illustrative 40bb calling range vs CO's open — widened from the real 100bb
  *  cash BB-vs-CO calling range up to the book's cited ≈56.8% MTT figure. Always
  *  render this with an on-screen caption; never call it "the book's chart." */
 export const BB_CALL_RANGE_40BB_ILLUSTRATIVE: string[] = deriveIllustrativeWidenedRange(BB_VS_CO_100BB_CASH_CORE, 56.8)
 export const BB_CALL_RANGE_40BB_PCT = Math.round(weightPct(BB_CALL_RANGE_40BB_ILLUSTRATIVE) * 10) / 10
+
+/** Per-hand calling frequency for every hand in `BB_CALL_RANGE_40BB_ILLUSTRATIVE`. Hands from
+ *  the real 100bb-cash core keep their real (often mixed) frequency; hands added purely by the
+ *  deterministic widening step have no sourced frequency at all — they were never claimed to
+ *  be anything other than a full illustrative addition, so they default to 1 (pure), never a
+ *  fabricated fractional number. */
+export const BB_CALL_RANGE_40BB_FREQUENCY: Record<string, number> = Object.fromEntries(
+  BB_CALL_RANGE_40BB_ILLUSTRATIVE.map((hand) => [hand, BB_VS_CO_100BB_CASH_FREQUENCY[hand] ?? 1]),
+)
 
 // ── Lesson 1 — the book's central range-vs-range walkthrough ──────────────────
 
@@ -196,6 +224,8 @@ export const RANGE_EQUITY_PREDICT_TOLERANCE = 8 // percentage points for "perfec
 
 export const ILLUSTRATIVE_OPENER_RANGE = CO_OPEN_RANGE_40BB
 export const ILLUSTRATIVE_CALLER_RANGE = BB_CALL_RANGE_40BB_ILLUSTRATIVE
+export const ILLUSTRATIVE_OPENER_FREQUENCY = CO_OPEN_FREQUENCY_40BB
+export const ILLUSTRATIVE_CALLER_FREQUENCY = BB_CALL_RANGE_40BB_FREQUENCY
 
 // ── Audit trail (mirrors the user's spec verification checklist) ──────────────
 
@@ -205,4 +235,5 @@ export const MODULE8_AUDIT_NOTES = {
   bb_call_range: `Illustrative — widened from the real 100bb-cash BB-vs-CO calling range up to the book's cited ≈56.8% (lands at ≈${BB_CALL_RANGE_40BB_PCT}% at hand-class granularity). Never presented as the book's own chart.`,
   equity_buckets_source: 'Strong ≥75 / Good 50–75 / Weak 33–50 / Trash <33 — exact thresholds from the book, reused via flopClassifier.ts\'s equityBucket(), never redefined.',
   a76r_654r_strong_bucket: 'Only the Strong bucket has an exact book-cited number for these two boards; Good/Weak/Trash are directional-only text, never invented percentages.',
+  mixed_frequency_shading: 'CO_OPEN_FREQUENCY_40BB and BB_CALL_RANGE_40BB_FREQUENCY carry the real per-hand mix frequency (0-1) for every sourced hand (e.g. CO K8o raises 25%, BB AA calls 20%) so the grid can shade "sometimes" hands differently from "always" hands — hands added only by the illustrative widening step have no sourced frequency and default to 1 (pure), never a fabricated fraction.',
 }

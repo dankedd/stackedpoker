@@ -47,6 +47,39 @@ const TIER_STYLE: Record<HandBoardInteractionTier, { bg: string; ring: string }>
  *  draw can share a tier's color (both 'connected', say) but must never look identical. */
 const DASHED_RING_CATEGORIES: HandBoardCategory[] = ['straight_draw']
 
+/**
+ * How often a hand actually takes the range-defining action (raise/call), NOT how strongly
+ * it connects with the board — a separate axis from `HandBoardInteractionTier` above. Reuses
+ * the exact same "diagonal hatch over a solid fill" technique `RangeXRay.tsx` already uses to
+ * mark "direction known, exact number not claimed" data, so a learner who's seen one place in
+ * this module already knows what hatching means in the other.
+ *   - 'pure'  -> the hand takes this action essentially every time (>= 99%). No overlay.
+ *   - 'mixed' -> a genuine mixed strategy (roughly 30-99%). Light hatch.
+ *   - 'low'   -> the hand mostly does something else and only occasionally takes this action
+ *     (< 30%, e.g. AA calling 20% of the time because it mostly 3-bets instead). Denser hatch
+ *     + reduced fill opacity, so it reads as clearly less common than 'mixed' at a glance.
+ * A hand with no entry in `frequencyMap` (or when `frequencyMap` is omitted entirely) is
+ * treated as 'pure' — the historical, unchanged behavior for every existing caller.
+ */
+export type FrequencyTier = 'pure' | 'mixed' | 'low'
+
+export function frequencyTier(freq: number): FrequencyTier {
+  if (freq >= 0.99) return 'pure'
+  if (freq >= 0.3) return 'mixed'
+  return 'low'
+}
+
+const FREQUENCY_HATCH: Record<Exclude<FrequencyTier, 'pure'>, string> = {
+  mixed: 'repeating-linear-gradient(135deg, transparent, transparent 3px, rgba(0,0,0,0.28) 3px, rgba(0,0,0,0.28) 6px)',
+  low: 'repeating-linear-gradient(135deg, transparent, transparent 2px, rgba(0,0,0,0.5) 2px, rgba(0,0,0,0.5) 4px)',
+}
+
+const FREQUENCY_TIER_LABEL: Record<FrequencyTier, string> = {
+  pure: 'Always',
+  mixed: 'Mixed strategy',
+  low: 'Low frequency',
+}
+
 function categoryCellStyle(category: HandBoardCategory): { bg: string; ring: string } {
   const tier = HAND_BOARD_INTERACTION_TIER[category]
   const base = TIER_STYLE[tier]
@@ -163,6 +196,12 @@ interface PokerRangeGridProps {
   /** 'category' mode: which categories to visually call out via the legend — defaults to every
    *  category actually present in `categoryMap`. */
   categoryLegend?: HandBoardCategory[]
+  /** 'category' mode (optional): real per-hand action frequency (0-1) for hands in `range` —
+   *  see `frequencyTier`'s doc comment. A hand present in `range` but absent here (or when this
+   *  whole prop is omitted) renders as 'pure', identical to today's behavior. Never a mode of
+   *  its own — this only ever adds shading on top of 'category' mode's existing board-interaction
+   *  coloring, so a mixed-frequency hand's category color is still fully visible underneath. */
+  frequencyMap?: Record<string, number>
   /** 'three_action' mode: which action each hand takes. */
   actionMap?: Record<string, PreflopAction>
   /** 'diff' mode: the range being compared against the baseline (`range`). */
@@ -185,8 +224,10 @@ interface PokerRangeGridProps {
   /** 'strategy' mode: explicit left-to-right action order (defaults to a stable aggression-first
    *  order derived from every action actually present in `strategies`). */
   strategyActionOrder?: ActionId[]
-  /** Rings exactly one cell (e.g. the just-tested hand) without touching its existing color. */
-  highlightHand?: string
+  /** Rings the given cell(s) (e.g. the just-tested hand, or every hand seen across a lesson's
+   *  puzzles) without touching their existing color. A single string keeps the historical
+   *  one-hand behavior; an array rings every hand it contains. */
+  highlightHand?: string | string[]
   /** 'standard' (default) = a solo grid's own comfortable cap (520px) — never sprawls to
    *  fill an oversized ancestor container. 'compact' = one half of a two-grid comparison
    *  (480px) — sized so two of them plus a realistic gap fit inside the widened lesson
@@ -216,10 +257,14 @@ export function PokerRangeGrid({
   highlightHand,
   categoryMap,
   categoryLegend,
+  frequencyMap,
   size = 'standard',
 }: PokerRangeGridProps) {
   const inRange = new Set(range)
   const inComparison = new Set(comparisonRange ?? [])
+  const highlightedHands = new Set(
+    highlightHand == null ? [] : Array.isArray(highlightHand) ? highlightHand : [highlightHand],
+  )
   const combos = range.reduce((sum, h) => sum + comboCount(h), 0)
   const pct = ((combos / TOTAL_COMBOS) * 100).toFixed(1)
   const diffByHand = new Map((actionDiff ?? []).map((d) => [d.hand, d]))
@@ -244,6 +289,13 @@ export function PokerRangeGrid({
         ).filter((t): t is Exclude<HandBoardInteractionTier, 'unconnected'> => t !== 'unconnected')
       : []
   const TIER_LEGEND_ORDER: Exclude<HandBoardInteractionTier, 'unconnected'>[] = ['made', 'connected', 'marginal']
+  // Which frequency tiers actually appear among this grid's in-range hands right now — so the
+  // legend only ever mentions "Mixed strategy" / "Low frequency" when at least one visible cell
+  // uses that shading, and stays silent (identical to pre-frequencyMap behavior) otherwise.
+  const presentFrequencyTiers =
+    mode === 'category' && frequencyMap
+      ? new Set(range.map((h) => frequencyTier(frequencyMap[h] ?? 1)).filter((t) => t !== 'pure'))
+      : new Set<FrequencyTier>()
 
   function cellClasses(hand: string, isPair: boolean, isSuited: boolean): string {
     if (mode === 'action_diff') {
@@ -336,6 +388,15 @@ export function PokerRangeGrid({
                 const style = inR ? categoryCellStyle(category) : undefined
                 const tierLabel = HAND_BOARD_INTERACTION_TIER_LABEL[tier]
                 const categoryLabel = HAND_BOARD_CATEGORY_LABEL[category]
+                const freq = frequencyMap?.[hand] ?? 1
+                const freqTier: FrequencyTier = inR ? frequencyTier(freq) : 'pure'
+                const freqPct = Math.round(freq * 100)
+                const preflopLine =
+                  !inR
+                    ? 'Not in range'
+                    : freqTier === 'pure'
+                    ? 'In range'
+                    : `In range — ${FREQUENCY_TIER_LABEL[freqTier].toLowerCase()} (${freqPct}%)`
 
                 return (
                   <div
@@ -343,17 +404,21 @@ export function PokerRangeGrid({
                     tabIndex={0}
                     role="group"
                     aria-label={
-                      inR ? `${hand}: in range, ${categoryLabel.toLowerCase()}` : `${hand}: not in range`
+                      inR
+                        ? `${hand}: in range, ${categoryLabel.toLowerCase()}${freqTier !== 'pure' ? `, ${FREQUENCY_TIER_LABEL[freqTier].toLowerCase()} ${freqPct}%` : ''}`
+                        : `${hand}: not in range`
                     }
-                    title={inR ? `${hand} — In range — ${categoryLabel}` : `${hand} — Not in range`}
+                    title={inR ? `${hand} — In range — ${categoryLabel}${freqTier !== 'pure' ? ` (${freqPct}%)` : ''}` : `${hand} — Not in range`}
                     className={cn(
                       'group relative flex-1 min-w-0 aspect-square flex items-center justify-center',
                       'rounded-[3px] select-none text-[8px] sm:text-[10px] font-bold leading-none cursor-default',
                       'focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:z-20',
                       inR ? style!.bg : OUT_OF_RANGE_STYLE,
                       inR && style!.ring,
-                      highlightHand === hand && 'ring-2 ring-white ring-offset-1 ring-offset-background z-10 relative',
+                      inR && freqTier === 'low' && 'opacity-75',
+                      highlightedHands.has(hand) && 'ring-2 ring-white ring-offset-1 ring-offset-background z-10 relative',
                     )}
+                    style={inR && freqTier !== 'pure' ? { backgroundImage: FREQUENCY_HATCH[freqTier] } : undefined}
                   >
                     <span className="truncate px-0.5">{hand}</span>
                     {/* Hover/focus/tap detail — always in the DOM, shown via CSS only, present
@@ -369,7 +434,7 @@ export function PokerRangeGrid({
                       )}
                     >
                       <p className="font-bold">{hand}</p>
-                      <p className="text-muted-foreground">Preflop: {inR ? 'In range' : 'Not in range'}</p>
+                      <p className="text-muted-foreground">Preflop: {preflopLine}</p>
                       {inR && <p className="text-muted-foreground">Board: {categoryLabel}{tier !== 'unconnected' ? ` (${tierLabel})` : ''}</p>}
                     </div>
                   </div>
@@ -392,7 +457,7 @@ export function PokerRangeGrid({
                       'group relative flex-1 min-w-0 aspect-square flex items-center justify-center',
                       'rounded-[3px] select-none text-[8px] sm:text-[10px] font-bold leading-none cursor-default',
                       'focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:z-20',
-                      highlightHand === hand && 'ring-2 ring-white ring-offset-1 ring-offset-background z-10 relative',
+                      highlightedHands.has(hand) && 'ring-2 ring-white ring-offset-1 ring-offset-background z-10 relative',
                     )}
                     style={{ background: segmentedBackground(mix, strategyOrder) }}
                   >
@@ -451,6 +516,17 @@ export function PokerRangeGrid({
               <span>{HAND_BOARD_INTERACTION_TIER_LABEL[tier]}</span>
             </div>
           ))}
+          {(['mixed', 'low'] as const)
+            .filter((t) => presentFrequencyTiers.has(t))
+            .map((t) => (
+              <div key={t} className="flex items-center gap-1.5">
+                <div
+                  className={cn('h-2.5 w-2.5 rounded-[2px]', TIER_STYLE.unconnected.bg, t === 'low' && 'opacity-75')}
+                  style={{ backgroundImage: FREQUENCY_HATCH[t] }}
+                />
+                <span>{FREQUENCY_TIER_LABEL[t]} (hatched)</span>
+              </div>
+            ))}
         </div>
       ) : mode === 'strategy' ? (
         <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] sm:text-[10px] text-muted-foreground/40">

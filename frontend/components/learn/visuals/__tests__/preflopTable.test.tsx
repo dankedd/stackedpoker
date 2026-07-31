@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { PreflopTable, computeHeroRotatedSeats, railCenterlinePoint, DESKTOP_LAYOUT } from '../PreflopTable'
 import { ChipStack } from '@/components/poker/ChipStack'
 import { buildPlaybackTimeline } from '@/lib/learn/preflopTablePlayback'
+import { ROW2_TOP_OFFSET_PX } from '../PreflopSeatRow'
 
 /** A seat's Row-1 label now nests the position inside a child <span> (and, for
  *  Hero, an extra "HERO ·" <span> before it) rather than being the outer
@@ -552,6 +553,83 @@ describe('PreflopTable — status/context info lives below the table, not inside
     expect(feltIdx).toBeGreaterThan(-1)
     expect(feltIdx).toBeLessThan(statusIdx)
     expect(statusIdx).toBeLessThan(srOnlyIdx)
+  })
+})
+
+describe('PreflopTable — Row 2/3 (action/stack) never overlap Row 1 (position label), at every seat', () => {
+  // Regression for the reported CO overlap ("CO" / "RAISE" rendering with no
+  // visible gap). The fix is generic (PreflopSeatRow's shared vertical-rhythm
+  // constants), so this sweeps every occupied seat position, not just CO.
+  const ALL_POSITIONS_9MAX = ['UTG', 'UTG+1', 'UTG+2', 'LJ', 'HJ', 'CO', 'BTN', 'SB', 'BB']
+
+  /** Row 2/3's group `top: calc(X% + Npx)` immediately following `position`'s
+   *  own Row-1 label in the markup — the window is deliberately tight (a
+   *  seat's own Row 2 wrapper is the very next `top:calc(...)` after its
+   *  Row-1 span in the source, before the NEXT seat's block begins) so this
+   *  can't accidentally cross-match a different seat's group. Captures N. */
+  function row2Offset(html: string, position: string): number | undefined {
+    const escaped = position.replace('+', '\\+')
+    const m = html.match(
+      new RegExp(`>${escaped}<[\\s\\S]{0,500}?top:calc\\([\\d.]+% \\+ (\\d+)px\\)`),
+    )
+    return m ? Number(m[1]) : undefined
+  }
+
+  it('every folded seat (9-max, action folded to BTN) has Row 2 offset by exactly ROW2_TOP_OFFSET_PX below its own rail point', () => {
+    const html = renderToStaticMarkup(
+      <PreflopTable tableSize={9} heroPosition="BTN" effectiveStackBb={100} actionBeforeHero={['Everyone folds']} />,
+    )
+    for (const pos of ['UTG', 'UTG+1', 'UTG+2', 'LJ', 'HJ', 'CO']) {
+      const offset = row2Offset(html, pos)
+      expect(offset, `expected a Row 2 group for folded seat ${pos}`).toBe(ROW2_TOP_OFFSET_PX)
+    }
+  })
+
+  it.each(ALL_POSITIONS_9MAX)('Hero at %s: the acting Hero seat\'s own Row 2 (its stack line) uses the same fixed offset', (heroPosition) => {
+    const html = renderToStaticMarkup(
+      <PreflopTable tableSize={9} heroPosition={heroPosition} effectiveStackBb={100} actionBeforeHero={[]} />,
+    )
+    expect(row2Offset(html, heroPosition)).toBe(ROW2_TOP_OFFSET_PX)
+  })
+
+  it.each(['FOLD', 'CALL', 'CHECK', 'RAISE', '3-BET', 'ALL-IN'])(
+    'action label "%s" never changes Row 2\'s vertical offset from Row 1, regardless of text length',
+    (label) => {
+      // 3-BET/ALL-IN only ever render via deriveCenterStatus/actionVerb text,
+      // not directly settable per-seat, so drive them via realistic action
+      // sequences that produce each exact label on CO's own Row 2.
+      const actionBeforeHeroByLabel: Record<string, string[]> = {
+        FOLD: ['CO folds'],
+        CALL: ['UTG raises to 2.3bb', 'CO calls'],
+        CHECK: ['CO checks'],
+        RAISE: ['CO raises to 2.3bb'],
+        '3-BET': ['UTG raises to 2.3bb', 'CO raises to 8bb'],
+        'ALL-IN': ['CO raises all-in to 40bb'],
+      }
+      const html = renderToStaticMarkup(
+        <PreflopTable
+          tableSize={9}
+          heroPosition="BTN"
+          effectiveStackBb={100}
+          actionBeforeHero={actionBeforeHeroByLabel[label]}
+        />,
+      )
+      expect(row2Offset(html, 'CO'), `expected CO's Row 2 group for action "${label}"`).toBe(ROW2_TOP_OFFSET_PX)
+    },
+  )
+
+  it('CO specifically (the reported case): position and action render with the centralized offset, not touching', () => {
+    const html = renderToStaticMarkup(
+      <PreflopTable
+        tableSize={9}
+        heroPosition="BTN"
+        effectiveStackBb={100}
+        actionBeforeHero={['UTG folds', 'HJ folds', 'CO raises to 2.3bb']}
+      />,
+    )
+    expect(html).toContain('aria-label="CO, RAISE"')
+    expect(row2Offset(html, 'CO')).toBe(ROW2_TOP_OFFSET_PX)
+    expect(ROW2_TOP_OFFSET_PX).toBeGreaterThanOrEqual(12) // a real, deliberate gap — not the old razor-thin one
   })
 })
 

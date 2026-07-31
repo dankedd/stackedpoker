@@ -20,6 +20,10 @@ interface MultiActionRangeRevealProps {
   yourAssignments: Record<string, MultiRangeAction>
   chart: MultiActionChartLike
   className?: string
+  /** Hand classes the learner already saw in this lesson's Predict/decision_spot puzzles —
+   *  rung on the Baseline Strategy grid so the student can connect each puzzle hand back to
+   *  where it sits inside the full range, without touching that hand's color. */
+  puzzleHands?: string[]
 }
 
 /**
@@ -31,7 +35,7 @@ interface MultiActionRangeRevealProps {
  * cells are `{ hand, actions: Partial<Record<string, number>> }` — both the MTT
  * RFI charts and the 3-bet-response charts satisfy this shape.
  */
-export function MultiActionRangeReveal({ yourAssignments, chart, className }: MultiActionRangeRevealProps) {
+export function MultiActionRangeReveal({ yourAssignments, chart, className, puzzleHands }: MultiActionRangeRevealProps) {
   // "Your Strategy" is the learner's simplified single-action-per-hand paint — the
   // input side stays simple by design. "Baseline Strategy" is the AUTHORITATIVE
   // reveal and must show the book's full mixed-frequency strategy, never collapsed
@@ -58,9 +62,21 @@ export function MultiActionRangeReveal({ yourAssignments, chart, className }: Mu
         </div>
         <div className="space-y-1.5">
           <p className="text-center text-[11px] font-semibold text-foreground/80">Baseline Strategy</p>
-          <PokerRangeGrid range={bookRangeHands} mode="strategy" strategies={bookStrategies} size="compact" />
+          <PokerRangeGrid
+            range={bookRangeHands}
+            mode="strategy"
+            strategies={bookStrategies}
+            size="compact"
+            highlightHand={puzzleHands}
+          />
         </div>
       </RangeComparisonLayout>
+
+      {puzzleHands && puzzleHands.length > 0 && (
+        <p className="text-center text-[11px] text-muted-foreground/50">
+          Ringed hands are the ones you saw in this lesson&apos;s puzzles — see where they land inside the full range.
+        </p>
+      )}
 
       {mixedCells.length > 0 && (
         <div className="space-y-1.5">

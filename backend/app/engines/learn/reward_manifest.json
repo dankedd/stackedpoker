@@ -797,38 +797,29 @@
       }
     },
     "someone-opened": {
-      "xp_reward": 170,
+      "xp_reward": 150,
       "steps": {
         "so-s1": 8,
         "so-s2": 6,
         "so-s3": 12,
         "so-s4": 8,
-        "so-s5": 8,
         "so-s6": 8,
-        "so-s7a": 6,
-        "so-s7b": 6,
-        "so-s7c": 6,
-        "so-s7d": 8,
         "so-s8": 10
       }
     },
-    "the-price": {
-      "xp_reward": 180,
+    "defending-as-hj": {
+      "xp_reward": 200,
       "steps": {
-        "tp-s1": 8,
-        "tp-s2": 14,
-        "tp-s3": 10,
-        "tp-s4": 10,
-        "tp-s5": 8,
-        "tp-s6": 8,
-        "tp-s7": 10,
-        "tp-s8a": 8,
-        "tp-s8b": 8,
-        "tp-s8c": 8
+        "hj-s1": 6,
+        "hj-s2": 8,
+        "hj-s3": 8,
+        "hj-s4": 8,
+        "hj-s5": 30,
+        "hj-s6": 6
       }
     },
-    "realizing-equity": {
-      "xp_reward": 190,
+    "defending-as-co": {
+      "xp_reward": 220,
       "steps": {
         "re-s1": 8,
         "re-s2": 8,
@@ -841,11 +832,13 @@
         "re-s8b": 6,
         "re-s8c": 6,
         "re-s8d": 6,
-        "re-s9": 20
+        "re-s9": 10,
+        "co-s-build": 30,
+        "co-s-review": 6
       }
     },
     "the-big-blind-discount": {
-      "xp_reward": 200,
+      "xp_reward": 280,
       "steps": {
         "bbd-s1": 6,
         "bbd-s2": 10,
@@ -869,11 +862,30 @@
         "bbd-s8m": 8,
         "bbd-s8n": 8,
         "bbd-s8o": 8,
-        "bbd-s8p": 8
+        "bbd-s8p": 8,
+        "bb-s-build": 34,
+        "bb-s-review": 6
+      }
+    },
+    "position-changes-everything-defense": {
+      "xp_reward": 220,
+      "steps": {
+        "dip-s1": 6,
+        "dip-s2": 8,
+        "dip-s3": 8,
+        "dip-s4": 10,
+        "dip-s6": 8,
+        "dip-s7": 8,
+        "dip-s8a-action": 6,
+        "dip-s8a-reason": 6,
+        "dip-s8b-action": 6,
+        "dip-s8b-reason": 6,
+        "btn-s-build": 30,
+        "btn-s-review": 6
       }
     },
     "the-small-blind-problem": {
-      "xp_reward": 190,
+      "xp_reward": 220,
       "steps": {
         "sbp-s1": 8,
         "sbp-s2": 10,
@@ -883,27 +895,13 @@
         "sbp-s6": 12,
         "sbp-s7": 18,
         "sbp-s8a": 8,
-        "sbp-s8b": 10
-      }
-    },
-    "position-changes-everything-defense": {
-      "xp_reward": 190,
-      "steps": {
-        "dip-s1": 6,
-        "dip-s2": 8,
-        "dip-s3": 8,
-        "dip-s4": 10,
-        "dip-s5": 10,
-        "dip-s6": 8,
-        "dip-s7": 8,
-        "dip-s8a-action": 6,
-        "dip-s8a-reason": 6,
-        "dip-s8b-action": 6,
-        "dip-s8b-reason": 6
+        "sbp-s8b": 10,
+        "sb-s-build": 30,
+        "sb-s-review": 6
       }
     },
     "same-hand-different-stack": {
-      "xp_reward": 210,
+      "xp_reward": 230,
       "steps": {
         "shd-s1": 8,
         "shd-s2": 6,
@@ -911,6 +909,7 @@
         "shd-s4": 6,
         "shd-s5": 7,
         "shd-s6": 12,
+        "shd-s6b": 12,
         "shd-s7": 10,
         "shd-s8a": 6,
         "shd-s8b": 6,
@@ -936,7 +935,8 @@
         "rad-s8b": 16,
         "rad-s9a": 22,
         "rad-s9b": 8,
-        "rad-s9c": 8
+        "rad-s9c": 8,
+        "rad-s10": 22
       }
     },
     "defense-room": {

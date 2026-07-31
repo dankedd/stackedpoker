@@ -206,6 +206,15 @@ export interface LessonStep {
   players_behind?: number
   /** Action already taken before Hero, in order, e.g. ["UTG folds", "HJ folds"]. */
   action_before_hero?: string[]
+  /** Which canonical chart family the post-answer range reveal (see `DecisionSpotRangeReveal`)
+   *  should resolve `hero_position`/`villain_position`/`hero_hand`/`effective_stack_bb` against.
+   *  Omit (or `'defend'`) for the original Module 5 behavior — Hero as the one facing an open,
+   *  resolved by `defendRangeReveal.ts`. `'3bet'` resolves Hero as the 3-bettor against
+   *  `villain_position`'s open via `threebetRangeReveal.ts` (Module 4, "The 3-Bet"). Both funnel
+   *  into the same `DecisionSpotRangeReveal` shape and the same `RangeRevealCard`/`PokerRangeGrid`
+   *  renderer — adding a future direction (e.g. facing-a-3-bet for Module 6, 4-betting for Module 7)
+   *  means adding one more resolver + one more value here, never a new viewer. */
+  range_reveal_direction?: 'defend' | '3bet'
   /** Paired with `scenario_b`: the question compares two distinct poker states
    *  (two opener positions, two stack depths, two action sequences, ...), so
    *  `decision_spot`/`table_decision` render a ScenarioComparison switcher —
@@ -272,9 +281,13 @@ export interface LessonStep {
   //    facing-a-3-bet response lab) — range_build_multi only ──
   /** Which chart registry `range_build_multi_chart` resolves against. 'mtt_rfi' (default) reads
    *  MTT_RFI_CHARTS (raise/limp/jam/fold). 'threebet_response' reads THREEBET_RESPONSE_CHARTS
-   *  ('4bet'/call/fold) — see threebetResponseBaselines.ts. Every existing lesson omits this
-   *  field and keeps its current 'mtt_rfi' behavior unchanged. */
-  range_build_multi_domain?: 'mtt_rfi' | 'threebet_response'
+   *  ('4bet'/call/fold) — see threebetResponseBaselines.ts. 'defend_response' reads
+   *  DEFEND_RESPONSE_CHARTS ('3bet'/'jam'/call/fold) — see defendResponseBaselines.ts (Module 5's
+   *  HJ/CO/BTN/SB defending-an-open charts). 'bb_defense_complete' reads BB_DEFENSE_COMPLETE_100BB
+   *  (bbDefenseComplete.ts) — BB's pixel-exact, genuinely mixed-frequency 100bb complete strategy;
+   *  `range_build_multi_chart` is a BBOpenDefenseMatchup key like 'BB_vs_BTN'. Every existing
+   *  lesson omits this field and keeps its current 'mtt_rfi' behavior unchanged. */
+  range_build_multi_domain?: 'mtt_rfi' | 'threebet_response' | 'defend_response' | 'bb_defense_complete'
   /** Chart key into whichever registry `range_build_multi_domain` selects, e.g. 'UTG1_RFI_25BB'
    *  or 'BTN_vs_BB_3bet_response'. The single source of truth this step is graded against —
    *  lessons, drills, and the Lab all resolve through this same chart so an answer can never
@@ -282,8 +295,8 @@ export interface LessonStep {
   range_build_multi_chart?: string
   /** Which action chips are offered, in order — lets earlier lessons omit 'limp'/'jam' until
    *  they're introduced. Defaults to whichever actions actually appear in the target chart. */
-  range_build_multi_actions?: ('raise' | 'limp' | 'jam' | 'fold' | '4bet' | 'call')[]
-  range_build_multi_prefilled?: Record<string, 'raise' | 'limp' | 'jam' | 'fold' | '4bet' | 'call'>
+  range_build_multi_actions?: ('raise' | 'limp' | 'jam' | 'fold' | '4bet' | 'call' | '3bet')[]
+  range_build_multi_prefilled?: Record<string, 'raise' | 'limp' | 'jam' | 'fold' | '4bet' | 'call' | '3bet'>
   /** Lookup key into MTT_RFI_FOUNDATIONS (mttRfiRanges.ts) or THREEBET_RESPONSE_FOUNDATIONS
    *  (threebetResponseRanges.ts), per `range_build_multi_domain` — analogous to `range_prefilled_key`. */
   range_build_multi_prefilled_key?: string
@@ -297,6 +310,11 @@ export interface LessonStep {
    *  this chart's built strategy, edit only what differs). Grading is unaffected — always the
    *  full submission vs. `range_build_multi_chart`. */
   range_build_multi_transform_from_chart?: string
+  /** range_build_multi only, shown on the post-submit diff reveal — hand classes the learner
+   *  already saw in this lesson's earlier decision_spot puzzles, so the reveal can ring every
+   *  one of them on the Baseline Strategy grid (Module 5's "connect the puzzle hands back to
+   *  the full range" requirement). Purely a display hint — never affects grading. */
+  range_build_multi_puzzle_hands?: string[]
   // ── Table decision (Module 3 structural redesign) — table_decision only ──
   /** MTT_RFI_CHARTS key — the sole grading source, mirroring range_build_multi_chart's convention. */
   table_decision_chart?: string
@@ -477,8 +495,11 @@ export interface LessonStep {
   stack_depth_morph_show_actions?: boolean
   stack_depth_morph_prompt?: string
   /** Which baseline dataset to morph. Defaults to 'rfi' (opening ranges, preflopBaselines.ts).
-   *  'threebet_defense' reads threebetBaselines.ts; 'defend' reads defendBaselines.ts — both keyed by `stack_depth_morph_key`. */
-  stack_depth_morph_dataset?: 'rfi' | 'threebet_defense' | 'defend'
+   *  'threebet_defense' reads threebetBaselines.ts; 'defend' reads defendBaselines.ts (both keyed by
+   *  `stack_depth_morph_key`); 'defend_response' reads DEFEND_RESPONSE_CHARTS (defendResponseBaselines.ts)
+   *  — a genuine complete_strategy, keyed by `stack_depth_morph_key` as `${heroPosition}_vs_${villainPosition}`
+   *  (e.g. 'SB_vs_BTN'), sampled at 15/40/60bb for this component's 3-stop slider. */
+  stack_depth_morph_dataset?: 'rfi' | 'threebet_defense' | 'defend' | 'defend_response'
   /** threebet_defense/defend dataset lookup key, e.g. 'BB_vs_BTN'. Ignored for the 'rfi' dataset. */
   stack_depth_morph_key?: string
   // Dead money visualizer — ante on/off
@@ -702,8 +723,14 @@ export interface LessonStep {
   // classifier (never hand-authored, never an equity number) — `range_collision_a/b`
   // only supply the actual hand LIST, not per-hand strength.
   range_collision_mode?: 'reveal' | 'predict' | 'morph' | 'archaeology'
-  range_collision_a?: { label: string; range: string[]; source_note?: string }
-  range_collision_b?: { label: string; range: string[]; source_note?: string }
+  /** Optional: real per-hand preflop action frequency (0-1) for hands in `range` that don't
+   *  always take the range-defining action — e.g. a hand that only calls 20% of the time and
+   *  folds/3-bets the rest. Drives PokerRangeGrid's mixed-frequency shading so a "sometimes"
+   *  hand never renders identically to a "always" hand. A hand present in `range` but absent
+   *  from `frequencyMap` (or `frequencyMap` omitted entirely) renders as pure/always — never
+   *  fabricated, only ever real sourced frequency data. */
+  range_collision_a?: { label: string; range: string[]; source_note?: string; frequencyMap?: Record<string, number> }
+  range_collision_b?: { label: string; range: string[]; source_note?: string; frequencyMap?: Record<string, number> }
   /** Book-cited preflop range-vs-range equity split, shown in 'reveal'/'archaeology' modes. */
   range_collision_preflop_equity?: { a: number; b: number }
   /** Book-cited postflop range-vs-range equity split on `board`. */
@@ -743,7 +770,9 @@ export interface LessonStep {
   range_xray_prompt?: string
   /** Optional: a mini range grid rendered beneath the bars, click-a-bucket-to-highlight (via the
    *  same live card-logic classifier as range_collision — never fabricated per-hand equity). */
-  range_xray_grid?: { label: string; range: string[] }
+  /** See `range_collision_a`'s `frequencyMap` doc — same real-frequency-only, mixed-strategy
+   *  shading, applied to this mini grid. */
+  range_xray_grid?: { label: string; range: string[]; frequencyMap?: Record<string, number> }
   range_xray_board?: string[]
   range_xray_source_ref?: string
   // ── Blockers & Card Removal (Module 9) ──────────────────────────────────────
@@ -1088,17 +1117,19 @@ export interface ReasoningStageResult {
   detail?: string
 }
 
-/** Resolved (never learner-facing-computed) full Hero response strategy shown after a
- *  DEFEND decision_spot is answered — see `defendRangeReveal.ts` for how this is derived.
+/** Resolved (never learner-facing-computed) full Hero strategy shown after a decision_spot is
+ *  answered — see `defendRangeReveal.ts` (Hero facing an open) and `threebetRangeReveal.ts`
+ *  (Hero as the 3-bettor), dispatched by `step.range_reveal_direction` in evaluator.ts.
  *  Purely presentational: built from `step` alone, independent of grading, so its presence
  *  can never influence `quality`/`score`/`xp_earned` above. */
 export interface DecisionSpotRangeReveal {
   /** Hand -> action-frequency mix, ready for `PokerRangeGrid`'s `strategy` mode. */
   strategies: RangeStrategyMap
-  /** What `strategies` actually proves — see `RangeSemantics` in rangeStrategy.ts. Always
-   *  `{ kind: 'action_slice', action: 'call' }` for a defend reveal: defendBaselines.ts only
-   *  ever tracks BB's calling frequency, never a complete fold/call/(3bet) strategy, so a hand
-   *  absent from `strategies` must render as the honest "untracked" bucket, never fold. */
+  /** What `strategies` actually proves — see `RangeSemantics` in rangeStrategy.ts. E.g.
+   *  `{ kind: 'action_slice', action: 'call' }` for a calling-frequency-only defend reveal, or
+   *  `{ kind: 'action_slice', action: '3bet' }` for a 3-betting-frequency-only reveal — either
+   *  way, a hand absent from `strategies` must render as the honest "untracked" bucket, never
+   *  fold, unless `kind` is `'complete_strategy'` (every action genuinely known). */
   strategySemantics: RangeSemantics
   /** Hand list backing the resolved chart (required by `PokerRangeGrid`'s `range` prop;
    *  unused for coloring in `strategy` mode, which reads `strategies` instead). */
@@ -1132,9 +1163,10 @@ export interface StepResult {
    *  answer was fully correct, or when the step's own component already shows a
    *  richer item-by-item reveal. */
   answer_reveal?: AnswerReveal
-  /** Post-answer full defending-range reveal for DEFEND decision_spot steps — see
-   *  `DecisionSpotRangeReveal`. Undefined whenever the step isn't a defend spot, or the
-   *  canonical data can't back one (never fabricated to fill the gap). */
+  /** Post-answer full-range reveal (defending range or 3-betting range, see
+   *  `step.range_reveal_direction`) for decision_spot steps — see `DecisionSpotRangeReveal`.
+   *  Undefined whenever the step's scenario can't resolve to one, or the canonical data can't
+   *  back it (never fabricated to fill the gap). */
   range_reveal?: DecisionSpotRangeReveal
   // Evaluation pipeline metadata — always present from v2 onwards
   evaluation_source: EvaluationSource

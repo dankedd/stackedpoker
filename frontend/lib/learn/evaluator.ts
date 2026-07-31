@@ -16,8 +16,12 @@ import { RANGE_TARGETS } from './ranges'
 import { MTT_RFI_CHARTS, type MttAction, type MttRfiChart } from './mttRfiBaselines'
 import { THREEBET_RESPONSE_CHARTS, type ThreebetResponseAction, type ThreebetResponseChart } from './threebetResponseBaselines'
 import { diagnoseRangeShape } from './threebetResponseRanges'
+import { DEFEND_RESPONSE_CHARTS, type DefendResponseAction, type DefendResponseChart } from './defendResponseBaselines'
+import { diagnoseDefendRangeShape } from './defendResponseRanges'
+import { BB_DEFENSE_COMPLETE_100BB, type BBOpenDefenseMatchup } from './bbDefenseComplete'
 import { evaluateTableDecision } from './tableDecisionEngine'
 import { resolveDefendRangeReveal } from './defendRangeReveal'
+import { resolveThreebetRangeReveal } from './threebetRangeReveal'
 import {
   evOfBetting, evOfChecking, bestResponse, isIndifferent, testUnilateralDeviation,
   clairvoyanceEV, clairvoyanceEquilibrium, type ActionEV,
@@ -555,6 +559,33 @@ function evalThreebetResponseRange(
       : {}
 
   const { accuracy, messages } = diagnoseRangeShape(chart, assignments)
+  const rawScore = Math.round(accuracy * 100)
+  const toleranceFraction = (tolerance ?? 5) / 100
+  const feedback = messages.join(' ')
+
+  if (accuracy >= 1 - toleranceFraction) {
+    return { quality: 'perfect', score: 100, feedback: `Excellent — matches the baseline strategy's shape. ${feedback}`, ev_loss_bb: 0 }
+  }
+  if (accuracy >= 0.82 - toleranceFraction) {
+    return { quality: 'good', score: Math.max(QUALITY_SCORES.good, rawScore), feedback, ev_loss_bb: 0 }
+  }
+  if (accuracy >= 0.60 - toleranceFraction) {
+    return { quality: 'acceptable', score: Math.max(QUALITY_SCORES.acceptable, rawScore), feedback, ev_loss_bb: 0 }
+  }
+  return { quality: 'mistake', score: Math.max(20, rawScore), feedback, ev_loss_bb: 0 }
+}
+
+function evalDefendResponseRange(
+  chart: DefendResponseChart,
+  tolerance: number,
+  response: unknown,
+): EvalCore {
+  const assignments: Record<string, DefendResponseAction> =
+    response && typeof response === 'object' && !Array.isArray(response)
+      ? (response as Record<string, DefendResponseAction>)
+      : {}
+
+  const { accuracy, messages } = diagnoseDefendRangeShape(chart, assignments)
   const rawScore = Math.round(accuracy * 100)
   const toleranceFraction = (tolerance ?? 5) / 100
   const feedback = messages.join(' ')
@@ -1756,6 +1787,24 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
         }
         return evalThreebetResponseRange(chart, step.range_build_multi_tolerance ?? 5, response)
       }
+      if (step.range_build_multi_domain === 'defend_response') {
+        const chart = DEFEND_RESPONSE_CHARTS[step.range_build_multi_chart ?? '']
+        if (!chart) {
+          return { quality: 'good', score: 80, feedback: 'Range recorded.', ev_loss_bb: 0 }
+        }
+        return evalDefendResponseRange(chart, step.range_build_multi_tolerance ?? 5, response)
+      }
+      if (step.range_build_multi_domain === 'bb_defense_complete') {
+        const map = BB_DEFENSE_COMPLETE_100BB[(step.range_build_multi_chart ?? '') as BBOpenDefenseMatchup]
+        if (!map) {
+          return { quality: 'good', score: 80, feedback: 'Range recorded.', ev_loss_bb: 0 }
+        }
+        const chart: MttRfiChart = {
+          key: step.range_build_multi_chart ?? '',
+          cells: Object.entries(map).map(([hand, actions]) => ({ hand, actions: actions as Record<MttAction, number> })),
+        } as MttRfiChart
+        return evalMultiActionRange(chart, step.range_build_multi_tolerance ?? 5, response)
+      }
       const chart = MTT_RFI_CHARTS[step.range_build_multi_chart ?? '']
       if (!chart) {
         return { quality: 'good', score: 80, feedback: 'Range recorded.', ev_loss_bb: 0 }
@@ -2137,7 +2186,10 @@ export function evaluateStepLocally(
     reasoning_stages: core.reasoning_stages,
     // Resolved from `step` alone, independent of `core`/grading — see
     // DecisionSpotRangeReveal's doc comment: this can never affect score/quality/xp_earned.
-    range_reveal: resolveDefendRangeReveal(step),
+    // `range_reveal_direction` picks which chart family Hero's seat is read against;
+    // omitted/'defend' preserves the original Module 5 behavior unchanged.
+    range_reveal:
+      step.range_reveal_direction === '3bet' ? resolveThreebetRangeReveal(step) : resolveDefendRangeReveal(step),
     xp_earned,
     level_before,
     level_after,

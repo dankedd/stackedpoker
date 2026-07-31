@@ -134,6 +134,34 @@ describe('StepFeedback — action_slice reveal still shows "Other action", never
   })
 })
 
+describe('StepFeedback — action_slice(3bet) reveal (Module 4 3-betting range) phrases the caption generically', () => {
+  const result = baseResult({
+    range_reveal: fixtureReveal({
+      strategies: { A5s: { '3bet': 1 } },
+      strategySemantics: { kind: 'action_slice', action: '3bet' },
+      range: ['A5s'],
+      highlightHand: 'A5s',
+      heroPosition: 'BTN',
+      villainPosition: 'CO',
+      label: 'BTN 3-BET RANGE vs CO OPEN',
+      subtitle: "See where A5s sits in Hero's 3-betting frequency.",
+    }),
+  })
+  const html = renderToStaticMarkup(
+    <StepFeedback result={result} onContinue={noop} onRetry={noop} isLast={false} />,
+  )
+
+  it('renders the 3-BET RANGE label, never CALLING RANGE/DEFENSE', () => {
+    expect(html).toContain('BTN 3-BET RANGE vs CO OPEN')
+    expect(html).not.toMatch(/CALLING RANGE|DEFENSE/)
+  })
+
+  it('the "not necessarily a fold" caption names the 3-bet-only chart, never hardcoded "calling"', () => {
+    expect(html).toMatch(/3-bet-only chart/i)
+    expect(html).not.toMatch(/calling-range-only chart/i)
+  })
+})
+
 describe('StepFeedback — range_reveal never changes XP rendering', () => {
   it('shows the identical XP text whether or not range_reveal is present', () => {
     const withReveal = renderToStaticMarkup(

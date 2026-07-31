@@ -2,6 +2,7 @@
 
 import type { DecisionSpotRangeReveal } from '@/lib/learn/types'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
+import { actionLabel } from '@/lib/learn/actionStyles'
 
 interface RangeRevealCardProps {
   reveal: DecisionSpotRangeReveal
@@ -33,8 +34,8 @@ export function RangeRevealCard({ reveal }: RangeRevealCardProps) {
       />
       {reveal.strategySemantics.kind === 'action_slice' && (
         <p className="text-center text-[9px] text-muted-foreground/30">
-          &quot;Other action&quot; = this hand&apos;s remaining frequency isn&apos;t split out in this
-          calling-range-only chart — it is not necessarily a fold.
+          &quot;Other action&quot; = this hand&apos;s remaining frequency isn&apos;t split out in this{' '}
+          {actionLabel(reveal.strategySemantics.action).toLowerCase()}-only chart — it is not necessarily a fold.
         </p>
       )}
     </div>

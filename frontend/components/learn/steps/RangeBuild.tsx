@@ -17,7 +17,7 @@ import {
   type RangeSelectionState,
 } from '@/lib/learn/rangePrefill'
 import { RANKS, HAND_GRID, comboCount, TOTAL_COMBOS } from '@/lib/learn/handGrid'
-import { formatBb } from '@/components/poker/tableTokens'
+import { ScenarioMeta } from '@/components/poker/ScenarioMeta'
 
 // Splits an instruction note into a strong lead sentence and a more muted
 // follow-up, purely for presentation — the underlying copy is untouched.
@@ -198,21 +198,7 @@ export function RangeBuild({ step, onAnswer, disabled = false }: RangeBuildProps
     >
       {/* Context / instruction */}
       <div className="space-y-2.5">
-        {/* Scenario meta — position + effective stack depth, generic to any
-            range_build step that authors these fields (never fabricated: a
-            step without them simply renders nothing here). Opening ranges
-            depend heavily on stack depth, so this is shown prominently at
-            the top of the exercise, alongside the narrative — same "NNBB
-            EFFECTIVE" terminology PreflopTable's own status bar uses. */}
-        {(step.hero_position || step.effective_stack_bb != null) && (
-          <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.08em] text-violet-300/80">
-            {step.hero_position && <span>{step.hero_position}</span>}
-            {step.hero_position && step.effective_stack_bb != null && (
-              <span aria-hidden className="text-muted-foreground/30">·</span>
-            )}
-            {step.effective_stack_bb != null && <span>{formatBb(step.effective_stack_bb)}BB EFFECTIVE</span>}
-          </div>
-        )}
+        <ScenarioMeta heroPosition={step.hero_position} effectiveStackBb={step.effective_stack_bb} />
 
         {step.narrative && <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>}
 

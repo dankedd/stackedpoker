@@ -3,8 +3,10 @@ import { equityBucket } from '../flopClassifier'
 import {
   CO_OPEN_RANGE_40BB,
   CO_OPEN_RANGE_40BB_PCT,
+  CO_OPEN_FREQUENCY_40BB,
   BB_CALL_RANGE_40BB_ILLUSTRATIVE,
   BB_CALL_RANGE_40BB_PCT,
+  BB_CALL_RANGE_40BB_FREQUENCY,
   deriveIllustrativeWidenedRange,
   LESSON1_SCENARIO,
   A76R_SCENARIO,
@@ -97,6 +99,37 @@ describe('A76r / 654r scenarios — exact figures + strong-bucket-only numeric d
   it('neither scenario claims a Good/Weak/Trash exact number beyond Strong', () => {
     expect((A76R_SCENARIO as Record<string, unknown>).goodBucket).toBeUndefined()
     expect((CS_654R_SCENARIO as Record<string, unknown>).goodBucket).toBeUndefined()
+  })
+})
+
+describe('CO_OPEN_FREQUENCY_40BB / BB_CALL_RANGE_40BB_FREQUENCY — real per-hand mix frequencies for UI shading', () => {
+  it('every hand in CO_OPEN_RANGE_40BB has a frequency entry, and every frequency is in (0, 1]', () => {
+    for (const hand of CO_OPEN_RANGE_40BB) {
+      expect(CO_OPEN_FREQUENCY_40BB[hand]).toBeGreaterThan(0)
+      expect(CO_OPEN_FREQUENCY_40BB[hand]).toBeLessThanOrEqual(1)
+    }
+  })
+  it('CO_OPEN_FREQUENCY_40BB preserves real transcribed mixed frequencies (not collapsed to pure membership)', () => {
+    expect(CO_OPEN_FREQUENCY_40BB['22']).toBeCloseTo(0.15) // matches the chart's own transcribed cell
+    expect(CO_OPEN_FREQUENCY_40BB['K8o']).toBeCloseTo(0.25)
+    expect(CO_OPEN_FREQUENCY_40BB['AA']).toBe(1) // a genuinely pure hand stays pure
+  })
+  it('every hand in BB_CALL_RANGE_40BB_ILLUSTRATIVE has a frequency entry, and every frequency is in (0, 1]', () => {
+    for (const hand of BB_CALL_RANGE_40BB_ILLUSTRATIVE) {
+      expect(BB_CALL_RANGE_40BB_FREQUENCY[hand]).toBeGreaterThan(0)
+      expect(BB_CALL_RANGE_40BB_FREQUENCY[hand]).toBeLessThanOrEqual(1)
+    }
+  })
+  it('BB_CALL_RANGE_40BB_FREQUENCY preserves the real 100bb-cash core\'s mixed calling frequencies, e.g. AA calls only 20% (mostly 3-bets instead, tracked separately)', () => {
+    expect(BB_CALL_RANGE_40BB_FREQUENCY['AA']).toBeCloseTo(0.2)
+    expect(BB_CALL_RANGE_40BB_FREQUENCY['AKs']).toBeCloseTo(0.3)
+  })
+  it('a hand added only by the illustrative widening step (no real per-hand source) defaults to pure (1), never a fabricated fraction', () => {
+    // '72o' is far outside the real 100bb-cash BB-vs-CO calling core; if it's present at all
+    // in the widened range it can only be there via the deterministic widening step.
+    if (BB_CALL_RANGE_40BB_ILLUSTRATIVE.includes('72o')) {
+      expect(BB_CALL_RANGE_40BB_FREQUENCY['72o']).toBe(1)
+    }
   })
 })
 

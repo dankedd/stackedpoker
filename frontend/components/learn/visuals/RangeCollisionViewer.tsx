@@ -10,6 +10,10 @@ import { classifyRangeVsBoard, type HandBoardCategory } from '@/lib/learn/handBo
 export interface RangeCollisionSide {
   label: string
   range: string[]
+  /** Real per-hand action frequency (0-1) for hands that don't always take the range-defining
+   *  action — see `PokerRangeGrid`'s `frequencyMap` doc. Optional; omitting it renders exactly
+   *  as before (every in-range hand shown as "always"). */
+  frequencyMap?: Record<string, number>
 }
 
 interface RangeCollisionViewerProps {
@@ -50,14 +54,14 @@ export function RangeCollisionViewer({ a, b, board, emphasizeCategories, classNa
   const gridA = (
     <div className="min-w-0 space-y-1.5">
       <p className="text-center text-xs font-bold text-violet-300">{a.label}</p>
-      <PokerRangeGrid range={a.range} mode="category" categoryMap={categoryMapA} categoryLegend={emphasizeCategories} size="compact" />
+      <PokerRangeGrid range={a.range} mode="category" categoryMap={categoryMapA} categoryLegend={emphasizeCategories} frequencyMap={a.frequencyMap} size="compact" />
     </div>
   )
 
   const gridB = (
     <div className="min-w-0 space-y-1.5">
       <p className="text-center text-xs font-bold text-blue-300">{b.label}</p>
-      <PokerRangeGrid range={b.range} mode="category" categoryMap={categoryMapB} categoryLegend={emphasizeCategories} size="compact" />
+      <PokerRangeGrid range={b.range} mode="category" categoryMap={categoryMapB} categoryLegend={emphasizeCategories} frequencyMap={b.frequencyMap} size="compact" />
     </div>
   )
 

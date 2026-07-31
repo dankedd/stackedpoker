@@ -4,10 +4,13 @@
  * Per-seat rail label (position, fold state, action verb, stack/stack-behind)
  * — extracted out of `PreflopTable`'s per-seat `.map()` body, where this JSX
  * was previously inline, so the playback engine can drive it per-frame
- * without PreflopTable's render function growing further. Rendering is
- * byte-identical to the original inline version when `highlighted` is false
- * and `fadeDurationMs` is omitted (defaults to the original hardcoded 300ms) —
- * this is a pure extraction, not a redesign.
+ * without PreflopTable's render function growing further. Row 1 (the position
+ * label) keeps its original absolute anchor/classes untouched — every
+ * existing rail-position test depends on it landing exactly on the rail
+ * point regardless of content. Rows 2/3 (action/stack) were re-grouped into
+ * one flex column with a real `gap` instead of two independently-guessed
+ * pixel offsets, to fix a reported overlap between the position and action
+ * labels — see the vertical-rhythm constants below.
  *
  * Table-geometry-specific (rail-anchor positioning), so this lives alongside
  * PreflopTable rather than in the generic `components/poker/` primitives
@@ -16,6 +19,23 @@
  */
 import { cn } from '@/lib/utils'
 import { formatBb } from '@/components/poker/tableTokens'
+
+// ── Centralized vertical rhythm for the rail label stack ────────────────────
+// Row 1 (the position label) is vertically CENTERED on the rail point via
+// `-translate-y-1/2`, so its own rendered line box already extends roughly
+// this far below the rail point before anything else can safely start —
+// half of its ~13px-font/extrabold line height. Row 2 previously started at a
+// flat `+ 12px` offset that never accounted for this, leaving only a few
+// pixels of real clearance below row 1's actual glyph box — the cause of the
+// reported CO overlap (structurally present at EVERY seat, not CO-specific;
+// CO's action text just made it visible first). Every gap below is derived
+// from ONE shared constant instead of two independently-guessed pixel values,
+// so the whole stack can be retuned in one place and never drifts out of sync
+// with itself again.
+const ROW1_HALF_HEIGHT_PX = 9
+/** Minimum breathing room between any two adjacent rows in this stack. */
+export const ROW_GAP_PX = 8
+export const ROW2_TOP_OFFSET_PX = ROW1_HALF_HEIGHT_PX + ROW_GAP_PX
 
 export interface PreflopSeatRowProps {
   position: string
@@ -79,49 +99,61 @@ export function PreflopSeatRow({
         </span>
       </span>
 
-      {/* Row 2 — FOLD, the action verb, or (if neither) this seat's own effective
-          stack. A short seat gets a compact amber badge instead of the plain
-          muted text every other seat uses. Mobile hides a folded seat's row 2
-          entirely (dimmed position label only) to cut clutter. */}
-      {!(isMobile && folded) && (folded || hasVerb || seatStackBb != null) && (
-        <span
-          className={cn(
-            'absolute z-10 -translate-x-1/2 text-center whitespace-nowrap transition-opacity',
-            folded
-              ? 'text-[10px] font-semibold text-muted-foreground/40 opacity-35'
-              : hasVerb
-              ? cn('text-[10px] font-semibold', isHero ? 'text-violet-300/90' : 'text-sky-300/80')
-              : !seatIsShortStack && 'text-[10px] font-medium text-muted-foreground/45',
-          )}
-          style={{ left: railPoint.x, top: `calc(${railPoint.y} + 12px)`, transitionDuration: `${fadeDurationMs}ms` }}
-        >
-          {folded ? (
-            'FOLD'
-          ) : hasVerb ? (
-            verbText
-          ) : seatIsShortStack ? (
-            <span
-              className="inline-flex items-center gap-1 rounded-full border border-amber-400/50 bg-amber-400/15 px-1.5 py-[1px] text-[9px] font-black uppercase tracking-wide text-amber-300"
-              title="Short stack"
-            >
-              {formatBb(seatStackBb!)} BB · SHORT
-            </span>
-          ) : (
-            `${formatBb(seatStackBb!)} BB`
-          )}
-        </span>
-      )}
+      {/* Rows 2+3 — FOLD/action-verb/stack, then (only alongside a real action)
+          the stack BEHIND — grouped into ONE flex column so the gap between
+          them is a real, browser-guaranteed `gap`, never a second independently
+          -guessed pixel offset. Positioned ONCE, `ROW2_TOP_OFFSET_PX` below the
+          rail point (derived from row 1's own half-height, not a flat guess) —
+          the actual fix for the reported overlap. A short seat gets a compact
+          amber badge instead of the plain muted text every other seat uses.
+          Mobile hides a folded seat's row 2 entirely (dimmed position label
+          only) to cut clutter. */}
+      {(() => {
+        const showRow2 = !(isMobile && folded) && (folded || hasVerb || seatStackBb != null)
+        const showRow3 = hasVerb && !folded && stackBehindBb != null
+        if (!showRow2 && !showRow3) return null
+        return (
+          <div
+            className="absolute z-10 flex -translate-x-1/2 flex-col items-center"
+            style={{ left: railPoint.x, top: `calc(${railPoint.y} + ${ROW2_TOP_OFFSET_PX}px)`, gap: `${ROW_GAP_PX}px` }}
+          >
+            {showRow2 && (
+              <span
+                className={cn(
+                  'text-center whitespace-nowrap transition-opacity',
+                  folded
+                    ? 'text-[10px] font-semibold text-muted-foreground/40 opacity-35'
+                    : hasVerb
+                    ? cn('text-[10px] font-semibold', isHero ? 'text-violet-300/90' : 'text-sky-300/80')
+                    : !seatIsShortStack && 'text-[10px] font-medium text-muted-foreground/45',
+                )}
+                style={{ transitionDuration: `${fadeDurationMs}ms` }}
+              >
+                {folded ? (
+                  'FOLD'
+                ) : hasVerb ? (
+                  verbText
+                ) : seatIsShortStack ? (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full border border-amber-400/50 bg-amber-400/15 px-1.5 py-[1px] text-[9px] font-black uppercase tracking-wide text-amber-300"
+                    title="Short stack"
+                  >
+                    {formatBb(seatStackBb!)} BB · SHORT
+                  </span>
+                ) : (
+                  `${formatBb(seatStackBb!)} BB`
+                )}
+              </span>
+            )}
 
-      {/* Row 3 — stack BEHIND, only alongside a real action, always labeled
-          "behind" so it can never read as the raise/bet amount itself. */}
-      {hasVerb && !folded && stackBehindBb != null && (
-        <span
-          className="absolute z-10 -translate-x-1/2 text-center whitespace-nowrap text-[9px] font-medium text-muted-foreground/40"
-          style={{ left: railPoint.x, top: `calc(${railPoint.y} + 24px)` }}
-        >
-          {formatBb(stackBehindBb)} BB behind
-        </span>
-      )}
+            {showRow3 && (
+              <span className="text-center whitespace-nowrap text-[9px] font-medium text-muted-foreground/40">
+                {formatBb(stackBehindBb!)} BB behind
+              </span>
+            )}
+          </div>
+        )
+      })()}
     </div>
   )
 }

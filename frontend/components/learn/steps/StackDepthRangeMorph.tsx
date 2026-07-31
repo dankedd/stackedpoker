@@ -9,9 +9,21 @@ import {
 } from '@/lib/learn/preflopBaselines'
 import { THREEBET_DEEP, THREEBET_MEDIUM, THREEBET_SHALLOW, THREEBET_SEMANTICS, type ThreebetMatchup } from '@/lib/learn/threebetBaselines'
 import { resolveDefendEntries, DEFEND_SEMANTICS, type DefendMatchup } from '@/lib/learn/defendBaselines'
+import { DEFEND_RESPONSE_CHARTS } from '@/lib/learn/defendResponseBaselines'
+import { chartToStrategyMap as defendResponseChartToStrategyMap, chartHandList as defendResponseChartHandList } from '@/lib/learn/defendResponseRanges'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 import { orderStepOptions } from '@/lib/learn/interactionSafety'
-import { rangeEntriesToStrategyMap, type RangeSemantics } from '@/lib/learn/rangeStrategy'
+import { rangeEntriesToStrategyMap, type RangeSemantics, type RangeStrategyMap } from '@/lib/learn/rangeStrategy'
+
+/** 'defend_response' (DEFEND_RESPONSE_CHARTS) is a genuine complete_strategy at 4
+ *  discrete depths (15/25/40/60bb), not the 3-world shallow/medium/deep bucketing
+ *  every other dataset here uses — this component's slider still only has 3 stops,
+ *  so 25bb is skipped here (still available in the registry for other uses). */
+const DEFEND_RESPONSE_WORLD_BB: Record<'shallow' | 'medium' | 'deep', 15 | 40 | 60> = {
+  shallow: 15,
+  medium: 40,
+  deep: 60,
+}
 
 interface StackDepthRangeMorphProps {
   step: LessonStep
@@ -56,6 +68,12 @@ export function StackDepthRangeMorph({ step, onAnswer, disabled = false }: Stack
 
   const threebetKey = step.stack_depth_morph_key as ThreebetMatchup | undefined
   const defendKey = step.stack_depth_morph_key as DefendMatchup | undefined
+  const defendResponseKey = step.stack_depth_morph_key
+
+  const defendResponseChart =
+    dataset === 'defend_response' && defendResponseKey
+      ? DEFEND_RESPONSE_CHARTS[`${defendResponseKey}_${DEFEND_RESPONSE_WORLD_BB[world]}BB`]
+      : undefined
 
   const entries: RangeEntry[] =
     dataset === 'threebet_defense'
@@ -64,6 +82,8 @@ export function StackDepthRangeMorph({ step, onAnswer, disabled = false }: Stack
         : (threebetKey && THREEBET_DEEP[threebetKey]) ?? [])
       : dataset === 'defend'
       ? (defendKey ? resolveDefendEntries(defendKey, world) : [])
+      : dataset === 'defend_response'
+      ? []
       : (world === 'shallow' ? RFI_SHALLOW[position] ?? RFI_MEDIUM[position] ?? []
         : world === 'medium' ? RFI_MEDIUM[position] ?? []
         : RFI_DEEP[position] ?? [])
@@ -79,6 +99,7 @@ export function StackDepthRangeMorph({ step, onAnswer, disabled = false }: Stack
   const headerLabel =
     dataset === 'threebet_defense' ? `${position} 3-betting frequency vs ${villain} open`
     : dataset === 'defend' ? `${position} calling frequency vs ${villain} open`
+    : dataset === 'defend_response' ? `${position} DEFENSE vs ${villain} open`
     : `${position} opening range`
 
   // What each dataset's RangeEntry.freq actually PROVES — read off each
@@ -93,13 +114,21 @@ export function StackDepthRangeMorph({ step, onAnswer, disabled = false }: Stack
   const strategySemantics: RangeSemantics =
     dataset === 'rfi' ? RFI_SEMANTICS
     : dataset === 'defend' ? DEFEND_SEMANTICS
+    : dataset === 'defend_response' ? { kind: 'complete_strategy' }
     : THREEBET_SEMANTICS
-  const strategies = useMemo(
-    () => rangeEntriesToStrategyMap(entries, strategySemantics),
-    [entries, strategySemantics],
+  const strategies: RangeStrategyMap = useMemo(
+    () => (dataset === 'defend_response'
+      ? (defendResponseChart ? defendResponseChartToStrategyMap(defendResponseChart) : {})
+      : rangeEntriesToStrategyMap(entries, strategySemantics)),
+    [dataset, defendResponseChart, entries, strategySemantics],
   )
+  const range = dataset === 'defend_response'
+    ? (defendResponseChart ? defendResponseChartHandList(defendResponseChart) : [])
+    : entriesToHandList(entries)
 
-  const combos = entries.reduce((sum, e) => sum + (e.hand.length === 2 ? 6 : e.hand.endsWith('s') ? 4 : 12) * e.freq, 0)
+  const combos = dataset === 'defend_response'
+    ? range.reduce((sum, h) => sum + (h.length === 2 ? 6 : h.endsWith('s') ? 4 : 12), 0)
+    : entries.reduce((sum, e) => sum + (e.hand.length === 2 ? 6 : e.hand.endsWith('s') ? 4 : 12) * e.freq, 0)
   const pct = ((combos / 1326) * 100).toFixed(1)
 
   return (
@@ -125,7 +154,7 @@ export function StackDepthRangeMorph({ step, onAnswer, disabled = false }: Stack
           <PokerRangeGrid range={[]} mode="three_action" actionMap={RFI_SHALLOW_ACTIONS[position]} />
         ) : (
           <PokerRangeGrid
-            range={entriesToHandList(entries)}
+            range={range}
             mode="strategy"
             strategies={strategies}
             strategySemantics={strategySemantics}

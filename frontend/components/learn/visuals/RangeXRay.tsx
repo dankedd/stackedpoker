@@ -17,7 +17,7 @@ export interface RangeXRayEntry {
 
 interface RangeXRayProps {
   entries: RangeXRayEntry[]
-  grid?: { label: string; range: string[] }
+  grid?: { label: string; range: string[]; frequencyMap?: Record<string, number> }
   board?: string[]
   className?: string
 }
@@ -151,6 +151,7 @@ export function RangeXRay({ entries, grid, board, className }: RangeXRayProps) {
             mode="category"
             categoryMap={categoryMap}
             categoryLegend={emphasized}
+            frequencyMap={grid.frequencyMap}
           />
           <p className="text-center text-[9px] text-muted-foreground/30 mt-1">
             {activeBucket

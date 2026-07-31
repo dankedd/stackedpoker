@@ -32,25 +32,34 @@
  *      entirely (common in Module 5 — the narrative already says "X opens,
  *      Hero is in the BB") are treated as the plain single-open case.
  *
- * TWO DATA SOURCES, deliberately not merged into one (see bbDefenseComplete.ts
+ * THREE DATA SOURCES, deliberately not merged into one (see bbDefenseComplete.ts
  * and defendBaselines.ts's own doc comments for why they never can be):
  *   - `BB_DEFENSE_COMPLETE_100BB` (bbDefenseComplete.ts) — a genuine
  *     `complete_strategy` (fold+call+3bet all known), sourced from Modern
  *     Poker Theory's own solved diagrams, but ONLY valid at exactly 100bb —
  *     preferred whenever the step's `effective_stack_bb` matches that exactly.
- *   - `DEFEND_DEEP/MEDIUM/SHALLOW` (defendBaselines.ts) — calling-frequency-only
- *     (`action_slice`), covering other stack tiers and matchups the book data
- *     doesn't reach. Falls back to this whenever the complete source doesn't apply.
+ *   - `DEFEND_RESPONSE_CHARTS` (defendResponseBaselines.ts) — Module 5's
+ *     redesign data: a `complete_strategy` (fold/call/3bet-or-jam) SOURCE
+ *     RECONSTRUCTION from Modern Poker Theory Ch.5/Ch.8's aggregate %s, for
+ *     HJ/CO/BTN/SB/BB as defenders at the MTT 15/25/40/60bb depths — checked
+ *     next since it's the only source covering non-BB defenders at all.
+ *   - `DEFEND_DEEP/MEDIUM/SHALLOW` (defendBaselines.ts) — BB calling-frequency-
+ *     only (`action_slice`), the original fallback for BB matchups/depths
+ *     neither of the above two reaches.
  */
 import type { LessonStep, DecisionSpotRangeReveal } from './types'
 import { cardsToHandClass } from './combos'
 import { stackBBToWorld } from './preflopBaselines'
 import { DEFEND_DEEP, DEFEND_SEMANTICS, resolveDefendEntries, type DefendMatchup } from './defendBaselines'
 import { BB_DEFENSE_COMPLETE_100BB, type BBOpenDefenseMatchup } from './bbDefenseComplete'
+import { DEFEND_RESPONSE_CHARTS } from './defendResponseBaselines'
+import { chartToStrategyMap, chartHandList } from './defendResponseRanges'
 import { rangeEntriesToStrategyMap } from './rangeStrategy'
 import { entriesToHandList } from './preflopBaselines'
 
-function isCleanFacingOpen(actionBeforeHero: string[] | undefined): boolean {
+/** Exported for `threebetRangeReveal.ts` — the "was Hero facing a single clean open"
+ *  check is identical regardless of whether Hero's own response is a call or a 3-bet. */
+export function isCleanFacingOpen(actionBeforeHero: string[] | undefined): boolean {
   if (!actionBeforeHero || actionBeforeHero.length === 0) return true
   const raises = actionBeforeHero.filter((a) => /raises/i.test(a))
   const others = actionBeforeHero.filter((a) => !/raises/i.test(a))
@@ -82,6 +91,25 @@ export function resolveDefendRangeReveal(step: LessonStep): DecisionSpotRangeRev
       // "DEFENSE", not "CALLING RANGE" — fold/call/3bet are all genuinely known here.
       label: `${heroPosition} DEFENSE vs ${villainPosition} OPEN`,
       subtitle: `See where ${highlightHand} sits inside your full defending strategy — fold, call, and 3-bet.`,
+    }
+  }
+
+  // Next, the reconstructed complete-strategy chart — the only source covering
+  // non-BB defenders (HJ/CO/BTN/SB) at all, plus BB at the MTT depths the 100bb
+  // cash chart above doesn't reach.
+  const responseKey = `${heroPosition}_vs_${villainPosition}_${stackBb}BB`
+  const responseChart = DEFEND_RESPONSE_CHARTS[responseKey]
+  if (responseChart) {
+    const strategies = chartToStrategyMap(responseChart)
+    return {
+      strategies,
+      strategySemantics: { kind: 'complete_strategy' },
+      range: chartHandList(responseChart),
+      highlightHand,
+      heroPosition,
+      villainPosition,
+      label: `${heroPosition} DEFENSE vs ${villainPosition} OPEN`,
+      subtitle: `See where ${highlightHand} sits inside your full defending strategy at ${stackBb}bb — fold, call, and 3-bet.`,
     }
   }
 

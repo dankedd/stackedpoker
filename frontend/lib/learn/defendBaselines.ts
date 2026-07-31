@@ -10,12 +10,15 @@
  *      the source file's own docstring notes BB's 3-bets are separate,
  *      see `threebetBaselines.ts` for those).
  *   2. SB/BTN/CO defend and every stack tier below 100bb DO NOT exist
- *      anywhere in the backend (confirmed: only `open_ranges.py`,
+ *      anywhere in the BACKEND (confirmed: only `open_ranges.py`,
  *      `defend_ranges.py` [BB only], `threebet_ranges.py` exist, all
- *      100bb cash). Those tiers below are hand-authored, simplified,
- *      clearly-labeled approximations — mechanically narrowed from the
- *      100bb tier the same way `preflopBaselines.ts` derived RFI_MEDIUM
- *      from RFI_DEEP — never claimed as solver-exact.
+ *      100bb cash) — the tiers below remain hand-authored, mechanically
+ *      narrowed approximations for that reason. They ARE, however, covered
+ *      by Modern Poker Theory's own Ch.8 ("MTT Equilibrium Strategies:
+ *      Defense") at 15/25/40/60bb, for every position — see
+ *      `defendResponseBaselines.ts` (Module 5's redesign) for the resulting
+ *      source-reconstructed complete-strategy charts, which `defendRangeReveal.ts`
+ *      now checks before falling back to this file's BB-only calling slices.
  *
  * Hand notation: 'AA' (pair), 'AKs' (suited), 'AKo' (offsuit).
  * Combo weights: pair=6, suited=4, offsuit=12.

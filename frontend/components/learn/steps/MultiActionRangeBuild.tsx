@@ -7,6 +7,7 @@ import type { LessonStep } from '@/lib/learn/types'
 import { RANKS, HAND_GRID, comboCount, TOTAL_COMBOS } from '@/lib/learn/handGrid'
 import { actionStyle, actionLabel } from '@/lib/learn/actionStyles'
 import { MultiActionRangeReveal } from '@/components/learn/visuals/MultiActionRangeReveal'
+import { ScenarioMeta } from '@/components/poker/ScenarioMeta'
 import {
   DEFAULT_MULTI_PREFILL_NOTE,
   resolveMultiActionTargetChart,
@@ -161,7 +162,11 @@ export function MultiActionRangeBuild({ step, onAnswer, disabled = false }: Mult
             Here&apos;s how your strategy compares to the baseline.
           </p>
         </div>
-        <MultiActionRangeReveal yourAssignments={finalAssignments} chart={chart} />
+        <MultiActionRangeReveal
+          yourAssignments={finalAssignments}
+          chart={chart}
+          puzzleHands={step.range_build_multi_puzzle_hands}
+        />
         <button
           type="button"
           onClick={handleContinueFromDiff}
@@ -198,6 +203,8 @@ export function MultiActionRangeBuild({ step, onAnswer, disabled = false }: Mult
       onMouseLeave={handleMouseUp}
     >
       <div className="space-y-2.5">
+        <ScenarioMeta heroPosition={step.hero_position} effectiveStackBb={step.effective_stack_bb} />
+
         {step.narrative && <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>}
 
         {hasPrefill && (

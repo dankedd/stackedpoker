@@ -154,8 +154,8 @@ describe('Scenario H — folded blind: forced-blind commitment survives the fold
 })
 
 describe('"Realizing Equity" regression (re-s8a-d) — the exact reported bug', () => {
-  const lesson = LESSONS.find((l) => l.id === 'realizing-equity')
-  if (!lesson) throw new Error('Fixture lesson "realizing-equity" not found — did curriculum content change?')
+  const lesson = LESSONS.find((l) => l.id === 'realizing-equity' || l.id === 'defending-as-co')
+  if (!lesson) throw new Error('Fixture lesson "realizing-equity"/"defending-as-co" not found — did curriculum content change?')
 
   for (const id of ['re-s8a', 're-s8b', 're-s8c', 're-s8d']) {
     it(`${id}: BTN's 2.3bb open is present in structured data, BB (Hero) is to act, pot is 3.8`, () => {
