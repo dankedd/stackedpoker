@@ -20,13 +20,16 @@ interface RangeComparisonLayoutProps {
 }
 
 /**
- * The one shared layout for every "two panels compared" spot in the learning modules
+ * The one shared layout for every "two range grids compared" spot in the learning modules
  * (RangeCompare, RangeBoardCollision, RangeRevealComparison, MultiActionRangeReveal,
- * RangeCollisionViewer, TableDecision's stack-confusion panel, ScenarioSideBySide's two
- * PreflopTables). Stacks the two panels full-width below the side-by-side breakpoint — each
- * panel gets the whole row instead of being squeezed to half-width and shrinking its
- * cells/labels to illegibility — and sits side-by-side once there's real room for both. Do
- * not reimplement this per-lesson; add call sites here instead.
+ * RangeCollisionViewer, TableDecision's stack-confusion panel). Stacks the two panels full-width
+ * below the side-by-side breakpoint — each grid gets the whole row instead of being squeezed to
+ * half-width and shrinking its cells/labels to illegibility — and sits side-by-side once there's
+ * real room for both. Do not reimplement this per-lesson; add call sites here instead.
+ *
+ * NOT used by `ScenarioSideBySide`'s two PreflopTables — a poker table needs more per-panel
+ * width than even this component's `sideBySideFrom="lg"` gives a range grid, so that component
+ * always stacks unconditionally instead of opting into a side-by-side breakpoint here.
  */
 export function RangeComparisonLayout({
   children,

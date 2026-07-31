@@ -59,6 +59,28 @@ describe('ScenarioSideBySide — mounts BOTH scenarios as independent PreflopTab
     const html = renderToStaticMarkup(<ScenarioSideBySide scenarioA={scenarioA} scenarioB={brokenB} />)
     expect(html).toBe('')
   })
+
+  it('stacks the two scenarios vertically, never side by side — no side-by-side grid breakpoint classes', () => {
+    const html = renderToStaticMarkup(<ScenarioSideBySide scenarioA={scenarioA} scenarioB={scenarioB} />)
+    expect(html).not.toContain('sm:grid-cols-2')
+    expect(html).not.toContain('lg:grid-cols-2')
+    expect(html).not.toContain('grid-cols-2')
+  })
+
+  it('renders Scenario A fully (heading + table) before Scenario B, with a directional divider between them', () => {
+    const html = renderToStaticMarkup(<ScenarioSideBySide scenarioA={scenarioA} scenarioB={scenarioB} />)
+    // Use each scenario's unique short_description rather than the bare position
+    // label — the UTG table's own seats include an "SB" rail label, so ">SB<"
+    // alone would false-match inside Scenario A's table before the divider.
+    const scenarioAHeadingIdx = html.indexOf('8 players behind')
+    const dividerIdx = html.indexOf('↓')
+    const scenarioBHeadingIdx = html.indexOf('1 player behind (BB)')
+    expect(scenarioAHeadingIdx).toBeGreaterThan(-1)
+    expect(dividerIdx).toBeGreaterThan(-1)
+    expect(scenarioBHeadingIdx).toBeGreaterThan(-1)
+    expect(scenarioAHeadingIdx).toBeLessThan(dividerIdx)
+    expect(dividerIdx).toBeLessThan(scenarioBHeadingIdx)
+  })
 })
 
 describe('DecisionSpot — scenario_layout: side_by_side wiring', () => {
