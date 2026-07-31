@@ -492,7 +492,7 @@ describe('PreflopTable — dark green felt (not casino-bright), outer rail uncha
 })
 
 describe('PreflopTable — stackOverridesBb: a short-stacked seat is visible on the table itself', () => {
-  it('the short seat shows its OWN stack (not the table-wide effectiveStackBb) in an amber badge', () => {
+  it("the short seat shows its OWN stack (not the table-wide effectiveStackBb), with NO special styling or SHORT label — identical to every other stack depth", () => {
     const html = renderToStaticMarkup(
       <PreflopTable
         tableSize={6}
@@ -502,11 +502,17 @@ describe('PreflopTable — stackOverridesBb: a short-stacked seat is visible on 
         actionBeforeHero={['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN calls']}
       />,
     )
-    // BB's own 10bb stack renders, badged distinctly from the plain-text stacks.
-    expect(html).toMatch(/text-amber-300[^<]*>10 BB · SHORT</)
-    // Every other seat still shows the table-wide 100bb, in the plain (non-badge) style.
+    // BB's own 10bb stack renders as plain "10 BB" — never a badge, never "SHORT",
+    // never the amber/border/pill treatment (checked narrowly on the stack span
+    // itself — the table's Pot readout legitimately uses unrelated amber tones
+    // elsewhere, so this must not be a whole-page substring check).
+    const stackSpan = html.match(/<span class="([^"]*)">10 BB<\/span>/)
+    expect(stackSpan, 'expected a plain span for the 10bb stack').toBeTruthy()
+    expect(stackSpan![1]).not.toMatch(/amber|border|rounded/)
+    expect(html).not.toContain('SHORT')
+    expect(html).not.toContain('border-amber')
+    // Every other seat still shows the table-wide 100bb, in the exact same styling.
     expect(html).toContain('100 BB')
-    expect(html).not.toMatch(/text-amber-300[^<]*>100 BB/)
   })
 
   it('without an override, no seat is ever badged short — never a fabricated short-stack flag', () => {
@@ -514,7 +520,28 @@ describe('PreflopTable — stackOverridesBb: a short-stacked seat is visible on 
       <PreflopTable tableSize={6} heroPosition="SB" effectiveStackBb={100} actionBeforeHero={['Everyone folds']} />,
     )
     expect(html).not.toContain('SHORT')
-    expect(html).not.toMatch(/text-amber-300[^<]*>\d/)
+  })
+
+  it('a short stack (15bb) and a deep stack (100bb) render through the exact same StackDepthBadge markup — only the number differs', () => {
+    const html = renderToStaticMarkup(
+      <PreflopTable
+        tableSize={6}
+        heroPosition="SB"
+        effectiveStackBb={100}
+        stackOverridesBb={{ BB: 15 }}
+        actionBeforeHero={['Everyone folds']}
+      />,
+    )
+    const shortMarkup = html.match(/<span class="([^"]*)">15 BB<\/span>/)
+    const deepMarkup = html.match(/<span class="([^"]*)">100 BB<\/span>/)
+    expect(shortMarkup, 'expected a plain span for the 15bb stack').toBeTruthy()
+    expect(deepMarkup, 'expected a plain span for the 100bb stack').toBeTruthy()
+    expect(shortMarkup![1]).toBe(deepMarkup![1]) // byte-identical className — no per-depth branch
+    // Neither stack-depth span carries any pill/border/badge chrome (unlike
+    // the dealer marker / chip discs elsewhere on the table, which legitimately
+    // use rounded-full for their own unrelated shapes).
+    expect(shortMarkup![1]).not.toMatch(/rounded|border|amber/)
+    expect(html).not.toContain('border-amber')
   })
 
   it('the short-stack fact is also present in the screen-reader summary', () => {

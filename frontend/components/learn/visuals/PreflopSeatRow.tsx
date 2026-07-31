@@ -19,6 +19,7 @@
  */
 import { cn } from '@/lib/utils'
 import { formatBb } from '@/components/poker/tableTokens'
+import { StackDepthBadge } from '@/components/poker/StackDepthBadge'
 
 // ── Centralized vertical rhythm for the rail label stack ────────────────────
 // Row 1 (the position label) is vertically CENTERED on the rail point via
@@ -45,7 +46,6 @@ export interface PreflopSeatRowProps {
   hasVerb: boolean
   verbText?: string
   seatStackBb?: number
-  seatIsShortStack: boolean
   stackBehindBb?: number
   railPoint: { x: string; y: string }
   /** True for the one frame in which this seat just raised/called/checked —
@@ -66,7 +66,6 @@ export function PreflopSeatRow({
   hasVerb,
   verbText,
   seatStackBb,
-  seatIsShortStack,
   stackBehindBb,
   railPoint,
   highlighted = false,
@@ -104,10 +103,10 @@ export function PreflopSeatRow({
           them is a real, browser-guaranteed `gap`, never a second independently
           -guessed pixel offset. Positioned ONCE, `ROW2_TOP_OFFSET_PX` below the
           rail point (derived from row 1's own half-height, not a flat guess) —
-          the actual fix for the reported overlap. A short seat gets a compact
-          amber badge instead of the plain muted text every other seat uses.
-          Mobile hides a folded seat's row 2 entirely (dimmed position label
-          only) to cut clutter. */}
+          the actual fix for the reported overlap. Every stack depth (short or
+          deep) renders through the SAME `StackDepthBadge` — no per-depth
+          styling ever again. Mobile hides a folded seat's row 2 entirely
+          (dimmed position label only) to cut clutter. */}
       {(() => {
         const showRow2 = !(isMobile && folded) && (folded || hasVerb || seatStackBb != null)
         const showRow3 = hasVerb && !folded && stackBehindBb != null
@@ -125,7 +124,7 @@ export function PreflopSeatRow({
                     ? 'text-[10px] font-semibold text-muted-foreground/40 opacity-35'
                     : hasVerb
                     ? cn('text-[10px] font-semibold', isHero ? 'text-violet-300/90' : 'text-sky-300/80')
-                    : !seatIsShortStack && 'text-[10px] font-medium text-muted-foreground/45',
+                    : undefined, // stack-depth case: StackDepthBadge owns its own styling
                 )}
                 style={{ transitionDuration: `${fadeDurationMs}ms` }}
               >
@@ -133,16 +132,9 @@ export function PreflopSeatRow({
                   'FOLD'
                 ) : hasVerb ? (
                   verbText
-                ) : seatIsShortStack ? (
-                  <span
-                    className="inline-flex items-center gap-1 rounded-full border border-amber-400/50 bg-amber-400/15 px-1.5 py-[1px] text-[9px] font-black uppercase tracking-wide text-amber-300"
-                    title="Short stack"
-                  >
-                    {formatBb(seatStackBb!)} BB · SHORT
-                  </span>
-                ) : (
-                  `${formatBb(seatStackBb!)} BB`
-                )}
+                ) : seatStackBb != null ? (
+                  <StackDepthBadge stackBb={seatStackBb} />
+                ) : null}
               </span>
             )}
 

@@ -429,9 +429,11 @@ export function PreflopTable({
 
           // This seat's OWN effective stack — a `stackOverridesBb[position]` entry (e.g. a
           // short-stacked player) always wins over the table-wide `effectiveStackBb`, so a
-          // scenario's stack story is visible on the table itself, not just in prose.
+          // scenario's stack story is visible on the table itself, not just in prose. Rendered
+          // via the same StackDepthBadge as every other seat's stack — a short stack carries
+          // no visual distinction of its own (see PreflopSeatRow); `isShortStack` still feeds
+          // the sr-only accessibility summary below, independent of this.
           const seatStackBb = seatInfo?.effectiveStackBb ?? effectiveStackBb
-          const seatIsShortStack = seatInfo?.isShortStack ?? false
 
           // Chip in front of the seat: the seat's real current-street commitment — this
           // is what keeps a FOLDED seat's earlier blind/raise visibly in the pot (spec
@@ -496,7 +498,6 @@ export function PreflopTable({
                 hasVerb={hasVerb}
                 verbText={verbText}
                 seatStackBb={seatStackBb}
-                seatIsShortStack={seatIsShortStack}
                 stackBehindBb={stackBehindBb}
                 railPoint={railPoint}
                 highlighted={seatHighlighted}
