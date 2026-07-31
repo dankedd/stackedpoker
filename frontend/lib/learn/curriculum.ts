@@ -7897,7 +7897,7 @@ export const LESSONS: Lesson[] = [
         options: [
           {
             id: 'co', label: 'Scenario B — vs the CO open', quality: 'perfect',
-            feedback: 'Correct. Hero\'s hand didn\'t change — Villain\'s range did. UTG\'s range is narrower and stronger; CO\'s is wider and weaker. The same A♠T♠ has to clear a much higher bar against UTG than it does against CO.',
+            feedback: 'Correct. Against the CO open, A♠T♠ clears the bar comfortably — CO\'s range is wider and weaker, so there\'s plenty here to attack. Hero\'s hand didn\'t change, Villain\'s range did: against UTG\'s much narrower, stronger range this same ATs would have to clear a far higher bar.',
           },
           {
             id: 'utg', label: 'Scenario A — vs the UTG open', quality: 'mistake',
@@ -7924,7 +7924,7 @@ export const LESSONS: Lesson[] = [
             range_compare_b: { label: 'BTN opens (~40%)', range: RANGE_TARGETS.BTN_open_100bb, option_id: 'btn' },
             range_compare_prompt: 'In which scenario does 76s have a much easier time continuing?',
             options: [
-              { id: 'btn', label: 'Scenario B — vs the BTN open', quality: 'perfect', feedback: 'Right — 76s struggles badly against UTG\'s tight, strong range but is a comfortable continue against BTN\'s wide, weak one.' },
+              { id: 'btn', label: 'Scenario B — vs the BTN open', quality: 'perfect', feedback: 'Right — 76s is a comfortable continue against BTN\'s wide, weak range, which is diluted with plenty of soft, dominated material for a suited connector to attack. Against UTG\'s tight, strong range this same 76s struggles badly — the range behind the open is what changed the answer, not the hand.' },
               { id: 'utg', label: 'Scenario A — vs the UTG open', quality: 'mistake', feedback: 'UTG\'s range is far too strong for a speculative hand like 76s to prefer facing.' },
             ],
             xp: 4,
@@ -7935,7 +7935,7 @@ export const LESSONS: Lesson[] = [
             concept_ids: ['opener_range_strength'],
             narrative: 'Applied check: KJo faces a raise. Which opener would Hero much rather see it against?',
             options: [
-              { id: 'wide', label: 'A wide, late-position opener', quality: 'perfect', feedback: 'Right — KJo is dominated by a large share of a tight early-position range, but performs much better against a wide, weak late-position range.' },
+              { id: 'wide', label: 'A wide, late-position opener', quality: 'perfect', feedback: 'Right — KJo performs much better against a wide, weak late-position range, which is diluted with far fewer of the AK/AJ/KQ-type hands that give it trouble. Against a tight, early-position range this same KJo is dominated by a large share of it — that\'s the tougher matchup to face.' },
               { id: 'tight', label: 'A tight, early-position opener', quality: 'mistake', feedback: 'A tight opener\'s range is packed with hands that dominate KJo — that\'s the tougher matchup, not the easier one.' },
             ],
             xp: 4,
@@ -8047,8 +8047,8 @@ export const LESSONS: Lesson[] = [
         action_before_hero: ['UTG raises to 2.2bb', 'UTG+1 folds', 'LJ folds'],
         decision_spot_question: '3-BET, CALL, or FOLD?',
         options: [
-          { id: 'fold', label: 'FOLD', quality: 'perfect', feedback: "Correct — 76s is a fine calling hand against a wide late-position open, but UTG's range is tight and strong enough, and there are still three players behind, that this exact suited connector isn't worth defending here." },
-          { id: 'call', label: 'CALL', quality: 'mistake', feedback: "This is exactly the trap the module opened with — 76s is a real hand, but UTG's range and the live players behind make this a tougher matchup than it looks." },
+          { id: 'fold', label: 'FOLD', quality: 'perfect', feedback: "Correct. Against a UTG opening range, 76s does not defend profitably from HJ. UTG opens a much stronger range than later positions, and several players are still behind you, reducing the value of speculative hands. Against a much wider CO or BTN opening range this same hand often becomes a profitable defend." },
+          { id: 'call', label: 'CALL', quality: 'mistake', feedback: "Not quite — against this UTG open, 76s doesn't clear the bar: UTG's range is tight and strong, and three players are still live behind you, both of which cut hard against a speculative suited connector. This is the same trap the module opened with — a real hand elsewhere doesn't mean a profitable call here." },
           { id: '3bet', label: '3-BET', quality: 'mistake', feedback: '76s has no business 3-betting into a tight, strong UTG range — that\'s pure blocker/fold-equity math this hand doesn\'t have.' },
         ],
         xp: 8,
@@ -8604,8 +8604,8 @@ export const LESSONS: Lesson[] = [
         action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.2bb', 'SB folds'],
         hero_hand: ['Kh', '9c'],
         options: [
-          { id: 'call', label: 'Call', quality: 'perfect', feedback: 'Correct — the same K9o that had to fold against UTG\'s tight range is a real continue here: BTN\'s much wider, weaker open gives it enough equity and playability to defend.' },
-          { id: 'fold', label: 'Fold', quality: 'mistake', feedback: 'This is too tight — the exact same K9o that folds against UTG becomes a defensible call against BTN\'s much wider range. The opener, not just the hand, decides this one.' },
+          { id: 'call', label: 'Call', quality: 'perfect', feedback: 'Correct — against BTN\'s much wider, weaker open, K9o has enough equity and playability to defend. The same K9o folds against UTG\'s tight range — the opener, not just the hand, is what decides this one.' },
+          { id: 'fold', label: 'Fold', quality: 'mistake', feedback: 'This is too tight — against BTN\'s much wider range, K9o has enough equity and playability to continue. The same K9o folds against UTG\'s tight range; the opener, not just the hand, decides this one.' },
           { id: '3bet', label: '3-Bet', quality: 'mistake', feedback: 'K9o is not a hand that wants to build the pot — it plays much better keeping the pot smaller and realizing its equity postflop than turning into a bluff here.' },
         ],
         xp: 8,
