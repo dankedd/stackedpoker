@@ -673,7 +673,7 @@ export const LESSONS: Lesson[] = [
         id: 'l1-s17',
         type: 'decision_spot',
         concept_ids: ['streets'],
-        narrative: 'BTN raises to 2.5bb. Hero calls, bringing the pot to roughly 6bb — both players have now acted preflop.',
+        narrative: 'BTN raises to 2.5bb. Hero calls, bringing the pot to 5.5bb — both players have now acted preflop.',
         decision_spot_question: 'What happens next?',
         hero_position: 'BB',
         villain_position: 'BTN',
