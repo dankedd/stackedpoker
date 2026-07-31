@@ -6,8 +6,8 @@ import {
   RotateCcw, Brain, Target,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { Lesson, StepResult } from '@/lib/learn/types'
-import { ConceptTagRow } from '@/components/learn/ConceptPopover'
+import type { Lesson, LessonStep, StepResult } from '@/lib/learn/types'
+import { ConceptTagRow, CONCEPT_DATA } from '@/components/learn/ConceptPopover'
 
 // ── Grade system ──────────────────────────────────────────────────────────────
 
@@ -156,6 +156,25 @@ function MasterySegments({ filled, color }: { filled: number; color: string }) {
       ))}
     </div>
   )
+}
+
+// ── Step Breakdown label resolution ─────────────────────────────────────────
+// The educational objective a step tested, not its component type — so two
+// "Decision Spot" steps in one lesson read as e.g. "Pot Odds" vs "3-Bet"
+// instead of both showing the same generic label. Reuses the SAME concept
+// registry + fallback pattern InlineConcept already uses (ConceptPopover.tsx):
+// concept id → CONCEPT_DATA title, then the step's own authored concept_title
+// (concept_reveal steps carry one directly), then the lesson-level concept_ids
+// a step without its own falls back to elsewhere in this file (see
+// `conceptScores` below) — and only once none of that exists, the previous
+// humanized step-type text, unchanged. Never fabricates a label.
+function resolveStepLabel(lesson: Lesson, step: LessonStep | undefined, index: number): string {
+  if (!step) return `step ${index + 1}`
+  const conceptId = step.concept_ids?.[0] ?? lesson.concept_ids?.[0]
+  const conceptTitle = conceptId ? CONCEPT_DATA[conceptId]?.title : undefined
+  if (conceptTitle) return conceptTitle
+  if (step.concept_title) return step.concept_title
+  return step.type?.replace(/_/g, ' ') ?? `step ${index + 1}`
 }
 
 // ── Step mini-bar row ─────────────────────────────────────────────────────────
@@ -515,7 +534,7 @@ export function LessonCompletionScreen({
               r.unscored ? null : (
                 <StepMiniBar
                   key={i}
-                  label={lesson.steps[i]?.type?.replace(/_/g, ' ') ?? `step ${i + 1}`}
+                  label={resolveStepLabel(lesson, lesson.steps[i], i)}
                   result={r}
                   isBest={i === bestIdx}
                   isWorst={i === worstIdx}
