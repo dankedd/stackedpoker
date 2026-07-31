@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 import { shuffleBySeed } from '@/lib/learn/interactionSafety'
-import { CorrectnessIcon, ReviewContinueButton, ReviewSummaryLine } from '@/components/learn/RevealKit'
+import { BoardOrderSpectrum, OrderedBoardRow, ReviewContinueButton, ReviewSummaryLine } from '@/components/learn/RevealKit'
 import { computeOrderReveal } from '@/lib/learn/revealHelpers'
 
 interface BoardRankSortProps {
@@ -138,54 +138,17 @@ export function BoardRankSort({ step, onAnswer, disabled = false, reviewMode = f
             {reveal.map((r) => {
               const b = boardById.get(r.id)
               if (!b) return null
-              return (
-                <div
-                  key={r.id}
-                  data-board-id={r.id}
-                  data-correct={r.correct}
-                  className={cn(
-                    'flex items-center gap-3 rounded-xl border px-3 py-2.5',
-                    r.correct ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-red-500/40 bg-red-500/10',
-                  )}
-                >
-                  <span className="w-6 shrink-0 text-center text-base font-black tabular-nums text-foreground/80">
-                    {r.position + 1}
-                  </span>
-                  {b.label && (
-                    <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/50">
-                      {b.label}
-                    </span>
-                  )}
-                  <div className="flex shrink-0 gap-1">
-                    {b.board.map((c, i) => <PlayingCardMini key={i} card={c} size="sm" />)}
-                  </div>
-                  <CorrectnessIcon correct={r.correct} className="ml-auto" />
-                </div>
-              )
+              return <OrderedBoardRow key={r.id} id={r.id} position={r.position} item={b} correct={r.correct} />
             })}
           </div>
 
           {correctCount < reveal.length && (
-            <div className="rounded-xl border border-border/40 bg-secondary/20 p-4">
-              <p className="mb-2.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">
-                Correct order — {highLabel} to {lowLabel}
-              </p>
-              <ol className="space-y-1.5">
-                {target.map((id, i) => {
-                  const b = boardById.get(id)
-                  if (!b) return null
-                  return (
-                    <li key={id} className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="w-4 shrink-0 text-right font-bold tabular-nums">{i + 1}</span>
-                      {b.label && <span className="font-medium text-foreground/80">{b.label}</span>}
-                      <div className="flex shrink-0 gap-0.5">
-                        {b.board.map((c, ci) => <PlayingCardMini key={ci} card={c} size="xs" />)}
-                      </div>
-                    </li>
-                  )
-                })}
-              </ol>
-            </div>
+            <BoardOrderSpectrum
+              order={target}
+              itemsById={boardById}
+              startLabel={highLabel.toUpperCase()}
+              endLabel={lowLabel.toUpperCase()}
+            />
           )}
 
           <ReviewContinueButton onClick={handleContinue} disabled={disabled} />
