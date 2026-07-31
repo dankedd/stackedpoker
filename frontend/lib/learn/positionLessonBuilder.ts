@@ -112,7 +112,7 @@ export function buildPositionLesson(config: PositionLessonConfig): Lesson {
     type: 'range_build_multi',
     concept_ids: [conceptId, 'range_construction'],
     narrative: foundationKey
-      ? `Build ${heroPositionLabel}'s complete 60bb opening strategy. We've filled in only the pure top pairs — work out everything else yourself.`
+      ? `Build ${heroPositionLabel}'s complete 60bb opening strategy.`
       : `Build ${heroPositionLabel}'s complete 60bb opening strategy from scratch.`,
     hero_position: heroPositionLabel,
     effective_stack_bb: BUILD_STACK_BB,
@@ -121,7 +121,7 @@ export function buildPositionLesson(config: PositionLessonConfig): Lesson {
     range_build_multi_chart: buildChartKey(positionKey, BUILD_STACK_BB),
     range_build_multi_prefilled_key: foundationKey,
     range_build_multi_prefilled_note: foundationKey
-      ? 'Only the top pairs are filled in. Build out the suited Aces, broadways, and marginal hands yourself.'
+      ? "We've already filled in the obvious core of the opening range. Complete the more marginal hands yourself."
       : undefined,
     range_build_multi_show_diff: true,
     xp: 24,

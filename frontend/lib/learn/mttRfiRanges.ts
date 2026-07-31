@@ -146,32 +146,101 @@ export const MTT_RFI_FOUNDATIONS: Record<string, MttRfiFoundation> = {
       JTs: 'raise',
     },
   },
-  // Deliberately minimal (per the structural redesign's "do not heavily prefill — this is
-  // reconstruction" design goal): only the pure-raise top pairs, nothing suited/offsuit/marginal.
+  // Widened alongside UTG_RFI_60BB_foundation above, same "obvious core, ~60% of the
+  // range's raise-weighted combos, never a mixed-frequency hand" rule — pairs down to
+  // wherever pure, AK/AQ/AJ/AT both ways, and the clearly-strong suited broadways
+  // (KQs/KJs/KTs, plus KQo). UTG1/UTG2 stay in the same "leave every suited ace below
+  // AJs for the learner" family as UTG itself (still a near-early-position seat); LJ/HJ
+  // are wide enough that every pair down to 22 and more offsuit broadways (KJo/KTo,
+  // QJo/QTo/JTo for HJ) are ALSO pure there, so they're included too — see each chart in
+  // mttRfiBaselines.ts (Modern Poker Theory, Ch. 7) for the source data this was derived
+  // from. Every mixed-frequency hand is left for the learner in all four.
   UTG1_RFI_60BB_foundation: {
     chartKey: 'UTG1_RFI_60BB',
-    hands: { AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise' },
+    hands: {
+      AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise', 88: 'raise', 77: 'raise', 66: 'raise', 55: 'raise',
+      AKs: 'raise', AQs: 'raise', AJs: 'raise', ATs: 'raise',
+      AKo: 'raise', AQo: 'raise', AJo: 'raise', ATo: 'raise',
+      KQs: 'raise', KJs: 'raise',
+      KQo: 'raise',
+    },
   },
   UTG2_RFI_60BB_foundation: {
     chartKey: 'UTG2_RFI_60BB',
-    hands: { AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise' },
+    hands: {
+      AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise', 88: 'raise', 77: 'raise', 66: 'raise', 55: 'raise',
+      AKs: 'raise', AQs: 'raise', AJs: 'raise', ATs: 'raise',
+      AKo: 'raise', AQo: 'raise', AJo: 'raise', ATo: 'raise',
+      KQs: 'raise', KJs: 'raise', KTs: 'raise',
+      KQo: 'raise',
+      QJs: 'raise', QTs: 'raise',
+      JTs: 'raise',
+    },
   },
   LJ_RFI_60BB_foundation: {
     chartKey: 'LJ_RFI_60BB',
-    hands: { AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise' },
+    hands: {
+      AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise', 88: 'raise', 77: 'raise', 66: 'raise', 55: 'raise', 44: 'raise', 33: 'raise',
+      AKs: 'raise', AQs: 'raise', AJs: 'raise', ATs: 'raise',
+      AKo: 'raise', AQo: 'raise', AJo: 'raise', ATo: 'raise',
+      KQs: 'raise', KJs: 'raise', KTs: 'raise',
+      KQo: 'raise', KJo: 'raise', KTo: 'raise',
+      QJs: 'raise', QTs: 'raise',
+      JTs: 'raise',
+    },
   },
   HJ_RFI_60BB_foundation: {
     chartKey: 'HJ_RFI_60BB',
-    hands: { AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise' },
+    hands: {
+      AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise', 88: 'raise', 77: 'raise', 66: 'raise', 55: 'raise', 44: 'raise', 33: 'raise',
+      AKs: 'raise', AQs: 'raise', AJs: 'raise', ATs: 'raise',
+      AKo: 'raise', AQo: 'raise', AJo: 'raise', ATo: 'raise',
+      KQs: 'raise', KJs: 'raise', KTs: 'raise',
+      KQo: 'raise', KJo: 'raise', KTo: 'raise',
+      QJs: 'raise', QTs: 'raise',
+      QJo: 'raise', QTo: 'raise',
+      JTs: 'raise', JTo: 'raise',
+    },
   },
+  // CO and BTN are wide enough (~33%/~46%+ VPIP) that a suited ace is never a genuine
+  // question at either seat — real solver output shows every one of them at frequency
+  // 1.0 here, so keeping the "leave weaker suited Aces for the learner" UTG-family rule
+  // would misrepresent a settled decision as an open one. The obvious core widens to
+  // match: every pair, every suited AND offsuit ace, then kings down to a tier that lands
+  // each at ~60-62% of the chart's raise-weighted combos — leaving every queen/jack/ten
+  // broadway, every suited connector/gapper, and the position's few genuinely
+  // mixed-frequency hands (Q9o, J6s for CO; Q7o/Q6o/Q5o, 97o for BTN) for the learner.
   CO_RFI_60BB_foundation: {
     chartKey: 'CO_RFI_60BB',
-    hands: { AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise' },
+    hands: {
+      AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise', 88: 'raise', 77: 'raise', 66: 'raise', 55: 'raise', 44: 'raise', 33: 'raise', 22: 'raise',
+      AKs: 'raise', AQs: 'raise', AJs: 'raise', ATs: 'raise', A9s: 'raise', A8s: 'raise', A7s: 'raise', A6s: 'raise', A5s: 'raise', A4s: 'raise', A3s: 'raise', A2s: 'raise',
+      AKo: 'raise', AQo: 'raise', AJo: 'raise', ATo: 'raise', A9o: 'raise', A8o: 'raise', A7o: 'raise', A6o: 'raise', A5o: 'raise',
+      KQs: 'raise', KJs: 'raise', KTs: 'raise', K9s: 'raise',
+      KQo: 'raise', KJo: 'raise', KTo: 'raise', K9o: 'raise',
+    },
   },
   BTN_RFI_60BB_foundation: {
     chartKey: 'BTN_RFI_60BB',
-    hands: { AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise' },
+    hands: {
+      AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise', 88: 'raise', 77: 'raise', 66: 'raise', 55: 'raise', 44: 'raise', 33: 'raise', 22: 'raise',
+      AKs: 'raise', AQs: 'raise', AJs: 'raise', ATs: 'raise', A9s: 'raise', A8s: 'raise', A7s: 'raise', A6s: 'raise', A5s: 'raise', A4s: 'raise', A3s: 'raise', A2s: 'raise',
+      AKo: 'raise', AQo: 'raise', AJo: 'raise', ATo: 'raise', A9o: 'raise', A8o: 'raise', A7o: 'raise', A6o: 'raise', A5o: 'raise', A4o: 'raise', A3o: 'raise', A2o: 'raise',
+      KQs: 'raise', KJs: 'raise', KTs: 'raise', K9s: 'raise', K8s: 'raise', K7s: 'raise', K6s: 'raise', K5s: 'raise', K4s: 'raise', K3s: 'raise', K2s: 'raise',
+      KQo: 'raise', KJo: 'raise', KTo: 'raise', K9o: 'raise', K8o: 'raise', K7o: 'raise', K6o: 'raise', K5o: 'raise',
+      QJs: 'raise', QTs: 'raise',
+      QJo: 'raise',
+    },
   },
+  // SB_RFI_60BB is the one exception to the module's "~60% obvious core" target: at
+  // 60bb, virtually SB's entire opening range is a genuine raise/limp MIX (per
+  // mttRfiBaselines.ts's own data, even AA is only 40% raise / 60% limp — see the
+  // "Small Blind Mastery" lesson's own narrative, which already explains this).
+  // Fewer than 55 of the chart's 159 hands have ANY single dominant action at all, and
+  // most of those are marginal limp-only junk, not a "premium core" — there is no
+  // subset here that is both (a) genuinely non-mixed and (b) actually obvious. sb-build
+  // deliberately keeps 0% prefill (see its own range_build_multi_prefilled_note) rather
+  // than fabricate a false "obvious" answer for a hand the real strategy hasn't settled.
   SB_RFI_15BB_foundation: {
     chartKey: 'SB_RFI_15BB',
     hands: {

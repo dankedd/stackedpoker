@@ -170,9 +170,13 @@ export const RANGE_TARGETS: Record<string, string[]> = {
 //
 // A foundation is the subset of a range_build target so universally obvious
 // (premium pairs, premium suited/offsuit broadways) that clicking each one by
-// hand teaches nothing — it's pure mechanical overhead. Keeping it a MINORITY
-// of the target range is deliberate: everything left out (offsuit ace depth,
-// suited king/queen/jack thresholds, the whole suited-connector tail) is
+// hand teaches nothing — it's pure mechanical overhead. Sized to land each
+// foundation at roughly 60% of its target range's combos (a Module 3-wide
+// pass — see UTG_RFI_60BB_foundation/etc. in mttRfiRanges.ts for the parallel
+// change to the frequency-chart-backed foundations), so the learner mainly
+// reasons about the genuinely marginal 40%: everything left out here (the
+// weak suited-connector/gapper tail, marginal offsuit broadways, and — for
+// CO specifically — the small-pair tier its own narrative calls out) is
 // exactly the boundary judgment the exercise exists to teach. See
 // RangeBuild.tsx and rangePrefill.ts for how these get merged into a step.
 //
@@ -184,27 +188,27 @@ export const RANGE_TARGETS: Record<string, string[]> = {
 const BTN_OPEN_FOUNDATION: string[] = [
   // All pairs — BTN opens every pair at 100bb, never a live question.
   'AA', 'KK', 'QQ', 'JJ', 'TT', '99', '88', '77', '66', '55', '44', '33', '22',
-  // Premium suited aces / top offsuit aces.
-  'AKs', 'AQs', 'AJs', 'ATs', 'AKo', 'AQo',
-  // Premium suited/offsuit kings.
-  'KQs', 'KJs', 'KTs', 'KQo',
-  // Premium suited queens.
-  'QJs', 'QTs',
-  // Premium suited jack.
-  'JTs',
+  // Every suited ace — none of these are a genuine question this wide.
+  'AKs', 'AQs', 'AJs', 'ATs', 'A9s', 'A8s', 'A7s', 'A6s', 'A5s', 'A4s', 'A3s', 'A2s',
+  // Offsuit aces down to the target range's own A7o floor.
+  'AKo', 'AQo', 'AJo', 'ATo', 'A9o', 'A8o', 'A7o',
+  // Suited/offsuit kings down through the nine.
+  'KQs', 'KJs', 'KTs', 'K9s', 'KQo', 'KJo', 'KTo',
 ]
 
 // CO opens a hair tighter than BTN — same premium spine, but the pair floor
-// and suited-broadway tail pull back a notch to leave more of CO's own
-// boundary (small pairs, wheel aces, suited-connector floor) for the learner.
-// mtc-s9's own narrative asks the learner to "focus especially on the
-// marginal bottom" — this foundation is sized specifically to leave that
-// bottom untouched.
+// stays at 77 (unchanged from before) and every offsuit king above K9o is
+// held back: mtc-s9's own narrative asks the learner to "focus especially on
+// the marginal bottom — the suited connectors, small pairs, and blocker-heavy
+// hands", so 66-and-under and the whole suited-connector/broadway-queen-down
+// tail stay deliberately unfilled even though the ace/king spine widens to
+// hit the same ~60% target as every other Module 3 range-build exercise.
 const CO_OPEN_FOUNDATION: string[] = [
   'AA', 'KK', 'QQ', 'JJ', 'TT', '99', '88', '77',
-  'AKs', 'AQs', 'AJs', 'ATs', 'AKo', 'AQo',
-  'KQs', 'KJs', 'KTs',
-  'QJs',
+  'AKs', 'AQs', 'AJs', 'ATs', 'A9s', 'A8s', 'A7s', 'A6s', 'A5s', 'A4s', 'A3s', 'A2s',
+  'AKo', 'AQo', 'AJo', 'ATo', 'A9o', 'A8o',
+  'KQs', 'KJs', 'KTs', 'K9s',
+  'KQo', 'KJo', 'KTo', 'K9o',
 ]
 
 // HJ tightens further still — pair floor rises again, suited-king tail

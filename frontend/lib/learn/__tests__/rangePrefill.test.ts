@@ -96,7 +96,7 @@ describe('learner can add new hands', () => {
     const foundation = resolvePrefilledHands(BASE_STEP)
     const foundationSet = new Set(foundation)
     let state = createInitialRangeSelection(foundation)
-    const boundaryHand = 'A9o' // in BTN_open_100bb target but not in the foundation
+    const boundaryHand = '76s' // in BTN_open_100bb target but not in the foundation
     expect(foundationSet.has(boundaryHand)).toBe(false)
     state = toggleRangeHand(state, boundaryHand, 'add')
     expect(state.selected.has(boundaryHand)).toBe(true)

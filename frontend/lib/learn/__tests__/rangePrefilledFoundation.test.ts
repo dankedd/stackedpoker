@@ -111,7 +111,13 @@ describe('Prefilling never covers the whole range — the boundary decision must
     expect(offenders).toEqual([])
   })
 
-  it('foundation covers a minority of the target\'s combo-weighted mass (<=60%)', () => {
+  it('foundation targets roughly 60% of the target\'s combo-weighted mass, never exceeding ~65%', () => {
+    // Module 3-wide pass: every range_build foundation is sized to land its
+    // learner at "mostly done, boundary decisions remain" (~60%) rather than
+    // "barely started" — see BTN_OPEN_FOUNDATION/CO_OPEN_FOUNDATION in
+    // ranges.ts. The floor guards against a foundation shrinking back toward
+    // the old "premium pairs only" minimum; the ceiling guards against ever
+    // prefilling so much that no real decision is left.
     const offenders: string[] = []
     for (const step of rangeBuildSteps) {
       const foundation = resolvePrefilledHands(step)
@@ -119,9 +125,30 @@ describe('Prefilling never covers the whole range — the boundary decision must
       const targetWeight = comboWeight(resolveTargetHands(step))
       const foundationWeight = comboWeight(foundation)
       const pct = targetWeight > 0 ? foundationWeight / targetWeight : 0
-      if (pct > 0.6) offenders.push(`${step.id}: foundation covers ${(pct * 100).toFixed(0)}% of target combos`)
+      if (pct > 0.65) offenders.push(`${step.id}: foundation covers ${(pct * 100).toFixed(0)}% of target combos (>65% ceiling)`)
     }
     expect(offenders).toEqual([])
+  })
+})
+
+describe('Module 3-wide pass: fi-s7 and mtc-s9 also target ~60% (was ~35%/~27% before this pass)', () => {
+  it('BTN_open_foundation (fi-s7) covers 55-65% of BTN_open_100bb', () => {
+    const pct = comboWeight(RANGE_FOUNDATIONS.BTN_open_foundation) / comboWeight(RANGE_TARGETS.BTN_open_100bb)
+    expect(pct).toBeGreaterThan(0.55)
+    expect(pct).toBeLessThan(0.66)
+  })
+
+  it('CO_open_foundation (mtc-s9) covers 55-65% of CO_open_100bb', () => {
+    const pct = comboWeight(RANGE_FOUNDATIONS.CO_open_foundation) / comboWeight(RANGE_TARGETS.CO_open_100bb)
+    expect(pct).toBeGreaterThan(0.55)
+    expect(pct).toBeLessThan(0.66)
+  })
+
+  it('CO_open_foundation still leaves every pair below 77 unfilled — mtc-s9\'s own narrative asks the learner to focus on "small pairs"', () => {
+    const foundation = new Set(RANGE_FOUNDATIONS.CO_open_foundation)
+    for (const smallPair of ['66', '55', '44', '33', '22']) {
+      expect(foundation.has(smallPair), `${smallPair} should be left for the learner`).toBe(false)
+    }
   })
 })
 

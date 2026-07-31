@@ -68,6 +68,54 @@ describe('UTG_RFI_60BB_foundation — widened from "only 99+" to ~60% of the ran
   })
 })
 
+describe('Module 3-wide pass: every position-mastery build foundation targets ~60% (55-65%)', () => {
+  const chartsByFoundation: Record<string, string> = {
+    UTG1_RFI_60BB_foundation: 'UTG1_RFI_60BB',
+    UTG2_RFI_60BB_foundation: 'UTG2_RFI_60BB',
+    LJ_RFI_60BB_foundation: 'LJ_RFI_60BB',
+    HJ_RFI_60BB_foundation: 'HJ_RFI_60BB',
+    CO_RFI_60BB_foundation: 'CO_RFI_60BB',
+    BTN_RFI_60BB_foundation: 'BTN_RFI_60BB',
+  }
+
+  for (const [foundationKey, chartKey] of Object.entries(chartsByFoundation)) {
+    it(`${foundationKey} covers 55-65% of ${chartKey}'s raise-weighted combos (was ~6-16% before this pass)`, () => {
+      const foundation = MTT_RFI_FOUNDATIONS[foundationKey]
+      const chart = MTT_RFI_CHARTS[chartKey]
+      const total = chart.cells.reduce((sum, c) => sum + comboCount(c.hand) * (c.actions.raise ?? 0), 0)
+      const prefilled = Object.keys(foundation.hands).reduce((sum, h) => sum + comboCount(h), 0)
+      const pct = prefilled / total
+      expect(pct).toBeGreaterThan(0.55)
+      expect(pct).toBeLessThan(0.66)
+    })
+  }
+
+  it('CO_RFI_60BB_foundation and BTN_RFI_60BB_foundation widen into weaker suited Aces (A9s-A2s) — genuinely non-marginal at these wide positions, unlike at UTG', () => {
+    // Confirms these two are the deliberate exception to the UTG-family "leave
+    // every suited ace below AJs for the learner" rule — see the doc comment
+    // on CO_RFI_60BB_foundation/BTN_RFI_60BB_foundation in mttRfiRanges.ts.
+    expect(MTT_RFI_FOUNDATIONS.CO_RFI_60BB_foundation.hands.A5s).toBe('raise')
+    expect(MTT_RFI_FOUNDATIONS.BTN_RFI_60BB_foundation.hands.A5s).toBe('raise')
+    expect(MTT_RFI_FOUNDATIONS.UTG1_RFI_60BB_foundation.hands.A5s).toBeUndefined()
+    expect(MTT_RFI_FOUNDATIONS.UTG2_RFI_60BB_foundation.hands.A5s).toBeUndefined()
+  })
+})
+
+describe('SB_RFI_60BB (sb-build, "Small Blind Mastery") — deliberately NOT widened, unlike every other Module 3 build', () => {
+  it('has no foundation — SB/60bb is ~65% genuinely mixed raise/limp, so there is no non-mixed "obvious core" to prefill', () => {
+    expect(MTT_RFI_FOUNDATIONS.SB_RFI_60BB_foundation).toBeUndefined()
+    const step = LESSONS.flatMap((l) => l.steps).find((s) => s.id === 'sb-build')
+    expect(step!.range_build_multi_prefilled_key).toBeUndefined()
+    expect(step!.narrative).toContain('no prefill')
+  })
+
+  it('even AA is a genuine raise/limp mix at SB/60bb (the reason no foundation exists)', () => {
+    const chart = MTT_RFI_CHARTS.SB_RFI_60BB
+    const aa = chart.cells.find((c) => c.hand === 'AA')!
+    expect(Math.max(...Object.values(aa.actions))).toBeLessThan(0.9)
+  })
+})
+
 describe('"UTG Mastery" (utg-s6) — updated copy reflects the new obvious-core prefill', () => {
   const step = LESSONS.flatMap((l) => l.steps).find((s) => s.id === 'utg-s6')
 
