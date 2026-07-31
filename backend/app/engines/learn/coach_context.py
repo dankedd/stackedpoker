@@ -35,7 +35,7 @@ _OPEN_RANGE_KEYS: dict[str, str] = {
 ANSWER_KEY_FIELDS = frozenset({
     "correctAnswer", "correct_answer", "evaluatorFeedback", "evaluator_feedback",
     "answer_reveal", "correct_feedback", "target", "targetValue", "target_value",
-    "solution", "quality",
+    "solution", "quality", "widget_answer_key",
 })
 
 

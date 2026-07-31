@@ -187,6 +187,98 @@ describe('buildLessonCoachContext — no fabricated data', () => {
   })
 })
 
+describe('buildLessonCoachContext — scenario: generic widget capture', () => {
+  const potOddsStep: LessonStep = {
+    id: 'pot-odds-1',
+    type: 'pot_odds_explorer',
+    concept_ids: ['pot_odds'],
+    pot_odds_explorer_mode: 'challenge',
+    pot_odds_pot: 20,
+    pot_odds_bet: 10,
+    pot_odds_prompt: 'What equity do you need to profitably call?',
+    pot_odds_correct: 33.3,
+    pot_odds_tolerance: 2,
+  }
+
+  it("a non-decision_spot widget step's own prompt/data fields reach `scenario`, always (not gated by hasAnswered)", () => {
+    const ctx = buildLessonCoachContext(lesson, potOddsStep, 0, null, undefined, 0)
+    expect(ctx.scenario).toMatchObject({
+      pot_odds_explorer_mode: 'challenge',
+      pot_odds_pot: 20,
+      pot_odds_bet: 10,
+      pot_odds_prompt: 'What equity do you need to profitably call?',
+      pot_odds_tolerance: 2,
+    })
+  })
+
+  it('the answer-key field (pot_odds_correct) never appears in `scenario`, pre- or post-answer', () => {
+    const preAnswer = buildLessonCoachContext(lesson, potOddsStep, 0, null, undefined, 0)
+    expect(preAnswer.scenario).not.toHaveProperty('pot_odds_correct')
+
+    const postAnswer = buildLessonCoachContext(lesson, potOddsStep, 0, makeResult(), 33, 0)
+    expect(postAnswer.scenario).not.toHaveProperty('pot_odds_correct')
+  })
+
+  it('the answer-key field only appears in `widgetAnswerKey`, and only once answered', () => {
+    const preAnswer = buildLessonCoachContext(lesson, potOddsStep, 0, null, undefined, 0)
+    expect(preAnswer.widgetAnswerKey).toBeUndefined()
+
+    const postAnswer = buildLessonCoachContext(lesson, potOddsStep, 0, makeResult(), 33, 0)
+    expect(postAnswer.widgetAnswerKey).toEqual({ pot_odds_correct: 33.3 })
+  })
+
+  it('a field not matching the _correct/_target suffix convention (equity_actual) is still classified as answer-key', () => {
+    const equityStep: LessonStep = {
+      id: 'equity-1',
+      type: 'equity_predict',
+      equity_actual: 62,
+      equity_tolerance: 5,
+      equity_villain_range: ['KK', 'AKs'],
+    }
+    const preAnswer = buildLessonCoachContext(lesson, equityStep, 0, null, undefined, 0)
+    expect(preAnswer.scenario).not.toHaveProperty('equity_actual')
+    expect(preAnswer.scenario).toMatchObject({ equity_tolerance: 5, equity_villain_range: ['KK', 'AKs'] })
+
+    const postAnswer = buildLessonCoachContext(lesson, equityStep, 0, makeResult(), 60, 0)
+    expect(postAnswer.widgetAnswerKey).toEqual({ equity_actual: 62 })
+  })
+
+  it('never duplicates a field already surfaced by a dedicated context property (board/narrative/options/etc.)', () => {
+    const ctx = buildLessonCoachContext(lesson, decisionStep, 0, null, undefined, 0)
+    expect(ctx.scenario).toBeUndefined() // decisionStep has nothing beyond already-named fields
+  })
+
+  it("remediation_ladder (an array of OTHER steps' own answer keys) is never swept into scenario", () => {
+    const stepWithLadder: LessonStep = {
+      ...potOddsStep,
+      remediation_ladder: [{ id: 'remedial-1', type: 'decision_spot', correct_answer: 'SHOULD-NOT-LEAK' } as LessonStep],
+    }
+    const ctx = buildLessonCoachContext(lesson, stepWithLadder, 0, null, undefined, 0)
+    expect(JSON.stringify(ctx.scenario)).not.toMatch(/SHOULD-NOT-LEAK/)
+  })
+})
+
+describe('buildLessonCoachContext — evaluatorFeedback (per-attempt grading feedback)', () => {
+  it('is undefined pre-answer', () => {
+    const ctx = buildLessonCoachContext(lesson, decisionStep, 0, null, undefined, 0)
+    expect(ctx.evaluatorFeedback).toBeUndefined()
+  })
+
+  it("mirrors the actual attempt's StepResult.feedback once answered — distinct from the authored correctFeedback", () => {
+    const result = makeResult({ feedback: 'You called off with a hand that has almost no fold equity here.' })
+    const ctx = buildLessonCoachContext(lesson, decisionStep, 0, result, 'bb', 0)
+    expect(ctx.evaluatorFeedback).toBe('You called off with a hand that has almost no fold equity here.')
+    expect(ctx.evaluatorFeedback).not.toBe(ctx.correctFeedback)
+  })
+
+  it('forwards into the API context as `evaluator_feedback` — the exact key ai_coach.py reads', () => {
+    const result = makeResult({ feedback: 'Solid read, wrong sizing.' })
+    const ctx = buildLessonCoachContext(lesson, decisionStep, 0, result, 'btn', 0)
+    const api = toCoachApiContext(ctx)
+    expect(api.evaluator_feedback).toBe('Solid read, wrong sizing.')
+  })
+})
+
 describe('toCoachApiContext — hint level', () => {
   it('omits hint_level when zero (falsy), includes it when set', () => {
     const noHint = buildLessonCoachContext(lesson, decisionStep, 0, null, undefined, 0)

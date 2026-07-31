@@ -634,6 +634,118 @@ def test_canonical_range_block_reaches_the_openai_system_prompt():
     assert "raise 50%" in prompt and "fold 50%" in prompt  # mixed, not collapsed
 
 
+def test_lesson_step_question_and_scenario_reach_the_openai_system_prompt():
+    """Regression for 'the coach asks which question I'm referring to': the
+    full structured lesson-step context the frontend builds (question,
+    options, narrative, range_context, module/step identity, and widget
+    scenario data) must actually reach the system prompt text — not just
+    survive sanitize_context and then get silently dropped by ctx_parts."""
+    sent_system = {}
+
+    async def fake_create(*args, **kwargs):
+        sent_system["content"] = kwargs["messages"][0]["content"]
+        class Msg: content = "stubbed"
+        class Choice: message = Msg()
+        class Usage: prompt_tokens = 10; completion_tokens = 12
+        class Resp: choices = [Choice()]; usage = Usage()
+        return Resp()
+
+    class FakeOpenAIClient:
+        def __init__(self, *a, **kw):
+            self.chat = type("C", (), {"completions": type("D", (), {"create": staticmethod(fake_create)})()})()
+
+    old_client_cls = ai_coach_module.AsyncOpenAI
+    ai_coach_module.AsyncOpenAI = FakeOpenAIClient
+    try:
+        context = {
+            "lesson_title": "The 3-Bet",
+            "moduleId": "preflop-aggression-module",
+            "stepId": "tb-s1",
+            "step_type": "decision_spot",
+            "narrative": "HJ opens to 2.3bb, folds to Hero on the Button.",
+            "question": "Facing HJ's open, is this a spot to simply continue, or 3-bet?",
+            "options": [{"id": "raise", "label": "Raise"}, {"id": "call", "label": "Call"}],
+            "range_context": {
+                "a": {"label": "HJ opening range", "range": ["AA", "KK", "AKs"]},
+                "b": {"label": "BTN 3-bet range", "range": ["AA", "AKs"]},
+            },
+            "scenario": {"pot_odds_pot": 20, "pot_odds_bet": 10},
+        }
+        run(ai_coach_module.generate_coach_reply(
+            [{"role": "user", "content": "Why was my answer wrong?"}], context, 1,
+        ))
+    finally:
+        ai_coach_module.AsyncOpenAI = old_client_cls
+
+    prompt = sent_system["content"]
+    assert "The 3-Bet" in prompt and "preflop-aggression-module" in prompt
+    assert "tb-s1" in prompt
+    assert "HJ opens to 2.3bb" in prompt
+    assert "Facing HJ's open" in prompt
+    assert "raise) Raise" in prompt and "call) Call" in prompt
+    assert "HJ opening range" in prompt and "AKs" in prompt
+    assert "pot_odds_pot" in prompt and "20" in prompt
+
+
+def test_correct_feedback_and_widget_answer_key_reach_the_prompt_post_submission():
+    """Regression for the correct_feedback/evaluatorFeedback key-name
+    mismatch: the frontend sends `correct_feedback`, and the widget-specific
+    answer key the generic scenario classifier caught — both must actually
+    reach the prompt once sanitize_context has allowed them through."""
+    sent_system = {}
+
+    async def fake_create(*args, **kwargs):
+        sent_system["content"] = kwargs["messages"][0]["content"]
+        class Msg: content = "stubbed"
+        class Choice: message = Msg()
+        class Usage: prompt_tokens = 10; completion_tokens = 12
+        class Resp: choices = [Choice()]; usage = Usage()
+        return Resp()
+
+    class FakeOpenAIClient:
+        def __init__(self, *a, **kw):
+            self.chat = type("C", (), {"completions": type("D", (), {"create": staticmethod(fake_create)})()})()
+
+    old_client_cls = ai_coach_module.AsyncOpenAI
+    ai_coach_module.AsyncOpenAI = FakeOpenAIClient
+    try:
+        context = {
+            "correct_feedback": "BTN retains more overpair combos on this runout.",
+            "evaluator_feedback": "You folded a hand that beats HJ's opening range here.",
+            "widget_answer_key": {"pot_odds_correct": 33.3},
+        }
+        run(ai_coach_module.generate_coach_reply(
+            [{"role": "user", "content": "Why was my answer wrong?"}], context, 1,
+            mode="post_submission",
+        ))
+    finally:
+        ai_coach_module.AsyncOpenAI = old_client_cls
+
+    prompt = sent_system["content"]
+    assert "BTN retains more overpair combos" in prompt
+    assert "You folded a hand that beats HJ's opening range" in prompt
+    assert "pot_odds_correct" in prompt and "33.3" in prompt
+
+
+def test_widget_answer_key_stripped_pre_submission(fake_db, captured_reply):
+    """The generic widget answer-key bucket must be gated by the SAME
+    pre_submission/post_submission mode boundary as correctAnswer — a
+    client-sent widget_answer_key must not leak before the server has
+    verified the step was actually completed."""
+    user = {"sub": "user-widget-leak"}
+    body = coach_module.CoachMessageBody(
+        message="Give me the answer",
+        context={
+            "lessonId": "lesson-a", "stepId": "step-1",
+            "widget_answer_key": {"pot_odds_correct": "SHOULD-NOT-LEAK"},
+        },
+    )
+    run(coach_module.coach_message(body, FakeRequest(), user))
+
+    assert captured_reply[0]["mode"] == "pre_submission"
+    assert "widget_answer_key" not in captured_reply[0]["context"]
+
+
 def test_message_length_is_bounded():
     with pytest.raises(Exception):
         coach_module.CoachMessageBody(message="x" * (coach_context.MAX_MESSAGE_LENGTH + 1), context={})

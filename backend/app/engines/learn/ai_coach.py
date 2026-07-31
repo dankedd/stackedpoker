@@ -200,9 +200,14 @@ async def generate_coach_reply(
         context: sanitized context — see app.engines.learn.coach_context.
                  May include board, hero_position, villain_position, street,
                  pot_bb, effective_stack_bb, user_action, concept_ids,
-                 active_leaks, lesson_title, step_type, lessonReview, hint_level,
-                 and (only in post_submission/lesson_review mode) answer-key
-                 fields such as correctAnswer/evaluatorFeedback.
+                 active_leaks, lesson_title, moduleId, stepId, step_type,
+                 question, options, narrative, range_context, scenario
+                 (widget-specific "given" data — pot odds/outs/equity inputs,
+                 range-builder pools, comparison scenarios, etc.),
+                 lessonReview, hint_level, and (only in post_submission/
+                 lesson_review mode) answer-key fields such as
+                 correctAnswer/evaluatorFeedback/correct_feedback/
+                 widget_answer_key.
         user_level: 1-30
         mode: "pre_submission" | "post_submission" | "lesson_review" | "general"
               — see app.engines.learn.coach_context.resolve_coaching_mode
@@ -230,7 +235,41 @@ async def generate_coach_reply(
                     f"{m.get('feedback', '')[:200]}"
                 )
     if context.get("lesson_title"):
-        ctx_parts.append(f"Lesson: {context['lesson_title']}")
+        lesson_line = f"Lesson: {context['lesson_title']}"
+        if context.get("moduleId"):
+            lesson_line += f" (module: {context['moduleId']})"
+        ctx_parts.append(lesson_line)
+    if context.get("step_type"):
+        step_identity = f"Step: {context['step_type']}"
+        if context.get("stepId"):
+            step_identity += f" ({context['stepId']})"
+        ctx_parts.append(step_identity)
+    if context.get("narrative"):
+        ctx_parts.append(f"Scenario: {context['narrative']}")
+    if context.get("question"):
+        ctx_parts.append(f"Question asked: {context['question']}")
+    if context.get("options"):
+        opts = context["options"]
+        if isinstance(opts, list):
+            labels = ", ".join(
+                f"{o.get('id', '?')}) {o.get('label', '')}" if isinstance(o, dict) else str(o)
+                for o in opts
+            )
+            ctx_parts.append(f"Answer options: {labels}")
+    if context.get("range_context"):
+        rc = context["range_context"]
+        if isinstance(rc, dict):
+            for side_key in ("a", "b"):
+                side = rc.get(side_key)
+                if isinstance(side, dict) and side.get("range"):
+                    ctx_parts.append(f"Range {side_key.upper()} ({side.get('label', '?')}): {', '.join(side['range'])}")
+    if context.get("scenario"):
+        scenario = context["scenario"]
+        if isinstance(scenario, dict):
+            for key, value in scenario.items():
+                if value in (None, "", []):
+                    continue
+                ctx_parts.append(f"Scenario data — {key}: {value}")
     if context.get("board"):
         board_str = " ".join(context["board"]) if isinstance(context["board"], list) else context["board"]
         ctx_parts.append(f"Board: {board_str}")
@@ -253,8 +292,17 @@ async def generate_coach_reply(
     # allowed them through (post_submission / lesson_review modes).
     if context.get("correctAnswer") or context.get("correct_answer"):
         ctx_parts.append(f"Correct answer: {context.get('correctAnswer') or context.get('correct_answer')}")
+    if context.get("correct_feedback"):
+        ctx_parts.append(f"Expected solution / theory explanation: {context['correct_feedback']}")
     if context.get("evaluatorFeedback") or context.get("evaluator_feedback"):
-        ctx_parts.append(f"Evaluator feedback: {context.get('evaluatorFeedback') or context.get('evaluator_feedback')}")
+        ctx_parts.append(f"Grading feedback on the learner's actual attempt: {context.get('evaluatorFeedback') or context.get('evaluator_feedback')}")
+    if context.get("widget_answer_key"):
+        wak = context["widget_answer_key"]
+        if isinstance(wak, dict):
+            for key, value in wak.items():
+                if value in (None, "", []):
+                    continue
+                ctx_parts.append(f"Answer key — {key}: {value}")
 
     # Skill level hint
     if user_level <= 5:
