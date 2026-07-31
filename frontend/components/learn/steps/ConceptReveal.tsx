@@ -9,6 +9,7 @@ import { EquityBar } from '@/components/learn/visuals/EquityBar'
 import { FoldFreqBar } from '@/components/learn/visuals/PressureGauge'
 import { NutAdvantageMeter } from '@/components/learn/visuals/NutAdvantageMeter'
 import { PreflopTable } from '@/components/learn/visuals/PreflopTable'
+import { ConvergenceIllustration } from '@/components/learn/visuals/ConceptIllustration'
 
 // ── Visual type renderers ─────────────────────────────────────────────────────
 
@@ -133,6 +134,23 @@ function NutAdvantageVisual() {
 // 'heatmap', 'pressure_chart' — 'table' now renders PreflopTable when hero_position is set).
 
 function resolveVisual(step: LessonStep, conceptId?: string) {
+  // Checked independent of `visual` so opting a step into an illustration never
+  // depends on (or collides with) the separate `visual` union below.
+  if (step.concept_illustration?.kind === 'convergence') {
+    const ci = step.concept_illustration
+    return (
+      <ConvergenceIllustration
+        targetPct={ci.targetPct}
+        shortTrialCount={ci.shortTrialCount}
+        longTrialCount={ci.longTrialCount}
+        shortLabel={ci.shortLabel}
+        longLabel={ci.longLabel}
+        shortCaption={ci.shortCaption}
+        longCaption={ci.longCaption}
+        seed={ci.seed}
+      />
+    )
+  }
   // Widened to a plain string so the (pre-existing) 'mdf_bar'/'nut_advantage' checks below —
   // neither of which is in LessonStep['visual']'s declared union — keep compiling exactly as
   // they did before this function took the whole step; those checks are effectively guarded

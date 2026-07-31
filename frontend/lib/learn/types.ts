@@ -882,6 +882,21 @@ export interface LessonStep {
    *  lesson can demonstrate equity with a scenario that fits its own content instead of
    *  reusing the shared default (36% flush draw / 50% pair vs pair / 78% overpair vs two overcards). */
   equity_bar_examples?: { hero: number; label: string }[]
+  /** Renders a small supporting chart inside a concept_reveal card via ConceptIllustration,
+   *  independent of `visual`. Currently only 'convergence' is implemented (a short volatile
+   *  run vs. a long run smoothing out toward `targetPct`) — add new `kind`s here as future
+   *  theory cards need other lightweight illustrations, rather than one-off components. */
+  concept_illustration?: {
+    kind: 'convergence'
+    targetPct: number
+    shortTrialCount?: number
+    longTrialCount?: number
+    shortLabel?: string
+    longLabel?: string
+    shortCaption?: string
+    longCaption?: string
+    seed?: number
+  }
   // ── Adaptive system (remediation) ───────────────────────────────────────────
   /** Ordered alternate representations of this step's concept, injected one at a time on repeated misses. */
   remediation_ladder?: LessonStep[]

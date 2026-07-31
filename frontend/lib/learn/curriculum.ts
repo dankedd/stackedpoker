@@ -2870,6 +2870,7 @@ export const LESSONS: Lesson[] = [
         concept_content:
           "Run a +EV decision 20 times and some will still lose — that's variance, ordinary short-run luck. Run it 1,000 times and the average result converges toward its true EV. Variance explains short-term swings; EV judges whether the decision itself was good.",
         visual: 'pressure_chart',
+        concept_illustration: { kind: 'convergence', targetPct: 55 },
         xp: 5,
       },
       {
@@ -4800,6 +4801,7 @@ export const LESSONS: Lesson[] = [
         players_behind: 2,
         action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb'],
         hero_hand: ['As', '5s'],
+        range_reveal_direction: '3bet',
         options: [
           {
             id: '3bet', label: '3-Bet', quality: 'perfect',
@@ -4828,6 +4830,7 @@ export const LESSONS: Lesson[] = [
         players_behind: 4,
         action_before_hero: ['UTG raises to 2.5bb'],
         hero_hand: ['Kc', 'Jd'],
+        range_reveal_direction: '3bet',
         options: [
           {
             id: 'fold', label: 'Fold', quality: 'perfect',
