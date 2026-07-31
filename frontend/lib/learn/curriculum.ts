@@ -531,8 +531,14 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_ids: ['basic_actions'],
         concept_title: 'Your Options on Any Street',
-        concept_content:
-          'On your turn you choose from: CHECK (pass the action along without betting, only legal if nobody has bet yet this street), BET (be the first to put chips in this street), CALL (match a bet that’s already out there), RAISE (increase the size of a bet that’s already out there), or FOLD (give up the hand).',
+        concept_content: 'On your turn, you choose from five possible actions.',
+        concept_structured_items: [
+          { term: 'CHECK', description: 'Pass the action without betting. Only possible if nobody has bet yet on this street.' },
+          { term: 'BET', description: 'Be the first player to put chips into the pot on this street.' },
+          { term: 'CALL', description: 'Match the current bet.' },
+          { term: 'RAISE', description: 'Increase the size of an existing bet.' },
+          { term: 'FOLD', description: 'Give up your hand.' },
+        ],
         xp: 3,
       },
       {
