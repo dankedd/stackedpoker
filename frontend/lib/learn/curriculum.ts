@@ -2490,7 +2490,7 @@ export const LESSONS: Lesson[] = [
         options: [
           {
             id: 'just_short',
-            label: 'No — 7/47 (≈14.9%) is just under the 15% needed',
+            label: 'No — the draw falls just short of what the pot odds require',
             quality: 'perfect',
             feedback: '7 ÷ 47 ≈ 14.9% — a hair below the 15% required. Extremely close, but technically short on this number alone.',
           },
