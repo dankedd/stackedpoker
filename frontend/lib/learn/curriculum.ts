@@ -11593,6 +11593,65 @@ export const LESSONS: Lesson[] = [
         xp: 10,
       },
       {
+        id: 'cna-s7b',
+        type: 'decision_spot',
+        concept_ids: ['range_advantage', 'flop_range_strategy'],
+        source: {
+          book: 'Modern Poker Theory',
+          section: 'Chapter 12, The Flop Continuation-bet (C-bet) — Diagram 25 / Table 100-101',
+          example: 'A76r vs 654r, BB vs BN, 20-40bb effective',
+          type: 'source_reconstructed',
+        },
+        narrative:
+          'Predict before you look at the reasoning. Same preflop line both times: BTN (the book\'s own data calls this seat "BN") opens, BB calls, BTN is in position — this time at 30bb effective, matching the exact stack depths (20-40bb) the numbers below were computed at. BB checks to BTN on the flop.',
+        decision_spot_question: 'On which flop does BTN (the preflop raiser) c-bet more often?',
+        scenario_a: {
+          label: 'A♠7♦6♣',
+          short_description: 'Ace-high, rainbow, disconnected',
+          hero_position: 'BTN',
+          villain_position: 'BB',
+          table_size: 6,
+          effective_stack_bb: 30,
+          action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds', 'BB calls', 'BB checks'],
+          board: ['As', '7d', '6c'],
+        },
+        scenario_b: {
+          label: '6♠5♦4♣',
+          short_description: 'Low, connected, rainbow',
+          hero_position: 'BTN',
+          villain_position: 'BB',
+          table_size: 6,
+          effective_stack_bb: 30,
+          action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds', 'BB calls', 'BB checks'],
+          board: ['6s', '5d', '4c'],
+        },
+        scenario_comparison_context: 'Same preflop action, same seats, same stack depth. Only the flop differs.',
+        scenario_layout: 'side_by_side',
+        options: [
+          {
+            id: 'a76r', label: 'A♠7♦6♣ — BTN c-bets far more often', quality: 'perfect',
+            feedback: 'Correct. This is one of the most extreme contrasts in the book\'s own aggregated GTO data (BB vs BN, 20-40bb). On A76r, BTN holds 62% range equity and a massive 31% Strong-hand concentration vs BB\'s 8% — strong enough that BTN gets to c-bet essentially 100% of the range, and BB almost never leads out instead (a 0.3% donk-bet frequency, the lowest recorded in the dataset). On 654r, BB actually holds the equity edge (51% to 49%) and connects nearly as well as BTN does — it is the single HIGHEST donk-bet-frequency board in the same dataset (67%), meaning BB fights back hard and BTN\'s c-bet frequency drops well below its 84% all-boards average.',
+          },
+          {
+            id: 'about_equal', label: 'About the same on both boards', quality: 'mistake',
+            feedback: 'Not close — see the numbers above. A76r sits at BTN\'s effective ceiling (≈100% c-bet, BB donking only 0.3% of the time); 654r is the one board in the book\'s dataset where BB pushes back hardest (67% donk-bet frequency). Same preflop action, opposite strategic pictures.',
+          },
+          {
+            id: '654r', label: '6♠5♦4♣ — BTN c-bets far more often', quality: 'mistake',
+            feedback: 'The reverse of the book\'s own finding. 654r is the board where BB actually holds the raw equity edge (51% to 49%) and applies the most pressure back (67% donk-bet frequency, the highest in the dataset) — A76r is where BTN\'s advantage is most lopsided, not 654r.',
+          },
+        ],
+        solver_reveal: {
+          title: 'BTN\'s Strategy on A♠7♦6♣',
+          buckets: [
+            { label: 'C-bet', pct: 100, color: 'bg-emerald-500' },
+            { label: 'Check', pct: 0, color: 'bg-slate-500' },
+          ],
+          caption: 'Exact — Modern Poker Theory, Ch. 12, p.635: "A76r is so good for IP that they get to c-bet 100% of their range... it works better for OOP to simply check 100% on A76r." (BB vs BN, 20-40bb effective — 654r\'s comparison in the feedback above is directionally accurate but not quoted as an exact frequency in the source text.)',
+        },
+        xp: 16,
+      },
+      {
         id: 'cna-s8',
         type: 'concept_reveal',
         concept_ids: ['flop_range_strategy'],
