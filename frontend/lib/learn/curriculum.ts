@@ -4685,7 +4685,15 @@ export const LESSONS: Lesson[] = [
         options: [
           {
             id: 'comprehensive', label: 'Several purposes at once — building a pot, generating fold equity, and applying pressure', quality: 'perfect',
-            feedback: 'Correct. BUILD A POT with hands that want to play a bigger pot. GENERATE FOLD EQUITY — sometimes Villain just folds. DENY EQUITY — a made hand or drawing hand gets no free look. ISOLATE the opener out of a crowded pot. CHANGE THE SPR — a smaller stack-to-pot ratio simplifies postflop. PUNISH a wide range that can\'t continue profitably. A single 3-bet is often doing more than one of these jobs simultaneously.',
+            feedback: 'Correct. A single 3-bet is often doing more than one of these jobs simultaneously.',
+            feedback_structured_items: [
+              { term: 'BUILD A POT', description: 'Building a bigger pot with hands that want to play one.' },
+              { term: 'GENERATE FOLD EQUITY', description: 'Making Villain fold immediately, winning the pot outright.' },
+              { term: 'DENY EQUITY', description: 'Preventing a made hand or drawing hand from seeing a free flop.' },
+              { term: 'ISOLATE', description: 'Taking the opener out of a crowded, multiway pot.' },
+              { term: 'CHANGE THE SPR', description: 'Lowering the stack-to-pot ratio to simplify postflop decisions.' },
+              { term: 'PUNISH', description: "Attacking a wide range that can't continue profitably." },
+            ],
           },
           {
             id: 'calling_weak', label: 'Because calling is always a weak, passive option', quality: 'mistake',
