@@ -2552,6 +2552,11 @@ export const LESSONS: Lesson[] = [
         concept_content:
           "Equity is the share of the pot a hand or range expects to own, based on how often it wins or ties at showdown. A 100-chip pot with 60% equity is worth 60 chips on average, over time.",
         visual: 'equity_bar',
+        equity_bar_examples: [
+          { hero: 55, label: '55% — Set vs. combo draw' },
+          { hero: 50, label: '50% — Pair vs. pair' },
+          { hero: 78, label: '78% — Overpair vs. two overcards' },
+        ],
         xp: 5,
       },
       {

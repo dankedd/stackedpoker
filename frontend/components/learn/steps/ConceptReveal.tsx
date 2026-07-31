@@ -12,9 +12,15 @@ import { PreflopTable } from '@/components/learn/visuals/PreflopTable'
 
 // ── Visual type renderers ─────────────────────────────────────────────────────
 
-function EquityBarVisual({ conceptId }: { conceptId?: string }) {
+function EquityBarVisual({
+  conceptId,
+  examples: examplesOverride,
+}: {
+  conceptId?: string
+  examples?: { hero: number; label: string }[]
+}) {
   // Show a contextual equity bar for pot_odds / equity_real concepts
-  const examples = [
+  const examples = examplesOverride ?? [
     { hero: 36, label: '36% — Flush draw (open-ender)' },
     { hero: 50, label: '50% — Pair vs. pair' },
     { hero: 78, label: '78% — Overpair vs. two overcards' },
@@ -145,7 +151,7 @@ function resolveVisual(step: LessonStep, conceptId?: string) {
       />
     )
   }
-  if (visualType === 'equity_bar') return <EquityBarVisual conceptId={conceptId} />
+  if (visualType === 'equity_bar') return <EquityBarVisual conceptId={conceptId} examples={step.equity_bar_examples} />
   if (visualType === 'mdf_bar' || conceptId === 'mdf' || conceptId === 'alpha') return <MdfVisual />
   if (visualType === 'nut_advantage' || conceptId === 'nut_advantage') return <NutAdvantageVisual />
   return null

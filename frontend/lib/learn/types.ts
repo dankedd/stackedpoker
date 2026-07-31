@@ -878,6 +878,10 @@ export interface LessonStep {
 
   // Visual
   visual?: 'table' | 'range_grid' | 'equity_bar' | 'heatmap' | 'pressure_chart'
+  /** Overrides the default 3-example carousel shown by the 'equity_bar' visual, so a
+   *  lesson can demonstrate equity with a scenario that fits its own content instead of
+   *  reusing the shared default (36% flush draw / 50% pair vs pair / 78% overpair vs two overcards). */
+  equity_bar_examples?: { hero: number; label: string }[]
   // ── Adaptive system (remediation) ───────────────────────────────────────────
   /** Ordered alternate representations of this step's concept, injected one at a time on repeated misses. */
   remediation_ladder?: LessonStep[]
