@@ -10647,7 +10647,7 @@ export const LESSONS: Lesson[] = [
         id: 'fl4-s8',
         type: 'straight_detective',
         concept_ids: ['flopped_straights'],
-        narrative: '8♠ 7♥ 5♦ — this one has more than one answer.',
+        narrative: '8♠ 7♥ 5♦.',
         straight_detective_board: ['8s', '7h', '5d'],
         straight_detective_decoys: [['3', '2'], ['T', 'J']],
         straight_detective_prompt: 'Tap every hole-card pair that completes a straight on this board.',
