@@ -221,6 +221,14 @@ export interface LessonStep {
    *  position." Always authored, never generated from scenario_a/scenario_b at
    *  runtime — omit rather than guess at a comparison's framing. */
   scenario_comparison_context?: string
+  /** How `scenario_a`/`scenario_b` render, when both are present. Omit (or
+   *  `'switch'`) for the default ONE-table segmented toggle (`ScenarioComparison`)
+   *  — unchanged for every existing comparison step. `'side_by_side'` mounts BOTH
+   *  scenarios as independent `PreflopTable`s at once (`ScenarioSideBySide`) — for
+   *  a question whose whole point is seeing two table states simultaneously (e.g.
+   *  "how many players remain behind at UTG vs. SB"), where toggling back and
+   *  forth would hide the comparison the question is actually testing. */
+  scenario_layout?: 'switch' | 'side_by_side'
   // Content
   narrative?: string
   /** decision_spot only: the exact question being tested, shown as the prominent

@@ -6,6 +6,7 @@ import type { LessonStep } from '@/lib/learn/types'
 import { orderStepOptions, isPokerActionSet } from '@/lib/learn/interactionSafety'
 import { PreflopTable } from '@/components/learn/visuals/PreflopTable'
 import { ScenarioComparison } from '@/components/learn/visuals/ScenarioComparison'
+import { ScenarioSideBySide } from '@/components/learn/visuals/ScenarioSideBySide'
 
 interface DecisionSpotProps {
   step: LessonStep
@@ -85,13 +86,25 @@ export function DecisionSpot({ step, onAnswer, disabled = false }: DecisionSpotP
           ONE-table scenario switcher instead of a single static table — see
           ScenarioComparison.tsx. Both scenario_a and scenario_b must be authored
           together; a step with only one silently falls through to the normal
-          single-table branch below (dev-only warning above, never a guessed table). */}
+          single-table branch below (dev-only warning above, never a guessed table).
+          A step can opt into `scenario_layout: 'side_by_side'` instead, mounting
+          BOTH tables at once via ScenarioSideBySide — for a question whose point
+          is seeing the two states simultaneously, where toggling would hide the
+          exact comparison being tested. Default (omitted/'switch') is unchanged. */}
       {hasFullScenarioComparison && (
-        <ScenarioComparison
-          scenarioA={step.scenario_a!}
-          scenarioB={step.scenario_b!}
-          comparisonContext={step.scenario_comparison_context}
-        />
+        step.scenario_layout === 'side_by_side' ? (
+          <ScenarioSideBySide
+            scenarioA={step.scenario_a!}
+            scenarioB={step.scenario_b!}
+            comparisonContext={step.scenario_comparison_context}
+          />
+        ) : (
+          <ScenarioComparison
+            scenarioA={step.scenario_a!}
+            scenarioB={step.scenario_b!}
+            comparisonContext={step.scenario_comparison_context}
+          />
+        )
       )}
 
       {/* Shared preflop table — replaces the old text-pill context bar for any

@@ -390,7 +390,7 @@ export const LESSONS: Lesson[] = [
     title: 'How Poker Works',
     subtitle: 'The absolute-beginner rules of Texas Hold’em, taught fast so the real course can begin.',
     lesson_type: 'micro',
-    concept_ids: ['holdem_objective', 'hole_cards', 'community_cards', 'blinds', 'streets', 'basic_actions', 'hand_rankings', 'winning_the_pot'],
+    concept_ids: ['holdem_objective', 'hole_cards', 'community_cards', 'poker_terminology', 'blinds', 'streets', 'basic_actions', 'hand_rankings', 'winning_the_pot', 'table_position'],
     estimated_min: 12,
     xp_reward: 220,
     sort_order: 1,
@@ -423,6 +423,15 @@ export const LESSONS: Lesson[] = [
         concept_content:
           "Each hand, you're dealt 2 private hole cards — only you can see them. The table also deals up to 5 community cards face up in the middle, shared by everyone still in the hand.",
         xp: 3,
+      },
+      {
+        id: 'l3-s1',
+        type: 'concept_reveal',
+        concept_ids: ['poker_terminology'],
+        concept_title: 'Hero and Villain',
+        concept_content:
+          'Hero is the player whose decision we’re studying — that’s you, in every lesson. Villain is an opponent. From here on, every scenario is described in these terms.',
+        xp: 2,
       },
       {
         // Step 3 — "Build Your First Hand": an unambiguous nut-flush example
@@ -619,6 +628,15 @@ export const LESSONS: Lesson[] = [
         xp: 3,
       },
       {
+        id: 'l2-s1',
+        type: 'concept_reveal',
+        concept_ids: ['table_position'],
+        concept_title: 'Every Seat Has a Name',
+        concept_content:
+          'Action moves clockwise around the table, and every seat is named by its distance from the Button (the dealer position). Nine-handed, there are three broad zones — early, middle, and late position — plus the two forced-bet seats, the blinds.',
+        xp: 2,
+      },
+      {
         id: 'l1-s15',
         type: 'concept_reveal',
         concept_ids: ['blinds', 'streets'],
@@ -772,15 +790,6 @@ export const LESSONS: Lesson[] = [
     sort_order: 2,
     steps: [
       {
-        id: 'l2-s1',
-        type: 'concept_reveal',
-        concept_ids: ['table_position'],
-        concept_title: 'Every Seat Has a Name',
-        concept_content:
-          'Action moves clockwise around the table, and every seat is named by its distance from the Button (the dealer position). Nine-handed, there are three broad zones — early, middle, and late position — plus the two forced-bet seats, the blinds.',
-        xp: 2,
-      },
-      {
         id: 'l2-s2',
         type: 'position_table',
         concept_ids: ['table_position'],
@@ -901,28 +910,6 @@ export const LESSONS: Lesson[] = [
         xp: 5,
       },
       {
-        id: 'l2-s11',
-        type: 'decision_spot',
-        concept_ids: ['ip_oop', 'relative_position'],
-        narrative: 'Three players see the flop together: HJ, BTN, and BB.',
-        decision_spot_question: 'Who is IP against both of the other two?',
-        options: [
-          {
-            id: 'btn', label: 'BTN', quality: 'perfect',
-            feedback: 'Correct — BTN acts last no matter how many opponents are still in the hand, so it’s IP against every one of them, not just one at a time.',
-          },
-          {
-            id: 'hj', label: 'HJ', quality: 'mistake',
-            feedback: 'HJ acts before both BTN and BB postflop here — HJ is OOP against the whole rest of the field.',
-          },
-          {
-            id: 'bb', label: 'BB', quality: 'mistake',
-            feedback: 'BB acts before BTN postflop — BB is not IP against the full field here.',
-          },
-        ],
-        xp: 7,
-      },
-      {
         id: 'l2-s12',
         type: 'concept_reveal',
         concept_ids: ['relative_position'],
@@ -945,6 +932,28 @@ export const LESSONS: Lesson[] = [
           {
             id: 'yes', label: 'Yes — being IP against one opponent means IP against all of them', quality: 'mistake',
             feedback: 'Position is relative to who you’re actually facing. CO is IP against UTG but still acts before BTN — meaning CO is OOP against BTN in that same hand.',
+          },
+        ],
+        xp: 7,
+      },
+      {
+        id: 'l2-s11',
+        type: 'decision_spot',
+        concept_ids: ['ip_oop', 'relative_position'],
+        narrative: 'Three players see the flop together: HJ, BTN, and BB.',
+        decision_spot_question: 'Who is IP against both of the other two?',
+        options: [
+          {
+            id: 'btn', label: 'BTN', quality: 'perfect',
+            feedback: 'Correct — BTN acts last no matter how many opponents are still in the hand, so it’s IP against every one of them, not just one at a time.',
+          },
+          {
+            id: 'hj', label: 'HJ', quality: 'mistake',
+            feedback: 'HJ acts before both BTN and BB postflop here — HJ is OOP against the whole rest of the field.',
+          },
+          {
+            id: 'bb', label: 'BB', quality: 'mistake',
+            feedback: 'BB acts before BTN postflop — BB is not IP against the full field here.',
           },
         ],
         xp: 7,
@@ -1033,15 +1042,6 @@ export const LESSONS: Lesson[] = [
     xp_reward: 230,
     sort_order: 3,
     steps: [
-      {
-        id: 'l3-s1',
-        type: 'concept_reveal',
-        concept_ids: ['poker_terminology'],
-        concept_title: 'Hero and Villain',
-        concept_content:
-          'Hero is the player whose decision we’re studying — that’s you, in every lesson. Villain is an opponent. From here on, every scenario is described in these terms.',
-        xp: 2,
-      },
       {
         id: 'l3-s2',
         type: 'decision_spot',
@@ -1200,6 +1200,37 @@ export const LESSONS: Lesson[] = [
         xp: 7,
       },
       {
+        id: 'l3-s18',
+        type: 'decision_spot',
+        concept_ids: ['effective_stack'],
+        narrative: 'Both players in a hand happen to have exactly 100bb.',
+        decision_spot_question: 'What is the effective stack?',
+        options: [
+          {
+            id: 'hundred', label: '100bb', quality: 'perfect',
+            feedback: 'Correct — when the two stacks are equal, the effective stack is simply that shared amount.',
+          },
+          {
+            id: 'fifty', label: '50bb', quality: 'mistake',
+            feedback: 'Effective stack isn’t half of one stack — with equal stacks, it’s just that stack size itself: 100bb.',
+          },
+          {
+            id: 'twohundred', label: '200bb', quality: 'mistake',
+            feedback: 'That’s the two stacks added together, not the effective stack — effective stack is never larger than either individual stack.',
+          },
+        ],
+        xp: 6,
+      },
+      {
+        id: 'l3-s13',
+        type: 'concept_reveal',
+        concept_ids: ['bet_size_notation'],
+        concept_title: 'Bet Sizing, Two Notations',
+        concept_content:
+          'Bets get described two ways: in big blinds ("BTN raises to 2.5bb") or as a fraction of the pot ("Hero bets 50% pot"). On a 100-chip pot: 25 chips is 25% pot, 50 is half pot, 75 is 75% pot, 100 is pot-sized, and 150 is a 150% pot overbet.',
+        xp: 3,
+      },
+      {
         id: 'l3-s12',
         type: 'decision_spot',
         concept_ids: ['bet_size_notation'],
@@ -1211,15 +1242,6 @@ export const LESSONS: Lesson[] = [
           { id: 'quarter', label: '25% pot', quality: 'mistake', feedback: 'A 25% pot bet on a 100 pot would be 25 chips — this bet is double that.' },
         ],
         xp: 5,
-      },
-      {
-        id: 'l3-s13',
-        type: 'concept_reveal',
-        concept_ids: ['bet_size_notation'],
-        concept_title: 'Bet Sizing, Two Notations',
-        concept_content:
-          'Bets get described two ways: in big blinds ("BTN raises to 2.5bb") or as a fraction of the pot ("Hero bets 50% pot"). On a 100-chip pot: 25 chips is 25% pot, 50 is half pot, 75 is 75% pot, 100 is pot-sized, and 150 is a 150% pot overbet.',
-        xp: 3,
       },
       {
         id: 'l3-s14',
@@ -1276,28 +1298,6 @@ export const LESSONS: Lesson[] = [
         concept_content:
           'Sometimes a hand isn’t literally the mathematical nuts, but it’s so strong against what opponents realistically hold that it plays like the nuts in practice. The literal ranking and the practical strength aren’t always the same conversation.',
         xp: 2,
-      },
-      {
-        id: 'l3-s18',
-        type: 'decision_spot',
-        concept_ids: ['effective_stack'],
-        narrative: 'Both players in a hand happen to have exactly 100bb.',
-        decision_spot_question: 'What is the effective stack?',
-        options: [
-          {
-            id: 'hundred', label: '100bb', quality: 'perfect',
-            feedback: 'Correct — when the two stacks are equal, the effective stack is simply that shared amount.',
-          },
-          {
-            id: 'fifty', label: '50bb', quality: 'mistake',
-            feedback: 'Effective stack isn’t half of one stack — with equal stacks, it’s just that stack size itself: 100bb.',
-          },
-          {
-            id: 'twohundred', label: '200bb', quality: 'mistake',
-            feedback: 'That’s the two stacks added together, not the effective stack — effective stack is never larger than either individual stack.',
-          },
-        ],
-        xp: 6,
       },
       {
         id: 'l3-s19',
@@ -2372,9 +2372,9 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['outs_probability', 'drawing_probability'],
         outs_deck_mode: 'speed_round',
         narrative: 'Speed round — flush draw, one card to come.',
-        outs_deck_outs_count: 9,
+        outs_deck_outs_count: 15,
         outs_deck_question: "What's the chance of hitting on the very next card?",
-        outs_deck_correct: 19.1,
+        outs_deck_correct: 31.9,
         outs_deck_tolerance: 2,
         xp: 6,
       },
@@ -3772,6 +3772,31 @@ export const LESSONS: Lesson[] = [
         narrative:
           "Hero holds Q♠7♠ twice. At UTG, 8 players remain behind before the blinds. At SB, only BB remains. Which player must survive more possible resistance?",
         hero_hand: ['Qs', '7s'],
+        // Top-level fields mirror scenario_a — the AI Coach reads these
+        // top-level fields regardless of step.type, so they must agree with
+        // the "Scenario 1" half of the comparison (see scenarioValidator.ts
+        // check #0, and the same pattern in 'pce-s1').
+        table_size: 9,
+        hero_position: 'UTG',
+        action_before_hero: [],
+        scenario_a: {
+          label: 'UTG',
+          short_description: '8 players behind',
+          hero_position: 'UTG',
+          hero_hand: ['Qs', '7s'],
+          table_size: 9,
+          action_before_hero: [],
+        },
+        scenario_b: {
+          label: 'SB',
+          short_description: '1 player behind (BB)',
+          hero_position: 'SB',
+          hero_hand: ['Qs', '7s'],
+          table_size: 9,
+          action_before_hero: ['Everyone folds'],
+        },
+        scenario_layout: 'side_by_side',
+        scenario_comparison_context: 'Same hand, same table. Only Hero\'s seat — and how many players are still left to act — changes.',
         options: [
           { id: 'utg', label: 'UTG (8 players behind)', quality: 'perfect', feedback: 'Correct — with 8 players still to act, there is far more chance someone wakes up with a strong hand.' },
           { id: 'sb', label: 'SB (1 player behind)', quality: 'mistake', feedback: 'SB only has to survive BB — that is about as little resistance as preflop poker gets.' },
@@ -4616,7 +4641,8 @@ export const LESSONS: Lesson[] = [
         id: 'tb-s1',
         type: 'decision_spot',
         concept_ids: ['three_bet'],
-        narrative: 'HJ opens to 2.3bb. Action is on Hero.',
+        narrative:
+          "UTG, UTG+1 and UTG+2 have already folded. HJ opens to 2.3bb — the first player to voluntarily put chips in the pot this hand. CO folds behind, which brings the action all the way around to Hero on the Button, the only player left with a real decision. From here Hero has exactly three options: fold and give up the hand, call and see a flop, or raise back over HJ's open. That third option — reraising an opener before the flop — is what poker calls a 3-bet, and it's the subject of this entire lesson. This first spot sets up the question the rest of the module keeps coming back to: when reraising here is actually the better play.",
         table_size: 9,
         hero_position: 'BTN',
         villain_position: 'HJ',
