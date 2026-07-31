@@ -11500,15 +11500,15 @@ export const LESSONS: Lesson[] = [
         id: 'cna-s3',
         type: 'decision_spot',
         concept_ids: ['flop_range_strategy'],
-        narrative: 'If the preflop raiser checked back literally every single flop, no matter the hand or board, what would go wrong?',
+        narrative: 'If Hero (the preflop raiser) checked back literally every single flop, no matter the hand or board, what would go wrong?',
         options: [
           {
             id: 'comprehensive', label: 'Villain realizes free equity, with no pressure on the hands that missed', quality: 'perfect',
             feedback: 'Correct. Checking back unconditionally hands the entire field a free card and gives up every opportunity to make a wide, weak calling range pay for continuing. A pure-check strategy is just as broken as a pure-bet one.',
           },
           {
-            id: 'nothing', label: 'Nothing — checking is always safe', quality: 'mistake',
-            feedback: 'Checking has a real cost: it lets Villain\'s whole range see the next card for free, including all the hands that would have folded to a bet.',
+            id: 'simpler_decisions', label: 'It mostly just makes the hand simpler for Hero, avoiding tough decisions on later streets', quality: 'mistake',
+            feedback: 'That\'s a minor side-benefit of checking, not the real cost. The actual problem is what it does for Villain: an unconditional check hands Villain\'s entire range — including every hand that would have folded to a bet — a free look at the next card.',
           },
         ],
         xp: 8,
