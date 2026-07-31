@@ -4649,6 +4649,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['three_bet'],
         narrative:
           "UTG, UTG+1 and UTG+2 have already folded. HJ opens to 2.3bb — the first player to voluntarily put chips in the pot this hand. CO folds behind, which brings the action all the way around to Hero on the Button, the only player left with a real decision. From here Hero has exactly three options: fold and give up the hand, call and see a flop, or raise back over HJ's open. That third option — reraising an opener before the flop — is what poker calls a 3-bet, and it's the subject of this entire lesson. This first spot sets up the question the rest of the module keeps coming back to: when reraising here is actually the better play.",
+        decision_spot_question: "Facing HJ's open, is this a spot to simply continue — or come back over the top with a 3-bet?",
         table_size: 9,
         hero_position: 'BTN',
         villain_position: 'HJ',
