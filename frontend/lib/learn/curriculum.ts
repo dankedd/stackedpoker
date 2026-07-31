@@ -15,6 +15,7 @@ import { chartToStrategyMap, chartHandList } from './threebetResponseRanges'
 import { DEFEND_DEEP } from './defendBaselines'
 import { selectLabAttempt, buildTableDecisionStep } from './mttRfiLabPool'
 import { selectDrillQuestions } from './mttBoundarySelector'
+import { FLOP_STRUCTURE_FREQUENCY } from './flopClassifier'
 import { buildPositionLesson } from './positionLessonBuilder'
 import {
   IP_VS_BB_AVERAGE, BB_VS_IP_AVERAGE, BB_LOW_CONNECTED_BOARDS, BB_HIGH_CARD_BOARDS,
@@ -10313,9 +10314,9 @@ export const LESSONS: Lesson[] = [
         concept_title: 'Structure: Do Any Ranks Repeat?',
         concept_content: 'Structure looks only at ranks, never suits.',
         concept_structured_items: [
-          { term: 'TRIPS', description: 'All three cards share a rank (rare — 0.24% of flops).' },
-          { term: 'PAIRED', description: 'Exactly two cards share a rank.' },
-          { term: 'UNPAIRED', description: 'All three ranks are different (the large majority of flops).' },
+          { term: 'TRIPS', description: `All three cards share a rank (rare — ${FLOP_STRUCTURE_FREQUENCY.trips.toFixed(2)}% of flops).` },
+          { term: 'PAIRED', description: `Exactly two cards share a rank (${FLOP_STRUCTURE_FREQUENCY.paired.toFixed(1)}% of flops).` },
+          { term: 'UNPAIRED', description: `All three ranks are different (the large majority — ${FLOP_STRUCTURE_FREQUENCY.unpaired.toFixed(1)}% of flops).` },
         ],
         xp: 2,
       },

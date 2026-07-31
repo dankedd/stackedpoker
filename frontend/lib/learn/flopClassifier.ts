@@ -42,6 +42,18 @@ function rankFamilyOf(rank: Rank): RankFamily {
   return 'L'
 }
 
+/** Exact combinatorial frequency of each flop structure, derived from C(52,3) = 22,100
+ *  possible flops (not a book figure — pure card-combinatorics, verifiable by hand):
+ *    trips:    13 ranks * C(4,3)          =    52 flops -> 0.24%
+ *    paired:   13 * 12 * C(4,2) * 4       = 3,744 flops -> 16.94%
+ *    unpaired: 22,100 - 52 - 3,744        = 18,304 flops -> 82.82%
+ *  Single source of truth so the percentage isn't re-derived/re-typed per lesson. */
+export const FLOP_STRUCTURE_FREQUENCY: Record<FlopStructure, number> = {
+  trips: 52 / 221,
+  paired: 3744 / 221,
+  unpaired: 18304 / 221,
+}
+
 export interface ParsedCard {
   card: string
   rank: Rank
