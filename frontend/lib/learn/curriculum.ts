@@ -21,6 +21,7 @@ import { FLOP_STRUCTURE_FREQUENCY } from './flopClassifier'
 import { buildPositionLesson } from './positionLessonBuilder'
 import {
   IP_VS_BB_AVERAGE, BB_VS_IP_AVERAGE, BB_LOW_CONNECTED_BOARDS, BB_HIGH_CARD_BOARDS,
+  CBET_FREQUENCY_OPTIONS, cbetFrequencyDisplayLabel,
 } from './cbetBaselines'
 import {
   LESSON1_SCENARIO, A76R_SCENARIO, CS_654R_SCENARIO,
@@ -333,7 +334,7 @@ export const LEARNING_MODULES: LearningModule[] = [
     path_id: 'intermediate',
     slug: 'game-theory-foundations-module',
     title: 'Game Theory Foundations',
-    description: 'Not a glossary of GTO terms — a strategy lab. Manipulate strategies, exploit mistakes, trigger counter-adjustments, and derive equilibrium and MDF yourself from the underlying EV logic, the way Modern Poker Theory builds it.',
+    description: 'Not a glossary of GTO terms — a strategy lab. Manipulate strategies, exploit mistakes, trigger counter-adjustments, and derive equilibrium and MDF yourself from the underlying EV logic.',
     concept_ids: ['strategy_interdependence', 'maximally_exploitative_strategy', 'counter_exploitation', 'nash_equilibrium_source', 'indifference_principle', 'clairvoyance_game', 'alpha_mdf_derivation', 'mdf_limitations'],
     unlock_after: ['blockers-module'],
     sort_order: 9,
@@ -2611,7 +2612,6 @@ export const LESSONS: Lesson[] = [
         id: 'ysp-s4',
         type: 'equity_predict',
         concept_ids: ['hand_vs_range_equity'],
-        narrative: "Now Hero's A-K faces Villain's entire continuing range on this board — not one specific hand.",
         hero_hand: ['As', 'Kd'],
         board: ['Kc', '8h', '4d'],
         equity_villain_range: ['AA', '88', '44', 'AKs', 'AKo', 'AQs', 'AQo', 'KQs', 'KQo', 'QQ', 'JJ', 'TT', '99', '77', '66', '55'],
@@ -2624,7 +2624,6 @@ export const LESSONS: Lesson[] = [
         id: 'ysp-s5',
         type: 'range_compare',
         concept_ids: ['range_weighting'],
-        narrative: "Same Hero hand and board. Two different Villain ranges.",
         hero_hand: ['As', 'Kd'],
         board: ['Kc', '8h', '4d'],
         range_compare_a: {
@@ -3277,7 +3276,6 @@ export const LESSONS: Lesson[] = [
         id: 'eqr-s10',
         type: 'range_compare',
         concept_ids: ['range_advantage_realization'],
-        narrative: "Hero's range is strong on this board. Villain's range is comparatively weak.",
         range_compare_a: { label: "Hero's range (strong here)", range: ['AA', 'KK', 'QQ', 'JJ', 'TT', '99', 'AKs', 'AKo', 'AQs', 'KQs'] },
         range_compare_b: { label: "Villain's range (weak here)", range: ['A9o', 'A8o', 'K9o', 'Q9o', 'J9o', 'T9o', '98o', '87o', '76o', '65o', '54o', '43o'] },
         range_compare_prompt: "When Hero's overall range is this strong, what happens to the WEAKER hands inside it?",
@@ -4105,7 +4103,6 @@ export const LESSONS: Lesson[] = [
         id: 'scr-s3',
         type: 'mtt_stack_depth_compare',
         concept_ids: ['stack_depth_preflop'],
-        narrative: 'These are the four canonical stack depths this whole module uses — the same ones the source material studies. Drag the slider across all four and watch the real BTN opening strategy change shape.',
         mtt_stack_depth_compare_position: 'BTN',
         mtt_stack_depth_compare_reference_bb: 60,
         xp: 10,
@@ -4157,7 +4154,6 @@ export const LESSONS: Lesson[] = [
         id: 'scr-s8',
         type: 'mtt_stack_depth_compare',
         concept_ids: ['stack_depth_preflop', 'position_rfi'],
-        narrative: 'Now compare UTG at the same four canonical depths.',
         mtt_stack_depth_compare_position: 'UTG',
         mtt_stack_depth_compare_reference_bb: 60,
         mtt_stack_depth_compare_prompt: 'Why does UTG widen so much less than BTN did when both get deeper?',
@@ -4224,7 +4220,7 @@ export const LESSONS: Lesson[] = [
         ante_bb: 0.125,
         action_before_hero: ['Everyone folds'],
         concept_content:
-          'UTG has the tightest range of any seat — averaging about 15% VPIP across every stack depth the book studies, with 8 players still able to wake up with a hand behind it. Unlike most positions, going deeper barely widens UTG at all: frequency actually peaks around 25bb, then edges back down at 40bb and 60bb. What changes with depth isn’t how OFTEN UTG opens — it’s WHICH hands. Shallower stacks lean on high-equity, blocker-heavy holdings; deeper stacks make a little more room for suited connectors and small pairs that can flop the nuts, trimming a few offsuit broadways to pay for it.',
+          'UTG has the tightest range of any seat — averaging about 15% VPIP across every stack depth, with 8 players still able to wake up with a hand behind it. Unlike most positions, going deeper barely widens UTG at all: frequency actually peaks around 25bb, then edges back down at 40bb and 60bb. What changes with depth isn’t how OFTEN UTG opens — it’s WHICH hands. Shallower stacks lean on high-equity, blocker-heavy holdings; deeper stacks make a little more room for suited connectors and small pairs that can flop the nuts, trimming a few offsuit broadways to pay for it.',
         xp: 8,
       },
       {
@@ -4310,7 +4306,6 @@ export const LESSONS: Lesson[] = [
         id: 'utg-s7',
         type: 'mtt_stack_depth_compare',
         concept_ids: ['utg_rfi', 'stack_depth_preflop'],
-        narrative: 'Here’s UTG’s real strategy at all four canonical depths. Slide through them, then tap "Compare" to see exactly what changes relative to your 60bb build.',
         mtt_stack_depth_compare_position: 'UTG',
         mtt_stack_depth_compare_reference_bb: 60,
         mtt_stack_depth_compare_prompt: 'True or false: UTG’s opening frequency increases steadily as the stack gets deeper.',
@@ -4518,7 +4513,7 @@ export const LESSONS: Lesson[] = [
         ante_bb: 0.125,
         action_before_hero: ['Everyone folds'],
         concept_content:
-          'The Small Blind is not just "a wide Button" — it is structurally different. SB has a discount (0.5bb already invested) and only one opponent left to act, which lets it play the largest fraction of hands of any position. But unlike CO and BTN — where the book deliberately excludes limping from the model — SB is guaranteed to play out of position for the rest of the hand if called, and limping remains a real, book-supported part of its strategy at every depth. At 15bb, SB plays a clean jam/limp/fold game. Past about 17bb a real raise size appears; by 30bb the all-in option is gone entirely, and by 60bb almost the ENTIRE range is a genuine raise/limp blend — even AA (40% raise / 60% limp).',
+          'The Small Blind is not just "a wide Button" — it is structurally different. SB has a discount (0.5bb already invested) and only one opponent left to act, which lets it play the largest fraction of hands of any position. But unlike CO and BTN — where limping is deliberately excluded from this model — SB is guaranteed to play out of position for the rest of the hand if called, and limping remains a real, supported part of its strategy at every depth. At 15bb, SB plays a clean jam/limp/fold game. Past about 17bb a real raise size appears; by 30bb the all-in option is gone entirely, and by 60bb almost the ENTIRE range is a genuine raise/limp blend — even AA (40% raise / 60% limp).',
         xp: 8,
       },
       {
@@ -4608,7 +4603,6 @@ export const LESSONS: Lesson[] = [
         id: 'sb-compare',
         type: 'mtt_stack_depth_compare',
         concept_ids: ['sb_first_in', 'stack_depth_preflop'],
-        narrative: 'Here’s SB’s real strategy at all four canonical depths. Slide through them, then tap "Compare" to see exactly what changes relative to your 60bb build.',
         mtt_stack_depth_compare_position: 'SB',
         mtt_stack_depth_compare_reference_bb: 60,
         mtt_stack_depth_compare_prompt: 'True or false: SB plays the same three actions (jam, limp, fold) at every stack depth in this module.',
@@ -5202,7 +5196,6 @@ export const LESSONS: Lesson[] = [
             type: 'morphology_builder',
             morphology_builder_mode: 'classify',
             concept_ids: ['linear_range'],
-            narrative: 'Try a clearer example first.',
             morphology_builder_range: ['AA', 'KK', 'QQ', 'JJ', 'AKs', 'AKo'],
             morphology_builder_prompt: 'This range stops abruptly at JJ/AKo with nothing weaker included. Shape?',
             options: [
@@ -6068,7 +6061,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['squeeze'],
         concept_title: 'Squeeze Sizing',
         concept_content:
-          'A squeeze generally needs to account for the extra caller and the extra dead money already in the pot — simply reusing Hero\'s normal heads-up 3-bet size undersizes the raise relative to how much is already in play and how many players still need to be priced out. Modern Poker Theory treats squeeze sizing as its own topic precisely because it isn\'t one fixed number: the right size also flexes with Hero\'s position and with how deep the effective stacks are, not just with how much dead money is already sitting in the pot.',
+          'A squeeze generally needs to account for the extra caller and the extra dead money already in the pot — simply reusing Hero\'s normal heads-up 3-bet size undersizes the raise relative to how much is already in play and how many players still need to be priced out. Squeeze sizing deserves its own attention precisely because it isn\'t one fixed number: the right size also flexes with Hero\'s position and with how deep the effective stacks are, not just with how much dead money is already sitting in the pot.',
         xp: 7,
       },
       {
@@ -6508,7 +6501,6 @@ export const LESSONS: Lesson[] = [
         id: 'trb-flip-reveal',
         type: 'range_compare',
         concept_ids: ['position_three_bet', 'facing_three_bet'],
-        narrative: "Here's the same shift in real numbers — the book's own aggregate frequencies for two 3-bet-response matchups.",
         range_compare_a: {
           label: 'BTN vs BB — IN POSITION (4-bet 8.6% / Call 47.3% / Fold 44.5%)',
           range: chartHandList(THREEBET_RESPONSE_CHARTS.BTN_vs_BB_3bet_response),
@@ -7944,7 +7936,6 @@ export const LESSONS: Lesson[] = [
             id: 'so-s3-remediate-2',
             type: 'range_compare',
             concept_ids: ['opener_range_strength'],
-            narrative: 'Try a starker contrast first: Hero holds 7♠6♠. Scenario A: UTG opens. Scenario B: BTN opens.',
             hero_hand: ['7s', '6s'],
             range_compare_a: { label: 'UTG opens (~15%)', range: RANGE_TARGETS.UTG_open_100bb, option_id: 'utg' },
             range_compare_b: { label: 'BTN opens (~40%)', range: RANGE_TARGETS.BTN_open_100bb, option_id: 'btn' },
@@ -8120,7 +8111,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['range_construction'],
         concept_title: 'The HJ Shape',
         concept_content:
-          "HJ's defense against an early open is deliberately tight and polarized: a value-3-bet core of strong pairs, AK, and a couple of suited wheel-Ax blockers; a calling range of the remaining pairs, suited broadways and suited connectors; everything else — most offsuit hands outside AQo — folds. Source reconstruction from Modern Poker Theory Ch.8's \"Defending the HJ\" (60bb) aggregate 3-bet/call/fold %, not a pixel-exact chart.",
+          "HJ's defense against an early open is deliberately tight and polarized: a value-3-bet core of strong pairs, AK, and a couple of suited wheel-Ax blockers; a calling range of the remaining pairs, suited broadways and suited connectors; everything else — most offsuit hands outside AQo — folds.",
         xp: 6,
       },
     ],
@@ -8328,7 +8319,7 @@ export const LESSONS: Lesson[] = [
         narrative: 'Hero defends the CO at 60bb effective. Scenario A: UTG opens. Scenario B: HJ opens. Same seat, same stack in both.',
         effective_stack_bb: 60,
         table_size: 9,
-        range_compare_a: { label: 'UTG opens — CO continues (~14.5%)', range: defendChartHandList(DEFEND_RESPONSE_CHARTS.CO_vs_UTG_60BB), option_id: 'utg' },
+        range_compare_a: { label: 'UTG opens — CO continues (~17.0%)', range: defendChartHandList(DEFEND_RESPONSE_CHARTS.CO_vs_UTG_60BB), option_id: 'utg' },
         range_compare_b: { label: 'HJ opens — CO continues (~21.3%)', range: defendChartHandList(DEFEND_RESPONSE_CHARTS.CO_vs_HJ_60BB), option_id: 'hj' },
         range_compare_prompt: 'In which scenario does CO defend meaningfully wider?',
         options: [
@@ -8366,7 +8357,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['range_construction'],
         concept_title: 'The CO Shape',
         concept_content:
-          "CO's defense is a direct widening of HJ's: the same value-3-bet core, but a noticeably deeper calling range — reaching further into suited broadways, connectors, and small pairs — because CO only has BTN and the two blinds left to survive, and because a later opener's range gives it more to work with. Source reconstruction from Modern Poker Theory Ch.8's \"Defending the CO\" (60bb) aggregate %, extrapolated for the CO-vs-HJ matchup specifically (see defendResponseBaselines.ts for the exact citation).",
+          "CO's defense is a direct widening of HJ's: the same value-3-bet core, but a noticeably deeper calling range — reaching further into suited broadways, connectors, and small pairs — because CO only has BTN and the two blinds left to survive, and because a later opener's range gives it more to work with.",
         xp: 6,
       },
     ],
@@ -8475,7 +8466,6 @@ export const LESSONS: Lesson[] = [
         id: 'bbd-s6',
         type: 'stack_depth_morph',
         concept_ids: ['stack_depth_defense', 'bb_defense'],
-        narrative: 'Hero (BB) facing a BTN open, across different effective stack depths.',
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'BTN',
@@ -8822,7 +8812,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['range_construction', 'bb_defense'],
         concept_title: 'The BB Shape',
         concept_content:
-          "BB's defense is the widest and most genuinely MIXED of any seat — many hands split between two actions rather than picking one cleanly, because BB's price and closed action make continuing (in some form) correct so often that the real skill is choosing WHICH action, not whether to continue at all. This chart is an exact transcription from Modern Poker Theory Ch.5's own solved BB-vs-BTN diagram (100bb, 6-max cash) — the highest-fidelity data in this entire module, unlike the source-reconstructed charts built for every other position.",
+          "BB's defense is the widest and most genuinely MIXED of any seat — many hands split between two actions rather than picking one cleanly, because BB's price and closed action make continuing (in some form) correct so often that the real skill is choosing WHICH action, not whether to continue at all. This chart is the highest-fidelity data in this entire module — a precise, solved BB-vs-BTN reference (100bb, 6-max cash), unlike the approximated charts built for every other position.",
         xp: 6,
       },
     ],
@@ -8901,7 +8891,7 @@ export const LESSONS: Lesson[] = [
         table_size: 9,
         hero_position: 'BTN',
         effective_stack_bb: 60,
-        range_compare_a: { label: 'vs UTG open (~23.6%)', range: defendChartHandList(DEFEND_RESPONSE_CHARTS.BTN_vs_UTG_60BB), option_id: 'utg' },
+        range_compare_a: { label: 'vs UTG open (~20.7%)', range: defendChartHandList(DEFEND_RESPONSE_CHARTS.BTN_vs_UTG_60BB), option_id: 'utg' },
         range_compare_b: { label: 'vs CO open (~28.4%)', range: defendChartHandList(DEFEND_RESPONSE_CHARTS.BTN_vs_CO_60BB), option_id: 'co' },
         range_compare_prompt: 'As the opener moves from UTG to CO, should Hero\'s BTN defending range get wider or tighter?',
         options: [
@@ -9004,7 +8994,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['range_construction', 'btn_defense'],
         concept_title: 'The BTN Shape',
         concept_content:
-          "BTN's defense is the widest of any non-blind defender — a broad value/blocker 3-betting range plus a calling range that, against a weak enough open, reaches all the way into offsuit broadways and offsuit Ax. Position is doing the work here: hands that can't profitably continue from CO or HJ become clear calls once Hero is guaranteed to act last for the rest of the hand. Source reconstruction from Modern Poker Theory Ch.8's \"Defending the BN\" 60bb aggregate (directly stated vs CO; extrapolated vs HJ/UTG).",
+          "BTN's defense is the widest of any non-blind defender — a broad value/blocker 3-betting range plus a calling range that, against a weak enough open, reaches all the way into offsuit broadways and offsuit Ax. Position is doing the work here: hands that can't profitably continue from CO or HJ become clear calls once Hero is guaranteed to act last for the rest of the hand.",
         xp: 6,
       },
     ],
@@ -9096,7 +9086,7 @@ export const LESSONS: Lesson[] = [
         options: [
           {
             id: 'btn', label: 'The BTN open — a wide, weak range supports more rejamming', quality: 'perfect',
-            feedback: "Correct. A wide, weak late-position range has far less that can comfortably call an all-in — rejamming is considerably more profitable there. Against a strong early-position range, rejamming becomes less attractive, and the source's baselines show some hands shifting toward calls instead where that's supported.",
+            feedback: "Correct. A wide, weak late-position range has far less that can comfortably call an all-in — rejamming is considerably more profitable there. Against a strong early-position range, rejamming becomes less attractive, and the baseline data shows some hands shifting toward calls instead where that's supported.",
           },
           {
             id: 'utg', label: 'The UTG open — a strong range makes rejamming safer', quality: 'mistake',
@@ -9219,7 +9209,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['range_construction', 'sb_defense'],
         concept_title: 'The SB Shape',
         concept_content:
-          "SB's defense looks different in kind, not just width, from every other seat: it leans on 3-betting/jamming far more than calling, because a flat leaves the BB a live, cheap look to squeeze while SB is already locked into being out of position for the rest of the hand. Source reconstruction from Modern Poker Theory Ch.8's \"Defending the SB\" 60bb aggregate (directly stated vs BN; extrapolated vs CO/HJ/UTG).",
+          "SB's defense looks different in kind, not just width, from every other seat: it leans on 3-betting/jamming far more than calling, because a flat leaves the BB a live, cheap look to squeeze while SB is already locked into being out of position for the rest of the hand.",
         xp: 6,
       },
     ],
@@ -9282,7 +9272,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['stack_depth_defense'],
         concept_title: '60bb — Deep',
         concept_content:
-          'Deeper stacks create more decisions still to come, so hands chosen for aggression increasingly care about how well they play postflop, not just their raw value. Position becomes even more valuable. Do NOT read this as "deeper always means defend wider" — the source material itself shows composition changes that are not purely monotonic with depth.',
+          'Deeper stacks create more decisions still to come, so hands chosen for aggression increasingly care about how well they play postflop, not just their raw value. Position becomes even more valuable. Do NOT read this as "deeper always means defend wider" — the underlying data itself shows composition changes that are not purely monotonic with depth.',
         xp: 7,
       },
       {
@@ -9316,7 +9306,7 @@ export const LESSONS: Lesson[] = [
         stack_depth_morph_position: 'SB',
         stack_depth_morph_prompt: 'At 15bb, what does SB\'s "aggression" action actually mean, compared to 60bb?',
         options: [
-          { id: 'jam_vs_3bet', label: 'At 15bb it\'s a jam (all-in); at 60bb it\'s a real non-all-in 3-bet', quality: 'perfect', feedback: "Correct — Modern Poker Theory's own Ch.8 numbers show SB vs BTN at 15bb as essentially all-in-or-fold (no meaningful calling range at all), while at 60bb SB has a genuine non-all-in 3-bet plus a real calling range alongside it. Same seat, same opener, a completely different shape of aggression." },
+          { id: 'jam_vs_3bet', label: 'At 15bb it\'s a jam (all-in); at 60bb it\'s a real non-all-in 3-bet', quality: 'perfect', feedback: "Correct — the numbers show SB vs BTN at 15bb as essentially all-in-or-fold (no meaningful calling range at all), while at 60bb SB has a genuine non-all-in 3-bet plus a real calling range alongside it. Same seat, same opener, a completely different shape of aggression." },
           { id: 'always_3bet', label: 'It\'s the same non-all-in 3-bet size at both depths', quality: 'mistake', feedback: 'At 15bb there simply isn\'t room left for a non-all-in raise to mean much — the aggressive action collapses into a jam.' },
         ],
         xp: 12,
@@ -10653,7 +10643,7 @@ export const LESSONS: Lesson[] = [
         id: 'fl4-s6',
         type: 'straight_detective',
         concept_ids: ['flopped_straights'],
-        narrative: 'A♠ Q♥ 7♦ — the book\'s first example. Work it out yourself before checking.',
+        narrative: 'A♠ Q♥ 7♦ — a classic first example. Work it out yourself before checking.',
         straight_detective_board: ['As', 'Qh', '7d'],
         straight_detective_decoys: [['K', 'J'], ['T', '9']],
         straight_detective_prompt: 'Tap any hole-card pair that completes a straight on this board — or submit with nothing selected if there is none.',
@@ -10683,7 +10673,7 @@ export const LESSONS: Lesson[] = [
         id: 'fl4-s9',
         type: 'straight_detective',
         concept_ids: ['flopped_straights'],
-        narrative: 'J♠ T♥ 9♦ — the most connected shape in the book\'s examples.',
+        narrative: 'J♠ T♥ 9♦ — the most connected shape in this set of examples.',
         straight_detective_board: ['Js', 'Th', '9d'],
         straight_detective_decoys: [['6', '5']],
         straight_detective_prompt: 'Tap every hole-card pair that completes a straight on this board.',
@@ -10844,7 +10834,6 @@ export const LESSONS: Lesson[] = [
         id: 'fl6-s2',
         type: 'range_board_collision',
         concept_ids: ['range_board_interaction'],
-        narrative: 'Same flop, A♠K♦5♣, under two different preflop matchups. Compare what each range keeps.',
         board: ['As', 'Kd', '5c'],
         range_board_collision_a: { label: 'UTG open (tight)', range: RFI_DEEP['UTG'] ? entriesToHandList(RFI_DEEP['UTG']) : [] },
         range_board_collision_b: { label: 'BTN open (wide)', range: RFI_DEEP['BTN'] ? entriesToHandList(RFI_DEEP['BTN']) : [] },
@@ -10914,7 +10903,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['equity_buckets'],
         concept_title: 'Equity Buckets',
         concept_content:
-          "A hand's equity against a range is a single number — but raw numbers are hard to reason with quickly. Modern Poker Theory sorts hand-vs-range equity into four bands: STRONG (≥75%), GOOD (50–75%), WEAK (33–50%), TRASH (<33%). Same thresholds, every time.",
+          "A hand's equity against a range is a single number — but raw numbers are hard to reason with quickly. Sort hand-vs-range equity into four bands: STRONG (≥75%), GOOD (50–75%), WEAK (33–50%), TRASH (<33%). Same thresholds, every time.",
         xp: 3,
       },
       {
@@ -11629,7 +11618,7 @@ export const LESSONS: Lesson[] = [
           type: 'source_reconstructed',
         },
         narrative:
-          'Predict before you look at the reasoning. Same preflop line both times: BTN (the book\'s own data calls this seat "BN") opens, BB calls, BTN is in position — this time at 30bb effective, matching the exact stack depths (20-40bb) the numbers below were computed at. BB checks to BTN on the flop.',
+          'Predict before you look at the reasoning. Same preflop line both times: BTN opens, BB calls, BTN is in position — this time at 30bb effective, matching the exact stack depths (20-40bb) the numbers below were computed at. BB checks to BTN on the flop.',
         decision_spot_question: 'On which flop does BTN (the preflop raiser) c-bet more often?',
         scenario_a: {
           label: 'A♠7♦6♣',
@@ -11656,15 +11645,15 @@ export const LESSONS: Lesson[] = [
         options: [
           {
             id: 'a76r', label: 'A♠7♦6♣ — BTN c-bets far more often', quality: 'perfect',
-            feedback: 'Correct. This is one of the most extreme contrasts in the book\'s own aggregated GTO data (BB vs BN, 20-40bb). On A76r, BTN holds 62% range equity and a massive 31% Strong-hand concentration vs BB\'s 8% — strong enough that BTN gets to c-bet essentially 100% of the range, and BB almost never leads out instead (a 0.3% donk-bet frequency, the lowest recorded in the dataset). On 654r, BB actually holds the equity edge (51% to 49%) and connects nearly as well as BTN does — it is the single HIGHEST donk-bet-frequency board in the same dataset (67%), meaning BB fights back hard and BTN\'s c-bet frequency drops well below its 84% all-boards average.',
+            feedback: 'Correct. This is one of the most extreme contrasts in the aggregated GTO data (BB vs BN, 20-40bb). On A76r, BTN holds 62% range equity and a massive 31% Strong-hand concentration vs BB\'s 8% — strong enough that BTN gets to c-bet essentially 100% of the range, and BB almost never leads out instead (a 0.3% donk-bet frequency, the lowest recorded in the dataset). On 654r, BB actually holds the equity edge (51% to 49%) and connects nearly as well as BTN does — it is the single HIGHEST donk-bet-frequency board in the same dataset (67%), meaning BB fights back hard and BTN\'s c-bet frequency drops well below its 84% all-boards average.',
           },
           {
             id: 'about_equal', label: 'About the same on both boards', quality: 'mistake',
-            feedback: 'Not close — see the numbers above. A76r sits at BTN\'s effective ceiling (≈100% c-bet, BB donking only 0.3% of the time); 654r is the one board in the book\'s dataset where BB pushes back hardest (67% donk-bet frequency). Same preflop action, opposite strategic pictures.',
+            feedback: 'Not close — see the numbers above. A76r sits at BTN\'s effective ceiling (≈100% c-bet, BB donking only 0.3% of the time); 654r is the one board in this dataset where BB pushes back hardest (67% donk-bet frequency). Same preflop action, opposite strategic pictures.',
           },
           {
             id: '654r', label: '6♠5♦4♣ — BTN c-bets far more often', quality: 'mistake',
-            feedback: 'The reverse of the book\'s own finding. 654r is the board where BB actually holds the raw equity edge (51% to 49%) and applies the most pressure back (67% donk-bet frequency, the highest in the dataset) — A76r is where BTN\'s advantage is most lopsided, not 654r.',
+            feedback: 'That\'s the reverse of what actually happens. 654r is the board where BB actually holds the raw equity edge (51% to 49%) and applies the most pressure back (67% donk-bet frequency, the highest in the dataset) — A76r is where BTN\'s advantage is most lopsided, not 654r.',
           },
         ],
         solver_reveal: {
@@ -11673,7 +11662,7 @@ export const LESSONS: Lesson[] = [
             { label: 'C-bet', pct: 100, color: 'bg-emerald-500' },
             { label: 'Check', pct: 0, color: 'bg-slate-500' },
           ],
-          caption: 'Exact — Modern Poker Theory, Ch. 12, p.635: "A76r is so good for IP that they get to c-bet 100% of their range... it works better for OOP to simply check 100% on A76r." (BB vs BN, 20-40bb effective — 654r\'s comparison in the feedback above is directionally accurate but not quoted as an exact frequency in the source text.)',
+          caption: 'A76r is so good for IP that they get to c-bet 100% of their range — it works better for OOP to simply check 100% on A76r. (BB vs BN, 20-40bb effective — 654r\'s comparison in the feedback above is directionally accurate but not an exact quoted frequency.)',
         },
         xp: 16,
       },
@@ -11847,7 +11836,7 @@ export const LESSONS: Lesson[] = [
     lesson_type: 'micro',
     concept_ids: ['range_composition', 'equity_buckets', 'strong_hand_density'],
     estimated_min: 18,
-    xp_reward: 210,
+    xp_reward: 232,
     sort_order: 3,
     next_lesson_teaser: 'High-Frequency C-Bets',
     steps: [
@@ -11990,6 +11979,57 @@ export const LESSONS: Lesson[] = [
         ],
         xp: 12,
       },
+      {
+        id: 'ran-s8',
+        type: 'range_distribution',
+        concept_ids: ['range_composition', 'strong_hand_density'],
+        source: {
+          book: 'Modern Poker Theory',
+          section: 'Chapter 12, The Flop Continuation-bet — "The Way Ahead or Way Behind Situation"',
+          example: 'A♠T♥T♦, BB vs UTG, 30bb effective',
+          type: 'exact_derived',
+        },
+        narrative:
+          'A real solver example this time, not an average. Tournament, 30bb effective. UTG opens, BB calls, UTG is in position. Board: A♠T♥T♦ — trips on the flop. BB checks to UTG.',
+        table_size: 6,
+        hero_position: 'UTG',
+        villain_position: 'BB',
+        effective_stack_bb: 30,
+        board: ['As', 'Th', 'Td'],
+        range_distribution_mode: 'predict',
+        range_distribution_hero: { label: 'UTG (in position)', strong: 57, good: 37, weak: 5, trash: 1 },
+        range_distribution_villain: { label: 'BB (caller)', strong: 7, good: 12, weak: 0, trash: 81 },
+        range_distribution_prompt: 'UTG holds a massive edge here. What does that huge gap actually mean for UTG\'s betting frequency?',
+        options: [
+          {
+            id: 'check_back_more', label: 'UTG should actually check back a lot — including many strong hands, as traps', quality: 'perfect',
+            feedback: 'Correct — this is the "way ahead or way behind" pattern. BB either has a monster or close to nothing (81% trash!), with almost no middle. UTG checks back many strong hands as traps and most good hands for pot control, betting mostly trash and weak hands instead — the opposite of "huge edge means bet more."',
+          },
+          {
+            id: 'bet_almost_everything', label: 'UTG should bet almost everything — a 57% Strong-hand share is about as good as it gets', quality: 'mistake',
+            feedback: 'That\'s the natural read from the last two lessons\' usual pattern, but it breaks down here specifically because BB\'s range is so extremely polarized (7% strong, 81% trash, almost nothing between) — there\'s no wide "good-but-not-great" calling range left for a merged betting range to punish.',
+          },
+          {
+            id: 'bet_small_wide', label: 'UTG should bet small with the whole range, denying BB\'s trash cheaply', quality: 'acceptable',
+            feedback: 'That logic works well on the merged, high-frequency boards from earlier — but UTG\'s own range here is itself mostly polarized (57% strong, almost no good-tier hands relative to that), which is exactly the shape that benefits more from checking back real strength as traps than from betting it all small.',
+          },
+        ],
+        xp: 14,
+      },
+      {
+        id: 'ran-s9',
+        type: 'concept_reveal',
+        concept_ids: ['range_composition', 'strong_hand_density'],
+        concept_title: 'Way Ahead or Way Behind',
+        concept_content:
+          'Some boards don\'t split a range into a smooth spectrum from Strong down to Trash — they split it into two piles with almost nothing in between. When a range looks like that, the usual "bigger edge means bet more" logic can flip: the bettor checks back real strength as traps and for pot control, saving the betting range for the hands that most need to win the pot right now.',
+        concept_structured_items: [
+          { term: 'The usual pattern (Lessons 3-4)', description: 'A wide, evenly-spread range advantage — like BTN vs BB on A72r — supports betting almost everything, merged.' },
+          { term: 'Way ahead or way behind', description: 'A sharply bimodal range advantage — like UTG vs BB on AT-Tr, 57% strong vs 81% trash — instead supports checking back real strength, because there is no wide middle range left to punish with a bet.' },
+        ],
+        concept_note: '"The Way Ahead or Way Behind Situation" — A♠T♥T♦ example (BB vs UTG, 30bb), real EQB figures.',
+        xp: 8,
+      },
     ],
   },
 
@@ -12002,7 +12042,7 @@ export const LESSONS: Lesson[] = [
     lesson_type: 'micro',
     concept_ids: ['cbet_frequency', 'range_advantage', 'strong_hand_density'],
     estimated_min: 16,
-    xp_reward: 190,
+    xp_reward: 208,
     sort_order: 4,
     next_lesson_teaser: 'When the C-Bet Slows Down',
     steps: [
@@ -12037,11 +12077,11 @@ export const LESSONS: Lesson[] = [
         board: ['As', '9d', '3c'],
         decision_spot_question: 'What is BTN\'s aggregate c-bet frequency here?',
         options: [
-          { id: 'check_heavy', label: 'Check-heavy', quality: 'mistake', feedback: "This dry, Ace-high board with a wide, weak BB range in front of it is one of BTN's best betting spots — checking heavily here gives up a lot." },
-          { id: 'low', label: 'Low', quality: 'mistake', feedback: 'This board supports far more aggression than a low frequency implies — BTN\'s range advantage here is substantial.' },
-          { id: 'medium', label: 'Medium', quality: 'acceptable', feedback: 'Directionally reasonable, but this board\'s combination of range advantage, strong-hand concentration, and BB\'s heavy trash concentration supports going higher than medium.' },
-          { id: 'high', label: 'High', quality: 'good', feedback: 'Correct direction — this is a genuinely high-frequency spot for BTN.' },
-          { id: 'near_range', label: 'Near-range bet', quality: 'perfect', feedback: 'Correct. Every ingredient lines up: BTN\'s range is loaded with Ax relative to BB\'s, the board is dry enough that BB rarely has a strong continuing hand, BB\'s wide range is heavy with trash that must fold, and BB has little ability to raise back effectively. That combination supports betting nearly the entire range.' },
+          { id: 'check_heavy', label: cbetFrequencyDisplayLabel('check_heavy'), quality: 'mistake', feedback: "This dry, Ace-high board with a wide, weak BB range in front of it is one of BTN's best betting spots — checking heavily here gives up a lot." },
+          { id: 'low', label: cbetFrequencyDisplayLabel('low'), quality: 'mistake', feedback: 'This board supports far more aggression than a low frequency implies — BTN\'s range advantage here is substantial.' },
+          { id: 'medium', label: cbetFrequencyDisplayLabel('medium'), quality: 'acceptable', feedback: 'Directionally reasonable, but this board\'s combination of range advantage, strong-hand concentration, and BB\'s heavy trash concentration supports going higher than medium.' },
+          { id: 'high', label: cbetFrequencyDisplayLabel('high'), quality: 'good', feedback: 'Correct direction — this is a genuinely high-frequency spot for BTN.' },
+          { id: 'near_range', label: cbetFrequencyDisplayLabel('near_range'), quality: 'perfect', feedback: 'Correct. Every ingredient lines up: BTN\'s range is loaded with Ax relative to BB\'s, the board is dry enough that BB rarely has a strong continuing hand, BB\'s wide range is heavy with trash that must fold, and BB has little ability to raise back effectively. That combination supports betting nearly the entire range.' },
         ],
         xp: 10,
       },
@@ -12080,11 +12120,11 @@ export const LESSONS: Lesson[] = [
         board: ['Ks', 'Qs', 'Td'],
         decision_spot_question: 'What is BTN\'s aggregate c-bet frequency here?',
         options: [
-          { id: 'near_range', label: 'Near-range bet, same as A93r', quality: 'mistake', feedback: 'This board gives BB\'s range far more straights, flush draws, and two pairs to continue with than A93r did — treating them the same ignores that.' },
-          { id: 'high', label: 'High', quality: 'acceptable', feedback: 'Directionally not unreasonable, but the sheer amount of connectivity here pulls this down further than a simple "high" frequency.' },
-          { id: 'medium', label: 'Medium', quality: 'perfect', feedback: "Correct. BTN still has a range edge (more premium broadways), but this board's heavy connectivity gives BB real continuing equity and real raising potential — that trims the frequency down from near-range-bet to a medium, more selective approach." },
-          { id: 'low', label: 'Low', quality: 'acceptable', feedback: 'BTN still keeps a meaningful range edge here — dropping all the way to a low frequency underrates that.' },
-          { id: 'check_heavy', label: 'Check-heavy', quality: 'mistake', feedback: 'BTN still has a real range advantage on this board — checking heavily gives that up unnecessarily.' },
+          { id: 'near_range', label: `${cbetFrequencyDisplayLabel('near_range')}, same as A93r`, quality: 'mistake', feedback: 'This board gives BB\'s range far more straights, flush draws, and two pairs to continue with than A93r did — treating them the same ignores that.' },
+          { id: 'high', label: cbetFrequencyDisplayLabel('high'), quality: 'acceptable', feedback: 'Directionally not unreasonable, but the sheer amount of connectivity here pulls this down further than a simple "high" frequency.' },
+          { id: 'medium', label: cbetFrequencyDisplayLabel('medium'), quality: 'perfect', feedback: "Correct. BTN still has a range edge (more premium broadways), but this board's heavy connectivity gives BB real continuing equity and real raising potential — that trims the frequency down from near-range-bet to a medium, more selective approach." },
+          { id: 'low', label: cbetFrequencyDisplayLabel('low'), quality: 'acceptable', feedback: 'BTN still keeps a meaningful range edge here — dropping all the way to a low frequency underrates that.' },
+          { id: 'check_heavy', label: cbetFrequencyDisplayLabel('check_heavy'), quality: 'mistake', feedback: 'BTN still has a real range advantage on this board — checking heavily gives that up unnecessarily.' },
         ],
         xp: 10,
       },
@@ -12104,6 +12144,65 @@ export const LESSONS: Lesson[] = [
           },
         ],
         xp: 10,
+      },
+      {
+        id: 'hfc-s6b',
+        type: 'decision_spot',
+        concept_ids: ['cbet_frequency', 'range_advantage'],
+        source: {
+          book: 'Modern Poker Theory',
+          section: 'Chapter 12, The Flop Continuation-bet — IP C-bet Examples 1 & 3 (Diagram 58/Table 113, Diagram 61/Table 115)',
+          example: 'A♥Q♦3♠ vs 9♥8♥4♦, BB vs UTG, 40bb effective',
+          type: 'exact_derived',
+        },
+        narrative:
+          'Predict before you look at the reasoning. Tournament, 40bb effective, both times. UTG opens, BB calls, UTG is in position. BB checks to UTG on the flop.',
+        decision_spot_question: 'On which of these two boards can UTG profitably bet literally 100% of the range?',
+        scenario_a: {
+          label: 'A♥Q♦3♠',
+          short_description: 'Ace-high, dry, disconnected',
+          hero_position: 'UTG',
+          villain_position: 'BB',
+          table_size: 6,
+          effective_stack_bb: 40,
+          action_before_hero: ['UTG raises to 2.3bb', 'HJ folds', 'CO folds', 'BTN folds', 'SB folds', 'BB calls', 'BB checks'],
+          board: ['Ah', 'Qd', '3s'],
+        },
+        scenario_b: {
+          label: '9♥8♥4♦',
+          short_description: 'Middling, two-tone, one gap',
+          hero_position: 'UTG',
+          villain_position: 'BB',
+          table_size: 6,
+          effective_stack_bb: 40,
+          action_before_hero: ['UTG raises to 2.3bb', 'HJ folds', 'CO folds', 'BTN folds', 'SB folds', 'BB calls', 'BB checks'],
+          board: ['9h', '8h', '4d'],
+        },
+        scenario_comparison_context: 'Same preflop action, same seats, same stack depth. Only the flop differs — and UTG holds a real range edge on both.',
+        scenario_layout: 'side_by_side',
+        options: [
+          {
+            id: 'aq3r', label: 'A♥Q♦3♠ — UTG can bet 100% of the range profitably', quality: 'perfect',
+            feedback: 'Correct. On A♥Q♦3♠, UTG holds 72% equity and captures 85% of the pot — BB\'s flop x/r frequency is only about 5%, so UTG\'s edge is lopsided enough to support betting everything. On 9♥8♥4♦, UTG still has the better range (59% equity, 69.04% pot share) but forcing a 100% c-bet strategy there actually LOSES EV — -4.25% of the pot (-24bb/100) — because BB can counter-attack with a 48.42% x/r frequency against a range that wide, versus only ~4% at the real equilibrium mix.',
+          },
+          {
+            id: '984hh', label: '9♥8♥4♦ — its extra connectivity means UTG needs to bet everything to deny draws fast', quality: 'mistake',
+            feedback: 'That reasoning has it backwards. The extra connectivity on 9♥8♥4♦ is exactly what gives BB real hands to check-raise BACK with — pushing UTG to a 100% c-bet strategy there actually costs -24bb/100, because BB\'s x/r frequency balloons to 48.42% against it. A76r-style dry boards like A♥Q♦3♠ are where "bet everything" is actually free.',
+          },
+          {
+            id: 'both', label: 'Both — UTG holds a real range edge on each board, so both support a 100% strategy', quality: 'mistake',
+            feedback: "UTG's range edge alone doesn't guarantee a 100% ceiling — it only holds on A♥Q♦3♠. On 9♥8♥4♦, that same edge exists but BB's extra connectivity gives real raise-back potential, capping the profitable frequency below 100% even though UTG is still betting a lot.",
+          },
+        ],
+        solver_reveal: {
+          title: "UTG's Strategy on A♥Q♦3♠",
+          buckets: [
+            { label: 'C-bet', pct: 100, color: 'bg-emerald-500' },
+            { label: 'Check', pct: 0, color: 'bg-slate-500' },
+          ],
+          caption: '(BB vs UTG, 40bb): 72% equity, capturing 85% of the pot; BB x/rs only ~5%. On 9♥8♥4♦, the identical "bet everything" strategy actually loses EV — -4.25% of the pot (-24bb/100) — because BB\'s x/r frequency jumps from an equilibrium ~4% to 48.42% against it.',
+        },
+        xp: 18,
       },
       {
         id: 'hfc-s7',
@@ -12126,7 +12225,7 @@ export const LESSONS: Lesson[] = [
     lesson_type: 'micro',
     concept_ids: ['cbet_frequency', 'strong_hand_density', 'range_advantage'],
     estimated_min: 17,
-    xp_reward: 200,
+    xp_reward: 214,
     sort_order: 5,
     next_lesson_teaser: 'Small Bet or Big Bet?',
     steps: [
@@ -12184,6 +12283,41 @@ export const LESSONS: Lesson[] = [
           },
         ],
         xp: 10,
+      },
+      {
+        id: 'csd-s4b',
+        type: 'decision_spot',
+        concept_ids: ['range_advantage', 'strong_hand_density'],
+        source: {
+          book: 'Modern Poker Theory',
+          section: 'Chapter 12, The Flop Continuation-bet — IP C-bet Example 4 (Diagram 63/64, Table 116)',
+          example: 'J♠6♥6♦, BTN ("BN" in the book) vs BB, 40bb effective',
+          type: 'exact_derived',
+        },
+        narrative:
+          'Tournament, 40bb effective. BTN opens, BB calls, BTN is in position. Board: J♠6♥6♦ — a paired board where BB actually flops trip sixes in real volume.',
+        table_size: 6,
+        hero_position: 'BTN',
+        villain_position: 'BB',
+        effective_stack_bb: 40,
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds', 'BB calls', 'BB checks'],
+        board: ['Js', '6h', '6d'],
+        decision_spot_question: "BB's Strong-hand share here is a real 14% (8.9% of it is trip sixes alone) — much closer to BTN's 23% than on most boards this module has shown. Shouldn't that push BTN's c-bet frequency DOWN, the way 654r did?",
+        options: [
+          {
+            id: 'trash_still_decides', label: "No — BB still carries 52% trash that can't continue even against a small bet, and that alone keeps BTN's frequency high", quality: 'perfect',
+            feedback: "Correct. BTN c-bets a high 72% here, using a SMALL size specifically because BB's real 8.9% trip-six share means BTN can't safely use a big bet — but that same 52% trash concentration is what keeps the FREQUENCY high. 654r dropped frequency because BB's whole range connected evenly; here only BB's strong-hand slice got stronger, while its trash share stayed just as exploitable.",
+          },
+          {
+            id: 'freq_should_drop', label: "Yes — frequency should drop toward the 654r level, since the strong-hand gap narrowed", quality: 'mistake',
+            feedback: "The strong-hand gap narrowing is real, but frequency and the strong-hand gap aren't the same lever. 654r dropped frequency because BB's WHOLE range connected evenly with that board — here BB's trash share is still huge (52%), which is what actually licenses a high c-bet frequency, just at a smaller size than usual.",
+          },
+          {
+            id: 'too_dangerous', label: "It doesn't matter — trip sixes make BB's whole range too dangerous to bet into at all", quality: 'mistake',
+            feedback: "BB's trip-six share is real, but it's still only 8.9% of BB's range, not the whole thing — BTN keeps betting a high 72% of the time here, just with a small size to avoid overexposing against that specific slice.",
+          },
+        ],
+        xp: 14,
       },
       {
         id: 'csd-s5a',
@@ -12252,7 +12386,7 @@ export const LESSONS: Lesson[] = [
     lesson_type: 'micro',
     concept_ids: ['cbet_sizing', 'polarization_advantage', 'threebet_pot_cbet'],
     estimated_min: 20,
-    xp_reward: 230,
+    xp_reward: 254,
     sort_order: 6,
     next_lesson_teaser: 'What Does My Hand Do?',
     steps: [
@@ -12293,6 +12427,56 @@ export const LESSONS: Lesson[] = [
         xp: 8,
       },
       {
+        id: 'sbb-s4b',
+        type: 'decision_spot',
+        concept_ids: ['cbet_sizing', 'polarization_advantage'],
+        source: {
+          book: 'Modern Poker Theory',
+          section: 'Chapter 12, The Flop Continuation-bet — Flop C-betting by Texture (Diagrams 52-55, Table 112)',
+          type: 'source_reconstructed',
+        },
+        narrative:
+          'Predict before you look at the reasoning. Cash game, 100bb effective. BTN opens, BB calls, BTN is in position, both times. Same three ranks both boards — only the suits differ.',
+        decision_spot_question: 'Same connectivity, same ranks — which board calls for the BIGGER c-bet size?',
+        scenario_a: {
+          label: '8♠7♦6♣',
+          short_description: 'Rainbow',
+          hero_position: 'BTN',
+          villain_position: 'BB',
+          table_size: 6,
+          effective_stack_bb: 100,
+          action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds', 'BB calls', 'BB checks'],
+          board: ['8s', '7d', '6c'],
+        },
+        scenario_b: {
+          label: '8♥7♥6♥',
+          short_description: 'Monotone',
+          hero_position: 'BTN',
+          villain_position: 'BB',
+          table_size: 6,
+          effective_stack_bb: 100,
+          action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds', 'BB calls', 'BB checks'],
+          board: ['8h', '7h', '6h'],
+        },
+        scenario_comparison_context: 'Same preflop action, same seats, same three ranks, same stack depth. Only the suit pattern differs.',
+        scenario_layout: 'side_by_side',
+        options: [
+          {
+            id: 'rainbow', label: '8♠7♦6♣ (rainbow) — the bigger size', quality: 'perfect',
+            feedback: "Correct. On rainbow flops, IP's range advantage is even greater than on two-tone — no flush draws around to mute IP's made hands or turn BB's trash into real equity, so IP can size up further. On the monotone version, IP's Strong-hand share drops sharply while BB's rises (either side can now make the nut flush), which is exactly why SMALLER sizing is correct there — betting big on monotone boards is a common mistake, even though a three-flush board 'feels' like it needs a bigger bet to protect against.",
+          },
+          {
+            id: 'monotone', label: '8♥7♥6♥ (monotone) — bet bigger there to protect and deny the flush draws fast', quality: 'mistake',
+            feedback: "This is a classic mistake on this texture. A big bet on a monotone board forces BB to fold cheaply-continuing weak hands while isolating IP against the top of BB's range (made flushes and strong draws) — a SMALL size gets just as many folds from BB's dead hands without overcommitting IP's own good-but-not-great holdings.",
+          },
+          {
+            id: 'no_difference', label: "Doesn't matter — connectivity is identical on both, so sizing should be the same", quality: 'mistake',
+            feedback: 'Connectivity is only one of the properties that drives strategy (Lesson 2) — texture is a separate lever. Holding connectivity and rank constant, suit texture alone flips which range gets polarized (BB on monotone, otherwise IP), and that flip is what changes the right sizing.',
+          },
+        ],
+        xp: 16,
+      },
+      {
         id: 'sbb-s5',
         type: 'cbet_frequency_size',
         concept_ids: ['cbet_frequency', 'cbet_sizing'],
@@ -12303,28 +12487,25 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         board: ['As', '9d', '3c'],
         cbet_frequency_size_prompt: 'Choose the aggregate frequency, then the primary sizing.',
-        cbet_frequency_size_frequency_options: [
-          { id: 'check_heavy', label: 'Check-Heavy' }, { id: 'low', label: 'Low' }, { id: 'medium', label: 'Medium' },
-          { id: 'high', label: 'High' }, { id: 'near_range', label: 'Near-Range Bet' },
-        ],
+        cbet_frequency_size_frequency_options: CBET_FREQUENCY_OPTIONS,
         cbet_frequency_size_sizing_options: [
           { id: 'check', label: 'Check' }, { id: 'small', label: 'Small (~25-33%)' }, { id: 'medium', label: 'Medium (~50-67%)' },
         ],
         options: [
           {
-            id: 'near_range|small', label: 'Near-Range Bet + Small', quality: 'perfect',
+            id: 'near_range|small', label: 'Near-Range Bet (≈85–100%) + Small', quality: 'perfect',
             feedback: 'Correct — HIGH FREQUENCY + SMALL SIZE. This is a merged strategy: BTN\'s range is concentrated enough to bet almost everything cheaply, denying BB\'s wide, trash-heavy range a free card without risking much per bet.',
           },
           {
-            id: 'near_range|medium', label: 'Near-Range Bet + Medium', quality: 'acceptable',
+            id: 'near_range|medium', label: 'Near-Range Bet (≈85–100%) + Medium', quality: 'acceptable',
             feedback: "The frequency read is right, but pairing a near-range bet with a bigger size unnecessarily overexposes the many thin, merged hands in that same wide betting range — small captures the same denial at a lower cost.",
           },
           {
-            id: 'medium|medium', label: 'Medium Frequency + Medium Size', quality: 'mistake',
+            id: 'medium|medium', label: 'Medium Frequency (≈40–65%) + Medium Size', quality: 'mistake',
             feedback: "This board supports betting far more of BTN's range than a medium frequency suggests — BB's range is simply too weak here to check back this much value.",
           },
           {
-            id: 'high|small', label: 'High Frequency + Small', quality: 'good',
+            id: 'high|small', label: 'High Frequency (≈65–85%) + Small', quality: 'good',
             feedback: 'Very close — the frequency and size logic are both right; this board actually supports pushing all the way to a near-range bet, but the reasoning here is sound.',
           },
         ],
@@ -12342,23 +12523,21 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         board: ['Qs', '7d', '2c'],
         cbet_frequency_size_prompt: 'Choose the aggregate frequency, then the primary sizing, for this more polarized range.',
-        cbet_frequency_size_frequency_options: [
-          { id: 'check_heavy', label: 'Check-Heavy' }, { id: 'low', label: 'Low' }, { id: 'medium', label: 'Medium' }, { id: 'high', label: 'High' },
-        ],
+        cbet_frequency_size_frequency_options: CBET_FREQUENCY_OPTIONS.filter((o) => o.id !== 'near_range'),
         cbet_frequency_size_sizing_options: [
           { id: 'check', label: 'Check' }, { id: 'medium', label: 'Medium (~50-67%)' }, { id: 'big', label: 'Big (~75-100%+)' },
         ],
         options: [
           {
-            id: 'medium|big', label: 'Medium Frequency + Big', quality: 'perfect',
+            id: 'medium|big', label: 'Medium Frequency (≈40–65%) + Big', quality: 'perfect',
             feedback: "Correct — LOWER FREQUENCY + BIG SIZE. Hero's 3-bet range here is polarized: real value hands and real bluffs, without much in between. A bigger size extracts more from the value hands and still folds out the same air, while the mediocre hands that would hate facing a big bet mostly aren't in this range to begin with.",
           },
           {
-            id: 'high|small', label: 'High Frequency + Small', quality: 'mistake',
+            id: 'high|small', label: 'High Frequency (≈65–85%) + Small', quality: 'mistake',
             feedback: "That combination fits a wide, merged range — not a polarized 3-bet range. Hero doesn't have nearly as many medium-strength hands here to protect with a cheap, high-frequency small bet.",
           },
           {
-            id: 'medium|medium', label: 'Medium Frequency + Medium', quality: 'acceptable',
+            id: 'medium|medium', label: 'Medium Frequency (≈40–65%) + Medium', quality: 'acceptable',
             feedback: "The frequency read is reasonable, but a range this polarized can extract more value with a bigger size without meaningfully changing how often the air gets through as a bluff.",
           },
         ],
@@ -12391,6 +12570,20 @@ export const LESSONS: Lesson[] = [
           'Real strategies sometimes mix between two nearby sizes with similar EV — that\'s a sign the exact choice matters less than getting the RANGE SHAPE right. Once you know whether a spot wants a merged, high-frequency approach or a polarized, lower-frequency one, picking a reasonable size inside that category matters far more than chasing an exact percentage.',
         xp: 8,
       },
+      {
+        id: 'sbb-s8b',
+        type: 'concept_reveal',
+        concept_ids: ['cbet_sizing'],
+        concept_title: 'The Sizing Rule, With Real Numbers',
+        concept_content:
+          'Every sizing decision in this lesson traces back to the same underlying measurement: how much real continuing strength does the other range still have?',
+        concept_structured_items: [
+          { term: 'Big bet-size boards', description: "BB averages only 4-5% Strong hands (though 19-36% Good) — a depolarized calling range with little that can comfortably fight back, so IP is free to size up." },
+          { term: 'Small bet-size boards', description: 'BB averages roughly TWICE as many Strong hands, 7-9% (and less Good, 20-27%) — enough real continuing and raising strength that IP sizes down to stay cheap and merged instead.' },
+        ],
+        concept_note: '"Average Flop Equity Buckets" by bet-size — aggregated across many flop simulations.',
+        xp: 8,
+      },
     ],
   },
 
@@ -12403,7 +12596,7 @@ export const LESSONS: Lesson[] = [
     lesson_type: 'micro',
     concept_ids: ['cbet_hand_selection', 'range_protection', 'checking_range'],
     estimated_min: 18,
-    xp_reward: 210,
+    xp_reward: 226,
     sort_order: 7,
     next_lesson_teaser: 'In Position vs Out of Position',
     steps: [
@@ -12462,6 +12655,44 @@ export const LESSONS: Lesson[] = [
         xp: 22,
       },
       {
+        id: 'wdm-s3b',
+        type: 'decision_spot',
+        concept_ids: ['cbet_hand_selection', 'range_protection'],
+        source: {
+          book: 'Modern Poker Theory',
+          section: 'Chapter 12, The Flop Continuation-bet — Flop Strategy Example 6 (Table 118)',
+          example: '5♥5♦4♥, UTG, 40bb effective',
+          type: 'exact_derived',
+        },
+        narrative:
+          'Real solver data, not a rule of thumb. Tournament, 40bb effective. UTG opens, BB calls, UTG is in position. Board: 5♥5♦4♥. UTG\'s overpairs get c-bet at these exact frequencies: TT 76%, JJ 64%, QQ 50%, KK 40%, AA only 22%.',
+        table_size: 6,
+        hero_position: 'UTG',
+        villain_position: 'BB',
+        effective_stack_bb: 40,
+        board: ['5h', '5d', '4h'],
+        decision_spot_question: 'Why does the SMALLEST overpair (TT) get c-bet almost four times as often as the BIGGEST (AA)?',
+        options: [
+          {
+            id: 'protection_and_calldown', label: 'Bigger pairs need less protection and make better hands to check back and call down with on later streets', quality: 'perfect',
+            feedback: "Correct — that's the right reasoning here. AA and KK don't need to bet now to protect their equity, and checking them back sets up a great call-down hand on almost any turn. TT is the one that actually benefits from betting now: it's the overpair most likely to need to get value or fold out real equity before a scary turn card arrives.",
+          },
+          {
+            id: 'too_strong_to_bet', label: "AA is simply too strong to risk betting — it can't be beaten in this spot", quality: 'mistake',
+            feedback: "AA can absolutely still lose here — a set of 5s beats it outright, and this reasoning also isn't why the solver checks it back more. The real reason is about what AA gains from checking (a strong, protected call-down hand on future streets), not fear of being beaten right now.",
+          },
+          {
+            id: 'no_reason', label: "It's a solver quirk with no real strategic reason behind it", quality: 'mistake',
+            feedback: 'There is a concrete reason, the same one you\'ve already seen apply elsewhere in this module: every hand\'s role comes from what it gains from betting vs. checking, not just its raw strength — bigger pairs simply have more to gain from checking here.',
+          },
+          {
+            id: 'tt_vulnerable', label: 'TT needs to bet more because it is more vulnerable to being outdrawn by overcards or a gutshot', quality: 'acceptable',
+            feedback: "There's something to this — TT is more exposed to future cards than AA or KK — but the real reason is what checking GAINS the bigger pairs (a strong, protected call-down hand on many runouts), not just what betting protects TT from.",
+          },
+        ],
+        xp: 16,
+      },
+      {
         id: 'wdm-s4',
         type: 'decision_spot',
         concept_ids: ['checking_range'],
@@ -12499,7 +12730,7 @@ export const LESSONS: Lesson[] = [
     lesson_type: 'micro',
     concept_ids: ['position_postflop', 'ip_cbet', 'oop_cbet'],
     estimated_min: 16,
-    xp_reward: 200,
+    xp_reward: 218,
     sort_order: 8,
     next_lesson_teaser: 'The C-Bet Decision Lab',
     steps: [
@@ -12561,6 +12792,63 @@ export const LESSONS: Lesson[] = [
         xp: 12,
       },
       {
+        id: 'pce-s3b',
+        type: 'decision_spot',
+        concept_ids: ['position_postflop', 'ip_cbet', 'oop_cbet'],
+        source: {
+          book: 'Modern Poker Theory',
+          section: 'Chapter 12, The Flop Continuation-bet — C-betting in 3-bet Pots, OOP 3-bet Strategy Overview (Diagram 87)',
+          example: 'Axx boards, 3-bet pot, 40bb effective — same board family used in hfc-s3',
+          type: 'source_reconstructed',
+        },
+        narrative:
+          'Predict before you look at the reasoning. Tournament, 40bb effective, 3-bet pot both times. Same Axx-type board (A♠9♦3♣, the board from Lesson 4), a similar equity distribution for the 3-bettor either way — only whether Hero is IP or OOP changes.',
+        decision_spot_question: 'Which Hero c-bets this Axx board MORE often: the one in position, or the one out of position?',
+        scenario_a: {
+          label: 'Hero In Position',
+          short_description: 'BTN 3-bets, BB calls',
+          hero_position: 'BTN',
+          villain_position: 'BB',
+          table_size: 6,
+          effective_stack_bb: 40,
+          board: ['As', '9d', '3c'],
+        },
+        scenario_b: {
+          label: 'Hero Out Of Position',
+          short_description: 'SB 3-bets, BTN calls',
+          hero_position: 'SB',
+          villain_position: 'BTN',
+          table_size: 6,
+          effective_stack_bb: 40,
+          board: ['As', '9d', '3c'],
+        },
+        scenario_comparison_context: 'Same 3-bet pot, same Axx-type board, a similar equity distribution for Hero\'s range either way. Only IP-vs-OOP changes.',
+        scenario_layout: 'side_by_side',
+        options: [
+          {
+            id: 'oop_more', label: 'Hero OOP c-bets more often — 77% vs only 53% IP', quality: 'perfect',
+            feedback: 'Correct, and it\'s a real inversion of this module\'s usual pattern. Despite similar equity distributions either way, Hero c-bets Axx 77% of the time OOP but only 53% IP. The reason is exactly the asymmetry from earlier in this lesson: IP\'s check ends the street for free, so IP can afford to check back more. OOP\'s check does NOT end the street — Hero would have to act first on the turn with less information — so Hero bets now instead, denying that disadvantage rather than walking into it.',
+          },
+          {
+            id: 'ip_more', label: 'Hero IP c-bets more often — position always means more aggression', quality: 'mistake',
+            feedback: "That's the pattern this whole module has mostly shown, which makes this board a useful exception to notice: on this specific Axx/3-bet-pot combination, it's OOP that bets MORE (77% vs 53%) — precisely because OOP loses the free, no-cost check that IP gets to rely on.",
+          },
+          {
+            id: 'about_same', label: "About the same — the equity distribution is described as similar either way, so frequency should be too", quality: 'mistake',
+            feedback: "The equity distribution really is similar in both spots — that's exactly what makes the frequency gap (77% vs 53%) so informative. It isn't an equity difference driving it at all; it's purely the positional information asymmetry from earlier in this lesson.",
+          },
+        ],
+        solver_reveal: {
+          title: 'Axx C-bet Frequency, Same Board, Different Position',
+          buckets: [
+            { label: 'OOP c-bet', pct: 77, color: 'bg-emerald-500' },
+            { label: 'IP c-bet', pct: 53, color: 'bg-sky-500' },
+          ],
+          caption: '"OOP 3-bet Strategy Overview": Axx boards get c-bet 77% of the time when Hero is OOP but only 53% when Hero is IP. In both situations, the players\' equity distribution is similar.',
+        },
+        xp: 18,
+      },
+      {
         id: 'pce-s4',
         type: 'concept_reveal',
         concept_ids: ['position_postflop'],
@@ -12585,7 +12873,7 @@ export const LESSONS: Lesson[] = [
       'checking_range', 'range_protection', 'cbet_hand_selection', 'threebet_pot_cbet',
     ],
     estimated_min: 30,
-    xp_reward: 450,
+    xp_reward: 462,
     sort_order: 9,
     steps: [
       // ── Scenario 1 — The Baseline Read ──────────────────────────────────────
@@ -12623,17 +12911,14 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         board: ['As', '9d', '3c'],
         cbet_frequency_size_prompt: 'Choose the aggregate frequency, then the primary sizing.',
-        cbet_frequency_size_frequency_options: [
-          { id: 'check_heavy', label: 'Check-Heavy' }, { id: 'low', label: 'Low' }, { id: 'medium', label: 'Medium' },
-          { id: 'high', label: 'High' }, { id: 'near_range', label: 'Near-Range Bet' },
-        ],
+        cbet_frequency_size_frequency_options: CBET_FREQUENCY_OPTIONS,
         cbet_frequency_size_sizing_options: [
           { id: 'check', label: 'Check' }, { id: 'small', label: 'Small (~25-33%)' }, { id: 'medium', label: 'Medium (~50-67%)' },
         ],
         options: [
-          { id: 'near_range|small', label: 'Near-Range Bet + Small', quality: 'perfect', feedback: 'Correct — the same merged, high-frequency, cheap-sizing logic from Lesson 6\'s A93r case.' },
-          { id: 'high|small', label: 'High Frequency + Small', quality: 'good', feedback: 'The sizing logic is right, but this board supports pushing all the way to a near-range bet.' },
-          { id: 'medium|medium', label: 'Medium Frequency + Medium', quality: 'mistake', feedback: 'This underestimates just how lopsided the range advantage is here — it supports much higher frequency at a cheaper size.' },
+          { id: 'near_range|small', label: 'Near-Range Bet (≈85–100%) + Small', quality: 'perfect', feedback: 'Correct — the same merged, high-frequency, cheap-sizing logic from Lesson 6\'s A93r case.' },
+          { id: 'high|small', label: 'High Frequency (≈65–85%) + Small', quality: 'good', feedback: 'The sizing logic is right, but this board supports pushing all the way to a near-range bet.' },
+          { id: 'medium|medium', label: 'Medium Frequency (≈40–65%) + Medium', quality: 'mistake', feedback: 'This underestimates just how lopsided the range advantage is here — it supports much higher frequency at a cheaper size.' },
         ],
         xp: 16,
       },
@@ -12674,7 +12959,7 @@ export const LESSONS: Lesson[] = [
         board: ['6s', '5d', '4c'],
         options: [
           { id: 'low', label: 'It should drop well below the A93r frequency — this board no longer rewards near-universal betting', quality: 'perfect', feedback: 'Correct — a much more symmetric range interaction, with real check-raise potential from BB, pulls frequency down significantly from the near-range-bet extreme.' },
-          { id: 'near_range', label: 'It should stay a near-range bet, just like A93r', quality: 'mistake', feedback: 'Treating every flop the same regardless of range interaction is exactly the "preflop aggression determines flop strategy" mistake this module set out to correct.' },
+          { id: 'near_range', label: 'It should stay a near-range bet (≈85–100%), just like A93r', quality: 'mistake', feedback: 'Treating every flop the same regardless of range interaction is exactly the "preflop aggression determines flop strategy" mistake this module set out to correct.' },
         ],
         xp: 10,
       },
@@ -12734,15 +13019,13 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         board: ['Js', '6d', '2c'],
         cbet_frequency_size_prompt: 'Choose the aggregate frequency, then the primary sizing, for this polarized range.',
-        cbet_frequency_size_frequency_options: [
-          { id: 'check_heavy', label: 'Check-Heavy' }, { id: 'low', label: 'Low' }, { id: 'medium', label: 'Medium' }, { id: 'high', label: 'High' },
-        ],
+        cbet_frequency_size_frequency_options: CBET_FREQUENCY_OPTIONS.filter((o) => o.id !== 'near_range'),
         cbet_frequency_size_sizing_options: [
           { id: 'check', label: 'Check' }, { id: 'medium', label: 'Medium (~50-67%)' }, { id: 'big', label: 'Big (~75-100%+)' },
         ],
         options: [
-          { id: 'medium|big', label: 'Medium Frequency + Big', quality: 'perfect', feedback: 'Correct — the same polarized, lower-frequency-but-bigger-sizing shape from the Q72r 3-bet-pot case in Lesson 6.' },
-          { id: 'high|small', label: 'High Frequency + Small', quality: 'mistake', feedback: 'That combination belongs to a wide, merged range — a 3-bet continuing range is shaped very differently, with far fewer medium-strength hands to protect cheaply.' },
+          { id: 'medium|big', label: 'Medium Frequency (≈40–65%) + Big', quality: 'perfect', feedback: 'Correct — the same polarized, lower-frequency-but-bigger-sizing shape from the Q72r 3-bet-pot case in Lesson 6.' },
+          { id: 'high|small', label: 'High Frequency (≈65–85%) + Small', quality: 'mistake', feedback: 'That combination belongs to a wide, merged range — a 3-bet continuing range is shaped very differently, with far fewer medium-strength hands to protect cheaply.' },
         ],
         xp: 16,
       },
@@ -12817,6 +13100,34 @@ export const LESSONS: Lesson[] = [
         ],
         xp: 10,
       },
+      {
+        id: 'cdl-s7c',
+        type: 'decision_spot',
+        concept_ids: ['position_postflop', 'oop_cbet'],
+        source: {
+          book: 'Modern Poker Theory',
+          section: 'Chapter 12, The Flop Continuation-bet — OOP 3-bet Strategy Overview (Diagram 87), reviewing Lesson 8',
+          type: 'source_reconstructed',
+        },
+        narrative:
+          'Recall Lesson 8: on Axx boards in 3-bet pots, Hero actually c-bets MORE often OUT of position (77%) than in position (53%) — despite a similar equity distribution either way.',
+        decision_spot_question: 'What made that possible, given IP is usually the one betting more in this module?',
+        options: [
+          {
+            id: 'comprehensive', label: "OOP's check doesn't end the street for free the way IP's does — betting now denies that turn disadvantage instead of walking into it", quality: 'perfect',
+            feedback: "Correct — this is the position asymmetry from Lesson 8 (pce-s2/s3), just showing up as a frequency number instead of a qualitative description. IP's check is close to free; OOP's check hands the turn decision to Villain with less information revealed, so OOP has extra incentive to bet now.",
+          },
+          {
+            id: 'range_stronger', label: "Hero's range is simply stronger on Axx boards when OOP", quality: 'mistake',
+            feedback: "Not quite — the equity distribution is similar in both spots. The frequency gap comes entirely from the positional information asymmetry, not from Hero holding a better range OOP.",
+          },
+          {
+            id: 'one_off', label: 'It was a one-off solver quirk specific to that exact board, not a general principle', quality: 'mistake',
+            feedback: "It's the opposite of a one-off — it's a direct, numerical instance of the same general in-position-vs-out-of-position asymmetry this whole lesson is built on, just showing up as a real frequency gap instead of a description.",
+          },
+        ],
+        xp: 12,
+      },
 
       // ── Final Boss — Build the Whole Read ────────────────────────────────────
       {
@@ -12863,17 +13174,14 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         board: ['Ks', '9d', '4c'],
         cbet_frequency_size_prompt: 'Choose the aggregate frequency, then the primary sizing.',
-        cbet_frequency_size_frequency_options: [
-          { id: 'check_heavy', label: 'Check-Heavy' }, { id: 'low', label: 'Low' }, { id: 'medium', label: 'Medium' },
-          { id: 'high', label: 'High' }, { id: 'near_range', label: 'Near-Range Bet' },
-        ],
+        cbet_frequency_size_frequency_options: CBET_FREQUENCY_OPTIONS,
         cbet_frequency_size_sizing_options: [
           { id: 'check', label: 'Check' }, { id: 'small', label: 'Small (~25-33%)' }, { id: 'medium', label: 'Medium (~50-67%)' },
         ],
         options: [
-          { id: 'high|small', label: 'High Frequency + Small', quality: 'perfect', feedback: 'Correct — a merged, high-frequency, cheaply-sized approach, consistent with the range advantage just identified.' },
-          { id: 'near_range|small', label: 'Near-Range Bet + Small', quality: 'good', feedback: 'Close — this board supports very high frequency, though it isn\'t quite as extreme as the A93r near-range-bet case.' },
-          { id: 'medium|medium', label: 'Medium Frequency + Medium', quality: 'mistake', feedback: 'This undersells the range advantage just identified — it supports betting considerably more often, at a cheaper size.' },
+          { id: 'high|small', label: 'High Frequency (≈65–85%) + Small', quality: 'perfect', feedback: 'Correct — a merged, high-frequency, cheaply-sized approach, consistent with the range advantage just identified.' },
+          { id: 'near_range|small', label: 'Near-Range Bet (≈85–100%) + Small', quality: 'good', feedback: 'Close — this board supports very high frequency, though it isn\'t quite as extreme as the A93r near-range-bet case.' },
+          { id: 'medium|medium', label: 'Medium Frequency (≈40–65%) + Medium', quality: 'mistake', feedback: 'This undersells the range advantage just identified — it supports betting considerably more often, at a cheaper size.' },
         ],
         xp: 16,
       },
@@ -12936,7 +13244,7 @@ export const LESSONS: Lesson[] = [
         id: 'sthh-s1',
         type: 'concept_reveal',
         concept_title: 'The Setup',
-        concept_content: `A $109 9-max online MTT. 40bb effective, 12.5% ante. CO opens 2.25bb. BB defends. CO's opening range here is real: it's the book's own transcribed 40bb chart. Hero, in the CO seat, looks down at A♦A♣.`,
+        concept_content: `A $109 9-max online MTT. 40bb effective, 12.5% ante. CO opens 2.25bb. BB defends. CO's opening range here is real: a genuine 40bb chart. Hero, in the CO seat, looks down at A♦A♣.`,
         table_size: 9,
         hero_position: 'CO',
         effective_stack_bb: 40,
@@ -12998,7 +13306,7 @@ export const LESSONS: Lesson[] = [
         range_collision_show_me_why: [
           {
             title: 'Preflop Ranges',
-            body: 'CO opens a real, wide 40bb range. BB defends back with a wide illustrative calling range shaped to the book\'s cited ≈56.8% combo weight. Preflop, CO leads 58.5% to 41.5% — a big-card range is ahead of a wider, weaker-average-hand range before any board exists.',
+            body: 'CO opens a real, wide 40bb range. BB defends back with a wide illustrative calling range shaped to a real-world ≈56.8% combo weight. Preflop, CO leads 58.5% to 41.5% — a big-card range is ahead of a wider, weaker-average-hand range before any board exists.',
           },
           {
             title: 'Board Interaction',
@@ -13301,7 +13609,7 @@ export const LESSONS: Lesson[] = [
         id: 'xr-s2',
         type: 'concept_reveal',
         concept_title: 'Equity Buckets',
-        concept_content: 'Modern Poker Theory\'s own classification — every hand-vs-range equity number falls into exactly one bucket:',
+        concept_content: 'A simple classification — every hand-vs-range equity number falls into exactly one bucket:',
         concept_structured_items: [
           { term: 'STRONG', description: '≥ 75% hand-vs-range equity' },
           { term: 'GOOD', description: '≥ 50% and < 75%' },
@@ -13407,7 +13715,7 @@ export const LESSONS: Lesson[] = [
         id: 'wsc-s2',
         type: 'decision_spot',
         concept_ids: ['range_advantage'],
-        narrative: `In the exact BB-vs-IP configuration this module has been analyzing, IP holds a very strong range advantage on A76r (62% to 38%, Strong bucket 31% to 8%) — the solver c-bets A76r at 100% in this specific analyzed configuration, while BB has almost no donk-betting incentive. On 654r, BB performs dramatically better (51% to 49%, and a much larger share of BB's range lands in Good rather than Trash) — the book shows substantially different betting incentives on that board.`,
+        narrative: `In the exact BB-vs-IP configuration this module has been analyzing, IP holds a very strong range advantage on A76r (62% to 38%, Strong bucket 31% to 8%) — the solver c-bets A76r at 100% in this specific analyzed configuration, while BB has almost no donk-betting incentive. On 654r, BB performs dramatically better (51% to 49%, and a much larger share of BB's range lands in Good rather than Trash) — the betting incentives on that board are substantially different.`,
         decision_spot_question: 'Is it accurate to say "A76r is always a 100% c-bet" as a general poker rule?',
         options: [
           {
@@ -13489,7 +13797,7 @@ export const LESSONS: Lesson[] = [
           },
           {
             id: 'equity_is_everything', label: 'Range equity is the single number that fully determines correct strategy', quality: 'mistake',
-            feedback: 'Equity is necessary information, not sufficient — Modern Poker Theory is explicit that equity alone doesn\'t determine EV or equity realization. Position, stacks, and range composition all matter too.',
+            feedback: 'Equity is necessary information, not sufficient — equity alone doesn\'t determine EV or equity realization. Position, stacks, and range composition all matter too.',
           },
         ],
         xp: 12,
@@ -13940,7 +14248,7 @@ export const LESSONS: Lesson[] = [
         id: 'trar-s3',
         type: 'concept_reveal',
         concept_title: "Villain's Defending Range",
-        concept_content: "Facing a 3-bet here, the book gives Villain's SB defending range as 350 combinations.",
+        concept_content: "Facing a 3-bet here, Villain's SB defending range comes out to 350 combinations.",
         source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Exploitative 3-betting', example: 'SB Defense vs BB (350 combos)', type: 'source_reconstructed' },
       },
       {
@@ -13967,13 +14275,13 @@ export const LESSONS: Lesson[] = [
         id: 'trar-s6',
         type: 'concept_reveal',
         concept_title: 'The Whole Range Shrinks',
-        concept_content: 'AK and KK are only two slices of what the book names as blocked: "AK, KK, K6s+, and KTo+." Working through every suited K6-KQ and offsuit KT-KQ combination the same way accounts for 23 of the removed combinations. The book states that Villain\'s complete 350-combo defending range — which also includes plenty of hands with no king in them at all — drops to 324 once every K♦-blocked continuation is removed. One held card just reshaped a range built from hundreds of combinations, not six.',
+        concept_content: 'AK and KK are only two slices of the blocked hands: AK, KK, K6s+, and KTo+. Working through every suited K6-KQ and offsuit KT-KQ combination the same way accounts for 23 of the removed combinations. Villain\'s complete 350-combo defending range — which also includes plenty of hands with no king in them at all — drops to 324 once every K♦-blocked continuation is removed. One held card just reshaped a range built from hundreds of combinations, not six.',
         concept_structured_items: [
           { term: 'Before', description: "350 combos in Villain's full defending range." },
-          { term: "After Hero's K♦", description: '324 combos — the reduction across the ENTIRE range, per the book.' },
+          { term: "After Hero's K♦", description: '324 combos — the reduction across the ENTIRE range.' },
           { term: 'Named blocked classes alone (AK, KK, K6s-KQs, KTo-KQo)', description: '86 raw combos → 63 remain once K♦ is removed — 23 of the total reduction, computed directly from the cards.' },
         ],
-        concept_note: "The 23-combo figure only covers the classes the book names explicitly — the full 350-combo range isn't fully itemized here, so it isn't expected to exactly equal the book's 26-combo total.",
+        concept_note: "The 23-combo figure only covers the classes named explicitly above — the full 350-combo range isn't itemized card-by-card here, so it isn't expected to exactly equal the 26-combo total reduction across the full range.",
         source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Exploitative 3-betting', example: 'SB Defense vs BB (350 combos)', type: 'source_reconstructed' },
       },
       {
@@ -14001,7 +14309,7 @@ export const LESSONS: Lesson[] = [
         id: 'btv-s1',
         type: 'concept_reveal',
         concept_title: 'A River Decision',
-        concept_content: "River. Board: A♥9♦4♣2♠7♥. Hero is BB, facing a bet from BTN, holding A♣T♦ — top pair, no real kicker. The range below is a simplified teaching range built to isolate one idea cleanly — not a solver or book-cited range.",
+        concept_content: "River. Board: A♥9♦4♣2♠7♥. Hero is BB, facing a bet from BTN, holding A♣T♦ — top pair, no real kicker. On the river, top pair alone never decides a call — what decides it is how many of Villain's strongest hands can still exist once your own two cards are accounted for. Which cards you hold determines how many of those strong value combinations Villain can still have. The next few steps ask you to work out exactly which part of Villain's range your ace and ten touch.",
         hero_position: 'BB',
         villain_position: 'BTN',
         board: ['Ah', '9d', '4c', '2s', '7h'],
@@ -14285,7 +14593,7 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_title: 'Zero Traps',
         concept_content: "This is similar to a polarized-range-vs-bluff-catchers model: Hero is either the nuts or a bluff, with far more bluffs than value combos to bet them all. In this specific model, when Hero holds the nut flush OR the nut blocker, Villain's range contains zero traps — no flush Villain could have that beats Hero's polarized betting range, since Villain's own nut flush requires the very ace Hero is already holding. For this reason, the nut-flush blocker is the preferred bluffing class in this model.",
-        concept_note: 'Explicitly "in this model" — this is not a universal claim that nut blockers are always the best bluffs. The next lesson shows exactly when that stops being true.',
+        concept_note: 'That conclusion is scoped to this exact board and range — not a universal claim that nut blockers are always the best bluffs. The next lesson shows exactly when that stops being true.',
         source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Blocker Effects', example: 'Blocker Example 1', type: 'source_reconstructed' },
       },
       {
@@ -14360,20 +14668,20 @@ export const LESSONS: Lesson[] = [
         id: 'bnag-s4',
         type: 'decision_spot',
         concept_ids: ['blocker_classification'],
-        narrative: 'The book poses this exact question to its own students.',
+        narrative: 'This is the harder version of the same question — no shortcut answer this time.',
         decision_spot_question: "Now that the nut blocker isn't available, which combos should Hero prefer as bluffs?",
         options: [
           {
             id: 'low_blockers', label: 'Low flush-blocker combos — not the second-nut (K) blocker', quality: 'perfect',
-            feedback: "Correct, and this is the book's own stated answer: no blocker is better than a non-nut blocker here. Betting a specific class like the K-blocker lets a solver-aware opponent adjust — overfolding king-high flushes and calling more of the lower ones. Spreading bluffs into the low end avoids handing away that read.",
+            feedback: "Correct — no blocker at all beats a non-nut blocker here. Betting a specific class like the K-blocker gives an observant opponent something to key on: overfolding king-high flushes and calling more of the lower ones. Spreading bluffs into the low end avoids handing away that read.",
           },
           {
             id: 'second_nut', label: "The second-nut blocker (K-high) — it's the next best thing after the ace", quality: 'mistake',
-            feedback: "This is the exact instinct the book warns against: \"many rush to say Hero should be using the second nut blocker... in reality, no blocker is better than a non-nut blocker.\" The K-blocker is a specific, exploitable tell here, not simply \"next best.\"",
+            feedback: "A common instinct, but it doesn't hold up here: no blocker at all beats a non-nut blocker in this spot. The K-blocker is a specific, exploitable tell, not simply \"next best.\"",
           },
           {
             id: 'doesnt_matter', label: "It no longer matters which card Hero holds", quality: 'mistake',
-            feedback: 'It still matters — just not by rank alone. The book still names a specific preferred class (low flush blockers), for a specific reason (avoiding a readable class an opponent can adjust against).',
+            feedback: "It still matters — just not by rank alone. There's still a specific preferred class here (low flush blockers), for a specific reason: it avoids leaving a readable class an opponent can adjust against.",
           },
         ],
         xp: 15,
@@ -14663,13 +14971,13 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['blocker_classification'],
         narrative: 'Hero holds the nut blocker in this river spot.',
-        decision_spot_question: "Which statement about bluffing combos here does the book actually support?",
+        decision_spot_question: "Which statement about bluffing combos here is actually correct?",
         options: [
           {
             id: 'nut_preferred', label: 'The nut-flush blocker is the preferred bluffing class in this specific model', quality: 'perfect',
-            feedback: "Correct — and stated exactly that way: \"in this model,\" not as a universal law about blockers in general.",
+            feedback: "Correct — but scoped to this specific board and range, not a universal law about blockers in general.",
           },
-          { id: 'any_blocker', label: 'Any flush blocker works equally well as a bluff here', quality: 'mistake', feedback: 'The book is explicit that non-nut blockers lose EV in this exact setup — they leave Villain\'s only trap alive.' },
+          { id: 'any_blocker', label: 'Any flush blocker works equally well as a bluff here', quality: 'mistake', feedback: "Non-nut blockers lose EV in this exact setup — they leave Villain's only trap alive." },
           { id: 'irrelevant', label: "Blockers are irrelevant here — it's still just a bet-or-check decision", quality: 'mistake', feedback: "This entire lab has been about how much the choice of blocker changes that decision." },
         ],
         tendency_tag: 'blocker_bet_selection',
@@ -14771,7 +15079,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['strategy_interdependence'],
         source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'The Core Concepts', type: 'source_reconstructed' },
         concept_title: 'Now the vocabulary',
-        concept_content: "You just built the four ideas this whole module rests on — here's what Modern Poker Theory calls them.",
+        concept_content: "You just built the four ideas this whole module rests on — here's what we call them.",
         concept_structured_items: [
           { term: 'Game', description: 'Any interaction where the outcome for one player depends on decisions made by another.' },
           { term: 'Strategy', description: 'A full specification of behavior at every decision point the game can reach — not just "what I do in this one spot."' },
@@ -14808,7 +15116,7 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_ids: ['strategy_interdependence'],
         concept_title: 'Where this goes next',
-        concept_content: "So far Player B's best response was obvious just by looking at it. Real opponents aren't that simple — they commit to specific, fixed frequencies, and finding the single most profitable response to an EXACT fixed strategy is its own skill. Modern Poker Theory calls that a Maximally Exploitative Strategy.",
+        concept_content: "So far Player B's best response was obvious just by looking at it. Real opponents aren't that simple — they commit to specific, fixed frequencies, and finding the single most profitable response to an EXACT fixed strategy is its own skill. We call that a Maximally Exploitative Strategy.",
         xp: 8,
       },
     ],
@@ -14902,7 +15210,7 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_ids: ['maximally_exploitative_strategy'],
         concept_title: 'MES is not "play aggressive"',
-        concept_content: "MES isn't a style — it's not \"bluff more\" or \"play tight.\" It's whatever action earns the most against THIS exact opponent, and it can point in either direction depending on what that opponent actually does. Next: chasing MES has a real cost, and Acevedo is explicit about what that cost is.",
+        concept_content: "MES isn't a style — it's not \"bluff more\" or \"play tight.\" It's whatever action earns the most against THIS exact opponent, and it can point in either direction depending on what that opponent actually does. Next: chasing MES has a real cost, and it's worth being explicit about what that cost is.",
         xp: 8,
       },
     ],
@@ -14927,7 +15235,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['counter_exploitation'],
         source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Counter Exploitation', type: 'source_reconstructed' },
         concept_title: 'Counter-Exploitation',
-        concept_content: "Acevedo's warning: chasing the Maximally Exploitative Strategy can expose Hero to an even larger counter-exploit. An MES is only maximally profitable against the EXACT strategy it was built for. The moment that opponent adjusts, your \"maximally exploitative\" play can become a liability — because you're now the one with a fixed, exploitable pattern.",
+        concept_content: "The warning here: chasing the Maximally Exploitative Strategy can expose Hero to an even larger counter-exploit. An MES is only maximally profitable against the EXACT strategy it was built for. The moment that opponent adjusts, your \"maximally exploitative\" play can become a liability — because you're now the one with a fixed, exploitable pattern.",
         xp: 10,
       },
       {
@@ -15032,7 +15340,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['nash_equilibrium_source'],
         source: PUSH_FOLD_SOURCE,
         concept_title: 'A real example: heads-up push/fold',
-        concept_content: "Heads-up, effective stacks shallow enough that the button's only real options are shove all-in (\"push\") or fold, and the big blind's only real options are call the shove (\"call\") or fold. This is a real, source-cited example from Modern Poker Theory — not the pedagogical toy game from the last three lessons. Watch what happens when BN (the button) and BB (the big blind) take turns best-responding to each other.",
+        concept_content: "Heads-up, effective stacks shallow enough that the button's only real options are shove all-in (\"push\") or fold, and the big blind's only real options are call the shove (\"call\") or fold. This is a real, precisely solved example — not the pedagogical toy game from the last three lessons. Watch what happens when BN (the button) and BB (the big blind) take turns best-responding to each other.",
         xp: 10,
       },
       {
@@ -15151,13 +15459,13 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['nash_equilibrium_source'],
         source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'The Nash Equilibrium', type: 'source_reconstructed' },
         concept_title: 'EQUILIBRIUM',
-        concept_content: "B can't improve either — with Hero never betting, there's no decision for Villain to face, so no calling frequency beats any other. Neither player can improve by changing strategy alone. That's Nash equilibrium, exactly as Acevedo defines it:",
+        concept_content: "B can't improve either — with Hero never betting, there's no decision for Villain to face, so no calling frequency beats any other. Neither player can improve by changing strategy alone. That's Nash equilibrium, precisely defined:",
         concept_structured_items: [
           { term: 'Property 1', description: "Each player's strategy is known to the other (this is a full-information toy game — no guessing)." },
           { term: 'Property 2', description: 'Both players are simultaneously playing a maximally exploitative strategy against the other.' },
           { term: 'Property 3', description: 'Neither player can unilaterally change strategy to improve their own expectation.' },
         ],
-        concept_note: "This is NOT \"GTO means playing balanced because balance is good.\" Acevedo's framing is stronger and more specific: equilibrium arises from mutual maximal exploitation, not from balance as a virtue in itself.",
+        concept_note: "This is NOT \"GTO means playing balanced because balance is good.\" The real framing is stronger and more specific: equilibrium arises from mutual maximal exploitation, not from balance as a virtue in itself.",
         xp: 12,
       },
       {
@@ -15234,7 +15542,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['indifference_principle'],
         source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'The Indifference Principle', type: 'source_reconstructed' },
         concept_title: 'INDIFFERENCE',
-        concept_content: "At 50% calling, Push and Fold earn exactly the same. That's not a coincidence you found by chance — it's Acevedo's Indifference Principle: if a player uses multiple actions with the SAME hand at equilibrium with nonzero frequencies, those actions must have equal EV. And critically — it's the OPPONENT'S strategy that makes those two actions equal. Change Villain's calling frequency even slightly, and one action becomes clearly better, and the mix stops making sense.",
+        concept_content: "At 50% calling, Push and Fold earn exactly the same. That's not a coincidence you found by chance — it's the Indifference Principle: if a player uses multiple actions with the SAME hand at equilibrium with nonzero frequencies, those actions must have equal EV. And critically — it's the OPPONENT'S strategy that makes those two actions equal. Change Villain's calling frequency even slightly, and one action becomes clearly better, and the mix stops making sense.",
         xp: 12,
       },
       {
@@ -15243,7 +15551,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['indifference_principle'],
         source: INDIFFERENCE_EXAMPLE.source,
         concept_title: 'The real boundary hand: 43s',
-        concept_content: `This is the same push/fold game as the Strategy Loop — a genuine hand from Acevedo's solved example, not the pedagogical model above. At the true equilibrium (BN pushes ${(INDIFFERENCE_EXAMPLE.bnEquilibriumPush * 100).toFixed(1)}%), the very bottom of BN's pushing range is 43s — and it doesn't push or fold purely. It mixes.`,
+        concept_content: `This is the same push/fold game as the Strategy Loop — a genuine hand from a real solved example, not the pedagogical model above. At the true equilibrium (BN pushes ${(INDIFFERENCE_EXAMPLE.bnEquilibriumPush * 100).toFixed(1)}%), the very bottom of BN's pushing range is 43s — and it doesn't push or fold purely. It mixes.`,
         concept_structured_items: [
           { term: 'Push', description: `${(INDIFFERENCE_EXAMPLE.bottomPushingHand.freqA * 100).toFixed(0)}%` },
           { term: 'Fold', description: `${(INDIFFERENCE_EXAMPLE.bottomPushingHand.freqB * 100).toFixed(0)}%` },
@@ -15297,7 +15605,7 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_ids: ['indifference_principle'],
         concept_title: 'One more piece missing',
-        concept_content: "Lesson 10.5 found that a LONE bluff can't anchor a real equilibrium — the defender just calls more and more. But real hands aren't lone bluffs; they're part of a RANGE that also contains genuine value. Next: Acevedo's own toy game showing exactly how a value hand and a bluff, together, create a stable equilibrium neither player wants to leave.",
+        concept_content: "Lesson 10.5 found that a LONE bluff can't anchor a real equilibrium — the defender just calls more and more. But real hands aren't lone bluffs; they're part of a RANGE that also contains genuine value. Next: a toy game showing exactly how a value hand and a bluff, together, create a stable equilibrium neither player wants to leave.",
         xp: 8,
       },
     ],
@@ -15308,7 +15616,7 @@ export const LESSONS: Lesson[] = [
     module_id: 'game-theory-foundations-module',
     slug: 'the-clairvoyance-game',
     title: 'The Clairvoyance Game',
-    subtitle: "Acevedo's own toy game — this is the centerpiece.",
+    subtitle: "The Clairvoyance Game — this is the centerpiece.",
     lesson_type: 'concept_reveal',
     concept_ids: ['clairvoyance_game'],
     estimated_min: 12,
@@ -15383,7 +15691,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['clairvoyance_game'],
         source: CLAIRVOYANCE_GAME.source,
         concept_title: 'The equilibrium',
-        concept_content: 'Acevedo\'s own solution to this exact game:',
+        concept_content: 'The solution to this exact game:',
         concept_structured_items: [
           { term: 'AA', description: 'Bets 100% — a hand that never loses has nothing to gain by ever checking.' },
           { term: 'QQ', description: 'Bets 50%, checks 50% — bluffs just often enough to be worth calling sometimes, not so often it gets picked off.' },
@@ -15454,7 +15762,7 @@ export const LESSONS: Lesson[] = [
         type: 'mdf_slider',
         concept_ids: ['alpha_mdf_derivation'],
         source: HALF_POT_ALPHA_MDF_EXAMPLE.source,
-        narrative: 'Different bet size now — Modern Poker Theory\'s own half-pot river example.',
+        narrative: 'Different bet size now — a half-pot river example.',
         mdf_slider_question: 'Set the bet size to half-pot and read off the resulting MDF.',
         mdf_slider_initial_bet_pct: 100,
         mdf_slider_target: HALF_POT_ALPHA_MDF_EXAMPLE.mdfPct,
@@ -15467,7 +15775,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['alpha_mdf_derivation'],
         source: HALF_POT_ALPHA_MDF_EXAMPLE.source,
         concept_title: 'The exact numbers',
-        concept_content: `A half-pot bet: Alpha = ${HALF_POT_ALPHA_MDF_EXAMPLE.alphaPct}%, MDF = ${HALF_POT_ALPHA_MDF_EXAMPLE.mdfPct}%. That's a smaller bet than the Clairvoyance Game's pot-sized one, so it needs LESS defense — makes sense, there's less to risk by folding. Acevedo also connects this to a separate but related number: the CALLER's own pot odds for this same half-pot bet are 25%, which sets the bluff-to-value ratio of a balanced betting range at exactly ${HALF_POT_ALPHA_MDF_EXAMPLE.valuePct}% value / ${HALF_POT_ALPHA_MDF_EXAMPLE.bluffPct}% bluffs.`,
+        concept_content: `A half-pot bet: Alpha = ${HALF_POT_ALPHA_MDF_EXAMPLE.alphaPct}%, MDF = ${HALF_POT_ALPHA_MDF_EXAMPLE.mdfPct}%. That's a smaller bet than the Clairvoyance Game's pot-sized one, so it needs LESS defense — makes sense, there's less to risk by folding. There's also a separate but related number worth connecting here: the CALLER's own pot odds for this same half-pot bet are 25%, which sets the bluff-to-value ratio of a balanced betting range at exactly ${HALF_POT_ALPHA_MDF_EXAMPLE.valuePct}% value / ${HALF_POT_ALPHA_MDF_EXAMPLE.bluffPct}% bluffs.`,
         concept_note: 'Two related but distinct numbers: MDF is about how much the DEFENDER must continue with. The value/bluff ratio is about how the BETTOR should construct their own betting range. Building that range for real is Module 11 — here it\'s just the number the same formula produces.',
         xp: 12,
       },
@@ -15822,7 +16130,7 @@ export const LESSONS: Lesson[] = [
         source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Theory of Betting', type: 'exact_derived' },
         concept_title: 'Not "value bet" or "bluff"',
         concept_content: "Every earlier module has asked you to label a bet as either \"for value\" or \"as a bluff.\" Those labels describe what happened once the hand was over — not why the bet was correct in the first place. If you bet and get called by worse, you happened to be value-betting. If you bet and a better hand folds, you happened to be bluffing. Neither label was available to you at the moment you decided to bet, because you don't know your opponent's hand when you act. \"Bet good hands, check bad hands\" doesn't explain why betting works — it just relabels the fact that you bet.",
-        narrative: "So what is the real reason to bet? Modern Poker Theory reduces it to two ideas: leveraging the fact that you know your own exact cards while your opponent only knows your range, and realizing (or denying) equity.",
+        narrative: "So what is the real reason to bet? It reduces to two ideas: leveraging the fact that you know your own exact cards while your opponent only knows your range, and realizing (or denying) equity.",
         xp: 8,
       },
       {
@@ -15952,7 +16260,7 @@ export const LESSONS: Lesson[] = [
             id: 'depends_on_cards',
             label: 'It depends on which specific cards are involved',
             quality: 'mistake',
-            feedback: "The book's own point (reinforced in Ch.14) is exactly the opposite: it does NOT matter which specific cards are involved. What matters is the RANGE STRUCTURE — one side polarized (50% nuts, 50% air), the other side a pure bluff-catcher. Any hands that fit that structure produce the same equilibrium behavior.",
+            feedback: "It's exactly the opposite: it does NOT matter which specific cards are involved. What matters is the RANGE STRUCTURE — one side polarized (50% nuts, 50% air), the other side a pure bluff-catcher. Any hands that fit that structure produce the same equilibrium behavior.",
           },
         ],
         xp: 12,
@@ -16106,7 +16414,7 @@ export const LESSONS: Lesson[] = [
             type: 'concept_reveal',
             concept_ids: ['relative_range_shape'],
             concept_title: 'Why this feels surprising',
-            concept_content: "Module 4 taught you to name a range's shape once and treat it as settled — reasonably, since every range you classified there was judged against a fairly typical, implied opponent. This lesson adds a case Module 4 never needed: comparing the SAME range against two named, different opponents in the same exercise. The book's own real example is a range that checks back the flop — it becomes capped/depolarized relative to a range that hasn't acted yet, in the exact same hand, at the exact same instant.",
+            concept_content: "Module 4 taught you to name a range's shape once and treat it as settled — reasonably, since every range you classified there was judged against a fairly typical, implied opponent. This lesson adds a case Module 4 never needed: comparing the SAME range against two named, different opponents in the same exercise. A clean real example is a range that checks back the flop — it becomes capped/depolarized relative to a range that hasn't acted yet, in the exact same hand, at the exact same instant.",
             xp: 3,
           },
           {
@@ -16371,7 +16679,7 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_ids: ['bluff_to_value_ratio'],
         source: HALF_POT_ALPHA_MDF_EXAMPLE.source,
-        concept_title: "The book's own half-pot example",
+        concept_title: "A Half-Pot Example",
         concept_content: `A half-pot river bet with a polarized range: Alpha = ${HALF_POT_ALPHA_MDF_EXAMPLE.alphaPct}%, MDF = ${HALF_POT_ALPHA_MDF_EXAMPLE.mdfPct}%. The book states the resulting betting range directly: ${HALF_POT_ALPHA_MDF_EXAMPLE.valuePct}% value hands and ${HALF_POT_ALPHA_MDF_EXAMPLE.bluffPct}% bluffs (3-to-1). Notice this is a claim about the RESULTING COMPOSITION of the whole betting range — a separate (related) number from Alpha itself, not simply Alpha restated.`,
         concept_note: 'Keep this distinction precise: Alpha is a property of the bet-size. The value-to-bluff RATIO is what that Alpha, combined with your specific value-combo count, actually requires your range to look like.',
         xp: 8,
@@ -16381,7 +16689,7 @@ export const LESSONS: Lesson[] = [
         type: 'mdf_slider',
         concept_ids: ['bluff_to_value_ratio'],
         source: HALF_POT_ALPHA_MDF_EXAMPLE.source,
-        narrative: 'River spot. Slide to a half-pot bet (50%) — the exact bet-size from the book\'s own example — and read off MDF.',
+        narrative: 'River spot. Slide to a half-pot bet (50%) — the exact bet-size from the example above — and read off MDF.',
         mdf_slider_question: "What is MDF at a half-pot bet-size?",
         mdf_slider_initial_bet_pct: 100,
         mdf_slider_target: HALF_POT_ALPHA_MDF_EXAMPLE.mdfPct,
@@ -16393,14 +16701,14 @@ export const LESSONS: Lesson[] = [
         id: 'bhj-s4',
         type: 'decision_spot',
         concept_ids: ['bluff_to_value_ratio'],
-        narrative: `You have 12 genuine value combos on the river and are betting half-pot — the same bet-size and ratio (${HALF_POT_ALPHA_MDF_EXAMPLE.valuePct}% value / ${HALF_POT_ALPHA_MDF_EXAMPLE.bluffPct}% bluff, 3-to-1) as the book's own example.`,
+        narrative: `You have 12 genuine value combos on the river and are betting half-pot — the same bet-size and ratio (${HALF_POT_ALPHA_MDF_EXAMPLE.valuePct}% value / ${HALF_POT_ALPHA_MDF_EXAMPLE.bluffPct}% bluff, 3-to-1) as the example above.`,
         decision_spot_question: 'How many bluff combos does your range need?',
         options: [
           {
             id: 'four',
             label: '4 bluff combos',
             quality: 'perfect',
-            feedback: 'Right — if 12 value combos make up 75% of the range, the total range is 16 combos, so bluffs are the remaining 4 (25%, a 3-to-1 value-to-bluff ratio, exactly matching the book\'s own half-pot figure).',
+            feedback: 'Right — if 12 value combos make up 75% of the range, the total range is 16 combos, so bluffs are the remaining 4 (25%, a 3-to-1 value-to-bluff ratio, exactly matching the half-pot figure above).',
           },
           {
             id: 'six',
@@ -16418,7 +16726,7 @@ export const LESSONS: Lesson[] = [
             id: 'twelve',
             label: '12 bluff combos (matching value 1-to-1)',
             quality: 'mistake',
-            feedback: 'A 1-to-1 ratio would only be correct for a much bigger bet-size — at half-pot, the book\'s own cited ratio is 3-to-1 (value-to-bluff), which means 4 bluffs against 12 value combos, not 12.',
+            feedback: 'A 1-to-1 ratio would only be correct for a much bigger bet-size — at half-pot, the real ratio is 3-to-1 (value-to-bluff), which means 4 bluffs against 12 value combos, not 12.',
           },
         ],
         remediation_ladder: [
@@ -16452,7 +16760,7 @@ export const LESSONS: Lesson[] = [
         source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Alpha and MDF Revisited — the flop/river caveat', type: 'exact_derived' },
         concept_title: 'Where this stops being exact',
         concept_content: "Alpha and MDF are derived from an EV equation that makes two assumptions: a checked-back hand's EV is exactly 0, and a called bluff always loses everything. On the RIVER, both are literally true — no more cards to come. On the FLOP (and to a lesser extent the turn), neither holds up cleanly: a checked-back hand often retains real equity to improve, and a flop \"bluff\" — a hand with a gutshot, a backdoor flush draw — often keeps a genuine chance to win even when called.",
-        concept_note: "The book is explicit that even respected coaches make this mistake: treating \"my bet only needs to work X% of the time\" as automatically sound, without checking whether the underlying zero-EV assumptions actually hold on this street.",
+        concept_note: "Even respected coaches make this mistake: treating \"my bet only needs to work X% of the time\" as automatically sound, without checking whether the underlying zero-EV assumptions actually hold on this street.",
         xp: 8,
       },
       {

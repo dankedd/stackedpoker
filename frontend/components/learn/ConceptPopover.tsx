@@ -95,7 +95,7 @@ const CONCEPT_DATA: Record<string, ConceptEntry> = {
     id: 'cbet_frequency',
     title: 'C-Bet Frequency',
     domain: 'postflop',
-    summary: 'How often a range bets on a given flop, described in categories (check-heavy / low / medium / high / near-range-bet) rather than a memorized percentage. Driven by range advantage, strong-hand concentration, the opponent\'s trash concentration, and how well the opponent can raise back — never by a card label alone.',
+    summary: 'How often a range bets on a given flop, described in five categories with an indicative percentage band attached as a learning aid — Check-Heavy (≈0–15%), Low (≈15–40%), Medium (≈40–65%), High (≈65–85%), Near-Range Bet (≈85–100%) — rather than one memorized exact number. Driven by range advantage, strong-hand concentration, the opponent\'s trash concentration, and how well the opponent can raise back — never by a card label alone.',
     related: ['range_advantage', 'strong_hand_density'],
   },
   flop_range_strategy: {

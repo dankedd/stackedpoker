@@ -169,7 +169,9 @@ export function RangeDistributionBar({ step, onAnswer, disabled = false }: Range
             ))}
           </div>
           <p className="text-center text-[9px] text-muted-foreground/30">
-            Illustrative reference distributions, not solver-exact outputs.
+            {step.source?.type === 'exact_derived'
+              ? 'Real reference distribution, not an invented estimate.'
+              : 'Illustrative reference distribution, not solver-exact.'}
           </p>
         </div>
       )}

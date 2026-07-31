@@ -1130,7 +1130,7 @@
       }
     },
     "range-advantage-not-enough": {
-      "xp_reward": 210,
+      "xp_reward": 232,
       "steps": {
         "ran-s1": 8,
         "ran-s2": 6,
@@ -1140,11 +1140,13 @@
         "ran-s4c": 10,
         "ran-s5": 16,
         "ran-s6": 8,
-        "ran-s7": 12
+        "ran-s7": 12,
+        "ran-s8": 14,
+        "ran-s9": 8
       }
     },
     "high-frequency-cbets": {
-      "xp_reward": 190,
+      "xp_reward": 208,
       "steps": {
         "hfc-s1": 8,
         "hfc-s2": 7,
@@ -1152,55 +1154,61 @@
         "hfc-s4": 10,
         "hfc-s5": 10,
         "hfc-s6": 10,
+        "hfc-s6b": 18,
         "hfc-s7": 8
       }
     },
     "cbet-slows-down": {
-      "xp_reward": 200,
+      "xp_reward": 214,
       "steps": {
         "csd-s1": 8,
         "csd-s2": 8,
         "csd-s3": 16,
         "csd-s4": 10,
+        "csd-s4b": 14,
         "csd-s5a": 8,
         "csd-s5b": 12,
         "csd-s6": 8
       }
     },
     "small-bet-or-big-bet": {
-      "xp_reward": 230,
+      "xp_reward": 254,
       "steps": {
         "sbb-s1": 8,
         "sbb-s2": 8,
         "sbb-s3": 8,
         "sbb-s4": 8,
+        "sbb-s4b": 16,
         "sbb-s5": 20,
         "sbb-s6": 20,
         "sbb-s7": 12,
-        "sbb-s8": 8
+        "sbb-s8": 8,
+        "sbb-s8b": 8
       }
     },
     "what-does-my-hand-do": {
-      "xp_reward": 210,
+      "xp_reward": 226,
       "steps": {
         "wdm-s1": 8,
         "wdm-s2": 8,
         "wdm-s3": 22,
+        "wdm-s3b": 16,
         "wdm-s4": 12,
         "wdm-s5": 8
       }
     },
     "position-changes-everything": {
-      "xp_reward": 200,
+      "xp_reward": 218,
       "steps": {
         "pce-s1": 8,
         "pce-s2": 12,
         "pce-s3": 12,
+        "pce-s3b": 18,
         "pce-s4": 8
       }
     },
     "cbet-decision-lab": {
-      "xp_reward": 450,
+      "xp_reward": 462,
       "steps": {
         "cdl-s1a": 10,
         "cdl-s1b": 16,
@@ -1212,6 +1220,7 @@
         "cdl-s6": 22,
         "cdl-s7a": 10,
         "cdl-s7b": 10,
+        "cdl-s7c": 12,
         "cdl-fb1": 10,
         "cdl-fb2": 8,
         "cdl-fb3": 16,

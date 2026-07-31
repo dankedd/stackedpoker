@@ -55,3 +55,54 @@ export const BB_LOW_CONNECTED_BOARDS = dist('BB on low connected boards', 18, 32
 
 /** High-card boards (the A76r / A-high family) — BB's calling range here. */
 export const BB_HIGH_CARD_BOARDS = dist('BB on high-card boards', 4, 18, 20, 58)
+
+// ── C-bet frequency category bands — pedagogical model, not solver data ──────
+//
+// Module 7 (and `cbet_frequency_size`/`FrequencySizeLab.tsx` specifically)
+// describes aggregate c-bet frequency in five named categories rather than a
+// memorized percentage — matching the book's own qualitative framing (Ch.12:
+// "High c-bet frequency flops (80%+) / Mid (60%-80%) / Low (less than 60%)",
+// simplified to 5 bands here for a finer-grained "Near-Range Bet" top tier and
+// a "Check-Heavy" bottom tier the book doesn't name separately). The ranges
+// below are an indicative learning aid for what each label roughly MEANS, not
+// a claimed solver frequency for any specific spot — deliberately never used
+// to grade an answer, only to label one. Single source of truth: every place
+// in `curriculum.ts` that shows one of these five category names as a UI
+// label should build it from here so the wording can never drift out of sync.
+export interface CbetFrequencyBand {
+  id: 'near_range' | 'high' | 'medium' | 'low' | 'check_heavy'
+  label: string
+  pctRange: string
+  displayLabel: string
+}
+
+export const CBET_FREQUENCY_BANDS: CbetFrequencyBand[] = (
+  [
+    ['near_range', 'Near-Range Bet', '≈85–100%'],
+    ['high', 'High', '≈65–85%'],
+    ['medium', 'Medium', '≈40–65%'],
+    ['low', 'Low', '≈15–40%'],
+    ['check_heavy', 'Check-Heavy', '≈0–15%'],
+  ] as const
+).map(([id, label, pctRange]) => ({ id, label, pctRange, displayLabel: `${label} (${pctRange})` }))
+
+const CBET_FREQUENCY_BAND_BY_ID: Record<string, CbetFrequencyBand> = Object.fromEntries(
+  CBET_FREQUENCY_BANDS.map((b) => [b.id, b]),
+)
+
+/** Ready-to-use `{id, label}` options for `cbet_frequency_size_frequency_options`,
+ *  in the book's low-to-high reading order. Steps set in a 3-bet pot (where
+ *  a literal 100%-of-range near-range-bet ceiling isn't the point being taught)
+ *  should use `CBET_FREQUENCY_OPTIONS.filter(o => o.id !== 'near_range')`
+ *  rather than a hand-copied 4-item array. */
+export const CBET_FREQUENCY_OPTIONS: { id: string; label: string }[] = CBET_FREQUENCY_BANDS
+  .slice()
+  .reverse()
+  .map((b) => ({ id: b.id, label: b.displayLabel }))
+
+/** The "Category (≈low–high%)" display string for a band id, e.g. for building
+ *  a composite `options[].label` like `${cbetFrequencyDisplayLabel('near_range')} + Small`,
+ *  or splicing the percentage into a longer sentence that names the category. */
+export function cbetFrequencyDisplayLabel(id: string): string {
+  return CBET_FREQUENCY_BAND_BY_ID[id]?.displayLabel ?? id
+}
