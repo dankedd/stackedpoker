@@ -1,12 +1,22 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Check } from 'lucide-react'
+import { Check, Pencil } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PlayingCard } from '@/components/poker/PlayingCard'
-import { CardPicker } from '@/components/poker/CardPicker'
+import { CardPickerGrid } from '@/components/poker/CardPicker'
 import { SUITS } from '@/lib/learn/flopClassifier'
+
+const RANK_NAME: Record<string, string> = {
+  A: 'Ace', K: 'King', Q: 'Queen', J: 'Jack', T: 'Ten',
+  '9': 'Nine', '8': 'Eight', '7': 'Seven', '6': 'Six', '5': 'Five', '4': 'Four', '3': 'Three', '2': 'Two',
+}
+const SUIT_NAME: Record<string, string> = { s: 'Spades', h: 'Hearts', d: 'Diamonds', c: 'Clubs' }
+
+function cardLabel(card: string): string {
+  return `${RANK_NAME[card[0]?.toUpperCase()] ?? card[0]} of ${SUIT_NAME[card[1]?.toLowerCase()] ?? card[1]}`
+}
 
 interface FlopBuilderProps {
   step: LessonStep
@@ -37,12 +47,15 @@ export function FlopBuilder({ step, onAnswer, disabled = false }: FlopBuilderPro
   const [suits, setSuits] = useState<(string | null)[]>(fixedRanks.map(() => null))
   // swap_one_card: which slot (if any) has been overridden, and to what card.
   const [override, setOverride] = useState<{ slot: number; card: string } | null>(null)
+  // swap_one_card: which slot's replacement picker is currently open below the board.
+  const [selectedSlot, setSelectedSlot] = useState<number | null>(null)
   const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
     mountTime.current = Date.now()
     setSuits(fixedRanks.map(() => null))
     setOverride(null)
+    setSelectedSlot(null)
     setSubmitted(false)
   }, [step.id, fixedRanks.length])
 
@@ -111,8 +124,19 @@ export function FlopBuilder({ step, onAnswer, disabled = false }: FlopBuilderPro
     )
   }
 
-  // swap_one_card mode
+  // swap_one_card mode — a guided 5-step flow: (1) show the board, (2) click a
+  // card to select it, (3) an inline picker appears below to choose its
+  // replacement, (4) the board above updates immediately as a live preview,
+  // (5) submit. The board itself is the single source of truth throughout —
+  // nothing is ever hidden or duplicated, and the replacement grid never
+  // scrolls (see CardPickerGrid).
   const board = baseBoard.map((c, i) => (override && override.slot === i ? override.card : c))
+  const locked = disabled || submitted
+
+  function selectSlot(i: number) {
+    if (locked) return
+    setSelectedSlot((prev) => (prev === i ? null : i))
+  }
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -125,31 +149,72 @@ export function FlopBuilder({ step, onAnswer, disabled = false }: FlopBuilderPro
         <p className="text-center text-sm font-semibold text-foreground">{step.flop_builder_prompt}</p>
       )}
 
-      <div className="flex items-center justify-center gap-2 sm:gap-5 overflow-x-auto">
-        {board.map((card, i) => (
-          <CardPicker
-            key={i}
-            value={card}
-            onChange={(newCard) => {
-              if (!newCard) return
-              setOverride({ slot: i, card: newCard })
-            }}
-            disabledCards={board}
-            boardCards={board.filter((_, j) => j !== i)}
-            disabled={disabled || submitted}
-            size={BOARD_CARD_SIZE}
-          />
-        ))}
+      <div className="flex items-center justify-center gap-3 sm:gap-6">
+        {board.map((card, i) => {
+          const isSelected = selectedSlot === i
+          const isChanged = override?.slot === i
+          return (
+            <button
+              key={i}
+              type="button"
+              disabled={locked}
+              onClick={() => selectSlot(i)}
+              aria-pressed={isSelected}
+              aria-label={locked ? cardLabel(card) : `${cardLabel(card)} — click to replace`}
+              className={cn(
+                'group relative rounded-xl transition-all duration-200',
+                locked ? 'cursor-default' : 'cursor-pointer hover:-translate-y-0.5',
+              )}
+            >
+              <PlayingCard
+                card={card}
+                size={BOARD_CARD_SIZE}
+                className={cn(
+                  'transition-shadow duration-200',
+                  isSelected && 'ring-2 ring-violet-400 ring-offset-2 ring-offset-background',
+                  !isSelected && isChanged && 'ring-2 ring-violet-500/40 ring-offset-2 ring-offset-background',
+                )}
+              />
+              {isChanged && (
+                <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 text-white shadow">
+                  <Check className="h-3 w-3" strokeWidth={3} />
+                </span>
+              )}
+              {!locked && !isSelected && !isChanged && (
+                <span className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-white/80 text-black text-[9px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow">
+                  <Pencil className="h-2 w-2" strokeWidth={3} />
+                </span>
+              )}
+            </button>
+          )
+        })}
       </div>
+
       <p className="text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground/50">
-        Click a card to pick a replacement
+        {selectedSlot === null
+          ? 'Click one card to replace.'
+          : `Choose a replacement for the ${cardLabel(board[selectedSlot])}`}
       </p>
+
+      {selectedSlot !== null && (
+        <CardPickerGrid
+          key={selectedSlot}
+          value={board[selectedSlot]}
+          onChange={(newCard) => {
+            if (!newCard) return
+            setOverride({ slot: selectedSlot, card: newCard })
+          }}
+          disabledCards={board.filter((_, j) => j !== selectedSlot)}
+          onEscape={() => setSelectedSlot(null)}
+          className="mx-auto max-w-md animate-in fade-in slide-in-from-top-1 duration-200"
+        />
+      )}
 
       <button
         type="button"
-        disabled={disabled || submitted}
+        disabled={locked || !override}
         onClick={() => submit(board)}
-        className="group relative w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden disabled:opacity-50"
+        className="group relative w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden disabled:opacity-50 disabled:hover:translate-y-0 disabled:shadow-none"
       >
         <Check className="h-4 w-4" />
         Submit Board

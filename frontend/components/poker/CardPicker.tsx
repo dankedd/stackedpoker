@@ -14,16 +14,14 @@ interface SuitDef {
   symbol: string;
   name: string;
   accent: SuitAccent;
-  /** Strong color for the peripheral-vision cue (left stripe + selected suit filter). */
+  /** Strong color for the peripheral-vision cue (filter pill + row icon). */
   stripe: string;
   /** Text/icon color. */
   text: string;
-  /** Translucent row background (layered over the dropdown's opaque backdrop). */
+  /** Translucent row background. */
   rowBg: string;
   /** Row border. */
   rowBorder: string;
-  /** Solid color behind the sticky suit label so scrolled cards don't show through it. */
-  labelBg: string;
   /** Available (non-selected, non-disabled) card cell styling. */
   cell: string;
   cellHover: string;
@@ -42,7 +40,6 @@ const SUITS: SuitDef[] = [
     text: "text-slate-100",
     rowBg: "bg-white/[0.03]",
     rowBorder: "border-white/10",
-    labelBg: "#141414",
     cell: "bg-white/8 text-slate-200",
     cellHover: "hover:bg-white/20 hover:text-white",
   },
@@ -55,7 +52,6 @@ const SUITS: SuitDef[] = [
     text: "text-red-400",
     rowBg: "bg-red-500/[0.07]",
     rowBorder: "border-red-500/15",
-    labelBg: "#1c1013",
     cell: "bg-red-500/10 text-red-400",
     cellHover: "hover:bg-red-500/25 hover:text-red-300",
   },
@@ -68,7 +64,6 @@ const SUITS: SuitDef[] = [
     text: "text-orange-400",
     rowBg: "bg-orange-500/[0.07]",
     rowBorder: "border-orange-500/15",
-    labelBg: "#1c150f",
     cell: "bg-orange-500/10 text-orange-400",
     cellHover: "hover:bg-orange-500/25 hover:text-orange-300",
   },
@@ -81,26 +76,10 @@ const SUITS: SuitDef[] = [
     text: "text-emerald-100",
     rowBg: "bg-emerald-500/[0.05]",
     rowBorder: "border-emerald-500/10",
-    labelBg: "#10160f",
     cell: "bg-emerald-500/[0.08] text-emerald-100",
     cellHover: "hover:bg-emerald-500/20 hover:text-emerald-50",
   },
 ];
-
-interface CardPickerProps {
-  value: string;           // current card e.g. "Ah"
-  onChange: (card: string) => void;
-  disabledCards?: string[];  // cards already in use elsewhere
-  /** Cards currently on the board, shown as context inside the dropdown so the
-   *  user never has to look back up at the table while picking. */
-  boardCards?: string[];
-  className?: string;
-  /** Locks the trigger — used once an answer has been submitted. */
-  disabled?: boolean;
-  /** Trigger card face size, using the shared PlayingCard size tiers. Defaults to
-   *  the compact size used in dense forms (e.g. HandConfirmation's card grid). */
-  size?: CardSize;
-}
 
 function suitOf(card: string): SuitDef | undefined {
   return SUITS.find(s => s.key === card[1]?.toLowerCase());
@@ -117,31 +96,52 @@ function BoardChip({ card }: { card: string }) {
   );
 }
 
-export function CardPicker({ value, onChange, disabledCards = [], boardCards = [], className, disabled = false, size = "xs" }: CardPickerProps) {
-  const [open, setOpen] = useState(false);
+// ── CardPickerGrid ───────────────────────────────────────────────────────────
+// The actual rank/suit picking surface. Self-contained (owns its own suit
+// filter + keyboard nav), fixed-width-free so it can be dropped either inside
+// a popover (see `CardPicker` below) or rendered inline in the page flow —
+// the whole reason FlopBuilder's swap-a-card exercise can show this directly
+// under the board instead of behind a click-to-open trigger. Never scrolls:
+// the 13-rank row is a `1fr` grid that shrinks to fit its container instead
+// of overflowing, so there is no nested scrollbar at any width.
+
+export interface CardPickerGridProps {
+  /** Current card in the slot being edited, e.g. "Ah" (or "" if unset). */
+  value: string;
+  /** Fires immediately on pick — callers decide whether that closes anything. */
+  onChange: (card: string) => void;
+  /** Cards already in use elsewhere that can't be picked again. */
+  disabledCards?: string[];
+  /** Cards to show as a "current board" context strip — for callers where the
+   *  slot being edited isn't next to the rest of the board on screen (e.g.
+   *  HandConfirmation's Turn/River pickers). Omit when the board is already
+   *  visible right above the picker (e.g. FlopBuilder) — showing it twice is
+   *  just noise. */
+  boardCards?: string[];
+  /** Renders a "Clear" footer link when provided (unset the slot entirely). */
+  onClear?: () => void;
+  /** Escape key handler — e.g. close a popover or collapse an inline picker. */
+  onEscape?: () => void;
+  className?: string;
+}
+
+export function CardPickerGrid({ value, onChange, disabledCards = [], boardCards = [], onClear, onEscape, className }: CardPickerGridProps) {
   const [suitFilter, setSuitFilter] = useState<string | null>(null);
   const [focusPos, setFocusPos] = useState({ row: 0, col: 0 });
-  const ref = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
   const cellRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   const visibleSuits = useMemo(
     () => (suitFilter ? SUITS.filter(s => s.key === suitFilter) : SUITS),
     [suitFilter],
   );
+  const disabledSet = useMemo(
+    () => new Set(disabledCards.filter(c => c !== value)),
+    [disabledCards, value],
+  );
 
+  // Focus the selected card (or the first available one) on mount, and again
+  // whenever the suit filter narrows the visible rows.
   useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, []);
-
-  // Focus the selected card (or the first available one) whenever the picker opens.
-  useEffect(() => {
-    if (!open) return;
-    const disabledSet = new Set(disabledCards.filter(c => c !== value));
     let row = 0, col = 0;
     const suitIdx = value ? visibleSuits.findIndex(s => s.key === value[1]?.toLowerCase()) : -1;
     const rankIdx = value ? RANKS.indexOf(value[0]?.toUpperCase()) : -1;
@@ -156,25 +156,13 @@ export function CardPicker({ value, onChange, disabledCards = [], boardCards = [
     setFocusPos({ row, col });
     const key = `${visibleSuits[row]?.key}-${col}`;
     requestAnimationFrame(() => cellRefs.current[key]?.focus());
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  function pick(card: string) {
-    onChange(card);
-    close();
-  }
-
-  function close() {
-    setOpen(false);
-    setSuitFilter(null);
-    requestAnimationFrame(() => triggerRef.current?.focus());
-  }
-
-  const disabledSet = new Set(disabledCards.filter(c => c !== value));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suitFilter]);
 
   const handleGridKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
       e.preventDefault();
-      close();
+      onEscape?.();
       return;
     }
     const rows = visibleSuits.length;
@@ -192,7 +180,177 @@ export function CardPicker({ value, onChange, disabledCards = [], boardCards = [
     setFocusPos({ row, col });
     const key = `${visibleSuits[row]?.key}-${col}`;
     cellRefs.current[key]?.focus();
-  }, [focusPos, visibleSuits]);
+  }, [focusPos, visibleSuits, onEscape]);
+
+  return (
+    <div className={cn("rounded-xl border border-white/10 overflow-hidden", className)} style={{ background: "#111" }}>
+      <div className="flex items-center justify-between px-3 pt-2 pb-1.5 border-b border-white/5">
+        <p className="text-[9px] text-white/40 uppercase tracking-widest font-semibold">Choose a card</p>
+        {/* Suit filter — collapses the grid to a single row */}
+        <div className="flex items-center gap-0.5" role="group" aria-label="Filter by suit">
+          {SUITS.map(s => (
+            <button
+              key={s.key}
+              type="button"
+              onClick={() => setSuitFilter(prev => (prev === s.key ? null : s.key))}
+              title={`Show only ${s.name}`}
+              aria-pressed={suitFilter === s.key}
+              className={cn(
+                "flex h-5 w-5 items-center justify-center rounded text-[11px] transition-colors",
+                suitFilter === s.key ? "bg-white/20" : "hover:bg-white/10",
+                s.text,
+              )}
+            >
+              {s.symbol}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {boardCards.length > 0 && (
+        <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-white/5 bg-white/[0.02]">
+          <span className="text-[9px] text-white/30 uppercase tracking-wide shrink-0">Current board:</span>
+          <div className="flex items-center gap-1 flex-wrap">
+            {boardCards.map((c, i) => <BoardChip key={i} card={c} />)}
+          </div>
+        </div>
+      )}
+
+      <div className="p-2 space-y-1" role="grid" aria-label="Card selection grid" onKeyDown={handleGridKeyDown}>
+        {visibleSuits.map((suit, rowIdx) => (
+          <div
+            key={suit.key}
+            role="row"
+            className={cn("flex items-center gap-1.5 rounded-lg border px-1.5 py-1", suit.rowBg, suit.rowBorder)}
+          >
+            <span
+              className={cn("flex h-6 w-6 shrink-0 items-center justify-center rounded text-[13px]", suit.text)}
+              aria-hidden="true"
+              title={suit.name}
+            >
+              {suit.symbol}
+            </span>
+            <div className="grid flex-1 gap-1" style={{ gridTemplateColumns: `repeat(${RANKS.length}, minmax(0, 1fr))` }}>
+              {RANKS.map((rank, colIdx) => {
+                const card = `${rank}${suit.key}`;
+                const isDisabled = disabledSet.has(card);
+                const isCurrent = card === value;
+                const isFocusable = rowIdx === focusPos.row && colIdx === focusPos.col;
+                const cellKey = `${suit.key}-${colIdx}`;
+                return (
+                  <div key={card} className="group/cell relative">
+                    <button
+                      ref={el => { cellRefs.current[cellKey] = el; }}
+                      type="button"
+                      role="gridcell"
+                      disabled={isDisabled}
+                      tabIndex={isFocusable ? 0 : -1}
+                      onFocus={() => setFocusPos({ row: rowIdx, col: colIdx })}
+                      onClick={() => onChange(card)}
+                      title={isDisabled ? "Already on the board" : undefined}
+                      aria-selected={isCurrent}
+                      aria-disabled={isDisabled}
+                      aria-label={
+                        isDisabled
+                          ? `${rank} of ${suit.name}, already on the board`
+                          : `${rank} of ${suit.name}`
+                      }
+                      className={cn(
+                        "relative flex h-7 w-full items-center justify-center rounded text-[11px] font-bold leading-none",
+                        "border transition-colors",
+                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-1",
+                        "focus-visible:ring-offset-[#111]",
+                        isCurrent
+                          ? "scale-110 border-violet-300 bg-violet-500 text-white shadow-[0_0_0_3px_rgba(139,92,246,0.35),0_4px_14px_rgba(139,92,246,0.5)] transition-transform"
+                          : isDisabled
+                          ? cn(
+                              "cursor-not-allowed border-dashed",
+                              "after:absolute after:left-[15%] after:right-[15%] after:top-1/2 after:h-px after:-rotate-[25deg] after:bg-current",
+                              suit.accent === "hearts" ? "border-red-500/15 bg-red-500/5 text-red-400/30"
+                              : suit.accent === "diamonds" ? "border-orange-500/15 bg-orange-500/5 text-orange-400/30"
+                              : suit.accent === "clubs" ? "border-emerald-500/10 bg-emerald-500/5 text-emerald-100/25"
+                              : "border-white/10 bg-white/5 text-white/20"
+                            )
+                          : cn(
+                              "cursor-pointer border-transparent transition-transform hover:scale-105 active:scale-95",
+                              suit.cell, suit.cellHover,
+                            )
+                      )}
+                    >
+                      {rank}
+                      {isCurrent && (
+                        <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-violet-400 shadow">
+                          <Check className="h-2 w-2 text-white" strokeWidth={3.5} />
+                        </span>
+                      )}
+                    </button>
+                    {isDisabled && (
+                      <span
+                        role="tooltip"
+                        className="pointer-events-none absolute -top-7 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded bg-black px-1.5 py-0.5 text-[9px] font-medium text-white opacity-0 shadow-lg transition-opacity group-hover/cell:opacity-100 group-focus-visible/cell:opacity-100"
+                      >
+                        Already on the board
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {onClear && (
+        <div className="px-3 pb-2 pt-1 border-t border-white/5">
+          <button
+            type="button"
+            onClick={onClear}
+            className="w-full text-[9px] text-white/30 hover:text-white/60 transition-colors py-1"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── CardPicker ───────────────────────────────────────────────────────────────
+// Click-to-open popover trigger built on CardPickerGrid — used where a card
+// slot needs to stay compact until edited (dense forms like HandConfirmation).
+
+interface CardPickerProps {
+  value: string;           // current card e.g. "Ah"
+  onChange: (card: string) => void;
+  disabledCards?: string[];  // cards already in use elsewhere
+  /** Cards currently on the board, shown as context inside the dropdown so the
+   *  user never has to look back up at the table while picking. */
+  boardCards?: string[];
+  className?: string;
+  /** Locks the trigger — used once an answer has been submitted. */
+  disabled?: boolean;
+  /** Trigger card face size, using the shared PlayingCard size tiers. Defaults to
+   *  the compact size used in dense forms (e.g. HandConfirmation's card grid). */
+  size?: CardSize;
+}
+
+export function CardPicker({ value, onChange, disabledCards = [], boardCards = [], className, disabled = false, size = "xs" }: CardPickerProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  function close() {
+    setOpen(false);
+    requestAnimationFrame(() => triggerRef.current?.focus());
+  }
 
   return (
     <div ref={ref} className={cn("relative inline-block", className)}>
@@ -216,148 +374,15 @@ export function CardPicker({ value, onChange, disabledCards = [], boardCards = [
       </button>
 
       {open && (
-        <div
-          className="absolute z-50 top-full mt-2 left-1/2 -translate-x-1/2 rounded-xl border border-white/10 shadow-2xl"
-          style={{ background: "#111", minWidth: "260px", maxWidth: "94vw" }}
-        >
-          <div className="flex items-center justify-between px-3 pt-2 pb-1.5 border-b border-white/5">
-            <p className="text-[9px] text-white/40 uppercase tracking-widest font-semibold">Select card</p>
-            {/* Suit filter — collapses the grid to a single row */}
-            <div className="flex items-center gap-0.5" role="group" aria-label="Filter by suit">
-              {SUITS.map(s => (
-                <button
-                  key={s.key}
-                  type="button"
-                  onClick={() => setSuitFilter(prev => (prev === s.key ? null : s.key))}
-                  title={`Show only ${s.name}`}
-                  aria-pressed={suitFilter === s.key}
-                  className={cn(
-                    "flex h-5 w-5 items-center justify-center rounded text-[11px] transition-colors",
-                    suitFilter === s.key ? "bg-white/20" : "hover:bg-white/10",
-                    s.text,
-                  )}
-                >
-                  {s.symbol}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {boardCards.length > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-white/5 bg-white/[0.02]">
-              <span className="text-[9px] text-white/30 uppercase tracking-wide shrink-0">Current board:</span>
-              <div className="flex items-center gap-1 flex-wrap">
-                {boardCards.map((c, i) => <BoardChip key={i} card={c} />)}
-              </div>
-            </div>
-          )}
-
-          <div
-            className="overflow-x-auto overscroll-contain"
-            role="grid"
-            aria-label="Card selection grid"
-            onKeyDown={handleGridKeyDown}
-          >
-            <div className="p-2 space-y-1.5" style={{ minWidth: "460px" }}>
-              {visibleSuits.map((suit, rowIdx) => (
-                <div
-                  key={suit.key}
-                  role="row"
-                  className={cn("flex items-stretch gap-2 rounded-lg border", suit.rowBg, suit.rowBorder)}
-                >
-                  <div
-                    role="rowheader"
-                    className="sticky left-0 z-10 flex w-[78px] flex-shrink-0 items-center gap-1.5 rounded-l-lg py-1.5 pl-1 pr-2"
-                    style={{ backgroundColor: suit.labelBg }}
-                  >
-                    <span aria-hidden="true" className="h-4 w-[3px] flex-shrink-0 rounded-full" style={{ backgroundColor: suit.stripe }} />
-                    <span className={cn("text-base leading-none", suit.text)} aria-hidden="true">{suit.symbol}</span>
-                    <span className={cn("text-[10px] font-semibold uppercase tracking-wide leading-none", suit.text)}>
-                      {suit.name}
-                    </span>
-                  </div>
-                  <div className="flex gap-1 py-1.5 pr-2">
-                    {RANKS.map((rank, colIdx) => {
-                      const card = `${rank}${suit.key}`;
-                      const isDisabled = disabledSet.has(card);
-                      const isCurrent = card === value;
-                      const isFocusable = rowIdx === focusPos.row && colIdx === focusPos.col;
-                      const cellKey = `${suit.key}-${colIdx}`;
-                      return (
-                        <div key={card} className="group/cell relative">
-                          <button
-                            ref={el => { cellRefs.current[cellKey] = el; }}
-                            type="button"
-                            role="gridcell"
-                            disabled={isDisabled}
-                            tabIndex={isFocusable ? 0 : -1}
-                            onFocus={() => setFocusPos({ row: rowIdx, col: colIdx })}
-                            onClick={() => pick(card)}
-                            title={isDisabled ? "Already on the board" : undefined}
-                            aria-selected={isCurrent}
-                            aria-disabled={isDisabled}
-                            aria-label={
-                              isDisabled
-                                ? `${rank} of ${suit.name}, already on the board`
-                                : `${rank} of ${suit.name}`
-                            }
-                            className={cn(
-                              "relative flex h-9 w-7 flex-col items-center justify-center gap-px rounded text-[10px] font-bold leading-none",
-                              "border transition-colors",
-                              "focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-1",
-                              "focus-visible:ring-offset-[#111]",
-                              isCurrent
-                                ? "scale-110 border-violet-300 bg-violet-500 text-white shadow-[0_0_0_3px_rgba(139,92,246,0.35),0_4px_14px_rgba(139,92,246,0.5)] transition-transform"
-                                : isDisabled
-                                ? cn(
-                                    "cursor-not-allowed border-dashed",
-                                    "after:absolute after:left-[15%] after:right-[15%] after:top-1/2 after:h-px after:-rotate-[25deg] after:bg-current",
-                                    suit.accent === "hearts" ? "border-red-500/15 bg-red-500/5 text-red-400/30"
-                                    : suit.accent === "diamonds" ? "border-orange-500/15 bg-orange-500/5 text-orange-400/30"
-                                    : suit.accent === "clubs" ? "border-emerald-500/10 bg-emerald-500/5 text-emerald-100/25"
-                                    : "border-white/10 bg-white/5 text-white/20"
-                                  )
-                                : cn(
-                                    "cursor-pointer border-transparent transition-transform hover:scale-105 active:scale-95",
-                                    suit.cell, suit.cellHover,
-                                  )
-                            )}
-                          >
-                            <span>{rank}</span>
-                            <span className="text-[9px]">{suit.symbol}</span>
-                            {isCurrent && (
-                              <span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-violet-400 shadow">
-                                <Check className="h-2 w-2 text-white" strokeWidth={3.5} />
-                              </span>
-                            )}
-                          </button>
-                          {isDisabled && (
-                            <span
-                              role="tooltip"
-                              className="pointer-events-none absolute -top-7 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded bg-black px-1.5 py-0.5 text-[9px] font-medium text-white opacity-0 shadow-lg transition-opacity group-hover/cell:opacity-100 group-focus-visible/cell:opacity-100"
-                            >
-                              Already on the board
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="px-3 pb-2 pt-1">
-            <button
-              type="button"
-              onClick={() => { onChange(""); close(); }}
-              className="w-full text-[9px] text-white/30 hover:text-white/60 transition-colors py-1"
-            >
-              Clear
-            </button>
-          </div>
-        </div>
+        <CardPickerGrid
+          value={value}
+          onChange={(card) => { onChange(card); close(); }}
+          disabledCards={disabledCards}
+          boardCards={boardCards}
+          onClear={() => { onChange(""); close(); }}
+          onEscape={close}
+          className="absolute z-50 top-full mt-2 left-1/2 -translate-x-1/2 min-w-[280px] max-w-[94vw] shadow-2xl"
+        />
       )}
     </div>
   );
