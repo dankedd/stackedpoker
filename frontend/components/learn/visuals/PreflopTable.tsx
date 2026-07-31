@@ -1,15 +1,31 @@
 'use client'
 
+import { useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 import { POSITIONS_BY_SIZE, normalizePosition } from '@/lib/replay/positions'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { usePlaybackEngine } from '@/hooks/usePlaybackEngine'
 import {
   buildPreflopTableRenderState,
   deriveCenterStatus,
   type ParsedSeatAction,
   type PreflopSeatState,
 } from '@/lib/learn/preflopTableState'
+import { buildPlaybackTimeline, type PlaybackEvent, type PlaybackEventKind } from '@/lib/learn/preflopTablePlayback'
+import { ChipStack, type ChipTone } from '@/components/poker/ChipStack'
+import { DealerMarker } from '@/components/poker/DealerMarker'
+import { PotDisplay } from '@/components/poker/PotDisplay'
+import { formatBb, formatAnte } from '@/components/poker/tableTokens'
+import { PreflopSeatRow } from './PreflopSeatRow'
+
+/** Events that move a NEW chip pile onto the felt — drives which seat's chip
+ *  gets the seat→pot travel-in animation for the frame it fires on. Checks
+ *  and folds never move chips (spec: "Checks: geen chipanimatie"). */
+const CHIP_EVENT_KINDS = new Set<PlaybackEventKind>(['post_sb', 'post_bb', 'raise', 'allin', 'call', 'limp'])
+/** Events that get a brief seat highlight so it's visible the seat just
+ *  acted — everything except fold (folds dim instead of highlighting). */
+const HIGHLIGHT_EVENT_KINDS = new Set<PlaybackEventKind>(['post_sb', 'post_bb', 'raise', 'allin', 'call', 'limp', 'check'])
 
 export interface SeatLayoutEntry {
   position: string
@@ -181,14 +197,6 @@ export function computeHeroRotatedSeats(
   })
 }
 
-function formatBb(n: number): string {
-  return n % 1 === 0 ? String(n) : n.toFixed(1).replace(/\.0$/, '')
-}
-
-function formatAnte(anteBb: number): string {
-  return formatBb(anteBb) === String(anteBb) ? String(anteBb) : anteBb.toFixed(3).replace(/0+$/, '').replace(/\.$/, '')
-}
-
 /** Action verb only — the bet size (if any) is shown separately as an in-table chip marker. */
 function actionVerb(action: ParsedSeatAction): string {
   switch (action.kind) {
@@ -199,175 +207,6 @@ function actionVerb(action: ParsedSeatAction): string {
     case 'raise': return 'RAISE'
     case 'allin': return 'ALL-IN'
   }
-}
-
-/** A point `t` of the way from a seat's percentage coordinate toward table center (50%, 50%) —
- *  used to place the dealer button and blind/bet chip markers just inside the rail, near
- *  their seat, using the same seat-to-center positioning system for both. Every seat, Hero
- *  included, derives its bet/chip position from this SAME function — there is no separate
- *  per-position pixel coordinate anywhere in this file. */
-function towardCenter(
-  xPct: string,
-  yPct: string,
-  t: number,
-  protectedZone?: { cxPct: number; cyPct: number; halfWidthPct: number; halfHeightPct: number },
-): { left: string; top: string } {
-  const x = parseFloat(xPct)
-  const y = parseFloat(yPct)
-  const dx = 50 - x
-  const dy = 50 - y
-  let clampedT = t
-
-  if (protectedZone) {
-    // Same seat point → center segment as always, but stopped at the edge of the
-    // protected rectangle (a standard ray/AABB slab test) instead of running
-    // through it — the segment's t-interval inside the rect is [enter, exit];
-    // if that interval falls within [0, t], clamp to its entry point. The
-    // rectangle is centered on its OWN cx/cy (the pot/card-zone column), not
-    // assumed to be the container's 50/50 center.
-    const xLo = protectedZone.cxPct - protectedZone.halfWidthPct
-    const xHi = protectedZone.cxPct + protectedZone.halfWidthPct
-    const yLo = protectedZone.cyPct - protectedZone.halfHeightPct
-    const yHi = protectedZone.cyPct + protectedZone.halfHeightPct
-
-    const txEnter = dx === 0 ? -Infinity : Math.min((xLo - x) / dx, (xHi - x) / dx)
-    const txExit = dx === 0 ? Infinity : Math.max((xLo - x) / dx, (xHi - x) / dx)
-    const tyEnter = dy === 0 ? -Infinity : Math.min((yLo - y) / dy, (yHi - y) / dy)
-    const tyExit = dy === 0 ? Infinity : Math.max((yLo - y) / dy, (yHi - y) / dy)
-
-    const enter = Math.max(txEnter, tyEnter, 0)
-    const exit = Math.min(txExit, tyExit, t)
-
-    // Stop noticeably short of the rectangle's exact edge rather than flush against it —
-    // otherwise the chip pile's own rendered footprint (not just its anchor point) still
-    // visually touches the content it was supposed to clear.
-    if (enter <= exit) clampedT = Math.max(0, enter - 0.09)
-  }
-
-  return { left: `${x + dx * clampedT}%`, top: `${y + dy * clampedT}%` }
-}
-
-type ChipTone = 'blind' | 'bet' | 'allin'
-
-/** Per-tone palette for the poker-chip glyph — color is supportive only (spec item 6): shape,
- *  amount, and the seat's own action label already carry the meaning without it. */
-const CHIP_PALETTE: Record<ChipTone, { edgeA: string; edgeB: string; face: string; ringColor: string; text: string }> = {
-  blind: {
-    edgeA: '#cbd5e1', // slate-300
-    edgeB: '#3f4b5f',
-    face: 'linear-gradient(155deg, #64748b 0%, #334155 65%, #1e293b 100%)',
-    ringColor: 'rgba(226,232,240,0.35)',
-    text: 'text-slate-200',
-  },
-  bet: {
-    edgeA: '#bae6fd', // sky-200
-    edgeB: '#0c4a6e',
-    face: 'linear-gradient(155deg, #38bdf8 0%, #0284c7 65%, #075985 100%)',
-    ringColor: 'rgba(224,242,254,0.45)',
-    text: 'text-sky-100',
-  },
-  allin: {
-    edgeA: '#fecaca', // red-200
-    edgeB: '#7f1d1d',
-    face: 'linear-gradient(155deg, #f87171 0%, #dc2626 65%, #7f1d1d 100%)',
-    ringColor: 'rgba(254,226,226,0.45)',
-    text: 'text-red-100',
-  },
-}
-
-/** One poker-chip disc: an alternating-wedge edge band (a `repeating-conic-gradient` — the
- *  "contrasterende edge markings", no extra DOM nodes needed for it), a solid gradient face,
- *  and a thin inner ring — a compact but genuinely chip-shaped glyph, not a hollow outline. */
-function PokerChip({
-  tone,
-  sizePx,
-  style,
-}: {
-  tone: ChipTone
-  sizePx: number
-  style?: React.CSSProperties
-}) {
-  const p = CHIP_PALETTE[tone]
-  const faceInset = Math.max(2, Math.round(sizePx * 0.17))
-  return (
-    <div
-      aria-hidden
-      className="absolute rounded-full"
-      style={{
-        width: sizePx,
-        height: sizePx,
-        background: `repeating-conic-gradient(${p.edgeA} 0deg 18deg, ${p.edgeB} 18deg 36deg)`,
-        boxShadow: '0 2px 3px rgba(0,0,0,0.55), inset 0 1px 1px rgba(255,255,255,0.2)',
-        ...style,
-      }}
-    >
-      <div
-        className="absolute rounded-full border"
-        style={{ inset: faceInset, background: p.face, borderColor: p.ringColor }}
-      >
-        <div className="absolute inset-[2px] rounded-full border border-white/10" />
-      </div>
-    </div>
-  )
-}
-
-/** A small 2-chip pile (a diagonal overlap, not a flat stack) plus the commitment amount —
- *  "onmiddellijk duidelijk: deze speler heeft chips ingezet." Positioned purely from the same
- *  seat-anchor → towardCenter vector every other geometric element in this file uses; `sizePx`
- *  comes from the layout config, never a hardcoded/per-breakpoint JSX literal. */
-function ChipStack({
-  x,
-  y,
-  amount,
-  tone,
-  pullFactor,
-  protectedZone,
-  sizePx,
-}: {
-  x: string
-  y: string
-  amount: number
-  tone: ChipTone
-  pullFactor: number
-  protectedZone?: { cxPct: number; cyPct: number; halfWidthPct: number; halfHeightPct: number }
-  sizePx: number
-}) {
-  const pos = towardCenter(x, y, pullFactor, protectedZone)
-  const spread = Math.max(3, Math.round(sizePx * 0.22))
-
-  return (
-    <div
-      className="absolute z-20 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-[2px]"
-      style={{ left: pos.left, top: pos.top }}
-    >
-      <div className="relative" style={{ width: sizePx + spread, height: sizePx + spread }}>
-        <PokerChip tone={tone} sizePx={sizePx} style={{ left: 0, top: spread, opacity: 0.65 }} />
-        <PokerChip tone={tone} sizePx={sizePx} style={{ left: spread, top: 0 }} />
-      </div>
-      <span
-        className={cn(
-          'text-[10px] font-bold tabular-nums leading-none whitespace-nowrap',
-          CHIP_PALETTE[tone].text,
-        )}
-      >
-        {formatBb(amount)}
-      </span>
-    </div>
-  )
-}
-
-function DealerMarker({ style }: { style: React.CSSProperties }) {
-  return (
-    <div className="absolute z-20" style={style}>
-      <span
-        aria-label="Dealer button"
-        title="Dealer"
-        className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-black/10 bg-white/90 text-[8px] font-black text-neutral-800 shadow-sm"
-      >
-        D
-      </span>
-    </div>
-  )
 }
 
 export interface PreflopTableProps {
@@ -429,15 +268,41 @@ export function PreflopTable({
 
   const seats = computeHeroRotatedSeats(tableSize, heroPosition, layout.ellipseRadius)
   const cards = heroHand && heroHand.length === 2 ? heroHand : ['', '']
-  const state = buildPreflopTableRenderState({
-    hero_position: heroPosition,
-    table_size: tableSize,
-    action_before_hero: actionBeforeHero,
-    effective_stack_bb: effectiveStackBb,
-    stack_overrides_bb: stackOverridesBb,
-  })
+
+  // The shared Action Playback Engine: builds a timeline (blinds post, then
+  // each parsed action_before_hero entry) and steps through it one frame at a
+  // time. `undefined` whenever there's no reliable action data to play back
+  // (same "never fabricate" contract buildPreflopTableRenderState already
+  // has) — the engine then yields a single, already-complete frame so this
+  // component falls back to exactly today's static final-state render below.
+  const timeline = useMemo(
+    () =>
+      buildPlaybackTimeline({
+        hero_position: heroPosition,
+        table_size: tableSize,
+        action_before_hero: actionBeforeHero,
+        effective_stack_bb: effectiveStackBb,
+        stack_overrides_bb: stackOverridesBb,
+        ante_bb: anteBb,
+      }),
+    [heroPosition, tableSize, actionBeforeHero, effectiveStackBb, stackOverridesBb, anteBb],
+  )
+  const engine = usePlaybackEngine(timeline?.frames, timeline?.events)
+
+  // No reliable timeline (unparseable/absent action data) — render exactly
+  // today's static final state, unchanged.
+  const state = timeline
+    ? engine.frame
+    : buildPreflopTableRenderState({
+        hero_position: heroPosition,
+        table_size: tableSize,
+        action_before_hero: actionBeforeHero,
+        effective_stack_bb: effectiveStackBb,
+        stack_overrides_bb: stackOverridesBb,
+      })
   const centerStatus = state ? deriveCenterStatus(state) : undefined
   const seatState = new Map<string, PreflopSeatState>(state?.seats.map((s) => [s.position, s]))
+  const currentEvent = timeline ? engine.event : null
 
   // ── LAYER 2 (field) content that isn't per-seat: pot + Hero's protected card zone ──
   // Hero's cards/result/own-action pill live in ONE fixed screen position regardless of
@@ -482,24 +347,36 @@ export function PreflopTable({
     </div>
   )
 
-  const potReadout = state && state.potBb > 0 && (
-    <div
-      className="absolute left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5"
-      style={{ top: `${layout.potYPct}%` }}
-    >
-      <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-amber-300/50">Pot</span>
-      <span className="text-[13px] font-black tabular-nums text-amber-200 whitespace-nowrap">
-        {formatBb(state.potBb)} BB
-      </span>
-    </div>
+  const potReadout = (
+    <PotDisplay potBb={state?.potBb ?? 0} topPct={layout.potYPct} pulse={currentEvent?.kind === 'allin'} />
   )
+
+  // Skip is only ever meaningful once real client playback is underway — on
+  // the first (SSR/pre-hydration) render `engine.isComplete` is already true
+  // (see usePlaybackEngine's SSR-safe initial state), so this never appears
+  // in a static render.
+  const showSkip = !!timeline && !engine.isComplete
 
   return (
     <div className={cn('preflop-table-root space-y-2', className)}>
       <div
         className={cn('relative mx-auto', isMobile ? 'w-[94%]' : 'w-full max-w-2xl')}
         style={{ aspectRatio: layout.aspectRatio }}
+        onClick={showSkip ? engine.skip : undefined}
       >
+        {showSkip && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              engine.skip()
+            }}
+            className="absolute right-2 top-2 z-30 rounded-full border border-white/15 bg-black/40 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white/60 backdrop-blur-sm hover:bg-black/60"
+          >
+            Skip ▸
+          </button>
+        )}
+
         {/* LAYER 1 — rail: a thin premium border ring, distinct from the inner felt */}
         <div
           className={cn('absolute rounded-[999px]', isMobile ? 'inset-[14%]' : 'inset-[10%]')}
@@ -576,6 +453,15 @@ export function PreflopTable({
           // every other seat's.
           const railPoint = railCenterlinePoint(seat.x, seat.y, layout.ellipseRadius, railCenterlineRadius)
 
+          // Did THIS seat's action just fire, this exact frame? Gates the chip
+          // travel-in animation and the brief action highlight — and, via
+          // `engine.hasStarted`, never fires during the SSR/pre-hydration
+          // render (see hooks/usePlaybackEngine.ts), so static-render output
+          // is unaffected by any of this.
+          const justActedEvent = engine.hasStarted && currentEvent?.position === seat.position ? currentEvent : null
+          const chipAnimatesIn = justActedEvent != null && CHIP_EVENT_KINDS.has(justActedEvent.kind)
+          const seatHighlighted = justActedEvent != null && HIGHLIGHT_EVENT_KINDS.has(justActedEvent.kind)
+
           return (
             <div key={`${seat.position}-${i}`}>
               {chipAmount != null && (
@@ -587,6 +473,8 @@ export function PreflopTable({
                   pullFactor={layout.chipPullFactor}
                   protectedZone={layout.protectedZone}
                   sizePx={layout.chipSizePx}
+                  animateIn={chipAnimatesIn}
+                  travelDurationMs={engine.timing.chipTravelDuration}
                 />
               )}
 
@@ -600,86 +488,20 @@ export function PreflopTable({
                 />
               )}
 
-              <div
-                aria-label={`${seat.position}${folded ? ', folded' : hasVerb ? `, ${verbText}` : ''}`}
-              >
-                {/* Row 1 — position label, dead center on the rail. Hero is NOT a second,
-                    independently-positioned element anymore (that's what caused "Hero"
-                    to visually collide with the position text below/behind it) — the
-                    "HERO ·" prefix is now part of THIS SAME text line, sharing the exact
-                    same anchor and baseline as the position itself. One anchor, one line,
-                    structurally impossible to overlap with itself. */}
-                <span
-                  className={cn(
-                    'absolute z-10 -translate-x-1/2 -translate-y-1/2 text-center whitespace-nowrap transition-opacity duration-300',
-                    folded && 'opacity-35',
-                  )}
-                  style={{ left: railPoint.x, top: railPoint.y }}
-                >
-                  {isHero && (
-                    <span className="mr-[3px] align-middle text-[9px] font-black uppercase tracking-[0.1em] text-violet-300/80">
-                      HERO ·
-                    </span>
-                  )}
-                  <span
-                    className={cn(
-                      'align-middle text-[13px] font-extrabold',
-                      isHero ? 'text-violet-200' : 'text-foreground',
-                    )}
-                  >
-                    {seat.position}
-                  </span>
-                </span>
-
-                {/* Row 2 — FOLD, the action verb, or (if neither) this seat's own effective
-                    stack. A short seat (seatIsShortStack — its own effectiveStackBb, from
-                    stackOverridesBb when authored, at or below SHORT_STACK_THRESHOLD_BB) gets
-                    a compact amber badge instead of the plain muted text every other seat
-                    uses, so the stack story the narrative describes is visible on the table
-                    itself, not just in prose. Mobile hides a folded seat's row 2 entirely
-                    (dimmed position label only) to cut clutter — its rail position never
-                    changes either way. */}
-                {!(isMobile && folded) && (folded || hasVerb || seatStackBb != null) && (
-                  <span
-                    className={cn(
-                      'absolute z-10 -translate-x-1/2 text-center whitespace-nowrap transition-opacity duration-300',
-                      folded
-                        ? 'text-[10px] font-semibold text-muted-foreground/40 opacity-35'
-                        : hasVerb
-                        ? cn('text-[10px] font-semibold', isHero ? 'text-violet-300/90' : 'text-sky-300/80')
-                        : !seatIsShortStack && 'text-[10px] font-medium text-muted-foreground/45',
-                    )}
-                    style={{ left: railPoint.x, top: `calc(${railPoint.y} + 12px)` }}
-                  >
-                    {folded ? (
-                      'FOLD'
-                    ) : hasVerb ? (
-                      verbText
-                    ) : seatIsShortStack ? (
-                      <span
-                        className="inline-flex items-center gap-1 rounded-full border border-amber-400/50 bg-amber-400/15 px-1.5 py-[1px] text-[9px] font-black uppercase tracking-wide text-amber-300"
-                        title="Short stack"
-                      >
-                        {formatBb(seatStackBb!)} BB · SHORT
-                      </span>
-                    ) : (
-                      `${formatBb(seatStackBb!)} BB`
-                    )}
-                  </span>
-                )}
-
-                {/* Row 3 — stack BEHIND, only alongside a real action, and always labeled
-                    "behind" so it can never read as the raise/bet amount itself (that
-                    number lives ONLY on the chip stack below). */}
-                {hasVerb && !folded && stackBehindBb != null && (
-                  <span
-                    className="absolute z-10 -translate-x-1/2 text-center whitespace-nowrap text-[9px] font-medium text-muted-foreground/40"
-                    style={{ left: railPoint.x, top: `calc(${railPoint.y} + 24px)` }}
-                  >
-                    {formatBb(stackBehindBb)} BB behind
-                  </span>
-                )}
-              </div>
+              <PreflopSeatRow
+                position={seat.position}
+                isHero={isHero}
+                isMobile={isMobile}
+                folded={folded}
+                hasVerb={hasVerb}
+                verbText={verbText}
+                seatStackBb={seatStackBb}
+                seatIsShortStack={seatIsShortStack}
+                stackBehindBb={stackBehindBb}
+                railPoint={railPoint}
+                highlighted={seatHighlighted}
+                fadeDurationMs={engine.timing.fadeDuration}
+              />
             </div>
           )
         })}

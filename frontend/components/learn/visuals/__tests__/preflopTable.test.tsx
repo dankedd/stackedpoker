@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { PreflopTable, computeHeroRotatedSeats, railCenterlinePoint, DESKTOP_LAYOUT } from '../PreflopTable'
+import { ChipStack } from '@/components/poker/ChipStack'
+import { buildPlaybackTimeline } from '@/lib/learn/preflopTablePlayback'
 
 /** A seat's Row-1 label now nests the position inside a child <span> (and, for
  *  Hero, an extra "HERO ·" <span> before it) rather than being the outer
@@ -550,5 +552,75 @@ describe('PreflopTable — status/context info lives below the table, not inside
     expect(feltIdx).toBeGreaterThan(-1)
     expect(feltIdx).toBeLessThan(statusIdx)
     expect(statusIdx).toBeLessThan(srOnlyIdx)
+  })
+})
+
+describe('PreflopTable — shared Action Playback Engine: SSR/static-render safety', () => {
+  // The engine's very first render (before any client effect has run) must
+  // always show the COMPLETE final state — matching what a server-rendered or
+  // pre-hydration client render produces (no timers have fired yet). This is
+  // what lets every test above keep asserting final-state content unchanged.
+  it('a playback-eligible scenario (real action_before_hero) still renders the full final state on first render, not an empty/partial frame', () => {
+    const html = renderToStaticMarkup(
+      <PreflopTable
+        tableSize={9}
+        heroPosition="BTN"
+        effectiveStackBb={100}
+        actionBeforeHero={['UTG folds', 'HJ folds', 'CO raises to 2.3bb']}
+      />,
+    )
+    // Every fold and the raise are already present — not just blinds posted.
+    expect(html).toContain('aria-label="UTG, folded"')
+    expect(html).toContain('aria-label="HJ, folded"')
+    expect(html).toContain('aria-label="CO, RAISE"')
+    expect(html).toContain('CO OPEN')
+    expect(html).toContain(`${2.3 + 0.5 + 1} BB`)
+  })
+
+  it('the Skip control never appears in the static/first-render markup (playback is already "complete" pre-hydration)', () => {
+    const html = renderToStaticMarkup(
+      <PreflopTable
+        tableSize={9}
+        heroPosition="BTN"
+        effectiveStackBb={100}
+        actionBeforeHero={['UTG folds', 'HJ folds', 'CO raises to 2.3bb']}
+      />,
+    )
+    expect(html).not.toContain('Skip ▸')
+  })
+
+  it('a chip pile never appears at its pre-travel (t=0, at-the-seat) position on first render — no transition style leaks into static markup', () => {
+    const html = renderToStaticMarkup(
+      <PreflopTable
+        tableSize={9}
+        heroPosition="BTN"
+        effectiveStackBb={100}
+        actionBeforeHero={['UTG folds', 'HJ folds', 'CO raises to 2.3bb']}
+      />,
+    )
+    expect(html).not.toContain('transition:')
+  })
+
+  it('a scenario with NO reliable action data (undefined actionBeforeHero) renders identically whether or not a timeline exists — no playback engine artifacts leak in', () => {
+    const html = renderToStaticMarkup(<PreflopTable tableSize={9} heroPosition="CO" effectiveStackBb={40} />)
+    expect(buildPlaybackTimeline({ hero_position: 'CO', table_size: 9, effective_stack_bb: 40 })).toBeUndefined()
+    expect(html).not.toContain('Skip ▸')
+    expect(html).not.toContain('FOLD')
+  })
+})
+
+describe('ChipStack — animateIn extends the existing chip component rather than duplicating it', () => {
+  it('renders without throwing when animateIn is set, and starts at the resting position under static rendering (no live effect ever runs)', () => {
+    const html = renderToStaticMarkup(
+      <ChipStack x="50%" y="93%" amount={2.3} tone="bet" pullFactor={0.4} sizePx={20} animateIn travelDurationMs={450} />,
+    )
+    expect(html).toContain('2.3')
+    expect(html).toContain('repeating-conic-gradient(#bae6fd 0deg 18deg, #0c4a6e 18deg 36deg)')
+  })
+
+  it('omitting animateIn renders byte-identical output to explicitly passing animateIn={false}', () => {
+    const withDefault = renderToStaticMarkup(<ChipStack x="50%" y="93%" amount={5} tone="blind" pullFactor={0.4} sizePx={20} />)
+    const explicit = renderToStaticMarkup(<ChipStack x="50%" y="93%" amount={5} tone="blind" pullFactor={0.4} sizePx={20} animateIn={false} />)
+    expect(withDefault).toBe(explicit)
   })
 })
