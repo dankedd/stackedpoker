@@ -288,6 +288,13 @@ function evalNumeric(opts: {
   // "your answer vs correct answer" reveal reaches every one of them.
   const yourAnswer = `You answered ${value}${unit}.`
   const yourDisplay = `${value}${unit}`
+  // Most callers' wrongFeedback already states the correct value as part of its
+  // explanation (a formula, a WHY, or just "the correct answer is X") — appending
+  // another "the correct/exact answer is X" sentence unconditionally produced the
+  // literal doubled-up feedback reported for equity realization ("The correct
+  // answer is 32%. The correct answer is 32%."). Only append the generic reveal
+  // sentence when wrongFeedback hasn't already surfaced the number itself.
+  const wrongFeedbackStatesAnswer = wrongFeedback.includes(correctDisplay)
 
   if (delta <= tolerance) {
     return { quality: 'perfect', score: 100, feedback: `${yourAnswer} ${correctFeedback}`, ev_loss_bb: 0 }
@@ -305,7 +312,9 @@ function evalNumeric(opts: {
     return {
       quality: 'acceptable',
       score: QUALITY_SCORES.acceptable,
-      feedback: `${yourAnswer} ${wrongFeedback} The exact value is ${actual}${unit}.`,
+      feedback: wrongFeedbackStatesAnswer
+        ? `${yourAnswer} ${wrongFeedback}`
+        : `${yourAnswer} ${wrongFeedback} The exact value is ${actual}${unit}.`,
       ev_loss_bb: 0,
       answer_reveal: { term, correct: correctDisplay, yours: yourDisplay },
     }
@@ -313,7 +322,9 @@ function evalNumeric(opts: {
   return {
     quality: 'mistake',
     score: QUALITY_SCORES.mistake,
-    feedback: `${yourAnswer} ${wrongFeedback} The correct answer is ${actual}${unit}.`,
+    feedback: wrongFeedbackStatesAnswer
+      ? `${yourAnswer} ${wrongFeedback}`
+      : `${yourAnswer} ${wrongFeedback} The correct answer is ${actual}${unit}.`,
     ev_loss_bb: 0,
     answer_reveal: { term, correct: correctDisplay, yours: yourDisplay },
   }

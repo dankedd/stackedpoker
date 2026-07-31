@@ -2392,6 +2392,7 @@ export const LESSONS: Lesson[] = [
         outs_deck_question: "What's the chance of hitting on the very next card?",
         outs_deck_correct: 31.9,
         outs_deck_tolerance: 2,
+        wrong_feedback: 'Drawing probability = outs ÷ 47 unseen cards. Here: 15 ÷ 47 ≈ 31.9% on the next card alone.',
         xp: 6,
       },
       {
@@ -2404,6 +2405,7 @@ export const LESSONS: Lesson[] = [
         outs_deck_question: "What's the chance of hitting on the very next card?",
         outs_deck_correct: 17.0,
         outs_deck_tolerance: 2,
+        wrong_feedback: 'Drawing probability = outs ÷ 47 unseen cards. Here: 8 ÷ 47 ≈ 17.0% on the next card alone.',
         xp: 6,
       },
       {
@@ -2416,6 +2418,7 @@ export const LESSONS: Lesson[] = [
         outs_deck_question: "What's the chance of hitting on the very next card?",
         outs_deck_correct: 8.5,
         outs_deck_tolerance: 2,
+        wrong_feedback: 'Drawing probability = outs ÷ 47 unseen cards. Here: 4 ÷ 47 ≈ 8.5% on the next card alone.',
         xp: 6,
       },
       {
@@ -2536,6 +2539,7 @@ export const LESSONS: Lesson[] = [
         outs_deck_correct: 35.0,
         outs_deck_tolerance: 3,
         correct_feedback: 'Two cards to come raises a 9-out draw from ~19% to ~35% — nearly double, not because of a shortcut, but because there are two chances to hit.',
+        wrong_feedback: 'With two cards to come, it\'s easier to find the miss chance first: (38÷47) × (37÷46) ≈ 65% to miss both, so about 35% to hit by the river.',
         xp: 10,
       },
     ],
@@ -3315,6 +3319,8 @@ export const LESSONS: Lesson[] = [
         equity_realization_correct: 32,
         equity_realization_tolerance: 3,
         correct_feedback: 'Raw equity × equity realization = actual capture: 40% × 80% = 32%.',
+        wrong_feedback:
+          "You used the raw equity instead of realized equity. Realized equity equals raw equity × equity realization: 40% × 80% = 32%, so Hero only captures 32% of the pot on average.",
         xp: 8,
       },
       {
@@ -3436,6 +3442,7 @@ export const LESSONS: Lesson[] = [
         outs_deck_question: "What's the one-card probability of hitting the flush?",
         outs_deck_correct: 19.1,
         outs_deck_tolerance: 2,
+        wrong_feedback: 'Drawing probability = outs ÷ unseen cards. Here: 9 clean outs ÷ 47 unseen ≈ 19.1% on the next card alone.',
         xp: 8,
       },
       {
