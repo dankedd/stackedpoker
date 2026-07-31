@@ -242,6 +242,17 @@ const SIZE_MAX_WIDTH: Record<'standard' | 'compact', string> = {
   compact: 'max-w-[480px]',
 }
 
+// ── Legend styling — ONE definition, reused by every mode's legend block
+// below (membership/three_action/diff/action_diff/strategy/category), so
+// every Range Grid across the whole platform stays visually consistent and a
+// future readability tweak only ever needs one edit here, never a per-mode
+// or per-module override. Sizes/spacing only — swatch colors, hatch
+// patterns, and every existing className driving them are untouched.
+const LEGEND_CONTAINER = 'flex flex-wrap items-center justify-center gap-x-4 gap-y-2'
+const LEGEND_ITEM = 'flex items-center gap-2'
+const LEGEND_SWATCH = 'h-3.5 w-3.5 rounded-[3px] shrink-0'
+const LEGEND_TEXT = 'text-[13px] text-muted-foreground/60'
+
 /** Read-only 13x13 range-grid display — membership, frequency-shaded, 3-4 action colored, a
  *  baseline-vs-comparison diff, or a two-chart action-level diff. */
 export function PokerRangeGrid({
@@ -342,7 +353,7 @@ export function PokerRangeGrid({
     // wide the lesson container itself gets for a given step type. `mx-auto` centers it
     // whenever the cap actually binds; it's a no-op once the parent is already narrower.
     <div className={cn('mx-auto w-full', SIZE_MAX_WIDTH[size])}>
-    <div className={cn('space-y-2 w-full min-w-0', className)}>
+    <div className={cn('space-y-3 w-full min-w-0', className)}>
       {/* No horizontal scroll container here on purpose — the whole 13x13 matrix must always
        *  be visible without scrolling or clipped columns. `min-w-0` on this block (and every
        *  flex row/cell inside it) is what lets the grid actually shrink to whatever width its
@@ -499,29 +510,30 @@ export function PokerRangeGrid({
         ))}
       </div>
 
-      {/* Legend / stats */}
+      {/* Legend / stats — sizing/spacing centralized above (LEGEND_*); each
+          mode below only ever supplies its own colors/labels/hatch patterns. */}
       {mode === 'category' ? (
-        <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] sm:text-[10px] text-muted-foreground/40">
-          <div className="flex items-center gap-1.5">
-            <div className={cn('h-2.5 w-2.5 rounded-[2px]', OUT_OF_RANGE_STYLE)} />
+        <div className={cn(LEGEND_CONTAINER, 'pt-1', LEGEND_TEXT)}>
+          <div className={LEGEND_ITEM}>
+            <div className={cn(LEGEND_SWATCH, OUT_OF_RANGE_STYLE)} />
             <span>Not in range</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className={cn('h-2.5 w-2.5 rounded-[2px]', TIER_STYLE.unconnected.bg)} />
+          <div className={LEGEND_ITEM}>
+            <div className={cn(LEGEND_SWATCH, TIER_STYLE.unconnected.bg)} />
             <span>In range</span>
           </div>
           {TIER_LEGEND_ORDER.filter((t) => presentCategoryTiers.includes(t)).map((tier) => (
-            <div key={tier} className="flex items-center gap-1.5">
-              <div className={cn('h-2.5 w-2.5 rounded-[2px]', TIER_STYLE[tier].bg)} />
+            <div key={tier} className={LEGEND_ITEM}>
+              <div className={cn(LEGEND_SWATCH, TIER_STYLE[tier].bg)} />
               <span>{HAND_BOARD_INTERACTION_TIER_LABEL[tier]}</span>
             </div>
           ))}
           {(['mixed', 'low'] as const)
             .filter((t) => presentFrequencyTiers.has(t))
             .map((t) => (
-              <div key={t} className="flex items-center gap-1.5">
+              <div key={t} className={LEGEND_ITEM}>
                 <div
-                  className={cn('h-2.5 w-2.5 rounded-[2px]', TIER_STYLE.unconnected.bg, t === 'low' && 'opacity-75')}
+                  className={cn(LEGEND_SWATCH, TIER_STYLE.unconnected.bg, t === 'low' && 'opacity-75')}
                   style={{ backgroundImage: FREQUENCY_HATCH[t] }}
                 />
                 <span>{FREQUENCY_TIER_LABEL[t]} (hatched)</span>
@@ -529,57 +541,57 @@ export function PokerRangeGrid({
             ))}
         </div>
       ) : mode === 'strategy' ? (
-        <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] sm:text-[10px] text-muted-foreground/40">
+        <div className={cn(LEGEND_CONTAINER, 'pt-1', LEGEND_TEXT)}>
           {strategyOrder.map((a) => (
-            <div key={a} className="flex items-center gap-1.5">
-              <div className={cn('h-2.5 w-2.5 rounded-[2px]', actionStyle(a).swatch)} />
+            <div key={a} className={LEGEND_ITEM}>
+              <div className={cn(LEGEND_SWATCH, actionStyle(a).swatch)} />
               <span>{actionLabel(a)}</span>
             </div>
           ))}
         </div>
       ) : mode === 'three_action' && actionMap ? (
-        <div className="flex items-center justify-center gap-3 text-[10px] text-muted-foreground/40">
+        <div className={cn(LEGEND_CONTAINER, 'pt-1', LEGEND_TEXT)}>
           {(['raise', 'limp', 'shove', 'fold'] as PreflopAction[])
             .filter((a) => Object.values(actionMap).includes(a))
             .map((a) => (
-              <div key={a} className="flex items-center gap-1.5">
-                <div className={cn('h-2.5 w-2.5 rounded-[2px]', ACTION_COLOR[a])} />
+              <div key={a} className={LEGEND_ITEM}>
+                <div className={cn(LEGEND_SWATCH, ACTION_COLOR[a])} />
                 <span>{ACTION_LABEL[a]}</span>
               </div>
             ))}
         </div>
       ) : mode === 'diff' ? (
-        <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] sm:text-[10px] text-muted-foreground/40">
-          <div className="flex items-center gap-1.5">
-            <div className="h-2.5 w-2.5 rounded-[2px] bg-emerald-500/70" />
+        <div className={cn(LEGEND_CONTAINER, 'pt-1', LEGEND_TEXT)}>
+          <div className={LEGEND_ITEM}>
+            <div className={cn(LEGEND_SWATCH, 'bg-emerald-500/70')} />
             <span>Correctly included</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="h-2.5 w-2.5 rounded-[2px] bg-amber-500/60" />
+          <div className={LEGEND_ITEM}>
+            <div className={cn(LEGEND_SWATCH, 'bg-amber-500/60')} />
             <span>Missed</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="h-2.5 w-2.5 rounded-[2px] bg-red-500/60" />
+          <div className={LEGEND_ITEM}>
+            <div className={cn(LEGEND_SWATCH, 'bg-red-500/60')} />
             <span>Too wide</span>
           </div>
         </div>
       ) : mode === 'action_diff' ? (
-        <div className="flex flex-wrap items-center justify-center gap-3 text-[11px] sm:text-[10px] text-muted-foreground/40">
+        <div className={cn(LEGEND_CONTAINER, 'pt-1', LEGEND_TEXT)}>
           {(['added', 'changed', 'removed'] as ChartDiffEntry['kind'][]).map((kind) => (
-            <div key={kind} className="flex items-center gap-1.5">
-              <div className={cn('h-2.5 w-2.5 rounded-[2px]', ACTION_DIFF_COLOR[kind])} />
+            <div key={kind} className={LEGEND_ITEM}>
+              <div className={cn(LEGEND_SWATCH, ACTION_DIFF_COLOR[kind])} />
               <span>{ACTION_DIFF_LABEL[kind]}</span>
             </div>
           ))}
         </div>
       ) : (
-        <div className="flex items-center justify-between text-[11px] sm:text-[10px] text-muted-foreground/40">
-          <div className="flex items-center gap-1.5">
-            <div className="h-2.5 w-2.5 rounded-[2px] bg-violet-500" />
+        <div className={cn('flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-1', LEGEND_TEXT)}>
+          <div className={LEGEND_ITEM}>
+            <div className={cn(LEGEND_SWATCH, 'bg-violet-500')} />
             <span>In range</span>
           </div>
           <span>
-            {combos} combos <span className="text-muted-foreground/30">({pct}% of all hands)</span>
+            {combos} combos <span className="text-muted-foreground/45">({pct}% of all hands)</span>
           </span>
         </div>
       )}

@@ -517,3 +517,86 @@ describe('PokerRangeGrid — size prop: a self-owned max-width cap, independent 
     }
   })
 })
+
+// ── Legend readability — one centralized definition, every mode inherits it ──
+// Regression coverage for the "legend too small to read" fix: every mode's
+// legend must use the SAME enlarged text/swatch/spacing classes (no mode left
+// on the old, tiny styling), while every color/hatch-pattern literal driving
+// the swatches stays byte-identical to before — this is a sizing/spacing
+// change only, never a visual-identity change.
+describe('PokerRangeGrid — legend readability (centralized across every mode)', () => {
+  const ALL_LEGEND_MODES: { mode: 'membership' | 'diff' | 'action_diff' | 'three_action' | 'strategy' | 'category'; props: Record<string, unknown> }[] = [
+    { mode: 'membership', props: {} },
+    { mode: 'diff', props: { comparisonRange: ['AA'] } },
+    { mode: 'action_diff', props: { actionDiff: [{ hand: 'AA', kind: 'added' }] } },
+    { mode: 'three_action', props: { actionMap: { AA: 'raise' } } },
+    { mode: 'strategy', props: { strategies: { AA: { raise: 1 } } } },
+    { mode: 'category', props: { categoryMap: { AA: 'overpair' } } },
+  ]
+
+  it('every mode\'s legend uses the enlarged, centralized text size and swatch size — none left on the old 10-11px/2.5 sizing', () => {
+    for (const { mode, props } of ALL_LEGEND_MODES) {
+      const html = renderToStaticMarkup(<PokerRangeGrid range={['AA']} mode={mode} {...props} />)
+      expect(html, `${mode} legend text size`).toContain('text-[13px]')
+      expect(html, `${mode} legend swatch size`).toContain('h-3.5 w-3.5')
+      // The old, too-small sizing must be gone everywhere, not just replaced in some modes.
+      expect(html, `${mode} must not use the old swatch size`).not.toContain('h-2.5 w-2.5')
+      expect(html, `${mode} must not use the old icon-label gap`).not.toContain('gap-1.5')
+    }
+  })
+
+  it('legend item spacing (icon-to-label and item-to-item) is centralized, not per-mode', () => {
+    for (const { mode, props } of ALL_LEGEND_MODES) {
+      const html = renderToStaticMarkup(<PokerRangeGrid range={['AA']} mode={mode} {...props} />)
+      expect(html, `${mode} icon-label gap`).toContain('gap-2')
+      expect(html, `${mode} item-to-item gap`).toContain('gap-x-4')
+    }
+  })
+
+  it('category mode: every listed legend item is present and reads with the enlarged styling', () => {
+    const html = renderToStaticMarkup(
+      <PokerRangeGrid
+        range={['AA', 'KQs', 'T9s']}
+        mode="category"
+        categoryMap={{ AA: 'overpair', KQs: 'straight_draw', T9s: 'weak_pair' }}
+        frequencyMap={{ AA: 0.5, KQs: 0.15 }}
+      />,
+    )
+    for (const label of ['Not in range', 'In range']) {
+      expect(html).toContain(label)
+    }
+    expect(html).toContain('(hatched)')
+  })
+
+  it('never changes any swatch color/hatch-pattern literal — same colors, same patterns, only sizing/spacing changed', () => {
+    const html = renderToStaticMarkup(
+      <PokerRangeGrid
+        range={['AA', 'KQs', 'T9s']}
+        mode="category"
+        categoryMap={{ AA: 'overpair', KQs: 'straight_draw', T9s: 'weak_pair' }}
+        frequencyMap={{ AA: 0.5, KQs: 0.15 }}
+      />,
+    )
+    // Tier fill colors — byte-identical to TIER_STYLE's existing definitions.
+    expect(html).toContain('bg-emerald-500/80')
+    expect(html).toContain('bg-sky-500/60')
+    expect(html).toContain('bg-amber-500/40')
+    expect(html).toContain('bg-slate-500/35')
+    // The mixed/low-frequency hatch gradients — unchanged pixel-for-pixel.
+    expect(html).toContain('repeating-linear-gradient(135deg, transparent, transparent 3px, rgba(0,0,0,0.28) 3px, rgba(0,0,0,0.28) 6px)')
+    expect(html).toContain('repeating-linear-gradient(135deg, transparent, transparent 2px, rgba(0,0,0,0.5) 2px, rgba(0,0,0,0.5) 4px)')
+  })
+
+  it('the vertical gap above the legend increased from the old space-y-2', () => {
+    const html = renderToStaticMarkup(<PokerRangeGrid range={['AA']} mode="membership" />)
+    expect(html).toContain('space-y-3')
+    expect(html).not.toContain('space-y-2')
+  })
+
+  it('the legend stays centered (flex-wrap + justify-center) for every mode, so mobile wraps gracefully without overlapping the grid', () => {
+    for (const { mode, props } of ALL_LEGEND_MODES) {
+      const html = renderToStaticMarkup(<PokerRangeGrid range={['AA']} mode={mode} {...props} />)
+      expect(html, `${mode} wraps`).toContain('flex-wrap')
+    }
+  })
+})
