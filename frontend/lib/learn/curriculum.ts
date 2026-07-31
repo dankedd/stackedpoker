@@ -4856,7 +4856,10 @@ export const LESSONS: Lesson[] = [
         players_behind: 4,
         action_before_hero: ['UTG raises to 2.5bb'],
         hero_hand: ['Kc', 'Jd'],
-        range_reveal_direction: '3bet',
+        // 'opener', not '3bet': there is no HJ 3-bet chart, and the point of a FOLD
+        // decision is what Hero is up against, not a Hero-side strategy chart —
+        // shows UTG's own opening range with KJo highlighted (Example 1's exact spot).
+        range_reveal_direction: 'opener',
         options: [
           {
             id: 'fold', label: 'Fold', quality: 'perfect',
@@ -5372,6 +5375,11 @@ export const LESSONS: Lesson[] = [
         players_behind: 2,
         action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb'],
         hero_hand: ['Ks', 'Qs'],
+        // No BTN-as-defender chart exists at 100bb, so show what IS real: CO's own
+        // opening range, KQs highlighted — grounds "why calling is fine here" in the
+        // actual range Hero would be calling, and sets up a direct contrast with
+        // pce-s5b (same opener range, Hero now OOP in the SB).
+        range_reveal_direction: 'opener',
         options: [
           {
             id: 'call', label: 'Call', quality: 'perfect',
@@ -5400,6 +5408,10 @@ export const LESSONS: Lesson[] = [
         players_behind: 1,
         action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN folds'],
         hero_hand: ['Ks', 'Qs'],
+        // Same reasoning as pce-s5a: no SB-as-3-bettor-vs-CO chart exists, so show
+        // CO's real opening range — the same panel as pce-s5a, letting the learner
+        // directly compare "same opener range, different Hero position" side by side.
+        range_reveal_direction: 'opener',
         options: [
           {
             id: '3bet', label: '3-Bet', quality: 'perfect',
@@ -6118,6 +6130,10 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN calls'],
         hero_hand: ['Kd', 'Qc'],
+        // Shows the original opener's (CO) range even though BTN also called — the
+        // "who am I actually up against" question a squeeze spot still has a real
+        // answer to (Example 4's "current opener's range" case).
+        range_reveal_direction: 'opener',
         options: [
           {
             id: 'call', label: 'Call', quality: 'perfect',
@@ -6145,6 +6161,9 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN calls'],
         hero_hand: ['7h', '6h'],
+        // Same opener-range context as sqz-s5b — helps show why extra resistance
+        // (opener's range, plus a live caller) tightens what 76s can profitably do here.
+        range_reveal_direction: 'opener',
         options: [
           {
             id: 'fold', label: 'Fold', quality: 'perfect',
@@ -6583,6 +6602,7 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         action_before_hero: ['UTG folds', 'HJ raises to 2.3bb', 'CO raises to 7.5bb'],
         hero_hand: ['Qs', 'Qh'],
+        range_reveal_direction: 'facing_3bet',
         options: [
           { id: '4bet', label: '4-Bet', quality: 'perfect', feedback: 'Correct — a premium pair like QQ is a clean value 4-bet here, especially out of position where taking back the initiative and lowering the SPR both matter more.' },
           { id: 'call', label: 'Call', quality: 'mistake', feedback: "QQ is too strong to just call here — it wants to get value and doesn't need to hide behind a flat, especially OOP where calling realizes equity worse." },
@@ -6604,6 +6624,7 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         action_before_hero: ['UTG folds', 'HJ raises to 2.3bb', 'CO raises to 7.5bb'],
         hero_hand: ['Ks', 'Qs'],
+        range_reveal_direction: 'facing_3bet',
         options: [
           { id: 'call', label: 'Call', quality: 'perfect', feedback: 'Correct — KQs has real playability and equity, and out of position it fits better as a call than a forced 4-bet: it can see a flop cheaply instead of turning a decent-but-not-great hand into a bloated pot.' },
           { id: '4bet', label: '4-Bet', quality: 'mistake', feedback: "Defensible in isolation, but KQs plays better as a call here — it doesn't need to force the issue the way a pure value hand or a blocker bluff does." },
@@ -6625,6 +6646,7 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         action_before_hero: ['UTG folds', 'HJ raises to 2.3bb', 'CO raises to 7.5bb'],
         hero_hand: ['Kh', 'Qd'],
+        range_reveal_direction: 'facing_3bet',
         options: [
           { id: 'fold', label: 'Fold', quality: 'perfect', feedback: "Correct. KQo LOOKS like a similar hand to KQs, but offsuit it loses the flush potential and the extra playability — against a 3-betting range full of better broadways and pairs, it's dominated too often to profitably continue, especially out of position." },
           { id: 'call', label: 'Call', quality: 'mistake', feedback: 'This is the classic trap — KQo looks strong on paper, but it realizes equity far worse than the suited version and gets dominated too often to be a good call here.' },
@@ -6646,6 +6668,7 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         action_before_hero: ['UTG folds', 'HJ raises to 2.3bb', 'CO raises to 7.5bb'],
         hero_hand: ['As', '9s'],
+        range_reveal_direction: 'facing_3bet',
         options: [
           { id: 'fold', label: 'Fold', quality: 'perfect', feedback: "Correct — even suited, a small Ace like A9s doesn't have enough going for it here. Out of position, against a 3-betting range with plenty of bigger Aces and pairs, it's more of a reverse-implied-odds trap than a hand worth continuing." },
           { id: 'call', label: 'Call', quality: 'mistake', feedback: "A9s feels like it should call — suited, an Ace, some playability — but out of position against a 3-bet it's too easily dominated by the bigger Aces in Villain's range to be a profitable continue." },
@@ -6667,6 +6690,7 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         action_before_hero: ['UTG folds', 'HJ raises to 2.3bb', 'CO raises to 7.5bb'],
         hero_hand: ['Th', 'Tc'],
+        range_reveal_direction: 'facing_3bet',
         options: [
           { id: 'call', label: 'Call', quality: 'perfect', feedback: 'Correct — TT has real value but isn\'t quite strong enough to prefer 4-betting over just calling here. It plays well as a call: enough equity to continue, with implied odds if it flops a set.' },
           { id: '4bet', label: '4-Bet', quality: 'mistake', feedback: "TT usually lacks enough raw value and blocker quality to prefer 4-betting over simply calling — save the 4-bets for the clearer value hands and the blocker bluffs." },
@@ -6688,6 +6712,7 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         action_before_hero: ['UTG folds', 'HJ raises to 2.3bb', 'CO raises to 7.5bb'],
         hero_hand: ['Jd', 'Td'],
+        range_reveal_direction: 'facing_3bet',
         options: [
           { id: 'call', label: 'Call', quality: 'perfect', feedback: 'Correct — JTs keeps enough playability (straights, flushes, two-way boards) to call profitably here, even out of position. It is one of the few speculative hands in this range that still holds up once Hero loses position.' },
           { id: 'fold', label: 'Fold', quality: 'mistake', feedback: "JTs is exactly the kind of suited connector that still has enough equity and playability to continue here — folding it gives up real value." },
@@ -6709,6 +6734,7 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         action_before_hero: ['UTG folds', 'HJ raises to 2.3bb', 'CO raises to 7.5bb'],
         hero_hand: ['Qc', 'Jh'],
+        range_reveal_direction: 'facing_3bet',
         options: [
           { id: 'fold', label: 'Fold', quality: 'perfect', feedback: "Correct. QJo is a marginal offsuit broadway — dominated by the better broadways and pairs in Villain's 3-betting range far too often, and out of position it doesn't have the equity realization to make up for it." },
           { id: 'call', label: 'Call', quality: 'mistake', feedback: "QJo looks like a normal opening-range hand, but against a 3-bet — especially OOP — it's exactly the dominated offsuit broadway that should be folding instead of calling." },
@@ -11732,6 +11758,12 @@ export const LESSONS: Lesson[] = [
           { id: 'rank', label: 'Rank — king-high', quality: 'mistake', feedback: 'The rank matters less once you account for pairing — a paired board changes the strategic picture for both ranges no matter which rank is paired.' },
           { id: 'texture', label: 'Texture — rainbow', quality: 'mistake', feedback: 'Suit texture is nearly irrelevant on a paired board with only one non-paired card — the pairing itself is the dominant fact here.' },
         ],
+        nut_advantage_reveal: {
+          advantage: 25,
+          ipLabel: 'Preflop Raiser',
+          oopLabel: 'Caller',
+          caption: 'Illustrative, not a solved number for this exact board — pedagogical model, not a book/solver citation. It reflects the same "pairing dominates" principle from the feedback above: a paired board compresses both ranges toward one-pair hands and makes trips/full houses rare for everyone, so neither side owns the nuts here in a big way — the raiser keeps a modest edge because a raiser\'s range still holds more Kx/pocket-pairs-above-7 on average than a typical calling range does.',
+        },
         xp: 8,
       },
       {
@@ -11752,6 +11784,47 @@ export const LESSONS: Lesson[] = [
           },
         ],
         xp: 10,
+      },
+      {
+        id: 'rtb-s6b',
+        type: 'board_rank_sort',
+        concept_ids: ['flop_range_strategy', 'range_advantage'],
+        source: {
+          book: 'Modern Poker Theory',
+          section: 'This lesson\'s own board-classification reasoning (rtb-s3 through rtb-s6), applied to rank four boards head-to-head',
+          type: 'pedagogical_model',
+        },
+        narrative:
+          'Predict before revealing. Cash game, 100bb effective. BTN opens, BB calls, BTN is in position on every board below — the same four boards from this lesson, now ranked head-to-head. Order these from bets most to bets least.',
+        table_size: 6,
+        hero_position: 'BTN',
+        villain_position: 'BB',
+        effective_stack_bb: 100,
+        board_rank_sort_prompt: 'Tap in order: bets most first, bets least last.',
+        board_rank_sort_boards: [
+          { id: 'ace_rainbow', label: 'A♠7♦2♣', board: ['As', '7d', '2c'] },
+          { id: 'kk_paired', label: 'K♠K♣7♥', board: ['Ks', 'Kc', '7h'] },
+          { id: 'jt9_twotone', label: 'J♥T♥9♦', board: ['Jh', 'Th', '9d'] },
+          { id: 'monotone_connected', label: '8♥7♥6♥', board: ['8h', '7h', '6h'] },
+        ],
+        board_rank_sort_target: ['ace_rainbow', 'kk_paired', 'jt9_twotone', 'monotone_connected'],
+        xp: 16,
+      },
+      {
+        id: 'rtb-s6c',
+        type: 'concept_reveal',
+        concept_ids: ['flop_range_strategy', 'range_advantage'],
+        concept_title: 'Why Each Board Ranks Where It Does',
+        concept_content:
+          'The order above follows straight from the property each board\'s own step already identified as dominant — rank, structure, connectivity, and texture each push BTN\'s betting frequency in a different direction.',
+        concept_structured_items: [
+          { term: 'A♠7♦2♣ — bets MOST', description: 'Rank dominates: BTN\'s range is loaded with Ax that BB\'s calling range simply doesn\'t have, and the rainbow, disconnected board gives BB almost no real draws to fight back with.' },
+          { term: 'K♠K♣7♥ — bets 2nd-most', description: 'Structure dominates: pairing compresses both ranges toward one-pair-or-better and makes trips/full houses rare for everyone, but BB still has little here to raise back with — BTN keeps a real, if smaller, edge.' },
+          { term: 'J♥T♥9♦ — bets 3rd', description: 'Connectivity dominates: BB\'s range now picks up real straight and flush-draw equity, cutting hard into BTN\'s edge and raising the cost of getting raised.' },
+          { term: '8♥7♥6♥ — bets LEAST', description: 'Texture overrides everything: a connected AND monotone board hands either range a shot at the nut flush on top of the straight potential — the most dangerous combination of the four, and the one that demands the most caution.' },
+        ],
+        concept_note: 'Illustrative ordering, derived from this lesson\'s own board-classification reasoning — not a specific solver output for these exact boards.',
+        xp: 8,
       },
       {
         id: 'rtb-s7',

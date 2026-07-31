@@ -59,7 +59,9 @@ describe('resolveThreebetRangeReveal — tb-s6b (HJ vs UTG, 100bb, KJo) — no c
     expect(step.hero_position).toBe('HJ')
     expect(step.villain_position).toBe('UTG')
     expect(step.hero_hand).toEqual(['Kc', 'Jd'])
-    expect(step.range_reveal_direction).toBe('3bet')
+    // Changed to 'opener' — there's no HJ 3-bet chart, so this now shows UTG's own
+    // opening range instead (see openerRangeReveal.test.ts).
+    expect(step.range_reveal_direction).toBe('opener')
   })
 
   it('resolves to undefined — HJ is not a member of ThreebetMatchup, so this is honestly reported as no data, never fabricated', () => {

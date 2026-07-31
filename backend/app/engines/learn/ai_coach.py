@@ -30,10 +30,14 @@ If the learner signals they don't know or are stuck — "I don't know", "no idea
 WHEN THE LEARNER IS WRONG:
 Don't just say "incorrect." Explain the strategic reason their choice underperforms, then name the concept it connects to. If canonical range data is provided below, compare their choice against it directly.
 
+GROUNDING RULE (hard rule — overrides everything else below when it applies):
+If an OFFICIAL SOLUTION block is provided below, it is the exact, verified result of THIS specific exercise as the learner actually saw it — not a topic, not a skill category, not "the kind of spot this usually is." When you explain what is correct for this exercise, you MUST match that block exactly: the same cards, the same action, the same numbers, every time. Never state, imply, or explain a different correct answer than what's listed there, even if a different answer seems equally or more plausible from general poker knowledge — general poker reasoning may support/enrich your explanation of WHY the official solution is correct, but must never override or replace WHAT the official solution says. If the learner asks what the correct answer was for a specific completed exercise and no OFFICIAL SOLUTION block is present (see any NOTE below CURRENT SESSION CONTEXT), say plainly that you don't have the solved result for that exact exercise in front of you right now — never reconstruct, infer, or guess one from the lesson topic, skill id, or memory of similar spots.
+
 KNOWLEDGE HIERARCHY — never blur these levels together:
+0. OFFICIAL SOLUTION — see the GROUNDING RULE above. Always takes precedence over everything below for "what is correct."
 1. CANONICAL DATA — if a CANONICAL RANGE block is provided below, you may state its exact numbers; they're real.
 2. VALIDATED THEORY — if a VALIDATED THEORY block is provided, explain those concepts confidently as established theory.
-3. GENERAL POKER REASONING — when no exact data is available, reason from general poker/GTO principles. This is useful and expected. Do not refuse to help just because you lack an exact number.
+3. GENERAL POKER REASONING — when no exact data is available AND no specific graded exercise's official solution is being asked about, reason from general poker/GTO principles. This is useful and expected. Do not refuse to help just because you lack an exact number.
 4. QUALITATIVE ESTIMATE — when you're extrapolating beyond the above, say so and use soft language ("likely", "mostly", "probably close", "this looks like a mixed region") instead of claiming precision you don't have.
 
 Never invent an exact frequency, percentage, EV number, page number, or statistic that wasn't given to you in this prompt. Never say "the solver says" or "GTO says X%" unless that exact output was actually supplied below. Reserve absolute words — always, never, pure, 100%, 0% — for cases the CANONICAL DATA or VALIDATED THEORY below actually supports; otherwise prefer mostly / often / usually / likely / generally / a mixed region. If a supplied canonical strategy shows a mixed frequency (e.g. raise 70 / fold 30), describe it as mixed or leaning — never collapse it into a pure action.
@@ -64,9 +68,13 @@ MODE_INSTRUCTIONS: dict[str, str] = {
     ),
     "post_submission": (
         "MODE: POST-SUBMISSION COACHING.\n"
-        "The learner already submitted and was scored on this step. Explain the correct "
-        "answer and why it's correct, using the evaluator feedback and concepts provided "
-        "below, and compare against any canonical range data given."
+        "The learner already submitted and was scored on this step. If an OFFICIAL "
+        "SOLUTION block is provided below, explain THAT exact correct answer and why "
+        "it's correct — never a different one — using the evaluator feedback and "
+        "concepts provided, and compare against any canonical range data given. If no "
+        "OFFICIAL SOLUTION block is provided, follow the GROUNDING RULE above: say "
+        "plainly you don't have the solved result for this exact exercise rather than "
+        "reconstructing one."
     ),
     "lesson_review": (
         "MODE: LESSON REVIEW.\n"
@@ -120,7 +128,9 @@ ACTION_INSTRUCTIONS: dict[str, str] = {
     ),
     "why_wrong": (
         "ACTION: WHY WAS MY ANSWER WRONG.\n"
-        "Do not just restate the correct answer. Explain what assumption likely led "
+        "Do not just restate the correct answer — but the correct answer you DO state "
+        "must be exactly the one in the OFFICIAL SOLUTION block below, never a "
+        "different one you consider plausible. Explain what assumption likely led "
         "toward the learner's choice, which concept changes that conclusion, and "
         "what to look for in similar spots — using the evaluator feedback and "
         "concepts provided below."
@@ -128,8 +138,8 @@ ACTION_INSTRUCTIONS: dict[str, str] = {
     "why_correct": (
         "ACTION: WHY WAS MY ANSWER CORRECT.\n"
         "Don't just congratulate — explain the strategic mechanism: what changes "
-        "what, which makes the learner's choice preferable. Aim for transferable "
-        "understanding, not just confirmation."
+        "what, which makes the OFFICIAL SOLUTION below preferable. Aim for "
+        "transferable understanding, not just confirmation."
     ),
     "key_takeaway": (
         "ACTION: WHAT SHOULD I REMEMBER.\n"
@@ -184,6 +194,83 @@ def _build_canonical_range_block(context: dict) -> str:
     )
 
 
+def _build_official_solution_block(context: dict) -> str:
+    """The single, authoritative "what IS correct" block for the exact graded
+    step in view — every line here is a direct passthrough of what the
+    evaluator produced and the learner actually saw on screen (never
+    re-derived, never guessed at here or by the model). Only ever non-empty
+    once coach_context.sanitize_context has allowed these fields through
+    (post_submission / lesson_review mode).
+
+    Kept structurally separate from the general "CURRENT SESSION CONTEXT"
+    block below so the model can never blend "what the spot looks like" with
+    "what's definitively correct" — this is the fix for the coach citing a
+    plausible-but-wrong answer (e.g. a different card than the one actually
+    marked correct) when the real solved result was available in `context`
+    but previously never reached the prompt at all.
+    """
+    lines: list[str] = []
+
+    if context.get("correctAnswer") or context.get("correct_answer"):
+        lines.append(f"Correct answer: {context.get('correctAnswer') or context.get('correct_answer')}")
+
+    reveal = context.get("answer_reveal")
+    if isinstance(reveal, dict) and reveal.get("correct"):
+        term = reveal.get("term") or "Correct answer"
+        line = f"{term}: {reveal['correct']}"
+        if reveal.get("yours") and reveal["yours"] != reveal["correct"]:
+            line += f" (learner answered: {reveal['yours']})"
+        if reveal.get("alsoAccepted"):
+            line += f" — also accepted: {', '.join(reveal['alsoAccepted'])}"
+        if reveal.get("source"):
+            line += f" [{reveal['source']}]"
+        lines.append(line)
+
+    wak = context.get("widget_answer_key")
+    if isinstance(wak, dict):
+        for key, value in wak.items():
+            if value in (None, "", []):
+                continue
+            lines.append(f"{key}: {value}")
+
+    points = context.get("structured_points")
+    if isinstance(points, list):
+        for p in points:
+            if isinstance(p, dict) and p.get("term"):
+                lines.append(f"{p['term']}: {p.get('description', '')}")
+
+    nar = context.get("nut_advantage_reveal")
+    if isinstance(nar, dict) and nar.get("advantage") is not None:
+        favored = nar.get("ipLabel", "IP") if nar["advantage"] > 0 else nar.get("oopLabel", "OOP")
+        lines.append(f"Nut advantage: {nar['advantage']} (favors {favored})")
+
+    sr = context.get("solver_reveal")
+    if isinstance(sr, dict) and sr.get("buckets"):
+        buckets = ", ".join(
+            f"{b.get('label', '?')} {b.get('pct', '?')}%" for b in sr["buckets"] if isinstance(b, dict)
+        )
+        if buckets:
+            lines.append(f"Solver strategy: {buckets}")
+
+    if context.get("correct_feedback"):
+        lines.append(f"Why it's correct: {context['correct_feedback']}")
+
+    if context.get("evaluatorFeedback") or context.get("evaluator_feedback"):
+        lines.append(
+            "Grading feedback on the learner's actual attempt: "
+            f"{context.get('evaluatorFeedback') or context.get('evaluator_feedback')}"
+        )
+
+    if not lines:
+        return ""
+    return (
+        "OFFICIAL SOLUTION (ground truth for THIS exact exercise, exactly as the "
+        "learner saw it — see the GROUNDING RULE above; never state a different "
+        "correct answer than what's listed here):\n"
+        + "\n".join(f"- {line}" for line in lines)
+    )
+
+
 async def generate_coach_reply(
     messages: list[dict],
     context: dict,
@@ -205,9 +292,13 @@ async def generate_coach_reply(
                  (widget-specific "given" data — pot odds/outs/equity inputs,
                  range-builder pools, comparison scenarios, etc.),
                  lessonReview, hint_level, and (only in post_submission/
-                 lesson_review mode) answer-key fields such as
-                 correctAnswer/evaluatorFeedback/correct_feedback/
-                 widget_answer_key.
+                 lesson_review mode) answer-key fields assembled into the
+                 dedicated OFFICIAL SOLUTION block (see
+                 _build_official_solution_block) — correctAnswer/answer_reveal/
+                 evaluatorFeedback/correct_feedback/widget_answer_key/
+                 structured_points/nut_advantage_reveal/solver_reveal. When a
+                 graded step is in view but none of these were provided, the
+                 model is explicitly told to say so rather than guessing.
         user_level: 1-30
         mode: "pre_submission" | "post_submission" | "lesson_review" | "general"
               — see app.engines.learn.coach_context.resolve_coaching_mode
@@ -288,21 +379,23 @@ async def generate_coach_reply(
         ctx_parts.append(f"Concepts in focus: {', '.join(context['concept_ids'])}")
     if context.get("hint_level"):
         ctx_parts.append(f"Hint request #{context['hint_level']} for this step.")
-    # Answer-key fields — only ever present here when coach_context.sanitize_context
-    # allowed them through (post_submission / lesson_review modes).
-    if context.get("correctAnswer") or context.get("correct_answer"):
-        ctx_parts.append(f"Correct answer: {context.get('correctAnswer') or context.get('correct_answer')}")
-    if context.get("correct_feedback"):
-        ctx_parts.append(f"Expected solution / theory explanation: {context['correct_feedback']}")
-    if context.get("evaluatorFeedback") or context.get("evaluator_feedback"):
-        ctx_parts.append(f"Grading feedback on the learner's actual attempt: {context.get('evaluatorFeedback') or context.get('evaluator_feedback')}")
-    if context.get("widget_answer_key"):
-        wak = context["widget_answer_key"]
-        if isinstance(wak, dict):
-            for key, value in wak.items():
-                if value in (None, "", []):
-                    continue
-                ctx_parts.append(f"Answer key — {key}: {value}")
+    # NOTE: answer-key fields (correctAnswer/correct_feedback/evaluatorFeedback/
+    # widget_answer_key/structured_points/nut_advantage_reveal/solver_reveal) are
+    # NOT read here — they're assembled into the dedicated, authoritative
+    # OFFICIAL SOLUTION block below (_build_official_solution_block) instead of
+    # being blended into this general scenario context.
+    if context.get("range_reveal") or context.get("rangeReveal"):
+        rr = context.get("range_reveal") or context.get("rangeReveal")
+        if isinstance(rr, dict):
+            hero_pos = rr.get("heroPosition", "?")
+            villain_pos = rr.get("villainPosition", "?")
+            hand = rr.get("highlightHand", "?")
+            ctx_parts.append(
+                f"Range visualization the learner is looking at: \"{rr.get('label', '?')}\" "
+                f"({hero_pos} vs {villain_pos}), with {hand} highlighted in the grid."
+            )
+            if rr.get("secondaryLabel"):
+                ctx_parts.append(f"A second panel is also shown alongside it: \"{rr['secondaryLabel']}\".")
 
     # Skill level hint
     if user_level <= 5:
@@ -317,6 +410,23 @@ async def generate_coach_reply(
     action_instruction = ACTION_INSTRUCTIONS.get(action or "", "")
     theory_block = _build_theory_block(theory or [])
     canonical_block = _build_canonical_range_block(context)
+    solution_block = _build_official_solution_block(context)
+
+    # Fallback for the literal ask behind this fix: a specific graded step IS
+    # in view (post_submission/lesson_review — the server already verified
+    # completion), but no official-solution data actually reached this
+    # function. Tell the model explicitly to say so rather than silently
+    # falling back to general reasoning about what's "probably" correct.
+    missing_solution_notice = ""
+    if mode in ("post_submission", "lesson_review") and not solution_block:
+        missing_solution_notice = (
+            "NOTE: This step has been completed, but its exact solved result "
+            "was not provided to you (no OFFICIAL SOLUTION block above). If "
+            "the learner asks what the correct answer was, say plainly that "
+            "you don't have the solved result for this exact exercise in "
+            "front of you right now — do not guess, infer, or reconstruct an "
+            "answer from the lesson topic, skill id, or memory of similar spots."
+        )
 
     system_with_context = "\n\n".join(
         part for part in [
@@ -324,6 +434,8 @@ async def generate_coach_reply(
             mode_instruction,
             action_instruction,
             f"CURRENT SESSION CONTEXT:\n{context_str}\n{level_hint}",
+            solution_block,
+            missing_solution_notice,
             theory_block,
             canonical_block,
         ] if part

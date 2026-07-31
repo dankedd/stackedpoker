@@ -210,11 +210,16 @@ export interface LessonStep {
    *  should resolve `hero_position`/`villain_position`/`hero_hand`/`effective_stack_bb` against.
    *  Omit (or `'defend'`) for the original Module 5 behavior — Hero as the one facing an open,
    *  resolved by `defendRangeReveal.ts`. `'3bet'` resolves Hero as the 3-bettor against
-   *  `villain_position`'s open via `threebetRangeReveal.ts` (Module 4, "The 3-Bet"). Both funnel
-   *  into the same `DecisionSpotRangeReveal` shape and the same `RangeRevealCard`/`PokerRangeGrid`
-   *  renderer — adding a future direction (e.g. facing-a-3-bet for Module 6, 4-betting for Module 7)
-   *  means adding one more resolver + one more value here, never a new viewer. */
-  range_reveal_direction?: 'defend' | '3bet'
+   *  `villain_position`'s open via `threebetRangeReveal.ts`. `'opener'` shows `villain_position`'s
+   *  own opening range instead of a Hero-side chart (`openerRangeReveal.ts`) — the right choice
+   *  when Hero's own chart doesn't exist or isn't the point (e.g. a FOLD decision, where "here's
+   *  what Hero is up against" explains the answer better than a Hero-side strategy chart).
+   *  `'facing_3bet'` resolves Hero's call/4bet/fold response after Hero opened and Villain
+   *  3-bet (`facingThreebetRangeReveal.ts`, Module 4 "They Raised Back"). All four funnel into
+   *  the same `DecisionSpotRangeReveal` shape and the same `RangeRevealCard`/`PokerRangeGrid`
+   *  renderer — adding a future direction (e.g. 4-betting for Module 7) means adding one more
+   *  resolver + one more value here, never a new viewer. */
+  range_reveal_direction?: 'defend' | '3bet' | 'opener' | 'facing_3bet'
   /** Post-answer "who owns more of the strongest hands" reveal, rendered via
    *  `NutAdvantageMeter` after the score — see `NutAdvantageRevealData`. Purely
    *  presentational (passed through `evaluator.ts` unchanged, from `step` alone),
@@ -1097,7 +1102,8 @@ export type EvaluationConfidence = 'high' | 'medium' | 'low' | null
  * correct (so a perfect answer never gets an unnecessary comparison), and
  * omitted entirely for step types whose own component already renders a
  * richer item-by-item reveal (range_bucket, board_rank_sort, hand_ranking_order,
- * straight_detective, board_autopsy, range_build, range_heatmap).
+ * straight_detective, board_autopsy, range_build, range_heatmap,
+ * board_volatility's continuum_sort mode).
  */
 export interface AnswerReveal {
   /** Terminology appropriate to the interaction, e.g. "Correct play", "Correct classification", "Correct answer". */
@@ -1198,6 +1204,18 @@ export interface DecisionSpotRangeReveal {
   label: string
   /** e.g. "See where K9o sits in Hero's calling frequency." */
   subtitle: string
+  /** Optional second panel shown alongside the primary one — e.g. the opener's
+   *  own opening range next to Hero's 3-bet/defend response (see
+   *  `openerRangeReveal.ts`'s `resolveOpenerRangePanel`, attached automatically
+   *  by `evaluator.ts` for `'defend'`/`'3bet'` reveals whenever it resolves).
+   *  Shares this reveal's `highlightHand` — it's the same Hero hand shown
+   *  against a second range, not a second hand. */
+  secondaryRange?: {
+    label: string
+    range: string[]
+    strategies: RangeStrategyMap
+    strategySemantics: RangeSemantics
+  }
 }
 
 export interface StepResult {

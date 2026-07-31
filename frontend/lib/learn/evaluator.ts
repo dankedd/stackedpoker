@@ -9,7 +9,7 @@
  * The same action on the same step always produces the same result.
  */
 
-import type { LessonStep, StepResult, ActionQuality, AnswerReveal, ScenarioOutcome, ReasoningStageResult } from './types'
+import type { LessonStep, StepResult, ActionQuality, AnswerReveal, ScenarioOutcome, ReasoningStageResult, DecisionSpotRangeReveal } from './types'
 import { levelForXP } from './types'
 import { expandHandClass, expandGenericUnpaired, getRemainingCombos, getBlockedCombos, comboKey, flushTiers } from './combos'
 import { RANGE_TARGETS } from './ranges'
@@ -22,6 +22,8 @@ import { BB_DEFENSE_COMPLETE_100BB, type BBOpenDefenseMatchup } from './bbDefens
 import { evaluateTableDecision } from './tableDecisionEngine'
 import { resolveDefendRangeReveal } from './defendRangeReveal'
 import { resolveThreebetRangeReveal } from './threebetRangeReveal'
+import { resolveOpenerRangePanel, resolveOpenerRangeReveal } from './openerRangeReveal'
+import { resolveFacingThreebetRangeReveal } from './facingThreebetRangeReveal'
 import {
   evOfBetting, evOfChecking, bestResponse, isIndifferent, testUnilateralDeviation,
   clairvoyanceEV, clairvoyanceEquilibrium, type ActionEV,
@@ -1281,13 +1283,13 @@ function evalBoardVolatility(step: LessonStep, response: unknown): EvalCore {
 
     if (inversions === 0) return { quality: 'perfect', score: 100, feedback: 'That ordering matches — low to high volatility.', ev_loss_bb: 0 }
 
-    const boardById = new Map(boards.map((b) => [b.id, b.board]))
-    const correctOrderDisplay = correctOrder.map((id) => formatCards(boardById.get(id) ?? [])).join(' → ')
-    const reveal: AnswerReveal = { term: 'Correct order (low to high volatility)', correct: correctOrderDisplay }
-
-    if (accuracy >= 0.75) return { quality: 'good', score: Math.max(QUALITY_SCORES.good, pct), feedback: 'Close — a couple of boards are out of order.', ev_loss_bb: 0, answer_reveal: reveal }
-    if (accuracy >= 0.5) return { quality: 'acceptable', score: Math.max(QUALITY_SCORES.acceptable, pct), feedback: 'Roughly right, but several boards are out of order.', ev_loss_bb: 0, answer_reveal: reveal }
-    return { quality: 'mistake', score: Math.max(15, pct), feedback: 'This ordering doesn\'t track static-to-dynamic. Review each board\'s texture and straight potential.', ev_loss_bb: 0, answer_reveal: reveal }
+    // No `answer_reveal` here — BoardVolatility's own ContinuumSortMode already
+    // renders a richer, item-by-item reveal (real board cards via
+    // OrderedBoardRow/BoardOrderSpectrum, never a joined text string). Same
+    // pattern as board_rank_sort below.
+    if (accuracy >= 0.75) return { quality: 'good', score: Math.max(QUALITY_SCORES.good, pct), feedback: 'Close — a couple of boards are out of order.', ev_loss_bb: 0 }
+    if (accuracy >= 0.5) return { quality: 'acceptable', score: Math.max(QUALITY_SCORES.acceptable, pct), feedback: 'Roughly right, but several boards are out of order.', ev_loss_bb: 0 }
+    return { quality: 'mistake', score: Math.max(15, pct), feedback: 'This ordering doesn\'t track static-to-dynamic. Review each board\'s texture and straight potential.', ev_loss_bb: 0 }
   }
 
   // runout_storm (default)
@@ -1765,6 +1767,20 @@ function evalUnilateralDeviationTest(step: LessonStep, response: unknown): EvalC
       }
 }
 
+/** Enriches a resolved `'defend'`/`'3bet'` reveal with the opener's own opening
+ *  range as `secondaryRange`, whenever `openerRangeReveal.ts` can resolve one for
+ *  this step — never invents a reveal that wasn't already there, and never
+ *  overrides one that already carries its own semantics. */
+function attachOpenerPanel(
+  reveal: DecisionSpotRangeReveal | undefined,
+  step: LessonStep,
+): DecisionSpotRangeReveal | undefined {
+  if (!reveal) return reveal
+  const panel = resolveOpenerRangePanel(step)
+  if (!panel) return reveal
+  return { ...reveal, secondaryRange: panel }
+}
+
 function resolveCore(step: LessonStep, response: unknown): EvalCore {
   if (!isScoredStep(step)) {
     return step.type === 'concept_reveal'
@@ -2231,9 +2247,15 @@ export function evaluateStepLocally(
     // Resolved from `step` alone, independent of `core`/grading — see
     // DecisionSpotRangeReveal's doc comment: this can never affect score/quality/xp_earned.
     // `range_reveal_direction` picks which chart family Hero's seat is read against;
-    // omitted/'defend' preserves the original Module 5 behavior unchanged.
+    // omitted/'defend' preserves the original Module 5 behavior unchanged. 'defend'/'3bet'
+    // additionally get the opener's own opening range attached as `secondaryRange` whenever
+    // it resolves (see attachOpenerPanel) — 'opener' and 'facing_3bet' are already complete
+    // standalone reveals and don't need (or want) a second panel bolted on.
     range_reveal:
-      step.range_reveal_direction === '3bet' ? resolveThreebetRangeReveal(step) : resolveDefendRangeReveal(step),
+      step.range_reveal_direction === '3bet' ? attachOpenerPanel(resolveThreebetRangeReveal(step), step)
+      : step.range_reveal_direction === 'opener' ? resolveOpenerRangeReveal(step)
+      : step.range_reveal_direction === 'facing_3bet' ? resolveFacingThreebetRangeReveal(step)
+      : attachOpenerPanel(resolveDefendRangeReveal(step), step),
     // Same purely-presentational, never-graded contract as `range_reveal` above — a
     // direct passthrough of hand-authored step data, never computed here.
     nut_advantage_reveal: step.nut_advantage_reveal,

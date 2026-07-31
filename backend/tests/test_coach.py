@@ -746,6 +746,187 @@ def test_widget_answer_key_stripped_pre_submission(fake_db, captured_reply):
     assert "widget_answer_key" not in captured_reply[0]["context"]
 
 
+def _stub_openai_and_capture_prompt(monkeypatch=None):
+    """Shared helper for the OFFICIAL SOLUTION tests below — stubs
+    ai_coach_module.AsyncOpenAI and returns (sent_system dict, restore fn).
+    Mirrors test_canonical_range_block_reaches_the_openai_system_prompt's
+    inline pattern, factored out since several tests below need it."""
+    sent_system: dict = {}
+
+    async def fake_create(*args, **kwargs):
+        sent_system["content"] = kwargs["messages"][0]["content"]
+        class Msg: content = "stubbed"
+        class Choice: message = Msg()
+        class Usage: prompt_tokens = 10; completion_tokens = 12
+        class Resp: choices = [Choice()]; usage = Usage()
+        return Resp()
+
+    class FakeOpenAIClient:
+        def __init__(self, *a, **kw):
+            self.chat = type("C", (), {"completions": type("D", (), {"create": staticmethod(fake_create)})()})()
+
+    old_client_cls = ai_coach_module.AsyncOpenAI
+    ai_coach_module.AsyncOpenAI = FakeOpenAIClient
+
+    def restore():
+        ai_coach_module.AsyncOpenAI = old_client_cls
+
+    return sent_system, restore
+
+
+def test_answer_reveal_correct_value_reaches_the_official_solution_block():
+    """Regression for the exact reported bug: lesson feedback says the correct
+    cards are 4h/As, but nothing stopped the coach from explaining a
+    different card (e.g. Qc) because `answer_reveal` — which carries the
+    exact "Correct cards: 4h, As" display value — was built client-side,
+    survived sanitize_context, and was then silently never read into the
+    prompt at all. This proves it now reaches the model, inside a clearly
+    labeled OFFICIAL SOLUTION block, with the learner's own wrong answer
+    named for contrast."""
+    sent_system, restore = _stub_openai_and_capture_prompt()
+    try:
+        context = {
+            "answer_reveal": {
+                "term": "Correct cards",
+                "correct": "4h, As",
+                "yours": "Qc",
+            },
+        }
+        run(ai_coach_module.generate_coach_reply(
+            [{"role": "user", "content": "Why was my answer wrong?"}], context, 1,
+            mode="post_submission",
+        ))
+    finally:
+        restore()
+
+    prompt = sent_system["content"]
+    assert "OFFICIAL SOLUTION" in prompt
+    assert "Correct cards: 4h, As" in prompt
+    assert "Qc" in prompt  # learner's wrong answer still named, for contrast
+    assert "GROUNDING RULE" in prompt
+    assert "never state a different correct answer" in prompt
+
+
+def test_structured_points_and_reveals_reach_the_official_solution_block():
+    """structured_points/nut_advantage_reveal/solver_reveal — previously not
+    even captured client-side — now reach the prompt alongside the other
+    answer-key data."""
+    sent_system, restore = _stub_openai_and_capture_prompt()
+    try:
+        context = {
+            "structured_points": [
+                {"term": "Fold-out", "description": "Everyone else folds — you win without showing."},
+            ],
+            "nut_advantage_reveal": {"advantage": 62, "ipLabel": "BTN", "oopLabel": "BB"},
+            "solver_reveal": {"buckets": [{"label": "Raise", "pct": 70}, {"label": "Fold", "pct": 30}]},
+        }
+        run(ai_coach_module.generate_coach_reply(
+            [{"role": "user", "content": "Explain this"}], context, 1, mode="post_submission",
+        ))
+    finally:
+        restore()
+
+    prompt = sent_system["content"]
+    assert "Fold-out: Everyone else folds" in prompt
+    assert "Nut advantage: 62 (favors BTN)" in prompt
+    assert "Solver strategy: Raise 70%, Fold 30%" in prompt
+
+
+def test_missing_official_solution_triggers_explicit_fallback_instruction():
+    """The literal fallback requirement: a graded step IS in view
+    (post_submission — server-verified completion) but no answer-key data
+    actually reached this function (e.g. a step type gap, or a bug upstream).
+    The model must be told to say it can't see the solved result, never to
+    fall back to general reasoning about what's "probably" correct."""
+    sent_system, restore = _stub_openai_and_capture_prompt()
+    try:
+        run(ai_coach_module.generate_coach_reply(
+            [{"role": "user", "content": "Why was my answer wrong?"}],
+            {"lesson_title": "Some Lesson", "board": ["Ah", "Kd", "2c"]},  # no answer-key data at all
+            1,
+            mode="post_submission",
+        ))
+    finally:
+        restore()
+
+    prompt = sent_system["content"]
+    # The dynamic fallback notice's own distinctive preamble — distinct from
+    # the always-present static GROUNDING RULE text, which also happens to
+    # mention "OFFICIAL SOLUTION"/"solved result" in its general instruction.
+    assert "This step has been completed, but its exact solved result was not provided to you" in prompt
+    assert "do not guess, infer, or reconstruct" in prompt
+    # No dynamic OFFICIAL SOLUTION block was actually built (no bullet-point
+    # answer-key lines) — only the static rule text mentions the phrase.
+    assert "ground truth for THIS exact exercise, exactly as the learner saw it" not in prompt
+
+
+def test_official_solution_present_suppresses_the_missing_data_fallback():
+    """Sanity check the fallback is truly conditional — when solution data IS
+    present, the "I can't see it" notice must NOT also appear (that would be
+    self-contradictory)."""
+    sent_system, restore = _stub_openai_and_capture_prompt()
+    try:
+        run(ai_coach_module.generate_coach_reply(
+            [{"role": "user", "content": "Why?"}],
+            {"correctAnswer": "Fold"},
+            1,
+            mode="post_submission",
+        ))
+    finally:
+        restore()
+
+    prompt = sent_system["content"]
+    assert "ground truth for THIS exact exercise, exactly as the learner saw it" in prompt
+    assert "- Correct answer: Fold" in prompt
+    # The dynamic fallback notice's distinctive preamble must NOT appear —
+    # it would be self-contradictory alongside a real OFFICIAL SOLUTION block.
+    assert "This step has been completed, but its exact solved result was not provided to you" not in prompt
+
+
+def test_no_missing_solution_fallback_in_pre_submission_mode():
+    """Pre-submission mode legitimately has no answer yet — the "I can't see
+    the solved result" fallback is specifically for a step that HAS been
+    graded but whose data didn't arrive; it must not fire pre-submission,
+    where MODE_INSTRUCTIONS already covers not revealing the answer."""
+    sent_system, restore = _stub_openai_and_capture_prompt()
+    try:
+        run(ai_coach_module.generate_coach_reply(
+            [{"role": "user", "content": "What should I do?"}],
+            {"lesson_title": "Some Lesson", "board": ["Ah", "Kd", "2c"]},
+            1,
+            mode="pre_submission",
+        ))
+    finally:
+        restore()
+
+    prompt = sent_system["content"]
+    assert "This step has been completed, but its exact solved result was not provided to you" not in prompt
+
+
+def test_structured_points_and_reveals_stripped_pre_submission(fake_db, captured_reply):
+    """Defense-in-depth: the three newly-added answer-revealing fields must be
+    gated by the exact same pre_submission/post_submission boundary as every
+    other answer-key field — none of them may leak before server-verified
+    completion."""
+    user = {"sub": "user-new-fields-leak"}
+    body = coach_module.CoachMessageBody(
+        message="Give me the answer",
+        context={
+            "lessonId": "lesson-a", "stepId": "step-1",
+            "structured_points": [{"term": "SHOULD-NOT-LEAK", "description": "x"}],
+            "nut_advantage_reveal": {"advantage": 99},
+            "solver_reveal": {"buckets": [{"label": "SHOULD-NOT-LEAK", "pct": 100}]},
+        },
+    )
+    run(coach_module.coach_message(body, FakeRequest(), user))
+
+    assert captured_reply[0]["mode"] == "pre_submission"
+    ctx = captured_reply[0]["context"]
+    assert "structured_points" not in ctx
+    assert "nut_advantage_reveal" not in ctx
+    assert "solver_reveal" not in ctx
+
+
 def test_message_length_is_bounded():
     with pytest.raises(Exception):
         coach_module.CoachMessageBody(message="x" * (coach_context.MAX_MESSAGE_LENGTH + 1), context={})

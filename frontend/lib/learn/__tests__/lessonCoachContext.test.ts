@@ -279,6 +279,59 @@ describe('buildLessonCoachContext — evaluatorFeedback (per-attempt grading fee
   })
 })
 
+// ── Regression coverage for "the Coach explained a different card than the
+// lesson's own correct answer" — answerReveal (already captured) is the
+// exact display string the learner saw; structuredPoints/nutAdvantageReveal/
+// solverReveal below were NOT captured at all before this fix, meaning the
+// Coach had zero grounding data for any step type that reveals its answer
+// through them, and would silently reason from general poker knowledge
+// instead — see ai_coach.py's OFFICIAL SOLUTION block for where these land.
+describe('buildLessonCoachContext — answerReveal is the exact on-screen "correct answer" value', () => {
+  it('is undefined pre-answer (never leaked before the step is graded)', () => {
+    const ctx = buildLessonCoachContext(lesson, decisionStep, 0, null, undefined, 0)
+    expect(ctx.answerReveal).toBeUndefined()
+  })
+
+  it("carries the exact display string the learner saw — e.g. the reported 'Correct cards' bug", () => {
+    const result = makeResult({
+      answer_reveal: { term: 'Correct cards', correct: '4h, As', yours: 'Qc' },
+    })
+    const ctx = buildLessonCoachContext(lesson, decisionStep, 0, result, 'Qc', 0)
+    expect(ctx.answerReveal).toEqual({ term: 'Correct cards', correct: '4h, As', yours: 'Qc' })
+    const api = toCoachApiContext(ctx)
+    expect(api.answer_reveal).toEqual({ term: 'Correct cards', correct: '4h, As', yours: 'Qc' })
+  })
+})
+
+describe('buildLessonCoachContext — structuredPoints/nutAdvantageReveal/solverReveal (previously uncaptured)', () => {
+  it('all three are undefined pre-answer', () => {
+    const ctx = buildLessonCoachContext(lesson, decisionStep, 0, null, undefined, 0)
+    expect(ctx.structuredPoints).toBeUndefined()
+    expect(ctx.nutAdvantageReveal).toBeUndefined()
+    expect(ctx.solverReveal).toBeUndefined()
+  })
+
+  it('structuredPoints mirrors StepResult.structured_points once answered', () => {
+    const points = [{ term: 'Fold-out', description: 'Everyone else folds — you win without showing.' }]
+    const result = makeResult({ structured_points: points })
+    const ctx = buildLessonCoachContext(lesson, decisionStep, 0, result, 'btn', 0)
+    expect(ctx.structuredPoints).toEqual(points)
+    expect(toCoachApiContext(ctx).structured_points).toEqual(points)
+  })
+
+  it('nutAdvantageReveal and solverReveal mirror their StepResult fields once answered', () => {
+    const nutAdvantageReveal = { advantage: 62, ipLabel: 'BTN', oopLabel: 'BB' }
+    const solverReveal = { buckets: [{ label: 'Raise', pct: 70, color: 'bg-violet-500' }] }
+    const result = makeResult({ nut_advantage_reveal: nutAdvantageReveal, solver_reveal: solverReveal })
+    const ctx = buildLessonCoachContext(lesson, decisionStep, 0, result, 'btn', 0)
+    expect(ctx.nutAdvantageReveal).toEqual(nutAdvantageReveal)
+    expect(ctx.solverReveal).toEqual(solverReveal)
+    const api = toCoachApiContext(ctx)
+    expect(api.nut_advantage_reveal).toEqual(nutAdvantageReveal)
+    expect(api.solver_reveal).toEqual(solverReveal)
+  })
+})
+
 describe('toCoachApiContext — hint level', () => {
   it('omits hint_level when zero (falsy), includes it when set', () => {
     const noHint = buildLessonCoachContext(lesson, decisionStep, 0, null, undefined, 0)

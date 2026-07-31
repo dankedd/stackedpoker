@@ -33,6 +33,22 @@ export interface LessonCoachRangeSide {
   range: string[]
 }
 
+/** Compact summary of a post-answer range reveal (see `DecisionSpotRangeReveal`) — the
+ *  Coach gets WHICH visualization the learner is looking at (label(s) + highlighted hand +
+ *  the two seats involved), never the full 169-cell strategy map, which would bloat the
+ *  prompt without adding anything a label/hand pair doesn't already convey. Action
+ *  taken/correct action/concepts are already covered by the existing
+ *  `selectedAnswer`/`correctAnswer`/`conceptIds`/`evaluatorFeedback` fields below — this only
+ *  fills the one gap: which range chart(s) the learner is currently seeing. */
+export interface LessonCoachRangeReveal {
+  label: string
+  subtitle: string
+  highlightHand: string
+  heroPosition: string
+  villainPosition: string
+  secondaryLabel?: string
+}
+
 export interface LessonCoachContext {
   lessonId: string
   lessonTitle: string
@@ -60,6 +76,12 @@ export interface LessonCoachContext {
    *  server-side regardless of what's sent (see module docstring). */
   correctAnswer?: string
   correctFeedback?: string
+  /** "What was the correct answer" reveal actually rendered on screen — see
+   *  `AnswerReveal.correct`, a ready-to-read display string (e.g. "4h, As" or
+   *  "Fold"). The single most reliable source of "what did the lesson actually
+   *  say was correct" for the many step types that don't use `correct_answer`
+   *  — it's the exact value the evaluator produced and the learner saw, never
+   *  re-derived independently. Only once `hasAnswered`. */
   answerReveal?: StepResult['answer_reveal']
   /** The widget-specific answer-key fields the generic classifier caught
    *  (e.g. `pot_odds_correct`, `equity_actual`) — same `hasAnswered` gating. */
@@ -68,6 +90,18 @@ export interface LessonCoachContext {
    *  StepFeedback screen (`StepResult.feedback`) — distinct from the
    *  authored, generic `correctFeedback` above. Only once `hasAnswered`. */
   evaluatorFeedback?: string
+  /** Which post-answer range visualization (if any) is currently on screen — see
+   *  `LessonCoachRangeReveal`. Only once `hasAnswered` (same gating as every other
+   *  post-answer field here), since the reveal itself never renders before then. */
+  rangeReveal?: LessonCoachRangeReveal
+  /** Structured term/description breakdown shown alongside `feedback` on the
+   *  StepFeedback screen (carried through from the answered option's
+   *  `feedback_structured_items` — see `StepOption`). Only once `hasAnswered`. */
+  structuredPoints?: StepResult['structured_points']
+  /** Post-answer nut-advantage meter reveal, if this step has one. Only once `hasAnswered`. */
+  nutAdvantageReveal?: StepResult['nut_advantage_reveal']
+  /** Post-answer "Solver Strategy" bucket reveal, if this step has one. Only once `hasAnswered`. */
+  solverReveal?: StepResult['solver_reveal']
 }
 
 function extractOptions(step: LessonStep): { id: string; label: string }[] | undefined {
@@ -82,6 +116,18 @@ function extractRangeContext(step: LessonStep): LessonCoachContext['rangeContext
   return {
     a: a ? { label: a.label, range: a.range } : undefined,
     b: b ? { label: b.label, range: b.range } : undefined,
+  }
+}
+
+function extractRangeReveal(reveal: StepResult['range_reveal']): LessonCoachRangeReveal | undefined {
+  if (!reveal) return undefined
+  return {
+    label: reveal.label,
+    subtitle: reveal.subtitle,
+    highlightHand: reveal.highlightHand,
+    heroPosition: reveal.heroPosition,
+    villainPosition: reveal.villainPosition,
+    secondaryLabel: reveal.secondaryRange?.label,
   }
 }
 
@@ -204,6 +250,10 @@ export function buildLessonCoachContext(
     answerReveal: hasAnswered ? result!.answer_reveal : undefined,
     widgetAnswerKey: hasAnswered ? extractWidgetAnswerKey(step) : undefined,
     evaluatorFeedback: hasAnswered ? result!.feedback : undefined,
+    rangeReveal: hasAnswered ? extractRangeReveal(result!.range_reveal) : undefined,
+    structuredPoints: hasAnswered ? result!.structured_points : undefined,
+    nutAdvantageReveal: hasAnswered ? result!.nut_advantage_reveal : undefined,
+    solverReveal: hasAnswered ? result!.solver_reveal : undefined,
   }
 }
 
@@ -241,5 +291,9 @@ export function toCoachApiContext(ctx: LessonCoachContext): Record<string, unkno
     answer_reveal: ctx.answerReveal,
     widget_answer_key: ctx.widgetAnswerKey,
     evaluator_feedback: ctx.evaluatorFeedback,
+    range_reveal: ctx.rangeReveal,
+    structured_points: ctx.structuredPoints,
+    nut_advantage_reveal: ctx.nutAdvantageReveal,
+    solver_reveal: ctx.solverReveal,
   }
 }

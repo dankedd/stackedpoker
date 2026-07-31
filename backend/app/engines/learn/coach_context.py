@@ -36,6 +36,15 @@ ANSWER_KEY_FIELDS = frozenset({
     "correctAnswer", "correct_answer", "evaluatorFeedback", "evaluator_feedback",
     "answer_reveal", "correct_feedback", "target", "targetValue", "target_value",
     "solution", "quality", "widget_answer_key",
+    # Post-answer range-reveal summary (label/highlighted hand — see
+    # lessonCoachContext.ts's LessonCoachRangeReveal) — client-gated behind
+    # `hasAnswered` already, same defense-in-depth stripping as the fields above.
+    "rangeReveal", "range_reveal",
+    # Post-answer structured breakdown / nut-advantage / solver-strategy reveals
+    # — same "what the learner actually saw after answering" category as
+    # answer_reveal above, same hasAnswered client-side gating, same
+    # defense-in-depth stripping here.
+    "structured_points", "nut_advantage_reveal", "solver_reveal",
 })
 
 
