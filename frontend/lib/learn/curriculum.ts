@@ -3964,9 +3964,18 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['suitedness_preflop'],
         narrative: 'Compare A♠5♠ to A♠5♦. What does suitedness mainly add here?',
         options: [
-          { id: 'all', label: 'Flush potential, backdoors, playability, AND nut potential', quality: 'perfect', feedback: "Correct — suitedness is not just one thing. It adds direct flush potential, backdoor draws, extra playability, and stronger nut potential all at once." },
-          { id: 'just_flush', label: 'Just flush potential', quality: 'acceptable', feedback: 'Flush potential is the most obvious piece, but suitedness also improves backdoors, playability, and nut potential.' },
-          { id: 'nothing_real', label: 'Nothing meaningful — it is overrated', quality: 'mistake', feedback: 'Suitedness is a real, measurable contributor to a hand\'s postflop value — it is not cosmetic.' },
+          {
+            id: 'flush_only', label: 'Suitedness mainly increases flush potential', quality: 'acceptable',
+            feedback: "True, but incomplete. Flush potential is the most visible piece, but it's not the only thing suitedness changes — backdoor draws, postflop playability, and nut potential all improve too.",
+          },
+          {
+            id: 'flush_and_backdoors_only', label: "Suitedness improves flush potential and adds backdoor equity, but doesn't change how playable the hand is", quality: 'mistake',
+            feedback: "Flush potential and backdoor equity are real — but that extra equity is exactly what makes a hand MORE playable, not unrelated to it. Those backdoor draws give A5s more ways to continue profitably on a bad-looking flop that A5o simply doesn't have.",
+          },
+          {
+            id: 'all', label: 'Suitedness adds flush potential, backdoor equity, postflop playability, AND nut potential', quality: 'perfect',
+            feedback: "Correct — suitedness is not just one thing. It adds direct flush potential, backdoor draws, extra playability, and stronger nut potential all at once.",
+          },
         ],
         xp: 8,
       },
