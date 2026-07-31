@@ -3595,7 +3595,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['fold_equity'],
         concept_title: 'Hand 3',
         concept_content:
-          "Hero holds T♥9♥ on an A♥5♥2♣ flop — a flush draw with little showdown value if called right now. Pot is 80. Villain's range here folds often to pressure. Is betting profitable?",
+          "Hero holds T♥9♥ on an A♥5♥2♣ flop — a flush draw with little showdown value if called right now. Pot is 80. Because Villain's range here folds often to pressure and Hero still has a real backup chance to win if called, betting is profitable.",
         board: ['Ah', '5h', '2c'],
         hero_hand: ['Th', '9h'],
         pot_bb: 80,
