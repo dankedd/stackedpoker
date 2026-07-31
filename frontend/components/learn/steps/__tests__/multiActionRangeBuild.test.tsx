@@ -48,6 +48,24 @@ describe('MultiActionRangeBuild — prefilled foundation is visible on first pai
   })
 })
 
+describe('MultiActionRangeBuild — every curriculum range_build_multi step displays its effective stack depth', () => {
+  // Every real range_build_multi step in the curriculum already authors
+  // hero_position/effective_stack_bb (positionLessonBuilder.ts, the SB/UTG
+  // mastery lessons, "They Raised Back", every "Defending as X" lesson, and
+  // the Preflop Range Mastery Lab pool all pair these fields together) — this
+  // sweep guards that the shared ScenarioMeta line actually renders for all
+  // of them, not just a hand-picked fixture.
+  for (const step of multiSteps) {
+    it(`${step.id} shows "${step.hero_position} · ${step.effective_stack_bb}BB EFFECTIVE"`, () => {
+      expect(step.hero_position, `${step.id} is missing hero_position`).toBeTruthy()
+      expect(step.effective_stack_bb, `${step.id} is missing effective_stack_bb`).not.toBeUndefined()
+      const html = renderToStaticMarkup(<MultiActionRangeBuild step={step} onAnswer={noop} />)
+      expect(html).toContain(`>${step.hero_position}<`)
+      expect(html).toContain('BB EFFECTIVE')
+    })
+  }
+})
+
 describe('MultiActionRangeBuild — action toolbar matches the target chart\'s real action set', () => {
   const mttSteps = multiSteps.filter((s) => s.range_build_multi_domain !== 'threebet_response').slice(0, 6)
   for (const step of mttSteps) {
