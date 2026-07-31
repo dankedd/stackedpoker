@@ -24,9 +24,12 @@ interface BoardSortingPuzzleProps {
  * presentational front-end for `board_rank_sort_layout: 'spectrum'`.
  *
  * Drag is via `SortableRankingList`'s horizontal axis (pointer, touch, AND
- * keyboard sensors). Per-tile move-left/move-right buttons are an explicit,
- * always-visible non-drag alternative — not just the less-discoverable keyboard
- * drag-and-drop path.
+ * keyboard sensors) — the whole card is the drag surface, matching
+ * `HandRankingOrder.tsx`'s existing pattern (attributes/listeners on the row,
+ * not a small icon), so grabbing anywhere on a card works like a physical
+ * card. Per-tile move-left/move-right buttons remain as an explicit,
+ * always-visible non-drag alternative; their `onPointerDown` stops
+ * propagation so tapping them never gets captured as a drag start.
  */
 export function BoardSortingPuzzle({ step, onAnswer, disabled = false, reviewMode = false }: BoardSortingPuzzleProps) {
   const mountTime = useRef(Date.now())
@@ -105,9 +108,15 @@ export function BoardSortingPuzzle({ step, onAnswer, disabled = false, reviewMod
               if (!b) return null
               return (
                 <div
+                  {...drag.attributes}
+                  {...(disabled ? {} : drag.listeners)}
+                  aria-label={`${b.label ?? id}, position ${index + 1} of ${order.length}. Drag to reorder.`}
                   className={cn(
-                    'flex shrink-0 flex-col items-center gap-1.5 rounded-xl border p-2.5 min-w-[92px] transition-all',
-                    drag.isDragging ? 'border-violet-500/60 bg-violet-500/15 shadow-lg' : 'border-border/40 bg-secondary/30',
+                    'flex shrink-0 flex-col items-center gap-1.5 rounded-xl border p-2.5 min-w-[92px] select-none transition-[transform,box-shadow,border-color,background-color] duration-150',
+                    disabled ? 'cursor-default' : 'cursor-grab active:cursor-grabbing touch-none',
+                    drag.isDragging
+                      ? 'z-20 scale-[1.04] border-violet-500/60 bg-violet-500/15 shadow-xl shadow-violet-500/30'
+                      : 'border-border/40 bg-secondary/30',
                   )}
                 >
                   <div className="flex items-center gap-1 w-full">
@@ -115,23 +124,20 @@ export function BoardSortingPuzzle({ step, onAnswer, disabled = false, reviewMod
                       type="button"
                       disabled={disabled || index === 0}
                       onClick={() => moveTile(id, -1)}
+                      onPointerDown={(e) => e.stopPropagation()}
                       aria-label={`Move ${b.label ?? id} toward ${lowLabel}`}
                       className="rounded p-0.5 text-muted-foreground/40 hover:text-violet-300 disabled:opacity-20 disabled:pointer-events-none"
                     >
                       <ChevronLeft className="h-3.5 w-3.5" />
                     </button>
-                    <span
-                      {...drag.attributes}
-                      {...drag.listeners}
-                      className="flex-1 flex items-center justify-center cursor-grab active:cursor-grabbing touch-none"
-                      aria-label={`Drag ${b.label ?? id} to reorder`}
-                    >
+                    <span className="flex-1 flex items-center justify-center" aria-hidden>
                       <GripVertical className="h-3.5 w-3.5 text-muted-foreground/25" />
                     </span>
                     <button
                       type="button"
                       disabled={disabled || index === order.length - 1}
                       onClick={() => moveTile(id, 1)}
+                      onPointerDown={(e) => e.stopPropagation()}
                       aria-label={`Move ${b.label ?? id} toward ${highLabel}`}
                       className="rounded p-0.5 text-muted-foreground/40 hover:text-blue-300 disabled:opacity-20 disabled:pointer-events-none"
                     >
