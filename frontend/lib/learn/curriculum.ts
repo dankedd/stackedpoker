@@ -3246,7 +3246,7 @@ export const LESSONS: Lesson[] = [
           { label: 'Q♣7♦ (disconnected)', cards: ['Qc', '7d'], option_id: 'disconnected' },
           { label: '9♠8♠ (connected, suited)', cards: ['9s', '8s'], option_id: 'connected' },
         ],
-        equity_realization_prompt: 'Which hand can interact profitably with more boards, through straight draws, backdoors, and strong runouts?',
+        equity_realization_prompt: 'Which hand can interact profitably with more boards?',
         options: [
           { id: 'connected', label: '9♠8♠', quality: 'perfect', feedback: 'Correct — 98s connects with far more flops through straight draws, pair-plus-draw combos, and backdoors than the disconnected Q7o.' },
           { id: 'disconnected', label: 'Q♣7♦', quality: 'mistake', feedback: 'Q7o is disconnected and offsuit — it has far fewer profitable ways to continue than 98s.' },
