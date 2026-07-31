@@ -59,6 +59,30 @@
  * uniformly, don't hand-adjust individual hands) rather than snapped to a
  * "cleaner"-looking round number.
  *
+ * CORRECTION (BB_vs_BTN, '76s'): the pixel extraction originally read this
+ * cell as a pure 3-bet, which directly contradicts the book's own running
+ * prose for this exact chart (page 243, describing Hand Range 82/Diagram on
+ * page 244): "the BB 3-bets a very LINEAR range... while CALLING with most
+ * suited hands, offsuit Ax, CONNECTORS and broadways." A pure-bluff 3-bet on
+ * a low suited connector is also internally inconsistent with "linear" (a
+ * linear range is strength-ordered, not a mix of top pairs/broadways plus a
+ * speculative low-card bluff) -- this is a misclassification, not a genuine
+ * mixed/mostly-3-bet hand, so it is corrected to `{ call: 1.0 }` here, matching
+ * the prose and this file's own "pure" convention for its unambiguous neighbors
+ * ('75s', '74s' are both `{ call: 1.0 }` in this same chart). NOT re-derived
+ * from a new pixel pass -- this is a text-grounded correction of one specific,
+ * textually-contradicted cell, not a re-extraction.
+ *
+ * A handful of OTHER suited connectors in this same BB_vs_BTN chart ('87s',
+ * '98s', 'T9s', 'JTs', 'J9s') show the identical pure-3-bet pattern and are
+ * equally hard to reconcile with "linear" -- they are NOT corrected here
+ * because (a) no current lesson step highlights any of them (confirmed via a
+ * full-module reveal/answer-key sweep) and (b) the book's prose only confirms
+ * the CATEGORY ("connectors"), not each individual combo's exact split, so
+ * snapping every one of them to `call: 1.0` would be a broader, less certain
+ * change than this fix requires. Flagged here for a future full re-extraction
+ * pass, not silently left inconsistent.
+ *
  * SCOPE: this is a genuine `complete_strategy` (see RangeSemantics in
  * rangeStrategy.ts) ONLY at 100bb, for these five matchups. Do NOT reuse it
  * for a different stack depth (60bb, 40bb, 15bb, etc.) -- GTO defending/
@@ -743,7 +767,9 @@ export const BB_DEFENSE_COMPLETE_100BB: Record<BBOpenDefenseMatchup, RangeStrate
     '97o': { 'call': 0.411, 'fold': 0.589 },
     '87o': { 'call': 0.916, 'fold': 0.084 },
     77: { '3bet': 0.3755, 'call': 0.6245 },
-    '76s': { '3bet': 1.0 },
+    // Corrected from a pixel-misread `{ '3bet': 1.0 }` — see the file-level
+    // "CORRECTION (BB_vs_BTN, '76s')" doc comment above.
+    '76s': { 'call': 1.0 },
     '75s': { 'call': 1.0 },
     '74s': { 'call': 1.0 },
     '73s': { 'call': 1.0 },

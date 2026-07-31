@@ -429,8 +429,14 @@ function evalEquityPredict(step: LessonStep, response: unknown): EvalCore {
 
 // ── Range steps (range_build, range_heatmap) ──────────────────────────────────
 
-/** Number of distinct combos a hand notation represents */
+/** Number of distinct combos a hand notation represents. A length-4 entry
+ *  (e.g. 'JcJd', 'AhQh') is a single concrete board-situated combo — not a
+ *  class — so it's exactly one combo, not the pair/suited/offsuit weighting
+ *  below. No existing hand-class notation is ever 4 characters, so this
+ *  check is purely additive for range_bucket steps that author concrete
+ *  combos via `range_bucket_board` (see RangeBucketSort.tsx). */
 function handCombos(hand: string): number {
+  if (hand.length === 4) return 1    // concrete combo e.g. 'JcJd'
   if (hand.length === 2) return 6    // pair  e.g. 'AA'
   if (hand.endsWith('s')) return 4   // suited e.g. 'AKs'
   if (hand.endsWith('o')) return 12  // offsuit e.g. 'AKo'

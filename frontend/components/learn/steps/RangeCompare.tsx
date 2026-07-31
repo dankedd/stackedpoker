@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 import { RangeComparisonLayout } from '@/components/learn/visuals/RangeComparisonLayout'
+import { RangeExplanationCallout } from '@/components/poker/RangeExplanationCallout'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 import { orderStepOptions, bindVisualOptions } from '@/lib/learn/interactionSafety'
 
@@ -49,12 +50,6 @@ export function RangeCompare({ step, onAnswer, disabled = false }: RangeCompareP
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      {step.narrative && (
-        <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-4">
-          <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>
-        </div>
-      )}
-
       {(heroHand.length > 0 || board.length > 0) && (
         <div className="flex flex-wrap items-center justify-center gap-4">
           {heroHand.length > 0 && (
@@ -148,6 +143,8 @@ export function RangeCompare({ step, onAnswer, disabled = false }: RangeCompareP
           </div>
         </div>
       )}
+
+      {step.narrative && <RangeExplanationCallout>{step.narrative}</RangeExplanationCallout>}
 
       {step.range_compare_prompt && (
         <div className="text-center">

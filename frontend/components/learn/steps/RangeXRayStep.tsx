@@ -6,6 +6,7 @@ import type { LessonStep } from '@/lib/learn/types'
 import { orderStepOptions } from '@/lib/learn/interactionSafety'
 import { RangeXRay } from '@/components/learn/visuals/RangeXRay'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
+import { RangeExplanationCallout } from '@/components/poker/RangeExplanationCallout'
 
 interface RangeXRayStepProps {
   step: LessonStep
@@ -39,12 +40,6 @@ export function RangeXRayStep({ step, onAnswer, disabled = false }: RangeXRaySte
        *  the outer lesson container — only the RangeXRay box (below) needs the room, and
        *  its own mini grid self-caps via PokerRangeGrid's size prop regardless. */}
       <div className="max-w-2xl mx-auto w-full space-y-5">
-        {step.narrative && (
-          <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-4">
-            <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>
-          </div>
-        )}
-
         {board && board.length > 0 && (
           <div className="flex items-center justify-center gap-1.5">
             {board.map((c, i) => <PlayingCardMini key={i} card={c} size="md" />)}
@@ -61,6 +56,8 @@ export function RangeXRayStep({ step, onAnswer, disabled = false }: RangeXRaySte
       </div>
 
       <div className="max-w-2xl mx-auto w-full space-y-5">
+        {step.narrative && <RangeExplanationCallout>{step.narrative}</RangeExplanationCallout>}
+
         {step.range_xray_prompt && (
           <p className="text-center text-base font-semibold text-foreground">{step.range_xray_prompt}</p>
         )}

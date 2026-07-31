@@ -16517,7 +16517,6 @@ export const LESSONS: Lesson[] = [
         source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: A76R_SCENARIO.source.note, type: 'source_reconstructed' },
         board: A76R_SCENARIO.board,
         range_xray_board: A76R_SCENARIO.board,
-        narrative: `${A76R_SCENARIO.boardLabel} — the reveal.`,
         range_xray_entries: [
           { label: 'IP', strong: A76R_SCENARIO.strongBucket.ip },
           { label: 'BB', strong: A76R_SCENARIO.strongBucket.bb },
@@ -16574,7 +16573,6 @@ export const LESSONS: Lesson[] = [
         source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: CS_654R_SCENARIO.source.note, type: 'source_reconstructed' },
         board: CS_654R_SCENARIO.board,
         range_xray_board: CS_654R_SCENARIO.board,
-        narrative: `${CS_654R_SCENARIO.boardLabel} — the reveal.`,
         range_xray_entries: [
           { label: 'BB', strong: CS_654R_SCENARIO.strongBucket.bb, good_note: CS_654R_SCENARIO.goodBucketNote, trash_note: CS_654R_SCENARIO.trashBucketNote },
           { label: 'IP', strong: CS_654R_SCENARIO.strongBucket.ip },

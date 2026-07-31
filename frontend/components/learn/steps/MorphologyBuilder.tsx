@@ -8,6 +8,7 @@ import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 import { RangeRevealComparison } from '@/components/learn/visuals/RangeRevealComparison'
 import { orderStepOptions } from '@/lib/learn/interactionSafety'
 import { diagnoseMorphologyBuild, type MorphologyPanelDiagnostic } from '@/lib/learn/evaluator'
+import { RangeExplanationCallout } from '@/components/poker/RangeExplanationCallout'
 
 interface MorphologyBuilderProps {
   step: LessonStep
@@ -84,15 +85,11 @@ export function MorphologyBuilder({ step, onAnswer, disabled = false }: Morpholo
 
     return (
       <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-        {step.narrative && (
-          <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-4">
-            <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>
-          </div>
-        )}
-
         <div className="max-w-sm mx-auto">
           <PokerRangeGrid range={range} />
         </div>
+
+        {step.narrative && <RangeExplanationCallout>{step.narrative}</RangeExplanationCallout>}
 
         {step.morphology_builder_prompt && (
           <p className="text-center text-base font-semibold text-foreground">{step.morphology_builder_prompt}</p>

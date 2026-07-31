@@ -5,6 +5,20 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { CATEGORY_COLORS, CorrectnessIcon, ReviewContinueButton, ReviewSummaryLine } from '@/components/learn/RevealKit'
 import { computeBucketReveal, explainHandNotation, isPairSuitedOffsuit } from '@/lib/learn/revealHelpers'
+import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
+
+/** A pool entry is a concrete combo (e.g. 'JcJd') rather than hand-class
+ *  notation ('JJ', 'AKs') exactly when `range_bucket_board` is set — see that
+ *  field's doc comment. Renders as two real cards instead of a text chip. */
+function HandLabel({ hand, concrete }: { hand: string; concrete: boolean }) {
+  if (!concrete) return <span className="text-xs font-bold">{hand}</span>
+  return (
+    <span className="flex gap-0.5">
+      <PlayingCardMini card={hand.slice(0, 2)} size="xs" />
+      <PlayingCardMini card={hand.slice(2, 4)} size="xs" />
+    </span>
+  )
+}
 
 interface RangeBucketSortProps {
   step: LessonStep
@@ -43,6 +57,8 @@ export function RangeBucketSort({
   const mountTime = useRef(Date.now())
   const categories = step.range_bucket_categories ?? []
   const pool = step.range_bucket_pool ?? []
+  const board = step.range_bucket_board
+  const concrete = !!board
 
   const [activeCategory, setActiveCategory] = useState<string>(categories[0]?.id ?? '')
   const [assignments, setAssignments] = useState<Record<string, string>>(initialAssignments ?? {})
@@ -97,6 +113,12 @@ export function RangeBucketSort({
         </div>
       )}
 
+      {board && (
+        <div className="flex items-center justify-center gap-2">
+          {board.map((c, i) => <PlayingCardMini key={i} card={c} size="md" />)}
+        </div>
+      )}
+
       {step.range_bucket_prompt && (
         <p className="text-center text-sm font-semibold text-foreground">{step.range_bucket_prompt}</p>
       )}
@@ -141,13 +163,14 @@ export function RangeBucketSort({
                   disabled={disabled}
                   onClick={() => handleHandClick(hand)}
                   className={cn(
-                    'min-w-[3.25rem] rounded-lg px-2.5 py-2 text-xs font-bold transition-all duration-150 active:scale-95 border',
+                    'min-w-[3.25rem] rounded-lg transition-all duration-150 active:scale-95 border',
+                    concrete ? 'p-1' : 'px-2.5 py-2 text-xs font-bold',
                     colors
                       ? `${colors.chip} text-white border-transparent shadow-sm`
                       : 'border-border/40 bg-secondary/50 text-foreground hover:bg-secondary/80',
                   )}
                 >
-                  {hand}
+                  <HandLabel hand={hand} concrete={concrete} />
                 </button>
               )
             })}
@@ -207,7 +230,9 @@ export function RangeBucketSort({
                     r.correct ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-red-500/40 bg-red-500/10',
                   )}
                 >
-                  <span className="w-14 shrink-0 text-sm font-bold text-foreground">{r.hand}</span>
+                  <span className={cn('shrink-0 text-sm font-bold text-foreground', !concrete && 'w-14')}>
+                    <HandLabel hand={r.hand} concrete={concrete} />
+                  </span>
                   <span
                     className={cn(
                       'rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide',

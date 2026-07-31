@@ -14,6 +14,7 @@ import { chartToStrategyMap as defendResponseChartToStrategyMap, chartHandList a
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 import { orderStepOptions } from '@/lib/learn/interactionSafety'
 import { rangeEntriesToStrategyMap, type RangeSemantics, type RangeStrategyMap } from '@/lib/learn/rangeStrategy'
+import { RangeExplanationCallout } from '@/components/poker/RangeExplanationCallout'
 
 /** 'defend_response' (DEFEND_RESPONSE_CHARTS) is a genuine complete_strategy at 4
  *  discrete depths (15/25/40/60bb), not the 3-world shallow/medium/deep bucketing
@@ -133,12 +134,6 @@ export function StackDepthRangeMorph({ step, onAnswer, disabled = false }: Stack
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      {step.narrative && (
-        <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-4">
-          <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>
-        </div>
-      )}
-
       <div className="rounded-2xl border border-border/40 bg-card/60 p-5 space-y-4">
         <div className="text-center">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/40">
@@ -186,6 +181,8 @@ export function StackDepthRangeMorph({ step, onAnswer, disabled = false }: Stack
           </p>
         )}
       </div>
+
+      {step.narrative && <RangeExplanationCallout>{step.narrative}</RangeExplanationCallout>}
 
       {step.stack_depth_morph_prompt && (
         <div className="text-center">

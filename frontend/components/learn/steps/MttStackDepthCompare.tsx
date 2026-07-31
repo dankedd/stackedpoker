@@ -7,6 +7,7 @@ import { MTT_RFI_CHARTS, type MttStackBB } from '@/lib/learn/mttRfiBaselines'
 import { chartToDisplayActionMap, computeChartDiff } from '@/lib/learn/mttRfiRanges'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 import { orderStepOptions } from '@/lib/learn/interactionSafety'
+import { RangeExplanationCallout } from '@/components/poker/RangeExplanationCallout'
 
 interface MttStackDepthCompareProps {
   step: LessonStep
@@ -68,12 +69,6 @@ export function MttStackDepthCompare({ step, onAnswer, disabled = false }: MttSt
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      {step.narrative && (
-        <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-4">
-          <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>
-        </div>
-      )}
-
       <div className="rounded-2xl border border-border/40 bg-card/60 p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div>
@@ -130,6 +125,8 @@ export function MttStackDepthCompare({ step, onAnswer, disabled = false }: MttSt
           </div>
         </div>
       </div>
+
+      {step.narrative && <RangeExplanationCallout>{step.narrative}</RangeExplanationCallout>}
 
       {step.mtt_stack_depth_compare_prompt && (
         <div className="text-center">

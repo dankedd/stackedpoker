@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 import { orderStepOptions } from '@/lib/learn/interactionSafety'
+import { RangeExplanationCallout } from '@/components/poker/RangeExplanationCallout'
 
 interface RangeDiffOverlayProps {
   step: LessonStep
@@ -37,13 +38,9 @@ export function RangeDiffOverlay({ step, onAnswer, disabled = false }: RangeDiff
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      {step.narrative && (
-        <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-4">
-          <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>
-        </div>
-      )}
-
       <PokerRangeGrid range={baseline} mode="diff" comparisonRange={example} />
+
+      {step.narrative && <RangeExplanationCallout>{step.narrative}</RangeExplanationCallout>}
 
       {step.range_diff_prompt && (
         <div className="text-center">

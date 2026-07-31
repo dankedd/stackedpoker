@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
+import { RangeExplanationCallout } from '@/components/poker/RangeExplanationCallout'
 
 interface EquityPredictProps {
   step: LessonStep
@@ -59,13 +60,6 @@ export function EquityPredict({ step, onAnswer, disabled = false }: EquityPredic
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      {/* Narrative — what equity means */}
-      {step.narrative && (
-        <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-4">
-          <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>
-        </div>
-      )}
-
       {/* Hand vs range distinction */}
       {villainRange.length > 0 && (
         <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 px-4 py-3">
@@ -115,6 +109,8 @@ export function EquityPredict({ step, onAnswer, disabled = false }: EquityPredic
           )}
         </div>
       )}
+
+      {step.narrative && <RangeExplanationCallout>{step.narrative}</RangeExplanationCallout>}
 
       {/* Prompt */}
       <div className="text-center">

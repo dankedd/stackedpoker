@@ -100,12 +100,23 @@ export function cells(entries: [string, DefendResponseAction][]): DefendResponse
 
 // ── HJ vs UTG (60bb) ───────────────────────────────────────────────────────────
 // Source: Ch.8 "Defending the HJ" (60bb) — 3-bet 5.2% / Call 9.3% / Fold 85.5%.
-// 3-bet 68 combos (5.1%), call 126 combos (9.5%) — close to the book's %.
+// 3-bet 68 combos (5.1%), call 118 combos (8.9%) — close to the book's %.
 // Named anchors: the book's own qualitative rule (pairs+AK 3-bet for value, a
 // couple of suited wheel-Ax as blocker bluffs, suited broadways/connectors and
 // remaining pairs call, everything offsuit outside AQo folds) is the same rule
 // threebetResponseBaselines.ts already used for its 3-bet-response charts —
 // individual hand placement here is a pedagogical reconstruction, not a quote.
+// AUDIT CORRECTION (Module 5 Lesson 2 review): 76s/65s were removed from the
+// call bucket. HJ's total continue here is only 14.5% of combos with four
+// players still behind (UTG+1, LJ, CO, BTN, SB, BB minus the folds already
+// shown) — Ch.8's own repeated theme is that more players behind shrinks the
+// room for speculative, implied-odds-dependent hands in favor of pairs/
+// suited-Ax/broadways. There is no book-cited named-hand list for this exact
+// chart (only the aggregate %), so keeping thin suited connectors in a chart
+// this tight was an unsupported assumption, not a book-grounded inclusion —
+// removed per the "never show a mixed frequency or combo the book doesn't
+// support" rule, and to stop contradicting this lesson's own hj-s3 step
+// (which correctly folds 76s here).
 const HJ_VS_UTG_60BB_ENTRIES: [string, DefendResponseAction][] = [
   ['AA', '3bet'], ['KK', '3bet'], ['QQ', '3bet'], ['JJ', '3bet'], ['TT', '3bet'], ['99', '3bet'],
   ['AKs', '3bet'], ['AKo', '3bet'],
@@ -116,16 +127,21 @@ const HJ_VS_UTG_60BB_ENTRIES: [string, DefendResponseAction][] = [
   ['KJs', 'call'], ['KTs', 'call'],
   ['QJs', 'call'], ['QTs', 'call'],
   ['JTs', 'call'],
-  ['T9s', 'call'], ['98s', 'call'], ['87s', 'call'], ['76s', 'call'], ['65s', 'call'],
+  ['T9s', 'call'], ['98s', 'call'], ['87s', 'call'],
   ['AQo', 'call'],
 ]
 
 // ── CO vs UTG (60bb) ───────────────────────────────────────────────────────────
 // Source: Ch.8 "Defending the CO" (60bb) — 3-bet 5.2% / Call 13.0% / Fold 81.8%.
-// 3-bet 68 combos (5.1%), call 166 combos (12.5%) — close to the book's %.
+// 3-bet 68 combos (5.1%), call 158 combos (11.9%) — close to the book's %.
 // Same value-3-bet/blocker-bluff core as HJ's chart; the widening the book
 // describes shows up in the calling range (more suited broadways/connectors,
 // two offsuit broadways added), not in the 3-bet range.
+// AUDIT CORRECTION (Module 5 Lesson 2 review, applied module-wide to every
+// vs-UTG chart for consistency): 76s/65s removed from the call bucket for the
+// same reason as HJ_VS_UTG_60BB above — no book-cited named-hand list exists
+// for this exact chart, and CO still has three players behind (BTN, SB, BB)
+// facing the tightest, strongest opener in the game.
 const CO_VS_UTG_60BB_ENTRIES: [string, DefendResponseAction][] = [
   ['AA', '3bet'], ['KK', '3bet'], ['QQ', '3bet'], ['JJ', '3bet'], ['TT', '3bet'], ['99', '3bet'],
   ['AKs', '3bet'], ['AKo', '3bet'],
@@ -136,7 +152,7 @@ const CO_VS_UTG_60BB_ENTRIES: [string, DefendResponseAction][] = [
   ['KJs', 'call'], ['KTs', 'call'], ['K9s', 'call'],
   ['QJs', 'call'], ['QTs', 'call'], ['Q9s', 'call'],
   ['JTs', 'call'], ['J9s', 'call'],
-  ['T9s', 'call'], ['98s', 'call'], ['87s', 'call'], ['76s', 'call'], ['65s', 'call'], ['54s', 'call'],
+  ['T9s', 'call'], ['98s', 'call'], ['87s', 'call'], ['54s', 'call'],
   ['AQo', 'call'], ['AJo', 'call'],
   ['KQo', 'call'],
 ]
@@ -174,6 +190,13 @@ const CO_VS_HJ_60BB_ENTRIES: [string, DefendResponseAction][] = [
 // progression (3-bet 7.3%->8.8%->11.7%, call 6.9%->6.5%->5.4% as the opener
 // gets later) to scale the 60bb anchor down for earlier openers — the same
 // technique CO_VS_HJ_60BB above uses, not an invented shape.
+// AUDIT CORRECTION (Module 5 Lesson 2 review, applied to every vs-UTG chart):
+// 76s/65s removed from BTN's call bucket too, for the same reason as
+// HJ_VS_UTG_60BB — no book-cited named-hand list exists for this exact
+// (already-extrapolated) chart, so thin connectors here were an unsupported
+// guess, not a book-grounded inclusion. Aggregate below updated to the
+// chart's real combo-weighted total (5.9% / 14.8% / 79.3%) rather than the
+// original pre-audit extrapolation target.
 const BTN_VS_UTG_60BB_ENTRIES: [string, DefendResponseAction][] = [
   ['AA', '3bet'], ['KK', '3bet'], ['QQ', '3bet'], ['JJ', '3bet'], ['TT', '3bet'], ['99', '3bet'], ['88', '3bet'],
   ['AKs', '3bet'], ['AKo', '3bet'],
@@ -184,7 +207,7 @@ const BTN_VS_UTG_60BB_ENTRIES: [string, DefendResponseAction][] = [
   ['KJs', 'call'], ['KTs', 'call'], ['K9s', 'call'], ['K8s', 'call'],
   ['QJs', 'call'], ['QTs', 'call'], ['Q9s', 'call'],
   ['JTs', 'call'], ['J9s', 'call'], ['J8s', 'call'],
-  ['T9s', 'call'], ['T8s', 'call'], ['98s', 'call'], ['87s', 'call'], ['76s', 'call'], ['65s', 'call'], ['54s', 'call'],
+  ['T9s', 'call'], ['T8s', 'call'], ['98s', 'call'], ['87s', 'call'], ['54s', 'call'],
   ['AQo', 'call'], ['AJo', 'call'], ['ATo', 'call'],
   ['KQo', 'call'], ['KJo', 'call'],
   ['QJo', 'call'],
@@ -364,7 +387,7 @@ export const DEFEND_RESPONSE_CHARTS: Record<string, DefendResponseChart> = {
     villainPosition: 'UTG',
     stackBB: 60,
     source: 'Extrapolated from Ch.8 "Defending the BN" (vs CO, 60bb) using Ch.5\'s stated BN-vs-LJ/HJ/CO widening pattern.',
-    aggregate: { '3bet': 7.2, call: 16.4, fold: 76.4 },
+    aggregate: { '3bet': 5.9, call: 14.8, fold: 79.3 },
     cells: cells(BTN_VS_UTG_60BB_ENTRIES),
   },
   BTN_vs_HJ_60BB: {

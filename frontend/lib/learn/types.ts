@@ -546,6 +546,15 @@ export interface LessonStep {
   /** Optional secondary acceptable categories per hand (full credit, not just partial). */
   range_bucket_acceptable?: Record<string, string[]>
   range_bucket_prompt?: string
+  /** Optional flop, shown above the pool via `PlayingCardMini` — additive/opt-in.
+   *  When present, `range_bucket_pool` entries are expected to be concrete
+   *  combos (e.g. 'JcJd', 'AhQh': rank+suit, rank+suit — 4 characters, distinct
+   *  from the 2-3 character hand-class notation every other range_bucket step
+   *  uses) so each hand can be evaluated against this specific board, and the
+   *  pool renders real suited cards instead of a text chip. Every existing
+   *  range_bucket step (Module 4+, hand-class pools, no board) is unaffected —
+   *  omitting this field keeps the original text-chip rendering exactly as is. */
+  range_bucket_board?: string[]
   /** Module 11, Lesson 5 ("Protect the Checking Range") — additive, opt-in. When present, the sort
    *  is scored by `evalRangeSurgeryProtection` instead of the default `evalRangeBucket`: the SAME
    *  combo-weighted accuracy against `range_bucket_correct`/`range_bucket_acceptable` still drives the

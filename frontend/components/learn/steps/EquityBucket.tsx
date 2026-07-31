@@ -7,6 +7,7 @@ import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 import { orderStepOptions } from '@/lib/learn/interactionSafety'
 import { equityBucket, type EquityBucketId } from '@/lib/learn/flopClassifier'
+import { RangeExplanationCallout } from '@/components/poker/RangeExplanationCallout'
 
 interface EquityBucketProps {
   step: LessonStep
@@ -59,11 +60,6 @@ export function EquityBucket({ step, onAnswer, disabled = false }: EquityBucketP
 
     return (
       <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-        {step.narrative && (
-          <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-4">
-            <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>
-          </div>
-        )}
         {step.board && step.board.length > 0 && (
           <div className="flex items-center justify-center gap-2">
             {step.board.map((c, i) => <PlayingCardMini key={i} card={c} size="md" />)}
@@ -86,6 +82,8 @@ export function EquityBucket({ step, onAnswer, disabled = false }: EquityBucketP
         <div className="flex justify-center gap-3 text-[10px] text-muted-foreground/50">
           {BUCKETS.map((b) => <span key={b.id}>{b.label}: {counts[b.id]}</span>)}
         </div>
+
+        {step.narrative && <RangeExplanationCallout>{step.narrative}</RangeExplanationCallout>}
 
         {step.equity_bucket_prompt && (
           <p className="text-center text-sm font-semibold text-foreground">{step.equity_bucket_prompt}</p>

@@ -8,6 +8,7 @@ import { RangeComparisonLayout } from '@/components/learn/visuals/RangeCompariso
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 import { orderStepOptions } from '@/lib/learn/interactionSafety'
 import { totalBlockedCombos } from '@/lib/learn/combos'
+import { RangeExplanationCallout } from '@/components/poker/RangeExplanationCallout'
 
 interface RangeBoardCollisionProps {
   step: LessonStep
@@ -49,12 +50,6 @@ export function RangeBoardCollision({ step, onAnswer, disabled = false }: RangeB
 
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-      {step.narrative && (
-        <div className="rounded-xl border border-border/30 bg-secondary/20 px-4 py-4">
-          <p className="text-sm text-muted-foreground leading-relaxed">{step.narrative}</p>
-        </div>
-      )}
-
       {board.length > 0 && (
         <div className="flex items-center justify-center gap-2">
           {board.map((c, i) => <PlayingCardMini key={i} card={c} size="md" />)}
@@ -98,6 +93,8 @@ export function RangeBoardCollision({ step, onAnswer, disabled = false }: RangeB
           </div>
         </div>
       )}
+
+      {step.narrative && <RangeExplanationCallout>{step.narrative}</RangeExplanationCallout>}
 
       {step.range_board_collision_prompt && (
         <p className="text-center text-sm font-semibold text-foreground">{step.range_board_collision_prompt}</p>

@@ -94,8 +94,8 @@ describe('BB_DEFENSE_COMPLETE_100BB — source-lock: pinned values from Modern P
     expect(BB_DEFENSE_COMPLETE_100BB.BB_vs_CO.KQs).toEqual({ '3bet': 0.8143, call: 0.1857 })
   })
 
-  it('BB_vs_BTN (Hand Range 82, p.244): 76s is a pure 3-bet — the widest, most aggressive of the five charts', () => {
-    expect(BB_DEFENSE_COMPLETE_100BB.BB_vs_BTN['76s']).toEqual({ '3bet': 1 })
+  it('BB_vs_BTN (Hand Range 82, p.244): 76s is a pure call — corrected from a pixel-misread pure 3-bet; the book\'s own prose (p.243) says this range is "very linear" while "calling with most suited hands... connectors"', () => {
+    expect(BB_DEFENSE_COMPLETE_100BB.BB_vs_BTN['76s']).toEqual({ call: 1 })
   })
 
   it('BB_vs_SB (Hand Range 84, p.246): QJs is a call/3bet mix', () => {
