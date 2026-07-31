@@ -878,8 +878,11 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_ids: ['ip_oop'],
         concept_title: 'In Position vs Out of Position',
-        concept_content:
-          'IN POSITION (IP): you act after your opponent on a given street. OUT OF POSITION (OOP): you act before them. Since postflop action always restarts closest to the Button, BTN is IP against every single other seat at the table.',
+        concept_structured_items: [
+          { term: 'IN POSITION (IP)', description: 'You act after your opponent on a given street. Acting later means you have more information before making a decision.' },
+          { term: 'OUT OF POSITION (OOP)', description: 'You act before your opponent. Your opponent gets to react after seeing your action.' },
+          { term: 'POSTFLOP', description: 'Action always restarts closest to the Button. Because of this, the Button is IP against every single other seat at the table.' },
+        ],
         xp: 3,
       },
       {
@@ -1084,8 +1087,11 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_ids: ['poker_terminology'],
         concept_title: 'Preflop and Postflop, Revisited',
-        concept_content:
-          'Quick refresher, since you’ll see these constantly: PREFLOP is everything before any community cards appear. POSTFLOP is everything after — flop, turn, and river together, treated as one broad phase.',
+        concept_content: 'Quick refresher, since you’ll see these constantly.',
+        concept_structured_items: [
+          { term: 'PREFLOP', description: 'Everything before any community cards appear.' },
+          { term: 'POSTFLOP', description: 'Everything after — flop, turn, and river together, treated as one broad phase.' },
+        ],
         xp: 2,
       },
       {
