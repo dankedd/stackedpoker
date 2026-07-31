@@ -2201,6 +2201,10 @@ export function evaluateStepLocally(
     // omitted/'defend' preserves the original Module 5 behavior unchanged.
     range_reveal:
       step.range_reveal_direction === '3bet' ? resolveThreebetRangeReveal(step) : resolveDefendRangeReveal(step),
+    // Same purely-presentational, never-graded contract as `range_reveal` above — a
+    // direct passthrough of hand-authored step data, never computed here.
+    nut_advantage_reveal: step.nut_advantage_reveal,
+    solver_reveal: step.solver_reveal,
     xp_earned,
     level_before,
     level_after,

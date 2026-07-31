@@ -215,6 +215,15 @@ export interface LessonStep {
    *  renderer — adding a future direction (e.g. facing-a-3-bet for Module 6, 4-betting for Module 7)
    *  means adding one more resolver + one more value here, never a new viewer. */
   range_reveal_direction?: 'defend' | '3bet'
+  /** Post-answer "who owns more of the strongest hands" reveal, rendered via
+   *  `NutAdvantageMeter` after the score — see `NutAdvantageRevealData`. Purely
+   *  presentational (passed through `evaluator.ts` unchanged, from `step` alone),
+   *  same non-grading contract as `range_reveal_direction`/`range_reveal`. */
+  nut_advantage_reveal?: NutAdvantageRevealData
+  /** Post-answer compact "Solver Strategy" reveal (e.g. Check 72% / Bet-small 28%),
+   *  rendered via `RangeCoverageBar` after the score — see `SolverRevealData`. Same
+   *  purely-presentational, non-grading contract as `range_reveal_direction`. */
+  solver_reveal?: SolverRevealData
   /** Paired with `scenario_b`: the question compares two distinct poker states
    *  (two opener positions, two stack depths, two action sequences, ...), so
    *  `decision_spot`/`table_decision` render a ScenarioComparison switcher —
@@ -1117,6 +1126,42 @@ export interface ReasoningStageResult {
   detail?: string
 }
 
+/** Post-answer "who owns more of the strongest hands" reveal — see
+ *  `LessonStep.nut_advantage_reveal`, rendered via `NutAdvantageMeter`
+ *  (`components/learn/visuals/NutAdvantageMeter.tsx`). Always hand-authored on the
+ *  step (never computed from a range engine), so `caption` must say plainly whether
+ *  `advantage` is an exact book/solver figure or an illustrative pedagogical model —
+ *  see `LessonSource`/`SourceEvidenceType` for the same distinction elsewhere. */
+export interface NutAdvantageRevealData {
+  /** -100..100 — positive favors `ipLabel`'s side, negative favors `oopLabel`'s side. */
+  advantage: number
+  ipLabel?: string
+  oopLabel?: string
+  /** One-line sourcing/interpretation caption shown under the meter. */
+  caption?: string
+}
+
+/** One labeled slice of a post-answer "Solver Strategy" reveal — see `SolverRevealData`. */
+export interface SolverRevealBucket {
+  label: string
+  /** 0-100; the set of buckets on one `SolverRevealData` should sum to ~100. */
+  pct: number
+  /** Tailwind background class, e.g. 'bg-emerald-500' — see `RangeCoverageBar`. */
+  color: string
+}
+
+/** Post-answer compact strategy-mix reveal (e.g. "Check 72% / Bet-small 28%") — see
+ *  `LessonStep.solver_reveal`, rendered via `RangeCoverageBar`
+ *  (`components/learn/visuals/NutAdvantageMeter.tsx`). Same hand-authored,
+ *  never-computed contract as `NutAdvantageRevealData`. */
+export interface SolverRevealData {
+  buckets: SolverRevealBucket[]
+  title?: string
+  /** One-line sourcing caption, e.g. "Exact — Modern Poker Theory, Table 100, p.634"
+   *  or "Illustrative, solver-inspired — not a specific solve". */
+  caption?: string
+}
+
 /** Resolved (never learner-facing-computed) full Hero strategy shown after a decision_spot is
  *  answered — see `defendRangeReveal.ts` (Hero facing an open) and `threebetRangeReveal.ts`
  *  (Hero as the 3-bettor), dispatched by `step.range_reveal_direction` in evaluator.ts.
@@ -1168,6 +1213,12 @@ export interface StepResult {
    *  Undefined whenever the step's scenario can't resolve to one, or the canonical data can't
    *  back it (never fabricated to fill the gap). */
   range_reveal?: DecisionSpotRangeReveal
+  /** Post-answer nut-advantage reveal — direct passthrough of `step.nut_advantage_reveal`,
+   *  see `NutAdvantageRevealData`. Same non-grading contract as `range_reveal`. */
+  nut_advantage_reveal?: NutAdvantageRevealData
+  /** Post-answer "Solver Strategy" reveal — direct passthrough of `step.solver_reveal`,
+   *  see `SolverRevealData`. Same non-grading contract as `range_reveal`. */
+  solver_reveal?: SolverRevealData
   // Evaluation pipeline metadata — always present from v2 onwards
   evaluation_source: EvaluationSource
   confidence: EvaluationConfidence

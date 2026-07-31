@@ -120,12 +120,34 @@ export interface MttRfiFoundation {
  * Populated per-lesson as `range_build_multi` steps are authored (see mttRfiCoverage.ts).
  */
 export const MTT_RFI_FOUNDATIONS: Record<string, MttRfiFoundation> = {
-  // Deliberately minimal (per the structural redesign's "do not heavily prefill — this is
-  // reconstruction" design goal): only the pure-raise top pairs, nothing suited/offsuit/marginal.
+  // UTG_RFI_60BB_foundation is the one deliberate exception to the "deliberately minimal"
+  // rule below: Module 3's UTG Mastery lesson (utg-s6) had only 6 pairs prefilled (~13% of
+  // UTG_RFI_60BB's raise-weighted combos), leaving the learner to reconstruct the ENTIRE
+  // range from scratch instead of reasoning about its actual edge. Widened to the pure
+  // (frequency = 1.0, i.e. not `isMixedHand`) hand-classes a player never genuinely debates
+  // opening at UTG — premium-through-small pairs (AA-66), AK/AQ both ways, AJs, the clearly-
+  // strong suited broadways (KQs/KJs/KTs/QJs/QTs/JTs), and KQo — totaling 126 of 204.5
+  // raise-weighted combos (~62%). Every genuinely mixed-frequency hand (ATo, A3s, K8s, K6s,
+  // J9s, 87s, 76s, 65s, 55, 54o, 44) AND every pure-but-thematically-marginal hand a step
+  // below that core (AJo, ATs, A9s-A4s, K9s, Q9s, T9s — weaker suited Aces, marginal suited
+  // broadways/connectors, borderline offsuit broadways) is deliberately left unfilled: that
+  // boundary is the whole point of the exercise. See UTG_RFI_60BB in mttRfiBaselines.ts
+  // (Modern Poker Theory, Ch. 7, Hand Range 139, p.360) for the source chart this was derived
+  // from — nothing here is invented.
   UTG_RFI_60BB_foundation: {
     chartKey: 'UTG_RFI_60BB',
-    hands: { AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise' },
+    hands: {
+      AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise', 88: 'raise', 77: 'raise', 66: 'raise',
+      AKs: 'raise', AQs: 'raise', AJs: 'raise',
+      AKo: 'raise', AQo: 'raise',
+      KQs: 'raise', KJs: 'raise', KTs: 'raise',
+      KQo: 'raise',
+      QJs: 'raise', QTs: 'raise',
+      JTs: 'raise',
+    },
   },
+  // Deliberately minimal (per the structural redesign's "do not heavily prefill — this is
+  // reconstruction" design goal): only the pure-raise top pairs, nothing suited/offsuit/marginal.
   UTG1_RFI_60BB_foundation: {
     chartKey: 'UTG1_RFI_60BB',
     hands: { AA: 'raise', KK: 'raise', QQ: 'raise', JJ: 'raise', TT: 'raise', 99: 'raise' },

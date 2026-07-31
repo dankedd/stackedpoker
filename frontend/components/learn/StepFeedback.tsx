@@ -9,6 +9,7 @@ import { EvaluationFailed } from './EvaluationFailed'
 import { PreviousButton } from './PreviousButton'
 import { AskCoachTrigger } from './coach/AskCoachTrigger'
 import { RangeRevealCard } from './RangeRevealCard'
+import { NutAdvantageMeter, RangeCoverageBar } from './visuals/NutAdvantageMeter'
 
 interface StepFeedbackProps {
   result: StepResult
@@ -266,6 +267,38 @@ export function StepFeedback({ result, onContinue, onRetry, isLast, onPrevious, 
           matchup/stack tier; never shown before this point (the answer + score above),
           so it can never leak the answer ahead of time. */}
       {result.range_reveal && <RangeRevealCard reveal={result.range_reveal} />}
+
+      {/* Nut-advantage reveal — "who owns more of the strongest hands," purely
+          presentational (see LessonStep.nut_advantage_reveal), never before this point. */}
+      {result.nut_advantage_reveal && (
+        <div className="rounded-2xl border border-border/30 bg-secondary/10 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/50 mb-3">
+            Nut Advantage
+          </p>
+          <NutAdvantageMeter
+            advantage={result.nut_advantage_reveal.advantage}
+            ipLabel={result.nut_advantage_reveal.ipLabel}
+            oopLabel={result.nut_advantage_reveal.oopLabel}
+          />
+          {result.nut_advantage_reveal.caption && (
+            <p className="text-[10px] text-muted-foreground/50 mt-2">{result.nut_advantage_reveal.caption}</p>
+          )}
+        </div>
+      )}
+
+      {/* Compact post-prediction "Solver Strategy" reveal (see LessonStep.solver_reveal) —
+          the learner predicted first; this confirms or challenges that prediction. */}
+      {result.solver_reveal && (
+        <div className="rounded-2xl border border-border/30 bg-secondary/10 p-4">
+          <RangeCoverageBar
+            buckets={result.solver_reveal.buckets}
+            title={result.solver_reveal.title ?? 'Solver Strategy'}
+          />
+          {result.solver_reveal.caption && (
+            <p className="text-[10px] text-muted-foreground/50 mt-2">{result.solver_reveal.caption}</p>
+          )}
+        </div>
+      )}
 
       <div className="flex items-center gap-3">
         {onPrevious && <PreviousButton onClick={onPrevious} />}
