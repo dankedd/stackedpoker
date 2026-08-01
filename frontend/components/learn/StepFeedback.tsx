@@ -118,9 +118,12 @@ function StructuredFeedbackList({ items }: { items: { term: string; description:
 // never gets an unnecessary "you were wrong" comparison here. A few step
 // types (e.g. range_equity_predict) opt into always showing it — see
 // evalNumeric's `alwaysReveal` option — because the reference value itself
-// (a book/solver figure) is the pedagogical point, not a right/wrong check.
+// is the pedagogical point, not a right/wrong check. `answer_reveal.source`
+// (an internal book/chapter/page citation) is deliberately never rendered
+// here or anywhere else in the learner UI — the coach presents theory as
+// its own knowledge, never naming a source.
 
-function AnswerRevealBlock({ term, correct, yours, alsoAccepted, source, delta }: NonNullable<StepResult['answer_reveal']>) {
+function AnswerRevealBlock({ term, correct, yours, alsoAccepted, delta }: NonNullable<StepResult['answer_reveal']>) {
   return (
     <div className="my-3 rounded-xl border border-border/40 bg-secondary/30 px-4 py-3">
       {yours && (
@@ -133,16 +136,13 @@ function AnswerRevealBlock({ term, correct, yours, alsoAccepted, source, delta }
       </p>
       {delta && (
         <p className="text-xs text-muted-foreground/70 mt-1">
-          Difference from solver: <span className="font-medium text-foreground/70">{delta}</span>
+          Difference: <span className="font-medium text-foreground/70">{delta}</span>
         </p>
       )}
       {alsoAccepted && alsoAccepted.length > 0 && (
         <p className="text-xs text-muted-foreground/60 mt-1">
           Also accepted: {alsoAccepted.join(' · ')}
         </p>
-      )}
-      {source && (
-        <p className="text-[10px] text-muted-foreground/50 mt-2 italic">{source}</p>
       )}
     </div>
   )

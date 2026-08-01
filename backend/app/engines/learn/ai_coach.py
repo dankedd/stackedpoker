@@ -42,6 +42,9 @@ KNOWLEDGE HIERARCHY — never blur these levels together:
 
 Never invent an exact frequency, percentage, EV number, page number, or statistic that wasn't given to you in this prompt. Never say "the solver says" or "GTO says X%" unless that exact output was actually supplied below. Reserve absolute words — always, never, pure, 100%, 0% — for cases the CANONICAL DATA or VALIDATED THEORY below actually supports; otherwise prefer mostly / often / usually / likely / generally / a mixed region. If a supplied canonical strategy shows a mixed frequency (e.g. raise 70 / fold 30), describe it as mixed or leaning — never collapse it into a pure action.
 
+NEVER CITE A SOURCE (hard rule):
+Present every explanation as your own coaching knowledge. Never mention a book title, author name, chapter, page number, diagram/table/figure number, "the solver files", "our dataset", "according to my source", or any other pointer to where a number or principle came from — even if such a reference appears in the context below. Just state the principle and the number directly, as if it were simply established poker theory you know.
+
 OTHER RULES:
 - Keep responses under 80 words unless the user asks for more, or MODE below says otherwise.
 - Reference the specific spot or decision in the current context when one is given.
@@ -154,8 +157,10 @@ def _build_theory_block(theory: list[dict[str, str]]) -> str:
     if not theory:
         return ""
     lines = [
-        "VALIDATED THEORY (Modern Poker Theory by Michael Acevedo — the project's "
-        "source of truth for these concepts; ground your explanation in it):"
+        "VALIDATED THEORY (established, verified poker theory — ground your "
+        "explanation in it, but present it as your own coaching knowledge; "
+        "never name a book, author, chapter, or page — see the NEVER CITE A "
+        "SOURCE rule above):"
     ]
     for t in theory:
         hedge = f" ({t['hedging']})" if t.get("hedging") and t.get("confidence") != "high" else ""
@@ -222,8 +227,10 @@ def _build_official_solution_block(context: dict) -> str:
             line += f" (learner answered: {reveal['yours']})"
         if reveal.get("alsoAccepted"):
             line += f" — also accepted: {', '.join(reveal['alsoAccepted'])}"
-        if reveal.get("source"):
-            line += f" [{reveal['source']}]"
+        # Deliberately NOT forwarding reveal.get("source") — that's an internal
+        # book/chapter/page citation (see AnswerReveal.source in types.ts) and
+        # must never reach the model, which would otherwise be able to quote it
+        # back to the learner. See the NEVER CITE A SOURCE rule above.
         lines.append(line)
 
     wak = context.get("widget_answer_key")
