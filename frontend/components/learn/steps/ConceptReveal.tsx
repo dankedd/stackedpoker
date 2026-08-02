@@ -9,6 +9,7 @@ import { EquityBar } from '@/components/learn/visuals/EquityBar'
 import { FoldFreqBar } from '@/components/learn/visuals/PressureGauge'
 import { NutAdvantageMeter } from '@/components/learn/visuals/NutAdvantageMeter'
 import { PreflopTable } from '@/components/learn/visuals/PreflopTable'
+import { PostflopScenarioCard } from '@/components/learn/visuals/PostflopScenarioCard'
 import { ConvergenceIllustration } from '@/components/learn/visuals/ConceptIllustration'
 
 // ── Visual type renderers ─────────────────────────────────────────────────────
@@ -168,6 +169,11 @@ function resolveVisual(step: LessonStep, conceptId?: string) {
         actionBeforeHero={step.action_before_hero}
       />
     )
+  }
+  // Postflop scenes (a board is set) never get the preflop seat table above —
+  // this is the postflop equivalent, built from the same poker-context fields.
+  if (step.hero_position && step.board?.length) {
+    return <PostflopScenarioCard step={step} />
   }
   if (visualType === 'equity_bar') return <EquityBarVisual conceptId={conceptId} examples={step.equity_bar_examples} />
   if (visualType === 'mdf_bar' || conceptId === 'mdf' || conceptId === 'alpha') return <MdfVisual />

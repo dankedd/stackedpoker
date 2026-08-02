@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { orderStepOptions, isPokerActionSet } from '@/lib/learn/interactionSafety'
 import { PreflopTable } from '@/components/learn/visuals/PreflopTable'
+import { PostflopScenarioCard } from '@/components/learn/visuals/PostflopScenarioCard'
 import { ScenarioComparison } from '@/components/learn/visuals/ScenarioComparison'
 import { ScenarioSideBySide } from '@/components/learn/visuals/ScenarioSideBySide'
 import { BoardScenarioComparison, isBoardOnlyScenarioPair } from '@/components/learn/visuals/BoardScenarioComparison'
@@ -140,6 +141,12 @@ export function DecisionSpot({ step, onAnswer, disabled = false }: DecisionSpotP
           anteBb={step.ante_bb}
           actionBeforeHero={step.action_before_hero}
         />
+      )}
+
+      {/* Postflop equivalent of the table above — a board is set, so this is a
+          flop/turn/river spot, never the preflop seat table. */}
+      {!hasFullScenarioComparison && step.hero_position && !!step.board?.length && (
+        <PostflopScenarioCard step={step} />
       )}
 
       {/* Narrative / context */}
