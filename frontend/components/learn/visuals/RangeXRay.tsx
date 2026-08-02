@@ -20,6 +20,11 @@ interface RangeXRayProps {
   grid?: { label: string; range: string[]; frequencyMap?: Record<string, number> }
   board?: string[]
   className?: string
+  /** Fired with a stable `${entry.label}:${bucket}` key every time a bucket
+   *  segment is tapped (including toggling one back off) — lets a parent step
+   *  track how many distinct segments the learner has actually inspected,
+   *  since this component owns the tap/highlight interaction itself. */
+  onBucketInspected?: (key: string) => void
 }
 
 /** Illustrative, non-numeric mapping from a VERIFIED equity bucket (this component's own
@@ -56,7 +61,7 @@ function noteFor(entry: RangeXRayEntry, bucket: Bucket): string | undefined {
  * (see BUCKET_CATEGORY_HINT) — illustrative pattern recognition, not exact
  * per-hand equity-bucket membership.
  */
-export function RangeXRay({ entries, grid, board, className }: RangeXRayProps) {
+export function RangeXRay({ entries, grid, board, className, onBucketInspected }: RangeXRayProps) {
   const [activeBucket, setActiveBucket] = useState<Bucket | null>(null)
 
   const categoryMap = useMemo(() => {
@@ -81,7 +86,10 @@ export function RangeXRay({ entries, grid, board, className }: RangeXRayProps) {
               {hasStrong && (
                 <button
                   type="button"
-                  onClick={() => setActiveBucket((b) => (b === 'strong' ? null : 'strong'))}
+                  onClick={() => {
+                    setActiveBucket((b) => (b === 'strong' ? null : 'strong'))
+                    onBucketInspected?.(`${entry.label}:strong`)
+                  }}
                   title={`Strong: ${strong}%`}
                   style={{ width: `${strong}%` }}
                   className={cn(
@@ -99,7 +107,10 @@ export function RangeXRay({ entries, grid, board, className }: RangeXRayProps) {
                   <button
                     key={bucketKey}
                     type="button"
-                    onClick={() => setActiveBucket((b) => (b === bucketKey ? null : bucketKey))}
+                    onClick={() => {
+                      setActiveBucket((b) => (b === bucketKey ? null : bucketKey))
+                      onBucketInspected?.(`${entry.label}:${bucketKey}`)
+                    }}
                     title={`${meta.label}${noteFor(entry, bucketKey) ? `: ${noteFor(entry, bucketKey)}` : ' (exact % not stated by source)'}`}
                     style={{
                       width: `${bandWidth}%`,
