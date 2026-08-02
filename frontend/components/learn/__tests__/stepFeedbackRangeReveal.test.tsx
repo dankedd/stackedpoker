@@ -162,6 +162,49 @@ describe('StepFeedback — action_slice(3bet) reveal (Module 4 3-betting range) 
   })
 })
 
+describe('StepFeedback — secondaryRange (opener/Villain panel) never gets the ring highlight', () => {
+  it('rings the hand only in the primary (Hero) panel, never in the secondary (Villain) panel', () => {
+    const result = baseResult({
+      range_reveal: fixtureReveal({
+        secondaryRange: {
+          label: 'UTG OPENING RANGE',
+          range: ['AA', 'KK'],
+          strategies: { AA: { open: 1 }, KK: { open: 1 } },
+          strategySemantics: COMPLETE_STRATEGY,
+        },
+      }),
+    })
+    const html = renderToStaticMarkup(
+      <StepFeedback result={result} onContinue={noop} onRetry={noop} isLast={false} />,
+    )
+    // Two full 13x13 grids render (338 cells) but only one hand, in one grid, is ringed.
+    expect((html.match(/role="tooltip"/g) || []).length).toBe(338)
+    expect((html.match(/ring-2 ring-white/g) || []).length).toBe(1)
+  })
+
+  it('still rings correctly when the discussed hand is entirely absent from Villain’s range (e.g. 76s vs a tight opener)', () => {
+    const result = baseResult({
+      range_reveal: fixtureReveal({
+        highlightHand: '76s',
+        range: ['76s'],
+        strategies: { '76s': { call: 1 } },
+        secondaryRange: {
+          label: 'UTG OPENING RANGE',
+          range: ['AA', 'KK'], // does not contain 76s
+          strategies: { AA: { open: 1 }, KK: { open: 1 } },
+          strategySemantics: COMPLETE_STRATEGY,
+        },
+      }),
+    })
+    const html = renderToStaticMarkup(
+      <StepFeedback result={result} onContinue={noop} onRetry={noop} isLast={false} />,
+    )
+    // No ring anywhere in the Villain panel — an absent hand must never render a
+    // circled empty cell there, since only the Hero panel is ever ringed at all.
+    expect((html.match(/ring-2 ring-white/g) || []).length).toBe(1)
+  })
+})
+
 describe('StepFeedback — range_reveal never changes XP rendering', () => {
   it('shows the identical XP text whether or not range_reveal is present', () => {
     const withReveal = renderToStaticMarkup(

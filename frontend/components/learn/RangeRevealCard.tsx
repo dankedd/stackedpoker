@@ -15,7 +15,7 @@ interface RangeGridPanelProps {
   range: string[]
   strategies: RangeStrategyMap
   strategySemantics: RangeSemantics
-  highlightHand: string
+  highlightHand?: string
 }
 
 /** One labeled grid — the primary reveal and its optional `secondaryRange` both
@@ -56,9 +56,11 @@ function RangeGridPanel({ label, subtitle, range, strategies, strategySemantics,
  *
  *  When `reveal.secondaryRange` is present (e.g. the opener's own opening range attached
  *  alongside Hero's defend/3-bet response — see `evaluator.ts`'s `attachOpenerPanel`), the two
- *  panels sit side-by-side on desktop and stack vertically on mobile (`sm:grid-cols-2`),
- *  sharing the same highlighted hand so the learner reads them as one comparison, not two
- *  unrelated charts. */
+ *  panels sit side-by-side on desktop and stack vertically on mobile (`sm:grid-cols-2`). Only
+ *  the primary (Hero) panel gets the ring highlight — `secondaryRange` is always Villain's own
+ *  range, shown purely as reference for what Hero is playing against, so circling the same hand
+ *  there would wrongly imply Villain's hand is what's in question (and renders a nonsensical
+ *  empty-cell ring whenever that hand isn't even in Villain's range at all). */
 export function RangeRevealCard({ reveal }: RangeRevealCardProps) {
   return (
     <div className="rounded-2xl border border-border/40 bg-card/60 p-5">
@@ -77,7 +79,6 @@ export function RangeRevealCard({ reveal }: RangeRevealCardProps) {
             range={reveal.secondaryRange.range}
             strategies={reveal.secondaryRange.strategies}
             strategySemantics={reveal.secondaryRange.strategySemantics}
-            highlightHand={reveal.highlightHand}
           />
         )}
       </div>

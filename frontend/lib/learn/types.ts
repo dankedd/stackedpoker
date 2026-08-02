@@ -1217,8 +1217,8 @@ export interface DecisionSpotRangeReveal {
    *  own opening range next to Hero's 3-bet/defend response (see
    *  `openerRangeReveal.ts`'s `resolveOpenerRangePanel`, attached automatically
    *  by `evaluator.ts` for `'defend'`/`'3bet'` reveals whenever it resolves).
-   *  Shares this reveal's `highlightHand` — it's the same Hero hand shown
-   *  against a second range, not a second hand. */
+   *  This is always Villain's range, shown for reference only — `RangeRevealCard`
+   *  never rings a hand here, only on the primary (Hero) panel. */
   secondaryRange?: {
     label: string
     range: string[]
