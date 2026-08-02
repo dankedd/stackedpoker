@@ -7,6 +7,7 @@ import { orderStepOptions, isPokerActionSet } from '@/lib/learn/interactionSafet
 import { PreflopTable } from '@/components/learn/visuals/PreflopTable'
 import { ScenarioComparison } from '@/components/learn/visuals/ScenarioComparison'
 import { ScenarioSideBySide } from '@/components/learn/visuals/ScenarioSideBySide'
+import { BoardScenarioComparison, isBoardOnlyScenarioPair } from '@/components/learn/visuals/BoardScenarioComparison'
 
 interface DecisionSpotProps {
   step: LessonStep
@@ -90,14 +91,28 @@ export function DecisionSpot({ step, onAnswer, disabled = false }: DecisionSpotP
           A step can opt into `scenario_layout: 'side_by_side'` instead, mounting
           BOTH tables at once via ScenarioSideBySide — for a question whose point
           is seeing the two states simultaneously, where toggling would hide the
-          exact comparison being tested. Default (omitted/'switch') is unchanged. */}
+          exact comparison being tested. When the two scenarios share the exact
+          same preflop situation and differ ONLY in `board` (see
+          isBoardOnlyScenarioPair), BoardScenarioComparison replaces
+          ScenarioSideBySide's two full tables with ONE shared table plus two
+          compact board cards — the comparison is about board texture, not two
+          different hand histories, so the UI shouldn't imply otherwise. Default
+          (omitted/'switch') is unchanged. */}
       {hasFullScenarioComparison && (
         step.scenario_layout === 'side_by_side' ? (
-          <ScenarioSideBySide
-            scenarioA={step.scenario_a!}
-            scenarioB={step.scenario_b!}
-            comparisonContext={step.scenario_comparison_context}
-          />
+          isBoardOnlyScenarioPair(step.scenario_a!, step.scenario_b!) ? (
+            <BoardScenarioComparison
+              scenarioA={step.scenario_a!}
+              scenarioB={step.scenario_b!}
+              comparisonContext={step.scenario_comparison_context}
+            />
+          ) : (
+            <ScenarioSideBySide
+              scenarioA={step.scenario_a!}
+              scenarioB={step.scenario_b!}
+              comparisonContext={step.scenario_comparison_context}
+            />
+          )
         ) : (
           <ScenarioComparison
             scenarioA={step.scenario_a!}
