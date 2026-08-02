@@ -963,16 +963,22 @@
       }
     },
     "the-flop-has-a-language": {
-      "xp_reward": 90,
+      "xp_reward": 165,
       "steps": {
         "fl1-s1": 2,
         "fl1-s2": 6,
-        "fl1-s3": 2,
+        "fl1-s3": 3,
         "fl1-s4": 6,
         "fl1-s5": 2,
-        "fl1-s6": 3,
+        "fl1-s6": 6,
         "fl1-s7": 6,
-        "fl1-s8": 2
+        "fl1-s8": 8,
+        "fl1-s9": 8,
+        "fl1-s10": 6,
+        "fl1-s11": 4,
+        "fl1-s12": 8,
+        "fl1-s13": 2,
+        "fl1-s14": 2
       }
     },
     "board-structure": {
