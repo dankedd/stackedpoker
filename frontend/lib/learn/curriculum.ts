@@ -12378,7 +12378,7 @@ export const LESSONS: Lesson[] = [
         id: 'hfc-s4',
         type: 'decision_spot',
         concept_ids: ['cbet_frequency', 'range_advantage'],
-        narrative: 'What is actually driving that near-range betting frequency on A93r?',
+        narrative: 'What is actually driving BTN\'s aggressive betting frequency on A93r?',
         options: [
           {
             id: 'comprehensive', label: 'BTN\'s range is stronger here, and BB has limited ability to raise back', quality: 'perfect',
@@ -12400,7 +12400,7 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['cbet_frequency'],
         narrative:
-          'Same preflop action and positions. Board: K♠Q♠T♦ (two-tone, highly connected, also technically "high-card"). Does this behave the same way as the near-range-bet Ace-high board?',
+          'Same preflop action and positions. Board: K♠Q♠T♦ (two-tone, highly connected, also technically "high-card"). Does this behave the same way as the Ace-high board from before?',
         table_size: 6,
         hero_position: 'BTN',
         villain_position: 'BB',
@@ -12694,7 +12694,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['cbet_sizing'],
         concept_title: 'Why Small Sizing Supports High Frequency',
         concept_content:
-          'A small bet is cheap to fire with almost an entire range. It protects a wide, merged betting range at low risk, so Hero can bet nearly everything — value and thin bluffs alike — without over-committing. That is exactly why the near-range-bet boards from Lesson 4 pair naturally with small sizing, not big.',
+          'A small bet is cheap to fire with almost an entire range. It protects a wide, merged betting range at low risk, so Hero can bet nearly everything — value and thin bluffs alike — without over-committing. That is exactly why boards where the raiser\'s range advantage is at its most lopsided pair naturally with small sizing, not big.',
         xp: 8,
       },
       {
@@ -12769,7 +12769,7 @@ export const LESSONS: Lesson[] = [
         id: 'sbb-s5',
         type: 'cbet_frequency_size',
         concept_ids: ['cbet_frequency', 'cbet_sizing'],
-        narrative: 'Cash game, 100bb effective. BTN opens, BB calls, BTN is in position. Board: A♠9♦3♣ — the near-range-bet board from Lesson 4.',
+        narrative: 'Cash game, 100bb effective. BTN opens, BB calls, BTN is in position. Board: A♠9♦3♣. Consider how this board interacts with both ranges before choosing the aggregate betting frequency and primary sizing.',
         table_size: 6,
         hero_position: 'BTN',
         villain_position: 'BB',
@@ -12916,7 +12916,7 @@ export const LESSONS: Lesson[] = [
         id: 'wdm-s3',
         type: 'range_bucket',
         concept_ids: ['cbet_hand_selection', 'range_protection'],
-        narrative: 'Cash game, 100bb effective. BTN opens 2.3bb, BB calls. BTN is in position. Board: K♠Q♠T♦ — the mixed/medium-frequency board from Lesson 4.',
+        narrative: 'Cash game, 100bb effective. BTN opens 2.3bb, BB calls. BTN is in position. Board: K♠Q♠T♦ — the two-tone, highly connected board from Lesson 4.',
         table_size: 6,
         hero_position: 'BTN',
         villain_position: 'BB',
