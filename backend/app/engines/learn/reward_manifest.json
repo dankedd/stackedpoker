@@ -982,17 +982,24 @@
       }
     },
     "board-structure": {
-      "xp_reward": 95,
+      "xp_reward": 170,
       "steps": {
         "fl2-s1": 2,
-        "fl2-s2": 10,
-        "fl2-s3": 2,
-        "fl2-s4": 6,
+        "fl2-s2": 3,
+        "fl2-s3": 10,
+        "fl2-s4": 2,
         "fl2-s5": 6,
-        "fl2-s6": 8,
+        "fl2-s6": 6,
         "fl2-s7": 8,
-        "fl2-s8": 3,
-        "fl2-s9": 10
+        "fl2-s8": 6,
+        "fl2-s9": 6,
+        "fl2-s10": 8,
+        "fl2-s11": 8,
+        "fl2-s12": 8,
+        "fl2-s13": 3,
+        "fl2-s14": 8,
+        "fl2-s15": 12,
+        "fl2-s16": 2
       }
     },
     "read-the-suits": {
