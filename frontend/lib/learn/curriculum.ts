@@ -5424,18 +5424,39 @@ export const LESSONS: Lesson[] = [
       {
         id: 'pce-s6',
         type: 'decision_spot',
-        concept_ids: ['position_three_bet'],
+        concept_ids: ['position_three_bet', 'players_behind_aggression'],
         narrative:
-          'HJ opens. Scenario A: Hero is in the CO. Scenario B: Hero is in the HJ... no — Hero is in the CO facing an HJ open in one case, and Hero is in the HJ facing an LJ (UTG) open in the other, at a 9-handed table. In both, ask: who is still alive behind Hero?',
+          'HJ opens in both scenarios below, at the same 9-handed table. The only thing that changes is Hero\'s own seat — and, with it, how many players are still left to act after Hero.',
+        decision_spot_question: 'Which seat can profitably 3-bet more aggressively?',
         table_size: 9,
+        hero_position: 'CO',
+        villain_position: 'HJ',
+        action_before_hero: ['UTG folds', 'UTG+1 folds', 'UTG+2 folds', 'LJ folds', 'HJ raises to 2.3bb'],
+        scenario_a: {
+          label: 'Hero on the CO',
+          short_description: 'CO vs HJ Open',
+          hero_position: 'CO',
+          villain_position: 'HJ',
+          table_size: 9,
+          action_before_hero: ['UTG folds', 'UTG+1 folds', 'UTG+2 folds', 'LJ folds', 'HJ raises to 2.3bb'],
+        },
+        scenario_b: {
+          label: 'Hero on the BTN',
+          short_description: 'BTN vs HJ Open',
+          hero_position: 'BTN',
+          villain_position: 'HJ',
+          table_size: 9,
+          action_before_hero: ['UTG folds', 'UTG+1 folds', 'UTG+2 folds', 'LJ folds', 'HJ raises to 2.3bb', 'CO folds'],
+        },
+        scenario_comparison_context: 'Same opener (HJ), same table. Only Hero\'s seat — and how many players are still left to act — changes.',
         options: [
           {
-            id: 'depends', label: 'It depends on the seat — count who is actually left to act', quality: 'perfect',
-            feedback: "Correct. Hero's own seat is not enough information by itself — what matters is how many live players remain between Hero and the button. Two different Hero seats can have very different numbers of players still able to wake up behind them.",
+            id: 'co', label: 'CO can 3-bet more aggressively', quality: 'perfect',
+            feedback: "Correct. From the CO, three players — BTN, SB and BB — are still left to act behind Hero, all live to call, cold 3-bet, or wake up with a premium. From the BTN, only the two blinds remain. The more players still left to act, the less attractive a flat call becomes (it invites a multiway pot or a squeeze from one of those live players) and the more attractive a 3-bet becomes instead — it applies immediate pressure and narrows the field before those extra players get a chance to enter. Since the opener (HJ) is identical in both scenarios, this difference comes purely from players left to act, not from facing a stronger or weaker range.",
           },
           {
-            id: 'always_same', label: 'It\'s always the same — position is position', quality: 'mistake',
-            feedback: 'The number of players still left to act changes with the exact seats involved — it has to be counted directly in each spot, not assumed.',
+            id: 'btn', label: 'BTN can 3-bet more aggressively', quality: 'mistake',
+            feedback: "It's the reverse. Hero on the BTN only has the two blinds left to act, while Hero on the CO still has BTN, SB and BB all live behind — three players who could call, squeeze, or wake up with a premium. More players left to act makes calling riskier and a 3-bet comparatively more attractive, which favors the CO here, not the BTN.",
           },
         ],
         xp: 8,
@@ -6041,7 +6062,7 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['opener_range_strength', 'squeeze'],
         narrative:
-          'Scenario A: a tight UTG open, then a strong-looking MP call. Scenario B: a wide CO open, then a loose BTN call. Should Hero attack these two squeeze spots identically?',
+          'Scenario A: a tight UTG open, then a strong-looking HJ call. Scenario B: a wide CO open, then a loose BTN call. Should Hero attack these two squeeze spots identically?',
         table_size: 6,
         options: [
           {

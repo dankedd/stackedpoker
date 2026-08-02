@@ -134,7 +134,7 @@ describe('"Position and Equity Realization" — every scenario-comparison step i
   )
   if (!lesson) throw new Error('Fixture lesson "position-and-equity-realization" not found — did curriculum content change?')
 
-  const comparisonStepIds = ['pce-s1', 'pce-s7a', 'pce-s7b', 'pce-s7c', 'pce-s7d']
+  const comparisonStepIds = ['pce-s1', 'pce-s6', 'pce-s7a', 'pce-s7b', 'pce-s7c', 'pce-s7d']
 
   it('has exactly the expected set of comparison steps', () => {
     const actual = lesson.steps.filter((s) => s.scenario_a && s.scenario_b).map((s) => s.id)
@@ -177,9 +177,19 @@ describe('"Position and Equity Realization" — every scenario-comparison step i
     expect(step.scenario_a!.effective_stack_bb).toBe(step.scenario_b!.effective_stack_bb)
   })
 
-  it('pce-s6 (ambiguous "LJ (UTG)" narrative) was intentionally left unmigrated — flagged for content review, not auto-built', () => {
-    const step = lesson.steps.find((s) => s.id === 'pce-s6')
-    expect(step?.scenario_a).toBeUndefined()
-    expect(step?.scenario_b).toBeUndefined()
+  it('pce-s6 holds the opener fixed and varies only Hero\'s seat (CO vs HJ open → BTN vs HJ open) — same shape as pce-s1, fixing the old ambiguous "LJ (UTG)" narrative', () => {
+    const step = lesson.steps.find((s) => s.id === 'pce-s6')!
+    expect(step.scenario_a!.hero_position).toBe('CO')
+    expect(step.scenario_a!.villain_position).toBe('HJ')
+    expect(step.scenario_b!.hero_position).toBe('BTN')
+    expect(step.scenario_b!.villain_position).toBe('HJ')
+    // Every seat named across both scenarios is a real, distinct 9-max position —
+    // no leftover "LJ (UTG)"-style conflation.
+    expect(step.scenario_a!.action_before_hero).toEqual([
+      'UTG folds', 'UTG+1 folds', 'UTG+2 folds', 'LJ folds', 'HJ raises to 2.3bb',
+    ])
+    expect(step.scenario_b!.action_before_hero).toEqual([
+      'UTG folds', 'UTG+1 folds', 'UTG+2 folds', 'LJ folds', 'HJ raises to 2.3bb', 'CO folds',
+    ])
   })
 })
