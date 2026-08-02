@@ -167,12 +167,12 @@ describe('"Position and Equity Realization" — every scenario-comparison step i
     }
   })
 
-  it('pce-s1 varies Hero\'s seat AND the opener (BTN vs CO open → SB vs BTN open, same hand)', () => {
+  it('pce-s1 holds the opener fixed and varies only Hero\'s seat (BTN vs CO open → SB vs CO open, same hand)', () => {
     const step = lesson.steps.find((s) => s.id === 'pce-s1')!
     expect(step.scenario_a!.hero_position).toBe('BTN')
     expect(step.scenario_a!.villain_position).toBe('CO')
     expect(step.scenario_b!.hero_position).toBe('SB')
-    expect(step.scenario_b!.villain_position).toBe('BTN')
+    expect(step.scenario_b!.villain_position).toBe('CO')
     expect(step.scenario_a!.hero_hand).toEqual(step.scenario_b!.hero_hand)
     expect(step.scenario_a!.effective_stack_bb).toBe(step.scenario_b!.effective_stack_bb)
   })
