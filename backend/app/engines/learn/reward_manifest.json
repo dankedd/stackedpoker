@@ -1206,7 +1206,7 @@
       }
     },
     "small-bet-or-big-bet": {
-      "xp_reward": 254,
+      "xp_reward": 448,
       "steps": {
         "sbb-s1": 8,
         "sbb-s2": 8,
@@ -1217,7 +1217,17 @@
         "sbb-s6": 20,
         "sbb-s7": 12,
         "sbb-s8": 8,
-        "sbb-s8b": 8
+        "sbb-s8b": 8,
+        "sbb-s9": 16,
+        "sbb-s10": 16,
+        "sbb-s11": 16,
+        "sbb-s12": 18,
+        "sbb-s13": 20,
+        "sbb-s14": 20,
+        "sbb-s15": 20,
+        "sbb-s16": 22,
+        "sbb-s17": 22,
+        "sbb-s18": 24
       }
     },
     "what-does-my-hand-do": {
