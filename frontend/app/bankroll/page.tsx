@@ -5,8 +5,12 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/Navbar";
 import { BankrollStatCard } from "@/components/bankroll/BankrollStatCard";
+import { BankrollChart } from "@/components/bankroll/BankrollChart";
 import { formatCurrency, formatPercent } from "@/lib/utils";
+import { buildBankrollSeries } from "@/lib/bankroll/series";
 import type {
+  BankrollLedgerSession,
+  BankrollLedgerTransaction,
   BankrollOverview,
   RecentBankrollSession,
   SettledBankrollSession,
@@ -22,9 +26,15 @@ export default async function BankrollPage() {
     { data: settingsRow },
     { data: recentSessionRow },
     { data: settledSessionRows },
+    { data: ledgerSessionRows },
+    { data: ledgerTransactionRows },
   ] = await Promise.all([
     supabase.rpc("bankroll_overview", { p_user_id: user.id }).single(),
-    supabase.from("bankroll_settings").select("preferred_currency").eq("user_id", user.id).maybeSingle(),
+    supabase
+      .from("bankroll_settings")
+      .select("preferred_currency, starting_bankroll, starting_at")
+      .eq("user_id", user.id)
+      .maybeSingle(),
     supabase
       .from("bankroll_sessions")
       .select("stakes, variant, site, session_type, started_at")
@@ -37,13 +47,35 @@ export default async function BankrollPage() {
       .select("buy_in_amount, cash_out_amount")
       .eq("user_id", user.id)
       .not("cash_out_amount", "is", null),
+    supabase
+      .from("bankroll_sessions")
+      .select("started_at, buy_in_amount, cash_out_amount, ev_amount")
+      .eq("user_id", user.id)
+      .order("started_at", { ascending: true })
+      .limit(2000),
+    supabase
+      .from("bankroll_transactions")
+      .select("occurred_at, type, amount")
+      .eq("user_id", user.id)
+      .order("occurred_at", { ascending: true })
+      .limit(2000),
   ]);
 
   const overview = overviewRow as unknown as BankrollOverview | null;
   const recentSession = recentSessionRow as unknown as RecentBankrollSession | null;
   const settledSessions = (settledSessionRows ?? []) as unknown as SettledBankrollSession[];
+  const ledgerSessions = (ledgerSessionRows ?? []) as unknown as BankrollLedgerSession[];
+  const ledgerTransactions = (ledgerTransactionRows ?? []) as unknown as BankrollLedgerTransaction[];
 
   const currency = settingsRow?.preferred_currency ?? "USD";
+  const startingAt = settingsRow?.starting_at ?? user.created_at;
+
+  const { series: bankrollSeries, hasEvData } = buildBankrollSeries(
+    settingsRow?.starting_bankroll ?? 0,
+    startingAt,
+    ledgerSessions,
+    ledgerTransactions
+  );
 
   const currentBankroll = overview?.current_bankroll ?? 0;
   const startingBankroll = overview?.starting_bankroll ?? 0;
@@ -155,6 +187,11 @@ export default async function BankrollPage() {
             caption="200 buy-in rule · Modern Poker Theory p.264"
             delayMs={280}
           />
+        </div>
+
+        {/* ── Bankroll chart ── */}
+        <div className="mt-8">
+          <BankrollChart data={bankrollSeries} currency={currency} hasEvData={hasEvData} />
         </div>
 
       </main>

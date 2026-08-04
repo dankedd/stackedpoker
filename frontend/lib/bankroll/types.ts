@@ -28,3 +28,23 @@ export interface SettledBankrollSession {
   buy_in_amount: number;
   cash_out_amount: number | null;
 }
+
+export interface BankrollLedgerSession {
+  started_at: string;
+  buy_in_amount: number;
+  cash_out_amount: number | null;
+  ev_amount: number | null;
+}
+
+export interface BankrollLedgerTransaction {
+  occurred_at: string;
+  type: "deposit" | "withdrawal";
+  amount: number;
+}
+
+/** One plotted point: the running bankroll (and EV-adjusted bankroll) as of `date`. */
+export interface BankrollChartPoint {
+  date: string;
+  bankroll: number;
+  evBankroll: number;
+}
