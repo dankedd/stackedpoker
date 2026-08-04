@@ -5368,11 +5368,16 @@ export const LESSONS: Lesson[] = [
         players_behind: 2,
         action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb'],
         hero_hand: ['Ks', 'Qs'],
-        // No BTN-as-defender chart exists at 100bb, so show what IS real: CO's own
-        // opening range, KQs highlighted — grounds "why calling is fine here" in the
-        // actual range Hero would be calling, and sets up a direct contrast with
-        // pce-s5b (same opener range, Hero now OOP in the SB).
-        range_reveal_direction: 'opener',
+        // This lesson asks Hero to decide call vs 3-bet vs fold, so the reveal must
+        // show HERO's own response, not CO's opening range (a prior version showed
+        // 'opener' here, which mismatched the text/question — see the CLAUDE.md-driven
+        // audit that caught this). No BTN-as-defender COMPLETE chart exists at 100bb,
+        // but a real 3-bet-only chart does (THREEBET_DEEP.BTN_vs_CO has KQs at a 50%
+        // 3-bet frequency) — directly corroborating this step's own "Call=perfect,
+        // 3-Bet=good (a fine, mixable play)" answer key. CO's opening range is still
+        // attached automatically as a secondary panel (attachOpenerPanel in
+        // evaluator.ts) for context.
+        range_reveal_direction: '3bet',
         options: [
           {
             id: 'call', label: 'Call', quality: 'perfect',
@@ -5401,10 +5406,12 @@ export const LESSONS: Lesson[] = [
         players_behind: 1,
         action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN folds'],
         hero_hand: ['Ks', 'Qs'],
-        // Same reasoning as pce-s5a: no SB-as-3-bettor-vs-CO chart exists, so show
-        // CO's real opening range — the same panel as pce-s5a, letting the learner
-        // directly compare "same opener range, different Hero position" side by side.
-        range_reveal_direction: 'opener',
+        // No reveal here, deliberately: unlike pce-s5a (BTN_vs_CO has a real 3-bet-only
+        // chart), 'SB_vs_CO' isn't a covered ThreebetMatchup at all, and this lesson
+        // needs Hero's OWN call/3bet/fold response, not CO's opening range — showing
+        // CO's opening range here (as an earlier version did, via 'opener') repeats
+        // the exact text/visualization mismatch this step is meant to avoid. Text-only
+        // feedback below still teaches the concept; never fabricate a chart to fill this.
         options: [
           {
             id: '3bet', label: '3-Bet', quality: 'perfect',

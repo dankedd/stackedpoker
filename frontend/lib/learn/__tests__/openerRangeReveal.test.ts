@@ -138,14 +138,21 @@ describe('evaluateStepLocally — opener direction dispatch + secondaryRange att
     expect(result.range_reveal!.secondaryRange!.label).toBe('BTN OPENING RANGE')
   })
 
-  it('pce-s5a/pce-s5b share the identical opener-range panel (same CO opener, different Hero seat)', () => {
-    const a = evaluateStepLocally(findStep('pce-s5a'), 'call', 0)
-    const b = evaluateStepLocally(findStep('pce-s5b'), '3bet', 0)
-    expect(a.range_reveal!.label).toBe('CO OPENING RANGE')
-    expect(b.range_reveal!.label).toBe('CO OPENING RANGE')
-    expect(a.range_reveal!.strategies).toEqual(b.range_reveal!.strategies)
-    expect(a.range_reveal!.highlightHand).toBe('KQs')
-    expect(b.range_reveal!.highlightHand).toBe('KQs')
+  it('pce-s5a shows Hero\'s OWN 3-bet response (real THREEBET_DEEP.BTN_vs_CO data), not just CO\'s opening range, with CO\'s opening range attached as context', () => {
+    const step = findStep('pce-s5a')
+    expect(step.range_reveal_direction).toBe('3bet')
+    const result = evaluateStepLocally(step, 'call', 0)
+    expect(result.range_reveal!.label).toBe('BTN 3-BET RANGE vs CO OPEN')
+    expect(result.range_reveal!.highlightHand).toBe('KQs')
+    expect(result.range_reveal!.strategies.KQs).toEqual({ '3bet': 0.5, other: 0.5 })
+    expect(result.range_reveal!.secondaryRange!.label).toBe('CO OPENING RANGE')
+  })
+
+  it('pce-s5b has no reveal at all — SB_vs_CO has no real 3-bet chart, and CO\'s opening range alone would repeat the text/visualization mismatch this step was fixed to avoid', () => {
+    const step = findStep('pce-s5b')
+    expect(step.range_reveal_direction).toBeUndefined()
+    const result = evaluateStepLocally(step, '3bet', 0)
+    expect(result.range_reveal).toBeUndefined()
   })
 
   it('sqz-s5b/sqz-s5c (squeeze spots) resolve CO\'s opener range despite BTN\'s intervening call', () => {

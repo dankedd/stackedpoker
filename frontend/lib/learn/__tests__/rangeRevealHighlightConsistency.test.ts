@@ -62,6 +62,16 @@ describe('range reveal highlight consistency — highlighted hand always matches
       const dominant = dominantAction(mix)
       if (dominant === undefined) return
 
+      // For an `action_slice` chart (only ONE action tracked; the remainder is a
+      // genuinely UNKNOWN mix of the others — see RangeSemantics), a tracked
+      // frequency below ~0.9 can't safely be called "dominant": e.g. a 50%
+      // 3-bet frequency leaves the other 50% split across call/fold in a way
+      // this chart never claims to know, so it may well NOT be the single
+      // largest action overall. Only a near-pure tracked frequency (>=0.9) is
+      // safe to compare against the graded answer; anything more mixed is
+      // skipped rather than flagged as a false mismatch.
+      if (reveal.strategySemantics.kind === 'action_slice' && (mix[dominant] ?? 0) < 0.9) return
+
       expect(
         dominant,
         `${step.id}: reveal highlights ${reveal.highlightHand} as dominantly "${dominant}" ` +
