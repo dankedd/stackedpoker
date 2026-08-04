@@ -293,7 +293,7 @@ export function turnImpact(flop: [string, string, string], turnCard: string): Tu
   const reasons: string[] = []
 
   if (board.ranks.includes(turn.rank)) {
-    reasons.push(`Pairs the board (${turn.rank}) — opens up trips/full-house possibilities that were not there before.`)
+    reasons.push(`Pairs the board (${turn.rank}) — opens up trips/full-house possibilities that were not there before, so both ranges suddenly carry far more strong value hands. That's a real jump in how the board connects with what each range is holding.`)
   }
 
   if (board.texture === 'two_tone') {
@@ -301,14 +301,15 @@ export function turnImpact(flop: [string, string, string], turnCard: string): Tu
     for (const s of board.suits) suitCounts.set(s, (suitCounts.get(s) ?? 0) + 1)
     const majoritySuit = [...suitCounts.entries()].find(([, n]) => n === 2)![0]
     if (turn.suit === majoritySuit) {
-      reasons.push(`Completes a three-flush in ${turn.suit === 's' ? 'spades' : turn.suit === 'h' ? 'hearts' : turn.suit === 'd' ? 'diamonds' : 'clubs'} — a flush is now live.`)
+      const suitName = turn.suit === 's' ? 'spades' : turn.suit === 'h' ? 'hearts' : turn.suit === 'd' ? 'diamonds' : 'clubs'
+      reasons.push(`Completes a three-flush in ${suitName} — a flush is now live for anyone holding two more ${suitName}, which is exactly the kind of flush potential that makes a board dynamic instead of static.`)
     }
   }
 
   if (board.structure === 'unpaired' && board.possibleFloppedStraights.count > 0) {
     const neededRanks = new Set(board.possibleFloppedStraights.combos.flat())
     if (neededRanks.has(turn.rank)) {
-      reasons.push(`${turn.rank} completes one of the board's possible straights outright.`)
+      reasons.push(`${turn.rank} completes one of the board's possible straights outright — the board's connectivity was already carrying straight potential, and this card cashes it in, so hands that looked ahead a card ago can suddenly be behind.`)
     }
   }
 

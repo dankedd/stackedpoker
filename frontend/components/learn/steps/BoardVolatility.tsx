@@ -6,9 +6,9 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 import { shuffleBySeed } from '@/lib/learn/interactionSafety'
-import { estimateVolatility } from '@/lib/learn/flopClassifier'
-import { BoardOrderSpectrum, OrderedBoardRow, ReviewContinueButton, ReviewSummaryLine } from '@/components/learn/RevealKit'
-import { computeOrderReveal } from '@/lib/learn/revealHelpers'
+import { estimateVolatility, turnImpact } from '@/lib/learn/flopClassifier'
+import { BoardOrderSpectrum, CorrectnessIcon, OrderedBoardRow, ReviewContinueButton, ReviewSummaryLine } from '@/components/learn/RevealKit'
+import { computeFlagReveal, computeOrderReveal, type FlagRevealItem } from '@/lib/learn/revealHelpers'
 
 interface BoardVolatilityProps {
   step: LessonStep
@@ -42,19 +42,43 @@ export function BoardVolatility({ step, onAnswer, disabled = false, reviewMode =
   return <RunoutStormMode step={step} onAnswer={onAnswer} disabled={disabled} mountTime={mountTime} />
 }
 
+/** Why a card that DOESN'T change the board was still a reasonable guess to
+ *  consider — kept generic (true for any card here by construction, since
+ *  `turnImpact` already ruled out pairing/flush/straight impact) rather than
+ *  invented per-card, so it never overclaims a specific mechanism that isn't
+ *  actually present. */
+const NO_IMPACT_EXPLANATION =
+  "This card doesn't pair the board, complete a flush, or complete one of the board's possible straights — the two ranges' relative strength barely moves. Not every card that looks scary actually shifts who's ahead."
+
+/**
+ * Two phases before `onAnswer` fires — same "select -> reviewed -> Continue"
+ * contract as StraightDetective/BoardRankSort: 'select' (freely retoggle,
+ * unscored) -> 'reviewed' (frozen; every candidate card shows correct/
+ * incorrect via the shared `computeFlagReveal`, plus a `turnImpact`-derived
+ * explanation for anything the learner got wrong — never just "close, missed
+ * 1 card"). `onAnswer` only fires on Continue, using the selection exactly as
+ * submitted — the reveal never changes what gets scored, which still lives
+ * entirely in `evalIdSetSelection` (evaluator.ts).
+ */
 function RunoutStormMode({ step, onAnswer, disabled, mountTime }: BoardVolatilityProps & { mountTime: React.RefObject<number> }) {
   const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [submitted, setSubmitted] = useState(false)
+  const [phase, setPhase] = useState<'select' | 'reviewed'>('select')
   const board = step.board_volatility_board ?? step.board ?? []
   const pool = useMemo(() => shuffleBySeed(step.board_volatility_storm_pool ?? [], step.id), [step.board_volatility_storm_pool, step.id])
 
+  const correctIds = useMemo(() => {
+    if (board.length !== 3) return new Set<string>()
+    const flop: [string, string, string] = [board[0], board[1], board[2]]
+    return new Set(pool.filter((card) => turnImpact(flop, card).changesBoard))
+  }, [board, pool])
+
   useEffect(() => {
     setSelected(new Set())
-    setSubmitted(false)
+    setPhase('select')
   }, [step.id])
 
   function toggle(card: string) {
-    if (disabled || submitted) return
+    if (disabled || phase === 'reviewed') return
     setSelected((prev) => {
       const next = new Set(prev)
       if (next.has(card)) next.delete(card)
@@ -63,10 +87,33 @@ function RunoutStormMode({ step, onAnswer, disabled, mountTime }: BoardVolatilit
     })
   }
 
-  function handleSubmit() {
-    if (disabled || submitted) return
-    setSubmitted(true)
+  function handleCheck() {
+    if (disabled || phase === 'reviewed') return
+    setPhase('reviewed')
+  }
+
+  function handleContinue() {
+    if (disabled) return
     onAnswer([...selected], Date.now() - (mountTime.current ?? Date.now()))
+  }
+
+  const reveal = useMemo(
+    () => (phase === 'reviewed' ? computeFlagReveal(pool, selected, correctIds) : []),
+    [phase, pool, selected, correctIds],
+  )
+  const correctCount = reveal.filter((r) => r.correct).length
+
+  function explanationFor(r: FlagRevealItem): string | null {
+    if (r.correct) return null
+    if (r.shouldBeSelected) {
+      // Missed — the card DOES change the board; explain why, via the exact
+      // same live-computed reasons `evalIdSetSelection` scored against.
+      if (board.length !== 3) return null
+      const flop: [string, string, string] = [board[0], board[1], board[2]]
+      return turnImpact(flop, r.id).reasons.join(' ')
+    }
+    // Wrongly flagged — the card does NOT change the board.
+    return NO_IMPACT_EXPLANATION
   }
 
   return (
@@ -85,35 +132,86 @@ function RunoutStormMode({ step, onAnswer, disabled, mountTime }: BoardVolatilit
         {step.board_volatility_prompt ?? 'Which turn cards would meaningfully change this board?'}
       </p>
 
-      <div className="flex flex-wrap justify-center gap-2">
-        {pool.map((card) => {
-          const isSelected = selected.has(card)
-          return (
-            <button
-              key={card}
-              type="button"
-              disabled={disabled || submitted}
-              onClick={() => toggle(card)}
-              className={cn(
-                'rounded-lg transition-all duration-150 active:scale-[0.95] p-0.5',
-                isSelected ? 'ring-2 ring-violet-500/60' : '',
-              )}
-            >
-              <PlayingCardMini card={card} size="sm" />
-            </button>
-          )
-        })}
-      </div>
+      {phase === 'select' && (
+        <>
+          <div className="flex flex-wrap justify-center gap-2">
+            {pool.map((card) => {
+              const isSelected = selected.has(card)
+              return (
+                <button
+                  key={card}
+                  type="button"
+                  data-card={card}
+                  disabled={disabled}
+                  onClick={() => toggle(card)}
+                  className={cn(
+                    'rounded-lg transition-all duration-150 active:scale-[0.95] p-0.5',
+                    isSelected ? 'ring-2 ring-violet-500/60' : '',
+                  )}
+                >
+                  <PlayingCardMini card={card} size="sm" />
+                </button>
+              )
+            })}
+          </div>
 
-      <button
-        type="button"
-        disabled={disabled || submitted}
-        onClick={handleSubmit}
-        className="group relative w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden disabled:opacity-50"
-      >
-        <Check className="h-4 w-4" />
-        Submit
-      </button>
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={handleCheck}
+            className="group relative w-full inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden disabled:opacity-50"
+          >
+            <Check className="h-4 w-4" />
+            Check cards
+          </button>
+        </>
+      )}
+
+      {phase === 'reviewed' && (
+        <div className="space-y-4 animate-in fade-in duration-300">
+          <ReviewSummaryLine correctCount={correctCount} total={reveal.length} />
+
+          <div className="space-y-2">
+            {reveal.map((r) => {
+              const explanation = explanationFor(r)
+              return (
+                <div
+                  key={r.id}
+                  data-card={r.id}
+                  data-correct={r.correct}
+                  className={cn(
+                    'flex items-start gap-3 rounded-xl border px-3 py-2.5',
+                    r.correct
+                      ? r.selected
+                        ? 'border-emerald-500/40 bg-emerald-500/10'
+                        : 'border-border/30 bg-secondary/20'
+                      : r.selected
+                      ? 'border-red-500/40 bg-red-500/10'
+                      : 'border-amber-500/40 bg-amber-500/10',
+                  )}
+                >
+                  <PlayingCardMini card={r.id} size="sm" />
+                  <div className="min-w-0 flex-1 space-y-1 pt-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground/50">
+                        {r.correct
+                          ? r.selected ? 'Correctly flagged' : 'Correctly left out'
+                          : r.selected ? "Doesn't actually change the board" : 'Missed'}
+                      </span>
+                      <CorrectnessIcon correct={r.correct} />
+                    </div>
+                    {explanation && (
+                      <p className="text-xs text-muted-foreground leading-relaxed">{explanation}</p>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          <ReviewContinueButton onClick={handleContinue} disabled={disabled} />
+        </div>
+      )}
     </div>
   )
 }

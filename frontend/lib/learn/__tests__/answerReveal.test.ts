@@ -123,6 +123,13 @@ describe('4. Multi-item reveal step types are NOT given a redundant generic answ
     expect(result.quality).not.toBe('perfect')
     expect(result.answer_reveal).toBeUndefined()
   })
+
+  it('board_volatility runout_storm (flab-r5) has its own per-card reveal component — evaluator adds no generic answer_reveal', () => {
+    const step = findStep('flab-r5')
+    const result = evaluateStepLocally(step, [], 0) // flags nothing, misses every card that changes the board
+    expect(result.quality).not.toBe('perfect')
+    expect(result.answer_reveal).toBeUndefined()
+  })
 })
 
 describe('5. Accepted-alternative questions never falsely claim a single exclusive answer', () => {

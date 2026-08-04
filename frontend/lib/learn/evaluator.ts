@@ -1304,19 +1304,16 @@ function evalBoardVolatility(step: LessonStep, response: unknown): EvalCore {
   const correctIds = new Set(pool.filter((card) => turnImpact(board, card).changesBoard))
   const selectedIds = new Set(Array.isArray(response) ? (response as string[]) : [])
 
-  const core = evalIdSetSelection(correctIds, selectedIds, {
+  // No `answer_reveal` here — BoardVolatility's own RunoutStormMode already
+  // renders a richer, per-card reveal (real board cards via PlayingCardMini,
+  // plus a `turnImpact`-derived explanation for every missed or wrongly
+  // flagged card), never a joined text string. Same pattern as
+  // continuum_sort/board_rank_sort above.
+  return evalIdSetSelection(correctIds, selectedIds, {
     unit: 'card',
     correctFeedback: 'Exactly right — those are the turn cards that meaningfully change this board.',
     noneFeedback: 'Correct — none of these cards meaningfully change this board.',
   })
-  if (core.quality === 'perfect') return core
-  return {
-    ...core,
-    answer_reveal: {
-      term: 'Correct cards',
-      correct: correctIds.size > 0 ? formatCards([...correctIds]) : 'None of these cards',
-    },
-  }
 }
 
 function evalEquityBucket(step: LessonStep, response: unknown): EvalCore {

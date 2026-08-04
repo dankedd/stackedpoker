@@ -1112,7 +1112,7 @@ export type EvaluationConfidence = 'high' | 'medium' | 'low' | null
  * omitted entirely for step types whose own component already renders a
  * richer item-by-item reveal (range_bucket, board_rank_sort, hand_ranking_order,
  * straight_detective, board_autopsy, range_build, range_heatmap,
- * board_volatility's continuum_sort mode).
+ * board_volatility's continuum_sort and runout_storm modes).
  */
 export interface AnswerReveal {
   /** Terminology appropriate to the interaction, e.g. "Correct play", "Correct classification", "Correct answer". */
