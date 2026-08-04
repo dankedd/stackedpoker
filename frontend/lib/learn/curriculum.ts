@@ -322,7 +322,7 @@ export const LEARNING_MODULES: LearningModule[] = [
       'Recognize that a blocker\'s strategic value depends on which part of the opponent\'s range survives — not on the blocker card\'s rank alone',
     ],
     difficulty: 'intermediate',
-    estimatedLessons: 10,
+    estimatedLessons: 8,
     stageId: 'range-thinking',
     order: 9,
     prerequisiteModuleId: 'range-vs-range-module',
@@ -15145,7 +15145,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: "Villain's defending range is 350 combos. Is this 3-bet bluff already automatically profitable on that number alone?",
         options: [
           {
-            id: 'no_threshold', label: 'No — 350 is still above the 334.62-combo threshold', quality: 'perfect',
+            id: 'no_threshold', label: "No — Villain's combos are still above the automatic-profit threshold", quality: 'perfect',
             feedback: "Correct. 350 > 334.62, so purely on this count, Hero can't call it an automatic profit yet — Villain is continuing with slightly too many combos.",
           },
           {
@@ -15201,7 +15201,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'Has the picture changed?',
         options: [
           {
-            id: 'now_profitable', label: 'Yes — 324 is now below the 334.62-combo threshold', quality: 'perfect',
+            id: 'now_profitable', label: "Yes — Villain's combos have dropped below the automatic-profit threshold", quality: 'perfect',
             feedback: "Correct. 324 < 334.62 — the K♦ blocker is exactly what pushes this from \"not quite\" to an immediately profitable 3-bet bluff, on top of an otherwise unremarkable hand.",
           },
           {
@@ -15419,7 +15419,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'Hero holds A♣7♣. Call or fold?',
         options: [
           {
-            id: 'call_worse', label: 'Still call — but a worse one than A♣T♦', quality: 'perfect',
+            id: 'call_worse', label: 'Still call — just a worse one than A♣T♦', quality: 'perfect',
             feedback: "Correct. A♣7♣ still blocks the same AA value — that part hasn't changed. It just also removes one live bluff (7♣6♣), shifting what's left in Villain's range slightly toward more value. Still a call on these facts. Just not as clean as A♣T♦.",
           },
           {
@@ -15486,11 +15486,20 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_title: 'The Comparison',
         concept_structured_items: [
-          { term: 'A♣T♦', description: 'Removes 5 of 6 AA combos (value). Removes 0 of 8 bluff combos (76s + 65s combined). Nothing but value touched — the ideal profile.' },
-          { term: 'A♣7♣', description: 'Removes the same 5 AA combos. Also removes 1 of 8 bluff combos (7♣6♣) — one live bluff gone that Hero wanted Villain to still have.' },
-          { term: 'A♣6♣', description: 'Removes the same 5 AA combos. Also removes 2 of 8 bluff combos — 7♣6♣ AND 6♣5♣, one card touching two different bluff classes at once. The worst of the three, despite an identical hand.' },
+          {
+            term: 'A♣T♦',
+            description: "Blocks 5 of AA's 6 combos — Villain's only value hand here, and the strongest thing Villain can be continuing with — while leaving both bluff classes (76s, 65s) completely untouched. Every bluff combo Hero needs Villain to still have for this call to pay off is still fully live. Maximum pressure on value, zero cost to the bluffs: the ideal blocker profile for a caller, and why it ranks best.",
+          },
+          {
+            term: 'A♣7♣',
+            description: "Blocks the same 5 AA combos as A♣T♦ — identical pressure on Villain's strongest hand. But the 7♣ also removes 1 of 76s's 4 combos (7♣6♣), one of the exact bluffs that make this call profitable. Same value blocked, one fewer bluff left in Villain's range — strictly worse than A♣T♦ for a caller, even though the two hands are identical at showdown.",
+          },
+          {
+            term: 'A♣6♣',
+            description: "Also blocks the same 5 AA combos, but the 6♣ touches TWO bluff classes at once — 7♣6♣ (from 76s) AND 6♣5♣ (from 65s), 2 of the 8 total bluff combos gone. Same value pressure as the other two, but double the collateral damage to the bluffs compared to A♣7♣'s single collision, and far more than A♣T♦'s zero. Worst blocker of the three, and worst hand to hold as a caller, despite showing down exactly the same as the other two.",
+          },
         ],
-        concept_note: 'All three hands show down exactly the same. The ranking is entirely about which cards they remove from the rest of the range.',
+        concept_note: "The ranking never turns on showdown strength — all three are top pair aces. It turns entirely on which of Villain's bluff combos each kicker happens to remove: none, one, or two.",
         source: { book: 'Modern Poker Theory', section: 'River Calling Strategies — Blockers', type: 'pedagogical_model' },
       },
       {

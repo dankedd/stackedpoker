@@ -1273,46 +1273,55 @@
       }
     },
     "stop-thinking-hand-vs-hand": {
-      "xp_reward": 130,
+      "xp_reward": 170,
       "steps": {
+        "sthh-intro": 10,
         "sthh-s1": 10,
         "sthh-s2": 15,
         "sthh-s3": 10,
         "sthh-s4": 15,
-        "sthh-s5": 10
+        "sthh-tf1": 8,
+        "sthh-tf2": 8,
+        "sthh-why": 12,
+        "sthh-s5": 10,
+        "sthh-bridge": 10
       }
     },
-    "who-owns-this-flop": {
-      "xp_reward": 150,
+    "range-advantage": {
+      "xp_reward": 340,
       "steps": {
         "wotf-s1": 10,
         "wotf-s2": 10,
         "wotf-s3": 10,
         "wotf-s4": 10,
         "wotf-s5": 10,
-        "wotf-s6": 10
-      }
-    },
-    "range-advantage": {
-      "xp_reward": 140,
-      "steps": {
         "ra-s1": 10,
         "ra-s2": 20,
         "ra-s3": 20,
         "ra-s4": 15,
         "ra-s5": 10,
+        "rax-sets": 10,
+        "rax-straights": 10,
+        "rax-tf1": 8,
+        "rax-tf2": 8,
         "ra-s6": 10
       }
     },
     "x-ray-the-range": {
-      "xp_reward": 150,
+      "xp_reward": 260,
       "steps": {
         "xr-s1": 12,
         "xr-s2": 10,
         "xr-s3": 10,
         "xr-s4": 10,
         "xr-s5": 15,
-        "xr-s6": 10
+        "xr-s6": 10,
+        "xr-nut-intro": 10,
+        "xr-nut-aq3": 15,
+        "xr-nut-qjt": 15,
+        "xr-nut-mistake": 12,
+        "xr-nut-distinguish": 15,
+        "xr-nut-close": 10
       }
     },
     "why-strategy-changes": {
@@ -1349,7 +1358,7 @@
       }
     },
     "from-hands-to-combos": {
-      "xp_reward": 120,
+      "xp_reward": 290,
       "steps": {
         "fhtc-s1": 10,
         "fhtc-s2": 10,
@@ -1359,39 +1368,39 @@
         "fhtc-s6": 15,
         "fhtc-s7": 15,
         "fhtc-s8": 15,
-        "fhtc-s9": 10
-      }
-    },
-    "the-range-after-removal": {
-      "xp_reward": 150,
-      "steps": {
+        "fhtc-s9": 10,
+        "fhr-s1": 10,
+        "fhr-s2": 15,
+        "fhr-s3": 15,
+        "fhr-s4": 20,
+        "fhr-s5": 10,
         "trar-s1": 10,
         "trar-s2": 15,
         "trar-s3": 10,
+        "trar-s3b": 15,
         "trar-s4": 15,
         "trar-s5": 15,
         "trar-s6": 10,
+        "trar-s6b": 15,
         "trar-s7": 10
       }
     },
     "block-the-value": {
-      "xp_reward": 130,
+      "xp_reward": 185,
       "steps": {
+        "btv-s0": 10,
         "btv-s1": 10,
-        "btv-s2": 15,
+        "btv-s2": 20,
         "btv-s3": 15,
         "btv-s4": 15,
-        "btv-s5": 10
-      }
-    },
-    "leave-the-bluffs-alive": {
-      "xp_reward": 130,
-      "steps": {
         "ltba-s1": 10,
         "ltba-s2": 15,
         "ltba-s3": 15,
         "ltba-s4": 15,
-        "ltba-s5": 10
+        "btv-rd1": 10,
+        "btv-rd2": 20,
+        "btv-rd3": 20,
+        "btv-close": 10
       }
     },
     "same-strength-different-cards": {

@@ -143,9 +143,9 @@ export const ROADMAP_MODULES: LearningModule[] = [
   // Modules 1-8). blockers-module's build spec used different lesson titles
   // than this stub's original placeholders (compare the promoted entry's
   // content to the plannedLessons this comment used to sit above), same
-  // judgment-call precedent as Module 7's rename. Only 2 of 10 lessons are
-  // built so far (a phased, in-progress delivery) — `estimatedLessons` on the
-  // promoted entry reflects that honestly and grows with each checkpoint.
+  // judgment-call precedent as Module 7's rename. All 8 lessons are built
+  // (originally 10; Lessons 1-2 and 3-4 were later merged into two longer,
+  // more applied lessons) — `estimatedLessons` on the promoted entry matches.
 
   // ── Stage 5 — Game Theory ────────────────────────────────────────────────────
   // game-theory-foundations-module has been promoted to real content — see
