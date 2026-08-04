@@ -290,7 +290,7 @@ export const LEARNING_MODULES: LearningModule[] = [
     ],
     unlock_after: ['cbetting-fundamentals-module'],
     sort_order: 7,
-    xp_reward: 1000,
+    xp_reward: 1520,
     subtitle: 'Stop analyzing isolated hands and start seeing the entire strategy.',
     learningObjectives: [
       'Distinguish hand-vs-hand thinking from range-vs-range thinking, and recognize when a strong individual hand sits inside a weak overall range',
@@ -14774,8 +14774,8 @@ export const LESSONS: Lesson[] = [
     subtitle: 'Range advantage does not simply mean "bet."',
     lesson_type: 'puzzle_drill',
     concept_ids: ['range_composition', 'range_advantage', 'board_coverage', 'range_archaeology'],
-    estimated_min: 9,
-    xp_reward: 170,
+    estimated_min: 13,
+    xp_reward: 250,
     sort_order: 4,
     next_lesson_teaser: 'The Range Lab',
     steps: [
@@ -14804,43 +14804,6 @@ export const LESSONS: Lesson[] = [
         xp: 15,
       },
       {
-        id: 'wsc-s3',
-        type: 'decision_spot',
-        concept_ids: ['hand_vs_range_strength'],
-        narrative: 'FIND THE BROKEN INTUITION. Claim: "AA is an overpair, therefore CO should bet aggressively."',
-        decision_spot_question: 'What is the flawed logical step?',
-        board: LESSON1_SCENARIO.board,
-        options: [
-          {
-            id: 'individual_not_range', label: 'It treats individual-hand strength as if it were range strength', quality: 'perfect',
-            feedback: `Correct — this is Lesson 1's scenario. AA has ≈${LESSON1_SCENARIO.heroHandEquity}% equity here, yet CO's whole range trails BB's (${LESSON1_SCENARIO.postflopEquity.co}% to ${LESSON1_SCENARIO.postflopEquity.bb}%) on this flop.`,
-          },
-          {
-            id: 'aa_not_overpair', label: 'The flaw is that AA is not actually an overpair on this board', quality: 'mistake',
-            feedback: 'AA genuinely is an overpair to 8-7-5 — that part of the claim is accurate. The flaw is what gets concluded FROM it, not the premise itself.',
-          },
-        ],
-        xp: 15,
-      },
-      {
-        id: 'wsc-s4',
-        type: 'decision_spot',
-        concept_ids: ['board_texture_shift'],
-        narrative: 'Claim: "CO had more equity preflop, therefore CO must have more equity after every flop."',
-        decision_spot_question: 'What is the flawed logical step?',
-        options: [
-          {
-            id: 'no_persistence', label: 'A preflop edge is a preflop-only fact — each flop revalues both ranges', quality: 'perfect',
-            feedback: 'Correct — you saw this directly: CO led preflop 58.5/41.5, yet trailed BB on 875ss. No board is guaranteed to preserve a preflop edge.',
-          },
-          {
-            id: 'equity_wrong', label: 'The preflop equity numbers themselves must be miscalculated', quality: 'mistake',
-            feedback: 'The preflop numbers are correct as stated — the error is assuming they constrain every future board, not that they\'re wrong.',
-          },
-        ],
-        xp: 12,
-      },
-      {
         id: 'wsc-s5',
         type: 'decision_spot',
         concept_ids: ['range_composition'],
@@ -14859,19 +14822,45 @@ export const LESSONS: Lesson[] = [
         xp: 12,
       },
       {
-        id: 'wsc-s6',
+        id: 'wsc-swap-1',
         type: 'decision_spot',
-        concept_ids: ['range_composition', 'strong_hand_density'],
-        narrative: 'Claim: "Having more range equity tells us everything about the strategy."',
-        decision_spot_question: 'What is the flawed logical step?',
+        concept_ids: ['board_texture_shift', 'range_advantage'],
+        narrative: 'Same two ranges throughout this whole module. On A76r, IP\'s correct strategy is to bet often and big. Now swap in 654r — same two ranges, only the board changes.',
+        decision_spot_question: 'What should actually change about IP\'s c-betting strategy on 654r, compared to A76r?',
         options: [
           {
-            id: 'composition_matters', label: 'Range composition can matter more than the raw equity number itself', quality: 'perfect',
-            feedback: 'Correct — this is X-Ray the Range\'s whole lesson. Two ranges can carry similar raw equity with very different strong-hand density, and that difference drives real strategic decisions.',
+            id: 'less_smaller', label: 'Bet smaller, and fewer times', quality: 'perfect',
+            feedback: 'Correct. IP\'s range connects far worse here, and pushing hard just invites BB to fight back — IP\'s Strong-bucket share collapses on 654r while BB\'s grows, so a range that connects this poorly can\'t sustain the same betting pressure it applied on A76r.',
           },
           {
-            id: 'equity_is_everything', label: 'Range equity is the single number that fully determines correct strategy', quality: 'mistake',
-            feedback: 'Equity is necessary information, not sufficient — equity alone doesn\'t determine EV or equity realization. Position, stacks, and range composition all matter too.',
+            id: 'no_change', label: 'Nothing — the same two ranges should play the same way regardless of which board comes down', quality: 'mistake',
+            feedback: 'The ranges are identical, but the BOARD isn\'t — and you\'ve now seen repeatedly that the same two ranges can flip who\'s favored depending entirely on which cards land.',
+          },
+          {
+            id: 'more_bigger', label: 'Bet MORE and bigger, to compensate for the weaker connection', quality: 'mistake',
+            feedback: 'That\'s backwards — betting bigger with a range that connects poorly just means losing more when called or raised by BB\'s now-stronger holdings.',
+          },
+        ],
+        xp: 12,
+      },
+      {
+        id: 'wsc-swap-2',
+        type: 'decision_spot',
+        concept_ids: ['range_composition'],
+        narrative: 'You just said IP should ease off on 654r.',
+        decision_spot_question: 'Why, specifically, does easing off make sense here — not just "the board is different"?',
+        options: [
+          {
+            id: 'bb_hand_types', label: 'BB holds far more of the hand types this board rewards', quality: 'perfect',
+            feedback: 'Correct — sets, two pair, and straights specifically. It\'s never "the board changed" in the abstract; it\'s that the board changed which specific hand types each range actually holds, so a big bet now gets called or raised by real hands instead of just folded to. That\'s what strategy has to respond to.',
+          },
+          {
+            id: 'low_boards_weak', label: 'Low boards are inherently weaker for everyone, so betting less is always correct there', quality: 'mistake',
+            feedback: 'Low boards aren\'t inherently weak for everyone — they\'re weak for whichever range doesn\'t hold the low/connected hand types. Swap the two ranges\' identities and the same board would favor the other side.',
+          },
+          {
+            id: 'protect_lead', label: 'IP already won enough on A76r and should play it safe to protect that lead', quality: 'mistake',
+            feedback: 'These are two independent hands with no shared "lead" to protect — each board is evaluated fresh, on its own range/board interaction.',
           },
         ],
         xp: 12,
@@ -14899,16 +14888,91 @@ export const LESSONS: Lesson[] = [
         ],
       },
       {
+        id: 'wsc-recon-1',
+        type: 'concept_reveal',
+        concept_title: 'A New Scenario',
+        concept_content: 'A $215 9-max online MTT. BN opens to 2bb with 25bb effective. BB calls with 15bb effective (the effective stack is always the SMALLER of the two — 15bb here). Flop: A♥J♦T♠.',
+        board: ['Ah', 'Jd', 'Ts'],
+      },
+      {
+        id: 'wsc-recon-2',
+        type: 'decision_spot',
+        concept_ids: ['range_archaeology'],
+        narrative: 'BB\'s calling range here is missing its very best hands for this exact board — no KQ (the nut straight), no AA/JJ/TT (sets), and almost none of AJ-AT (two pair).',
+        board: ['Ah', 'Jd', 'Ts'],
+        decision_spot_question: 'Using the capped/uncapped framework — is BB\'s range capped or uncapped on this flop?',
+        options: [
+          {
+            id: 'capped', label: 'Capped — the strongest possible hands for this board are missing from it', quality: 'perfect',
+            feedback: 'Correct. BB\'s range lacks the actual nut-class hands this specific board supports (straights, sets, big two pair) — that\'s exactly what "capped" means.',
+          },
+          {
+            id: 'uncapped', label: 'Uncapped — BB still has plenty of hands overall', quality: 'mistake',
+            feedback: 'Having many combos isn\'t the same as having the BEST ones. BB\'s range is wide, but it\'s missing precisely the hand types that would make the nuts here.',
+          },
+          {
+            id: 'condensed', label: 'Condensed — the top and bottom of the range are both gone', quality: 'mistake',
+            feedback: 'Condensed means BOTH ends are missing. Here it\'s specifically the TOP that\'s gone (capped) — BB still holds genuine bottom-of-range hands like weak aces and gutshots, so this isn\'t condensed.',
+          },
+        ],
+        xp: 12,
+      },
+      {
+        id: 'wsc-recon-3',
+        type: 'decision_spot',
+        concept_ids: ['range_archaeology'],
+        narrative: 'BB is capped on A♥J♦T♠.',
+        board: ['Ah', 'Jd', 'Ts'],
+        decision_spot_question: 'Which of these can BB\'s continuing range still realistically hold?',
+        options: [
+          {
+            id: 'worse_ace', label: 'A weaker ace-x', quality: 'perfect',
+            feedback: 'Correct — a weaker ace, or a pair of jacks/tens without a set behind it, are exactly the hands a capped range keeps: real, but not the nuts. Being capped means the TOP is missing, not that BB has nothing at all.',
+          },
+          {
+            id: 'set', label: 'A set of aces, jacks, or tens', quality: 'mistake',
+            feedback: 'That\'s exactly what "capped" rules out here — BB\'s range was defined as missing AA/JJ/TT for this board.',
+          },
+          {
+            id: 'nut_straight', label: 'The nut straight (KQ)', quality: 'mistake',
+            feedback: 'Also ruled out by definition — KQ was named as one of the missing hands that makes this range capped in the first place.',
+          },
+        ],
+        xp: 12,
+      },
+      {
         id: 'wsc-s8',
         type: 'concept_reveal',
         concept_title: 'Board Coverage',
         concept_content: 'A well-constructed range is not just a percentage of hands — it has board coverage: the ability to keep making strong hands across MANY different runouts, not just this one. IP\'s range connects hard with ace-high boards (A76r) but comparatively poorly with low, connected ones (654r); BB\'s wider range trades some raw preflop equity for coverage across exactly those low/middle textures instead. Composition determines not just what\'s strong right now, but how well a range keeps contesting future cards.',
       },
       {
+        id: 'wsc-s8b',
+        type: 'decision_spot',
+        concept_ids: ['board_coverage'],
+        narrative: 'IP\'s range is loaded with big, mostly-unpaired cards. That serves it well on A76r but poorly on 654r.',
+        decision_spot_question: 'If IP wanted better board coverage without abandoning what already works on ace-high boards, what would that actually mean?',
+        options: [
+          {
+            id: 'keep_some_low', label: 'Adding hands that also connect with LOW, connected boards', quality: 'perfect',
+            feedback: 'Correct. Board coverage isn\'t only about playing more or fewer hands overall — it\'s about which RUNOUTS your range can still make strong holdings on. A range built entirely around one board family will always have a weak spot on the opposite family.',
+          },
+          {
+            id: 'only_best', label: 'Playing only the very best hands, regardless of board type', quality: 'mistake',
+            feedback: 'That narrows the range without addressing coverage at all — a tighter range of the SAME hand types still misses the same boards, just with fewer combos.',
+          },
+          {
+            id: 'open_more', label: 'Opening more hands overall, without regard to which specific boards they connect with', quality: 'mistake',
+            feedback: 'Width alone doesn\'t fix coverage — you already saw this with the tied set-count on A76r. What matters is which SPECIFIC hand types get added, not how many.',
+          },
+        ],
+        xp: 12,
+      },
+      {
         id: 'wsc-s9',
         type: 'concept_reveal',
         concept_title: 'The Pattern So Far',
-        concept_content: 'Range advantage is not a fixed label attached to a position or a board category. It emerges from real range composition meeting a real board — and even a genuine range advantage never automatically means "bet." Next: put it all together.',
+        concept_content: 'Range advantage is not a fixed label attached to a position or a board category. It emerges from real range composition meeting a real board — and even a genuine range advantage never automatically means "bet." You can now reconstruct what a range does and doesn\'t hold from how it was built, and read a range\'s board coverage, not just its strength on one flop. Next: put it all together.',
       },
     ],
   },
@@ -14919,16 +14983,16 @@ export const LESSONS: Lesson[] = [
     title: 'The Range Lab',
     subtitle: 'A small poker research laboratory — not an exam.',
     lesson_type: 'simulation',
-    concept_ids: ['range_vs_range_equity', 'range_advantage', 'equity_bucket_distribution', 'hand_vs_range_strength'],
-    estimated_min: 15,
-    xp_reward: 420,
+    concept_ids: ['range_vs_range_equity', 'range_advantage', 'equity_bucket_distribution', 'hand_vs_range_strength', 'nut_advantage', 'board_coverage'],
+    estimated_min: 20,
+    xp_reward: 500,
     sort_order: 5,
     steps: [
       {
         id: 'rl-intro',
         type: 'concept_reveal',
         concept_title: 'Welcome to the Lab',
-        concept_content: 'Three verified flop states, all from this module. For each: predict who has more range equity, estimate how large the edge is, identify which part of the range drives it, then infer the general strategic effect. No new theory here — just the read, done independently.',
+        concept_content: 'Four verified flop states, all from this module. For each: predict who has more range equity, estimate how large the edge is, identify which part of the range drives it, then infer the general strategic effect. No new theory here — just the read, done independently.',
       },
 
       // ── Scenario 1 — A76r ──────────────────────────────────────────────────
@@ -14936,7 +15000,7 @@ export const LESSONS: Lesson[] = [
         id: 'rl-a76-predict',
         type: 'range_collision',
         concept_ids: ['range_vs_range_equity'],
-        narrative: 'Scenario 1 of 3. Board: A♦7♥6♣.',
+        narrative: 'Scenario 1 of 4. Board: A♦7♥6♣.',
         range_collision_mode: 'predict',
         range_collision_scale: '3pt',
         range_collision_prompt: 'Who has more range equity?',
@@ -15005,7 +15069,7 @@ export const LESSONS: Lesson[] = [
         id: 'rl-654-predict',
         type: 'range_collision',
         concept_ids: ['range_vs_range_equity'],
-        narrative: 'Scenario 2 of 3. Board: 6♥5♦4♣.',
+        narrative: 'Scenario 2 of 4. Board: 6♥5♦4♣.',
         range_collision_mode: 'predict',
         range_collision_scale: '3pt',
         range_collision_prompt: 'Who has more range equity?',
@@ -15074,7 +15138,7 @@ export const LESSONS: Lesson[] = [
         id: 'rl-aa-recognize',
         type: 'decision_spot',
         concept_ids: ['hand_vs_range_strength'],
-        narrative: `Scenario 3 of 3 — back to the opening scenario. CO holds A♦A♣ on 8♥7♠5♠. AA itself has ≈${LESSON1_SCENARIO.heroHandEquity}% equity, yet CO's whole range trails BB's (${LESSON1_SCENARIO.postflopEquity.co}% to ${LESSON1_SCENARIO.postflopEquity.bb}%).`,
+        narrative: `Scenario 3 of 4 — back to the opening scenario. CO holds A♦A♣ on 8♥7♠5♠. AA itself has ≈${LESSON1_SCENARIO.heroHandEquity}% equity, yet CO's whole range trails BB's (${LESSON1_SCENARIO.postflopEquity.co}% to ${LESSON1_SCENARIO.postflopEquity.bb}%).`,
         decision_spot_question: 'What should Hero take from this, specifically about strategy — not just this one hand?',
         board: LESSON1_SCENARIO.board,
         hero_hand: LESSON1_SCENARIO.heroHand,
@@ -15124,15 +15188,87 @@ export const LESSONS: Lesson[] = [
         ],
       },
 
+      // ── Scenario 4 — Nut advantage vs range advantage ───────────────────────
+      {
+        id: 'rl-nut-identify',
+        type: 'nut_advantage',
+        concept_ids: ['nut_advantage'],
+        narrative: 'Scenario 4 of 4. BB vs UTG, 40bb effective, same setup as X-Ray the Range\'s nut-advantage boards. Flop: A♥Q♦3♠.',
+        board: ['Ah', 'Qd', '3s'],
+        options: [
+          { id: 'utg', label: 'UTG', quality: 'perfect', feedback: 'Correct — BB\'s calling range is missing almost all its nutted hands here (they went into a 3-bet before the flop), so UTG holds the nut advantage along with the range advantage.' },
+          { id: 'bb', label: 'BB', quality: 'mistake', feedback: 'The opposite — BB\'s calling range specifically lacks the AA/QQ/AK-type hands that would make the nuts on this board.' },
+          { id: 'neither', label: 'Neither', quality: 'mistake', feedback: 'One side clearly does — UTG kept a normal share of the nutted hands here, while BB\'s calling range mostly didn\'t.' },
+        ],
+        tendency_tag: 'nut_advantage',
+        tendency_tag_label: 'Reading nut advantage on ace-high boards',
+        tendency_tag_leak_hint: 'Revisit X-Ray the Range\'s A♥Q♦3♠ walkthrough — BB\'s calling range specifically excludes the hands that 3-bet before the flop, which is exactly what strips it of the nuts here.',
+      },
+      {
+        id: 'rl-nut-contrast',
+        type: 'decision_spot',
+        concept_ids: ['nut_advantage'],
+        narrative: 'Same two ranges, flop Q♥J♥T♥ instead. UTG still connects with more of this board overall.',
+        decision_spot_question: 'Does UTG hold both range advantage and nut advantage here too?',
+        options: [
+          { id: 'no', label: 'No', quality: 'perfect', feedback: 'Correct. BB\'s range keeps real flushes, straights, sets, and two pair on this texture — the range advantage stays with UTG, but the nut advantage doesn\'t follow it here.' },
+          { id: 'yes', label: 'Yes', quality: 'mistake', feedback: 'Not on this board — BB\'s range keeps real flushes, straights, sets, and two pair here, unlike on A♥Q♦3♠.' },
+        ],
+        tendency_tag: 'nut_advantage',
+        tendency_tag_label: 'Spotting where range advantage and nut advantage split',
+        tendency_tag_leak_hint: 'Revisit X-Ray the Range\'s Q♥J♥T♥ contrast — this is the board built specifically to show the two advantages pulling apart.',
+      },
+      {
+        id: 'rl-nut-effect',
+        type: 'decision_spot',
+        concept_ids: ['nut_advantage', 'range_advantage'],
+        narrative: 'Given all of that —',
+        decision_spot_question: 'What should UTG\'s bet-sizing look like on these two boards, compared to each other?',
+        options: [
+          {
+            id: 'bigger_aq3', label: 'Bigger and more often on A♥Q♦3♠; smaller and more careful on Q♥J♥T♥', quality: 'perfect',
+            feedback: 'Correct. Without nut resistance, UTG can size up on A♥Q♦3♠ without real fear of a big raise back. On Q♥J♥T♥, BB\'s real flushes/straights/sets punish an oversized bet — the range advantage alone doesn\'t justify the same aggression there.',
+          },
+          {
+            id: 'same_both', label: 'The same size and frequency on both — UTG has the range advantage either way', quality: 'mistake',
+            feedback: 'Range advantage alone doesn\'t justify identical sizing — BB\'s real nutted hands on Q♥J♥T♥ change what a big bet actually accomplishes there, compared to A♥Q♦3♠.',
+          },
+        ],
+      },
+
+      // ── Bringing Lesson 4 back in ────────────────────────────────────────────
+      {
+        id: 'rl-coverage-recon',
+        type: 'decision_spot',
+        concept_ids: ['board_coverage', 'range_archaeology'],
+        narrative: 'One more zoom-out. BN vs BB, 15bb effective, flop A♥J♦T♠ — you already established BB\'s range is capped here (no straights, sets, or big two pair).',
+        board: ['Ah', 'Jd', 'Ts'],
+        decision_spot_question: 'What does BB needing to give up its top-end hands on THIS board suggest about range coverage in general?',
+        options: [
+          {
+            id: 'tradeoffs', label: 'Coverage is a trade-off, not something to maximize on every board at once', quality: 'perfect',
+            feedback: 'Correct. A range strong on some boards will be capped on others — BB\'s calling range wasn\'t built badly, it simply can\'t hold the nuts on every possible flop. The skill isn\'t avoiding being capped; it\'s knowing WHEN you are, and adjusting from there.',
+          },
+          {
+            id: 'bad_range', label: 'It means BB is playing a badly constructed range that should be rebuilt', quality: 'mistake',
+            feedback: 'Being capped on one specific board isn\'t evidence of a bad range — every real range is capped on SOME boards. The question is recognizing which ones, not eliminating the trade-off entirely.',
+          },
+        ],
+        tendency_tag: 'board_coverage',
+        tendency_tag_label: 'Connecting board coverage to range reconstruction',
+        tendency_tag_leak_hint: 'Revisit Why Strategy Changes\' board-coverage and capped/uncapped material — every range trades coverage on some boards for strength on others; the skill is recognizing which is which.',
+      },
+
       {
         id: 'rl-report',
         type: 'tendency_summary',
-        concept_ids: ['range_vs_range_equity', 'range_advantage', 'equity_bucket_distribution', 'hand_vs_range_strength'],
+        concept_ids: ['range_vs_range_equity', 'range_advantage', 'equity_bucket_distribution', 'hand_vs_range_strength', 'nut_advantage'],
         tendency_summary_intro: 'Your Range Reading Report — based only on what you actually answered in this lab.',
         summary_source_step_ids: [
           'rl-a76-predict', 'rl-a76-magnitude', 'rl-a76-composition',
           'rl-654-predict', 'rl-654-magnitude', 'rl-654-composition',
           'rl-aa-recognize', 'rl-aa-composition',
+          'rl-nut-identify', 'rl-nut-contrast', 'rl-coverage-recon',
         ],
         xp: 15,
       },
@@ -15140,16 +15276,18 @@ export const LESSONS: Lesson[] = [
         id: 'rl-close',
         type: 'concept_reveal',
         concept_title: 'Stop Seeing Two Cards',
-        concept_content: 'Before this module: "How strong is my hand?" Now, on every flop: what ranges reached this flop, which parts of each range connect, who has more overall equity, how is that equity distributed, where are the strong hands, and what does that imply for strategy.',
+        concept_content: 'Before this module: "How strong is my hand?" Now, on every flop: what ranges reached this flop, which parts of each range connect, who has more overall equity, how is that equity distributed, who owns the actual nutted hands, and what does all of that imply for strategy.',
         concept_structured_items: [
           { term: '1. Ranges', description: 'What ranges actually reached this flop?' },
           { term: '2. Interaction', description: 'Which parts of each range connect with this board?' },
           { term: '3. Equity', description: 'Who has more overall range-vs-range equity?' },
           { term: '4. Distribution', description: 'How is that equity distributed — Strong / Good / Weak / Trash?' },
           { term: '5. Density', description: 'Where do the strong hands actually come from?' },
-          { term: '6. Strategy', description: 'What does all of that imply for betting, checking, and pressure?' },
+          { term: '6. Nut advantage', description: 'Separately from equity — who holds more of the actual nutted hands?' },
+          { term: '7. Coverage & reconstruction', description: 'Which boards does each range cover well, and what does a capped range still realistically hold?' },
+          { term: '8. Strategy', description: 'What does all of that imply for betting, checking, and pressure?' },
         ],
-        concept_note: 'Stop seeing two cards. Start seeing two ranges.',
+        concept_note: 'Stop seeing two cards. Start seeing two ranges — and ask which one has the advantage.',
       },
     ],
   },

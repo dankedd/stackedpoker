@@ -1325,21 +1325,24 @@
       }
     },
     "why-strategy-changes": {
-      "xp_reward": 170,
+      "xp_reward": 250,
       "steps": {
         "wsc-s1": 10,
         "wsc-s2": 15,
-        "wsc-s3": 15,
-        "wsc-s4": 12,
         "wsc-s5": 12,
-        "wsc-s6": 12,
+        "wsc-swap-1": 12,
+        "wsc-swap-2": 12,
         "wsc-s7": 10,
+        "wsc-recon-1": 10,
+        "wsc-recon-2": 12,
+        "wsc-recon-3": 12,
         "wsc-s8": 10,
+        "wsc-s8b": 12,
         "wsc-s9": 10
       }
     },
     "the-range-lab": {
-      "xp_reward": 420,
+      "xp_reward": 500,
       "steps": {
         "rl-intro": 10,
         "rl-a76-predict": 10,
@@ -1353,6 +1356,10 @@
         "rl-aa-recognize": 10,
         "rl-aa-composition": 10,
         "rl-aa-effect": 10,
+        "rl-nut-identify": 10,
+        "rl-nut-contrast": 10,
+        "rl-nut-effect": 10,
+        "rl-coverage-recon": 10,
         "rl-report": 15,
         "rl-close": 10
       }
@@ -1658,7 +1665,7 @@
     "defending-the-open-module": 850,
     "flop-fundamentals-module": 900,
     "cbetting-fundamentals-module": 950,
-    "range-vs-range-module": 1000,
+    "range-vs-range-module": 1520,
     "blockers-module": 1000,
     "game-theory-foundations-module": 1000,
     "polarized-module": 1000,
