@@ -5,7 +5,7 @@ import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
-import { shuffleBySeed, orderStepOptions } from '@/lib/learn/interactionSafety'
+import { shuffleBySeed } from '@/lib/learn/interactionSafety'
 import { estimateVolatility } from '@/lib/learn/flopClassifier'
 import { BoardOrderSpectrum, OrderedBoardRow, ReviewContinueButton, ReviewSummaryLine } from '@/components/learn/RevealKit'
 import { computeOrderReveal } from '@/lib/learn/revealHelpers'
@@ -118,11 +118,31 @@ function RunoutStormMode({ step, onAnswer, disabled, mountTime }: BoardVolatilit
   )
 }
 
+/** Strips a trailing "(cards)" parenthetical from an option label — e.g.
+ *  "Board A (8♥7♥3♦)" -> "Board A". Once the button sits directly under its
+ *  own board (see CompareMode below), repeating the card text in the button
+ *  itself is just noise; the cards are already right there. */
+function shortLabel(label: string): string {
+  return label.replace(/\s*\([^)]*\)\s*$/, '')
+}
+
+/**
+ * Two boards, pick one (plus optionally a non-board option like "About the
+ * same"). Answer buttons are deliberately NEVER shuffled and NEVER run
+ * through `orderStepOptions` — the 'a' option always renders directly under
+ * Board A (left) and the 'b' option directly under Board B (right), so the
+ * challenge is judging the boards, not remembering which button maps to
+ * which side. Any option that isn't 'a'/'b' (e.g. "about the same") renders
+ * as its own full-width choice below both boards.
+ */
 function CompareMode({ step, onAnswer, disabled, mountTime }: BoardVolatilityProps & { mountTime: React.RefObject<number> }) {
   const [selected, setSelected] = useState<string | null>(null)
   const a = step.board_volatility_compare_a ?? []
   const b = step.board_volatility_compare_b ?? []
-  const options = useMemo(() => orderStepOptions(step.options ?? [], step.id), [step.options, step.id])
+  const options = step.options ?? []
+  const optionA = options.find((o) => o.id === 'a')
+  const optionB = options.find((o) => o.id === 'b')
+  const otherOptions = options.filter((o) => o.id !== 'a' && o.id !== 'b')
 
   useEffect(() => setSelected(null), [step.id])
 
@@ -134,6 +154,18 @@ function CompareMode({ step, onAnswer, disabled, mountTime }: BoardVolatilityPro
 
   const hasSelected = selected !== null
 
+  function buttonClass(id: string) {
+    const isSelected = selected === id
+    return cn(
+      'relative w-full rounded-xl px-4 py-3.5 text-sm font-semibold transition-all duration-150 active:scale-[0.97] border overflow-hidden',
+      isSelected
+        ? 'border-violet-500/50 bg-violet-500/15 text-violet-200 shadow-lg shadow-violet-900/20'
+        : hasSelected
+        ? 'border-border/20 bg-secondary/15 text-muted-foreground/30 cursor-default opacity-50'
+        : 'border-border/50 bg-secondary/40 text-foreground hover:bg-secondary/70 hover:border-violet-500/30',
+    )
+  }
+
   return (
     <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
       {step.narrative && (
@@ -142,44 +174,56 @@ function CompareMode({ step, onAnswer, disabled, mountTime }: BoardVolatilityPro
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-1.5 text-center">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">Board A</p>
-          <div className="flex items-center justify-center gap-1.5">{a.map((c, i) => <PlayingCardMini key={i} card={c} size="md" />)}</div>
-        </div>
-        <div className="space-y-1.5 text-center">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">Board B</p>
-          <div className="flex items-center justify-center gap-1.5">{b.map((c, i) => <PlayingCardMini key={i} card={c} size="md" />)}</div>
-        </div>
-      </div>
-
       {step.board_volatility_prompt && (
         <p className="text-center text-sm font-semibold text-foreground">{step.board_volatility_prompt}</p>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        {options.map((opt) => {
-          const isSelected = selected === opt.id
-          return (
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-3 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">Board A</p>
+          <div className="flex items-center justify-center gap-1.5">{a.map((c, i) => <PlayingCardMini key={i} card={c} size="md" />)}</div>
+          {optionA && (
+            <button
+              type="button"
+              disabled={disabled || (hasSelected && selected !== optionA.id)}
+              onClick={() => handleSelect(optionA.id)}
+              className={buttonClass(optionA.id)}
+            >
+              {shortLabel(optionA.label)}
+            </button>
+          )}
+        </div>
+        <div className="space-y-3 text-center">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">Board B</p>
+          <div className="flex items-center justify-center gap-1.5">{b.map((c, i) => <PlayingCardMini key={i} card={c} size="md" />)}</div>
+          {optionB && (
+            <button
+              type="button"
+              disabled={disabled || (hasSelected && selected !== optionB.id)}
+              onClick={() => handleSelect(optionB.id)}
+              className={buttonClass(optionB.id)}
+            >
+              {shortLabel(optionB.label)}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {otherOptions.length > 0 && (
+        <div className="grid grid-cols-1 gap-3">
+          {otherOptions.map((opt) => (
             <button
               key={opt.id}
               type="button"
-              disabled={disabled || (hasSelected && !isSelected)}
+              disabled={disabled || (hasSelected && selected !== opt.id)}
               onClick={() => handleSelect(opt.id)}
-              className={cn(
-                'relative rounded-xl px-4 py-3.5 text-sm font-semibold transition-all duration-150 active:scale-[0.97] border text-left overflow-hidden',
-                isSelected
-                  ? 'border-violet-500/50 bg-violet-500/15 text-violet-200 shadow-lg shadow-violet-900/20'
-                  : hasSelected
-                  ? 'border-border/20 bg-secondary/15 text-muted-foreground/30 cursor-default opacity-50'
-                  : 'border-border/50 bg-secondary/40 text-foreground hover:bg-secondary/70 hover:border-violet-500/30',
-              )}
+              className={cn(buttonClass(opt.id), 'text-left')}
             >
               {opt.label}
             </button>
-          )
-        })}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

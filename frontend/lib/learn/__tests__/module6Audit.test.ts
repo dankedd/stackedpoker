@@ -291,13 +291,18 @@ describe('Scored vs unscored — isScoredStep behaves as designed for every new 
 
 describe('New components use orderStepOptions wherever they render step.options (house style guard)', () => {
   const componentsWithOptions = [
-    'SuitIsomorphism.tsx', 'BoardVolatility.tsx', 'RangeBoardCollision.tsx', 'EquityBucket.tsx',
+    'SuitIsomorphism.tsx', 'RangeBoardCollision.tsx', 'EquityBucket.tsx',
   ]
 
   // `orderStepOptions` (interactionSafety.ts) is the single source of truth for option display
   // order: it enforces the global Fold->Check->Call->Raise->All-in order for clean poker-action
   // sets and otherwise falls back to the existing `shuffleBySeed` seeded shuffle internally — so
   // components must call it (not `shuffleBySeed` directly) wherever they render `step.options`.
+  //
+  // BoardVolatility.tsx is a deliberate exception, NOT an oversight: its CompareMode positions
+  // the 'a'/'b' answer buttons directly under their matching board (left answer under left board,
+  // right under right), so those two options must never be shuffled or reordered — the whole
+  // point of that layout is that position IS the mapping. See CompareMode's own doc comment.
   it('every listed component imports and calls orderStepOptions', () => {
     for (const file of componentsWithOptions) {
       const src = readFileSync(join(__dirname, '..', '..', '..', 'components', 'learn', 'steps', file), 'utf8')
