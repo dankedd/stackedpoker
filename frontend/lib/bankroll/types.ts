@@ -81,3 +81,13 @@ export interface BankrollMentalEntryRow {
   session_id: string;
   overall_score: number;
 }
+
+/** A full bankroll_transactions row, as managed by the /bankroll/wallet page. */
+export interface BankrollTransactionRow {
+  id: string;
+  type: "deposit" | "withdrawal";
+  amount: number;
+  currency: string;
+  occurred_at: string;
+  note: string | null;
+}

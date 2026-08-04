@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { toast } from "sonner";
-import { X, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Modal } from "@/components/ui/modal";
 import { cn } from "@/lib/utils";
 import { buildSessionTimestamps, splitSessionTimestamps, computeSessionResult } from "@/lib/bankroll/sessionForm";
 import type { BankrollSessionRow } from "@/lib/bankroll/types";
@@ -173,134 +173,113 @@ export function SessionFormModal({ open, userId, editing, onClose, onSaved }: Se
     }
   }
 
-  const modal = (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#0B1120] shadow-2xl shadow-black/60 max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.07] sticky top-0 bg-[#0B1120] z-10">
-          <h2 className="text-sm font-semibold text-foreground">{editing ? "Edit session" : "New session"}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-7 w-7 flex items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-white/5 transition-all"
-          >
-            <X className="h-4 w-4" />
-          </button>
+  return (
+    <Modal open={open} onClose={onClose} title={editing ? "Edit session" : "New session"}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <label className={labelCls}>Date</label>
+            <input type="date" required value={form.date} onChange={(e) => set("date", e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Begin time</label>
+            <input type="time" required value={form.beginTime} onChange={(e) => set("beginTime", e.target.value)} className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>End time</label>
+            <input type="time" required value={form.endTime} onChange={(e) => set("endTime", e.target.value)} className={inputCls} />
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className={labelCls}>Date</label>
-              <input type="date" required value={form.date} onChange={(e) => set("date", e.target.value)} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Begin time</label>
-              <input type="time" required value={form.beginTime} onChange={(e) => set("beginTime", e.target.value)} className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>End time</label>
-              <input type="time" required value={form.endTime} onChange={(e) => set("endTime", e.target.value)} className={inputCls} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className={labelCls}>Site</label>
-              <input list="bankroll-site-suggestions" value={form.site} onChange={(e) => set("site", e.target.value)} placeholder="PokerStars" className={inputCls} />
-              <datalist id="bankroll-site-suggestions">
-                {SITE_SUGGESTIONS.map((s) => <option key={s} value={s} />)}
-              </datalist>
-            </div>
-            <div>
-              <label className={labelCls}>Variant</label>
-              <input list="bankroll-variant-suggestions" value={form.variant} onChange={(e) => set("variant", e.target.value)} placeholder="NLHE" className={inputCls} />
-              <datalist id="bankroll-variant-suggestions">
-                {VARIANT_SUGGESTIONS.map((v) => <option key={v} value={v} />)}
-              </datalist>
-            </div>
-            <div>
-              <label className={labelCls}>Stake</label>
-              <input value={form.stakes} onChange={(e) => set("stakes", e.target.value)} placeholder="$1/$2" className={inputCls} />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className={labelCls}>Result</label>
-              <input
-                type="number"
-                step="0.01"
-                required
-                value={form.result}
-                onChange={(e) => set("result", e.target.value)}
-                className={cn(inputCls, "tabular-nums")}
-              />
-            </div>
-            <div>
-              <label className={labelCls}>EV <span className="text-muted-foreground/40 normal-case font-normal">(optional)</span></label>
-              <input
-                type="number"
-                step="0.01"
-                value={form.ev}
-                onChange={(e) => set("ev", e.target.value)}
-                placeholder="—"
-                className={cn(inputCls, "tabular-nums")}
-              />
-            </div>
-            <div>
-              <label className={labelCls}>Hands played</label>
-              <input
-                type="number"
-                min={0}
-                step="1"
-                value={form.hands}
-                onChange={(e) => set("hands", e.target.value)}
-                placeholder="—"
-                className={cn(inputCls, "tabular-nums")}
-              />
-            </div>
-          </div>
-
+        <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className={labelCls}>Mental game score <span className="text-muted-foreground/40 normal-case font-normal">(optional, 1–10)</span></label>
-            <select value={form.mentalScore} onChange={(e) => set("mentalScore", e.target.value)} className={cn(inputCls, "cursor-pointer")}>
-              <option value="">Not tracked</option>
-              {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-                <option key={n} value={n}>{n} / 10</option>
-              ))}
-            </select>
+            <label className={labelCls}>Site</label>
+            <input list="bankroll-site-suggestions" value={form.site} onChange={(e) => set("site", e.target.value)} placeholder="PokerStars" className={inputCls} />
+            <datalist id="bankroll-site-suggestions">
+              {SITE_SUGGESTIONS.map((s) => <option key={s} value={s} />)}
+            </datalist>
           </div>
-
           <div>
-            <label className={labelCls}>Notes</label>
-            <Textarea
-              value={form.notes}
-              onChange={(e) => set("notes", e.target.value)}
-              placeholder="How did it go? Any leaks, reads, or takeaways…"
-              rows={3}
-              className="font-sans"
+            <label className={labelCls}>Variant</label>
+            <input list="bankroll-variant-suggestions" value={form.variant} onChange={(e) => set("variant", e.target.value)} placeholder="NLHE" className={inputCls} />
+            <datalist id="bankroll-variant-suggestions">
+              {VARIANT_SUGGESTIONS.map((v) => <option key={v} value={v} />)}
+            </datalist>
+          </div>
+          <div>
+            <label className={labelCls}>Stake</label>
+            <input value={form.stakes} onChange={(e) => set("stakes", e.target.value)} placeholder="$1/$2" className={inputCls} />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <label className={labelCls}>Result</label>
+            <input
+              type="number"
+              step="0.01"
+              required
+              value={form.result}
+              onChange={(e) => set("result", e.target.value)}
+              className={cn(inputCls, "tabular-nums")}
             />
           </div>
-
-          <div className="flex items-center justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="poker" disabled={saving}>
-              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-              {editing ? "Save changes" : "Log session"}
-            </Button>
+          <div>
+            <label className={labelCls}>EV <span className="text-muted-foreground/40 normal-case font-normal">(optional)</span></label>
+            <input
+              type="number"
+              step="0.01"
+              value={form.ev}
+              onChange={(e) => set("ev", e.target.value)}
+              placeholder="—"
+              className={cn(inputCls, "tabular-nums")}
+            />
           </div>
-        </form>
-      </div>
-    </div>
-  );
+          <div>
+            <label className={labelCls}>Hands played</label>
+            <input
+              type="number"
+              min={0}
+              step="1"
+              value={form.hands}
+              onChange={(e) => set("hands", e.target.value)}
+              placeholder="—"
+              className={cn(inputCls, "tabular-nums")}
+            />
+          </div>
+        </div>
 
-  return createPortal(modal, document.body);
+        <div>
+          <label className={labelCls}>Mental game score <span className="text-muted-foreground/40 normal-case font-normal">(optional, 1–10)</span></label>
+          <select value={form.mentalScore} onChange={(e) => set("mentalScore", e.target.value)} className={cn(inputCls, "cursor-pointer")}>
+            <option value="">Not tracked</option>
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+              <option key={n} value={n}>{n} / 10</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className={labelCls}>Notes</label>
+          <Textarea
+            value={form.notes}
+            onChange={(e) => set("notes", e.target.value)}
+            placeholder="How did it go? Any leaks, reads, or takeaways…"
+            rows={3}
+            className="font-sans"
+          />
+        </div>
+
+        <div className="flex items-center justify-end gap-2 pt-2">
+          <Button type="button" variant="outline" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="poker" disabled={saving}>
+            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+            {editing ? "Save changes" : "Log session"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
 }
