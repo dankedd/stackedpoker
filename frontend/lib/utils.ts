@@ -10,6 +10,22 @@ export function formatBB(bb: number | null | undefined): string {
   return `${bb.toFixed(1)}BB`;
 }
 
+export function formatCurrency(amount: number | null | undefined, currency: string = "USD"): string {
+  if (amount == null || !Number.isFinite(amount)) return "—";
+  try {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 2 }).format(amount);
+  } catch {
+    return `${amount.toFixed(2)} ${currency}`;
+  }
+}
+
+export function formatPercent(value: number | null | undefined, opts?: { decimals?: number; signed?: boolean }): string {
+  if (value == null || !Number.isFinite(value)) return "—";
+  const decimals = opts?.decimals ?? 1;
+  const sign = opts?.signed && value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(decimals)}%`;
+}
+
 export function scoreToLabel(score: number): { label: string; color: string } {
   if (score >= 85) return { label: "Excellent", color: "text-violet-400" };
   if (score >= 70) return { label: "Good", color: "text-green-400" };

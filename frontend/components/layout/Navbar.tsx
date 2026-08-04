@@ -37,6 +37,7 @@ const DEV_ITEMS: DevNavItem[] = [
   { label: "Practice", href: "/practice", status: "next" },
   { label: "Analyze",  href: "/analyze",  status: "development" },
   { label: "Replay",   href: "/replay",   status: "development" },
+  { label: "Bankroll", href: "/bankroll", status: "development" },
 ];
 
 function isItemActive(pathname: string, href: string): boolean {
