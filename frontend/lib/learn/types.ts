@@ -1943,7 +1943,7 @@ export const ACHIEVEMENTS: Achievement[] = [
     description: 'Learned to see a flop as two colliding ranges, not one strong hand',
     icon: '🧬',
     category: 'learning',
-    condition: 'Complete "Stop Thinking Hand vs Hand" and "Who Owns This Flop?"',
+    condition: 'Complete "Stop Thinking Hand vs Hand" and "Range Advantage"',
     xp_bonus: 75,
     tier: 'bronze',
   },

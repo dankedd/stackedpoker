@@ -12,10 +12,10 @@ describe('Module 8 (Range vs Range) — QA audit', () => {
     expect(mod?.contentStatus).toBe('complete')
   })
 
-  it('has exactly 6 lessons, sort_order 1-6, all referencing the module', () => {
-    expect(moduleLessons.length).toBe(6)
+  it('has exactly 5 lessons, sort_order 1-5, all referencing the module', () => {
+    expect(moduleLessons.length).toBe(5)
     const orders = moduleLessons.map((l) => l.sort_order).sort((a, b) => a - b)
-    expect(orders).toEqual([1, 2, 3, 4, 5, 6])
+    expect(orders).toEqual([1, 2, 3, 4, 5])
     for (const l of moduleLessons) expect(l.module_id).toBe(MODULE_ID)
   })
 
@@ -136,9 +136,9 @@ describe('Module 8 (Range vs Range) — QA audit', () => {
     const lessonTitles = new Set(moduleLessons.map((l) => l.title))
     const rangeThinker = ACHIEVEMENTS.find((a) => a.id === 'range_thinker')!
     expect(rangeThinker.condition).toContain('Stop Thinking Hand vs Hand')
-    expect(rangeThinker.condition).toContain('Who Owns This Flop?')
+    expect(rangeThinker.condition).toContain('Range Advantage')
     expect(lessonTitles.has('Stop Thinking Hand vs Hand')).toBe(true)
-    expect(lessonTitles.has('Who Owns This Flop?')).toBe(true)
+    expect(lessonTitles.has('Range Advantage')).toBe(true)
 
     const xray = ACHIEVEMENTS.find((a) => a.id === 'xray_vision')!
     expect(lessonTitles.has('X-Ray the Range')).toBe(true)

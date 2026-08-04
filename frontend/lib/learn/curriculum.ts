@@ -296,9 +296,10 @@ export const LEARNING_MODULES: LearningModule[] = [
       'Distinguish hand-vs-hand thinking from range-vs-range thinking, and recognize when a strong individual hand sits inside a weak overall range',
       'Read an Equity Bucket (Strong/Good/Weak/Trash) distribution and explain where a range\'s strong hands actually come from, not just its raw equity number',
       'Judge which preflop range a board favors and why that advantage can shift after the flop, without assuming "range advantage" always means "bet"',
+      'Tell range advantage and nut advantage apart, and recognize when a single board hands one to each player instead of both to the same one',
     ],
     difficulty: 'intermediate',
-    estimatedLessons: 6,
+    estimatedLessons: 5,
     stageId: 'range-thinking',
     order: 8,
     prerequisiteModuleId: 'cbetting-fundamentals-module',
@@ -5879,13 +5880,18 @@ export const LESSONS: Lesson[] = [
         id: 'stp-s4',
         type: 'decision_spot',
         concept_ids: ['three_bet_sizing'],
-        narrative: 'Cash game, 100bb effective. CO opens to 2.3bb. Hero 3-bets to just 3bb from the BB.',
+        narrative: 'Cash game, 100bb effective. CO opens to 2.3bb. Hero 3-bets to just 4bb from the BB.',
         decision_spot_question: 'What is wrong with this 3-bet sizing?',
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'CO',
         effective_stack_bb: 100,
-        action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN folds', 'SB folds'],
+        // Hero's own completed 3-bet is included here (as 'Hero ...', same convention
+        // stp-s5 already uses) so the table actually shows the 3-bet being critiqued —
+        // not just CO's open. 4bb is the smallest bad-but-LEGAL size to critique: the
+        // minimum legal reraise over a 2.3bb open is 2.3 + (2.3 - 1) = 3.6bb, so the
+        // previous "3bb" was below the legal minimum raise, not just an unusually small one.
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN folds', 'SB folds', 'Hero raises to 4bb'],
         options: [
           {
             id: 'great_price', label: 'Villain gets a much better price to continue with more hands', quality: 'perfect',
@@ -6901,6 +6907,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BTN',
         villain_position: 'BB',
         effective_stack_bb: 60,
+        action_before_hero: ['Hero raises to 2.3bb', 'SB folds', 'BB raises to 8bb'],
         hero_hand: ['Ks', 'Qs'],
         options: [
           {
@@ -6927,6 +6934,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'UTG',
         villain_position: 'BTN',
         effective_stack_bb: 30,
+        action_before_hero: ['Hero raises to 2.3bb', 'HJ folds', 'CO folds', 'BTN raises to 7bb', 'SB folds', 'BB folds'],
         hero_hand: ['Ks', 'Qs'],
         options: [
           {
@@ -7762,6 +7770,7 @@ export const LESSONS: Lesson[] = [
         villain_position: 'CO',
         effective_stack_bb: 40,
         ante_bb: 0.1,
+        action_before_hero: ['UTG folds', 'UTG+1 folds', 'UTG+2 folds', 'LJ folds', 'HJ folds', 'CO raises to 2.3bb'],
         hero_hand: ['Ks', 'Js'],
         options: [
           { id: 'tighter', label: 'Tighter than a BTN open would be, but still wide enough to attack', quality: 'perfect', feedback: 'Correct — CO opens tighter than BTN, but it is still a late-position range with real attackable material in it, not a premium-only range.' },
@@ -7777,6 +7786,7 @@ export const LESSONS: Lesson[] = [
         table_size: 9,
         hero_position: 'BTN',
         villain_position: 'CO',
+        action_before_hero: ['UTG folds', 'UTG+1 folds', 'UTG+2 folds', 'LJ folds', 'HJ folds', 'CO raises to 2.3bb'],
         options: [
           { id: 'sb_bb', label: 'The SB and the BB', quality: 'perfect', feedback: 'Correct — from the BTN, only the two blinds remain live behind Hero.' },
           { id: 'three_players', label: 'Three players remain behind', quality: 'mistake', feedback: 'From the Button, only the SB and BB are left to act — that\'s two players, not three.' },
@@ -7791,6 +7801,7 @@ export const LESSONS: Lesson[] = [
         table_size: 9,
         hero_position: 'BTN',
         villain_position: 'CO',
+        action_before_hero: ['UTG folds', 'UTG+1 folds', 'UTG+2 folds', 'LJ folds', 'HJ folds', 'CO raises to 2.3bb'],
         options: [
           { id: 'yes', label: 'Yes — Hero is last to act', quality: 'perfect', feedback: 'Correct — the Button has position on every remaining player for the rest of the hand.' },
           { id: 'no', label: 'No', quality: 'mistake', feedback: 'The Button acts last postflop against every other player still in the hand — this is about as good as position gets.' },
@@ -7806,6 +7817,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BTN',
         villain_position: 'CO',
         effective_stack_bb: 40,
+        action_before_hero: ['UTG folds', 'UTG+1 folds', 'UTG+2 folds', 'LJ folds', 'HJ folds', 'CO raises to 2.3bb'],
         hero_hand: ['Ks', 'Js'],
         options: [
           { id: 'call', label: 'Call', quality: 'perfect', feedback: "In position, with a hand that has good playability and blocker value but isn't a clear premium, calling and playing postflop with the advantage is comfortable — there's no need to force the issue." },
@@ -7857,6 +7869,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'SB',
         villain_position: 'CO',
         effective_stack_bb: 40,
+        action_before_hero: ['UTG folds', 'UTG+1 folds', 'UTG+2 folds', 'LJ folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN folds'],
         hero_hand: ['Ks', 'Js'],
         options: [
           { id: 'no', label: 'No — Hero is out of position now', quality: 'perfect', feedback: 'Correct. Moving from BTN to SB flips Hero from full position to out of position, and unlike the BTN spot, the BB is still there to wake up as well.' },
@@ -7874,6 +7887,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'SB',
         villain_position: 'CO',
         effective_stack_bb: 40,
+        action_before_hero: ['UTG folds', 'UTG+1 folds', 'UTG+2 folds', 'LJ folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN folds'],
         hero_hand: ['Ks', 'Js'],
         options: [
           { id: '3bet_or_fold', label: 'More toward 3-bet-or-fold — calling OOP with a speculative hand that realizes equity worse, and with the BB still to act, is a weaker plan than it was in position', quality: 'perfect', feedback: 'Correct. This is the whole module\'s central lesson in miniature: the cards never changed, but position and players-behind both did — and that alone is enough to shift the entire plan for the same two cards.',
@@ -8023,6 +8037,7 @@ export const LESSONS: Lesson[] = [
         table_size: 9,
         hero_position: 'CO',
         villain_position: 'HJ',
+        action_before_hero: ['UTG folds', 'UTG+1 folds', 'UTG+2 folds', 'LJ folds', 'HJ raises to 2.3bb'],
         options: [
           {
             id: 'comprehensive', label: 'Every factor together — position, players behind, stack depth, and hand', quality: 'perfect',
@@ -8107,6 +8122,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'HJ',
         villain_position: 'UTG',
         effective_stack_bb: 60,
+        action_before_hero: ['UTG raises to 2.2bb', 'UTG+1 folds', 'LJ folds'],
         hero_hand: ['As', 'Jh'],
         decision_spot_question: '3-BET, CALL, or FOLD?',
         options: [
@@ -8522,6 +8538,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BB',
         villain_position: 'BTN',
         effective_stack_bb: 18,
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.5bb', 'SB folds'],
         options: [
           { id: 'allin', label: 'An all-in 3-bet (a jam) rather than a smaller, non-all-in raise', quality: 'perfect', feedback: 'Correct. Below roughly 30bb, a small non-all-in 3-bet often leaves too little behind to make sense — jamming becomes the structurally cleaner way to apply the same pressure, and folds to it are just as valuable as folds to a smaller raise would have been.' },
           { id: 'small_raise', label: 'A small, standard non-all-in raise, same as at deeper stacks', quality: 'mistake', feedback: 'At this depth a small non-all-in raise commits a large fraction of the stack anyway without the extra fold equity a genuine jam provides — the aggressive option typically becomes all-in instead.' },
@@ -9049,6 +9066,7 @@ export const LESSONS: Lesson[] = [
         table_size: 6,
         hero_position: 'SB',
         villain_position: 'CO',
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN folds'],
         options: [
           { id: 'no', label: 'No', quality: 'perfect', feedback: 'Correct — the BB is still behind Hero. Calling here does not close the action the way it would from the BB.' },
           { id: 'yes', label: 'Yes', quality: 'mistake', feedback: 'The BB has not acted yet — Hero calling does not end the betting round the way a BB call would.' },
@@ -9693,6 +9711,7 @@ export const LESSONS: Lesson[] = [
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'BTN',
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.5bb', 'SB folds'],
         options: [
           {
             id: 'overfold', label: 'Big Blind Overfolding — folding profitable suited hands and small pairs', quality: 'perfect',
@@ -9766,6 +9785,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BB',
         villain_position: 'CO',
         effective_stack_bb: 60,
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb'],
         hero_hand: ['Js', '9s'],
         options: [
           { id: 'call', label: 'Call', quality: 'perfect', feedback: 'Correct — good price, closed action, real suited connectivity against a CO open. A clean call, consistent with the range you just built.' },
@@ -9783,6 +9803,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BB',
         villain_position: 'CO',
         effective_stack_bb: 60,
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb'],
         hero_hand: ['8c', '6d'],
         options: [
           { id: 'fold', label: 'Fold', quality: 'perfect', feedback: 'Correct — no suitedness, a one-gap connector, and no real blocker or nut potential against a CO open. Even with a decent price, this doesn\'t clear the bar.' },
@@ -9959,6 +9980,7 @@ export const LESSONS: Lesson[] = [
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'BTN',
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds'],
         options: [
           {
             id: 'backwards', label: 'It has the priorities backwards — suited hands deserve more credit than offsuit broadways', quality: 'perfect',
@@ -10003,6 +10025,7 @@ export const LESSONS: Lesson[] = [
         table_size: 6,
         hero_position: 'CO',
         villain_position: 'HJ',
+        action_before_hero: ['UTG folds', 'HJ raises to 2.3bb'],
         hero_hand: ['Ac', 'Td'],
         options: [
           {
@@ -10054,6 +10077,7 @@ export const LESSONS: Lesson[] = [
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'BTN',
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 3bb', 'SB folds'],
         options: [
           {
             id: 'marginal', label: 'The marginal edge — weak suited hands and small pairs at the old price', quality: 'perfect',
@@ -10108,6 +10132,7 @@ export const LESSONS: Lesson[] = [
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'BTN',
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds'],
         options: [
           {
             id: 'comprehensive', label: 'Any change that weakens price, position, or stack depth for this call', quality: 'perfect',
@@ -10158,6 +10183,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BTN',
         villain_position: 'HJ',
         effective_stack_bb: 40,
+        action_before_hero: ['UTG folds', 'HJ raises to 2.3bb', 'CO folds'],
         hero_hand: ['Ts', '9s'],
         options: [
           { id: 'call', label: 'Call', quality: 'perfect', feedback: 'Consistent — T9s is exactly the kind of playable, well-connected suited hand a BTN calling range wants.' },
@@ -10174,6 +10200,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BTN',
         villain_position: 'HJ',
         effective_stack_bb: 40,
+        action_before_hero: ['UTG folds', 'HJ raises to 2.3bb', 'CO folds'],
         hero_hand: ['As', 'Kc'],
         options: [
           { id: 'raise', label: 'Raise / Jam', quality: 'perfect', feedback: 'Consistent — AKo has the raw value to want to build the pot and apply pressure rather than just call.' },
@@ -10191,6 +10218,7 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BTN',
         villain_position: 'HJ',
         effective_stack_bb: 40,
+        action_before_hero: ['UTG folds', 'HJ raises to 2.3bb', 'CO folds'],
         hero_hand: ['Qc', '4h'],
         options: [
           { id: 'fold', label: 'Fold', quality: 'perfect', feedback: 'Consistent — Q4o has no suitedness, no connectedness, and real domination risk against an HJ open. Clean fold.' },
@@ -14074,11 +14102,17 @@ export const LESSONS: Lesson[] = [
     subtitle: 'Your hand is strong. Is your range?',
     lesson_type: 'concept_reveal',
     concept_ids: ['range_vs_range_equity', 'hand_vs_range_strength', 'range_advantage'],
-    estimated_min: 6,
-    xp_reward: 130,
+    estimated_min: 8,
+    xp_reward: 170,
     sort_order: 1,
-    next_lesson_teaser: 'Who Owns This Flop?',
+    next_lesson_teaser: 'Range Advantage',
     steps: [
+      {
+        id: 'sthh-intro',
+        type: 'concept_reveal',
+        concept_title: 'What This Module Is About',
+        concept_content: 'Right now, when you look at a flop, you probably ask "what\'s my hand?" By the end of this module, that question will have been replaced by a better one: "which range has the advantage on this board?" Everything that follows builds toward that single shift.',
+      },
       {
         id: 'sthh-s1',
         type: 'concept_reveal',
@@ -14197,6 +14231,52 @@ export const LESSONS: Lesson[] = [
         xp: 15,
       },
       {
+        id: 'sthh-tf1',
+        type: 'decision_spot',
+        concept_ids: ['hand_vs_range_strength'],
+        narrative: 'True or false?',
+        decision_spot_question: '"A hand that wins by itself can still belong to a range that\'s behind on this flop."',
+        options: [
+          { id: 'true', label: 'True', quality: 'perfect', feedback: `True — you just watched it happen. AA alone has ≈${LESSON1_SCENARIO.heroHandEquity}% equity here, while CO's whole range trails BB's (${LESSON1_SCENARIO.postflopEquity.co}% to ${LESSON1_SCENARIO.postflopEquity.bb}%) on the exact same flop.` },
+          { id: 'false', label: 'False', quality: 'mistake', feedback: `It's true, and you already have the proof: AA's ≈${LESSON1_SCENARIO.heroHandEquity}% individual equity coexists with CO's range trailing BB's overall on 8♥7♠5♠.` },
+        ],
+        xp: 8,
+      },
+      {
+        id: 'sthh-tf2',
+        type: 'decision_spot',
+        concept_ids: ['range_advantage'],
+        narrative: 'True or false?',
+        decision_spot_question: '"The range that was ahead before the flop keeps the larger share of the edge on every flop."',
+        options: [
+          { id: 'false', label: 'False', quality: 'perfect', feedback: `False. CO led preflop ${LESSON1_SCENARIO.preflopEquity.co}% to ${LESSON1_SCENARIO.preflopEquity.bb}%, yet trails BB (${LESSON1_SCENARIO.postflopEquity.co}% to ${LESSON1_SCENARIO.postflopEquity.bb}%) after this exact flop. A preflop edge is a preflop-only fact — each board revalues both ranges on its own terms.` },
+          { id: 'true', label: 'True', quality: 'mistake', feedback: `Not on this flop — CO led preflop ${LESSON1_SCENARIO.preflopEquity.co}% to ${LESSON1_SCENARIO.preflopEquity.bb}%, but trails BB (${LESSON1_SCENARIO.postflopEquity.co}% to ${LESSON1_SCENARIO.postflopEquity.bb}%) once the flop actually comes down.` },
+        ],
+        xp: 8,
+      },
+      {
+        id: 'sthh-why',
+        type: 'decision_spot',
+        concept_ids: ['hand_vs_range_strength'],
+        narrative: `You've seen the numbers: CO leads preflop, trails after the flop, yet AA alone still has ≈${LESSON1_SCENARIO.heroHandEquity}% equity against BB's whole range.`,
+        decision_spot_question: 'In your own words — why can an individual hand\'s equity stay high while the range it belongs to loses ground?',
+        options: [
+          {
+            id: 'two_questions', label: 'Equity is measured hand-vs-range; range advantage is measured range-vs-range', quality: 'perfect',
+            feedback: 'Correct. Both numbers are real and both are about the same flop — they just answer different questions, same board, two different measurements. AA\'s ≈85% is "how does THIS hand do against BB\'s range." CO trailing is "how does CO\'s WHOLE range do against BB\'s whole range." Neither one contradicts the other.',
+          },
+          {
+            id: 'calc_error', label: 'One of the two numbers must be a calculation error', quality: 'mistake',
+            feedback: 'Both numbers are correct as stated. They can\'t contradict each other because they\'re not measuring the same thing — one is hand-vs-range, the other is range-vs-range.',
+          },
+          {
+            id: 'aa_immune', label: 'AA is simply immune to board texture in a way no other hand is', quality: 'mistake',
+            feedback: 'AA is a strong hand on this board, but it is not "immune" to texture — plenty of boards exist where AA\'s equity drops hard too. The real answer is about what each number measures, not about AA being special.',
+          },
+        ],
+        xp: 12,
+      },
+      {
         id: 'sthh-s5',
         type: 'concept_reveal',
         concept_title: 'The New Question',
@@ -14206,20 +14286,26 @@ export const LESSONS: Lesson[] = [
           { term: 'Range strength', description: 'How your ENTIRE range does against theirs on this board — what actually drives whether your range can keep applying pressure.' },
         ],
       },
+      {
+        id: 'sthh-bridge',
+        type: 'concept_reveal',
+        concept_title: 'One More Name For It',
+        concept_content: 'The pattern you just found — one range doing better than another on a specific board — has a name: range advantage. The next lesson puts a number on it, and follows it across boards where the edge swings hard in either direction.',
+      },
     ],
   },
   {
-    id: 'who-owns-this-flop',
+    id: 'range-advantage',
     module_id: 'range-vs-range-module',
-    slug: 'who-owns-this-flop',
-    title: 'Who Owns This Flop?',
-    subtitle: 'Same players. Different flop. Predict what changes.',
+    slug: 'range-advantage',
+    title: 'Range Advantage',
+    subtitle: 'Same players. Different flop. Now put a number on it.',
     lesson_type: 'puzzle_drill',
     concept_ids: ['board_texture_shift', 'range_advantage', 'range_vs_range_equity'],
-    estimated_min: 8,
-    xp_reward: 150,
+    estimated_min: 16,
+    xp_reward: 340,
     sort_order: 2,
-    next_lesson_teaser: 'Range Advantage',
+    next_lesson_teaser: 'X-Ray the Range',
     steps: [
       {
         id: 'wotf-s1',
@@ -14304,28 +14390,6 @@ export const LESSONS: Lesson[] = [
         board_rank_sort_boards: BOARD_FAVOR_SPECTRUM.map((b) => ({ id: b.id, label: b.label, board: b.board })),
         board_rank_sort_target: BOARD_FAVOR_SPECTRUM_TARGET,
       },
-      {
-        id: 'wotf-s6',
-        type: 'concept_reveal',
-        concept_title: 'What You Just Did',
-        concept_content: 'You read board texture through the lens of two ranges, not one hand — noticing which range\'s hand TYPES actually live on a given board. Next: put a number on that intuition.',
-      },
-    ],
-  },
-
-  {
-    id: 'range-advantage',
-    module_id: 'range-vs-range-module',
-    slug: 'range-advantage',
-    title: 'Range Advantage',
-    subtitle: '62% equity is useful. It is not the whole story.',
-    lesson_type: 'micro',
-    concept_ids: ['range_advantage', 'range_vs_range_equity', 'board_texture_shift'],
-    estimated_min: 6,
-    xp_reward: 140,
-    sort_order: 3,
-    next_lesson_teaser: 'X-Ray the Range',
-    steps: [
       {
         id: 'ra-s1',
         type: 'concept_reveal',
@@ -14412,10 +14476,76 @@ export const LESSONS: Lesson[] = [
         ],
       },
       {
+        id: 'rax-sets',
+        type: 'range_collision',
+        concept_ids: ['range_composition'],
+        narrative: 'BB\'s calling range is much wider than IP\'s opening range — 113 hand classes to IP\'s 82. Wider should mean more of everything, right?',
+        range_collision_mode: 'predict',
+        range_collision_prompt: 'Which range has more SETS on A♦7♥6♣?',
+        board: A76R_SCENARIO.board,
+        range_collision_a: { label: 'IP', range: ILLUSTRATIVE_OPENER_RANGE, frequencyMap: ILLUSTRATIVE_OPENER_FREQUENCY },
+        range_collision_b: { label: 'BB', range: ILLUSTRATIVE_CALLER_RANGE, frequencyMap: ILLUSTRATIVE_CALLER_FREQUENCY },
+        range_collision_emphasize_categories: ['set'],
+        range_collision_show_me_why: [
+          { title: 'The Actual Count', body: 'IP: 18 set combos. BB: 18 set combos. Tied, exactly.' },
+          { title: 'Why Width Doesn\'t Decide This', body: 'A pocket pair always makes exactly 6 combos, no matter how wide or narrow the range around it is. Both ranges hold the same three pairs that flop a set here (77, 66... whichever the board pairs) — BB\'s extra width comes entirely from OTHER hand types, not more pairs.' },
+        ],
+        options: [
+          { id: 'tied', label: 'TIED', quality: 'perfect', feedback: 'Correct — 18 combos each. BB being much wider doesn\'t automatically mean more of every specific category; set combos are fixed by how many pairs each range holds, not by overall range width.' },
+          { id: 'bb', label: 'BB', quality: 'mistake', feedback: 'A reasonable guess — BB is the wider range — but not here. Both ranges carry exactly 18 set combos. Width doesn\'t automatically win every category.' },
+          { id: 'ip', label: 'IP', quality: 'mistake', feedback: 'Close in spirit (IP\'s range is more pair-dense as a percentage) but the raw combo count is tied: 18 each.' },
+        ],
+      },
+      {
+        id: 'rax-straights',
+        type: 'range_collision',
+        concept_ids: ['range_composition'],
+        narrative: 'Now the low, connected board — the one built to reward BB\'s range.',
+        range_collision_mode: 'predict',
+        range_collision_prompt: 'Which range has more straight-relevant hands (made straights + straight draws) on 6♥5♦4♣?',
+        board: CS_654R_SCENARIO.board,
+        range_collision_a: { label: 'IP', range: ILLUSTRATIVE_OPENER_RANGE, frequencyMap: ILLUSTRATIVE_OPENER_FREQUENCY },
+        range_collision_b: { label: 'BB', range: ILLUSTRATIVE_CALLER_RANGE, frequencyMap: ILLUSTRATIVE_CALLER_FREQUENCY },
+        range_collision_emphasize_categories: ['straight', 'straight_draw'],
+        range_collision_show_me_why: [
+          { title: 'The Actual Count', body: 'IP: 4 made straights + 100 straight-draw combos = 104 total. BB: 16 made straights + 228 straight-draw combos = 244 total — well over double.' },
+          { title: 'Why This Time Width Does Decide It', body: 'Unlike sets (fixed at 6 combos per pair regardless of range width), straight potential depends on holding two DIFFERENT connected ranks — and that\'s exactly the kind of hand a wide, price-taking calling range is built to include far more of.' },
+        ],
+        options: [
+          { id: 'bb', label: 'BB', quality: 'perfect', feedback: 'Correct — 244 combos to IP\'s 104, well over double. Unlike the tied set-count on A76r, straight-relevant hands genuinely do scale with BB\'s extra width on this connected texture.' },
+          { id: 'tied', label: 'TIED', quality: 'mistake', feedback: 'Not this time — that was the sets question on A76r. Here the gap is real and large: BB 244 combos to IP\'s 104.' },
+          { id: 'ip', label: 'IP', quality: 'mistake', feedback: 'The opposite — BB\'s wide range holds far more connected, straight-relevant hands here: 244 combos to IP\'s 104.' },
+        ],
+      },
+      {
+        id: 'rax-tf1',
+        type: 'decision_spot',
+        concept_ids: ['range_advantage'],
+        narrative: 'True or false?',
+        decision_spot_question: '"A range with more raw equity always has more of the very best hands too."',
+        options: [
+          { id: 'false', label: 'False', quality: 'perfect', feedback: 'False — and the next lesson shows a real board where these two pull apart from each other: one range can hold more equity while the OTHER range holds more of the actual nutted hands.' },
+          { id: 'true', label: 'True', quality: 'mistake', feedback: 'Not always — hold that thought. The next lesson shows a real board where equity and "who owns the nuts" point in different directions.' },
+        ],
+        xp: 8,
+      },
+      {
+        id: 'rax-tf2',
+        type: 'decision_spot',
+        concept_ids: ['range_advantage'],
+        narrative: 'True or false?',
+        decision_spot_question: '"A single board can hand range advantage to one player while nut advantage stays with the other."',
+        options: [
+          { id: 'true', label: 'True', quality: 'perfect', feedback: 'True — coming up next. Range advantage (who\'s ahead overall) and nut advantage (who holds more of the very best hands) are related but distinct, and a board can genuinely split them between two different players.' },
+          { id: 'false', label: 'False', quality: 'mistake', feedback: 'It can, actually — that\'s exactly what the next lesson demonstrates with a real board where the two point at different players.' },
+        ],
+        xp: 8,
+      },
+      {
         id: 'ra-s6',
         type: 'concept_reveal',
         concept_title: 'The Board Revalues the Entire Range',
-        concept_content: 'Range advantage is not a fixed property of "who raised" or "who called" — it is a function of exactly which hands are in each range and exactly what the board does with them. Next: raw equity itself turns out to be incomplete too.',
+        concept_content: 'Range advantage is not a fixed property of "who raised" or "who called" — it is a function of exactly which hands are in each range and exactly what the board does with them. Next: raw equity itself turns out to be incomplete too — and "who\'s ahead" turns out to be a different question from "who owns the nuts."',
       },
     ],
   },
@@ -14426,10 +14556,10 @@ export const LESSONS: Lesson[] = [
     title: 'X-Ray the Range',
     subtitle: 'A range has 55% equity. Do you know enough?',
     lesson_type: 'micro',
-    concept_ids: ['equity_buckets', 'equity_bucket_distribution', 'strong_hand_density', 'range_composition'],
-    estimated_min: 7,
-    xp_reward: 150,
-    sort_order: 4,
+    concept_ids: ['equity_buckets', 'equity_bucket_distribution', 'strong_hand_density', 'range_composition', 'nut_advantage'],
+    estimated_min: 12,
+    xp_reward: 260,
+    sort_order: 3,
     next_lesson_teaser: 'Why Strategy Changes',
     steps: [
       {
@@ -14528,6 +14658,111 @@ export const LESSONS: Lesson[] = [
         concept_title: 'Hand Value Is Relative',
         concept_content: 'A hand category is not intrinsically strong, good, weak, or trash. Its bucket depends on the board and the opposing range — full stop. Range composition, not a single equity number, is what tells you where a range\'s strength actually lives.',
       },
+      {
+        id: 'xr-nut-intro',
+        type: 'concept_reveal',
+        concept_title: 'A Different Kind of Advantage',
+        concept_content: 'Equity buckets measure how much of a range\'s strength comes from hands that win outright, right now. There\'s a second, related but distinct question: how much of a range is made up of hands strong enough to be played as the best possible holding — even when a technically-better one exists somewhere in the deck. A range has the nut advantage when it holds more of THOSE hands than its opponent\'s range does.',
+        concept_structured_items: [
+          { term: 'Nut advantage', description: 'A range has it when the truly best possible hands make up a bigger share of it than they do of the opponent\'s range.' },
+          { term: 'Effective nuts', description: 'A hand that isn\'t literally the best possible holding, but is strong enough to be played as if it were — a set on a dry, unpaired board, for example.' },
+        ],
+        concept_note: 'Range advantage and nut advantage usually move together. The next two boards show what happens when they don\'t.',
+      },
+      {
+        id: 'xr-nut-aq3',
+        type: 'nut_advantage',
+        concept_ids: ['nut_advantage'],
+        narrative: 'BB vs UTG, 40bb effective. UTG opens, BB calls. Flop: A♥Q♦3♠. Preflop, BB\'s calling range already gave up its very best hands here — the AA/QQ/AK-type combos that would rather 3-bet than just flat — leaving mostly the tier just below them.',
+        board: ['Ah', 'Qd', '3s'],
+        options: [
+          {
+            id: 'utg', label: 'UTG — BB\'s range has almost none of the hands that make the nuts here', quality: 'perfect',
+            feedback: 'Correct. The nutted hands on an A-high flop are exactly the combos (AA, QQ, often AK) that a calling range like BB\'s mostly doesn\'t hold — they went into a 3-bet before the flop instead of a flat call. UTG kept a normal share of them, so here the nut advantage sits with UTG, same as the range advantage.',
+          },
+          {
+            id: 'bb', label: 'BB — a calling range always keeps some premium hands in reserve', quality: 'mistake',
+            feedback: 'Not on this board. BB\'s calling range is specifically the part of its preflop range that chose NOT to 3-bet — which is exactly where AA/QQ/AK-type hands are the most missing.',
+          },
+          {
+            id: 'neither', label: 'Neither — nut advantage doesn\'t apply on a rainbow board', quality: 'mistake',
+            feedback: 'Nut advantage is about made-hand strength (sets, top pairs, overpairs here), not flush potential — it applies on any board, rainbow or not.',
+          },
+        ],
+        xp: 15,
+      },
+      {
+        id: 'xr-nut-qjt',
+        type: 'nut_advantage',
+        concept_ids: ['nut_advantage'],
+        narrative: 'Same two ranges, same stakes. This time the flop is Q♥J♥T♥ — a much more connected texture. UTG still connects with more of this board overall than BB does (UTG still has the range advantage).',
+        board: ['Qh', 'Jh', 'Th'],
+        options: [
+          {
+            id: 'utg', label: 'UTG — range advantage and nut advantage always move together', quality: 'mistake',
+            feedback: 'Not this time — this board is the proof they can split. UTG connects with more combos overall, but that doesn\'t mean BB\'s range was stripped of its best hands the way it was on the ace-high flop.',
+          },
+          {
+            id: 'bb', label: 'BB — its calling range still holds real flushes, straights, sets and two pair on this texture', quality: 'perfect',
+            feedback: 'Correct — this is the split. UTG connects with MORE of this board overall (range advantage), but BB\'s flatting range was never stripped of its best hands the way it was on the ace-high flop: real flushes, straights, sets, and two pair are still in there. Playing this board as if UTG also owned the nuts would be the mistake.',
+          },
+          {
+            id: 'neither', label: 'Neither — this board has no meaningful nut advantage for either side', quality: 'mistake',
+            feedback: 'BB specifically keeps the real nutted hands here (flushes, straights, sets, two pair) — it\'s not that nobody has an edge, it\'s that the edge belongs to a different side than the range advantage does.',
+          },
+        ],
+        xp: 15,
+      },
+      {
+        id: 'xr-nut-mistake',
+        type: 'decision_spot',
+        concept_ids: ['nut_advantage', 'hand_vs_range_strength'],
+        narrative: 'A friend tells you: "I have top pair, top kicker, so I have range advantage here."',
+        decision_spot_question: 'What\'s wrong with this reasoning?',
+        options: [
+          {
+            id: 'hand_not_range', label: 'TPTK describes one hand, not a whole range', quality: 'perfect',
+            feedback: 'Correct — the same mistake this whole module opened with, now applied to advantage vocabulary specifically. Range advantage and nut advantage are both properties of the FULL range, not a single holding. Having a strong individual hand tells you nothing about whether your entire range beats theirs on this board.',
+          },
+          {
+            id: 'its_fine', label: 'Nothing — TPTK is a strong hand, so the statement is correct', quality: 'mistake',
+            feedback: 'TPTK being strong is true, but that\'s a fact about one hand. Range advantage and nut advantage are both properties of the WHOLE range — your friend never actually checked that.',
+          },
+          {
+            id: 'wet_boards_only', label: 'It\'s only wrong on wet, drawy boards', quality: 'mistake',
+            feedback: 'The error doesn\'t depend on board texture at all — it\'s that a single hand\'s strength was used to make a claim about the whole range, which is the wrong unit of analysis on any board.',
+          },
+        ],
+        xp: 12,
+      },
+      {
+        id: 'xr-nut-distinguish',
+        type: 'decision_spot',
+        concept_ids: ['nut_advantage', 'range_advantage'],
+        narrative: 'Two boards, same two ranges: A♥Q♦3♠ and Q♥J♥T♥.',
+        decision_spot_question: 'On which board does UTG hold BOTH range advantage AND nut advantage together?',
+        options: [
+          {
+            id: 'aq3', label: 'A♥Q♦3♠', quality: 'perfect',
+            feedback: 'Correct. A♥Q♦3♠ is the board where both advantages line up behind UTG. Q♥J♥T♥ is the split board instead — UTG still connects with more of it overall, but BB\'s range wasn\'t stripped of its best hands there, so BB keeps the nutted hands even as UTG keeps the range advantage.',
+          },
+          {
+            id: 'qjt', label: 'Q♥J♥T♥', quality: 'mistake',
+            feedback: 'That\'s the board where they split, not the one where they line up. UTG has the range advantage there, but BB\'s calling range still holds real nutted hands. On A♥Q♦3♠, BB\'s calling range is missing its nutted hands entirely — that\'s the board with both advantages together.',
+          },
+          {
+            id: 'both_equal', label: 'Both boards equally', quality: 'mistake',
+            feedback: 'Not equally — Q♥J♥T♥ is a real counterexample where the two advantages point at different players, not an edge case. Only A♥Q♦3♠ gives UTG both advantages together.',
+          },
+        ],
+        xp: 15,
+      },
+      {
+        id: 'xr-nut-close',
+        type: 'concept_reveal',
+        concept_title: 'Two Questions, Not One',
+        concept_content: 'From here on, a board can hand you two separate verdicts: who has more equity/range advantage overall, and who owns more of the actual nutted hands. They usually move together — but not always, and the boards where they split are exactly the ones that punish a lazy "range advantage means bet big" reflex.',
+      },
     ],
   },
 
@@ -14541,7 +14776,7 @@ export const LESSONS: Lesson[] = [
     concept_ids: ['range_composition', 'range_advantage', 'board_coverage', 'range_archaeology'],
     estimated_min: 9,
     xp_reward: 170,
-    sort_order: 5,
+    sort_order: 4,
     next_lesson_teaser: 'The Range Lab',
     steps: [
       {
@@ -14687,7 +14922,7 @@ export const LESSONS: Lesson[] = [
     concept_ids: ['range_vs_range_equity', 'range_advantage', 'equity_bucket_distribution', 'hand_vs_range_strength'],
     estimated_min: 15,
     xp_reward: 420,
-    sort_order: 6,
+    sort_order: 5,
     steps: [
       {
         id: 'rl-intro',

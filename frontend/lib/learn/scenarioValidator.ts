@@ -211,6 +211,23 @@ export function validateStep(lesson: Lesson, step: LessonStep): ScenarioIssue[] 
     )
   }
 
+  // ── 2b. villain_position with NO action_before_hero at all ─────────────────
+  // A structural check independent of narrative-text parsing (check #3 below):
+  // `villain_position` names who Hero is facing, which is meaningless unless
+  // SOME action put them there. Authoring villain_position with
+  // action_before_hero entirely absent (rather than even `[]`) means the table
+  // renders with no opener label, no raise chip, and a blinds-only pot — a
+  // real bug class the narrative-regex check below can miss (e.g. "Same UTG
+  // open" back-references an earlier step's action with no restated size, so
+  // it never matches a sized-raise pattern and slips through undetected).
+  // Found 22 live instances of exactly this across Modules 4-5 in one sweep.
+  pushIf(
+    issues, lesson, step,
+    !!step.villain_position && step.action_before_hero === undefined,
+    'action_order',
+    `villain_position is "${step.villain_position}" but action_before_hero is entirely unset — the table has no data to show who opened, so it renders as if nobody has acted (blinds-only pot, no opener label)`,
+  )
+
   if (!step.narrative) return issues
 
   // ── 3. Narrative action claims vs. action_before_hero ──────────────────────
