@@ -230,20 +230,51 @@ function optionAnswerReveal(
   }
 }
 
+/** Human-readable label for a response id that has no matching `options[]`
+ *  entry — reachable for `cbet_frequency_size` specifically, whose response
+ *  (`${frequencyId}|${sizingId}`, built in FrequencySizeLab.tsx from two
+ *  independent picker widgets) can land on a frequency/sizing combination
+ *  nobody explicitly authored as its own option. Decodes each half against
+ *  the step's own picker option lists so the learner sees their real choice
+ *  spelled out, not a raw id like "low|medium". */
+function describeUnlistedResponse(step: LessonStep, optionId: string): string {
+  if (step.type === 'cbet_frequency_size' && optionId.includes('|')) {
+    const [freqId, sizeId] = optionId.split('|')
+    const freqLabel = step.cbet_frequency_size_frequency_options?.find((o) => o.id === freqId)?.label ?? freqId
+    const sizeLabel = step.cbet_frequency_size_sizing_options?.find((o) => o.id === sizeId)?.label ?? sizeId
+    return `${freqLabel} + ${sizeLabel}`
+  }
+  return optionId
+}
+
+/** A response with no matching `options[]` entry never gets a bare technical
+ *  message — it reuses the step's own best-tier option feedback (which
+ *  already explains the real theory behind the correct answer) prefixed with
+ *  what the learner actually chose, so every unlisted combination still
+ *  teaches instead of just failing silently. Never invents new poker theory
+ *  here — only recombines prose the step's own author already wrote. */
+function evalUnlistedOptionResponse(step: LessonStep, optionId: string, term: string): EvalCore {
+  const best = bestOptions(step)[0]
+  const chosenLabel = describeUnlistedResponse(step, optionId)
+  const feedback = best
+    ? `You chose ${chosenLabel} — not the strategy this spot supports. ${best.feedback}`
+    : step.wrong_feedback ?? `You chose ${chosenLabel}. Take another look at the board and the reasoning above before choosing.`
+  return {
+    quality: 'mistake',
+    score: QUALITY_SCORES.mistake,
+    feedback,
+    ev_loss_bb: 0,
+    answer_reveal: optionAnswerReveal(step, undefined, term),
+  }
+}
+
 function evalOptionBased(step: LessonStep, response: unknown): EvalCore {
   const term = OPTION_BASED_TERM[step.type] ?? 'Correct answer'
   const optionId = String(response ?? '')
   const option = step.options?.find((o) => o.id === optionId)
 
   if (!option) {
-    // Unknown option — could be a custom value not in the list; treat as mistake
-    return {
-      quality: 'mistake',
-      score: QUALITY_SCORES.mistake,
-      feedback: step.wrong_feedback ?? 'Response not recognised. Review the options.',
-      ev_loss_bb: 0,
-      answer_reveal: optionAnswerReveal(step, undefined, term),
-    }
+    return evalUnlistedOptionResponse(step, optionId, term)
   }
 
   return {
