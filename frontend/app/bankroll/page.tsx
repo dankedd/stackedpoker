@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import {
   Wallet, TrendingUp, TrendingDown, Percent, Layers, Clock, Activity, Coins, ShieldCheck,
 } from "lucide-react";
@@ -115,14 +116,24 @@ export default async function BankrollPage() {
         <div className="relative mb-10 overflow-hidden rounded-3xl border border-violet-500/12 bg-gradient-to-br from-violet-950/40 via-background/70 to-blue-950/20 px-8 py-8 sm:px-10 animate-fade-in">
           <div aria-hidden className="pointer-events-none absolute -top-20 -left-10 h-72 w-72 rounded-full bg-violet-600/12 blur-3xl" />
           <div aria-hidden className="pointer-events-none absolute -bottom-10 right-0 h-48 w-48 rounded-full bg-blue-500/8 blur-3xl" />
-          <div className="relative">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-violet-400/60 mb-2">Bankroll</p>
-            <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
-              Your <span className="bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">bankroll</span>, at a glance
-            </h1>
-            <p className="text-muted-foreground mt-2 leading-relaxed max-w-xl">
-              Every deposit, session and result rolled into one running total.
-            </p>
+          <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-violet-400/60 mb-2">Bankroll</p>
+              <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
+                Your <span className="bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">bankroll</span>, at a glance
+              </h1>
+              <p className="text-muted-foreground mt-2 leading-relaxed max-w-xl">
+                Every deposit, session and result rolled into one running total.
+              </p>
+            </div>
+            <Link
+              href="/bankroll/sessions"
+              className="group relative overflow-hidden shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-sm font-semibold shadow-lg shadow-violet-500/25 hover:shadow-violet-500/45 hover:-translate-y-0.5 transition-all duration-200"
+            >
+              <div aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+              <Layers className="h-4 w-4" />
+              Manage sessions
+            </Link>
           </div>
         </div>
 
