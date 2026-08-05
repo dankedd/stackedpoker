@@ -18424,7 +18424,7 @@ export const LESSONS: Lesson[] = [
             feedback: "Exactly right. The menu of sizes a strategy uses is fixed before any hand is considered — a size is an entry a range commits to, and individual hands get assigned to it based on the job they need to do, not the other way around. That's why the definition of \"overbet\" is purely mechanical.",
           },
           {
-            id: 'always_bluff', label: 'Because an overbet is always a bluff, so hand strength is irrelevant', quality: 'mistake',
+            id: 'always_bluff', label: 'An overbet is usually a bluff, so hand strength is irrelevant', quality: 'mistake',
             feedback: "Not true, and this is exactly the trap Lesson 9 exists to correct: overbets show up at BOTH ends of a polarized range — as the biggest value bets AND the biggest bluffs. The size alone never tells you which.",
           },
           {
@@ -18442,7 +18442,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: "What's wrong with this statement?",
         options: [
           {
-            id: 'finite_list_given', label: 'A solver can only choose from a finite list of sizes a human gives it in advance — it cannot search the full continuous space', quality: 'perfect',
+            id: 'finite_list_given', label: 'A solver can only choose from sizes it was given in advance', quality: 'perfect',
             feedback: "Correct. NLH's bet-size space is continuous, so a full game tree with infinite sizes literally cannot be drawn. A human supplies a short betting abstraction first — change that list, and the solver's entire reported strategy changes with it, because it's now solving a different, smaller game.",
           },
           {
@@ -18484,7 +18484,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'Why the same size for every hand in the range, instead of a different size per hand?',
         options: [
           {
-            id: 'property_of_range', label: 'Bet-size is a property of the range/position, decided in advance — not of the individual hand', quality: 'perfect',
+            id: 'property_of_range', label: 'Bet-size is a property of the range/position, fixed before any hand is chosen', quality: 'perfect',
             feedback: "Correct — and you already had direct experience with this from your preflop work, this lesson just names the mechanism. UTG opens the same size with AA as with 76s because the size is a property of the position and range, fixed before any specific hand is considered — exactly the 'menu comes before the hand' structure this whole lesson is built on.",
           },
           {
@@ -18739,7 +18739,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'Why abandonment — not reduced frequency — is the correct response?',
         options: [
           {
-            id: 'exposure_not_removed', label: "A size that can be exploited exposes information about the narrower range still using it; reducing frequency doesn't remove that exposure — only fully vacating the size does", quality: 'perfect',
+            id: 'exposure_not_removed', label: "Reducing frequency still exposes the narrower range; only fully vacating the size removes it", quality: 'perfect',
             feedback: "Correct. This is the core mechanism: the moment a size can be safely raised, using it at ANY frequency still tells Villain something about the (now narrower) group of hands willing to use it. Only complete abandonment removes the target.",
           },
           {
@@ -18757,7 +18757,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'What real-world condition does Example C represent, and why does a genuinely threatening opponent push a strategy toward it rather than Example A?',
         options: [
           {
-            id: 'real_opponent', label: 'A real, capable opponent who can punish any size forces a strategy toward fewer, safer sizes — Example A\'s rich split only survives against an opponent who can\'t exploit it', quality: 'perfect',
+            id: 'real_opponent', label: 'A capable opponent who can punish any size forces a strategy toward fewer, safer sizes', quality: 'perfect',
             feedback: "Correct. Example A is the ceiling case — maximum EV, but only achievable against an opponent incapable of punishing any size. A real, aware opponent who can check-raise anything pushes the strategy toward Example C's structure: fewer sizes, narrower value range willing to use what remains.",
           },
           {
@@ -18867,11 +18867,11 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: "What's wrong with this reasoning, using the all-in exception this lesson taught?",
         options: [
           {
-            id: 'average_hides_variation', label: '0.21% is an AVERAGE across many situations — specific situations (like a low-SPR spot where all-in structurally survives raise pressure) can have a much larger, identifiable gap', quality: 'perfect',
+            id: 'average_hides_variation', label: "0.21% is an average; specific situations like low SPR can have a much larger, identifiable gap", quality: 'perfect',
             feedback: "Correct. An average hides variation — that's the whole point of an average. Example D showed a genuine, large, identifiable exception: low-SPR spots where the all-in size structurally survives raise pressure in a way no other size can. The lesson isn't 'never simplify' — it's 'simplify by default, but know the specific, nameable conditions where the default stops applying.'",
           },
           {
-            id: 'always_true', label: "Nothing's wrong — 0.21% is small enough that this reasoning holds in every spot", quality: 'mistake',
+            id: 'always_true', label: "Nothing's wrong, 0.21% is small enough that this reasoning holds up fine", quality: 'mistake',
             feedback: "0.21% is an average, not a universal guarantee. Example D is a genuine, large exception hiding inside that average: at low SPR, adding the all-in size alongside a pot-size bet captures real, identifiable EV that a single-size default would leave on the table.",
           },
         ],
@@ -18899,7 +18899,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'What does the book say the optimal bet-sizing strategy looks like here, and why?',
         options: [
           {
-            id: 'all_in_only', label: "Simply all-in — there isn't enough stack behind a pot-size bet to make it meaningfully different from shoving anyway", quality: 'perfect',
+            id: 'all_in_only', label: "Simply all-in, since the stack behind a pot-size bet is too shallow to matter", quality: 'perfect',
             feedback: "Correct — this is the simplest band conceptually. When the stack is already this shallow, 'bet pot' and 'go all-in' are close enough to the same action that the added complexity of keeping them separate isn't worth anything.",
           },
           {
@@ -18985,7 +18985,7 @@ export const LESSONS: Lesson[] = [
         range_distribution_prompt: "Hero's Strong share (14.3%) sits well below Villain's (36.4%) — a big polarization disadvantage. Predict Hero's sizing direction.",
         options: [
           {
-            id: 'pure_check', label: 'Pure check — 100% of the time, no betting at all', quality: 'perfect',
+            id: 'pure_check', label: 'Pure check, 100% of the time', quality: 'perfect',
             feedback: "Exactly — and this is a STRONGER prediction than 'bet small and rarely.' A big polarization disadvantage doesn't lead to timid betting; it leads to NO betting. Hero simply lets the pot split according to raw equity — there's no informational edge left to leverage once the range is this far behind in composition.",
           },
           {
@@ -19068,7 +19068,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'How does range merging differ from simply "betting a wide, linear range" (a concept from earlier modules)?',
         options: [
           {
-            id: 'strategic_response', label: "Merging is a deliberate STRATEGIC RESPONSE — chosen specifically to avoid a capped, exploitable checking range on the very next street — not just a static description of a range's width", quality: 'perfect',
+            id: 'strategic_response', label: "Merging is a deliberate strategic response, chosen to avoid a capped checking range next street", quality: 'perfect',
             feedback: "Correct. A linear range's width is a description of what the range simply IS, set before any street-specific pressure exists. Range merging is chosen specifically because polarizing too aggressively on THIS street would leave a capped checking range exposed to Villain's river bet on the NEXT street. Same-looking range, completely different reason for existing.",
           },
           {

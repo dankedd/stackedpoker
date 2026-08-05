@@ -1655,6 +1655,72 @@
         "ptcr-s5": 12,
         "ptcr-s6": 8
       }
+    },
+    "bet-size-is-a-sentence": {
+      "xp_reward": 160,
+      "steps": {
+        "bsis-s1": 10,
+        "bsis-s2": 10,
+        "bsis-s3": 10,
+        "bsis-s4": 14,
+        "bsis-s5": 16,
+        "bsis-s6": 14,
+        "bsis-s7": 10,
+        "bsis-s8": 10
+      }
+    },
+    "what-a-size-buys-you": {
+      "xp_reward": 170,
+      "steps": {
+        "wsby-s1": 10,
+        "wsby-s2": 10,
+        "wsby-s3": 14,
+        "wsby-s4": 18,
+        "wsby-s5": 18,
+        "wsby-s6": 16,
+        "wsby-s7": 10,
+        "wsby-s8": 10
+      }
+    },
+    "one-size-rarely-fits-all": {
+      "xp_reward": 180,
+      "steps": {
+        "osrfa-s1": 10,
+        "osrfa-s2": 10,
+        "osrfa-s3": 20,
+        "osrfa-s4": 18,
+        "osrfa-s5": 18,
+        "osrfa-s6": 16,
+        "osrfa-s7": 10,
+        "osrfa-s8": 10
+      }
+    },
+    "the-small-cost-of-simplifying": {
+      "xp_reward": 190,
+      "steps": {
+        "tscos-s1": 10,
+        "tscos-s2": 10,
+        "tscos-s3": 20,
+        "tscos-s4": 18,
+        "tscos-s5": 16,
+        "tscos-s6": 16,
+        "tscos-s7": 10,
+        "tscos-s8": 10
+      }
+    },
+    "why-your-range-shape-picks-your-bet-size": {
+      "xp_reward": 190,
+      "steps": {
+        "wyrsp-s1": 10,
+        "wyrsp-s2": 10,
+        "wyrsp-s3": 18,
+        "wyrsp-s4": 18,
+        "wyrsp-s5": 18,
+        "wyrsp-s6": 18,
+        "wyrsp-s7": 18,
+        "wyrsp-s8": 10,
+        "wyrsp-s9": 10
+      }
     }
   },
   "modules": {

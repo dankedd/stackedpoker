@@ -78,8 +78,10 @@ describe('confidence check removal — curriculum data', () => {
     // covers the same remediation role without a ladder — leaving 4 intact. Module 11
     // (Part 3B, Lessons 1-5) added 4 more, each on that lesson's one flagship concept
     // per docs/module-11-architecture.md Section 8's adaptive-flow table (wwb-s3,
-    // srtf-s5, bhj-s4, ptcr-s3) — bringing the total to 8.
-    expect(laddersFound.length).toBe(8)
+    // srtf-s5, bhj-s4, ptcr-s3) — bringing the total to 8. Module 12 (Part 3B, Lessons
+    // 1-5) added 4 more per docs/module-12-architecture.md Section 8's adaptive-flow
+    // table (bsis-s5, osrfa-s3, wsby-s4, tscos-s4) — bringing the total to 12.
+    expect(laddersFound.length).toBe(12)
   })
 })
 
