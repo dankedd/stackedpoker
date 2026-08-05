@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
-  Wallet, TrendingUp, TrendingDown, Percent, Layers, Clock, Activity, Coins, ShieldCheck, Settings2, Target,
+  Wallet, TrendingUp, TrendingDown, Percent, Layers, Clock, Activity, Coins, ShieldCheck, Settings2, Target, BarChart3,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/Navbar";
@@ -16,7 +16,6 @@ import type {
   BankrollLedgerTransaction,
   BankrollOverview,
   RecentBankrollSession,
-  SettledBankrollSession,
 } from "@/lib/bankroll/types";
 
 export default async function BankrollPage() {
@@ -28,7 +27,6 @@ export default async function BankrollPage() {
     { data: overviewRow },
     { data: settingsRow },
     { data: recentSessionRow },
-    { data: settledSessionRows },
     { data: ledgerSessionRows },
     { data: ledgerTransactionRows },
     { data: categorySessionRows },
@@ -46,11 +44,6 @@ export default async function BankrollPage() {
       .order("started_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabase
-      .from("bankroll_sessions")
-      .select("buy_in_amount, cash_out_amount")
-      .eq("user_id", user.id)
-      .not("cash_out_amount", "is", null),
     supabase
       .from("bankroll_sessions")
       .select("started_at, buy_in_amount, cash_out_amount, ev_amount")
@@ -73,7 +66,6 @@ export default async function BankrollPage() {
 
   const overview = overviewRow as unknown as BankrollOverview | null;
   const recentSession = recentSessionRow as unknown as RecentBankrollSession | null;
-  const settledSessions = (settledSessionRows ?? []) as unknown as SettledBankrollSession[];
   const ledgerSessions = (ledgerSessionRows ?? []) as unknown as BankrollLedgerSession[];
   const ledgerTransactions = (ledgerTransactionRows ?? []) as unknown as BankrollLedgerTransaction[];
 
@@ -105,8 +97,13 @@ export default async function BankrollPage() {
   const totalMinutes = overview?.total_minutes ?? 0;
   const hours = totalMinutes / 60;
 
-  const settledBuyIns = settledSessions.reduce((sum, s) => sum + Number(s.buy_in_amount ?? 0), 0);
-  const roi = settledBuyIns > 0 ? (sessionProfit / settledBuyIns) * 100 : null;
+  // Profit relative to money actually deposited into the bankroll — not
+  // profit/buy-ins. The session form only captures a single net "Resultaat"
+  // (buy_in_amount is always written as 0, see lib/bankroll/sessionForm.ts),
+  // so a per-session buy-in-based ROI isn't computable from this data model.
+  // Same definition used on /bankroll/stats, for consistency.
+  const totalDeposits = overview?.total_deposits ?? 0;
+  const roi = totalDeposits > 0 ? (sessionProfit / totalDeposits) * 100 : null;
   const avgPerHour = hours > 0 ? sessionProfit / hours : null;
 
   // Book-sourced heuristic: Modern Poker Theory, "MTT Bankroll Management", p.264 —
@@ -151,6 +148,7 @@ export default async function BankrollPage() {
                 { href: "/bankroll/sessions", label: "Sessions", icon: Layers },
                 { href: "/bankroll/management", label: "Rules", icon: Settings2 },
                 { href: "/bankroll/goals", label: "Goals", icon: Target },
+                { href: "/bankroll/stats", label: "Stats", icon: BarChart3 },
               ].map(({ href, label, icon: Icon }) => (
                 <Link
                   key={href}
@@ -186,7 +184,7 @@ export default async function BankrollPage() {
             icon={Percent}
             label="ROI"
             value={formatPercent(roi, { signed: true })}
-            caption="return on buy-ins"
+            caption="profit vs. deposits"
             valueClassName={roi != null ? (roiPositive ? "text-emerald-400" : "text-red-400") : undefined}
             delayMs={80}
           />
