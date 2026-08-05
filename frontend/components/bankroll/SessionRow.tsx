@@ -3,6 +3,7 @@
 import { Pencil, Trash2, X, Clock, Hash, Brain } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { computeSessionResult } from "@/lib/bankroll/sessionForm";
+import { DeleteConfirmFooter } from "@/components/bankroll/DeleteConfirmFooter";
 import type { BankrollSessionRow } from "@/lib/bankroll/types";
 
 function formatDateTime(startedAt: string, endedAt: string | null): string {
@@ -126,18 +127,7 @@ export function SessionRow({ session, currency, mentalScore, confirmingDelete, o
         </p>
       )}
 
-      {confirmingDelete && (
-        <div className="border-t border-red-500/20 mt-3 pt-3">
-          <p className="text-xs text-red-400 mb-2">Delete this session? This cannot be undone.</p>
-          <button
-            type="button"
-            onClick={onDelete}
-            className="px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-medium hover:bg-red-500/30 transition-all"
-          >
-            Yes, delete
-          </button>
-        </div>
-      )}
+      {confirmingDelete && <DeleteConfirmFooter itemLabel="session" onConfirm={onDelete} />}
     </div>
   );
 }

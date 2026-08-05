@@ -1,18 +1,20 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft, Search, X, Plus, Loader2, RotateCcw, Layers,
-} from "lucide-react";
+import { Search, X, Plus, Loader2, RotateCcw, Layers } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useConfirmDelete } from "@/hooks/useConfirmDelete";
 import { cn } from "@/lib/utils";
 import { computeSessionResult } from "@/lib/bankroll/sessionForm";
 import { SessionRow } from "@/components/bankroll/SessionRow";
 import { SessionFormModal, type SessionFormEditingData } from "@/components/bankroll/SessionFormModal";
+import { BankrollBackLink } from "@/components/bankroll/BankrollBackLink";
+import { BankrollPageLoader } from "@/components/bankroll/BankrollPageLoader";
+import { BankrollEmptyState } from "@/components/bankroll/BankrollEmptyState";
+import { BankrollErrorState } from "@/components/bankroll/BankrollErrorState";
 import type { BankrollSessionRow, BankrollMentalEntryRow } from "@/lib/bankroll/types";
 
 type SortKey = "newest" | "oldest" | "best" | "worst" | "mostHands" | "longest";
@@ -43,6 +45,7 @@ export default function BankrollSessionsPage() {
   const [mentalBySession, setMentalBySession] = useState<Record<string, BankrollMentalEntryRow>>({});
   const [currency, setCurrency] = useState("USD");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   const [search, setSearch] = useState("");
   const [resultFilter, setResultFilter] = useState<ResultFilter>("all");
@@ -51,7 +54,6 @@ export default function BankrollSessionsPage() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<SessionFormEditingData | null>(null);
-  const [confirmDel, setConfirmDel] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/login");
@@ -79,7 +81,10 @@ export default function BankrollSessionsPage() {
 
       if (sessionsError) {
         console.error("[bankroll/sessions] fetch error:", sessionsError.message);
+        setLoadError(true);
+        return;
       }
+      setLoadError(false);
 
       setSessions((sessionRows ?? []) as unknown as BankrollSessionRow[]);
       setCurrency(settingsRow?.preferred_currency ?? "USD");
@@ -95,6 +100,8 @@ export default function BankrollSessionsPage() {
   }, [user]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const { confirmId: confirmDel, handleDelete: handleDeleteClick, cancelDelete } = useConfirmDelete("bankroll_sessions", setSessions, fetchData);
 
   const siteOptions = useMemo(() => {
     const sites = new Set<string>();
@@ -146,28 +153,7 @@ export default function BankrollSessionsPage() {
     setModalOpen(true);
   };
 
-  const handleDeleteClick = useCallback(async (id: string) => {
-    if (confirmDel !== id) {
-      setConfirmDel(id);
-      return;
-    }
-    setConfirmDel(null);
-    setSessions((prev) => prev.filter((s) => s.id !== id));
-    const supabase = createClient();
-    const { error } = await supabase.from("bankroll_sessions").delete().eq("id", id);
-    if (error) {
-      console.error("[bankroll/sessions] delete failed:", error.message);
-      fetchData(); // resync on failure — the optimistic removal may be wrong
-    }
-  }, [confirmDel, fetchData]);
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground/40" />
-      </div>
-    );
-  }
+  if (authLoading) return <BankrollPageLoader />;
 
   return (
     <div className="min-h-screen bg-background">
@@ -177,10 +163,7 @@ export default function BankrollSessionsPage() {
 
         {/* ── Header ── */}
         <div className="mb-8 animate-fade-in">
-          <Link href="/bankroll" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-foreground transition-colors mb-3">
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Bankroll
-          </Link>
+          <BankrollBackLink />
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-black text-foreground tracking-tight">Sessions</h1>
@@ -197,137 +180,134 @@ export default function BankrollSessionsPage() {
           </div>
         </div>
 
-        {/* ── Search + filter bar ── */}
-        <div className="mb-6 space-y-3 animate-fade-in">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 pointer-events-none" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by site, variant, stakes, notes…"
-              className="w-full bg-card/60 border border-border/50 rounded-xl pl-9 pr-9 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all"
-            />
-            {search && (
-              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-foreground">
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
+        {loadError ? (
+          <BankrollErrorState message="Couldn't load your sessions." onRetry={fetchData} />
+        ) : (
+          <>
+            {/* ── Search + filter bar ── */}
+            <div className="mb-6 space-y-3 animate-fade-in">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/40 pointer-events-none" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search by site, variant, stakes, notes…"
+                  className="w-full bg-card/60 border border-border/50 rounded-xl pl-9 pr-9 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all"
+                />
+                {search && (
+                  <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-foreground">
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
 
-          <div className="flex flex-wrap gap-2 items-center">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortKey)}
-              className="h-8 bg-card/60 border border-border/50 rounded-lg px-2 text-xs text-foreground focus:outline-none focus:border-violet-500/40 cursor-pointer"
-            >
-              <option value="newest">Newest first</option>
-              <option value="oldest">Oldest first</option>
-              <option value="best">Best result</option>
-              <option value="worst">Worst result</option>
-              <option value="mostHands">Most hands</option>
-              <option value="longest">Longest session</option>
-            </select>
-
-            <div className="h-4 w-px bg-border/40" />
-
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {([["all", "Any result"], ["winning", "Winning"], ["losing", "Losing"]] as [ResultFilter, string][]).map(([v, label]) => (
-                <FilterChip key={v} active={resultFilter === v} onClick={() => setResultFilter(v)}>{label}</FilterChip>
-              ))}
-            </div>
-
-            {siteOptions.length > 0 && (
-              <>
-                <div className="h-4 w-px bg-border/40" />
+              <div className="flex flex-wrap gap-2 items-center">
                 <select
-                  value={siteFilter}
-                  onChange={(e) => setSiteFilter(e.target.value)}
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortKey)}
                   className="h-8 bg-card/60 border border-border/50 rounded-lg px-2 text-xs text-foreground focus:outline-none focus:border-violet-500/40 cursor-pointer"
                 >
-                  <option value="all">All sites</option>
-                  {siteOptions.map((site) => <option key={site} value={site}>{site}</option>)}
+                  <option value="newest">Newest first</option>
+                  <option value="oldest">Oldest first</option>
+                  <option value="best">Best result</option>
+                  <option value="worst">Worst result</option>
+                  <option value="mostHands">Most hands</option>
+                  <option value="longest">Longest session</option>
                 </select>
-              </>
-            )}
 
-            {hasActiveFilters && (
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="flex items-center gap-1 text-xs text-muted-foreground/60 hover:text-foreground transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
-              >
-                <RotateCcw className="h-3 w-3" />
-                Clear
-              </button>
-            )}
-          </div>
-        </div>
+                <div className="h-4 w-px bg-border/40" />
 
-        {/* ── Results count ── */}
-        <p className="text-sm text-muted-foreground mb-4">
-          {loading ? (
-            <span className="flex items-center gap-2"><Loader2 className="h-3.5 w-3.5 animate-spin" />Loading…</span>
-          ) : (
-            <>
-              <span className="font-semibold text-foreground">{filtered.length}</span>{" "}
-              {filtered.length === 1 ? "session" : "sessions"}
-              {hasActiveFilters && sessions.length > filtered.length && (
-                <span className="text-muted-foreground/50"> of {sessions.length} total</span>
-              )}
-            </>
-          )}
-        </p>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {([["all", "Any result"], ["winning", "Winning"], ["losing", "Losing"]] as [ResultFilter, string][]).map(([v, label]) => (
+                    <FilterChip key={v} active={resultFilter === v} onClick={() => setResultFilter(v)}>{label}</FilterChip>
+                  ))}
+                </div>
 
-        {/* ── List ── */}
-        {loading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="rounded-2xl border border-border/30 bg-card/40 h-32 animate-pulse" style={{ animationDelay: `${i * 80}ms` }} />
-            ))}
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="rounded-2xl border border-border/40 bg-card/40 p-16 text-center">
-            <div className="flex justify-center mb-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary border border-border/60">
-                <Layers className="h-7 w-7 text-muted-foreground/40" />
+                {siteOptions.length > 0 && (
+                  <>
+                    <div className="h-4 w-px bg-border/40" />
+                    <select
+                      value={siteFilter}
+                      onChange={(e) => setSiteFilter(e.target.value)}
+                      className="h-8 bg-card/60 border border-border/50 rounded-lg px-2 text-xs text-foreground focus:outline-none focus:border-violet-500/40 cursor-pointer"
+                    >
+                      <option value="all">All sites</option>
+                      {siteOptions.map((site) => <option key={site} value={site}>{site}</option>)}
+                    </select>
+                  </>
+                )}
+
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="flex items-center gap-1 text-xs text-muted-foreground/60 hover:text-foreground transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    Clear
+                  </button>
+                )}
               </div>
             </div>
-            {hasActiveFilters ? (
-              <>
-                <p className="text-foreground font-semibold mb-2">No matching sessions</p>
-                <p className="text-sm text-muted-foreground/60">Try adjusting your filters or search query.</p>
-              </>
-            ) : (
-              <>
-                <p className="text-foreground font-semibold mb-2">No sessions yet</p>
-                <p className="text-sm text-muted-foreground/60 mb-6">Log your first session to start building your bankroll history.</p>
-                <button
-                  type="button"
-                  onClick={openCreate}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-sm font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-violet-900/25"
-                >
-                  <Plus className="h-4 w-4" />
-                  New session
-                </button>
-              </>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filtered.map((session) => (
-              <SessionRow
-                key={session.id}
-                session={session}
-                currency={session.currency ?? currency}
-                mentalScore={mentalBySession[session.id]?.overall_score ?? null}
-                confirmingDelete={confirmDel === session.id}
-                onEdit={() => openEdit(session)}
-                onDelete={() => handleDeleteClick(session.id)}
-                onCancelDelete={() => setConfirmDel(null)}
+
+            {/* ── Results count ── */}
+            <p className="text-sm text-muted-foreground mb-4">
+              {loading ? (
+                <span className="flex items-center gap-2"><Loader2 className="h-3.5 w-3.5 animate-spin" />Loading…</span>
+              ) : (
+                <>
+                  <span className="font-semibold text-foreground">{filtered.length}</span>{" "}
+                  {filtered.length === 1 ? "session" : "sessions"}
+                  {hasActiveFilters && sessions.length > filtered.length && (
+                    <span className="text-muted-foreground/50"> of {sessions.length} total</span>
+                  )}
+                </>
+              )}
+            </p>
+
+            {/* ── List ── */}
+            {loading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="rounded-2xl border border-border/30 bg-card/40 h-32 animate-pulse" style={{ animationDelay: `${i * 80}ms` }} />
+                ))}
+              </div>
+            ) : filtered.length === 0 ? (
+              <BankrollEmptyState
+                icon={Layers}
+                title={hasActiveFilters ? "No matching sessions" : "No sessions yet"}
+                message={hasActiveFilters ? "Try adjusting your filters or search query." : "Log your first session to start building your bankroll history."}
+                action={
+                  !hasActiveFilters && (
+                    <button
+                      type="button"
+                      onClick={openCreate}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-sm font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-violet-900/25"
+                    >
+                      <Plus className="h-4 w-4" />
+                      New session
+                    </button>
+                  )
+                }
               />
-            ))}
-          </div>
+            ) : (
+              <div className="space-y-3">
+                {filtered.map((session) => (
+                  <SessionRow
+                    key={session.id}
+                    session={session}
+                    currency={session.currency ?? currency}
+                    mentalScore={mentalBySession[session.id]?.overall_score ?? null}
+                    confirmingDelete={confirmDel === session.id}
+                    onEdit={() => openEdit(session)}
+                    onDelete={() => handleDeleteClick(session.id)}
+                    onCancelDelete={cancelDelete}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
 
       </main>

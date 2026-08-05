@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, Bot, Coins, TrendingDown, Clock, Layers, Percent, Wallet, CalendarClock } from "lucide-react";
+import { Bot, Coins, TrendingDown, Clock, Layers, Percent, Wallet, CalendarClock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/Navbar";
 import { InsightCard } from "@/components/bankroll/InsightCard";
 import { InsightTipCard } from "@/components/bankroll/InsightTipCard";
+import { BankrollBackLink } from "@/components/bankroll/BankrollBackLink";
 import { formatCurrency, formatPercent, cn } from "@/lib/utils";
 import { computeSessionResult } from "@/lib/bankroll/sessionForm";
 import {
@@ -53,13 +53,12 @@ export default async function BankrollInsightsPage() {
 
       <main className="container mx-auto max-w-5xl px-4 sm:px-6 py-10 page-enter">
 
-        <Link href="/bankroll" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-foreground transition-colors mb-6">
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Bankroll
-        </Link>
+        <div className="mb-6 animate-fade-in">
+          <BankrollBackLink />
+        </div>
 
         {/* ── Hero — same visual language as /coach ── */}
-        <div className="relative mb-8 overflow-hidden rounded-3xl border border-violet-500/15 bg-gradient-to-br from-violet-950/50 via-background/70 to-blue-950/25 px-8 py-8 sm:px-10">
+        <div className="relative mb-8 overflow-hidden rounded-3xl border border-violet-500/15 bg-gradient-to-br from-violet-950/50 via-background/70 to-blue-950/25 px-8 py-8 sm:px-10 animate-fade-in">
           <div aria-hidden className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full bg-violet-500/15 blur-3xl" />
           <div aria-hidden className="pointer-events-none absolute -bottom-12 left-1/4 h-40 w-40 rounded-full bg-blue-500/10 blur-3xl" />
           <div className="relative flex items-start gap-4">

@@ -1,13 +1,13 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import {
-  ArrowLeft, TrendingUp, TrendingDown, Percent, Coins, Activity,
+  TrendingUp, TrendingDown, Percent, Coins, Activity,
   Flame, Snowflake, Trophy, AlertTriangle, Hash, Clock, Target,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/Navbar";
 import { BankrollStatCard } from "@/components/bankroll/BankrollStatCard";
 import { BreakdownSection } from "@/components/bankroll/BreakdownSection";
+import { BankrollBackLink } from "@/components/bankroll/BankrollBackLink";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import { computeSessionResult } from "@/lib/bankroll/sessionForm";
 import {
@@ -78,10 +78,7 @@ export default async function BankrollStatsPage() {
       <main className="container mx-auto max-w-6xl px-4 sm:px-6 py-10 page-enter">
 
         <div className="mb-8 animate-fade-in">
-          <Link href="/bankroll" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-foreground transition-colors mb-3">
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Bankroll
-          </Link>
+          <BankrollBackLink />
           <h1 className="text-3xl font-black text-foreground tracking-tight">Statistics</h1>
           <p className="text-muted-foreground mt-1.5">Every angle on your results, all-time.</p>
         </div>

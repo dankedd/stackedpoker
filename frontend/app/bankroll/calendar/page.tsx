@@ -1,15 +1,17 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn, formatCurrency } from "@/lib/utils";
 import { buildMonthGrid, buildCalendarDayMap, dayStatus, dateKeyOf, type CalendarSession, type CalendarDayData } from "@/lib/bankroll/calendar";
 import { CalendarDayModal } from "@/components/bankroll/CalendarDayModal";
+import { BankrollBackLink } from "@/components/bankroll/BankrollBackLink";
+import { BankrollPageLoader } from "@/components/bankroll/BankrollPageLoader";
+import { BankrollErrorState } from "@/components/bankroll/BankrollErrorState";
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -29,6 +31,7 @@ export default function BankrollCalendarPage() {
   const [sessions, setSessions] = useState<CalendarSession[]>([]);
   const [currency, setCurrency] = useState("USD");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -44,7 +47,7 @@ export default function BankrollCalendarPage() {
     setLoading(true);
     try {
       const supabase = createClient();
-      const [{ data: sessionRows }, { data: settingsRow }] = await Promise.all([
+      const [{ data: sessionRows, error: sessionsError }, { data: settingsRow }] = await Promise.all([
         supabase
           .from("bankroll_sessions")
           .select("id, started_at, buy_in_amount, cash_out_amount, duration_minutes, site, variant, stakes, notes")
@@ -53,6 +56,13 @@ export default function BankrollCalendarPage() {
           .lt("started_at", new Date(rangeEnd.getFullYear(), rangeEnd.getMonth(), rangeEnd.getDate() + 1).toISOString()),
         supabase.from("bankroll_settings").select("preferred_currency").eq("user_id", user.id).maybeSingle(),
       ]);
+
+      if (sessionsError) {
+        console.error("[bankroll/calendar] fetch error:", sessionsError.message);
+        setLoadError(true);
+        return;
+      }
+      setLoadError(false);
 
       setSessions((sessionRows ?? []) as unknown as CalendarSession[]);
       setCurrency(settingsRow?.preferred_currency ?? "USD");
@@ -86,13 +96,7 @@ export default function BankrollCalendarPage() {
 
   const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground/40" />
-      </div>
-    );
-  }
+  if (authLoading) return <BankrollPageLoader />;
 
   return (
     <div className="min-h-screen bg-background">
@@ -101,14 +105,14 @@ export default function BankrollCalendarPage() {
       <main className="container mx-auto max-w-4xl px-4 sm:px-6 py-10 page-enter">
 
         <div className="mb-8 animate-fade-in">
-          <Link href="/bankroll" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-foreground transition-colors mb-3">
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Bankroll
-          </Link>
+          <BankrollBackLink />
           <h1 className="text-3xl font-black text-foreground tracking-tight">Calendar</h1>
           <p className="text-muted-foreground mt-1.5">A day-by-day view of your results. Tap a day for the details.</p>
         </div>
 
+        {loadError ? (
+          <BankrollErrorState message="Couldn't load your calendar." onRetry={fetchData} />
+        ) : (
         <div className="rounded-2xl border border-border/50 bg-card/60 p-4 sm:p-6 card-lift">
           <div className="flex items-center justify-between mb-5">
             <button
@@ -196,6 +200,7 @@ export default function BankrollCalendarPage() {
             </span>
           </div>
         </div>
+        )}
 
       </main>
 

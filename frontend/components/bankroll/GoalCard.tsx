@@ -3,6 +3,7 @@
 import { Wallet, TrendingUp, Clock, Hash, Layers, Trash2, X, Sparkles, CalendarClock, type LucideIcon } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { GOAL_TYPE_META, computeGoalProgress, type GoalType, type GoalProgressInput } from "@/lib/bankroll/goals";
+import { DeleteConfirmFooter } from "@/components/bankroll/DeleteConfirmFooter";
 import type { BankrollGoalRow } from "@/lib/bankroll/types";
 
 const TYPE_ICONS: Record<GoalType, LucideIcon> = {
@@ -113,18 +114,7 @@ export function GoalCard({ goal, progressInput, confirmingDelete, onDelete, onCa
         </p>
       )}
 
-      {confirmingDelete && (
-        <div className="border-t border-red-500/20 mt-3 pt-3">
-          <p className="text-xs text-red-400 mb-2">Delete this goal? This cannot be undone.</p>
-          <button
-            type="button"
-            onClick={onDelete}
-            className="px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-medium hover:bg-red-500/30 transition-all"
-          >
-            Yes, delete
-          </button>
-        </div>
-      )}
+      {confirmingDelete && <DeleteConfirmFooter itemLabel="goal" onConfirm={onDelete} />}
     </div>
   );
 }

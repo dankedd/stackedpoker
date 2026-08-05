@@ -23,13 +23,16 @@ export default async function BankrollPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  // A single bankroll_sessions fetch covers three needs that used to be three
+  // separate round-trips: the chart's chronological series, the "most recent
+  // session per category" lookup, and (before that) a standalone "single most
+  // recent session" query — all derivable in JS from one descending-order
+  // fetch, since ledgerSessions below just re-sorts the same rows ascending.
   const [
     { data: overviewRow },
     { data: settingsRow },
-    { data: recentSessionRow },
-    { data: ledgerSessionRows },
-    { data: ledgerTransactionRows },
-    { data: categorySessionRows },
+    { data: sessionRows },
+    { data: transactionRows },
   ] = await Promise.all([
     supabase.rpc("bankroll_overview", { p_user_id: user.id }).single(),
     supabase
@@ -39,16 +42,9 @@ export default async function BankrollPage() {
       .maybeSingle(),
     supabase
       .from("bankroll_sessions")
-      .select("stakes, variant, site, session_type, started_at")
+      .select("started_at, buy_in_amount, cash_out_amount, ev_amount, session_type, variant, stakes, site")
       .eq("user_id", user.id)
       .order("started_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    supabase
-      .from("bankroll_sessions")
-      .select("started_at, buy_in_amount, cash_out_amount, ev_amount")
-      .eq("user_id", user.id)
-      .order("started_at", { ascending: true })
       .limit(2000),
     supabase
       .from("bankroll_transactions")
@@ -56,25 +52,21 @@ export default async function BankrollPage() {
       .eq("user_id", user.id)
       .order("occurred_at", { ascending: true })
       .limit(2000),
-    supabase
-      .from("bankroll_sessions")
-      .select("session_type, variant, stakes, started_at")
-      .eq("user_id", user.id)
-      .order("started_at", { ascending: false })
-      .limit(300),
   ]);
 
   const overview = overviewRow as unknown as BankrollOverview | null;
-  const recentSession = recentSessionRow as unknown as RecentBankrollSession | null;
-  const ledgerSessions = (ledgerSessionRows ?? []) as unknown as BankrollLedgerSession[];
-  const ledgerTransactions = (ledgerTransactionRows ?? []) as unknown as BankrollLedgerTransaction[];
+  const sessions = (sessionRows ?? []) as unknown as (BankrollLedgerSession & RecentBankrollSession)[];
+  const ledgerTransactions = (transactionRows ?? []) as unknown as BankrollLedgerTransaction[];
 
   const currency = settingsRow?.preferred_currency ?? "USD";
   const startingAt = settingsRow?.starting_at ?? user.created_at;
   const buyInRules = (settingsRow?.buy_in_rules ?? {}) as BuyInRules;
 
+  // sessions is already sorted newest-first, so [0] is the most recent session overall.
+  const recentSession = sessions[0] ?? null;
+
   const recentStakeByCategory: Partial<Record<BankrollCategory, string>> = {};
-  for (const row of (categorySessionRows ?? []) as unknown as RecentBankrollSession[]) {
+  for (const row of sessions) {
     const category = categorizeSession(row.session_type, row.variant);
     if (category && !recentStakeByCategory[category] && row.stakes) {
       recentStakeByCategory[category] = row.stakes;
@@ -85,7 +77,7 @@ export default async function BankrollPage() {
   const { series: bankrollSeries, hasEvData } = buildBankrollSeries(
     settingsRow?.starting_bankroll ?? 0,
     startingAt,
-    ledgerSessions,
+    [...sessions].reverse(), // buildBankrollSeries expects chronological (oldest-first) order
     ledgerTransactions
   );
 
