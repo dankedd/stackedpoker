@@ -66,6 +66,20 @@ export function isCleanFacingOpen(actionBeforeHero: string[] | undefined): boole
   return raises.length === 1 && others.every((a) => /folds/i.test(a))
 }
 
+/** True when the step itself offers a jam/all-in choice — meaning the REAL decision
+ *  is three-way (call/jam/fold), not two-way. `DEFEND_DEEP/MEDIUM/SHALLOW` only ever
+ *  tracks BB's CALLING frequency (see the module doc comment above) — it has no idea
+ *  whether a hand's non-call combos are jams or folds, so it can never honestly settle
+ *  a three-way question. `DEFEND_SHALLOW.BB_vs_BTN` is hand-authored (not solver/book-
+ *  derived — see defendBaselines.ts's own doc comment) and lists 65s as a "call",
+ *  directly contradicting a lesson step's own (theoretically sound — implied odds
+ *  require stack depth that isn't there at 15bb) fold verdict for the exact same hand.
+ *  Rather than silently overriding sound reasoning with a low-fidelity guess, this
+ *  stops the action_slice fallback from resolving a reveal at all here. */
+function stepHasJamOption(step: LessonStep): boolean {
+  return !!step.options?.some((o) => /\bjam\b|all-?in|shove/i.test(`${o.id} ${o.label}`))
+}
+
 export function resolveDefendRangeReveal(step: LessonStep): DecisionSpotRangeReveal | undefined {
   if (step.type !== 'decision_spot') return undefined
 
@@ -113,7 +127,11 @@ export function resolveDefendRangeReveal(step: LessonStep): DecisionSpotRangeRev
     }
   }
 
-  // Fall back to the calling-frequency-only chart for every other tier/matchup.
+  // Fall back to the calling-frequency-only chart for every other tier/matchup —
+  // but never when the step itself poses a genuine call/jam/fold choice (see
+  // stepHasJamOption's doc comment): a calling-only slice cannot honestly back
+  // an answer to a question it was never able to track a third of.
+  if (stepHasJamOption(step)) return undefined
   const matchup = `${heroPosition}_vs_${villainPosition}` as DefendMatchup
   if (!(matchup in DEFEND_DEEP)) return undefined
 

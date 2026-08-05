@@ -37,6 +37,11 @@ import {
 import {
   CAPPED_NOT_CONDENSED_EXAMPLE, RANGE_MIRROR, PROTECTION_SURGERY_BOARD,
 } from './module11Content'
+import {
+  RANGE_COMPRESSION_STATES, HAND_RANGE_337_340_SOURCE,
+  TOY_GAME_A, TOY_GAME_B, TOY_GAME_C, TOY_GAME_D, TOY_GAME_E, TOY_GAMES_A_TO_E_SOURCE,
+  SPR_TABLE_90, SPR_TABLE_90_SOURCE,
+} from './module12Content'
 
 // ── Learning Paths ────────────────────────────────────────────────────────────
 
@@ -377,6 +382,31 @@ export const LEARNING_MODULES: LearningModule[] = [
     stageId: 'game-theory',
     order: 11,
     prerequisiteModuleId: 'game-theory-foundations-module',
+    access: 'free',
+  },
+  {
+    id: 'bet-sizing-language-module',
+    path_id: 'intermediate',
+    slug: 'bet-sizing-language-module',
+    title: 'The Language of Bet Sizing',
+    description: 'A bet-size is never chosen per-hand — it is one entry from a small menu a strategy commits to in advance. Learn what a size actually buys (pot odds, Alpha, MDF, value:bluff ratio, as one connected cascade), why a strategy abandons a size the instant it can be raised rather than using it less, why that abandonment costs surprisingly little EV on average, and why relative polarization — not hand strength — sets both the direction and size of every bet.',
+    concept_ids: ['sizing_as_action_abstraction', 'alpha_size_dependence', 'size_abandonment_mechanism', 'simplification_ev_cost', 'one_size_fits_board_caveat', 'polarization_sizing_direction'],
+    unlock_after: ['polarized-module'],
+    sort_order: 11,
+    xp_reward: 1000,
+    subtitle: 'A bet-size is a sentence, not a chip count — learn to read and construct its meaning.',
+    learningObjectives: [
+      'State the formal definitions of bet-size, minbet, minraise, overbet, c-bet, and donk bet, and explain why a strategy must fix a finite menu of sizes before any specific hand is considered',
+      'Compute, from any stated bet-size, the pot odds it offers, the resulting Alpha, the MDF it implies, and the value:bluff ratio a polarized range needs — as one connected cascade, not four separate facts',
+      'Explain, using the book\'s own [0-1] Toy Game evidence, why a strategy abandons a bet-size entirely the instant it can be safely raised, rather than simply using it less often',
+      'State the book\'s own quantified EV cost of simplifying to a single bet-size, and identify the specific, nameable exceptions (the all-in size, low SPR) where that default stops applying',
+      'Predict a strategy\'s sizing direction — from pure-check to all-in-dominant — directly from a range\'s polarization relative to its opponent\'s, without needing raw equity numbers',
+    ],
+    difficulty: 'intermediate',
+    estimatedLessons: 5,
+    stageId: 'bet-sizing-defense',
+    order: 12,
+    prerequisiteModuleId: 'polarized-module',
     access: 'free',
   },
   ...ROADMAP_MODULES,
@@ -8117,13 +8147,13 @@ export const LESSONS: Lesson[] = [
         id: 'hj-s4',
         type: 'decision_spot',
         concept_ids: ['opener_range_strength'],
-        narrative: 'Same UTG open. Hero is in the HJ with A♠J♥ (AJs).',
+        narrative: 'Same UTG open. Hero is in the HJ with A♠J♠ (AJs).',
         table_size: 9,
         hero_position: 'HJ',
         villain_position: 'UTG',
         effective_stack_bb: 60,
         action_before_hero: ['UTG raises to 2.2bb', 'UTG+1 folds', 'LJ folds'],
-        hero_hand: ['As', 'Jh'],
+        hero_hand: ['As', 'Js'],
         decision_spot_question: '3-BET, CALL, or FOLD?',
         options: [
           { id: 'call', label: 'CALL', quality: 'perfect', feedback: 'Correct — AJs is good enough to continue against UTG\'s range, but it\'s dominated too often by AK/AQ/AA-JJ to be a clear value 3-bet here. Calling keeps it in cheaply while avoiding blowing up the pot with a hand that isn\'t a clear favorite.' },
@@ -8782,7 +8812,7 @@ export const LESSONS: Lesson[] = [
       {
         id: 'bbd-s8n',
         type: 'decision_spot',
-        concept_ids: ['bb_defense', 'stack_depth_defense'],
+        concept_ids: ['bb_defense'],
         narrative: 'Cash game, 100bb effective. BTN opens to 2.2bb. Hero is in the BB with 7♠6♠.',
         table_size: 6,
         hero_position: 'BB',
@@ -8791,8 +8821,8 @@ export const LESSONS: Lesson[] = [
         action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.2bb', 'SB folds'],
         hero_hand: ['7s', '6s'],
         options: [
-          { id: '3bet', label: '3-Bet', quality: 'perfect', feedback: 'Correct — at 100bb, this exact suited connector becomes a pure 3-bet against BTN\'s wide range: great blockers to the top of BTN\'s range and enough playability to be happy in a 3-bet pot. Compare this with the same 76s at 60bb, where calling was correct — the stack depth changed the answer, not just the width.' },
-          { id: 'call', label: 'Call', quality: 'mistake', feedback: 'At 100bb specifically, this leaves value on the table — 76s has enough equity and blocker value against BTN\'s wide range to 3-bet outright rather than just call.' },
+          { id: 'call', label: 'Call', quality: 'perfect', feedback: "Correct — 76s stays a call at 100bb too, same as at 60bb. Modern Poker Theory's own solved BB-vs-BTN diagram keeps suited connectors like this firmly in the calling group at this depth; BB's 3-betting range here is a linear, top-of-range bucket (big pairs, strong broadways) that a speculative connector like 76s doesn't qualify for on raw value." },
+          { id: '3bet', label: '3-Bet', quality: 'mistake', feedback: "76s doesn't carry the raw value to sit in BB's linear 3-betting range against BTN — that range is reserved for the top of the range, not a speculative suited connector, at either 60bb or 100bb." },
           { id: 'fold', label: 'Fold', quality: 'mistake', feedback: 'This is far too tight against one of the widest opens at the table, with a hand that flops well and blocks BTN\'s continuing range.' },
         ],
         xp: 8,
@@ -13015,10 +13045,10 @@ export const LESSONS: Lesson[] = [
         type: 'cbet_frequency_size',
         concept_ids: ['polarization_advantage', 'threebet_pot_cbet'],
         narrative:
-          'Cash game, 100bb effective. Hero 3-bet preflop from the BTN; BB called. Hero\'s continuing range here is more polarized than a single-raised-pot range would be — a 3-bet range keeps its clear premiums and its blocker-driven bluffs, with fewer in-between hands. Board: Q♠7♦2♣.',
+          'Cash game, 100bb effective. The CO opened, Hero 3-bet from the BTN, and the CO called. This creates a polarized 3-bet range rather than a single-raised-pot range — a 3-bet range keeps its clear premiums and its blocker-driven bluffs, with fewer in-between hands. Board: Q♠7♦2♣.',
         table_size: 6,
         hero_position: 'BTN',
-        villain_position: 'BB',
+        villain_position: 'CO',
         effective_stack_bb: 100,
         board: ['Qs', '7d', '2c'],
         cbet_frequency_size_prompt: 'Choose the aggregate frequency, then the primary sizing, for this more polarized range.',
@@ -13673,16 +13703,16 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'Which Hero c-bets this Axx board MORE often: the one in position, or the one out of position?',
         scenario_a: {
           label: 'Hero In Position',
-          short_description: 'BTN 3-bets, BB calls',
+          short_description: 'CO opens, BTN 3-bets, CO calls',
           hero_position: 'BTN',
-          villain_position: 'BB',
+          villain_position: 'CO',
           table_size: 6,
           effective_stack_bb: 40,
           board: ['As', '9d', '3c'],
         },
         scenario_b: {
           label: 'Hero Out Of Position',
-          short_description: 'SB 3-bets, BTN calls',
+          short_description: 'BTN opens, SB 3-bets, BTN calls',
           hero_position: 'SB',
           villain_position: 'BTN',
           table_size: 6,
@@ -13879,10 +13909,10 @@ export const LESSONS: Lesson[] = [
         type: 'cbet_frequency_size',
         concept_ids: ['polarization_advantage', 'threebet_pot_cbet'],
         narrative:
-          'Cash game, 100bb effective. Hero 3-bet preflop from the BTN; BB called. This continuing range is more polarized than a single-raised-pot range. Board: J♠6♦2♣.',
+          'Cash game, 100bb effective. The CO opened, Hero 3-bet from the BTN, and the CO called. This creates a polarized 3-bet range rather than a single-raised-pot range. Board: J♠6♦2♣.',
         table_size: 6,
         hero_position: 'BTN',
-        villain_position: 'BB',
+        villain_position: 'CO',
         effective_stack_bb: 100,
         board: ['Js', '6d', '2c'],
         cbet_frequency_size_prompt: 'Choose the aggregate frequency, then the primary sizing, for this polarized range.',
@@ -18328,6 +18358,157 @@ export const LESSONS: Lesson[] = [
         concept_content: "A checking range needs its own deliberate construction — it is not whatever's left over once you decide what to bet. Because checking OOP does not guarantee equity realization, an OOP checking range must be balanced at the moment of the check, not just on average by a later street. A checking range with zero strong hands becomes capped and exploitable; the fix is a modest, deliberate minority of strong hands checked back — enough to protect the range, not so much that the betting range goes thin in the opposite direction.",
         concept_note: "That's five lessons and the current build of this module. You now have: why betting works (Lesson 1), that shape is relative (Lesson 2), that composition beats raw equity (Lesson 3), the exact bluff-to-value math and its street-specific limits (Lesson 4), and how to protect what you don't bet (Lesson 5).",
         xp: 8,
+      },
+    ],
+  },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // MODULE 12 — The Language of Bet Sizing (Lessons 1-5 of 10; Part 3B scope)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  {
+    id: 'bet-size-is-a-sentence',
+    module_id: 'bet-sizing-language-module',
+    slug: 'bet-size-is-a-sentence',
+    title: 'A Bet Size Is a Sentence',
+    subtitle: 'A strategy fixes a small menu of sizes before any specific hand is even considered.',
+    lesson_type: 'concept_reveal',
+    concept_ids: ['sizing_as_action_abstraction'],
+    estimated_min: 10,
+    xp_reward: 160,
+    sort_order: 1,
+    next_lesson_teaser: 'What a Size Buys You',
+    steps: [
+      {
+        id: 'bsis-s1',
+        type: 'concept_reveal',
+        concept_title: 'The Menu, Not the Number',
+        concept_content: "No-Limit Hold'em lets you bet any amount from one chip to your whole stack — \"the ability to bet any amount... at any given point\" is what separates NLH from every other structured variant. Follow that freedom through: if bet-size is truly continuous, there's no finite decision tree for a single hand — between any two sizes there's always another size in between. No solver, and no strategy, can compute across infinitely many branches. So every real strategy secretly does the same thing first: it picks a small, finite list of sizes and agrees, in advance, never to use anything outside it. The book's glossary calls this an action abstraction — \"a situation where some of the actions in the real game are assumed to not be usable.\" A solver doesn't discover the \"correct\" size out of infinite possibilities; a human hands it a short list, and it only ever chooses among those.",
+        concept_note: "The direct consequence: you don't choose a bet-size for a hand. You decide, in advance, which small menu your strategy uses in this spot — only afterward does a specific hand get assigned to one of the entries already on it.",
+        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.1 Glossary pp.19-23; Ch.10 p.599', type: 'source_reconstructed' },
+      },
+      {
+        id: 'bsis-s2',
+        type: 'concept_reveal',
+        concept_title: 'The Exact Vocabulary',
+        concept_structured_items: [
+          { term: 'Bet-size', description: 'Displayed either in big blinds or as a fraction of the pot.' },
+          { term: 'Minbet', description: 'The minimum bet allowed — post-flop, one big blind.' },
+          { term: 'Minraise', description: 'Raises to exactly two times the last bet amount.' },
+          { term: 'Overbet', description: 'Any bet larger than the size of the pot. Notice this definition says nothing about the hand behind it — "overbet" is a size category, full stop.' },
+          { term: 'Continuation bet (c-bet)', description: 'A post-flop bet made by the player who was the last aggressor on the previous betting round.' },
+          { term: 'Donk bet (lead out)', description: 'The out-of-position player bets into the previous street\'s aggressor, denying them the option to c-bet.' },
+          { term: 'Slow play / trap', description: 'Playing a premium holding passively, hoping to induce a value-bet or bluff from a worse hand.' },
+        ],
+        concept_note: "This module uses every one of these definitions precisely, with no looser paraphrase substituted in their place.",
+        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.1 Glossary p.22', type: 'source_reconstructed' },
+      },
+      {
+        id: 'bsis-s3',
+        type: 'mdf_slider',
+        concept_ids: ['sizing_as_action_abstraction'],
+        narrative: "Set any pot size and drag the slider from min-bet up through overbet territory. Watch the four readouts move together. Notice: nothing here asks what hand you hold — every one of these numbers is a property of the SIZE, not of any specific hand. This pass can't be failed; there's nothing to get wrong here.",
+        mdf_slider_question: 'Explore freely — no target, no wrong answer.',
+        mdf_slider_variant: 'full_cascade',
+        mdf_slider_initial_bet_pct: 50,
+      },
+      {
+        id: 'bsis-s4',
+        type: 'decision_spot',
+        concept_ids: ['sizing_as_action_abstraction'],
+        narrative: "An overbet is defined precisely: \"a bet larger than the size of the pot.\"",
+        decision_spot_question: 'Why does this definition make no reference to hand strength?',
+        options: [
+          {
+            id: 'range_decided_in_advance', label: "Because a size is chosen by the range/strategy in advance, not by the specific hand", quality: 'perfect',
+            feedback: "Exactly right. The menu of sizes a strategy uses is fixed before any hand is considered — a size is an entry a range commits to, and individual hands get assigned to it based on the job they need to do, not the other way around. That's why the definition of \"overbet\" is purely mechanical.",
+          },
+          {
+            id: 'always_bluff', label: 'Because an overbet is always a bluff, so hand strength is irrelevant', quality: 'mistake',
+            feedback: "Not true, and this is exactly the trap Lesson 9 exists to correct: overbets show up at BOTH ends of a polarized range — as the biggest value bets AND the biggest bluffs. The size alone never tells you which.",
+          },
+          {
+            id: 'always_value', label: 'Because an overbet is always for value, so hand strength is irrelevant', quality: 'mistake',
+            feedback: "Not true — an overbetting range is frequently the MOST polarized range on the menu, meaning it needs plenty of bluffs, not just value. The size alone never tells you which.",
+          },
+        ],
+        xp: 14,
+      },
+      {
+        id: 'bsis-s5',
+        type: 'decision_spot',
+        concept_ids: ['sizing_as_action_abstraction'],
+        narrative: "A friend tells you: \"GTO solvers just try every possible bet-size and pick the best one.\"",
+        decision_spot_question: "What's wrong with this statement?",
+        options: [
+          {
+            id: 'finite_list_given', label: 'A solver can only choose from a finite list of sizes a human gives it in advance — it cannot search the full continuous space', quality: 'perfect',
+            feedback: "Correct. NLH's bet-size space is continuous, so a full game tree with infinite sizes literally cannot be drawn. A human supplies a short betting abstraction first — change that list, and the solver's entire reported strategy changes with it, because it's now solving a different, smaller game.",
+          },
+          {
+            id: 'solvers_only_flop', label: "It's wrong because solvers can only be used preflop, not for sizing decisions", quality: 'mistake',
+            feedback: "Solvers are used at every street, sizing included — that's not the issue here. The real problem with the statement is the claim that a solver searches EVERY possible size, which is impossible in a continuous space.",
+          },
+          {
+            id: 'nothing_wrong', label: "Nothing's wrong with it — that's basically how solvers work", quality: 'mistake',
+            feedback: 'A solver cannot search infinite bet-sizes — there is no finite way to represent that. It is handed a short, human-chosen list of legal sizes and can only ever choose among those.',
+          },
+        ],
+        xp: 16,
+        remediation_ladder: [
+          {
+            id: 'bsis-s5-remediate',
+            type: 'decision_spot',
+            concept_ids: ['sizing_as_action_abstraction'],
+            narrative: "A solver is given exactly two legal flop bet-sizes: 33% pot and 100% pot. It reports that 33% pot is used 80% of the time.",
+            decision_spot_question: 'Does this mean 33% pot is the single best possible bet-size on this flop, out of every size that could theoretically be used?',
+            options: [
+              {
+                id: 'no', label: 'No — it\'s only the best among the sizes it was given', quality: 'perfect',
+                feedback: "Right. If the reported 'best' size looks arbitrary, the real question isn't 'why did the solver pick this' — it's 'why did the human who set up this simulation include this size on the list in the first place.'",
+              },
+              {
+                id: 'yes', label: 'Yes — 80% usage proves it\'s the best size, period', quality: 'mistake',
+                feedback: "It only proves it's the best of the two sizes the solver was allowed to use. It cannot consider any size that wasn't on the list, no matter how good that size might theoretically be.",
+              },
+            ],
+            xp: 8,
+          },
+        ],
+      },
+      {
+        id: 'bsis-s6',
+        type: 'decision_spot',
+        concept_ids: ['sizing_as_action_abstraction'],
+        narrative: "A UTG open uses the same 2.5bb raise size for AA as it does for 76s.",
+        decision_spot_question: 'Why the same size for every hand in the range, instead of a different size per hand?',
+        options: [
+          {
+            id: 'property_of_range', label: 'Bet-size is a property of the range/position, decided in advance — not of the individual hand', quality: 'perfect',
+            feedback: "Correct — and you already had direct experience with this from your preflop work, this lesson just names the mechanism. UTG opens the same size with AA as with 76s because the size is a property of the position and range, fixed before any specific hand is considered — exactly the 'menu comes before the hand' structure this whole lesson is built on.",
+          },
+          {
+            id: 'aa_disguise', label: 'A bigger AA-specific size would just get folds, so it\'s disguised as the standard size', quality: 'mistake',
+            feedback: "That's a per-hand explanation, which is exactly the intuition this lesson is correcting. The real reason is structural: the whole range's size menu is fixed by position/width, before any individual hand — including AA — gets assigned to it.",
+          },
+        ],
+        xp: 14,
+      },
+      {
+        id: 'bsis-s7',
+        type: 'concept_reveal',
+        concept_title: 'Mental Model Shift',
+        concept_structured_items: [
+          { term: 'Before this lesson', description: 'A bet-size is the amount of chips I decide to risk with this specific hand, chosen in the moment based on how I feel about it.' },
+          { term: 'After this lesson', description: 'A bet-size is one entry from a small, deliberately fixed menu my whole strategy commits to in advance, before any specific hand is even considered — the hand gets assigned to the menu; the menu is never built around the hand.' },
+        ],
+      },
+      {
+        id: 'bsis-s8',
+        type: 'concept_reveal',
+        concept_reveal_optional: true,
+        concept_title: 'Elite Insight',
+        concept_content: "A strong regular's bet-sizes never seem to hesitate — the real explanation is less mystical than it looks. The sizing decision was already made, away from the table, before the hand started; the in-hand moment is closer to a lookup than an invention. If you ever find yourself needing to invent a genuinely new bet-size mid-hand — one that isn't already part of a menu you'd prepared for a spot like this — that feeling usually signals a gap in your preparation, not a clever new play.",
       },
     ],
   },
