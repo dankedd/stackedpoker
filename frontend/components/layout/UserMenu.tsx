@@ -1,88 +1,34 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { LayoutDashboard, BookOpen, Settings, LogOut, ChevronDown, CreditCard } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLearnProgress } from '@/contexts/LearnProgressContext'
+import {
+  MENU_Z_INDEX,
+  useAnchoredMenuPosition,
+  useDismissOnOutsideOrEscape,
+  useRecomputeOnScrollResize,
+} from '@/hooks/useAnchoredMenu'
 
 const DROPDOWN_W = 224 // w-56 = 14rem
-
-interface DropdownPos {
-  top: number
-  left: number
-  originX: string
-}
 
 export function UserMenu() {
   const { user, signOut, loading } = useAuth()
   const { progress } = useLearnProgress()
   const [open, setOpen] = useState(false)
-  const [pos, setPos] = useState<DropdownPos>({ top: 0, left: 0, originX: '50%' })
-  const triggerRef  = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
-
-  const computePos = useCallback(() => {
-    if (!triggerRef.current) return
-    const r   = triggerRef.current.getBoundingClientRect()
-    const vw  = window.innerWidth
-
-    // Center under trigger, clamp to viewport with 8 px margin
-    let left = r.left + r.width / 2 - DROPDOWN_W / 2
-    if (left < 8) left = 8
-    if (left + DROPDOWN_W > vw - 8) left = vw - DROPDOWN_W - 8
-
-    // Bottom-collision: if not enough space below, flip above
-    const DROPDOWN_H_EST = 280
-    const top = r.bottom + window.scrollY + 8 > window.innerHeight + window.scrollY - DROPDOWN_H_EST
-      ? r.top - DROPDOWN_H_EST - 8   // flip above
-      : r.bottom + 8                  // normal below (fixed so no scroll offset needed)
-
-    setPos({
-      top,
-      left,
-      originX: `${r.left + r.width / 2 - left}px`,
-    })
-  }, [])
+  const { pos, triggerRef, computePos } = useAnchoredMenuPosition({ width: DROPDOWN_W })
 
   function handleToggle() {
     if (!open) computePos()
     setOpen(v => !v)
   }
 
-  // Close on outside click (trigger + portal both excluded)
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      const t = e.target as Node
-      if (
-        triggerRef.current?.contains(t) ||
-        dropdownRef.current?.contains(t)
-      ) return
-      setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  // Escape key
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setOpen(false) }
-    document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
-  }, [])
-
-  // Recompute on scroll / resize while open
-  useEffect(() => {
-    if (!open) return
-    const update = () => computePos()
-    window.addEventListener('scroll', update, { passive: true, capture: true })
-    window.addEventListener('resize', update, { passive: true })
-    return () => {
-      window.removeEventListener('scroll', update, true)
-      window.removeEventListener('resize', update)
-    }
-  }, [open, computePos])
+  useDismissOnOutsideOrEscape(open, () => setOpen(false), triggerRef, dropdownRef)
+  useRecomputeOnScrollResize(open, computePos)
 
   if (loading) {
     return <div className="h-8 w-8 rounded-full bg-white/[0.06] animate-pulse" />
@@ -109,7 +55,7 @@ export function UserMenu() {
         top: pos.top,
         left: pos.left,
         width: DROPDOWN_W,
-        zIndex: 9999,
+        zIndex: MENU_Z_INDEX,
         transformOrigin: `${pos.originX} top`,
       }}
       className="animate-dropdown-in"

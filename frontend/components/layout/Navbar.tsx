@@ -1,13 +1,22 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Spade, Menu, X, ChevronDown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { StatusBadge, type ProductStatus } from "@/components/layout/StatusBadge";
+import {
+  MENU_Z_INDEX,
+  useAnchoredMenuPosition,
+  useDismissOnOutsideOrEscape,
+  useRecomputeOnScrollResize,
+} from "@/hooks/useAnchoredMenu";
 import { cn } from "@/lib/utils";
+
+const DEV_MENU_W = 256; // w-64 = 16rem
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Navigation config
@@ -74,9 +83,15 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [devOpen, setDevOpen] = useState(false);
-  const devRef = useRef<HTMLDivElement>(null);
+  const devMenuRef = useRef<HTMLDivElement>(null);
   const isSticky = variant === "sticky";
   const devActive = DEV_ITEMS.some((item) => isItemActive(pathname, item.href));
+
+  // Portaled to document.body (see the dropdown render below) so it always paints
+  // above page content, regardless of what stacking contexts a given page creates —
+  // see the useAnchoredMenu hooks' doc comments.
+  const { pos: devPos, triggerRef: devTriggerRef, computePos: computeDevPos } =
+    useAnchoredMenuPosition({ width: DEV_MENU_W, align: "right", estimatedHeight: 220 });
 
   // Scroll listener (sticky only)
   useEffect(() => {
@@ -92,15 +107,13 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
     setDevOpen(false);
   }, [pathname]);
 
-  // Close dev dropdown on outside click
-  useEffect(() => {
-    if (!devOpen) return;
-    function handler(e: MouseEvent) {
-      if (!devRef.current?.contains(e.target as Node)) setDevOpen(false);
-    }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [devOpen]);
+  useDismissOnOutsideOrEscape(devOpen, () => setDevOpen(false), devTriggerRef, devMenuRef);
+  useRecomputeOnScrollResize(devOpen, computeDevPos);
+
+  function toggleDevOpen() {
+    if (!devOpen) computeDevPos();
+    setDevOpen((v) => !v);
+  }
 
   // ── Nav pill ──────────────────────────────────────────────────────────────
   const nav = (
@@ -141,10 +154,11 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
         ))}
 
         {/* ── In development cluster (desktop dropdown) ── */}
-        <div className="relative ml-1" ref={devRef}>
+        <div className="ml-1">
           <button
+            ref={devTriggerRef}
             type="button"
-            onClick={() => setDevOpen((v) => !v)}
+            onClick={toggleDevOpen}
             className={cn(
               "flex items-center gap-1 px-3 py-1.5 rounded-xl text-[13px] font-medium transition-all duration-150",
               devActive
@@ -158,13 +172,24 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
             <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-150", devOpen && "rotate-180")} />
           </button>
 
-          {devOpen && (
-            <div className="absolute top-[calc(100%+8px)] right-0 w-64 rounded-2xl border border-white/[0.1] bg-[#070C1B] shadow-2xl shadow-black/70 overflow-hidden animate-dropdown-in z-50">
+          {/* Portaled to document.body + position: fixed (viewport coordinates from
+           *  useAnchoredMenuPosition) instead of absolute-inside-the-nav — on inner
+           *  pages the navbar renders in-flow (variant="static"), so an absolutely
+           *  positioned dropdown here inherited whatever stacking context page
+           *  content happened to create and could paint underneath it. Portaling
+           *  escapes that entirely; MENU_Z_INDEX keeps it above everything. */}
+          {devOpen && createPortal(
+            <div
+              ref={devMenuRef}
+              style={{ position: "fixed", top: devPos.top, left: devPos.left, width: DEV_MENU_W, zIndex: MENU_Z_INDEX }}
+              className="rounded-2xl border border-white/[0.1] bg-[#070C1B] shadow-2xl shadow-black/70 overflow-hidden animate-dropdown-in"
+            >
               <div className="p-1.5">
                 {DEV_ITEMS.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={() => setDevOpen(false)}
                     className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-slate-400 hover:text-slate-200 hover:bg-white/[0.06] transition-all duration-150"
                   >
                     {item.label}
@@ -172,7 +197,8 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
                   </Link>
                 ))}
               </div>
-            </div>
+            </div>,
+            document.body
           )}
         </div>
       </div>
@@ -214,7 +240,7 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
 
   // ── Mobile menu ───────────────────────────────────────────────────────────
   const mobileMenu = mobileOpen ? (
-    <div className="md:hidden fixed inset-x-0 top-[68px] z-50 px-4 animate-dropdown-in">
+    <div className="md:hidden fixed inset-x-0 top-[68px] px-4 animate-dropdown-in" style={{ zIndex: MENU_Z_INDEX }}>
       <div className="rounded-2xl border border-white/[0.09] bg-[#060B18]/98 backdrop-blur-xl backdrop-saturate-150 shadow-2xl shadow-black/70 overflow-hidden">
         <nav className="p-2">
           {NAV_ITEMS.map((item) => (
@@ -275,6 +301,14 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
     </div>
   ) : null;
 
+  // Portaled for the same reason as the dev dropdown above: on variant="static"
+  // pages this menu isn't nested inside anything that elevates it, so rendering
+  // it in-tree (even as `fixed` with a high z-index) still confines it to
+  // whatever stacking context page content creates. mobileOpen gates
+  // `mobileMenu` to `null` until the user opens it, so `document.body` is
+  // never touched during SSR.
+  const portaledMobileMenu = mobileMenu && createPortal(mobileMenu, document.body);
+
   // ── Render ────────────────────────────────────────────────────────────────
   if (isSticky) {
     return (
@@ -282,7 +316,7 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
         <div className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 pt-4">
           {nav}
         </div>
-        {mobileMenu}
+        {portaledMobileMenu}
       </>
     );
   }
@@ -292,7 +326,7 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
       <div className="flex justify-center px-4 pt-4 w-full">
         {nav}
       </div>
-      {mobileMenu}
+      {portaledMobileMenu}
     </>
   );
 }
