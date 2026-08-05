@@ -1,0 +1,41 @@
+-- ============================================================
+-- Bankroll Management — per-game-type buy-in rules
+-- Run this in the Supabase SQL Editor AFTER supabase_bankroll_schema.sql.
+-- Idempotent: ADD COLUMN IF NOT EXISTS, safe to re-run.
+--
+-- Adds one additive column to bankroll_settings: buy_in_rules jsonb, keyed
+-- by game-type category ("cash" | "tournament" | "spin_and_go" | "plo"),
+-- each value shaped as { buyInCount: number, currentBuyIn: number | null }.
+--
+-- Why jsonb instead of four separate columns: this mirrors the same
+-- "open sub-metrics" choice already made for bankroll_mental_entries.scores
+-- in supabase_bankroll_schema.sql — the set of game-type categories a
+-- player wants to track is not fixed (a fifth category is a product
+-- decision away, not a migration away), and the value the app reads is
+-- always looked up by category key, never queried/filtered by SQL, so
+-- there's no reporting/indexing reason to normalize it into columns or a
+-- child table.
+--
+-- Why this lives on bankroll_settings rather than a new table: it is,
+-- like starting_bankroll and preferred_currency, a single per-user
+-- configuration value with no history/audit-trail requirement — the same
+-- shape as everything else already on this table.
+--
+-- IMPORTANT — this column stores the buy-in COUNT THRESHOLD the player
+-- chose for themselves ("Gebruiker kiest eigen bankrollregels"), never a
+-- number this schema or the app asserts is "the correct" bankroll rule.
+-- Modern Poker Theory (docs/Modern Poker Theory.pdf) gives a bankroll
+-- buy-in figure for MTTs only (200 buy-ins suggested, 1,000 to minimize
+-- risk of ruin — "MTT Bankroll Management", p.264, already cited in
+-- supabase_bankroll_schema.sql's Recommended Stake note) and states no
+-- Cash Game, PLO, or Spin & Go figure at all — confirmed by a full-text
+-- search of the extracted book text before writing this migration. The
+-- preset buy-in counts the UI suggests for those three categories are
+-- therefore an implementation default (a common industry convention, nod
+-- to the book's cash-game silence), not a book citation — see
+-- frontend/lib/bankroll/management.ts for where that's spelled out again
+-- next to the actual preset numbers.
+-- ============================================================
+
+ALTER TABLE public.bankroll_settings
+  ADD COLUMN IF NOT EXISTS buy_in_rules jsonb NOT NULL DEFAULT '{}'::jsonb;
