@@ -7,8 +7,10 @@ import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/Navbar";
 import { BankrollStatCard } from "@/components/bankroll/BankrollStatCard";
 import { BankrollChart } from "@/components/bankroll/BankrollChart";
+import { BankrollManagementSection } from "@/components/bankroll/BankrollManagementSection";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import { buildBankrollSeries } from "@/lib/bankroll/series";
+import { categorizeSession, CATEGORY_ORDER, type BankrollCategory, type BuyInRules } from "@/lib/bankroll/management";
 import type {
   BankrollLedgerSession,
   BankrollLedgerTransaction,
@@ -29,11 +31,12 @@ export default async function BankrollPage() {
     { data: settledSessionRows },
     { data: ledgerSessionRows },
     { data: ledgerTransactionRows },
+    { data: categorySessionRows },
   ] = await Promise.all([
     supabase.rpc("bankroll_overview", { p_user_id: user.id }).single(),
     supabase
       .from("bankroll_settings")
-      .select("preferred_currency, starting_bankroll, starting_at")
+      .select("preferred_currency, starting_bankroll, starting_at, buy_in_rules")
       .eq("user_id", user.id)
       .maybeSingle(),
     supabase
@@ -60,6 +63,12 @@ export default async function BankrollPage() {
       .eq("user_id", user.id)
       .order("occurred_at", { ascending: true })
       .limit(2000),
+    supabase
+      .from("bankroll_sessions")
+      .select("session_type, variant, stakes, started_at")
+      .eq("user_id", user.id)
+      .order("started_at", { ascending: false })
+      .limit(300),
   ]);
 
   const overview = overviewRow as unknown as BankrollOverview | null;
@@ -70,6 +79,16 @@ export default async function BankrollPage() {
 
   const currency = settingsRow?.preferred_currency ?? "USD";
   const startingAt = settingsRow?.starting_at ?? user.created_at;
+  const buyInRules = (settingsRow?.buy_in_rules ?? {}) as BuyInRules;
+
+  const recentStakeByCategory: Partial<Record<BankrollCategory, string>> = {};
+  for (const row of (categorySessionRows ?? []) as unknown as RecentBankrollSession[]) {
+    const category = categorizeSession(row.session_type, row.variant);
+    if (category && !recentStakeByCategory[category] && row.stakes) {
+      recentStakeByCategory[category] = row.stakes;
+    }
+    if (CATEGORY_ORDER.every((c) => recentStakeByCategory[c])) break;
+  }
 
   const { series: bankrollSeries, hasEvData } = buildBankrollSeries(
     settingsRow?.starting_bankroll ?? 0,
@@ -206,6 +225,16 @@ export default async function BankrollPage() {
             value={recommendedBuyIn != null ? `${formatCurrency(recommendedBuyIn, currency)} buy-in` : "—"}
             caption="200 buy-in rule · Modern Poker Theory p.264"
             delayMs={280}
+          />
+        </div>
+
+        {/* ── Bankroll management ── */}
+        <div className="mt-8">
+          <BankrollManagementSection
+            bankroll={currentBankroll}
+            currency={currency}
+            buyInRules={buyInRules}
+            recentStakeByCategory={recentStakeByCategory}
           />
         </div>
 
