@@ -18803,6 +18803,148 @@ export const LESSONS: Lesson[] = [
       },
     ],
   },
+
+  {
+    id: 'the-small-cost-of-simplifying',
+    module_id: 'bet-sizing-language-module',
+    slug: 'the-small-cost-of-simplifying',
+    title: 'The Small Cost of Simplifying',
+    subtitle: 'Collapsing to one size costs surprisingly little EV — with specific, nameable exceptions.',
+    lesson_type: 'concept_reveal',
+    concept_ids: ['simplification_ev_cost', 'one_size_fits_board_caveat'],
+    estimated_min: 13,
+    xp_reward: 190,
+    sort_order: 4,
+    next_lesson_teaser: 'Why Your Range Shape Picks Your Bet Size',
+    steps: [
+      {
+        id: 'tscos-s1',
+        type: 'concept_reveal',
+        concept_title: 'How Much Does Splitting Actually Buy?',
+        concept_content: "Lesson 3 proved multi-size splitting is real — Example A beat Example C by a real EV margin. This lesson measures that margin precisely. Table 91 simplifies the [0-1] Toy Game's multi-size strategy at each tested SPR down to just its most-used size, and measures the loss: the average EV loss across all tested SPRs is only 0.21% of the pot. A second, independent test — a full BB-vs-BN simulation across all 1,755 strategically distinct flops, comparing a rich four-size c-bet menu against one-third-pot everywhere — lands on a strikingly similar number: 0.14% of the pot (0.9bb/100), assuming PERFECT play from both sides. Real opponents play imperfectly and systematically overfold to small bets specifically — meaning the practical case for simplification is, if anything, stronger than the bare number suggests. The book's own words: \"Splitting your range into different bet-sizes gives away information that your opponents could leverage against you... For this reason we don't have to worry about optimal play containing infinite bet-sizes.\"",
+        concept_note: "This is why two c-bet sizes (one-third-pot and two-thirds-pot) covers the overwhelming majority of practical situations, and a single one-third-pot-everywhere strategy is explicitly validated as workable against a real population — not a compromise you settle for, but a well-reasoned simplification with a small, known cost.",
+        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.10, Table 91 p.610; Table 95 p.620; pp.610-611, 621', type: 'source_reconstructed' },
+      },
+      {
+        id: 'tscos-s2',
+        type: 'concept_reveal',
+        concept_title: 'The All-In Exception, and Its SPR Bands',
+        concept_content: "The book gives exactly one clean, structural exception to \"default toward fewer sizes.\" Example D adds an all-in option to the pot-size bet: AA goes all-in 42% of the time (balanced by 55 bluffing 26%), while KK bets pot-size 100% (balanced by AA 58% and 55 74%). Why does all-in survive raise pressure when one-third-pot didn't? \"All-in is a special bet-size because it limits Villain's options to only call and fold\" — it's structurally IMMUNE to the exact mechanism (raise exposure) that collapsed every other size in Lesson 3. But even this exception is conditional on SPR: at SPR 3, the all-in option stops being used at all.",
+        concept_structured_items: SPR_TABLE_90.map((b) => ({ term: b.sprRange, description: `${b.band} — ${b.description}` })),
+        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.10 pp.607-610, Table 90', example: 'Hand Range 340', type: 'source_reconstructed' },
+      },
+      {
+        id: 'tscos-s3',
+        type: 'range_compression_toggle',
+        concept_ids: ['simplification_ev_cost'],
+        narrative: "Here is Example A's full three-size strategy (56.11% of the pot). Simplifying it down to only its single most-used size costs some EV — but how much?",
+        range_compression_toggle_pool: HAND_RANGE_POOL,
+        range_compression_toggle_states: RANGE_COMPRESSION_STATES.map((s) => ({
+          id: s.id, label: s.label, strategyMap: s.strategies, evLabel: s.ev_label,
+        })),
+        range_compression_toggle_prompt: 'Predict the magnitude band: how much EV is lost, on average, by simplifying a rich multi-size strategy down to its single most-used size?',
+        options: [
+          {
+            id: 'right_band', label: '0.1%-0.5% of the pot', quality: 'perfect',
+            feedback: "You landed in the right neighborhood — and that's worth pausing on, because this is genuinely a small number. Multi-size splitting is real and provable (Lesson 3), but its EV value, honestly measured, turns out to be modest. The book's own figures: 0.21% (single-street toy game, averaged across SPRs) and 0.14% / 0.9bb-100 (the full 1,755-flop simulation). Tap through the states above — Example D adds the one structural exception: the all-in size, which survives raise pressure by removing Villain's ability to raise at all.",
+          },
+          {
+            id: 'over_2', label: 'More than 2% of the pot', quality: 'mistake',
+            feedback: "That's a natural overestimate right after Lesson 3 showed a real, meaningful three-way split collapsing under pressure — but 'the collapse is real and directionally correct' and 'the collapse costs a lot of EV' are different claims. The real number, averaged across tested SPRs, is 0.21% of the pot — small enough that a well-chosen single size is a genuinely defensible default.",
+          },
+          {
+            id: 'under_01', label: 'Under 0.1% of the pot', quality: 'mistake',
+            feedback: "Close, but the real number (0.21% single-street, 0.14%/0.9bb-100 across the full 1,755-flop simulation) is a bit higher than that — small, but not negligible at the margins. Lesson 8 will show the book explicitly recommending a SECOND c-bet size specifically because certain board differences are large enough to be worth capturing, even though the average cost of ignoring them is small.",
+          },
+        ],
+        xp: 20,
+      },
+      {
+        id: 'tscos-s4',
+        type: 'decision_spot',
+        concept_ids: ['simplification_ev_cost'],
+        narrative: "A player argues: \"Since simplifying to one bet-size only costs 0.21% of the pot on average, I should never bother learning a second size for anything.\"",
+        decision_spot_question: "What's wrong with this reasoning, using the all-in exception this lesson taught?",
+        options: [
+          {
+            id: 'average_hides_variation', label: '0.21% is an AVERAGE across many situations — specific situations (like a low-SPR spot where all-in structurally survives raise pressure) can have a much larger, identifiable gap', quality: 'perfect',
+            feedback: "Correct. An average hides variation — that's the whole point of an average. Example D showed a genuine, large, identifiable exception: low-SPR spots where the all-in size structurally survives raise pressure in a way no other size can. The lesson isn't 'never simplify' — it's 'simplify by default, but know the specific, nameable conditions where the default stops applying.'",
+          },
+          {
+            id: 'always_true', label: "Nothing's wrong — 0.21% is small enough that this reasoning holds in every spot", quality: 'mistake',
+            feedback: "0.21% is an average, not a universal guarantee. Example D is a genuine, large exception hiding inside that average: at low SPR, adding the all-in size alongside a pot-size bet captures real, identifiable EV that a single-size default would leave on the table.",
+          },
+        ],
+        xp: 18,
+        remediation_ladder: [
+          {
+            id: 'tscos-s4-remediate',
+            type: 'decision_spot',
+            concept_ids: ['simplification_ev_cost'],
+            narrative: "Isolating the mechanism directly.",
+            decision_spot_question: 'What structural property makes the all-in bet-size immune to the check-raise-driven abandonment mechanism from Lesson 3?',
+            options: [
+              { id: 'removes_raise', label: 'It removes the opponent\'s ability to raise at all — there\'s no more stack behind to raise with', quality: 'perfect', feedback: 'Exactly. No other size on the menu has this property, which is precisely why it can survive being paired alongside another size even under raise pressure that eliminated every other multi-size split.' },
+              { id: 'biggest_size', label: 'It\'s simply the biggest possible size, so opponents fold more often', quality: 'mistake', feedback: "Size alone isn't the mechanism — a very large non-all-in overbet can still be raised. What makes all-in specifically immune is structural: there's no chips left behind for Villain to raise with." },
+            ],
+            xp: 8,
+          },
+        ],
+      },
+      {
+        id: 'tscos-s5',
+        type: 'decision_spot',
+        concept_ids: ['one_size_fits_board_caveat'],
+        narrative: "Table 90, SPR 1 or below.",
+        decision_spot_question: 'What does the book say the optimal bet-sizing strategy looks like here, and why?',
+        options: [
+          {
+            id: 'all_in_only', label: "Simply all-in — there isn't enough stack behind a pot-size bet to make it meaningfully different from shoving anyway", quality: 'perfect',
+            feedback: "Correct — this is the simplest band conceptually. When the stack is already this shallow, 'bet pot' and 'go all-in' are close enough to the same action that the added complexity of keeping them separate isn't worth anything.",
+          },
+          {
+            id: 'pot_all_in_split', label: 'A split between pot-size and all-in, same as slightly higher SPRs', quality: 'mistake',
+            feedback: "That's the SPR 1-2 band, one step higher. At SPR 1 or below specifically, the stack is too shallow for the two sizes to be meaningfully distinct — the strategy simplifies all the way down to all-in only.",
+          },
+        ],
+        xp: 16,
+      },
+      {
+        id: 'tscos-s6',
+        type: 'decision_spot',
+        concept_ids: ['one_size_fits_board_caveat'],
+        narrative: "Table 90, SPR 3.",
+        decision_spot_question: 'What happens to the all-in option at this SPR, and what replaces it?',
+        options: [
+          {
+            id: 'all_in_stops', label: 'All-in stops being used entirely; the range splits instead between 75%-pot and 125%-pot', quality: 'perfect',
+            feedback: "Correct — this is the exact SPR-3 threshold moment. A bigger stack behind the pot means going all-in risks proportionally more for a fixed amount of extra pressure and protection. A big-but-not-total bet does almost the same job for meaningfully less risk, so all-in stops earning its keep.",
+          },
+          {
+            id: 'still_used', label: 'All-in is still used, just less often, alongside a pot-size bet', quality: 'mistake',
+            feedback: "Past SPR 3, all-in isn't used at reduced frequency — it stops appearing entirely. The strategy switches to two large-but-not-total sizes (75%-pot and 125%-pot) instead.",
+          },
+        ],
+        xp: 16,
+      },
+      {
+        id: 'tscos-s7',
+        type: 'concept_reveal',
+        concept_title: 'Mental Model Shift',
+        concept_structured_items: [
+          { term: 'Before this lesson', description: "If splitting into more sizes is theoretically the 'best' strategy, then simplifying down to one size must be a real, meaningful compromise I'm settling for." },
+          { term: 'After this lesson', description: 'A single, well-chosen size costs surprisingly little EV on average, and is a legitimate default — not a compromise — with specific, nameable, checkable exceptions (like the all-in size at a low SPR) rather than a vague "sometimes more sizes matter."' },
+        ],
+      },
+      {
+        id: 'tscos-s8',
+        type: 'concept_reveal',
+        concept_reveal_optional: true,
+        concept_title: 'Elite Insight',
+        concept_content: "There's a specific, avoidable trap right after learning the EV cost of simplifying is small: swinging too far the other way and hunting for a \"special exception\" in every spot, effectively re-inventing complexity under the banner of \"finding an edge.\" The genuinely elite discipline: treat a single, well-chosen size as the default hypothesis for any new spot, and require a specific, nameable, checkable condition before deviating from it — \"I have a feeling this spot wants a second size\" is not a checkable condition; \"this SPR is 1.5, which Table 90 places in the pot/all-in band\" is.",
+      },
+    ],
+  },
 ]
 
 // ── Derived lookup maps ───────────────────────────────────────────────────────
