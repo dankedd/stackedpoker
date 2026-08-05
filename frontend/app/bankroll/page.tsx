@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
-  Wallet, TrendingUp, TrendingDown, Percent, Layers, Clock, Activity, Coins, ShieldCheck, Settings2, Target, BarChart3,
+  Wallet, TrendingUp, TrendingDown, Percent, Layers, Clock, Activity, Coins, ShieldCheck, Settings2, Target, BarChart3, CalendarDays,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/Navbar";
@@ -149,6 +149,7 @@ export default async function BankrollPage() {
                 { href: "/bankroll/management", label: "Rules", icon: Settings2 },
                 { href: "/bankroll/goals", label: "Goals", icon: Target },
                 { href: "/bankroll/stats", label: "Stats", icon: BarChart3 },
+                { href: "/bankroll/calendar", label: "Calendar", icon: CalendarDays },
               ].map(({ href, label, icon: Icon }) => (
                 <Link
                   key={href}
