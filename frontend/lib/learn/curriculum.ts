@@ -18512,6 +18512,151 @@ export const LESSONS: Lesson[] = [
       },
     ],
   },
+
+  {
+    id: 'what-a-size-buys-you',
+    module_id: 'bet-sizing-language-module',
+    slug: 'what-a-size-buys-you',
+    title: 'What a Size Buys You',
+    subtitle: 'Pot odds, Alpha, MDF, value:bluff ratio — one connected cascade from a single input.',
+    lesson_type: 'concept_reveal',
+    concept_ids: ['alpha_size_dependence'],
+    estimated_min: 12,
+    xp_reward: 170,
+    sort_order: 2,
+    next_lesson_teaser: 'One Size Rarely Fits All',
+    steps: [
+      {
+        id: 'wsby-s1',
+        type: 'concept_reveal',
+        concept_title: 'One Fact, Four Angles',
+        concept_content: "Every bet-size you could choose comes bundled with four numbers: the pot odds it offers, the percentage of the time it needs to work (Alpha), the minimum percentage of their range Villain must continue with (MDF), and — for a polarized range — the value:bluff ratio it needs to stay unexploitable. These aren't four separate facts to memorize. They're one fact, computed from one input, viewed four ways. Computing a pot-size BET is trivial: normalize the pot, multiply by the fraction, that's your bet. A pot-size RAISE is trickier and where players get it wrong constantly — three steps, always in this order: (1) match the bet you're facing, (2) recompute the pot including your OWN call, (3) add your target fraction of that new total on top. Skipping step 2 — forgetting your own call belongs in the pot before sizing the raise — produces a raise smaller than a true pot-size raise every time.",
+        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.10 pp.600-602', type: 'source_reconstructed' },
+      },
+      {
+        id: 'wsby-s2',
+        type: 'concept_reveal',
+        concept_title: 'Worked Example: Half-Pot',
+        concept_structured_items: [
+          { term: 'Pot odds', description: '25% — a $50 bet into a $100 pot asks Villain to risk half a pot to win a pot-and-a-half: 3-to-1, or 25%.' },
+          { term: 'Alpha', description: '33.3% — bet ÷ (bet + pot) = 0.5 ÷ 1.5. The frequency this bet needs to work for a bluff to break even.' },
+          { term: 'MDF', description: '66.7% — 1 − Alpha. Villain must continue with at least this much of their range or face a guaranteed-profit bet from Hero\'s entire range.' },
+          { term: 'Value:bluff ratio', description: '75/25, a 3-to-1 ratio — the bluff share of the range IS the Alpha number. Same fact as 33.3% Alpha, restated as a ratio.' },
+        ],
+        concept_note: "Bet bigger and every number tightens (higher pot odds offered, higher Alpha required, lower MDF demanded, a stricter value:bluff ratio). Bet smaller and every number loosens. This is the mechanism behind Lesson 1's claim: a bigger size isn't just 'more of the same bet' — it demands a different range composition.",
+        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.2, Table 14, pp.135-136', type: 'source_reconstructed' },
+      },
+      {
+        id: 'wsby-s3',
+        type: 'mdf_slider',
+        concept_ids: ['alpha_size_dependence'],
+        narrative: "Pot is $100. Find half-pot (50%) on the slider and lock in the MDF this size demands.",
+        mdf_slider_question: 'Drag to 50% (half-pot), then lock in the MDF this bet-size implies.',
+        mdf_slider_variant: 'full_cascade',
+        mdf_slider_initial_bet_pct: 100,
+        mdf_slider_target: 66.67,
+        mdf_slider_tolerance: 2,
+        xp: 14,
+      },
+      {
+        id: 'wsby-s4',
+        type: 'decision_spot',
+        concept_ids: ['alpha_size_dependence'],
+        narrative: "Pot is $80. A bet of $40 is made.",
+        decision_spot_question: 'Compute pot odds, Alpha, MDF, and the value:bluff ratio this size implies for a polarized river range.',
+        options: [
+          {
+            id: 'correct', label: '25% pot odds, 33.3% Alpha, 66.7% MDF, roughly 2:1 value:bluff', quality: 'perfect',
+            feedback: "Correct. Pot odds = 40 ÷ (80+40+40) = 25%. Alpha = 40 ÷ (80+40) = 33.3% — the bet ÷ (bet+pot) formula, NOT bet÷pot. MDF = 1 − 33.3% = 66.7%. Value:bluff ratio = 66.7% : 33.3% ≈ 2:1. Same underlying relationship as the book's own half-pot example, just different starting numbers.",
+          },
+          {
+            id: 'alpha_as_bet_over_pot', label: '25% pot odds, 50% Alpha, 50% MDF, 1:1 value:bluff', quality: 'mistake',
+            feedback: "Your pot odds are right. But Alpha isn't bet ÷ pot (40÷80=50%) — that's a different, wrong formula. Alpha = bet ÷ (bet + pot) = 40 ÷ 120 = 33.3%. The pot in the denominator has to include your own bet, because once you've bet, the total money at risk in the hand has grown.",
+          },
+          {
+            id: 'ratio_flipped', label: '25% pot odds, 33.3% Alpha, 66.7% MDF, roughly 1:2 value:bluff', quality: 'mistake',
+            feedback: "Pot odds, Alpha and MDF are all correct — only the ratio is backwards. The bluff PERCENTAGE of the range IS the Alpha number (33.3%), which makes the range 66.7% value — a 2:1 value:bluff ratio, not 1:2. Flipping it would mean a third of the range is VALUE, which is far too bluff-heavy for this size.",
+          },
+        ],
+        xp: 18,
+        remediation_ladder: [
+          {
+            id: 'wsby-s4-remediate',
+            type: 'decision_spot',
+            concept_ids: ['alpha_size_dependence'],
+            narrative: "Round-number version: Pot is $100, bet is $100 — exactly pot-size.",
+            decision_spot_question: 'Compute Alpha step by step: what is 100 ÷ (100+100)?',
+            options: [
+              { id: 'fifty', label: '50%', quality: 'perfect', feedback: 'Right — 100 ÷ 200 = 50%. The formula is always bet ÷ (bet + pot), never bet ÷ pot alone. Go back and re-apply this to the $80/$40 example.' },
+              { id: 'hundred', label: '100%', quality: 'mistake', feedback: 'That would be bet ÷ bet. The denominator is bet PLUS pot: 100 ÷ (100+100) = 100 ÷ 200 = 50%.' },
+            ],
+            xp: 8,
+          },
+        ],
+      },
+      {
+        id: 'wsby-s5',
+        type: 'decision_spot',
+        concept_ids: ['alpha_size_dependence'],
+        narrative: "Pot is $60. Villain bets $30. You want to raise to exactly 2/3-pot.",
+        decision_spot_question: 'Using the three-step procedure, what is your total bet?',
+        options: [
+          {
+            id: 'correct_110', label: '$110', quality: 'perfect',
+            feedback: "Correct. Step 1: match the $30 bet. Step 2: recompute the pot including your own call — $60 + $30 (Villain's bet) + $30 (your call) = $120. Step 3: add 2/3 of that $120 (=$80) on top of your $30 call — total $110.",
+          },
+          {
+            id: 'forgot_own_call', label: '$90', quality: 'mistake',
+            ev_loss_bb: 2,
+            feedback: "This is the single most common pot-size-raise mistake: you matched the $30 bet, but then recomputed the pot WITHOUT your own call — $60+$30=$90, and 2/3 of that is $60, total $90. Your own call belongs in the pot before sizing the raise on top of it: $60+$30+$30=$120 is the real number to take 2/3 of.",
+          },
+          {
+            id: 'full_pot_instead', label: '$150', quality: 'mistake',
+            feedback: "That's the FULL pot-size raise total (30 + 100% of $120), not the 2/3-pot raise you were asked for. Recompute step 3 using 2/3 of the $120 recomputed pot, not the whole $120.",
+          },
+        ],
+        xp: 18,
+      },
+      {
+        id: 'wsby-s6',
+        type: 'decision_spot',
+        concept_ids: ['alpha_size_dependence'],
+        narrative: "Two players both bet the river with polarized ranges on the same board, same pot. Player A bets 25% pot; Player B bets 150% pot (an overbet).",
+        decision_spot_question: "Without computing exact numbers, which player's range needs a STRICTER value:bluff ratio, and why?",
+        options: [
+          {
+            id: 'b_stricter', label: "Player B — Alpha rises with bet-size, so the bigger bet demands more value relative to bluffs", quality: 'perfect',
+            feedback: "Correct. Alpha = bet ÷ (bet+pot) increases as bet-size increases, and Alpha IS the bluff percentage a polarized range needs. A bigger bet-size mechanically demands a HIGHER value share (a stricter ratio) to stay unexploitable — this is the direction, not just the formula.",
+          },
+          {
+            id: 'a_stricter', label: 'Player A — smaller bets are riskier because they get called more often', quality: 'mistake',
+            feedback: "Getting called more often isn't the same as needing more value. Alpha (and therefore the required bluff percentage) SHRINKS as bet-size shrinks — Player A's smaller bet actually needs a LOOSER value:bluff ratio, not a stricter one.",
+          },
+          {
+            id: 'same_ratio', label: 'Both need the same ratio — it\'s the same board and the same pot', quality: 'mistake',
+            feedback: "The board and pot being the same doesn't matter here — Alpha is a function of BET-SIZE specifically. Two different bet-sizes on the identical board/pot produce two different Alpha values, and therefore two different required ratios.",
+          },
+        ],
+        xp: 16,
+      },
+      {
+        id: 'wsby-s7',
+        type: 'concept_reveal',
+        concept_title: 'Mental Model Shift',
+        concept_structured_items: [
+          { term: 'Before this lesson', description: 'I know a half-pot bet "feels" like a medium-sized bet, and a pot-size bet "feels" aggressive — I go by feel.' },
+          { term: 'After this lesson', description: 'I can compute, on demand, exactly what any bet-size demands — its pot odds, its Alpha, its required value:bluff ratio — as one connected cascade from a single input, not four separate facts I have to recall or guess at.' },
+        ],
+      },
+      {
+        id: 'wsby-s8',
+        type: 'concept_reveal',
+        concept_reveal_optional: true,
+        concept_title: 'Elite Insight',
+        concept_content: "Strong players don't recompute Alpha from scratch at the table — they've compressed a handful of landmark points into felt intuition: roughly 20% for a third-pot bet, 33% for half-pot, 50% for a full pot-size bet, higher again for an overbet. Because the relationship between bet-size and Alpha is smooth and monotonic, a player who has drilled these landmarks can interpolate any bet-size's rough Alpha within a couple of percentage points without doing a single division at the table. That's the exact math you just computed by hand — with repetition, it stops needing to be computed consciously at all.",
+      },
+    ],
+  },
 ]
 
 // ── Derived lookup maps ───────────────────────────────────────────────────────
