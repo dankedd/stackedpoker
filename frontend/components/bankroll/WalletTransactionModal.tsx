@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Modal } from "@/components/ui/modal";
 import { cn } from "@/lib/utils";
+import { parseLocaleNumber } from "@/lib/bankroll/parseNumberInput";
 
 const inputCls =
   "w-full bg-card/60 border border-border/50 rounded-xl px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all";
@@ -48,7 +49,7 @@ export function WalletTransactionModal({ open, type, userId, currency, onClose, 
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const amountValue = Number(amount);
+    const amountValue = parseLocaleNumber(amount);
     if (!amount || Number.isNaN(amountValue) || amountValue <= 0) {
       toast.error("Enter an amount greater than 0.");
       return;
@@ -76,7 +77,8 @@ export function WalletTransactionModal({ open, type, userId, currency, onClose, 
       onClose();
     } catch (err) {
       console.error("[bankroll] save transaction failed:", err);
-      toast.error("Couldn't save the transaction. Please try again.");
+      const detail = err instanceof Error ? err.message : String(err);
+      toast.error(`Couldn't save the transaction: ${detail}`);
     } finally {
       setSaving(false);
     }

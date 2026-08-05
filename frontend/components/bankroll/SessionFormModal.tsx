@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Modal } from "@/components/ui/modal";
 import { cn } from "@/lib/utils";
 import { buildSessionTimestamps, splitSessionTimestamps, computeSessionResult } from "@/lib/bankroll/sessionForm";
+import { parseLocaleNumber } from "@/lib/bankroll/parseNumberInput";
 import type { BankrollSessionRow } from "@/lib/bankroll/types";
 
 const inputCls =
@@ -101,7 +102,7 @@ export function SessionFormModal({ open, userId, editing, onClose, onSaved }: Se
       toast.error("Date, begin time and end time are required.");
       return;
     }
-    const resultValue = Number(form.result);
+    const resultValue = parseLocaleNumber(form.result);
     if (Number.isNaN(resultValue)) {
       toast.error("Result must be a number.");
       return;
@@ -120,11 +121,11 @@ export function SessionFormModal({ open, userId, editing, onClose, onSaved }: Se
         stakes: form.stakes.trim() || null,
         buy_in_amount: 0,
         cash_out_amount: resultValue,
-        ev_amount: form.ev.trim() === "" ? null : Number(form.ev),
+        ev_amount: form.ev.trim() === "" ? null : parseLocaleNumber(form.ev),
         started_at: startedAt,
         ended_at: endedAt,
         duration_minutes: durationMinutes,
-        hands_played: form.hands.trim() === "" ? null : Math.max(0, Math.round(Number(form.hands))),
+        hands_played: form.hands.trim() === "" ? null : Math.max(0, Math.round(parseLocaleNumber(form.hands))),
         notes: form.notes.trim() || null,
       };
 
@@ -167,7 +168,8 @@ export function SessionFormModal({ open, userId, editing, onClose, onSaved }: Se
       onClose();
     } catch (err) {
       console.error("[bankroll] save session failed:", err);
-      toast.error("Couldn't save the session. Please try again.");
+      const detail = err instanceof Error ? err.message : String(err);
+      toast.error(`Couldn't save the session: ${detail}`);
     } finally {
       setSaving(false);
     }

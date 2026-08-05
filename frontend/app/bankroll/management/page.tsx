@@ -13,6 +13,7 @@ import {
   CATEGORY_META, CATEGORY_ORDER, evaluateBankrollStatus,
   type BankrollCategory, type BuyInRules,
 } from "@/lib/bankroll/management";
+import { parseLocaleNumber } from "@/lib/bankroll/parseNumberInput";
 import { BankrollStatusBadge } from "@/components/bankroll/BankrollStatusBadge";
 import { BankrollBackLink } from "@/components/bankroll/BankrollBackLink";
 import { BankrollPageLoader } from "@/components/bankroll/BankrollPageLoader";
@@ -100,9 +101,9 @@ export default function BankrollManagementPage() {
     const result: BuyInRules = {};
     for (const category of CATEGORY_ORDER) {
       const f = forms[category];
-      const buyInCount = Number(f.buyInCount);
+      const buyInCount = parseLocaleNumber(f.buyInCount);
       if (!f.buyInCount || Number.isNaN(buyInCount) || buyInCount <= 0) continue;
-      const currentBuyIn = f.currentBuyIn.trim() === "" ? null : Number(f.currentBuyIn);
+      const currentBuyIn = f.currentBuyIn.trim() === "" ? null : parseLocaleNumber(f.currentBuyIn);
       result[category] = { buyInCount, currentBuyIn: currentBuyIn != null && !Number.isNaN(currentBuyIn) ? currentBuyIn : null };
     }
     return result;
@@ -121,7 +122,8 @@ export default function BankrollManagementPage() {
       toast.success("Bankroll rules saved");
     } catch (err) {
       console.error("[bankroll] save management rules failed:", err);
-      toast.error("Couldn't save your bankroll rules. Please try again.");
+      const detail = err instanceof Error ? err.message : String(err);
+      toast.error(`Couldn't save your bankroll rules: ${detail}`);
     } finally {
       setSaving(false);
     }
@@ -178,7 +180,7 @@ export default function BankrollManagementPage() {
                             onClick={() => setCategoryField(category, "buyInCount", String(preset))}
                             className={cn(
                               "px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all",
-                              Number(form.buyInCount) === preset
+                              parseLocaleNumber(form.buyInCount) === preset
                                 ? "border-violet-500/50 bg-violet-500/10 text-violet-300"
                                 : "border-border/40 bg-secondary/20 text-muted-foreground hover:text-foreground hover:border-border/60"
                             )}
@@ -191,7 +193,7 @@ export default function BankrollManagementPage() {
                           min={1}
                           step="1"
                           placeholder="Custom"
-                          value={form.buyInCount && !meta.buyInPresets.includes(Number(form.buyInCount)) ? form.buyInCount : ""}
+                          value={form.buyInCount && !meta.buyInPresets.includes(parseLocaleNumber(form.buyInCount)) ? form.buyInCount : ""}
                           onChange={(e) => setCategoryField(category, "buyInCount", e.target.value)}
                           className="w-20 bg-card/60 border border-border/50 rounded-lg px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-violet-500/50 tabular-nums"
                         />

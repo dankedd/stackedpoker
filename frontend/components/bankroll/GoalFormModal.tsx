@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { cn } from "@/lib/utils";
 import { GOAL_TYPE_META, GOAL_TYPE_ORDER, type GoalType } from "@/lib/bankroll/goals";
+import { parseLocaleNumber } from "@/lib/bankroll/parseNumberInput";
 
 const inputCls =
   "w-full bg-card/60 border border-border/50 rounded-xl px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all";
@@ -47,7 +48,7 @@ export function GoalFormModal({ open, userId, currency, onClose, onSaved }: Goal
   if (!open) return null;
 
   const meta = GOAL_TYPE_META[goalType];
-  const target = Number(targetValue);
+  const target = parseLocaleNumber(targetValue);
   const suggestedTitle = !Number.isNaN(target) && target > 0 ? meta.defaultTitle(target) : "";
 
   async function handleSubmit(e: React.FormEvent) {
@@ -74,7 +75,8 @@ export function GoalFormModal({ open, userId, currency, onClose, onSaved }: Goal
       onClose();
     } catch (err) {
       console.error("[bankroll] save goal failed:", err);
-      toast.error("Couldn't save the goal. Please try again.");
+      const detail = err instanceof Error ? err.message : String(err);
+      toast.error(`Couldn't save the goal: ${detail}`);
     } finally {
       setSaving(false);
     }
