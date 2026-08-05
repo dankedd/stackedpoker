@@ -38,7 +38,7 @@ import {
   CAPPED_NOT_CONDENSED_EXAMPLE, RANGE_MIRROR, PROTECTION_SURGERY_BOARD,
 } from './module11Content'
 import {
-  RANGE_COMPRESSION_STATES, HAND_RANGE_337_340_SOURCE,
+  RANGE_COMPRESSION_STATES, HAND_RANGE_POOL, HAND_RANGE_337_340_SOURCE,
   TOY_GAME_A, TOY_GAME_B, TOY_GAME_C, TOY_GAME_D, TOY_GAME_E, TOY_GAMES_A_TO_E_SOURCE,
   SPR_TABLE_90, SPR_TABLE_90_SOURCE,
 } from './module12Content'
@@ -18654,6 +18654,152 @@ export const LESSONS: Lesson[] = [
         concept_reveal_optional: true,
         concept_title: 'Elite Insight',
         concept_content: "Strong players don't recompute Alpha from scratch at the table — they've compressed a handful of landmark points into felt intuition: roughly 20% for a third-pot bet, 33% for half-pot, 50% for a full pot-size bet, higher again for an overbet. Because the relationship between bet-size and Alpha is smooth and monotonic, a player who has drilled these landmarks can interpolate any bet-size's rough Alpha within a couple of percentage points without doing a single division at the table. That's the exact math you just computed by hand — with repetition, it stops needing to be computed consciously at all.",
+      },
+    ],
+  },
+
+  {
+    id: 'one-size-rarely-fits-all',
+    module_id: 'bet-sizing-language-module',
+    slug: 'one-size-rarely-fits-all',
+    title: 'One Size Rarely Fits All',
+    subtitle: 'A size survives on the menu only if it can survive being raised.',
+    lesson_type: 'concept_reveal',
+    concept_ids: ['size_abandonment_mechanism'],
+    estimated_min: 12,
+    xp_reward: 180,
+    sort_order: 3,
+    next_lesson_teaser: 'The Small Cost of Simplifying',
+    steps: [
+      {
+        id: 'osrfa-s1',
+        type: 'concept_reveal',
+        concept_title: 'The [0-1] Toy Game',
+        concept_content: "Lesson 1 established that a strategy commits to a small menu of sizes in advance. It never asked how many entries that menu should have. In the book's [0-1] Toy Game, both players are dealt a random real number between 0 and 1 — infinitely many possible \"hands.\" With no cost to using more sizes, the theoretically optimal strategy uses infinitely many bet-sizes, one scaled to each value-hand's exact strength. But real poker has neither infinite hands nor zero cost to using more sizes. To test this against something closer to real poker, the book rebuilds it in a solver with a genuine, finite 10-combo range (AA down through 55, no card-removal effects) and three available sizes: full-pot, two-thirds-pot, one-third-pot, at SPR 2. The real question: given a small, finite range and menu, does the solver actually use every size, or collapse toward fewer?",
+        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.10 pp.603-604', type: 'source_reconstructed' },
+      },
+      {
+        id: 'osrfa-s2',
+        type: 'concept_reveal',
+        concept_title: 'Example A — No Raise Threat',
+        concept_structured_items: [
+          { term: 'AA (strongest)', description: 'Uses the biggest size — full-pot.' },
+          { term: 'KK (second-strongest)', description: 'Uses the middle size — two-thirds-pot.' },
+          { term: 'QQ + most of 55', description: 'Uses the smallest size — one-third-pot (a small top-up from 66 completes the correct bluffing frequency).' },
+          { term: 'JJ through 77', description: 'Checked entirely — the middle of the range.' },
+        ],
+        concept_note: 'This strategy captures 56.11% of the pot for Hero. When nothing punishes a strategy for splitting into multiple sizes, a genuine, hand-strength-scaled split is exactly what a GTO strategy produces.',
+        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.10 pp.604-605, Table 89', example: 'Hand Range 337', type: 'source_reconstructed' },
+      },
+      {
+        id: 'osrfa-s3',
+        type: 'range_compression_toggle',
+        concept_ids: ['size_abandonment_mechanism'],
+        narrative: "You're about to run the book's own experiment. Ten hands, three possible sizes: what happens to the menu when Villain gets the ability to check-raise it? You're currently viewing Example A (no raise threat). Predict before you toggle.",
+        range_compression_toggle_pool: HAND_RANGE_POOL,
+        range_compression_toggle_states: [RANGE_COMPRESSION_STATES[0], RANGE_COMPRESSION_STATES[1], RANGE_COMPRESSION_STATES[2]].map((s) => ({
+          id: s.id, label: s.label, strategyMap: s.strategies, evLabel: s.ev_label,
+        })),
+        range_compression_toggle_prompt: 'Villain gains the ability to check-raise ONLY the smallest size (one-third-pot) — Example B. What happens to QQ, which used that size in Example A?',
+        options: [
+          {
+            id: 'abandons', label: 'QQ abandons one-third-pot entirely and moves to two-thirds-pot', quality: 'perfect',
+            feedback: "Exactly right — and notice you predicted the harder, less obvious answer. QQ doesn't stay at one-third-pot at a reduced frequency; it moves entirely. The moment a size becomes safely raiseable, keeping ANY hand there exposes information about the narrower group still willing to use it. The clean fix isn't discount — it's evacuation. Hero's overall EV falls from 56.11% to 54.98% as a result. Tap through the states above to watch it happen.",
+          },
+          {
+            id: 'reduced_usage', label: 'QQ keeps using one-third-pot, just less often', quality: 'mistake',
+            feedback: "That's the intuitive guess, and it's wrong in a specific, instructive way. As long as ANY hands remain willing to use the exposed size, that size still tells Villain something about the range still using it — and a narrower range at a raiseable size is often a WORSE target than a wide one. The actual result: QQ moves to two-thirds-pot entirely. Toggle to Example B above to see it.",
+          },
+          {
+            id: 'stays_same', label: "Nothing changes — QQ isn't strong enough to worry about a raise", quality: 'mistake',
+            feedback: "Something does change, and dramatically — QQ moves off one-third-pot entirely, and the size itself becomes unused by anyone. Toggle to Example B above to see exactly what happens.",
+          },
+        ],
+        xp: 20,
+        remediation_ladder: [
+          {
+            id: 'osrfa-s3-remediate',
+            type: 'decision_spot',
+            concept_ids: ['size_abandonment_mechanism'],
+            narrative: "Simplified version, stripped of the full range: a strategy bets Hand X at Size S 100% of the time. Villain gains the ability to check-raise Size S profitably against Hand X's current frequency.",
+            decision_spot_question: "Which actually removes Villain's ability to profit from raising Size S?",
+            options: [
+              { id: 'never_again', label: 'Never bet Hand X at Size S again', quality: 'perfect', feedback: "Correct — this is the only fix that removes the exploit entirely. Betting it 50% of the time still leaves Size S profitable to attack, just less frequently rewarding, which isn't the same as removing the exploit." },
+              { id: 'half_frequency', label: 'Bet Hand X at Size S only 50% of the time', quality: 'mistake', feedback: "This reduces how often the exploit pays off, but doesn't remove it — Size S is still profitable for Villain to attack whenever Hand X does show up there. Only full abandonment removes the exposure." },
+            ],
+            xp: 8,
+          },
+        ],
+      },
+      {
+        id: 'osrfa-s4',
+        type: 'decision_spot',
+        concept_ids: ['size_abandonment_mechanism'],
+        narrative: "In Example A, Hero splits across three sizes. In Example B, a check-raise threat against only the smallest size causes Hero to abandon it entirely.",
+        decision_spot_question: 'Why abandonment — not reduced frequency — is the correct response?',
+        options: [
+          {
+            id: 'exposure_not_removed', label: "A size that can be exploited exposes information about the narrower range still using it; reducing frequency doesn't remove that exposure — only fully vacating the size does", quality: 'perfect',
+            feedback: "Correct. This is the core mechanism: the moment a size can be safely raised, using it at ANY frequency still tells Villain something about the (now narrower) group of hands willing to use it. Only complete abandonment removes the target.",
+          },
+          {
+            id: 'qq_too_weak', label: 'QQ simply isn\'t strong enough to defend against a raise at any frequency', quality: 'mistake',
+            feedback: 'This is a per-hand-strength explanation, exactly the kind of intuition this lesson corrects. The real reason is structural: the whole menu available to the whole range changed, and QQ\'s assignment had to be recomputed against that new menu — not because QQ got weaker.',
+          },
+        ],
+        xp: 18,
+      },
+      {
+        id: 'osrfa-s5',
+        type: 'decision_spot',
+        concept_ids: ['size_abandonment_mechanism'],
+        narrative: "Compare Example A's EV (56.11%) to Example C's (raise pressure on every size), where Hero's strategy collapses to a single full-pot size with a narrower value range.",
+        decision_spot_question: 'What real-world condition does Example C represent, and why does a genuinely threatening opponent push a strategy toward it rather than Example A?',
+        options: [
+          {
+            id: 'real_opponent', label: 'A real, capable opponent who can punish any size forces a strategy toward fewer, safer sizes — Example A\'s rich split only survives against an opponent who can\'t exploit it', quality: 'perfect',
+            feedback: "Correct. Example A is the ceiling case — maximum EV, but only achievable against an opponent incapable of punishing any size. A real, aware opponent who can check-raise anything pushes the strategy toward Example C's structure: fewer sizes, narrower value range willing to use what remains.",
+          },
+          {
+            id: 'always_c', label: 'Example C is always correct because it\'s simpler to execute', quality: 'mistake',
+            feedback: 'Simplicity isn\'t the driver here — EXPOSURE is. Example C is the correct response only when the opponent can actually punish every size on the menu. Against an opponent who can\'t, Example A\'s richer split captures more EV.',
+          },
+        ],
+        xp: 18,
+      },
+      {
+        id: 'osrfa-s6',
+        type: 'decision_spot',
+        concept_ids: ['size_abandonment_mechanism'],
+        narrative: "A new toy-game variant gives the opponent the ability to check-raise the LARGEST of three sizes, but not the two smaller ones.",
+        decision_spot_question: 'Using the same abandonment reasoning, what happens to the hand that was using the largest size?',
+        options: [
+          {
+            id: 'abandons_largest', label: 'The strongest hand abandons the exposed large size and moves to the next-safest size available', quality: 'perfect',
+            feedback: 'This is the correct transfer of the reasoning: whichever size becomes safely raiseable gets vacated entirely by whatever hand was using it, regardless of whether that size happens to be the biggest or smallest on the menu — the mechanism doesn\'t care about size rank, only about exposure.',
+          },
+          {
+            id: 'stays_reduced', label: 'The strongest hand keeps using the large size, just at a reduced frequency, since it\'s already the strongest hand in the range', quality: 'mistake',
+            feedback: "Being the strongest hand doesn't exempt it from the mechanism — Example B already proved reduced frequency doesn't remove exposure for QQ, and the same logic applies regardless of which size becomes exposed or which hand was using it.",
+          },
+        ],
+        xp: 16,
+      },
+      {
+        id: 'osrfa-s7',
+        type: 'concept_reveal',
+        concept_title: 'Mental Model Shift',
+        concept_structured_items: [
+          { term: 'Before this lesson', description: 'More bet-sizes on the menu is more sophisticated — a genuinely strong strategy should split its range into as many sizes as possible whenever it can.' },
+          { term: 'After this lesson', description: "A size survives on the menu only if it can survive being raised. The instant it can't, the correct response is total abandonment, not reduced usage — regardless of how theoretically correct the split looked before the raise threat existed." },
+        ],
+      },
+      {
+        id: 'osrfa-s8',
+        type: 'concept_reveal',
+        concept_reveal_optional: true,
+        concept_title: 'Elite Insight',
+        concept_content: "A strategy that mixes finely between three or four sizes is genuinely harder to execute consistently at the table than one using one or two clean sizes — inconsistent execution is its own kind of leak, distinct from the check-raise-exposure leak this lesson quantified. Strong players often intentionally under-use the theoretically available complexity, not because they can't understand it, but because a simpler strategy executed perfectly beats a theoretically superior strategy executed inconsistently. Treat every additional size as a cost to be justified, not a badge of sophistication to be earned.",
       },
     ],
   },
