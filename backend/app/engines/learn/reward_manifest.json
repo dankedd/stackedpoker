@@ -1735,7 +1735,7 @@
     "blockers-module": 1000,
     "game-theory-foundations-module": 1000,
     "polarized-module": 1000,
-    "bet-sizing-language-module": 0,
+    "bet-sizing-language-module": 1000,
     "defending-bets-module": 0,
     "flop-strategy-module": 0,
     "turn-strategy-module": 0,

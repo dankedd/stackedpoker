@@ -168,36 +168,15 @@ export const ROADMAP_MODULES: LearningModule[] = [
   // 7/10's own renames.
 
   // ── Stage 6 — Bet Sizing & Defense ──────────────────────────────────────────
-  {
-    ...ROADMAP_DEFAULTS,
-    id: 'bet-sizing-language-module',
-    path_id: 'intermediate',
-    slug: 'bet-sizing-language-module',
-    title: 'The Language of Bet Sizing',
-    subtitle: 'Learn why different range structures want different bet sizes.',
-    description: 'Move beyond "bet small" or "bet big" rules and teach why sizing exists.',
-    learningObjectives: [
-      'Explain what a bet size is actually trying to accomplish',
-      'Connect range/nut advantage and polarization to sizing choice',
-      'Reason about when a strategy wants multiple bet sizes at once',
-    ],
-    difficulty: 'intermediate',
-    stageId: 'bet-sizing-defense',
-    order: 12,
-    prerequisiteModuleId: 'polarized-module',
-    plannedLessons: [
-      { title: 'What Bet Size Accomplishes' },
-      { title: 'Small Bets' },
-      { title: 'Medium Bets' },
-      { title: 'Large Bets' },
-      { title: 'Overbets' },
-      { title: 'Range Advantage and Sizing' },
-      { title: 'Nut Advantage and Sizing' },
-      { title: 'Polarization and Sizing' },
-      { title: 'Multiple Bet Sizes' },
-      { title: 'Bet Sizing Lab' },
-    ],
-  },
+  // bet-sizing-language-module (Module 12, "The Language of Bet Sizing") has also been
+  // promoted to real content — see `LEARNING_MODULES` in ./curriculum.ts. Built from
+  // `docs/module-12-blueprint.md` (Part 1), `docs/module-12-lessons.md` (Part 2), and
+  // `docs/module-12-architecture.md` (Part 3A). Only 5 of its 10 lessons are built so far
+  // (Lessons 1-5, a phased delivery per Part 3B's own explicit scope) — same "phased,
+  // in-progress delivery" precedent as polarized-module's own promotion above. Lessons 1-5
+  // diverge from this stub's original placeholder titles below (built around the six
+  // approved flagship interactions rather than a "Small Bets"/"Medium Bets" progression) —
+  // same judgment-call precedent as Module 7/10/11's own renames.
   {
     ...ROADMAP_DEFAULTS,
     id: 'defending-bets-module',
