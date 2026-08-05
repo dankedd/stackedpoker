@@ -34,11 +34,11 @@ interface DevNavItem {
   status: ProductStatus;
 }
 
-// Learn dominates. Ranges is the one other reliable tool. Everything still
+// Learn dominates. Bankroll is the one other reliable tool. Everything still
 // being rebuilt lives in the separate "in development" cluster below.
 const NAV_ITEMS: NavItem[] = [
   { label: "Learn",       href: "/learn", primary: true },
-  { label: "Ranges",      href: "/train/ranges" },
+  { label: "Bankroll",    href: "/bankroll" },
   { label: "Leaderboard", href: "/leaderboard" },
 ];
 
@@ -46,7 +46,6 @@ const DEV_ITEMS: DevNavItem[] = [
   { label: "Practice", href: "/practice", status: "next" },
   { label: "Analyze",  href: "/analyze",  status: "development" },
   { label: "Replay",   href: "/replay",   status: "development" },
-  { label: "Bankroll", href: "/bankroll", status: "development" },
 ];
 
 function isItemActive(pathname: string, href: string): boolean {

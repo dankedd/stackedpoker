@@ -31,6 +31,7 @@ const KNOWN_ROUTES = new Set([
   '/',
   '/learn',
   '/train/ranges',
+  '/bankroll',
   '/leaderboard',
   '/pricing',
   '/login',
