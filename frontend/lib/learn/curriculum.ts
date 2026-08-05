@@ -18945,6 +18945,157 @@ export const LESSONS: Lesson[] = [
       },
     ],
   },
+
+  {
+    id: 'why-your-range-shape-picks-your-bet-size',
+    module_id: 'bet-sizing-language-module',
+    slug: 'why-your-range-shape-picks-your-bet-size',
+    title: 'Why Your Range Shape Picks Your Bet Size',
+    subtitle: "Relative polarization alone moves a strategy smoothly from pure-check to all-in-dominant.",
+    lesson_type: 'concept_reveal',
+    concept_ids: ['polarization_sizing_direction'],
+    estimated_min: 13,
+    xp_reward: 190,
+    sort_order: 5,
+    next_lesson_teaser: 'The Geometry of Maximum Pressure',
+    steps: [
+      {
+        id: 'wyrsp-s1',
+        type: 'concept_reveal',
+        concept_title: 'One Curve, Five Points',
+        concept_content: "Lesson 4 asked what determines the DIRECTION a strategy's sizing should lean. The answer is Module 11's central claim — range shape is relative, not fixed — pointed directly at bet-size for the first time. The book's experiment: board and SPR held fixed (SPR 4), five sizes always available (30/60/90/120%-pot, all-in), and the ONE thing varied across five trials is Hero's polarization relative to Villain's. Toy Game A (Hero QQ-66 vs. Villain's full AA-44 — a BIG disadvantage): Hero checks 100%, full stop — not timid betting, no betting at all. Toy Game B (a SLIGHT disadvantage): Hero bets only ~15%, exclusively at 60%-pot. Toy Game C (parity): the range splits between 90%-pot and 120%-pot — but all-in remains completely unused, even at parity. Toy Game D (a SLIGHT advantage): all-in finally appears, but 120%-pot is still the dominant size. Toy Game E (a BIG advantage): all-in becomes overwhelmingly dominant.",
+        concept_note: "Read this as one continuous curve, not five disconnected facts: as Hero's polarization advantage grows, both betting FREQUENCY and preferred SIZE climb together, smoothly, the whole way. A modest edge earns a modest sizing lean — only a genuinely large edge earns the genuinely large, all-in-dominant response.",
+        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.10, Table 92, pp.615-617', type: 'source_reconstructed' },
+      },
+      {
+        id: 'wyrsp-s2',
+        type: 'concept_reveal',
+        concept_title: 'Multi-Street Sharpening, and Range Merging',
+        concept_content: "Replay the same five scenarios across two streets, and the single-street result sharpens: \"even a slight polarization disadvantage is enough to stop Hero from doing any betting at all\" — where the single-street version still allowed a modest 15% frequency, the multi-street version collapses it to zero. Why sharper? Checking preserves Hero's ability to reach the river with their ENTIRE original range intact — a bigger prize than a single street's caution buys, since betting even a little forces some hands to fold to a check-raise \"along the way,\" and a multi-street game has more \"along the way\" for that cost to happen during. At multi-street PARITY, something new appears: Hero bets the SMALLEST size (30%-pot) with a deliberately MERGED range — blending what would be separate top-and-bottom groups into one betting group. Why merge instead of polarize? Because polarizing too aggressively here leaves Hero's checking range capped (missing its own strongest hands) right before Villain's river bet can attack that exact weakness. The book's own summary: \"The more polarized Hero's range is compared to Villain's range, the more they are incentivized to use bigger bet-sizes... all-in bets are rarely used on early streets unless stacks are shallow.\"",
+        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.10, Tables 93-94, pp.617-619', type: 'source_reconstructed' },
+      },
+      {
+        id: 'wyrsp-s3',
+        type: 'range_distribution',
+        concept_ids: ['polarization_sizing_direction'],
+        narrative: 'Toy Game A\'s setup, shown only as Equity Bucket compositions — no raw equity numbers. Predict the sizing direction before revealing the book\'s result.',
+        range_distribution_mode: 'predict',
+        range_distribution_hero: { label: TOY_GAME_A.hero.label, strong: TOY_GAME_A.hero.strong, good: TOY_GAME_A.hero.good, weak: TOY_GAME_A.hero.weak, trash: TOY_GAME_A.hero.trash },
+        range_distribution_villain: { label: TOY_GAME_A.villain.label, strong: TOY_GAME_A.villain.strong, good: TOY_GAME_A.villain.good, weak: TOY_GAME_A.villain.weak, trash: TOY_GAME_A.villain.trash },
+        range_distribution_prompt: "Hero's Strong share (14.3%) sits well below Villain's (36.4%) — a big polarization disadvantage. Predict Hero's sizing direction.",
+        options: [
+          {
+            id: 'pure_check', label: 'Pure check — 100% of the time, no betting at all', quality: 'perfect',
+            feedback: "Exactly — and this is a STRONGER prediction than 'bet small and rarely.' A big polarization disadvantage doesn't lead to timid betting; it leads to NO betting. Hero simply lets the pot split according to raw equity — there's no informational edge left to leverage once the range is this far behind in composition.",
+          },
+          {
+            id: 'small_infrequent', label: 'Small, infrequent betting', quality: 'mistake',
+            feedback: "Reasonable instinct, but the real answer is more extreme: 100% checking, not a reduced betting frequency. At the far ends of this spectrum, the book's results tend to be more absolute than a 'dial it down a bit' intuition predicts — a big disadvantage isn't a reason to bet less, it's a reason not to bet.",
+          },
+          {
+            id: 'moderate_split', label: 'A moderate split between two mid-sized bets', quality: 'mistake',
+            feedback: "That's closer to the PARITY case (Toy Game C). With a disadvantage this large, Hero has no informational edge left to leverage — the correct answer is 100% checking, not any betting split.",
+          },
+        ],
+        xp: 18,
+      },
+      {
+        id: 'wyrsp-s4',
+        type: 'range_distribution',
+        concept_ids: ['polarization_sizing_direction'],
+        narrative: "Toy Game E's setup — the opposite end of the spectrum from the previous screen.",
+        range_distribution_mode: 'predict',
+        range_distribution_hero: { label: TOY_GAME_E.hero.label, strong: TOY_GAME_E.hero.strong, good: TOY_GAME_E.hero.good, weak: TOY_GAME_E.hero.weak, trash: TOY_GAME_E.hero.trash },
+        range_distribution_villain: { label: TOY_GAME_E.villain.label, strong: TOY_GAME_E.villain.strong, good: TOY_GAME_E.villain.good, weak: TOY_GAME_E.villain.weak, trash: TOY_GAME_E.villain.trash },
+        range_distribution_prompt: "Hero's Strong share (36.4%) now sits well ABOVE Villain's (14.3%) — a big polarization advantage. Predict Hero's sizing direction.",
+        options: [
+          {
+            id: 'all_in_dominant', label: 'All-in becomes overwhelmingly the dominant size', quality: 'perfect',
+            feedback: "Correct — this is Toy Game E, the mirror image of the disadvantage case. Only a genuinely LARGE advantage earns this genuinely large response. Notice what did NOT happen one step earlier, at Toy Game D's slight advantage: all-in appeared for the first time there, but 120%-pot was still the dominant size — a modest edge earns a modest sizing lean, not an immediate leap to the most extreme tool on the menu.",
+          },
+          {
+            id: 'moderate_split', label: 'A moderate split between 90%-pot and 120%-pot', quality: 'mistake',
+            feedback: "That's the PARITY case (Toy Game C). With an advantage this large, the strategy pushes all the way to all-in-dominant — the small and medium sizes disappear from Hero's strategy entirely.",
+          },
+          {
+            id: 'pure_check', label: 'Pure check — no reason to bet into a worse range', quality: 'mistake',
+            feedback: "That's the opposite end of the spectrum (Toy Game A). With a BIG advantage, not a disadvantage, Hero bets aggressively and often, with all-in becoming the dominant size.",
+          },
+        ],
+        xp: 18,
+      },
+      {
+        id: 'wyrsp-s5',
+        type: 'decision_spot',
+        concept_ids: ['polarization_sizing_direction'],
+        narrative: "Hero's range: 40% Strong, 35% Good, 15% Weak, 10% Trash. Villain's range: 10% Strong, 20% Good, 30% Weak, 40% Trash.",
+        decision_spot_question: 'Without being told which Toy Game this maps to, predict Hero\'s qualitative sizing direction from the relative Strong/Trash gap.',
+        options: [
+          {
+            id: 'big_size_leaning', label: 'A big-size-leaning strategy — Hero\'s Strong share (40%) dwarfs Villain\'s (10%), a large relative advantage', quality: 'perfect',
+            feedback: "Correct — Hero holds 4x Villain's Strong share and far less Trash, sitting close to Toy Game D/E's advantage territory. The RELATIVE gap is the driver, not either range's absolute composition alone: a range this far ahead of its opponent's in Strong-hand share earns a large sizing lean.",
+          },
+          {
+            id: 'pure_check', label: "Pure check — Hero's own Trash share (10%) means there's nothing to leverage", quality: 'mistake',
+            feedback: "Hero's own absolute composition isn't the driver — the RELATIVE gap is. Hero's 40% Strong vs. Villain's 10% Strong is a large relative advantage, which pushes toward a big-size-leaning strategy, not toward checking.",
+          },
+        ],
+        xp: 18,
+      },
+      {
+        id: 'wyrsp-s6',
+        type: 'decision_spot',
+        concept_ids: ['polarization_sizing_direction'],
+        narrative: "The multi-street version of a slight polarization disadvantage produces zero betting — MORE extreme than the single-street version's reduced-but-nonzero frequency.",
+        decision_spot_question: 'Why does the multi-street version produce a more extreme result?',
+        options: [
+          {
+            id: 'preserves_full_range', label: "Checking preserves the ability to reach the river with the full range intact across multiple streets — a bigger, different prize than a single street's caution buys", quality: 'perfect',
+            feedback: "Correct. Checking back across multiple streets doesn't just avoid one street's raise risk — it preserves Hero's ability to bring their ENTIRE original range all the way to the river intact. That's a bigger prize than a single street's worth of caution can capture, which is why even a slight disadvantage, tolerable for one street, becomes a reason to never bet once a second street's exposure is added.",
+          },
+          {
+            id: 'just_doubled', label: 'The disadvantage simply compounds — two streets of a small disadvantage is roughly double the single-street cost', quality: 'mistake',
+            feedback: "This isn't a linear doubling — it's a qualitatively different outcome (zero betting vs. a reduced but nonzero frequency). The driver is what checking specifically PRESERVES across multiple streets (the full range reaching the river), not simple compounding of the same cost.",
+          },
+        ],
+        xp: 18,
+      },
+      {
+        id: 'wyrsp-s7',
+        type: 'decision_spot',
+        concept_ids: ['polarization_sizing_direction'],
+        narrative: "At multi-street parity, Hero bets the smallest size with a deliberately MERGED range — combining what would otherwise be separate top-and-bottom groups.",
+        decision_spot_question: 'How does range merging differ from simply "betting a wide, linear range" (a concept from earlier modules)?',
+        options: [
+          {
+            id: 'strategic_response', label: "Merging is a deliberate STRATEGIC RESPONSE — chosen specifically to avoid a capped, exploitable checking range on the very next street — not just a static description of a range's width", quality: 'perfect',
+            feedback: "Correct. A linear range's width is a description of what the range simply IS, set before any street-specific pressure exists. Range merging is chosen specifically because polarizing too aggressively on THIS street would leave a capped checking range exposed to Villain's river bet on the NEXT street. Same-looking range, completely different reason for existing.",
+          },
+          {
+            id: 'same_thing', label: "They're the same thing — a merged range is just another name for a linear range", quality: 'mistake',
+            feedback: "They can look similar from the outside, but they come from different places. Linear width is a static starting description; merging is a dynamic, purpose-driven act chosen to protect against a specific future-street weakness (a capped checking range).",
+          },
+        ],
+        xp: 18,
+      },
+      {
+        id: 'wyrsp-s8',
+        type: 'concept_reveal',
+        concept_title: 'Mental Model Shift',
+        concept_structured_items: [
+          { term: 'Before this lesson', description: 'Whether I bet big or small is mostly a matter of style, or how strong my specific hand feels right now.' },
+          { term: 'After this lesson', description: "My range's polarization relative to my opponent's — not my hand, not my mood — sets both the direction and the magnitude of my sizing, along one smooth, predictable curve I can reason my way along." },
+        ],
+      },
+      {
+        id: 'wyrsp-s9',
+        type: 'concept_reveal',
+        concept_reveal_optional: true,
+        concept_title: 'Elite Insight',
+        concept_content: "Strong players don't mentally re-run Toy Games A through E at the table — they've compressed the whole curve into one fast, recurring question, asked the instant a card hits the felt: \"if both ranges were face-up right now, whose range just got a bigger jump in its BEST hands' relative share?\" That question — not \"did my hand improve,\" not \"how strong do I feel\" — is the felt version of everything this lesson proved with numbers. The answer depends on the RELATIONSHIP between two ranges, never either one's absolute change in isolation.",
+      },
+    ],
+  },
 ]
 
 // ── Derived lookup maps ───────────────────────────────────────────────────────
