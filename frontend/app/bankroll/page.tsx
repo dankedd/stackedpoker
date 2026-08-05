@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
-  Wallet, TrendingUp, TrendingDown, Percent, Layers, Clock, Activity, Coins, ShieldCheck,
+  Wallet, TrendingUp, TrendingDown, Percent, Layers, Clock, Activity, Coins, ShieldCheck, Settings2, Target,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/Navbar";
@@ -145,22 +145,22 @@ export default async function BankrollPage() {
                 Every deposit, session and result rolled into one running total.
               </p>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Link
-                href="/bankroll/wallet"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border/50 bg-card/60 text-foreground text-sm font-semibold hover:border-border hover:bg-card/80 transition-all"
-              >
-                <Wallet className="h-4 w-4" />
-                Wallet
-              </Link>
-              <Link
-                href="/bankroll/sessions"
-                className="group relative overflow-hidden inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-sm font-semibold shadow-lg shadow-violet-500/25 hover:shadow-violet-500/45 hover:-translate-y-0.5 transition-all duration-200"
-              >
-                <div aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-                <Layers className="h-4 w-4" />
-                Manage sessions
-              </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { href: "/bankroll/wallet", label: "Wallet", icon: Wallet },
+                { href: "/bankroll/sessions", label: "Sessions", icon: Layers },
+                { href: "/bankroll/management", label: "Rules", icon: Settings2 },
+                { href: "/bankroll/goals", label: "Goals", icon: Target },
+              ].map(({ href, label, icon: Icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border/50 bg-card/60 text-foreground text-sm font-semibold hover:border-violet-500/40 hover:bg-card/80 transition-all"
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </Link>
+              ))}
             </div>
           </div>
         </div>

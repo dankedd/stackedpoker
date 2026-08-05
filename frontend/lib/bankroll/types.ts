@@ -91,3 +91,19 @@ export interface BankrollTransactionRow {
   occurred_at: string;
   note: string | null;
 }
+
+/**
+ * A bankroll_goals row, as managed by the /bankroll/goals page. current_value
+ * is intentionally not read here — for all 5 goal types this page exposes,
+ * progress is computed live from bankroll_overview() (see lib/bankroll/goals.ts)
+ * rather than trusted from a column that could go stale.
+ */
+export interface BankrollGoalRow {
+  id: string;
+  goal_type: string;
+  title: string;
+  target_value: number;
+  currency: string | null;
+  status: string;
+  created_at: string;
+}
