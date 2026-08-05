@@ -48,6 +48,23 @@ export function mdf(pot: number, bet: number): number {
   return 1 - alpha(pot, bet)
 }
 
+// ── Pot odds (Module 12) ────────────────────────────────────────────────────
+//
+// Distinct from `alpha`, though built from the same two inputs (Acevedo, Ch.2
+// Table 14 / Ch.10 p.600-602): pot odds asks what price a CALL is getting —
+// bet / (pot + bet + bet), i.e. bet / (pot + 2·bet), the symmetric bet=call
+// case. Alpha asks how often a BET needs to work for a bluff to break even —
+// bet / (pot + bet). At a half-pot bet these are genuinely different numbers
+// (25% pot odds vs. 33.3% Alpha) — locked against the book's own worked
+// example in the test suite, specifically to guard against a test that
+// accidentally treats the two as equal.
+
+export function potOddsRequiredEquity(pot: number, bet: number): number {
+  if (pot < 0 || bet < 0) throw new Error('potOddsRequiredEquity: pot and bet must be non-negative')
+  if (pot + 2 * bet === 0) return 0
+  return bet / (pot + 2 * bet)
+}
+
 // ── The one-street toy bet/check game ─────────────────────────────────────────
 
 export interface ToyBetGame {

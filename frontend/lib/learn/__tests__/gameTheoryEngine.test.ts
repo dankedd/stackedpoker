@@ -12,6 +12,7 @@ import {
   clairvoyanceEV,
   clairvoyanceEquilibrium,
   faceUpEV,
+  potOddsRequiredEquity,
   type ActionEV,
 } from '../gameTheoryEngine'
 
@@ -40,6 +41,25 @@ describe('alpha / MDF', () => {
   it('rejects negative inputs', () => {
     expect(() => alpha(-1, 10)).toThrow()
     expect(() => alpha(10, -1)).toThrow()
+  })
+})
+
+describe('potOddsRequiredEquity (Module 12) — distinct from alpha', () => {
+  it('source lock — half-pot bet: 25% pot odds vs. 33.3% Alpha (Modern Poker Theory, Ch.2 Table 14 / Ch.10 p.600-602)', () => {
+    expect(potOddsRequiredEquity(1, 0.5)).toBeCloseTo(0.25, 6)
+    expect(alpha(1, 0.5)).toBeCloseTo(1 / 3, 6)
+    // The whole point of this function existing: these are NOT the same number,
+    // even though both are built from the same pot/bet inputs.
+    expect(potOddsRequiredEquity(1, 0.5)).not.toBeCloseTo(alpha(1, 0.5), 2)
+  })
+
+  it('pot-sized bet: 33.3% pot odds', () => {
+    expect(potOddsRequiredEquity(100, 100)).toBeCloseTo(1 / 3, 6)
+  })
+
+  it('rejects negative inputs', () => {
+    expect(() => potOddsRequiredEquity(-1, 10)).toThrow()
+    expect(() => potOddsRequiredEquity(10, -1)).toThrow()
   })
 })
 

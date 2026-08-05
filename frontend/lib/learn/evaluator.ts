@@ -168,9 +168,23 @@ export function isScoredStep(step: LessonStep): boolean {
     case 'open_size_explorer':
       return step.open_size_correct != null || !!step.options?.length
 
+    // Module 12, Lesson 1 ("A Bet Size Is a Sentence") — the exploratory first pass over the
+    // Bet Size Translator authors no target at all (by design: "this pass cannot be failed").
+    // Every existing Module 10/11 mdf_slider lesson already authors mdf_slider_target, so this
+    // is a no-op for all of them — only a target-less step (which didn't exist before this
+    // module) newly becomes unscored.
+    case 'mdf_slider':
+      return step.mdf_slider_target != null
+
+    // Module 12, Lessons 3-4 (Range Compression Explorer) — scored only when a prediction
+    // question was authored, matching range_distribution's own identical convention; the
+    // component's own no-options path is a passive "Continue" step.
+    case 'range_compression_toggle':
+      return !!step.options?.length
+
     // Everything else (decision_spot, bet_size_choose, bluff_pick, board_classify,
     // nut_advantage, blocker_id, range_identify, reflection_prompt, equity_predict,
-    // mdf_slider, range_build, range_heatmap, scenario_tree, action_sequence,
+    // range_build, range_heatmap, scenario_tree, action_sequence,
     // range_morphology, equity_balance, range_bucket, hand_ranking_order, and any
     // unknown future type) always carries a real question/decision to grade.
     default:
@@ -199,6 +213,7 @@ const OPTION_BASED_TERM: Partial<Record<LessonStep['type'], string>> = {
   ev_tree: 'Correct decision',
   sizing_slider: 'Correct sizing',
   equity_bucket: 'Correct bucket',
+  range_compression_toggle: 'Correct prediction',
 }
 
 /** Every option tied for the highest quality tier actually authored on this step —
@@ -1832,6 +1847,10 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
     case 'blocker_id':
     case 'range_identify':
     case 'reflection_prompt':
+    // Module 12, Lessons 3-4 — the learner's answer is a plain option id (a prediction about
+    // what a toggle state does), the exact same response shape as decision_spot, so grading is
+    // pure reuse of evalOptionBased rather than a bespoke resolver.
+    case 'range_compression_toggle':
       return evalOptionBased(step, response)
 
     // Numeric steps

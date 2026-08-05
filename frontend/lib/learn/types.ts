@@ -82,6 +82,8 @@ export type StepType =
   | 'clairvoyance_lab'         // the AA/QQ-vs-KK polarized toy game — a three-frequency tug of war, exact_derived from gameTheoryEngine.ts's clairvoyanceEV
   | 'ev_indifference_balance'  // two-action EV bars + opponent-frequency slider; the learner searches for EV(A) = EV(B)
   | 'unilateral_deviation_test' // "can this player improve by changing strategy alone?" — the Nash-equilibrium test, one player at a time
+  // ── The Language of Bet Sizing (Module 12) ──────────────────────────────────
+  | 'range_compression_toggle' // toggle across N authored raise-pressure states over one range (PokerRangeGrid 'strategy' mode), each with an EV readout
 
 export type ActionQuality = 'perfect' | 'good' | 'acceptable' | 'mistake' | 'punt'
 export type LessonType = 'micro' | 'range_trainer' | 'puzzle_drill' | 'concept_reveal' | 'simulation'
@@ -356,6 +358,10 @@ export interface LessonStep {
   /** Short closing note shown after `concept_structured_items` (e.g. a caveat that applies to
    *  every row). Only meaningful alongside `concept_structured_items`. */
   concept_note?: string
+  /** Module 12 — marks a `concept_reveal` as "Elite Insight" content: optional, never graded,
+   *  collapsed-by-default with a tap-to-expand affordance, instead of the standard always-expanded
+   *  card. Default `false` preserves every existing `concept_reveal` step's rendering exactly. */
+  concept_reveal_optional?: boolean
   // MDF slider
   /** Question the user must answer via the slider */
   mdf_slider_question?: string
@@ -372,6 +378,11 @@ export interface LessonStep {
    *  approximation, since on earlier streets a "bluff" often keeps backdoor equity and a checked-back
    *  hand often isn't truly EV-0. Omit for every existing (Module 10) use of this step type. */
   mdf_slider_framing?: 'river' | 'flop'
+  /** Module 12, Lessons 1-2 ("A Bet Size Is a Sentence" / "What a Size Buys You") — additive,
+   *  default `'standard'` preserves every existing Module 10/11 lesson's rendering exactly.
+   *  `'full_cascade'` renders two additional readout tiles (Pot Odds, Value:Bluff Ratio) beneath
+   *  the existing MDF/Alpha gauges, computed from the SAME slider position. */
+  mdf_slider_variant?: 'standard' | 'full_cascade'
   // Scenario tree
   scenario_root?: string
   scenario_nodes?: ScenarioNode[]
@@ -927,6 +938,20 @@ export interface LessonStep {
    *  point / the "no deviation" baseline), `villainFreq` is the fixed other side. */
   unilateral_deviation_test_equilibrium?: { heroFreq: number; villainFreq: number }
   unilateral_deviation_test_tolerance?: number
+
+  // Range Compression Toggle (Module 12, Lessons 3-4) — toggle across N authored raise-pressure
+  // states over one fixed range, each state a complete strategy map plus a book-cited EV label.
+  // Wraps PokerRangeGrid('strategy') unchanged; grading reuses evalOptionBased via `options`
+  // exactly like decision_spot, since the learner's answer is a plain option id (a prediction
+  // about what a toggle state does), not a new response shape.
+  range_compression_toggle_pool?: string[]
+  range_compression_toggle_states?: {
+    id: string
+    label: string
+    strategyMap: import('./rangeStrategy').RangeStrategyMap
+    evLabel: string
+  }[]
+  range_compression_toggle_prompt?: string
 
   // Visual
   visual?: 'table' | 'range_grid' | 'equity_bar' | 'heatmap' | 'pressure_chart'

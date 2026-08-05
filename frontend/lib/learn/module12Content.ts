@@ -137,6 +137,24 @@ export const RANGE_COMPRESSION_STATES = [
   RANGE_COMPRESSION_EXAMPLE_D,
 ]
 
+// ── Lesson 4 — SPR bands (Table 90) ───────────────────────────────────────────────────────────
+
+export const SPR_TABLE_90_SOURCE: LessonSource = {
+  book: MPT_SOURCE,
+  author: MPT_AUTHOR,
+  section: 'Splitting Your Range Into Multiple Bet-sizes — Table 90 (Ch.10 pp.609-610)',
+  example: 'Table 90',
+  type: 'source_reconstructed',
+}
+
+/** The book's own four SPR-band descriptions (p.609-610) — exact quoted bands, not interpolated. */
+export const SPR_TABLE_90: { id: string; sprRange: string; band: string; description: string }[] = [
+  { id: 'spr_1_or_below', sprRange: 'SPR 1 or below', band: 'All-in only', description: "Not enough stack behind a pot-size bet to make it meaningfully different from all-in, so the strategy doesn't bother maintaining the distinction." },
+  { id: 'spr_1_to_2', sprRange: 'SPR 1-2', band: 'Pot / all-in split', description: 'The range splits between a pot-size bet and all-in — Example D\'s exact structure.' },
+  { id: 'spr_3', sprRange: 'SPR 3', band: '75%-pot / 125%-pot split', description: "The all-in size stops being used; the betting range splits instead between two large-but-not-total sizes." },
+  { id: 'spr_5_to_10', sprRange: 'SPR 5-10', band: '75%-pot / 150%-pot split', description: 'The two sizes drift further apart as more stack becomes available across the additional space.' },
+]
+
 // ── Lesson 5 — "Why Your Range Shape Picks Your Bet Size" ────────────────────────────────────
 
 export const TOY_GAMES_A_TO_E_SOURCE: LessonSource = {

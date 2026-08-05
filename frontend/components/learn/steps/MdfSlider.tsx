@@ -3,19 +3,45 @@
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
+import { alpha as engineAlpha, mdf as engineMdf, potOddsRequiredEquity } from '@/lib/learn/gameTheoryEngine'
 
 // ── Math helpers ──────────────────────────────────────────────────────────────
+// Delegates to gameTheoryEngine.ts's canonical, tested alpha()/mdf() (pot=1,
+// bet=betPct/100) rather than reimplementing the formula locally — closes a
+// pre-existing duplication between this file and gameTheoryEngine.ts (Module
+// 12 architecture, Section 3.1). Output is numerically identical to the
+// previous local implementation; only the source of truth changed.
 
 /** alpha  = bet / (pot + bet)  — fold frequency needed for bluff break-even */
 function calcAlpha(betPct: number): number {
-  // betPct is bet as % of pot (e.g. 50 = half-pot)
-  const bet = betPct / 100
-  return (bet / (1 + bet)) * 100
+  return engineAlpha(1, betPct / 100) * 100
 }
 
 /** MDF = 1 - alpha = pot / (pot + bet) */
 function calcMdf(betPct: number): number {
-  return 100 - calcAlpha(betPct)
+  return engineMdf(1, betPct / 100) * 100
+}
+
+/** Pot odds a call is getting at this bet-size — distinct from alpha (Module 12, Lesson 2). */
+function calcPotOdds(betPct: number): number {
+  return potOddsRequiredEquity(1, betPct / 100) * 100
+}
+
+/** Value:bluff ratio a polarized range needs at this Alpha — the bluff share IS
+ *  the Alpha number (Module 12, Lesson 2), restated as a simplified small-integer
+ *  ratio (e.g. 75/25 -> "3 : 1") when the numbers reduce cleanly, otherwise as
+ *  plain percentages. */
+function valueBluffRatioLabel(alphaPct: number): string {
+  const bluff = Math.round(alphaPct)
+  const value = 100 - bluff
+  if (bluff <= 0) return 'All value — no bluffs needed'
+  if (value <= 0) return 'All bluffs'
+  const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b))
+  const divisor = gcd(value, bluff)
+  const v = value / divisor
+  const b = bluff / divisor
+  if (v <= 20 && b <= 20) return `${v} : ${b} (value : bluff)`
+  return `${value}% : ${bluff}% (value : bluff)`
 }
 
 /** Human-readable bet size label */
@@ -91,6 +117,8 @@ export function MdfSlider({ step, onAnswer, disabled = false }: MdfSliderProps) 
 
   const alpha = calcAlpha(betPct)
   const mdf = calcMdf(betPct)
+  const potOdds = calcPotOdds(betPct)
+  const variant = step.mdf_slider_variant ?? 'standard'
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (disabled || submitted) return
@@ -211,6 +239,30 @@ export function MdfSlider({ step, onAnswer, disabled = false }: MdfSliderProps) 
             sublabel="How often villain must fold for bluff profit"
           />
         </div>
+
+        {/* Module 12, Lessons 1-2 ("full_cascade" variant) — two more readouts from the SAME
+           slider position: pot odds (a genuinely different number from Alpha, Ch.2 Table 14 /
+           Ch.10 p.600-602) and the value:bluff ratio a polarized range needs at this size. */}
+        {variant === 'full_cascade' && (
+          <div className="grid grid-cols-2 gap-5">
+            <GaugeBar
+              value={potOdds}
+              color="text-sky-400"
+              label="Pot Odds Offered"
+              sublabel="Price a call is getting on this bet"
+            />
+            <div className="space-y-1.5" aria-label={`Value to bluff ratio: ${valueBluffRatioLabel(alpha)}`}>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground/70 font-medium">Value:Bluff Ratio</span>
+              </div>
+              <div className="h-3 rounded-full bg-secondary/40 overflow-hidden relative flex">
+                <div className="h-full bg-gradient-to-r from-sky-600 to-sky-400" style={{ width: `${100 - Math.round(alpha)}%` }} />
+                <div className="h-full bg-gradient-to-r from-amber-600 to-amber-400" style={{ width: `${Math.round(alpha)}%` }} />
+              </div>
+              <p className="text-[10px] text-muted-foreground/40 tabular-nums">{valueBluffRatioLabel(alpha)}</p>
+            </div>
+          </div>
+        )}
 
         {/* Formula display */}
         <div

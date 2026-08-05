@@ -22,6 +22,7 @@ import { MttStackDepthCompare } from '@/components/learn/steps/MttStackDepthComp
 import { ClassifyStep } from '@/components/learn/steps/ClassifyStep'
 import { BetSizeSlider } from '@/components/learn/steps/BetSizeSlider'
 import { MdfSlider } from '@/components/learn/steps/MdfSlider'
+import { RangeCompressionToggle } from '@/components/learn/steps/RangeCompressionToggle'
 import { ScenarioTree } from '@/components/learn/steps/ScenarioTree'
 import { RangeHeatmap } from '@/components/learn/steps/RangeHeatmap'
 import { PositionTable } from '@/components/learn/steps/PositionTable'
@@ -243,6 +244,10 @@ function StepRenderer({
 
   if (step.type === 'mdf_slider') {
     return <MdfSlider step={step} onAnswer={(val, ms) => evaluate(val, ms)} />
+  }
+
+  if (step.type === 'range_compression_toggle') {
+    return <RangeCompressionToggle step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
   }
 
   if (step.type === 'scenario_tree') {

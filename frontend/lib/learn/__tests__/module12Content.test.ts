@@ -19,6 +19,8 @@ import {
   TOY_GAME_D,
   TOY_GAME_E,
   TOY_GAMES_A_TO_E_SOURCE,
+  SPR_TABLE_90,
+  SPR_TABLE_90_SOURCE,
   MISCONCEPTION_BY_CONCEPT_ID,
   MENTAL_MODEL_AUDIT,
 } from '../module12Content'
@@ -146,6 +148,28 @@ describe('Toy Games A-E — every Equity Bucket distribution sums to 100', () =>
     for (let i = 1; i < heroStrong.length; i++) {
       expect(heroStrong[i]).toBeGreaterThanOrEqual(heroStrong[i - 1])
     }
+  })
+})
+
+describe('SPR_TABLE_90 — the four SPR bands (Ch.10 pp.609-610)', () => {
+  it('has a valid source classification', () => {
+    expect(['exact_derived', 'source_reconstructed', 'pedagogical_model']).toContain(SPR_TABLE_90_SOURCE.type)
+    expect(SPR_TABLE_90_SOURCE.book).toBe('Modern Poker Theory')
+  })
+
+  it('is exactly the four book-cited bands, in ascending-SPR order, each non-empty', () => {
+    expect(SPR_TABLE_90.map((b) => b.id)).toEqual(['spr_1_or_below', 'spr_1_to_2', 'spr_3', 'spr_5_to_10'])
+    for (const b of SPR_TABLE_90) {
+      expect(b.band.length).toBeGreaterThan(0)
+      expect(b.description.length).toBeGreaterThan(10)
+    }
+  })
+
+  it('only the two lowest bands include all-in', () => {
+    expect(SPR_TABLE_90[0].band.toLowerCase()).toContain('all-in')
+    expect(SPR_TABLE_90[1].band.toLowerCase()).toContain('all-in')
+    expect(SPR_TABLE_90[2].band.toLowerCase()).not.toContain('all-in')
+    expect(SPR_TABLE_90[3].band.toLowerCase()).not.toContain('all-in')
   })
 })
 
