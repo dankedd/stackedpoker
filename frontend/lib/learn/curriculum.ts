@@ -4185,11 +4185,11 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['stack_depth_preflop', 'early_position_rfi'],
         narrative:
-          "Real MTT solver data for UTG's K8s: raised 40% of the time at 15bb, 100% at 25bb, then back down to 65% at 40bb and 60% at 60bb. It gets WIDER then NARROWER as the stack gets deeper — never simply \"tighter = shallower, wider = deeper.\"",
+          "UTG's actual K8s raise frequency across stack depths: 40% at 15bb, 100% at 25bb, then back down to 65% at 40bb and 60% at 60bb. It gets WIDER then NARROWER as the stack gets deeper — never simply \"tighter = shallower, wider = deeper.\"",
         decision_spot_question: 'What best explains why K8s peaks in the middle instead of climbing forever?',
         options: [
           { id: 'shifting_priority', label: 'Its value shifts between raw equity/blockers and playability, and it’s mediocre at both', quality: 'perfect', feedback: 'Correct. At 25bb, hands with decent raw equity and a king blocker get pushed harder because the game is closer to a raise/jam binary. At 60bb, there’s more postflop play, and K8s’ poor postflop playability (easily dominated, weak kicker) starts to outweigh its blocker value again.' },
-          { id: 'data_error', label: 'This must be a mistake — real strategies always widen monotonically with stack depth', quality: 'mistake', feedback: 'This is real solver output, not an error. Stack depth changes WHICH properties of a hand matter (raw equity vs. blockers vs. playability), not just how wide the range is — so non-monotonic patterns like this are common and expected.' },
+          { id: 'data_error', label: 'This must be a mistake — real strategies always widen monotonically with stack depth', quality: 'mistake', feedback: 'This isn\'t an error. Stack depth changes WHICH properties of a hand matter (raw equity vs. blockers vs. playability), not just how wide the range is — so non-monotonic patterns like this are common and expected.' },
         ],
         xp: 10,
       },
@@ -9157,7 +9157,7 @@ export const LESSONS: Lesson[] = [
             feedback: 'Correct. Against BTN, jamming is both more likely to fold out worse hands AND favored to win when called — hence 28.2% all-in and essentially no calling. Against UTG, a jam runs into a much scarier calling range, so the aggression frequency collapses — and calling picks up some of that slack instead of folding everything.',
           },
           {
-            id: 'random', label: 'No real reason — these numbers are simply how the solver happened to output for these two spots', quality: 'mistake',
+            id: 'random', label: 'No real reason — these numbers just happened to come out this way for these two spots', quality: 'mistake',
             feedback: "There's a clear driving factor here: the opener's range strength directly changes both fold equity and rejam profitability — that's exactly the pattern to take away, not an arbitrary result.",
           },
         ],
@@ -10602,8 +10602,8 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['flop_structure'],
         narrative: 'True or false: once you\'re the preflop raiser and the flop comes out, should a PAIRED board be approached with the exact same mental model as an UNPAIRED board?',
         options: [
-          { id: 'false', label: 'False — paired and unpaired boards behave very differently strategically', quality: 'perfect', feedback: 'Correct. Modern Poker Theory treats paired boards as a genuinely distinct case — the range dynamics and preferred bet-sizing on a paired flop are not the same as on an unpaired one. You\'ll learn exactly how once this module reaches c-betting strategy. For now, the job is simply to recognize structure on sight, instantly and reliably — everything downstream depends on getting this read right first.' },
-          { id: 'true', label: 'True — structure doesn\'t really change anything about strategy', quality: 'mistake', feedback: 'Not so — Modern Poker Theory treats paired flops as a genuinely different strategic case from unpaired ones. The specifics come later in this module (once c-betting is covered), but the read itself — recognizing structure instantly — is the foundation everything else builds on.' },
+          { id: 'false', label: 'False — paired and unpaired boards behave very differently strategically', quality: 'perfect', feedback: 'Correct. Paired boards are a genuinely distinct case — the range dynamics and preferred bet-sizing on a paired flop are not the same as on an unpaired one. You\'ll learn exactly how once this module reaches c-betting strategy. For now, the job is simply to recognize structure on sight, instantly and reliably — everything downstream depends on getting this read right first.' },
+          { id: 'true', label: 'True — structure doesn\'t really change anything about strategy', quality: 'mistake', feedback: 'Not so — paired flops are a genuinely different strategic case from unpaired ones. The specifics come later in this module (once c-betting is covered), but the read itself — recognizing structure instantly — is the foundation everything else builds on.' },
         ],
         xp: 8,
       },
@@ -12250,7 +12250,7 @@ export const LESSONS: Lesson[] = [
           advantage: 25,
           ipLabel: 'Preflop Raiser',
           oopLabel: 'Caller',
-          caption: 'Illustrative, not a solved number for this exact board — pedagogical model, not a book/solver citation. It reflects the same "pairing dominates" principle from the feedback above: a paired board compresses both ranges toward one-pair hands and makes trips/full houses rare for everyone, so neither side owns the nuts here in a big way — the raiser keeps a modest edge because a raiser\'s range still holds more Kx/pocket-pairs-above-7 on average than a typical calling range does.',
+          caption: 'Illustrative, not an exact figure for this specific board. It reflects the same "pairing dominates" principle from the feedback above: a paired board compresses both ranges toward one-pair hands and makes trips/full houses rare for everyone, so neither side owns the nuts here in a big way — the raiser keeps a modest edge because a raiser\'s range still holds more Kx/pocket-pairs-above-7 on average than a typical calling range does.',
         },
         xp: 8,
       },
@@ -12311,7 +12311,7 @@ export const LESSONS: Lesson[] = [
           { term: 'J♥T♥9♦ — bets 3rd', description: 'Connectivity dominates: BB\'s range now picks up real straight and flush-draw equity, cutting hard into BTN\'s edge and raising the cost of getting raised.' },
           { term: '8♥7♥6♥ — bets LEAST', description: 'Texture overrides everything: a connected AND monotone board hands either range a shot at the nut flush on top of the straight potential — the most dangerous combination of the four, and the one that demands the most caution.' },
         ],
-        concept_note: 'Illustrative ordering, derived from this lesson\'s own board-classification reasoning — not a specific solver output for these exact boards.',
+        concept_note: 'Illustrative ordering, derived from this lesson\'s own board-classification reasoning rather than an exact frequency figure for these specific boards.',
         xp: 8,
       },
       {
@@ -12489,7 +12489,7 @@ export const LESSONS: Lesson[] = [
           type: 'exact_derived',
         },
         narrative:
-          'A real solver example this time, not an average. Tournament, 30bb effective. UTG opens, BB calls, UTG is in position. Board: A♠T♥T♦ — trips on the flop. BB checks to UTG.',
+          'A single hand this time, not an average. Tournament, 30bb effective. UTG opens, BB calls, UTG is in position. Board: A♠T♥T♦ — trips on the flop. BB checks to UTG.',
         table_size: 6,
         hero_position: 'UTG',
         villain_position: 'BB',
@@ -13285,7 +13285,7 @@ export const LESSONS: Lesson[] = [
         options: [
           {
             id: 'near_range|small', label: 'Near-Range Bet (≈85–100%) + Small', quality: 'perfect',
-            feedback: "Real solver data: despite being monotone AND highly connected, UTG's range advantage here is substantial enough to c-bet 100% of the time — simplified to a min-bet with no EV loss. Min-bet works because BB's calling range is itself polarized on this texture: real flushes and straights that continue against any size, plus a lot of weak/drawing hands that fold to ANY bet, small or big. Betting bigger would only make BB's decision easier (fold everything except the genuine continues) — a tiny bet gets the same folds from the weak hands at a fraction of the risk, and still gets called by the real hands regardless of size. This overturns the 'monotone means check more' instinct from Lesson 2 — that instinct is about SIZING, not frequency: UTG still bets it ALL here, just cheaply.",
+            feedback: "Despite being monotone AND highly connected, UTG's range advantage here is substantial enough to c-bet 100% of the time — simplified to a min-bet with no EV loss. Min-bet works because BB's calling range is itself polarized on this texture: real flushes and straights that continue against any size, plus a lot of weak/drawing hands that fold to ANY bet, small or big. Betting bigger would only make BB's decision easier (fold everything except the genuine continues) — a tiny bet gets the same folds from the weak hands at a fraction of the risk, and still gets called by the real hands regardless of size. This overturns the 'monotone means check more' instinct from Lesson 2 — that instinct is about SIZING, not frequency: UTG still bets it ALL here, just cheaply.",
           },
           {
             id: 'medium|small', label: 'Medium Frequency (≈40–65%) + Small', quality: 'mistake',
@@ -13362,7 +13362,7 @@ export const LESSONS: Lesson[] = [
         options: [
           {
             id: 'low|big', label: 'Low Frequency (≈15–40%) + Big', quality: 'perfect',
-            feedback: "Real solver data: BB has few genuine strong hands on this low, disconnected board, which is exactly what lets BTN size UP when betting. But BTN's own range here is mostly good-and-weak, not strong — plenty of hands (middle/small pocket pairs, ace-highs) that would rather check back, take a free card, and realize their own equity cheaply than build a pot without real strength behind it. That combination — BB rarely has enough to punish a big bet, but BTN doesn't have enough STRONG hands to bet a merged range with — produces a genuinely polarized, low-frequency, BIG-sizing strategy: bet the real value and a few blockers big, check back the rest. This is the sharpest example in the lesson that frequency and sizing are separate questions — low frequency here does NOT mean small sizing, because it comes from a different mechanism (BTN's own range being thin on strength) than the wide, merged boards where low-and-small go together.",
+            feedback: "BB has few genuine strong hands on this low, disconnected board, which is exactly what lets BTN size UP when betting. But BTN's own range here is mostly good-and-weak, not strong — plenty of hands (middle/small pocket pairs, ace-highs) that would rather check back, take a free card, and realize their own equity cheaply than build a pot without real strength behind it. That combination — BB rarely has enough to punish a big bet, but BTN doesn't have enough STRONG hands to bet a merged range with — produces a genuinely polarized, low-frequency, BIG-sizing strategy: bet the real value and a few blockers big, check back the rest. This is the sharpest example in the lesson that frequency and sizing are separate questions — low frequency here does NOT mean small sizing, because it comes from a different mechanism (BTN's own range being thin on strength) than the wide, merged boards where low-and-small go together.",
           },
           {
             id: 'low|medium', label: 'Low Frequency (≈15–40%) + Medium', quality: 'mistake',
@@ -13403,7 +13403,7 @@ export const LESSONS: Lesson[] = [
         options: [
           {
             id: 'high|big', label: 'High Frequency (≈65–85%) + Big', quality: 'perfect',
-            feedback: "Real book finding: trips and rainbow paired flops are among the MOST frequently c-bet textures in 3-bet pots — the opposite of how a paired board often plays in a single-raised pot. The reason is range construction: CO's flatting-vs-a-3-bet range is thin on exactly the hands that make trip nines or a big overpair here, while Hero's 3-bet range still has real premiums (overpairs, AA/KK-type hands crushing 9-4-x) plus blocker-driven bluffs. That's a genuinely polarized range with real value AND CO having little to fight back with — which supports both a High frequency AND a Big size, betting most of the range for real value/protection rather than the smaller, more selective approach a paired board gets in a single-raised pot.",
+            feedback: "Trips and rainbow paired flops are among the MOST frequently c-bet textures in 3-bet pots — the opposite of how a paired board often plays in a single-raised pot. The reason is range construction: CO's flatting-vs-a-3-bet range is thin on exactly the hands that make trip nines or a big overpair here, while Hero's 3-bet range still has real premiums (overpairs, AA/KK-type hands crushing 9-4-x) plus blocker-driven bluffs. That's a genuinely polarized range with real value AND CO having little to fight back with — which supports both a High frequency AND a Big size, betting most of the range for real value/protection rather than the smaller, more selective approach a paired board gets in a single-raised pot.",
           },
           {
             id: 'medium|big', label: 'Medium Frequency (≈40–65%) + Big', quality: 'mistake',
@@ -13532,7 +13532,7 @@ export const LESSONS: Lesson[] = [
           type: 'exact_derived',
         },
         narrative:
-          'Real solver data, not a rule of thumb. Tournament, 40bb effective. UTG opens, BB calls, UTG is in position. Board: 5♥5♦4♥. UTG\'s overpairs get c-bet at these exact frequencies: TT 76%, JJ 64%, QQ 50%, KK 40%, AA only 22%.',
+          'Not a rule of thumb — the exact frequencies. Tournament, 40bb effective. UTG opens, BB calls, UTG is in position. Board: 5♥5♦4♥. UTG\'s overpairs get c-bet at these exact frequencies: TT 76%, JJ 64%, QQ 50%, KK 40%, AA only 22%.',
         table_size: 6,
         hero_position: 'UTG',
         villain_position: 'BB',
@@ -13546,10 +13546,10 @@ export const LESSONS: Lesson[] = [
           },
           {
             id: 'too_strong_to_bet', label: "AA is simply too strong to risk betting — it can't be beaten in this spot", quality: 'mistake',
-            feedback: "AA can absolutely still lose here — a set of 5s beats it outright, and this reasoning also isn't why the solver checks it back more. The real reason is about what AA gains from checking (a strong, protected call-down hand on future streets), not fear of being beaten right now.",
+            feedback: "AA can absolutely still lose here — a set of 5s beats it outright, but that's also not the real reason to check it back more. The real reason is about what AA gains from checking (a strong, protected call-down hand on future streets), not fear of being beaten right now.",
           },
           {
-            id: 'no_reason', label: "It's a solver quirk with no real strategic reason behind it", quality: 'mistake',
+            id: 'no_reason', label: "It's a random quirk with no real strategic reason behind it", quality: 'mistake',
             feedback: 'There is a concrete reason, the same one you\'ve already seen apply elsewhere in this module: every hand\'s role comes from what it gains from betting vs. checking, not just its raw strength — bigger pairs simply have more to gain from checking here.',
           },
           {
@@ -13989,7 +13989,7 @@ export const LESSONS: Lesson[] = [
             feedback: "Not quite — the equity distribution is similar in both spots. The frequency gap comes entirely from the positional information asymmetry, not from Hero holding a better range OOP.",
           },
           {
-            id: 'one_off', label: 'It was a one-off solver quirk specific to that exact board, not a general principle', quality: 'mistake',
+            id: 'one_off', label: 'It was a one-off quirk specific to that exact board, not a general principle', quality: 'mistake',
             feedback: "It's the opposite of a one-off — it's a direct, numerical instance of the same general in-position-vs-out-of-position asymmetry this whole lesson is built on, just showing up as a real frequency gap instead of a description.",
           },
         ],
@@ -14789,7 +14789,7 @@ export const LESSONS: Lesson[] = [
         id: 'wsc-s2',
         type: 'decision_spot',
         concept_ids: ['range_advantage'],
-        narrative: `In the exact BB-vs-IP configuration this module has been analyzing, IP holds a very strong range advantage on A76r (62% to 38%, Strong bucket 31% to 8%) — the solver c-bets A76r at 100% in this specific analyzed configuration, while BB has almost no donk-betting incentive. On 654r, BB performs dramatically better (51% to 49%, and a much larger share of BB's range lands in Good rather than Trash) — the betting incentives on that board are substantially different.`,
+        narrative: `In the exact BB-vs-IP configuration this module has been analyzing, IP holds a very strong range advantage on A76r (62% to 38%, Strong bucket 31% to 8%) — IP c-bets A76r at 100% in this specific analyzed configuration, while BB has almost no donk-betting incentive. On 654r, BB performs dramatically better (51% to 49%, and a much larger share of BB's range lands in Good rather than Trash) — the betting incentives on that board are substantially different.`,
         decision_spot_question: 'Is it accurate to say "A76r is always a 100% c-bet" as a general poker rule?',
         options: [
           {
