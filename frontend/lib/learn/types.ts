@@ -562,6 +562,15 @@ export interface LessonStep {
   /** Optional secondary acceptable categories per hand (full credit, not just partial). */
   range_bucket_acceptable?: Record<string, string[]>
   range_bucket_prompt?: string
+  /** Per-hand reason it belongs in its correct bucket, keyed exactly as
+   *  `range_bucket_pool` entries are. Surfaced ONLY for the hands the learner
+   *  actually misplaced, so a wrong sort explains itself instead of just
+   *  naming the hand. */
+  range_bucket_hand_notes?: Record<string, string>
+  /** See `combo_removal_partial_credit_note`. */
+  range_bucket_partial_credit_note?: string
+  /** See `combo_removal_takeaway`. */
+  range_bucket_takeaway?: string
   /** Optional flop, shown above the pool via `PlayingCardMini` — additive/opt-in.
    *  When present, `range_bucket_pool` entries are expected to be concrete
    *  combos (e.g. 'JcJd', 'AhQh': rank+suit, rank+suit — 4 characters, distinct
@@ -755,6 +764,14 @@ export interface LessonStep {
    *  frequency (e.g. Module 9's "best blocker" → "worst blocker" ranking). */
   board_rank_sort_high_label?: string
   board_rank_sort_low_label?: string
+  /** Per-item reason it sits where it does in `board_rank_sort_target`, keyed by
+   *  board id. Surfaced on a non-perfect order so "these two are swapped" becomes
+   *  "here is what actually separates them." */
+  board_rank_sort_item_notes?: Record<string, string>
+  /** See `combo_removal_partial_credit_note`. */
+  board_rank_sort_partial_credit_note?: string
+  /** See `combo_removal_takeaway`. */
+  board_rank_sort_takeaway?: string
   // ── Range vs Range (Module 8) ───────────────────────────────────────────────
   // Range Collision Viewer — two full 13x13 ranges rendered against a board, in one
   // of four modes. Per-cell "does this hand connect with the board" highlighting is
@@ -842,6 +859,12 @@ export interface LessonStep {
   /** Shown after submit regardless of correctness — the causal explanation of
    *  *why* the flagged combos are impossible (which known card collides). */
   combo_removal_explanation?: string
+  /** See `SetSelectionCoaching` in evaluator.ts — the portable one-line rule a
+   *  partial/incorrect answer ends on. */
+  combo_removal_takeaway?: string
+  /** Why a *near-miss* on this step is understandable — the "you were almost
+   *  right, and here's the reasoning that got you close" half of the feedback. */
+  combo_removal_partial_credit_note?: string
   // ── Flush pyramid (Module 9 — "The Nut Blocker") ────────────────────────────
   /** The flush suit this pyramid is built on, e.g. 'h'. */
   flush_pyramid_suit?: string
@@ -852,6 +875,15 @@ export interface LessonStep {
    *  tier(s) the learner should tap as "affected," computed live, never authored. */
   flush_pyramid_known_cards?: string[]
   flush_pyramid_prompt?: string
+  /** Strategic meaning of the correct tier set — WHY those tiers are the ones
+   *  that matter, beyond the pure card-removal arithmetic the evaluator already
+   *  derives. Shown on a correct answer AND on a partial one (a learner who got
+   *  it half right needs this more, not less). */
+  flush_pyramid_explanation?: string
+  /** See `combo_removal_partial_credit_note`. */
+  flush_pyramid_partial_credit_note?: string
+  /** See `combo_removal_takeaway`. */
+  flush_pyramid_takeaway?: string
   // ── Cross-step tendency summary ─────────────────────────────────────────────
   /** Any step can carry this: a machine id grouping it into a later `tendency_summary`
    *  step (e.g. 'offsuit_broadway'). Purely descriptive metadata — never read by this

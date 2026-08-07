@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import {
   TrendingUp, TrendingDown, Percent, Coins, Activity,
-  Flame, Snowflake, Trophy, AlertTriangle, Hash, Clock, Target,
+  Flame, Snowflake, Trophy, AlertTriangle, Hash, Clock, Target, Users, Medal, Sparkles,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/Navbar";
@@ -11,7 +11,7 @@ import { BankrollBackLink } from "@/components/bankroll/BankrollBackLink";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import { computeSessionResult } from "@/lib/bankroll/sessionForm";
 import {
-  computeStreaks, computeBiggestWinLoss, computeWinRate, groupSessionsBy,
+  computeStreaks, computeBiggestWinLoss, computeWinRate, groupSessionsBy, computeTournamentStats,
   type SessionForStats, type BankrollDimensionBreakdowns,
 } from "@/lib/bankroll/stats";
 import type { BankrollOverview } from "@/lib/bankroll/types";
@@ -24,7 +24,7 @@ export default async function BankrollStatsPage() {
   const [{ data: sessionRows }, { data: overviewRow }, { data: settingsRow }] = await Promise.all([
     supabase
       .from("bankroll_sessions")
-      .select("started_at, buy_in_amount, cash_out_amount, hands_played, duration_minutes, site, stakes, variant")
+      .select("session_type, started_at, buy_in_amount, cash_out_amount, hands_played, duration_minutes, site, stakes, variant, fee_amount, prize_amount, finishing_position")
       .eq("user_id", user.id)
       .limit(5000),
     supabase.rpc("bankroll_overview", { p_user_id: user.id }).single(),
@@ -34,6 +34,12 @@ export default async function BankrollStatsPage() {
   const sessions = (sessionRows ?? []) as unknown as SessionForStats[];
   const overview = overviewRow as unknown as BankrollOverview | null;
   const currency = settingsRow?.preferred_currency ?? "USD";
+
+  // Stakes/Variant are cash-game concepts (tournaments leave both null) — mixing
+  // tournament sessions into those two breakdowns would just dump them all into
+  // an "Unknown" bucket, so those two dimensions are computed cash-only. Site and
+  // the time-based dimensions apply to both kinds, so they keep every session.
+  const cashOnly = sessions.filter((s) => s.session_type !== "tournament");
 
   const settled = sessions.filter((s) => s.cash_out_amount != null);
   const profit = settled.reduce((sum, s) => sum + computeSessionResult(s), 0);
@@ -60,11 +66,15 @@ export default async function BankrollStatsPage() {
 
   const breakdowns: BankrollDimensionBreakdowns = {
     site: groupSessionsBy(sessions, "site"),
-    stakes: groupSessionsBy(sessions, "stakes"),
-    variant: groupSessionsBy(sessions, "variant"),
+    stakes: groupSessionsBy(cashOnly, "stakes"),
+    variant: groupSessionsBy(cashOnly, "variant"),
     month: groupSessionsBy(sessions, "month"),
     year: groupSessionsBy(sessions, "year"),
   };
+
+  const tournamentStats = computeTournamentStats(sessions);
+  const hasTournaments = tournamentStats.tournamentCount > 0;
+  const tournamentRoiPositive = tournamentStats.roi != null && tournamentStats.roi >= 0;
 
   const profitPositive = profit >= 0;
   const roiPositive = roi != null && roi >= 0;
@@ -172,6 +182,68 @@ export default async function BankrollStatsPage() {
         </div>
 
         <BreakdownSection breakdowns={breakdowns} currency={currency} />
+
+        {hasTournaments && (
+          <div className="mt-8">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground/50 mb-4">
+              Tournaments
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <BankrollStatCard
+                icon={Trophy}
+                label="Buy-ins"
+                value={formatCurrency(tournamentStats.totalBuyIns, currency)}
+                caption={`${tournamentStats.tournamentCount} tournament${tournamentStats.tournamentCount !== 1 ? "s" : ""}`}
+                delayMs={0}
+              />
+              <BankrollStatCard
+                icon={Coins}
+                label="Average Buy-in"
+                value={formatCurrency(tournamentStats.avgBuyIn, currency)}
+                caption="excluding fees"
+                delayMs={30}
+              />
+              <BankrollStatCard
+                icon={Medal}
+                label="Average Finish"
+                value={tournamentStats.avgFinish != null ? tournamentStats.avgFinish.toFixed(1) : "—"}
+                caption="place, lower is better"
+                delayMs={60}
+              />
+              <BankrollStatCard
+                icon={Target}
+                label="ITM%"
+                value={formatPercent(tournamentStats.itmPercent)}
+                caption="finished in the money"
+                delayMs={90}
+              />
+              <BankrollStatCard
+                icon={Percent}
+                label="ROI"
+                value={formatPercent(tournamentStats.roi, { signed: true })}
+                caption="profit vs. buy-ins + fees"
+                valueClassName={tournamentStats.roi != null ? (tournamentRoiPositive ? "text-emerald-400" : "text-red-400") : undefined}
+                delayMs={120}
+              />
+              <BankrollStatCard
+                icon={Users}
+                label="Total Prizes"
+                value={formatCurrency(tournamentStats.totalPrizes, currency)}
+                caption="all-time cashes"
+                valueClassName="text-emerald-400"
+                delayMs={150}
+              />
+              <BankrollStatCard
+                icon={Sparkles}
+                label="Biggest Cash"
+                value={formatCurrency(tournamentStats.biggestCash, currency)}
+                caption="single best prize"
+                valueClassName={tournamentStats.biggestCash ? "text-emerald-400" : undefined}
+                delayMs={180}
+              />
+            </div>
+          </div>
+        )}
 
       </main>
     </div>

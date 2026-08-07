@@ -38,6 +38,13 @@ export function chartHandList(chart: DefendResponseChart): string[] {
   return chart.cells.map((c) => c.hand)
 }
 
+/** Just the hands assigned a specific single action — e.g. the 3-bet-only
+ *  subset, for a range_compare step contrasting two matchups' AGGRESSION
+ *  width specifically (not their whole continuing range). */
+export function chartActionHandList(chart: DefendResponseChart, action: DefendResponseAction): string[] {
+  return chart.cells.filter((c) => action in c.actions).map((c) => c.hand)
+}
+
 /** A hand's single graded action in this domain's pure (never-mixed) charts. */
 export function chartHandAction(chart: DefendResponseChart, hand: string): DefendResponseAction {
   const cell = chart.cells.find((c) => c.hand === hand)

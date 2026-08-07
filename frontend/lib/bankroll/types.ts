@@ -51,12 +51,23 @@ export interface BankrollChartPoint {
 
 /**
  * A full bankroll_sessions row, as managed by the /bankroll/sessions page.
- * The session-management form only exposes a single "Resultaat" (result)
- * field rather than separate buy-in/cash-out amounts, so every session
- * written from that form has buy_in_amount fixed at 0 and cash_out_amount
- * set to the entered result — see lib/bankroll/sessionForm.ts. Display code
- * still computes the result as cash_out_amount - buy_in_amount so it reads
- * correctly even for rows written some other way.
+ * Every session's result is read the same way regardless of kind —
+ * cash_out_amount - buy_in_amount (see computeSessionResult in
+ * lib/bankroll/sessionForm.ts) — so bankroll_overview(), the chart, stats,
+ * insights and goals never need to know cash from tournament:
+ *
+ * - Cash sessions (session_type: "cash"): the form only exposes a single
+ *   "Resultaat" field, so buy_in_amount is fixed at 0 and cash_out_amount
+ *   is the entered result directly.
+ * - Tournament sessions (session_type: "tournament"): buy_in_amount stores
+ *   buy-in + fee (the total cost to enter — always >= 0, matching this
+ *   column's CHECK constraint), and cash_out_amount stores buy_in_amount +
+ *   net result (auto-calculated as prize - buy-in - fee, or the player's
+ *   manual override) — never the raw prize directly, and never negative.
+ *   fee_amount/prize_amount below store the raw entered values so the edit
+ *   form can split buy_in_amount back into its buy-in/fee parts and so
+ *   in-money/prize based tournament stats have honest numbers to read,
+ *   independent of whatever the net result ends up being.
  */
 export interface BankrollSessionRow {
   id: string;
@@ -73,6 +84,11 @@ export interface BankrollSessionRow {
   duration_minutes: number | null;
   hands_played: number | null;
   notes: string | null;
+  tournament_name: string | null;
+  fee_amount: number | null;
+  prize_amount: number | null;
+  field_size: number | null;
+  finishing_position: number | null;
 }
 
 /** A bankroll_mental_entries row linked to a session (session_id is never null here). */

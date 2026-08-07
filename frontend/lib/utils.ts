@@ -26,6 +26,19 @@ export function formatPercent(value: number | null | undefined, opts?: { decimal
   return `${sign}${value.toFixed(decimals)}%`;
 }
 
+/** "1st", "2nd", "3rd", "4th", ... — used for tournament finishing positions. */
+export function formatOrdinal(n: number): string {
+  const rounded = Math.round(n);
+  const mod100 = rounded % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${rounded}th`;
+  switch (rounded % 10) {
+    case 1: return `${rounded}st`;
+    case 2: return `${rounded}nd`;
+    case 3: return `${rounded}rd`;
+    default: return `${rounded}th`;
+  }
+}
+
 export function scoreToLabel(score: number): { label: string; color: string } {
   if (score >= 85) return { label: "Excellent", color: "text-violet-400" };
   if (score >= 70) return { label: "Good", color: "text-green-400" };

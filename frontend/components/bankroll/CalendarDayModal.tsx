@@ -1,5 +1,5 @@
-import { Clock } from "lucide-react";
-import { cn, formatCurrency } from "@/lib/utils";
+import { Clock, Trophy } from "lucide-react";
+import { cn, formatCurrency, formatOrdinal } from "@/lib/utils";
 import { Modal } from "@/components/ui/modal";
 import { computeSessionResult } from "@/lib/bankroll/sessionForm";
 import type { CalendarDayData } from "@/lib/bankroll/calendar";
@@ -48,7 +48,10 @@ export function CalendarDayModal({ open, onClose, date, day, currency }: Calenda
               {day.sessions.map((session) => {
                 const result = computeSessionResult(session);
                 const sessionPositive = result >= 0;
-                const meta = [session.site, session.variant, session.stakes].filter(Boolean).join(" · ");
+                const isTournament = session.session_type === "tournament";
+                const meta = isTournament
+                  ? [session.tournament_name, session.site].filter(Boolean).join(" · ")
+                  : [session.site, session.variant, session.stakes].filter(Boolean).join(" · ");
                 return (
                   <div key={session.id} className="rounded-xl border border-border/40 bg-background/30 px-4 py-3">
                     <div className="flex items-center justify-between gap-3 mb-1">
@@ -57,12 +60,20 @@ export function CalendarDayModal({ open, onClose, date, day, currency }: Calenda
                         {sessionPositive ? "+" : ""}{formatCurrency(result, currency)}
                       </p>
                     </div>
-                    {session.duration_minutes != null && (
-                      <p className="flex items-center gap-1 text-[11px] text-muted-foreground/40">
-                        <Clock className="h-2.5 w-2.5" />
-                        {(session.duration_minutes / 60).toFixed(1)}h
-                      </p>
-                    )}
+                    <div className="flex items-center gap-3">
+                      {session.duration_minutes != null && (
+                        <p className="flex items-center gap-1 text-[11px] text-muted-foreground/40">
+                          <Clock className="h-2.5 w-2.5" />
+                          {(session.duration_minutes / 60).toFixed(1)}h
+                        </p>
+                      )}
+                      {isTournament && session.finishing_position != null && (
+                        <p className="flex items-center gap-1 text-[11px] text-muted-foreground/40">
+                          <Trophy className="h-2.5 w-2.5" />
+                          {formatOrdinal(session.finishing_position)}
+                        </p>
+                      )}
+                    </div>
                     {session.notes && (
                       <p className="text-xs text-muted-foreground/60 mt-2 pt-2 border-t border-border/20 leading-relaxed">
                         {session.notes}

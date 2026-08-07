@@ -14,7 +14,7 @@ import { THREEBET_RESPONSE_CHARTS } from './threebetResponseBaselines'
 import { chartToStrategyMap, chartHandList } from './threebetResponseRanges'
 import { DEFEND_DEEP } from './defendBaselines'
 import { DEFEND_RESPONSE_CHARTS } from './defendResponseBaselines'
-import { chartHandList as defendChartHandList } from './defendResponseRanges'
+import { chartHandList as defendChartHandList, chartActionHandList } from './defendResponseRanges'
 import { selectLabAttempt, buildTableDecisionStep } from './mttRfiLabPool'
 import { selectDrillQuestions } from './mttBoundarySelector'
 import { FLOP_STRUCTURE_FREQUENCY } from './flopClassifier'
@@ -8281,12 +8281,72 @@ export const LESSONS: Lesson[] = [
         xp: 30,
       },
       {
+        id: 'hj-lj-decision',
+        type: 'decision_spot',
+        concept_ids: ['opener_range_strength', 'domination'],
+        narrative: 'LJ opens to 2.2bb. Hero is in the HJ with K♠J♠.',
+        table_size: 9,
+        hero_position: 'HJ',
+        villain_position: 'LJ',
+        effective_stack_bb: 60,
+        action_before_hero: ['UTG folds', 'UTG+1 folds', 'UTG+2 folds', 'LJ raises to 2.2bb'],
+        hero_hand: ['Ks', 'Js'],
+        decision_spot_question: '3-BET, CALL, or FOLD?',
+        options: [
+          {
+            id: '3bet', label: '3-BET', quality: 'perfect',
+            feedback: "Correct. Against LJ's wider, weaker opening range, KJs clears the bar for HJ's polarized 3-bet range — real blocker value against LJ's continuing hands, plenty of playability, and much less domination risk than the same hand would face 3-betting into UTG's tighter range. Modern Poker Theory states this directly: HJ 3-bets its highest frequency against any early opener here — 7.4% vs LJ, compared to just 5.2% vs UTG.",
+          },
+          {
+            id: 'call', label: 'CALL', quality: 'mistake',
+            feedback: "This leaves value on the table. Against UTG's tighter range, calling KJs is the safer default — but LJ's range is wide and weak enough that KJs is now strong enough to apply pressure with a 3-bet instead.",
+          },
+          {
+            id: 'fold', label: 'FOLD', quality: 'mistake',
+            feedback: 'KJs is well within HJ\'s continuing range against an LJ open — a suited king-jack with real playability and blocker value is far too strong to fold here.',
+          },
+        ],
+        xp: 10,
+      },
+      {
+        id: 'hj-lj-compare',
+        type: 'range_compare',
+        concept_ids: ['opener_range_strength', 'range_construction'],
+        narrative: "Hero defends the HJ at 60bb effective. Scenario A: LJ opens. Scenario B: UTG opens — same seat, same stack, both technically \"early position.\"",
+        table_size: 9,
+        hero_position: 'HJ',
+        effective_stack_bb: 60,
+        range_compare_a: { label: 'HJ 3-bets vs LJ open (7.4%)', range: chartActionHandList(DEFEND_RESPONSE_CHARTS.HJ_vs_LJ_60BB, '3bet'), option_id: 'lj' },
+        range_compare_b: { label: 'HJ 3-bets vs UTG open (5.2%)', range: chartActionHandList(DEFEND_RESPONSE_CHARTS.HJ_vs_UTG_60BB, '3bet'), option_id: 'utg' },
+        range_compare_prompt: 'In which scenario does HJ 3-bet a wider range?',
+        options: [
+          {
+            id: 'lj', label: 'Scenario A — vs the LJ open', quality: 'perfect',
+            feedback: 'Correct. LJ and UTG are both "early position," but they are not the same range — LJ opens wider and weaker. Modern Poker Theory states HJ 3-bets its highest frequency of any early-position matchup against LJ specifically (7.4%), more than against UTG (5.2%).',
+          },
+          {
+            id: 'utg', label: 'Scenario B — vs the UTG open', quality: 'mistake',
+            feedback: "It's the reverse — UTG is the tighter, stronger of the two ranges, so it actually draws HJ's LOWEST 3-bet frequency against any opener, not the highest.",
+          },
+        ],
+        xp: 10,
+      },
+      {
         id: 'hj-s6',
         type: 'concept_reveal',
         concept_ids: ['range_construction'],
         concept_title: 'The HJ Shape',
         concept_content:
           "HJ's defense against an early open is deliberately tight and polarized: a value-3-bet core of strong pairs, AK, and a couple of suited wheel-Ax blockers; a calling range of the remaining pairs, suited broadways and suited connectors; everything else — most offsuit hands outside AQo — folds.",
+        xp: 6,
+      },
+      {
+        id: 'hj-s7-takeaway',
+        type: 'concept_reveal',
+        concept_ids: ['opener_range_strength'],
+        concept_title: 'Key Takeaway: "Early Position" Isn\'t One Range',
+        concept_content:
+          'UTG and LJ are both "early" — but they are not the same opener. The same hand can be a comfortable call against one and a value 3-bet against the other. Whenever a decision feels close, ask which SEAT actually opened, not just which broad category it falls into.',
         xp: 6,
       },
     ],
@@ -15494,6 +15554,10 @@ export const LESSONS: Lesson[] = [
         combo_removal_known_cards: ['As'],
         combo_removal_prompt: 'Hero holds A♠. Tap every AA combination Villain can no longer hold.',
         combo_removal_explanation: 'Any AA combination containing A♠ is physically impossible once Hero holds that exact card — 3 of the 6 combinations. The other 3 (built from the remaining A♥/A♦/A♣) are untouched.',
+        combo_removal_partial_credit_note:
+          'The A♠ pairs with each of the other three aces, so it removes exactly 3 combos and no more. The half that survives — A♥A♦, A♥A♣, A♦A♣ — is built entirely from cards nobody can see yet.',
+        combo_removal_takeaway:
+          'Holding one card of a rank does not delete the hand class — it deletes the specific combinations built from that exact card. Always count combos, never hand names.',
         source: { book: 'Modern Poker Theory', section: 'Hand Ranges as Combinations', type: 'exact_derived' },
         xp: 15,
       },
@@ -15557,6 +15621,10 @@ export const LESSONS: Lesson[] = [
         combo_removal_board_cards: ['Jh'],
         combo_removal_prompt: 'Tap every JJ combination the J♥ on the flop makes impossible.',
         combo_removal_explanation: "The J♥ is on the board, so only J♠/J♦/J♣ remain to pair up — 3 of the 6 JJ combinations survive. The book notes 99 works out identically for the same reason (the 9♥ is also on board).",
+        combo_removal_partial_credit_note:
+          'The J♥ pairs with each of the other three jacks — 3 combos impossible, 3 still live. If the count was right but the specific tiles were wrong, that is reading the grid by rank when removal only ever works suit by suit.',
+        combo_removal_takeaway:
+          'A card removes combinations identically whether it is in your hand or lying on the board. The deck does not care where it went — only that it is gone.',
         source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Hand Ranges as Combinations', example: 'HJ Open vs BB Call — A♣J♥9♥ Flop', type: 'exact_derived' },
         xp: 15,
       },
@@ -15570,6 +15638,10 @@ export const LESSONS: Lesson[] = [
         combo_removal_hero_cards: ['3d'],
         combo_removal_prompt: "Tap every 33 combination Hero's own 3♦ makes impossible.",
         combo_removal_explanation: "Hero's own 3♦ removes exactly the 3 combinations built from it, leaving 3 of the 6 — the same math as fhtc-s6's A♠, just a different rank.",
+        combo_removal_partial_credit_note:
+          'The 3♦ pairs with 3♠, 3♥ and 3♣ — 3 gone, 3 left. Identical arithmetic to the ace exercise, which is the point: the rank never changes the mechanic.',
+        combo_removal_takeaway:
+          'Your own cards block your opponent exactly as hard as the board does. Every card you hold is a card they cannot have.',
         source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Hand Ranges as Combinations', example: 'HJ Open vs BB Call — A♣J♥9♥ Flop', type: 'exact_derived' },
         xp: 15,
       },
@@ -15584,6 +15656,10 @@ export const LESSONS: Lesson[] = [
         combo_removal_hero_cards: ['Ad'],
         combo_removal_prompt: 'Tap every AA combination that is now impossible.',
         combo_removal_explanation: "The board's A♣ and Hero's own A♦ each remove combinations built from that exact card — together they eliminate 5 of the 6, leaving only A♠A♥.",
+        combo_removal_partial_credit_note:
+          'With two aces already accounted for, A♠A♥ is the only combination left standing. A near-miss here almost always means counting the board\'s ace or Hero\'s ace, but not both at once.',
+        combo_removal_takeaway:
+          'Removal stacks. Two known cards of the same rank leave a pocket pair with almost nothing — which is why "they could still have aces" is usually far less true than it feels.',
         source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Hand Ranges as Combinations', example: 'HJ Open vs BB Call — A♣J♥9♥ Flop', type: 'exact_derived' },
         xp: 20,
       },
@@ -15668,6 +15744,12 @@ export const LESSONS: Lesson[] = [
         combo_removal_subject: 'AK',
         combo_removal_known_cards: ['Kd'],
         combo_removal_prompt: 'Tap every AK combination Villain can no longer hold once K♦ is accounted for.',
+        combo_removal_explanation:
+          'AK is 16 combinations — 4 suited and 12 offsuit. The K♦ appears in exactly 4 of them, one alongside each ace. The other 12 are untouched.',
+        combo_removal_partial_credit_note:
+          'Holding one specific king leaves every AK combo built on a different king fully live — three quarters of the class survives. Tapping more than four usually comes from "a king blocks AK," which overstates the effect by a long way.',
+        combo_removal_takeaway:
+          'A card can only remove the combinations that literally contain it. Blocker effects get counted, never estimated.',
         xp: 15,
       },
       {
@@ -15678,6 +15760,12 @@ export const LESSONS: Lesson[] = [
         combo_removal_subject: 'KK',
         combo_removal_known_cards: ['Kd'],
         combo_removal_prompt: 'Tap every KK combination Villain can no longer hold once K♦ is accounted for.',
+        combo_removal_explanation:
+          'KK is 6 combinations, and the K♦ pairs with each of the other three kings — 3 impossible, 3 still perfectly live.',
+        combo_removal_partial_credit_note:
+          'One known card of a rank removes exactly half a pocket pair, never all of it. If you tapped all six, that is the "I have a king, so they cannot have kings" instinct — the count is what disproves it.',
+        combo_removal_takeaway:
+          'Holding one card of a rank halves a pocket pair, from 6 combos to 3. It never removes the pair, and half a range is still a range.',
         xp: 15,
       },
       {
@@ -15769,6 +15857,18 @@ export const LESSONS: Lesson[] = [
           { id: 'not_value', label: 'Not Value' },
         ],
         range_bucket_correct: { AA: 'value', A9s: 'value', '94s': 'value', '76s': 'not_value', '87s': 'not_value', '65s': 'not_value' },
+        range_bucket_hand_notes: {
+          AA: 'A set of aces — the strongest hand Villain can arrive with here, and the one hand Hero\'s top pair is genuinely behind.',
+          A9s: 'Two pair, aces and nines. It beats top pair outright at showdown, so it bets for value.',
+          '94s': 'Two pair, nines and fours — unglamorous, but still ahead of a single pair of aces, which is the only test that matters.',
+          '76s': 'Pairs the river seven, and still loses to top pair aces. A hand that cannot win at showdown is betting as a bluff, however much of the board it hits.',
+          '87s': 'A straight draw that never got there — no pair, no showdown value. Pure air by the river.',
+          '65s': 'Another busted draw. It has to bluff or give up; it can never be value against top pair.',
+        },
+        range_bucket_partial_credit_note:
+          "The split is not strong-looking versus weak-looking — it is strictly whether the hand beats Hero's top pair at showdown. Hands like 76s are the trap: they connect with the board and still lose, which is exactly what makes them bluffs.",
+        range_bucket_takeaway:
+          'Sort a range by what beats YOUR hand, not by what looks strong in the abstract. Value and bluff are always defined relative to the specific hand you are holding.',
         xp: 20,
       },
       {
@@ -15780,6 +15880,12 @@ export const LESSONS: Lesson[] = [
         combo_removal_board_cards: ['Ah'],
         combo_removal_hero_cards: ['Ac'],
         combo_removal_prompt: "Tap every VALUE combination Hero's ace and the board's ace make impossible.",
+        combo_removal_explanation:
+          "Two aces are already accounted for — the board's A♥ and Hero's A♣ — which leaves AA with exactly one possible combination, A♠A♦. 94s shares no card with either ace, so all 4 of its combos survive intact.",
+        combo_removal_partial_credit_note:
+          'Nearly all the removal here lands on AA, so finding that side is most of the answer. 94s is the trap: it is a value hand too, but it contains no ace, and removal only ever follows shared cards.',
+        combo_removal_takeaway:
+          'Removal lands on whichever hands share a card with yours — never evenly across a range. Two aces gutted the top of the value region and left the rest of it exactly as it was.',
         xp: 15,
       },
       {
@@ -15827,6 +15933,12 @@ export const LESSONS: Lesson[] = [
         combo_removal_board_cards: ['Ah'],
         combo_removal_hero_cards: ['Ac', 'Td'],
         combo_removal_prompt: 'Tap every combination (value or bluff) that Hand A makes impossible.',
+        combo_removal_explanation:
+          'A♣T♦ removes 5 of AA\'s 6 combos and nothing else. Neither the ace nor the ten shares a card with 76s or 65s, so all 8 bluff combinations stay live.',
+        combo_removal_partial_credit_note:
+          'Everything this hand removes sits on the value side — if the value half was right, the mechanic was right. Tapping a bluff combo is worth re-checking against the actual cards: a ten and an ace share no rank with 7, 6 or 5.',
+        combo_removal_takeaway:
+          'Blocking value while leaving the bluffs alive is the best profile a bluff-catcher can have: fewer hands that beat you, and just as many still betting as a bluff.',
         xp: 15,
       },
       {
@@ -15839,6 +15951,12 @@ export const LESSONS: Lesson[] = [
         combo_removal_board_cards: ['Ah'],
         combo_removal_hero_cards: ['Ac', '7c'],
         combo_removal_prompt: 'Tap every combination Hand A′ makes impossible.',
+        combo_removal_explanation:
+          "The same 5 AA combos disappear, and this time the 7♣ takes one more with it — 7♣6♣, one of 76s's four bluff combinations. Identical made hand to A♣T♦, one extra bluff removed.",
+        combo_removal_partial_credit_note:
+          'The AA half is word-for-word the previous step, so getting that far is the easy part. The single combination that separates the two hands is 7♣6♣ — the only 76s combo built on Hero\'s exact seven.',
+        combo_removal_takeaway:
+          'Swapping a kicker cannot change your showdown strength, but it can change which of your opponent\'s bluffs still exist — and that is what decides a close call.',
         xp: 15,
       },
       {
@@ -15979,6 +16097,15 @@ export const LESSONS: Lesson[] = [
         board_rank_sort_target: ['act-td', 'ac-7c', 'ac-6c'],
         board_rank_sort_high_label: 'Best blocker',
         board_rank_sort_low_label: 'Worst blocker',
+        board_rank_sort_item_notes: {
+          'act-td': "Blocks 5 of AA's 6 combos and touches neither bluff class. Maximum pressure on the value hands, zero cost to the bluffs Hero needs Villain to still be holding — the best profile a caller can have.",
+          'ac-7c': "Blocks the same 5 AA combos, but the 7♣ also kills 7♣6♣ — 1 of 76s's 4 bluff combos. Same value removed, one fewer bluff left alive, so it has to rank below A♣T♦.",
+          'ac-6c': "Blocks the same 5 AA combos, but the 6♣ collides with TWO bluff classes at once — 7♣6♣ and 6♣5♣, 2 of the 8 bluff combos. Same value pressure, double the collateral damage, so it ranks last.",
+        },
+        board_rank_sort_partial_credit_note:
+          "All three hands block value identically — 5 of AA's 6 combos — so noticing that they are not interchangeable is already the harder half of this question. The ordering turns purely on the second card: how many of Villain's bluffs each kicker happens to kill (0, then 1, then 2).",
+        board_rank_sort_takeaway:
+          'When two hands show down the same, rank them by what they remove from the bluffs, not by kicker strength. Every bluff combo you block is a combo you can no longer get paid by.',
         xp: 20,
       },
       {
@@ -16080,6 +16207,12 @@ export const LESSONS: Lesson[] = [
         flush_pyramid_dead_ranks: ['8', '3', '2'],
         flush_pyramid_known_cards: ['Ah'],
         flush_pyramid_prompt: 'Hero holds A♥K♠ — the nut blocker. Tap every tier of the pyramid this card affects.',
+        flush_pyramid_explanation:
+          "The ace is the highest heart left in the deck, so it appears in exactly one place: its own tier. Holding A♥ removes all 9 nut-flush combos and not a single combo anywhere else — every other tier is exactly as full as it was. That is what makes this specific card so powerful: Villain's range now contains zero hands that beat a flush, so there are no traps left to run into.",
+        flush_pyramid_partial_credit_note:
+          "Expecting a big card to reach into several tiers is a sound instinct — most cards do exactly that, because a tier is named for its HIGH card and so every rank also sits as the low card of every tier above it. The ace is the one exception: nothing outranks it, so there is no tier above for it to appear in.",
+        flush_pyramid_takeaway:
+          "What makes a blocker strong is not the rank on the card — it is whether the combos it removes were the ones that could actually beat you. The ace matters here because the one tier it empties is the only tier that had Hero drawing dead.",
         source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Blocker Effects', example: 'Blocker Example 1', type: 'source_reconstructed' },
         xp: 20,
       },
@@ -16148,6 +16281,12 @@ export const LESSONS: Lesson[] = [
         flush_pyramid_dead_ranks: ['8', '3', '2'],
         flush_pyramid_known_cards: ['Kh'],
         flush_pyramid_prompt: 'Tap every tier this card affects — even partially.',
+        flush_pyramid_explanation:
+          "K♥ empties the entire K-high tier — all 8 of those combos — and takes exactly one more combo out of the nut tier: A♥K♥. That second hit is the part almost everyone misses, and it happens because a tier is named for its HIGH card, so the king also sits as the low card inside the tier above it. Add it up and 8 of Villain's 9 nut-flush traps are still live. What K♥ actually removed was the K-high flushes — hands that were only ever going to call or fold, never the hands that stack Hero. That is the whole reason this blocker is worth so much less than it looks: the ace last lesson left Villain with zero traps, the king leaves 8 of 9 sitting there, and Hero can no longer price a bet as though the traps are gone.",
+        flush_pyramid_partial_credit_note:
+          "Reading K♥ as \"the king lives in the K-high tier\" is the natural first pass, and it is genuinely right — that tier really is wiped out. The step it skips is that every card also appears as the LOW card of every tier above its own, which is the only reason K♥ reaches the nut tier at all.",
+        flush_pyramid_takeaway:
+          "A blocker is only worth something if it removes the combinations you actually need your opponent NOT to have. Count what a card removes tier by tier before calling it a good blocker — never by which tier it appears to belong to.",
         source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Blocker Effects', example: 'Blocker Example 2', type: 'source_reconstructed' },
         xp: 20,
       },
@@ -16295,6 +16434,12 @@ export const LESSONS: Lesson[] = [
         combo_removal_subject: 'AA',
         combo_removal_hero_cards: ['Ac'],
         combo_removal_prompt: "RANGE: AA or 76s. REGION: AA is the value here. COMBOS: 6 possible. REMOVAL — tap every AA combination Hero's ace removes.",
+        combo_removal_explanation:
+          "Hero's A♣ pairs with each of the other three aces, so 3 of AA's 6 combos are impossible. 76s contains no ace at all and is completely untouched.",
+        combo_removal_partial_credit_note:
+          'One ace can only remove the three AA combinations it is part of — the other three are built from aces nobody can see. Getting the count right is the whole skill here; the tiles follow from it.',
+        combo_removal_takeaway:
+          "Read removal one direction at a time: which of MY cards appears in which of THEIR hands. Anything that shares no rank with your cards is unaffected, full stop.",
         xp: 15,
       },
       {
@@ -16320,6 +16465,12 @@ export const LESSONS: Lesson[] = [
         combo_removal_subject: 'JJ',
         combo_removal_hero_cards: ['Jc'],
         combo_removal_prompt: 'Tap every JJ combination Hero\'s jack removes.',
+        combo_removal_explanation:
+          "Hero's J♣ pairs with the other three jacks — 3 of JJ's 6 combos gone, 3 remaining. 54s shares no card with a jack, so the bluff side is untouched.",
+        combo_removal_partial_credit_note:
+          'Same shape as Scenario 1 with the ranks swapped, which is exactly what the drill is testing: the arithmetic does not care whether the pair is aces or jacks.',
+        combo_removal_takeaway:
+          'The mechanic is rank-independent. One held card halves a pocket pair and leaves every hand that does not contain it completely alone.',
         xp: 15,
       },
       {
@@ -16344,6 +16495,12 @@ export const LESSONS: Lesson[] = [
         combo_removal_subject: 'QQ',
         combo_removal_hero_cards: ['Qc'],
         combo_removal_prompt: 'Tap the impossible combinations.',
+        combo_removal_explanation:
+          "Hero's Q♣ pairs with the other three queens — 3 of QQ's 6 combos impossible. T8s contains neither a queen nor a club Hero holds, so all of it survives.",
+        combo_removal_partial_credit_note:
+          'Third run of the same pattern, and the answer is the same 3-of-6 every time. If this one slipped, it is worth checking whether the tiles were read by suit rather than by rank.',
+        combo_removal_takeaway:
+          'Once you can do this in one pass — which of my cards, in which of their hands, how many combos — you can do it at the table, where nobody hands you a grid.',
         xp: 15,
       },
       {
@@ -16401,6 +16558,12 @@ export const LESSONS: Lesson[] = [
         combo_removal_subject: 'KK',
         combo_removal_hero_cards: ['Kd'],
         combo_removal_prompt: 'Tap every KK combination Hero\'s K♦ removes.',
+        combo_removal_explanation:
+          "Hero's K♦ pairs with the other three kings — 3 of KK's 6 combinations are impossible before a card is even dealt.",
+        combo_removal_partial_credit_note:
+          'Half of KK survives, exactly as it did in Lesson 9.1. This step is deliberately familiar — it is the small, visible slice of the 350-combo range the next step scales it up to.',
+        combo_removal_takeaway:
+          'This six-combo arithmetic is the same arithmetic that shrinks a 350-combo range to 324. The method never changes, only how many hand classes it applies to at once.',
         xp: 15,
       },
       {
@@ -16442,6 +16605,12 @@ export const LESSONS: Lesson[] = [
         flush_pyramid_dead_ranks: ['8', '3', '2'],
         flush_pyramid_known_cards: ['Ah'],
         flush_pyramid_prompt: 'Tap every tier Hero\'s nut blocker affects.',
+        flush_pyramid_explanation:
+          "Same answer as the Nut Blocker lesson, and for the same structural reason: the ace is the highest heart left, so it lives in one tier only. A♥ empties all 9 nut-flush combos and leaves every other tier completely full — Villain cannot hold a hand that beats a flush.",
+        flush_pyramid_partial_credit_note:
+          "If you marked extra tiers, you were applying the right general rule — most cards DO touch several tiers, because each one also sits as the low card of every tier above its own. The ace is the single card that rule cannot apply to.",
+        flush_pyramid_takeaway:
+          'Ask what a card removes, not how big it is. A blocker earns its value only when the combos it deletes are the ones that were going to beat you.',
         source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Blocker Effects', example: 'Blocker Example 1', type: 'source_reconstructed' },
         xp: 20,
       },
@@ -16638,7 +16807,7 @@ export const LESSONS: Lesson[] = [
         strategy_response_lab_equity_when_checked: PRESSURE_GAME_DEFAULT.equityWhenChecked,
         strategy_response_lab_fixed_villain_freq: 0.3,
         strategy_response_lab_tolerance: 0.1,
-        xp: 20,
+        xp: 22,
       },
       {
         id: 'fbr-s3',
@@ -16684,7 +16853,7 @@ export const LESSONS: Lesson[] = [
         strategy_response_lab_equity_when_checked: PRESSURE_GAME_DEFAULT.equityWhenChecked,
         strategy_response_lab_fixed_villain_freq: 0.7,
         strategy_response_lab_tolerance: 0.1,
-        xp: 20,
+        xp: 24,
       },
       {
         id: 'fbr-s6',
@@ -16869,7 +17038,7 @@ export const LESSONS: Lesson[] = [
             feedback: 'BB\'s guaranteed equilibrium EV (10.45) isn\'t half the pot, and there\'s no rule that equilibria split anything evenly. What\'s guaranteed is stability, not an even split.',
           },
         ],
-        xp: 22,
+        xp: 20,
       },
       {
         id: 'sl-s4',
@@ -16914,7 +17083,7 @@ export const LESSONS: Lesson[] = [
         unilateral_deviation_test_pot: PRESSURE_GAME_DEFAULT.pot,
         unilateral_deviation_test_bet: PRESSURE_GAME_DEFAULT.bet,
         unilateral_deviation_test_equilibrium: { heroFreq: 0, villainFreq: 50 },
-        xp: 24,
+        xp: 20,
       },
       {
         id: 'npi-s3',
@@ -18123,6 +18292,125 @@ export const LESSONS: Lesson[] = [
         xp: 12,
       },
       {
+        id: 'cbe-practice-intro',
+        type: 'concept_reveal',
+        concept_ids: ['range_composition'],
+        concept_title: 'Practice: Apply It',
+        concept_content: "Three short exercises, same two boards, three different angles — a c-betting decision, a single hand viewed on both boards, and a plausible-sounding mistake to catch. Each gets harder than the last.",
+        xp: 4,
+      },
+      {
+        id: 'cbe-ex1',
+        type: 'decision_spot',
+        concept_ids: ['range_composition'],
+        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Ch.11, "The Value of Donk Betting", p.635 — A76r c-betting frequency', type: 'exact_derived' },
+        narrative: `Exercise 1. Back to A76r: IP is ${A76R_SCENARIO.strongBucket.ip}% Strong, BB is only ${A76R_SCENARIO.strongBucket.bb}% Strong (raw equity ${A76R_SCENARIO.equity.ip}/${A76R_SCENARIO.equity.bb}). The book states IP's real GTO frequency here is to continuation-bet 100% of their range, every single time.`,
+        decision_spot_question: 'Why does the composition support betting 100% of the range, rather than something more moderate?',
+        options: [
+          {
+            id: 'concentration',
+            label: "IP's range is so concentrated at the top that BB has almost nothing on the other side capable of punishing a bet",
+            quality: 'perfect',
+            feedback: `Right. With only ${A76R_SCENARIO.strongBucket.bb}% Strong hands and a lopsided edge across the rest of the range too, BB has to fold or continue with mostly Weak/Trash material against any bet-size. That's what makes betting every single hand safe — the concentration at the top, not the raw ${A76R_SCENARIO.equity.ip}/${A76R_SCENARIO.equity.bb} split by itself.`,
+          },
+          {
+            id: 'equity_size',
+            label: 'A 24-point raw equity edge is always enough on its own to justify a 100% betting frequency',
+            quality: 'mistake',
+            feedback: "This treats raw equity size as a rule of thumb it isn't. A 24-point edge sitting on top of an EVEN bucket distribution would not come close to justifying betting every hand — it's specifically the extreme Strong-bucket concentration that does that here. Raw equity size alone never sets a frequency.",
+          },
+          {
+            id: 'position_only',
+            label: 'Being in position means you should always bet your whole range on the flop',
+            quality: 'mistake',
+            feedback: "Position helps, but it isn't sufficient by itself — Module 7 already showed plenty of boards where the in-position player checks back a large share of their range despite having position. What's different on A76r is the RANGE composition, not the seat.",
+          },
+        ],
+        xp: 12,
+      },
+      {
+        id: 'cbe-ex1-takeaway',
+        type: 'concept_reveal',
+        concept_ids: ['range_composition'],
+        concept_title: 'Key Takeaway 1',
+        concept_content: 'A specific betting frequency is justified by the SHAPE of your composition — how concentrated your strength is — not by the size of your raw equity edge.',
+        xp: 4,
+      },
+      {
+        id: 'cbe-ex2',
+        type: 'decision_spot',
+        concept_ids: ['range_composition'],
+        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Ch.11, "The Value of Donk Betting", p.634 — IP\'s Ax equity on A76r vs 654r', type: 'exact_derived' },
+        narrative: `Exercise 2. IP holds AJo on two separate hands. On A76r, AJo IS top pair, top kicker — part of the book's own "any Ax averages ${A76R_SCENARIO.ipTopPairAvgEquity}% equity" figure. On 654r, the identical AJo has no pair at all — just ace-high, part of the book's own "Ax averages ${CS_654R_SCENARIO.ipAxAvgEquity}% equity, effectively turning them into weak hands" figure.`,
+        decision_spot_question: 'The preflop hand never changed. Why did its performance change so drastically between the two boards?',
+        options: [
+          {
+            id: 'board_defines_class',
+            label: 'The board — not the starting hand — determines what hand-class AJo actually becomes on that runout',
+            quality: 'perfect',
+            feedback: `Exactly — this is composition thinking applied to a single combo instead of a whole range. "AJo" was never a fixed asset with a fixed value; A76r turns it into a made hand with real showdown value (${A76R_SCENARIO.ipTopPairAvgEquity}% average equity), while 654r leaves it completely unpaired, pushing it into the range's weak tier (${CS_654R_SCENARIO.ipAxAvgEquity}% average equity) — the book's own words, "effectively turning them into weak hands."`,
+          },
+          {
+            id: 'weak_preflop_hand',
+            label: 'AJo is just a below-average preflop hand, so it should underperform on most flops',
+            quality: 'mistake',
+            feedback: `AJo isn't weak at all here — it performs very well on A76r (${A76R_SCENARIO.ipTopPairAvgEquity}% average equity as top pair, top kicker). The issue was never the hand's preflop quality — 654r simply doesn't let this specific hand pair at all.`,
+          },
+          {
+            id: 'different_measurements',
+            label: `The ${A76R_SCENARIO.ipTopPairAvgEquity}% and ${CS_654R_SCENARIO.ipAxAvgEquity}% figures must be measuring different things — the same hand can't really swing that much`,
+            quality: 'mistake',
+            feedback: "They're measuring exactly the same thing — this hand's average equity against BB's range — on two different boards. A 36-point swing is real, and it's precisely the point: board texture can turn the identical starting hand into either a genuine value hand or an air-adjacent one.",
+          },
+        ],
+        xp: 14,
+      },
+      {
+        id: 'cbe-ex2-takeaway',
+        type: 'concept_reveal',
+        concept_ids: ['range_composition'],
+        concept_title: 'Key Takeaway 2',
+        concept_content: "The same preflop hand can belong to an entirely different hand-class from board to board — its actual composition role, not its starting label, is what determines its value.",
+        xp: 4,
+      },
+      {
+        id: 'cbe-ex3',
+        type: 'decision_spot',
+        concept_ids: ['range_composition'],
+        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Ch.11, "The Value of Donk Betting", p.634 — BB\'s bucket shift on 654r vs A76r', type: 'exact_derived' },
+        narrative: `Exercise 3 (the hardest). A player looks only at 654r's raw equity split — BB ${CS_654R_SCENARIO.equity.bb}%, IP ${CS_654R_SCENARIO.equity.ip}% — and concludes: "It's basically a coinflip, so neither range has a real edge here — strategy should be symmetric."`,
+        decision_spot_question: "What's wrong with this conclusion?",
+        options: [
+          {
+            id: 'ignores_composition',
+            label: "It ignores composition — the book's own numbers show BB's good-hand share nearly triples (17% to 40%) and BB's trash collapses (49% to 18%) versus A76r, while IP's Ax hands degrade into IP's own weak tier",
+            quality: 'perfect',
+            feedback: "Exactly the mistake this whole lesson warns against. \"Coinflip\" describes the AVERAGE outcome only. Underneath it, BB's range has quietly become much better-shaped — far more Good hands, far less Trash — while IP's seemingly fine Ax hands have degraded into weak holdings. Treating this as symmetric badly under-uses BB's real, composition-driven edge.",
+          },
+          {
+            id: 'nothing_wrong',
+            label: 'Nothing — a near-even raw equity number really does mean neither side has a meaningful edge',
+            quality: 'mistake',
+            feedback: "This is exactly the trap the lesson built toward. 654r is the clearest example in the whole lesson of a near-coinflip number hiding a real, exploitable composition edge for BB — trusting the raw split alone would miss it completely.",
+          },
+          {
+            id: 'right_for_654_only',
+            label: 'The conclusion is fine for 654r specifically, but the same reasoning would fail on A76r',
+            quality: 'mistake',
+            feedback: "The reasoning fails on BOTH boards, for the same underlying reason — trusting the raw number instead of the buckets. On A76r the raw number happens to point the right direction (IP is genuinely favored) but still badly understates HOW lopsided the real edge is; on 654r it points in a misleadingly reassuring direction entirely. Neither board rewards trusting the raw split alone.",
+          },
+        ],
+        xp: 16,
+      },
+      {
+        id: 'cbe-ex3-takeaway',
+        type: 'concept_reveal',
+        concept_ids: ['range_composition'],
+        concept_title: 'Key Takeaway 3',
+        concept_content: "A near-coinflip raw equity number is exactly where composition analysis matters most — it's the situation most likely to be hiding a real, exploitable edge.",
+        xp: 4,
+      },
+      {
         id: 'cbe-s8',
         type: 'concept_reveal',
         concept_ids: ['range_composition'],
@@ -18851,7 +19139,7 @@ export const LESSONS: Lesson[] = [
             feedback: "Correct. Example A is the ceiling case — maximum EV, but only achievable against an opponent incapable of punishing any size. A real, aware opponent who can check-raise anything pushes the strategy toward Example C's structure: fewer sizes, narrower value range willing to use what remains.",
           },
           {
-            id: 'always_c', label: 'Example C is always correct because it\'s simpler to execute', quality: 'mistake',
+            id: 'always_c', label: "Example C is generally correct because it's simpler to execute", quality: 'mistake',
             feedback: 'Simplicity isn\'t the driver here — EXPOSURE is. Example C is the correct response only when the opponent can actually punish every size on the menu. Against an opponent who can\'t, Example A\'s richer split captures more EV.',
           },
         ],
@@ -18989,7 +19277,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'What does the book say the optimal bet-sizing strategy looks like here, and why?',
         options: [
           {
-            id: 'all_in_only', label: "Simply all-in, since the stack behind a pot-size bet is too shallow to matter", quality: 'perfect',
+            id: 'all_in_only', label: "Simply all-in — the stack behind a pot-size bet is too shallow to matter", quality: 'perfect',
             feedback: "Correct — this is the simplest band conceptually. When the stack is already this shallow, 'bet pot' and 'go all-in' are close enough to the same action that the added complexity of keeping them separate isn't worth anything.",
           },
           {

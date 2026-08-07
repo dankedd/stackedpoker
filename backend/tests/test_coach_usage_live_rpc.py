@@ -98,8 +98,10 @@ def test_reserve_coach_usage_rpc_succeeds_against_real_supabase(disposable_user_
     usage, allowed = run(coach_usage.reserve_coach_usage(disposable_user_id, settings))
     assert allowed is True
     assert usage.used == 1
-    assert usage.limit == 10
-    assert usage.remaining == 9
+    # A freshly-created disposable user gets subscription_tier='free' via the
+    # handle_new_user trigger — 3/day is entitlements.FREE_AI_COACH_DAILY_LIMIT.
+    assert usage.limit == 3
+    assert usage.remaining == 2
 
 
 def test_reserve_then_release_nets_to_zero_against_real_supabase(disposable_user_id):
@@ -115,14 +117,16 @@ def test_reserve_then_release_nets_to_zero_against_real_supabase(disposable_user
 
 
 def test_reserve_at_the_limit_is_rejected_against_real_supabase(disposable_user_id):
-    """get_ai_coach_entitlement always resolves 10 today — this drives a real
-    user to the actual default limit rather than a synthetic one, so it also
-    catches any issue specific to hitting exactly the 10th/11th call."""
+    """A fresh disposable user is subscription_tier='free', so
+    get_ai_coach_entitlement resolves the real free-tier limit (3/day) —
+    this drives the user to the actual default limit rather than a synthetic
+    one, so it also catches any issue specific to hitting exactly the
+    3rd/4th call."""
     settings = get_settings()
-    for _ in range(10):
+    for _ in range(3):
         usage, allowed = run(coach_usage.reserve_coach_usage(disposable_user_id, settings))
         assert allowed is True
     usage, allowed = run(coach_usage.reserve_coach_usage(disposable_user_id, settings))
     assert allowed is False
-    assert usage.used == 10
+    assert usage.used == 3
     assert usage.remaining == 0

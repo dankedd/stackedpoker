@@ -66,13 +66,18 @@ async def _ensure_profile(user_id: str) -> None:
         logger.warning("Error auto-creating profile for user %s: %s", user_id, exc)
 
 
-async def get_user_profile(user_id: str) -> dict:
+async def get_user_profile(user_id: str, settings=None) -> dict:
     """Fetch plan + usage for a user via the service role key (bypasses RLS).
 
     Never raises on infrastructure failures — returns safe defaults so that a
     Supabase outage or missing migration never hard-blocks analysis.
+
+    `settings` is optional (defaults to the real `get_settings()`) so callers
+    that already thread a `settings` object through for testability — like
+    coach_usage.py — can inject a fake one instead of this function silently
+    reaching for the real, unpatched config.
     """
-    settings = get_settings()
+    settings = settings or get_settings()
     if not settings.supabase_url or not settings.supabase_service_role_key:
         logger.debug("Supabase not configured — using admin fallback for user %s", user_id)
         return {"subscription_tier": "admin", "hands_analyzed_count": 0, "analyses_limit": 9999}

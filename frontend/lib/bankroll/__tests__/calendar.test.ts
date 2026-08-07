@@ -4,6 +4,7 @@ import { dateKeyOf, buildCalendarDayMap, dayStatus, buildMonthGrid, type Calenda
 function session(overrides: Partial<CalendarSession>): CalendarSession {
   return {
     id: "s1",
+    session_type: "cash",
     started_at: "2026-01-15T14:00:00",
     buy_in_amount: 0,
     cash_out_amount: 0,
@@ -12,6 +13,8 @@ function session(overrides: Partial<CalendarSession>): CalendarSession {
     variant: null,
     stakes: null,
     notes: null,
+    tournament_name: null,
+    finishing_position: null,
     ...overrides,
   };
 }

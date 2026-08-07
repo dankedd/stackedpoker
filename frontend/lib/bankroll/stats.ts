@@ -1,6 +1,7 @@
 import { computeSessionResult } from "./sessionForm";
 
 export interface SessionForStats {
+  session_type: string;
   started_at: string;
   buy_in_amount: number;
   cash_out_amount: number | null;
@@ -9,6 +10,9 @@ export interface SessionForStats {
   site: string | null;
   stakes: string | null;
   variant: string | null;
+  fee_amount: number | null;
+  prize_amount: number | null;
+  finishing_position: number | null;
 }
 
 function settledOf(sessions: SessionForStats[]): SessionForStats[] {
@@ -53,6 +57,73 @@ export function computeWinRate(sessions: SessionForStats[]): number | null {
   if (settled.length === 0) return null;
   const wins = settled.filter((s) => computeSessionResult(s) >= 0).length;
   return (wins / settled.length) * 100;
+}
+
+export interface TournamentStats {
+  tournamentCount: number;
+  totalBuyIns: number;
+  avgBuyIn: number | null;
+  avgFinish: number | null;
+  itmPercent: number | null;
+  roi: number | null;
+  totalPrizes: number;
+  biggestCash: number | null;
+}
+
+const EMPTY_TOURNAMENT_STATS: TournamentStats = {
+  tournamentCount: 0,
+  totalBuyIns: 0,
+  avgBuyIn: null,
+  avgFinish: null,
+  itmPercent: null,
+  roi: null,
+  totalPrizes: 0,
+  biggestCash: null,
+};
+
+/**
+ * Tournament-only stats (buy-ins, average finish, ITM%, ROI, prizes). Never
+ * throws on missing data — every field that can't be computed (no settled
+ * tournaments yet, no finishing positions recorded, ...) comes back null/0
+ * instead, so the dashboard can render "—" rather than crash.
+ *
+ * "Buy-ins" here means the pure buy-in a player paid, excluding the entry
+ * fee — bankroll_sessions.buy_in_amount actually stores buy-in + fee (see
+ * the comment on BankrollSessionRow in lib/bankroll/types.ts, and
+ * supabase_bankroll_tournament_schema.sql, for why), so fee_amount is
+ * subtracted back out here to report the number the player actually typed
+ * into the "Buy-in" field. ROI's denominator deliberately uses the raw
+ * buy_in_amount (buy-in + fee) instead — ROI is "return on money actually
+ * spent", which should include the fee.
+ */
+export function computeTournamentStats(sessions: SessionForStats[]): TournamentStats {
+  const tournaments = settledOf(sessions).filter((s) => s.session_type === "tournament");
+  if (tournaments.length === 0) return EMPTY_TOURNAMENT_STATS;
+
+  const pureBuyIns = tournaments.map((t) => t.buy_in_amount - (t.fee_amount ?? 0));
+  const totalBuyIns = pureBuyIns.reduce((sum, b) => sum + b, 0);
+  const totalCost = tournaments.reduce((sum, t) => sum + t.buy_in_amount, 0);
+  const totalProfit = tournaments.reduce((sum, t) => sum + computeSessionResult(t), 0);
+  const totalPrizes = tournaments.reduce((sum, t) => sum + (t.prize_amount ?? 0), 0);
+
+  const finishes = tournaments.map((t) => t.finishing_position).filter((p): p is number => p != null);
+  const avgFinish = finishes.length > 0 ? finishes.reduce((sum, p) => sum + p, 0) / finishes.length : null;
+
+  const cashes = tournaments.filter((t) => (t.prize_amount ?? 0) > 0).length;
+
+  const prizesRecorded = tournaments.filter((t) => t.prize_amount != null);
+  const biggestCash = prizesRecorded.length > 0 ? Math.max(...prizesRecorded.map((t) => t.prize_amount!)) : null;
+
+  return {
+    tournamentCount: tournaments.length,
+    totalBuyIns,
+    avgBuyIn: totalBuyIns / tournaments.length,
+    avgFinish,
+    itmPercent: (cashes / tournaments.length) * 100,
+    roi: totalCost > 0 ? (totalProfit / totalCost) * 100 : null,
+    totalPrizes,
+    biggestCash,
+  };
 }
 
 export type BreakdownDimension = "site" | "stakes" | "variant" | "month" | "year";

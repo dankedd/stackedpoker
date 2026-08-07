@@ -49,8 +49,10 @@ def _row_matches(row: dict, filters: dict) -> bool:
 
 
 class FakeResponse:
-    def __init__(self, data):
+    def __init__(self, data, status_code: int = 200):
         self._data = data
+        self.status_code = status_code
+        self.text = "" if data is None else str(data)
 
     def raise_for_status(self):
         pass
@@ -131,8 +133,15 @@ class FakeAsyncClient:
             path, query = rest, ""
         return path, query
 
-    async def get(self, url, headers=None):
+    async def get(self, url, headers=None, params=None):
         path, query = self._split(url)
+        # usage_service.get_user_profile passes filters via httpx's `params=`
+        # kwarg rather than pre-baked into the URL (unlike coach_usage.py's
+        # own _supabase_get) — fold them into the same query string so
+        # _parse_filters/select see both calling conventions identically.
+        if params:
+            extra = "&".join(f"{k}={v}" for k, v in params.items())
+            query = f"{query}&{extra}" if query else extra
         return FakeResponse(self.db.select(path, query))
 
     async def post(self, url, headers=None, json=None):
@@ -1045,27 +1054,30 @@ def test_action_instructions_never_ask_for_exact_frequencies_beyond_hierarchy():
         assert "frequency" not in instruction.lower()
 
 
-# ── Daily quota (10 msgs/UTC day, server-authoritative, concurrency-safe) ──────
+# ── Daily quota (free tier = 3 msgs/UTC day via entitlements.py, server-
+#    authoritative, concurrency-safe). fake_db's profiles table is left
+#    empty, so usage_service.get_user_profile falls back to its default
+#    free-tier profile — every user in this suite is implicitly "free".
 
 
-def test_first_message_reports_1_of_10_used(fake_db, captured_reply):
+def test_first_message_reports_1_of_3_used(fake_db, captured_reply):
     user = {"sub": "user-quota-1"}
     body = coach_module.CoachMessageBody(message="hi", context={})
     result = run(coach_module.coach_message(body, FakeRequest(), user))
-    assert result["usage"] == {"limit": 10, "used": 1, "remaining": 9, "reset_at": result["usage"]["reset_at"]}
+    assert result["usage"] == {"limit": 3, "used": 1, "remaining": 2, "reset_at": result["usage"]["reset_at"]}
 
 
-def test_tenth_message_allowed_eleventh_rejected(fake_db, captured_reply):
+def test_third_message_allowed_fourth_rejected(fake_db, captured_reply):
     # Distinct IP per multi-request test — the per-IP rate limiter (20/60s,
     # separate from this daily quota) is a global in-memory window shared
     # across the whole test process, not reset per-test.
     req = FakeRequest(ip="10.0.1.1")
     user = {"sub": "user-quota-2"}
     last_result = None
-    for _ in range(10):
+    for _ in range(3):
         body = coach_module.CoachMessageBody(message="hi", context={})
         last_result = run(coach_module.coach_message(body, req, user))
-    assert last_result["usage"]["used"] == 10
+    assert last_result["usage"]["used"] == 3
     assert last_result["usage"]["remaining"] == 0
 
     body = coach_module.CoachMessageBody(message="one more", context={})
@@ -1073,34 +1085,34 @@ def test_tenth_message_allowed_eleventh_rejected(fake_db, captured_reply):
         run(coach_module.coach_message(body, req, user))
     assert exc_info.value.status_code == 429
     assert exc_info.value.detail["code"] == "AI_COACH_DAILY_LIMIT_REACHED"
-    assert exc_info.value.detail["used"] == 10
+    assert exc_info.value.detail["used"] == 3
     assert exc_info.value.detail["remaining"] == 0
 
 
 def test_quota_rejection_never_reaches_the_llm(fake_db, captured_reply):
-    """The 11th request must be rejected before generate_coach_reply is ever
+    """The 4th request must be rejected before generate_coach_reply is ever
     called — a rejected request costs nothing and never touches the AI."""
     req = FakeRequest(ip="10.0.1.2")
     user = {"sub": "user-quota-3"}
-    for _ in range(10):
+    for _ in range(3):
         run(coach_module.coach_message(
             coach_module.CoachMessageBody(message="hi", context={}), req, user,
         ))
-    assert len(captured_reply) == 10
+    assert len(captured_reply) == 3
 
     with pytest.raises(HTTPException):
         run(coach_module.coach_message(
             coach_module.CoachMessageBody(message="one more", context={}), req, user,
         ))
-    assert len(captured_reply) == 10  # unchanged — the 11th never reached the stub
+    assert len(captured_reply) == 3  # unchanged — the 4th never reached the stub
 
 
-def test_concurrent_requests_at_9_of_10_only_one_succeeds(fake_db, captured_reply):
+def test_concurrent_requests_at_2_of_3_only_one_succeeds(fake_db, captured_reply):
     """The core concurrency-safety guarantee: two simultaneous requests when
-    the user is at 9/10 must not both succeed (which would allow 11/10)."""
+    the user is at 2/3 must not both succeed (which would allow 4/3)."""
     req = FakeRequest(ip="10.0.1.3")
     user = {"sub": "user-quota-concurrent"}
-    for _ in range(9):
+    for _ in range(2):
         run(coach_module.coach_message(
             coach_module.CoachMessageBody(message="hi", context={}), req, user,
         ))
@@ -1118,7 +1130,20 @@ def test_concurrent_requests_at_9_of_10_only_one_succeeds(fake_db, captured_repl
     assert len(successes) == 1
     assert len(failures) == 1
     assert failures[0].status_code == 429
-    assert successes[0]["usage"]["used"] == 10
+    assert successes[0]["usage"]["used"] == 3
+
+
+def test_paid_tier_gets_the_unlimited_daily_limit(fake_db, captured_reply):
+    """entitlements.ai_coach_daily_limit reads the real subscription_tier —
+    a pro/premium/admin profile row must resolve to the unlimited sentinel,
+    not the free-tier 3/day fake_db defaults every other test in this file
+    implicitly gets (empty profiles table -> get_user_profile's free fallback)."""
+    fake_db.tables["profiles"] = [{"id": "user-quota-paid", "subscription_tier": "pro"}]
+    user = {"sub": "user-quota-paid"}
+    body = coach_module.CoachMessageBody(message="hi", context={})
+    result = run(coach_module.coach_message(body, FakeRequest(ip="10.0.1.5"), user))
+    assert result["usage"]["limit"] == 2_147_483_647
+    assert result["usage"]["used"] == 1
 
 
 def test_llm_failure_releases_the_reserved_slot(fake_db, monkeypatch):
@@ -1152,7 +1177,7 @@ def test_get_usage_endpoint_has_no_side_effects(fake_db, captured_reply):
 def test_get_usage_reflects_zero_before_any_message(fake_db):
     user = {"sub": "user-quota-fresh"}
     result = run(coach_module.coach_usage(user))
-    assert result["usage"] == {"limit": 10, "used": 0, "remaining": 10, "reset_at": result["usage"]["reset_at"]}
+    assert result["usage"] == {"limit": 3, "used": 0, "remaining": 3, "reset_at": result["usage"]["reset_at"]}
 
 
 def test_reset_at_is_next_utc_midnight(fake_db):
@@ -1168,11 +1193,11 @@ def test_reset_at_is_next_utc_midnight(fake_db):
 def test_quota_isolated_per_user(fake_db, captured_reply):
     """Two different users' daily usage must never share a counter."""
     req = FakeRequest(ip="10.0.1.4")
-    for _ in range(10):
+    for _ in range(3):
         run(coach_module.coach_message(
             coach_module.CoachMessageBody(message="hi", context={}), req, {"sub": "user-quota-a"},
         ))
-    # A different user starts fresh at 0/10, unaffected by user A being maxed out.
+    # A different user starts fresh at 0/3, unaffected by user A being maxed out.
     result = run(coach_module.coach_message(
         coach_module.CoachMessageBody(message="hi", context={}), req, {"sub": "user-quota-b"},
     ))

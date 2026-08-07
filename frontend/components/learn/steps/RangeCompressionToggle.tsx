@@ -78,9 +78,10 @@ export function RangeCompressionToggle({ step, onAnswer, disabled = false }: Ran
               aria-selected={isActive}
               aria-disabled={isLocked}
               disabled={isLocked}
+              tabIndex={isActive ? 0 : -1}
               onClick={() => !isLocked && setActiveIndex(i)}
               className={cn(
-                'rounded-full px-3 py-1.5 text-[11px] font-semibold border transition-all',
+                'rounded-full px-3 py-2 text-[11px] font-semibold border transition-all',
                 isActive
                   ? 'border-violet-500/50 bg-violet-500/15 text-violet-300'
                   : isLocked

@@ -1,7 +1,7 @@
 "use client";
 
-import { Pencil, Trash2, X, Clock, Hash, Brain } from "lucide-react";
-import { cn, formatCurrency } from "@/lib/utils";
+import { Pencil, Trash2, X, Clock, Hash, Brain, Coins, Trophy } from "lucide-react";
+import { cn, formatCurrency, formatOrdinal } from "@/lib/utils";
 import { computeSessionResult } from "@/lib/bankroll/sessionForm";
 import { DeleteConfirmFooter } from "@/components/bankroll/DeleteConfirmFooter";
 import type { BankrollSessionRow } from "@/lib/bankroll/types";
@@ -35,10 +35,14 @@ interface SessionRowProps {
 }
 
 export function SessionRow({ session, currency, mentalScore, confirmingDelete, onEdit, onDelete, onCancelDelete }: SessionRowProps) {
+  const isTournament = session.session_type === "tournament";
   const result = computeSessionResult(session);
   const positive = result >= 0;
   const duration = formatDuration(session.duration_minutes);
-  const metaParts = [session.site, session.variant, session.stakes].filter(Boolean);
+  const metaParts = isTournament
+    ? [session.tournament_name, session.site].filter(Boolean)
+    : [session.site, session.variant, session.stakes].filter(Boolean);
+  const KindIcon = isTournament ? Trophy : Coins;
 
   return (
     <div
@@ -48,11 +52,16 @@ export function SessionRow({ session, currency, mentalScore, confirmingDelete, o
       )}
     >
       <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-foreground truncate">{formatDateTime(session.started_at, session.ended_at)}</p>
-          {metaParts.length > 0 && (
-            <p className="text-xs text-muted-foreground/60 mt-0.5 truncate">{metaParts.join(" · ")}</p>
-          )}
+        <div className="min-w-0 flex items-start gap-2">
+          <div className={cn("flex h-6 w-6 items-center justify-center rounded-lg shrink-0 mt-0.5", isTournament ? "bg-amber-500/10 text-amber-400" : "bg-violet-500/10 text-violet-400")}>
+            <KindIcon className="h-3 w-3" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground truncate">{formatDateTime(session.started_at, session.ended_at)}</p>
+            {metaParts.length > 0 && (
+              <p className="text-xs text-muted-foreground/60 mt-0.5 truncate">{metaParts.join(" · ")}</p>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-0.5 shrink-0">
@@ -113,11 +122,30 @@ export function SessionRow({ session, currency, mentalScore, confirmingDelete, o
             {duration}
           </span>
         )}
-        {session.hands_played != null && (
-          <span className="flex items-center gap-1">
-            <Hash className="h-2.5 w-2.5" />
-            {session.hands_played.toLocaleString()} hands
-          </span>
+        {isTournament ? (
+          <>
+            {session.finishing_position != null && (
+              <span className="flex items-center gap-1">
+                <Trophy className="h-2.5 w-2.5" />
+                {formatOrdinal(session.finishing_position)}{session.field_size != null ? ` of ${session.field_size.toLocaleString()}` : ""}
+              </span>
+            )}
+            <span className="tabular-nums">
+              Buy-in {formatCurrency(session.buy_in_amount - (session.fee_amount ?? 0), currency)}
+            </span>
+            {session.prize_amount != null && session.prize_amount > 0 && (
+              <span className="tabular-nums text-emerald-400/70">
+                Prize {formatCurrency(session.prize_amount, currency)}
+              </span>
+            )}
+          </>
+        ) : (
+          session.hands_played != null && (
+            <span className="flex items-center gap-1">
+              <Hash className="h-2.5 w-2.5" />
+              {session.hands_played.toLocaleString()} hands
+            </span>
+          )
         )}
       </div>
 

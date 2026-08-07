@@ -32,16 +32,26 @@ function calcPotOdds(betPct: number): number {
  *  ratio (e.g. 75/25 -> "3 : 1") when the numbers reduce cleanly, otherwise as
  *  plain percentages. */
 function valueBluffRatioLabel(alphaPct: number): string {
-  const bluff = Math.round(alphaPct)
-  const value = 100 - bluff
-  if (bluff <= 0) return 'All value — no bluffs needed'
-  if (value <= 0) return 'All bluffs'
-  const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b))
-  const divisor = gcd(value, bluff)
-  const v = value / divisor
-  const b = bluff / divisor
-  if (v <= 20 && b <= 20) return `${v} : ${b} (value : bluff)`
-  return `${value}% : ${bluff}% (value : bluff)`
+  const bluffPct = alphaPct
+  const valuePct = 100 - bluffPct
+  const bluffRounded = Math.round(bluffPct)
+  const valueRounded = 100 - bluffRounded
+  if (bluffRounded <= 0) return 'All value — no bluffs needed'
+  if (valueRounded <= 0) return 'All bluffs'
+  // Search small-integer ratios (up to 1:8) for the closest match to the UNROUNDED
+  // value:bluff fraction — rounding both sides to whole percent first (e.g. 66.7/33.3
+  // -> 67/33) breaks clean book ratios like 2:1, since gcd(67,33) = 1. A half-pot bet
+  // must read "2 : 1", not "67% : 33%".
+  let best: { v: number; b: number; error: number } | null = null
+  for (let b = 1; b <= 8; b++) {
+    for (let v = 1; v <= 8; v++) {
+      const candidatePct = (b / (v + b)) * 100
+      const error = Math.abs(candidatePct - bluffPct)
+      if (!best || error < best.error) best = { v, b, error }
+    }
+  }
+  if (best && best.error <= 1.5) return `${best.v} : ${best.b} (value : bluff)`
+  return `${valueRounded}% : ${bluffRounded}% (value : bluff)`
 }
 
 /** Human-readable bet size label */
@@ -225,7 +235,7 @@ export function MdfSlider({ step, onAnswer, disabled = false }: MdfSliderProps) 
         <div className="h-px bg-gradient-to-r from-transparent via-violet-500/20 to-transparent" />
 
         {/* Live calculations */}
-        <div className="grid grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <GaugeBar
             value={mdf}
             color="text-emerald-400"
@@ -244,14 +254,14 @@ export function MdfSlider({ step, onAnswer, disabled = false }: MdfSliderProps) 
            slider position: pot odds (a genuinely different number from Alpha, Ch.2 Table 14 /
            Ch.10 p.600-602) and the value:bluff ratio a polarized range needs at this size. */}
         {variant === 'full_cascade' && (
-          <div className="grid grid-cols-2 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <GaugeBar
               value={potOdds}
               color="text-sky-400"
               label="Pot Odds Offered"
               sublabel="Price a call is getting on this bet"
             />
-            <div className="space-y-1.5" aria-label={`Value to bluff ratio: ${valueBluffRatioLabel(alpha)}`}>
+            <div className="space-y-1.5" role="group" aria-label={`Value to bluff ratio: ${valueBluffRatioLabel(alpha)}`}>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground/70 font-medium">Value:Bluff Ratio</span>
               </div>

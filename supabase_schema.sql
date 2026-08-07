@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   id                   uuid        PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   username             text        UNIQUE,
   avatar_url           text,
-  subscription_tier    text        NOT NULL DEFAULT 'free' CHECK (subscription_tier IN ('free','pro','admin')),
+  subscription_tier    text        NOT NULL DEFAULT 'free' CHECK (subscription_tier IN ('free','pro','premium','admin')),
   hands_analyzed_count integer     NOT NULL DEFAULT 0,
   analyses_limit       integer     NOT NULL DEFAULT 3,  -- 3 for free, 2147483647 for pro/admin
   created_at           timestamptz NOT NULL DEFAULT now(),

@@ -1,9 +1,9 @@
 """AI Coach daily usage quota — server-authoritative, concurrency-safe.
 
-Temporary flat limit (10 messages/UTC day, same for every user) structured
-so a future subscription-tier system only has to change
-`get_ai_coach_entitlement` — nothing in coach.py, CoachChat.tsx, or the
-quota-enforcement RPCs needs to know why a given user has a given limit.
+Per-tier limits are resolved from the user's real subscription_tier via
+app.services.entitlements (free=3/day, pro/premium/admin=unlimited) — nothing
+in coach.py, CoachChat.tsx, or the quota-enforcement RPCs needs to know why a
+given user has a given limit, only `get_ai_coach_entitlement`'s return value.
 
 See supabase_ai_coach_usage_schema.sql for the `ai_coach_usage` table and
 the `reserve_coach_usage`/`release_coach_usage` RPCs this module calls.
@@ -17,23 +17,18 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 
+from app.services.entitlements import ai_coach_daily_limit, get_subscription_tier
+
 logger = logging.getLogger(__name__)
 
-# Entitlement seam: today, every user gets the same "default" tier. A
-# subscription system later adds keys here (free/starter/pro/premium) and
-# get_ai_coach_entitlement looks up the user's actual tier instead of always
-# returning "default" — no caller of this module needs to change.
-AI_COACH_LIMITS: dict[str, dict] = {
-    "default": {"daily_messages": 10},
-}
 
-
-def get_ai_coach_entitlement(user_id: str) -> dict:
-    """Resolves a user's AI Coach entitlement. `user_id` is accepted (not yet
-    used) so a future subscription lookup can key off it without changing
-    this function's signature or any caller."""
-    del user_id  # unused today — kept in the signature for the future lookup
-    return AI_COACH_LIMITS["default"]
+async def get_ai_coach_entitlement(user_id: str, settings) -> dict:
+    """Resolves a user's AI Coach entitlement from their real subscription
+    tier. Takes `settings` (mirroring every other function in this module)
+    so tests that fake Supabase for the usage RPCs also fake it for the
+    profile/tier lookup, instead of this reaching for the real config."""
+    tier = await get_subscription_tier(user_id, settings)
+    return {"daily_messages": ai_coach_daily_limit(tier)}
 
 
 @dataclass
@@ -91,7 +86,7 @@ async def reserve_coach_usage(user_id: str, settings) -> tuple[CoachUsage, bool]
     entitlement limit is resolved server-side and the increment/check is one
     atomic SQL statement, so concurrent requests for the same user can never
     both land the same final slot."""
-    entitlement = get_ai_coach_entitlement(user_id)
+    entitlement = await get_ai_coach_entitlement(user_id, settings)
     limit = entitlement["daily_messages"]
     rows = await _supabase_post(
         "rpc/reserve_coach_usage",
@@ -120,7 +115,7 @@ async def get_coach_usage(user_id: str, settings) -> CoachUsage:
     """Read-only — no side effects, safe to call on every page load/drawer
     open so the frontend shows correct usage even before any message is sent
     this session (and after a refresh)."""
-    entitlement = get_ai_coach_entitlement(user_id)
+    entitlement = await get_ai_coach_entitlement(user_id, settings)
     limit = entitlement["daily_messages"]
     today = datetime.now(timezone.utc).date().isoformat()
     rows = await _supabase_get(

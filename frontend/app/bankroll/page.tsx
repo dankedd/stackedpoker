@@ -42,7 +42,7 @@ export default async function BankrollPage() {
       .maybeSingle(),
     supabase
       .from("bankroll_sessions")
-      .select("started_at, buy_in_amount, cash_out_amount, ev_amount, session_type, variant, stakes, site")
+      .select("started_at, buy_in_amount, cash_out_amount, ev_amount, session_type, variant, stakes, site, fee_amount")
       .eq("user_id", user.id)
       .order("started_at", { ascending: false })
       .limit(2000),
@@ -55,20 +55,32 @@ export default async function BankrollPage() {
   ]);
 
   const overview = overviewRow as unknown as BankrollOverview | null;
-  const sessions = (sessionRows ?? []) as unknown as (BankrollLedgerSession & RecentBankrollSession)[];
+  const sessions = (sessionRows ?? []) as unknown as (BankrollLedgerSession & RecentBankrollSession & { fee_amount: number | null })[];
   const ledgerTransactions = (transactionRows ?? []) as unknown as BankrollLedgerTransaction[];
 
   const currency = settingsRow?.preferred_currency ?? "USD";
   const startingAt = settingsRow?.starting_at ?? user.created_at;
   const buyInRules = (settingsRow?.buy_in_rules ?? {}) as BuyInRules;
 
-  // sessions is already sorted newest-first, so [0] is the most recent session overall.
-  const recentSession = sessions[0] ?? null;
+  // sessions is already sorted newest-first. "Current Stake" is a cash-game
+  // concept (tournaments have no blinds/stakes), so it looks specifically for
+  // the most recent cash session rather than just sessions[0] — otherwise a
+  // player whose latest logged activity was a tournament would see "—" here
+  // even if they have plenty of recent cash session history.
+  const recentSession = sessions.find((s) => s.session_type !== "tournament") ?? null;
 
+  // Tournaments have no blinds-style "stakes" value (it's always null on those
+  // rows), so the tournament category's label falls back to its most recent
+  // buy-in size instead — otherwise this card would always show "—" for
+  // tournament players even with plenty of history.
   const recentStakeByCategory: Partial<Record<BankrollCategory, string>> = {};
   for (const row of sessions) {
     const category = categorizeSession(row.session_type, row.variant);
-    if (category && !recentStakeByCategory[category] && row.stakes) {
+    if (!category || recentStakeByCategory[category]) continue;
+    if (category === "tournament") {
+      const pureBuyIn = row.buy_in_amount - (row.fee_amount ?? 0);
+      if (pureBuyIn > 0) recentStakeByCategory[category] = `${formatCurrency(pureBuyIn, currency)} buy-in`;
+    } else if (row.stakes) {
       recentStakeByCategory[category] = row.stakes;
     }
     if (CATEGORY_ORDER.every((c) => recentStakeByCategory[c])) break;

@@ -67,7 +67,7 @@ export default function BankrollSessionsPage() {
       const [{ data: sessionRows, error: sessionsError }, { data: mentalRows }, { data: settingsRow }] = await Promise.all([
         supabase
           .from("bankroll_sessions")
-          .select("id, session_type, variant, site, stakes, currency, buy_in_amount, cash_out_amount, ev_amount, started_at, ended_at, duration_minutes, hands_played, notes")
+          .select("id, session_type, variant, site, stakes, currency, buy_in_amount, cash_out_amount, ev_amount, started_at, ended_at, duration_minutes, hands_played, notes, tournament_name, fee_amount, prize_amount, field_size, finishing_position")
           .eq("user_id", user.id)
           .order("started_at", { ascending: false })
           .limit(1000),
@@ -122,6 +122,7 @@ export default function BankrollSessionsPage() {
         s.site?.toLowerCase().includes(q) ||
         s.variant?.toLowerCase().includes(q) ||
         s.stakes?.toLowerCase().includes(q) ||
+        s.tournament_name?.toLowerCase().includes(q) ||
         s.notes?.toLowerCase().includes(q)
       );
     }

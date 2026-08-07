@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { computeStreaks, computeBiggestWinLoss, computeWinRate, groupSessionsBy, type SessionForStats } from "../stats";
+import { computeStreaks, computeBiggestWinLoss, computeWinRate, groupSessionsBy, computeTournamentStats, type SessionForStats } from "../stats";
 
 function session(overrides: Partial<SessionForStats>): SessionForStats {
   return {
+    session_type: "cash",
     started_at: "2026-01-01T12:00:00Z",
     buy_in_amount: 0,
     cash_out_amount: 0,
@@ -11,8 +12,15 @@ function session(overrides: Partial<SessionForStats>): SessionForStats {
     site: null,
     stakes: null,
     variant: null,
+    fee_amount: null,
+    prize_amount: null,
+    finishing_position: null,
     ...overrides,
   };
+}
+
+function tournament(overrides: Partial<SessionForStats>): SessionForStats {
+  return session({ session_type: "tournament", ...overrides });
 }
 
 describe("computeStreaks", () => {
@@ -120,5 +128,44 @@ describe("groupSessionsBy", () => {
     expect(pokerStars.hours).toBe(1.5); // 90 minutes
     expect(pokerStars.hands).toBe(300);
     expect(pokerStars.winRate).toBe(50); // 1 of 2 sessions won
+  });
+});
+
+describe("computeTournamentStats", () => {
+  it("returns an all-null/zero shape when there are no tournament sessions, without crashing", () => {
+    expect(computeTournamentStats([session({ cash_out_amount: 50 })])).toEqual({
+      tournamentCount: 0, totalBuyIns: 0, avgBuyIn: null, avgFinish: null, itmPercent: null, roi: null, totalPrizes: 0, biggestCash: null,
+    });
+  });
+
+  it("reports the pure buy-in (excluding fee) for totalBuyIns/avgBuyIn, but includes fee in ROI's cost basis", () => {
+    // buy_in_amount stores buy-in+fee (109 = 100+9); pure buy-in is 100.
+    const t = tournament({ buy_in_amount: 109, fee_amount: 9, prize_amount: 500, cash_out_amount: 500, finishing_position: 3 });
+    const stats = computeTournamentStats([t]);
+    expect(stats.tournamentCount).toBe(1);
+    expect(stats.totalBuyIns).toBe(100);
+    expect(stats.avgBuyIn).toBe(100);
+    // profit = cash_out - buy_in = 500 - 109 = 391; roi = 391 / 109 * 100
+    expect(stats.roi).toBeCloseTo((391 / 109) * 100, 5);
+  });
+
+  it("computes ITM% from prize_amount > 0, average finish from recorded positions, and the biggest cash", () => {
+    const stats = computeTournamentStats([
+      tournament({ buy_in_amount: 100, prize_amount: 300, cash_out_amount: 300, finishing_position: 5 }),  // ITM
+      tournament({ buy_in_amount: 50, prize_amount: 0, cash_out_amount: 0, finishing_position: 80 }),      // not ITM
+      tournament({ buy_in_amount: 20, prize_amount: 0, cash_out_amount: 0, finishing_position: null }),    // no finish recorded
+    ]);
+    expect(stats.itmPercent).toBeCloseTo((1 / 3) * 100, 5);
+    expect(stats.avgFinish).toBe((5 + 80) / 2); // only the 2 sessions with a recorded finish
+    expect(stats.totalPrizes).toBe(300);
+    expect(stats.biggestCash).toBe(300);
+  });
+
+  it("ignores unsettled tournaments and non-tournament sessions", () => {
+    const stats = computeTournamentStats([
+      session({ cash_out_amount: 999 }), // cash, excluded
+      tournament({ cash_out_amount: null, buy_in_amount: 100 }), // unsettled, excluded
+    ]);
+    expect(stats.tournamentCount).toBe(0);
   });
 });

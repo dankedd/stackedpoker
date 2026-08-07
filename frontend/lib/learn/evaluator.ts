@@ -734,25 +734,53 @@ function evalRangeBucket(step: LessonStep, response: unknown): EvalCore {
   if (accuracy >= 0.95) {
     return { quality: 'perfect', score: 100, feedback: 'Excellent sort — every hand landed in a sound bucket.', ev_loss_bb: 0 }
   }
-  if (accuracy >= 0.8) {
+
+  const quality: ActionQuality = accuracy >= 0.8 ? 'good' : accuracy >= 0.6 ? 'acceptable' : 'mistake'
+  const score = quality === 'mistake' ? Math.max(20, pct) : Math.max(QUALITY_SCORES[quality], pct)
+
+  // Opt-in instructional layer (see SetSelectionCoaching): with authored
+  // per-hand reasoning, a misplaced hand explains WHY it belongs where it
+  // belongs instead of just being named. Steps without these fields are
+  // unchanged.
+  const notes = step.range_bucket_hand_notes
+  if (notes || step.range_bucket_takeaway) {
+    const bucketLabel = (id: string | undefined) =>
+      step.range_bucket_categories?.find((c) => c.id === id)?.label ?? id
+    const structured_points: { term: string; description: string }[] = []
+    for (const hand of misplaced) {
+      const note = notes?.[hand]
+      const placed = bucketLabel(assignments[hand])
+      const belongs = placed
+        ? `Belongs in ${bucketLabel(correct[hand])}, not ${placed}.`
+        : `Belongs in ${bucketLabel(correct[hand])} — it was never sorted.`
+      structured_points.push({ term: hand, description: note ? `${belongs} ${note}` : belongs })
+    }
+    if (step.range_bucket_partial_credit_note) {
+      structured_points.push({ term: 'Why you earned partial credit', description: step.range_bucket_partial_credit_note })
+    }
+    if (step.range_bucket_takeaway) {
+      structured_points.push({ term: 'Key takeaway', description: step.range_bucket_takeaway })
+    }
+
+    const placedRight = pool.length - misplaced.length
     return {
-      quality: 'good',
-      score: Math.max(QUALITY_SCORES.good, pct),
-      feedback: `Good sort${detail ? ` — ${detail}` : ''}.`,
+      quality,
+      score,
+      feedback: `${placedRight} of ${pool.length} hands landed in the right bucket. ${misplaced.join(', ')} ${misplaced.length === 1 ? 'is' : 'are'} in the wrong one — here's what decides each.`,
       ev_loss_bb: 0,
+      structured_points,
     }
   }
-  if (accuracy >= 0.6) {
-    return {
-      quality: 'acceptable',
-      score: Math.max(QUALITY_SCORES.acceptable, pct),
-      feedback: `Roughly right, but has leaks${detail ? ` — ${detail}` : ''}.`,
-      ev_loss_bb: 0,
-    }
+
+  if (quality === 'good') {
+    return { quality, score, feedback: `Good sort${detail ? ` — ${detail}` : ''}.`, ev_loss_bb: 0 }
+  }
+  if (quality === 'acceptable') {
+    return { quality, score, feedback: `Roughly right, but has leaks${detail ? ` — ${detail}` : ''}.`, ev_loss_bb: 0 }
   }
   return {
-    quality: 'mistake',
-    score: Math.max(20, pct),
+    quality,
+    score,
     feedback: `Several hands are in the wrong bucket${detail ? ` — ${detail}` : ''}. Review the reasoning for each category.`,
     ev_loss_bb: 0,
   }
@@ -1048,14 +1076,147 @@ function evalScenarioTree(step: LessonStep, response: unknown): EvalCore {
 // `classifyFlop`/`estimateVolatility` — never a hand-authored answer key — so a
 // content typo can't silently create a wrong-but-unenforced "correct" answer.
 
+// ── Instructional feedback for partial answers ────────────────────────────────
+// A tally ("Partial credit — missed 1 tier.") tells a learner they were wrong
+// without telling them anything they can use. Every set-selection step that
+// opts into `SetSelectionCoaching` below instead answers five questions on a
+// non-perfect answer: what you picked, what the answer actually was, WHY each
+// item you missed belongs (and each extra one doesn't), why your read still
+// earned credit, and the portable rule.
+//
+// Everything the coaching layer DERIVES (labels, which items were missed, why
+// each one belongs) is computed from the same ground truth the score is — the
+// live card logic, never an authored answer key — so it cannot drift from the
+// grade. Everything it can't derive (the strategic meaning, the takeaway) is a
+// verbatim passthrough of prose the step's author wrote. No theory is invented
+// in this file.
+
+/** Opt-in instructional layer for `evalIdSetSelection`. Omit it entirely and
+ *  the caller's grading/feedback is byte-for-byte unchanged. */
+interface SetSelectionCoaching {
+  /** Display name for an item id, e.g. 'nut' → 'the nut (A-high) tier'. */
+  label: (id: string) => string
+  /** Why a correct-but-unselected item genuinely belonged in the answer. */
+  whyMissed?: (id: string) => string | undefined
+  /** Why a selected-but-incorrect item did not belong. */
+  whyExtra?: (id: string) => string | undefined
+  /** Reveal terminology, e.g. 'Correct answer', 'Correct tiers'. */
+  answerTerm?: string
+  /** Authored: what the correct answer MEANS strategically. */
+  why?: string
+  /** Authored: why a near-miss was understandable — the "where you were almost
+   *  right" half. Appended to the derived near-miss line, never replacing it. */
+  partialCreditNote?: string
+  /** Authored: the one-line rule to carry into future hands. */
+  takeaway?: string
+}
+
+/** Capitalises the first letter only — the rest of the sentence is derived
+ *  prose that may legitimately start with a card ("A♥K♥") or a lowercase
+ *  article ("the nut tier"). */
+function sentenceCase(text: string): string {
+  return text.length > 0 ? text[0].toUpperCase() + text.slice(1) : text
+}
+
+/** Joins ids into readable prose via `label`, capping the named list so a
+ *  30-combo miss doesn't produce an unreadable wall ("…and 24 more"). */
+function namedList(ids: string[], label: (id: string) => string, max = 6): string {
+  const named = ids.slice(0, max).map(label)
+  const rest = ids.length - named.length
+  const joined = named.length > 1
+    ? `${named.slice(0, -1).join(', ')} and ${named[named.length - 1]}`
+    : named[0] ?? ''
+  return rest > 0 ? `${joined} (+${rest} more)` : joined
+}
+
+/** Turns a graded set selection into the "your answer / correct answer / why /
+ *  why it still counted / takeaway" structure. Called only on a non-perfect
+ *  answer — a fully-correct one keeps its own authored explanation. */
+function buildSetSelectionInstruction(
+  correctIds: Set<string>,
+  selectedIds: Set<string>,
+  unit: string,
+  coaching: SetSelectionCoaching,
+): Pick<EvalCore, 'feedback' | 'answer_reveal' | 'structured_points'> {
+  const correct = [...correctIds]
+  const hits = correct.filter((id) => selectedIds.has(id))
+  const missed = correct.filter((id) => !selectedIds.has(id))
+  const extra = [...selectedIds].filter((id) => !correctIds.has(id))
+  const name = (ids: string[]) => namedList(ids, coaching.label)
+
+  // Lead paragraph: what was missing/over-selected, and the causal reason for
+  // each — derived per item, so it names the actual cards/tiers every time.
+  // Items whose reason is word-for-word identical (e.g. six AA combos all
+  // killed by the same A♠) collapse into one sentence rather than repeating.
+  const groupByReason = (ids: string[], why: ((id: string) => string | undefined) | undefined) => {
+    const groups = new Map<string, string[]>()
+    for (const id of ids) {
+      const reason = why?.(id) ?? ''
+      const bucket = groups.get(reason)
+      if (bucket) bucket.push(id)
+      else groups.set(reason, [id])
+    }
+    return [...groups.entries()]
+  }
+
+  const reasons: string[] = []
+  for (const [reason, ids] of groupByReason(missed, coaching.whyMissed)) {
+    const subject = `${name(ids)} belong${ids.length === 1 ? 's' : ''} in the answer`
+    reasons.push(sentenceCase(reason ? `${subject} — ${reason}.` : `${subject}.`))
+  }
+  for (const [reason, ids] of groupByReason(extra, coaching.whyExtra)) {
+    const subject = `${name(ids)} do${ids.length === 1 ? 'es' : ''} not belong`
+    reasons.push(sentenceCase(reason ? `${subject} — ${reason}.` : `${subject}.`))
+  }
+
+  const opening = selectedIds.size === 0
+    ? `You submitted nothing, so the whole answer is still open.`
+    : missed.length > 0 && extra.length === 0
+      ? `You marked ${name(hits.length > 0 ? hits : [...selectedIds])} — as far as it goes, that's right. It just isn't the whole answer.`
+      : extra.length > 0 && missed.length === 0
+        ? `You found every ${unit} that mattered, but also flagged ${name(extra)}.`
+        : `You marked ${name([...selectedIds])}; the answer is ${name(correct)}.`
+
+  const structured_points: { term: string; description: string }[] = []
+  if (coaching.why) structured_points.push({ term: 'Why', description: coaching.why })
+
+  // The near-miss line only exists when there was something to credit. When the
+  // step author supplied their own note, the derived half stays short so the
+  // two don't say the same thing twice.
+  if (hits.length > 0) {
+    const description = coaching.partialCreditNote
+      ? `You correctly identified ${name(hits)}. ${coaching.partialCreditNote}`
+      : `You correctly identified ${name(hits)}${missed.length > 0 ? ', which is genuinely part of the answer — the read was right as far as it went' : ', and that read was sound'}.`
+    structured_points.push({ term: 'Why you earned partial credit', description })
+  } else if (coaching.partialCreditNote) {
+    structured_points.push({ term: 'Where the reasoning went', description: coaching.partialCreditNote })
+  }
+
+  if (coaching.takeaway) structured_points.push({ term: 'Key takeaway', description: coaching.takeaway })
+
+  return {
+    feedback: [opening, ...reasons].join(' '),
+    answer_reveal: {
+      term: coaching.answerTerm ?? 'Correct answer',
+      correct: name(correct),
+      yours: selectedIds.size > 0 ? name([...selectedIds]) : 'Nothing selected',
+    },
+    structured_points: structured_points.length > 0 ? structured_points : undefined,
+  }
+}
+
 /** Shared grading for "tap every item that belongs in the set" interactions
- *  (straight detective, runout storm, board autopsy): score by how well the
- *  selected id set matches the correct id set — no combo weighting, every
- *  item counts equally. */
+ *  (straight detective, runout storm, board autopsy, combo removal, flush
+ *  pyramid): score by how well the selected id set matches the correct id set —
+ *  no combo weighting, every item counts equally.
+ *
+ *  `coaching` is optional and affects PRESENTATION ONLY — the quality tier and
+ *  score below are computed identically whether it's supplied or not. */
 function evalIdSetSelection(
   correctIds: Set<string>,
   selectedIds: Set<string>,
   labels: { unit: string; correctFeedback: string; noneFeedback: string },
+  coaching?: SetSelectionCoaching,
 ): EvalCore {
   if (correctIds.size === 0) {
     return selectedIds.size === 0
@@ -1079,13 +1240,20 @@ function evalIdSetSelection(
   if (f1 >= 0.999) {
     return { quality: 'perfect', score: 100, feedback: labels.correctFeedback, ev_loss_bb: 0 }
   }
-  if (f1 >= 0.75) {
-    return { quality: 'good', score: Math.max(QUALITY_SCORES.good, Math.round(f1 * 100)), feedback: `Close — ${detail}.`, ev_loss_bb: 0 }
+
+  const quality: ActionQuality = f1 >= 0.75 ? 'good' : f1 >= 0.4 ? 'acceptable' : 'mistake'
+  const score = quality === 'mistake'
+    ? Math.max(15, Math.round(f1 * 100))
+    : Math.max(QUALITY_SCORES[quality], Math.round(f1 * 100))
+
+  if (coaching) {
+    return { quality, score, ev_loss_bb: 0, ...buildSetSelectionInstruction(correctIds, selectedIds, labels.unit, coaching) }
   }
-  if (f1 >= 0.4) {
-    return { quality: 'acceptable', score: Math.max(QUALITY_SCORES.acceptable, Math.round(f1 * 100)), feedback: `Partial credit — ${detail}.`, ev_loss_bb: 0 }
-  }
-  return { quality: 'mistake', score: Math.max(15, Math.round(f1 * 100)), feedback: `Review the board — ${detail}.`, ev_loss_bb: 0 }
+
+  const fallback = quality === 'good' ? `Close — ${detail}.`
+    : quality === 'acceptable' ? `Partial credit — ${detail}.`
+    : `Review the board — ${detail}.`
+  return { quality, score, feedback: fallback, ev_loss_bb: 0 }
 }
 
 function asBoard(cards: string[] | undefined, label: string): [string, string, string] {
@@ -1254,6 +1422,11 @@ function evalComboRemoval(step: LessonStep, response: unknown): EvalCore {
   const correctIds = new Set(allCombos.map(comboKey).filter((k) => !remainingKeys.has(k)))
   const selectedIds = new Set(Array.isArray(response) ? (response as string[]) : [])
 
+  // Which known card each combo collides with — the causal "why" behind every
+  // tile, read straight off the cards rather than authored per step.
+  const knownSet = new Set(known)
+  const collidingCard = (id: string) => id.split('-').find((c) => knownSet.has(c))
+
   const core = evalIdSetSelection(correctIds, selectedIds, {
     unit: 'combo',
     correctFeedback:
@@ -1262,6 +1435,21 @@ function evalComboRemoval(step: LessonStep, response: unknown): EvalCore {
           ? `Correct — ${correctIds.size} of ${allCombos.length} ${label} combinations are impossible given the known cards. ${remaining.length} remain.`
           : `Correct — none of ${label} combinations are affected by the known cards.`),
     noneFeedback: `Correct — none of ${label} combinations are affected by the known cards.`,
+  }, {
+    label: (id) => id.split('-').map(formatCard).join(''),
+    // Phrased without a singular/plural subject so the same reason can be
+    // shared by one combo or by six that all collide with the same card.
+    whyMissed: (id) => {
+      const card = collidingCard(id)
+      return card ? `${formatCard(card)} is already accounted for, so no combination containing it can exist` : undefined
+    },
+    whyExtra: () => known.length > 0
+      ? `nothing there collides with ${formatCards(known)}, so those combinations are all still live in the range`
+      : undefined,
+    answerTerm: 'Impossible combinations',
+    why: step.combo_removal_explanation,
+    partialCreditNote: step.combo_removal_partial_credit_note,
+    takeaway: step.combo_removal_takeaway,
   })
 
   return {
@@ -1289,13 +1477,49 @@ function evalFlushPyramid(step: LessonStep, response: unknown): EvalCore {
   )
   const selectedIds = new Set(Array.isArray(response) ? (response as string[]) : [])
 
+  // ── Per-tier ground truth, derived once and reused for both the grade and
+  // the explanation, so the two can never disagree.
+  const byLabel = new Map(tiers.map((t) => [t.tierLabel, t]))
+  const nutRank = tiers[0]?.combos[0]?.[0]?.[0] ?? 'A'
+  const tierName = (id: string) => (id === 'nut' ? `the nut (${nutRank}-high) tier` : `the ${id}-high tier`)
+  const comboName = (combo: [string, string]) => combo.map(formatCard).join('')
+
+  const whyTierBlocked = (id: string): string | undefined => {
+    const tier = byLabel.get(id)
+    if (!tier) return undefined
+    const blocked = getBlockedCombos(tier.combos, known)
+    if (blocked.length === 0) return undefined
+    if (blocked.length === tier.combos.length) {
+      return `every one of its ${tier.combos.length} combos is built on ${formatCards(known)}, so the whole tier is gone`
+    }
+    // A partial hit is the insight the pyramid exists to teach: tiers are named
+    // for their HIGH card, so a card also appears as the LOW card of every tier
+    // above its own.
+    const survivors = tier.combos.length - blocked.length
+    return `${blocked.length} of its ${tier.combos.length} combos ${blocked.length === 1 ? 'disappears' : 'disappear'} (${namedList(blocked.map(comboName), (s) => s, 4)}), because a tier is named for its HIGH card, so ${formatCards(known)} also sits inside every tier above its own. The other ${survivors} ${survivors === 1 ? 'is' : 'are'} untouched`
+  }
+
   const core = evalIdSetSelection(correctIds, selectedIds, {
     unit: 'tier',
     correctFeedback:
-      correctIds.size === 1 && correctIds.has('nut')
-        ? "Correct — Hero's card removes the nut-flush tier entirely. Every other tier is completely untouched: Villain's range now contains zero of the hands that could trap Hero for the biggest pot."
-        : `Correct — ${Array.from(correctIds).join(', ')} tier(s) lose combos to Hero's known card.`,
+      step.flush_pyramid_explanation
+        ?? (correctIds.size === 1 && correctIds.has('nut')
+          ? "Correct — Hero's card removes the nut-flush tier entirely. Every other tier is completely untouched: Villain's range now contains zero of the hands that could trap Hero for the biggest pot."
+          : `Correct — ${Array.from(correctIds).join(', ')} tier(s) lose combos to Hero's known card.`),
     noneFeedback: "Correct — none of Villain's flush tiers are affected by Hero's known card.",
+  }, {
+    label: tierName,
+    whyMissed: whyTierBlocked,
+    whyExtra: (id) => {
+      const tier = byLabel.get(id)
+      return tier
+        ? `not one of its ${tier.combos.length} combos contains ${formatCards(known)}, so that tier survives in full`
+        : undefined
+    },
+    answerTerm: 'Tiers actually affected',
+    why: step.flush_pyramid_explanation,
+    partialCreditNote: step.flush_pyramid_partial_credit_note,
+    takeaway: step.flush_pyramid_takeaway,
   })
 
   return {
@@ -1442,13 +1666,51 @@ function evalBoardRankSort(step: LessonStep, response: unknown): EvalCore {
   if (inversions === 0) {
     return { quality: 'perfect', score: 100, feedback: 'That ordering matches — from bets most to bets least.', ev_loss_bb: 0 }
   }
-  if (accuracy >= 0.75) {
-    return { quality: 'good', score: Math.max(QUALITY_SCORES.good, pct), feedback: 'Close — a couple of these boards are out of order.', ev_loss_bb: 0 }
+
+  const quality: ActionQuality = accuracy >= 0.75 ? 'good' : accuracy >= 0.5 ? 'acceptable' : 'mistake'
+  const score = quality === 'mistake' ? Math.max(15, pct) : Math.max(QUALITY_SCORES[quality], pct)
+
+  // Opt-in instructional layer (see SetSelectionCoaching): when the step author
+  // supplied per-item reasoning, a wrong order stops being "a couple of these
+  // are out of order" and names the actual items, their correct positions, and
+  // what separates them. Steps without these fields keep the original prose.
+  const notes = step.board_rank_sort_item_notes
+  if (notes || step.board_rank_sort_takeaway) {
+    const labelOf = (id: string) => step.board_rank_sort_boards?.find((b) => b.id === id)?.label ?? id
+    const asOrder = (ids: string[]) => ids.map(labelOf).join(' → ')
+    const misplaced = submitted.filter((id, i) => id !== target[i])
+
+    const structured_points: { term: string; description: string }[] = []
+    for (const id of target) {
+      const note = notes?.[id]
+      if (note && misplaced.includes(id)) {
+        structured_points.push({ term: `${labelOf(id)} — position ${target.indexOf(id) + 1}`, description: note })
+      }
+    }
+    if (step.board_rank_sort_partial_credit_note) {
+      structured_points.push({ term: 'Why you earned partial credit', description: step.board_rank_sort_partial_credit_note })
+    }
+    if (step.board_rank_sort_takeaway) {
+      structured_points.push({ term: 'Key takeaway', description: step.board_rank_sort_takeaway })
+    }
+
+    return {
+      quality,
+      score,
+      feedback: `You ordered them ${asOrder(submitted)}. The order that holds up is ${asOrder(target)} — ${misplaced.length} of ${target.length} landed in the wrong slot.`,
+      ev_loss_bb: 0,
+      answer_reveal: { term: 'Correct order', correct: asOrder(target), yours: asOrder(submitted) },
+      structured_points: structured_points.length > 0 ? structured_points : undefined,
+    }
   }
-  if (accuracy >= 0.5) {
-    return { quality: 'acceptable', score: Math.max(QUALITY_SCORES.acceptable, pct), feedback: 'Roughly right, but several boards are out of order. Review what drives frequency on each.', ev_loss_bb: 0 }
+
+  if (quality === 'good') {
+    return { quality, score, feedback: 'Close — a couple of these boards are out of order.', ev_loss_bb: 0 }
   }
-  return { quality: 'mistake', score: Math.max(15, pct), feedback: 'This ordering doesn\'t track the range-interaction story on these boards. Revisit which range each board favors and why.', ev_loss_bb: 0 }
+  if (quality === 'acceptable') {
+    return { quality, score, feedback: 'Roughly right, but several boards are out of order. Review what drives frequency on each.', ev_loss_bb: 0 }
+  }
+  return { quality, score, feedback: 'This ordering doesn\'t track the range-interaction story on these boards. Revisit which range each board favors and why.', ev_loss_bb: 0 }
 }
 
 // ── Hand ranking order (Module 1) ─────────────────────────────────────────────

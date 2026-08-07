@@ -8,6 +8,7 @@ import type { SessionForStats } from "../stats";
 
 function session(overrides: Partial<SessionForStats>): SessionForStats {
   return {
+    session_type: "cash",
     started_at: "2026-01-15T14:00:00",
     buy_in_amount: 0,
     cash_out_amount: 0,
@@ -16,6 +17,9 @@ function session(overrides: Partial<SessionForStats>): SessionForStats {
     site: null,
     stakes: null,
     variant: null,
+    fee_amount: null,
+    prize_amount: null,
+    finishing_position: null,
     ...overrides,
   };
 }

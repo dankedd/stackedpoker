@@ -352,6 +352,38 @@ const SB_VS_BTN_40BB_ENTRIES: [string, DefendResponseAction][] = [
   ['AJo', 'call'], ['ATo', 'call'], ['KQo', 'call'],
 ]
 
+// ── HJ vs LJ (60bb) ──────────────────────────────────────────────────────────
+// Source: Ch.8 "Defending the Hijack" (60bb) — 3-bet 7.4% / Call 8.8% / Fold 83.8%
+// (Hand Range 256, page 501) — a SEPARATE book-stated chart from HJ vs UTG, not
+// a reuse of it: "the HJ 3-bets... the highest frequency vs the LJ (7.4%) and
+// the lowest frequency vs UTG (5.20%)" (p.500). The book names the general 60bb
+// 3-bet/fold (blocker-bluff) bucket as "AQo-ATo, A9s-A5s, KQo, KJs-K8s" and the
+// calling bucket as "pocket pairs, AQo-AJo, KQo, suited broadways, suited Ax and
+// a small frequency of premium suited connectors" (p.500) — one shared
+// description spanning both LJ and UTG, calibrated here to LJ's wider 3-bet
+// aggregate by extending further into that same named list than the
+// (narrower) UTG chart does: UTG's chart stops at A5s-A3s for its 3-bet
+// bluffs; LJ's wider 7.4% reaches further into the book's own
+// "A9s-A5s"/"KQo"/"KJs-K8s" boundary. The book is explicit that LJ's EXTRA
+// width goes into 3-betting, not calling -- its calling aggregate (8.8%) is
+// actually LOWER than UTG's (9.3%) -- so hands moved into the 3-bet bucket
+// here are simply not re-added to calling, rather than widening both.
+// 3-bet 96 combos (7.24%), call 106 combos (7.99%) -- close to, not exactly
+// on, the book's 7.4%/8.8% (same calibration discipline as every chart here).
+const HJ_VS_LJ_60BB_ENTRIES: [string, DefendResponseAction][] = [
+  ['AA', '3bet'], ['KK', '3bet'], ['QQ', '3bet'], ['JJ', '3bet'], ['TT', '3bet'], ['99', '3bet'],
+  ['AKs', '3bet'], ['AKo', '3bet'],
+  ['A9s', '3bet'], ['A8s', '3bet'], ['A7s', '3bet'], ['A6s', '3bet'], ['A5s', '3bet'],
+  ['KQs', '3bet'], ['KQo', '3bet'],
+  ['KJs', '3bet'], ['KTs', '3bet'],
+  ['88', 'call'], ['77', 'call'], ['66', 'call'], ['55', 'call'], ['44', 'call'], ['33', 'call'], ['22', 'call'],
+  ['AQs', 'call'], ['AJs', 'call'], ['ATs', 'call'], ['A2s', 'call'],
+  ['QJs', 'call'], ['QTs', 'call'],
+  ['JTs', 'call'],
+  ['T9s', 'call'], ['98s', 'call'], ['87s', 'call'],
+  ['AQo', 'call'], ['AJo', 'call'],
+]
+
 /** Key convention: `${heroPosition}_vs_${villainPosition}_${stackBB}BB`. */
 export const DEFEND_RESPONSE_CHARTS: Record<string, DefendResponseChart> = {
   HJ_vs_UTG_60BB: {
@@ -362,6 +394,15 @@ export const DEFEND_RESPONSE_CHARTS: Record<string, DefendResponseChart> = {
     source: 'Modern Poker Theory Ch.8, "Defending the HJ" (60bb)',
     aggregate: { '3bet': 5.2, call: 9.3, fold: 85.5 },
     cells: cells(HJ_VS_UTG_60BB_ENTRIES),
+  },
+  HJ_vs_LJ_60BB: {
+    key: 'HJ_vs_LJ_60BB',
+    heroPosition: 'HJ',
+    villainPosition: 'LJ',
+    stackBB: 60,
+    source: 'Modern Poker Theory Ch.8, "Defending the Hijack" (60bb), Hand Range 256',
+    aggregate: { '3bet': 7.4, call: 8.8, fold: 83.8 },
+    cells: cells(HJ_VS_LJ_60BB_ENTRIES),
   },
   CO_vs_UTG_60BB: {
     key: 'CO_vs_UTG_60BB',

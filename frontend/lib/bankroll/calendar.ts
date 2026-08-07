@@ -2,6 +2,7 @@ import { computeSessionResult } from "./sessionForm";
 
 export interface CalendarSession {
   id: string;
+  session_type: string;
   started_at: string;
   buy_in_amount: number;
   cash_out_amount: number | null;
@@ -10,6 +11,8 @@ export interface CalendarSession {
   variant: string | null;
   stakes: string | null;
   notes: string | null;
+  tournament_name: string | null;
+  finishing_position: number | null;
 }
 
 export interface CalendarDayData {

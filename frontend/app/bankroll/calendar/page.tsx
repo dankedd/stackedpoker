@@ -50,7 +50,7 @@ export default function BankrollCalendarPage() {
       const [{ data: sessionRows, error: sessionsError }, { data: settingsRow }] = await Promise.all([
         supabase
           .from("bankroll_sessions")
-          .select("id, started_at, buy_in_amount, cash_out_amount, duration_minutes, site, variant, stakes, notes")
+          .select("id, session_type, started_at, buy_in_amount, cash_out_amount, duration_minutes, site, variant, stakes, notes, tournament_name, finishing_position")
           .eq("user_id", user.id)
           .gte("started_at", rangeStart.toISOString())
           .lt("started_at", new Date(rangeEnd.getFullYear(), rangeEnd.getMonth(), rangeEnd.getDate() + 1).toISOString()),

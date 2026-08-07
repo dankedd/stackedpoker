@@ -22,7 +22,7 @@ export default async function BankrollInsightsPage() {
   const [{ data: sessionRows }, { data: overviewRow }, { data: settingsRow }] = await Promise.all([
     supabase
       .from("bankroll_sessions")
-      .select("started_at, buy_in_amount, cash_out_amount, hands_played, duration_minutes, site, stakes, variant")
+      .select("session_type, started_at, buy_in_amount, cash_out_amount, hands_played, duration_minutes, site, stakes, variant, fee_amount, prize_amount, finishing_position")
       .eq("user_id", user.id)
       .limit(5000),
     supabase.rpc("bankroll_overview", { p_user_id: user.id }).single(),
@@ -37,7 +37,9 @@ export default async function BankrollInsightsPage() {
   const startingAt = settingsRow?.starting_at ?? user.created_at;
   const daysElapsed = Math.max(1, (Date.now() - new Date(startingAt).getTime()) / 86_400_000);
 
-  const stakes = computeStakeInsights(sessions);
+  // Stakes are a cash-game concept — tournaments have no stakes value, so they're
+  // excluded here rather than falling into a confusing "Unknown" stake bucket.
+  const stakes = computeStakeInsights(sessions.filter((s) => s.session_type !== "tournament"));
   const duration = computeDurationInsight(sessions);
   const timeOfDayBreakdown = computeTimeOfDayBreakdown(sessions);
   const timeOfDay = bestAndWorstTimeOfDay(timeOfDayBreakdown);
