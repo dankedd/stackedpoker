@@ -46,6 +46,49 @@ export function chartHandAction(chart: DefendResponseChart, hand: string): Defen
   return action ?? 'fold'
 }
 
+// ── Prefilled foundations — the obvious top-of-range core, same convention as
+//    MTT_RFI_FOUNDATIONS (mttRfiRanges.ts) / THREEBET_RESPONSE_FOUNDATIONS
+//    (threebetResponseBaselines.ts), except each hand's ACTION is read straight
+//    off the chart via chartHandAction above rather than re-typed as a literal —
+//    so a future chart correction can never leave a foundation silently stale
+//    (the exact AJo/76s class of bug rangeAnswerValidator.ts exists to catch).
+//    `obviousHands` is only the SET of which hands are obvious enough to hand a
+//    learner for free — a pedagogical judgment call authored here — never the
+//    action itself.
+
+export interface DefendResponseFoundation {
+  chartKey: string
+  hands: Record<string, DefendResponseAction>
+}
+
+function buildDefendPrefillFromChart(
+  chart: DefendResponseChart,
+  obviousHands: string[],
+): Record<string, DefendResponseAction> {
+  const hands: Record<string, DefendResponseAction> = {}
+  for (const hand of obviousHands) hands[hand] = chartHandAction(chart, hand)
+  return hands
+}
+
+export const DEFEND_RESPONSE_FOUNDATIONS: Record<string, DefendResponseFoundation> = {
+  // 114 of HJ_vs_UTG_60BB's 194 continuing-range combos (~59%) — the value
+  // pairs/AK/KQs 3-bet core (56 combos), every pocket pair's mandatory call (42
+  // combos), and the least-controversial suited-broadway calls (KJs/KTs/QJs/QTs,
+  // 16 combos). Deliberately excludes the suited wheel-Ax 3-bet bluffs (A5s-A3s),
+  // JTs, every suited-Ax/connector call, and AQo — those are exactly what
+  // hj-s2/hj-s3/hj-s4 just taught (domination, blockers, suitedness), so they're
+  // left for the learner to place here (the remaining ~41%) rather than handed
+  // over for free.
+  HJ_vs_UTG_60BB_foundation: {
+    chartKey: 'HJ_vs_UTG_60BB',
+    hands: buildDefendPrefillFromChart(DEFEND_RESPONSE_CHARTS.HJ_vs_UTG_60BB, [
+      'AA', 'KK', 'QQ', 'JJ', 'TT', '99', 'AKs', 'AKo', 'KQs',
+      '88', '77', '66', '55', '44', '33', '22',
+      'KJs', 'KTs', 'QJs', 'QTs',
+    ]),
+  },
+}
+
 function handCombos(hand: string): number {
   if (hand.endsWith('s')) return 4
   if (hand.endsWith('o')) return 12
@@ -85,10 +128,20 @@ export interface RangeShapeDiagnosis {
  * CATEGORY level (not cell-by-cell) and returns targeted feedback — same
  * approach as threebetResponseRanges.ts's diagnoseRangeShape, generalized to
  * this domain's 3bet/jam/call/fold action set.
+ *
+ * `prefilled`, when passed, is a "pre-answered for free" foundation (see
+ * DEFEND_RESPONSE_FOUNDATIONS above): any hand whose final assignment still
+ * exactly matches its prefilled value is excluded from BOTH the numerator and
+ * the denominator entirely — not auto-credited, genuinely not assessed — so a
+ * large foundation (e.g. ~60% of the range) can never pad the score with combos
+ * the learner never actually decided on. A hand the learner changed away from
+ * its prefilled value no longer matches `prefilled[hand]`, so it's graded
+ * normally like any other hand.
  */
 export function diagnoseDefendRangeShape(
   chart: DefendResponseChart,
   assignments: Record<string, DefendResponseAction>,
+  prefilled: Record<string, DefendResponseAction> = {},
 ): RangeShapeDiagnosis {
   const allHands = new Set<string>([...chart.cells.map((c) => c.hand), ...Object.keys(assignments)])
 
@@ -101,10 +154,13 @@ export function diagnoseDefendRangeShape(
   let learnerContinueCombos = 0
 
   for (const hand of allHands) {
+    const yoursRaw = assignments[hand]
+    if (hand in prefilled && yoursRaw === prefilled[hand]) continue // untouched free hand — not assessed
+
     const combos = handCombos(hand)
     totalCombos += combos
     const book = chartHandAction(chart, hand)
-    const yours = assignments[hand] ?? 'fold'
+    const yours = yoursRaw ?? 'fold'
     const category = classifyHandForResponse(hand)
 
     if (book === yours) earnedCombos += combos

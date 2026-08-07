@@ -18,6 +18,7 @@ import { THREEBET_RESPONSE_CHARTS, type ThreebetResponseAction, type ThreebetRes
 import { diagnoseRangeShape } from './threebetResponseRanges'
 import { DEFEND_RESPONSE_CHARTS, type DefendResponseAction, type DefendResponseChart } from './defendResponseBaselines'
 import { diagnoseDefendRangeShape } from './defendResponseRanges'
+import { resolveMultiPrefilledAssignments } from './multiActionRangePrefill'
 import { BB_DEFENSE_COMPLETE_100BB, type BBOpenDefenseMatchup } from './bbDefenseComplete'
 import { evaluateTableDecision } from './tableDecisionEngine'
 import { resolveDefendRangeReveal } from './defendRangeReveal'
@@ -667,13 +668,14 @@ function evalDefendResponseRange(
   chart: DefendResponseChart,
   tolerance: number,
   response: unknown,
+  prefilled: Record<string, DefendResponseAction> = {},
 ): EvalCore {
   const assignments: Record<string, DefendResponseAction> =
     response && typeof response === 'object' && !Array.isArray(response)
       ? (response as Record<string, DefendResponseAction>)
       : {}
 
-  const { accuracy, messages } = diagnoseDefendRangeShape(chart, assignments)
+  const { accuracy, messages } = diagnoseDefendRangeShape(chart, assignments, prefilled)
   const rawScore = Math.round(accuracy * 100)
   const toleranceFraction = (tolerance ?? 5) / 100
   const feedback = messages.join(' ')
@@ -1895,7 +1897,8 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
         if (!chart) {
           return { quality: 'good', score: 80, feedback: 'Range recorded.', ev_loss_bb: 0 }
         }
-        return evalDefendResponseRange(chart, step.range_build_multi_tolerance ?? 5, response)
+        const prefilled = resolveMultiPrefilledAssignments(step) as Record<string, DefendResponseAction>
+        return evalDefendResponseRange(chart, step.range_build_multi_tolerance ?? 5, response, prefilled)
       }
       if (step.range_build_multi_domain === 'bb_defense_complete') {
         const map = BB_DEFENSE_COMPLETE_100BB[(step.range_build_multi_chart ?? '') as BBOpenDefenseMatchup]

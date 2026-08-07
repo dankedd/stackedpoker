@@ -8176,6 +8176,9 @@ export const LESSONS: Lesson[] = [
         range_build_multi_actions: ['3bet', 'call', 'fold'],
         range_build_multi_puzzle_hands: ['QQ', '76s', 'AJs'],
         range_build_multi_show_diff: true,
+        range_build_multi_prefilled_key: 'HJ_vs_UTG_60BB_foundation',
+        range_build_multi_prefilled_note:
+          "We've filled in the obvious value 3-bets and the mandatory pocket-pair continues. The rest — the suited Ax, the suited broadways and connectors, the offsuit borderline hands — is where this lesson's real decisions live.",
         range_hint: 'Start from the value 3-bets (top pairs, AK), then work out which suited/connected hands are strong enough to call.',
         xp: 30,
       },

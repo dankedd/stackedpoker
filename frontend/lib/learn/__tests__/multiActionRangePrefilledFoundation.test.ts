@@ -38,7 +38,6 @@ const INTENTIONALLY_UNSCAFFOLDED: Record<string, string> = {
  */
 const KNOWN_GAPS_PENDING_FOLLOWUP: Record<string, string> = {
   'sb-build': 'Module 3 SB build-from-scratch exercise (159 cells) — same gap pattern as sqz-s7a, not yet designed',
-  'hj-s5': 'Module 5 HJ defend-range build (36 cells) — same gap pattern, not yet designed',
   'co-s-build': 'Module 5 CO defend-range build (50 cells) — same gap pattern, not yet designed',
   'bb-s-build': 'Module 5 BB defend-range build (169 cells) — same gap pattern, not yet designed',
   'btn-s-build': 'Module 5 BTN defend-range build (58 cells) — same gap pattern, not yet designed',

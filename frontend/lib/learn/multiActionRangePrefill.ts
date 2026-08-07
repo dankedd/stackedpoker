@@ -15,6 +15,7 @@ import {
 } from './threebetResponseBaselines'
 import { resolveThreebetResponsePrefilled } from './threebetResponseRanges'
 import { DEFEND_RESPONSE_CHARTS, type DefendResponseAction } from './defendResponseBaselines'
+import { DEFEND_RESPONSE_FOUNDATIONS } from './defendResponseRanges'
 import { BB_DEFENSE_COMPLETE_100BB, type BBOpenDefenseMatchup } from './bbDefenseComplete'
 import type { ActionId } from './rangeStrategy'
 import type { LessonStep } from './types'
@@ -63,6 +64,13 @@ export function resolveMultiActionTargetChart(step: LessonStep): MultiActionChar
 export function resolveMultiPrefilledAssignments(step: LessonStep): Record<string, MultiRangeAction> {
   if (step.range_build_multi_domain === 'threebet_response') {
     return resolveThreebetResponsePrefilled(step)
+  }
+  if (step.range_build_multi_domain === 'defend_response') {
+    return (
+      (step.range_build_multi_prefilled as Record<string, DefendResponseAction> | undefined) ??
+      DEFEND_RESPONSE_FOUNDATIONS[step.range_build_multi_prefilled_key ?? '']?.hands ??
+      {}
+    )
   }
   if (step.range_build_multi_transform_from_chart) {
     const source = MTT_RFI_CHARTS[step.range_build_multi_transform_from_chart]
