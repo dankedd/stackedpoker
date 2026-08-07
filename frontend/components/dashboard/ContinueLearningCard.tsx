@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { Brain, Sparkles, CheckCircle, ChevronRight } from "lucide-react";
 import { useLearnProgress } from "@/contexts/LearnProgressContext";
-import { LESSONS_BY_ID } from "@/lib/learn/curriculum";
+// Metadata only — never '@/lib/learn/curriculum'. See scripts/generateCurriculumPublic.ts.
+import { LESSONS_BY_ID } from "@/lib/learn/curriculumPublic.generated";
 import { getNextLessonTarget, getNextPlannedModule } from "@/lib/learn/journey";
 
 // Mirrors the "Continue learning" card on /learn (app/learn/page.tsx) so the

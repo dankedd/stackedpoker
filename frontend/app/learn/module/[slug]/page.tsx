@@ -16,13 +16,14 @@ import {
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { useLearnProgress } from "@/contexts/LearnProgressContext";
+// Metadata only — never '@/lib/learn/curriculum'. See scripts/generateCurriculumPublic.ts.
 import {
   MODULES_BY_SLUG,
   LEARNING_PATHS,
   LESSONS_BY_MODULE,
-} from "@/lib/learn/curriculum";
+} from "@/lib/learn/curriculumPublic.generated";
 import { getStageForModule } from "@/lib/learn/journey";
-import type { Lesson } from "@/lib/learn/types";
+import type { PublicLesson } from "@/lib/learn/types";
 import { cn } from "@/lib/utils";
 
 // ── Lesson type badge ─────────────────────────────────────────────────────────
@@ -52,7 +53,7 @@ function LessonCard({
   idx,
   status,
 }: {
-  lesson: Lesson;
+  lesson: PublicLesson;
   idx: number;
   status: LessonStatus;
 }) {
@@ -141,13 +142,13 @@ export default function ModulePage() {
   const { slug } = useParams<{ slug: string }>();
   const { progress, recordModuleComplete } = useLearnProgress();
 
-  const module = MODULES_BY_SLUG[slug];
+  const mod = MODULES_BY_SLUG[slug];
 
   // Computed unconditionally (module may be undefined) so the effect below —
   // a hook, which must run in the same order every render — can sit above
   // the "module not found" early return.
-  const lessons = module
-    ? (LESSONS_BY_MODULE[module.id] ?? []).slice().sort((a, b) => a.sort_order - b.sort_order)
+  const lessons = mod
+    ? (LESSONS_BY_MODULE[mod.id] ?? []).slice().sort((a, b) => a.sort_order - b.sort_order)
     : [];
   const completedLessonIds = new Set<string>(
     lessons.filter((l) => progress.lessons[l.id]?.status === "completed").map((l) => l.id)
@@ -162,22 +163,22 @@ export default function ModulePage() {
   // (e.g. lessons finished across different sessions/devices) — the display
   // of "complete" itself never depended on this (see journey.ts), only the XP.
   useEffect(() => {
-    if (!module || progress.loading || !progress.hydrated || progress.isGuest) return;
+    if (!mod || progress.loading || !progress.hydrated || progress.isGuest) return;
     if (lessons.length === 0) return;
-    if (progress.completedModules.has(module.id)) return;
+    if (progress.completedModules.has(mod.id)) return;
     const allComplete = lessons.every((l) => completedLessonIds.has(l.id));
     if (!allComplete) return;
-    recordModuleComplete(module.id, {
-      pathId: module.path_id,
-      moduleXpReward: module.xp_reward,
+    recordModuleComplete(mod.id, {
+      pathId: mod.path_id,
+      moduleXpReward: mod.xp_reward,
       lessonIds: lessons.map((l) => l.id),
     });
     // completedLessonIds is a new Set every render; keyed off its content via
     // progress.lessons instead so this doesn't re-fire needlessly.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [module, lessons, progress.lessons, progress.loading, progress.hydrated, progress.isGuest, progress.completedModules, recordModuleComplete]);
+  }, [mod, lessons, progress.lessons, progress.loading, progress.hydrated, progress.isGuest, progress.completedModules, recordModuleComplete]);
 
-  if (!module) {
+  if (!mod) {
     return (
       <div className="flex min-h-screen flex-col">
         <Navbar variant="static" />
@@ -194,15 +195,15 @@ export default function ModulePage() {
     );
   }
 
-  const path = LEARNING_PATHS.find((p) => p.id === module.path_id);
+  const path = LEARNING_PATHS.find((p) => p.id === mod.path_id);
   const firstIncomplete = lessons.find((l) => !completedLessonIds.has(l.id));
 
   // ── Poker Journey roadmap states ─────────────────────────────────────────
   // Every implemented module is open to every user — see lib/learn/journey.ts.
   // The only thing that can keep a module unreachable is not having any
   // playable content yet, handled by the Coming Soon branch below.
-  const isComingSoon = !!module.contentStatus && module.contentStatus !== "complete";
-  const stage = getStageForModule(module.id);
+  const isComingSoon = !!mod.contentStatus && mod.contentStatus !== "complete";
+  const stage = getStageForModule(mod.id);
 
   if (isComingSoon) {
     return (
@@ -213,7 +214,7 @@ export default function ModulePage() {
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
               <Link href="/learn" className="hover:text-foreground transition-colors">Learning Hub</Link>
               <ChevronRight className="h-3.5 w-3.5 opacity-40" />
-              <span className="text-foreground">{module.title}</span>
+              <span className="text-foreground">{mod.title}</span>
             </div>
 
             <div className="relative overflow-hidden rounded-2xl border border-border/40 bg-gradient-to-br from-card/80 via-card/60 to-card/40 px-6 py-8 sm:px-8">
@@ -230,22 +231,22 @@ export default function ModulePage() {
 
                 {stage && (
                   <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-1.5">
-                    {stage.title} · Module {module.order}
+                    {stage.title} · Module {mod.order}
                   </p>
                 )}
-                <h1 className="text-2xl font-bold text-foreground mb-1.5">{module.title}</h1>
-                {module.subtitle && (
-                  <p className="text-muted-foreground text-sm leading-relaxed mb-5">{module.subtitle}</p>
+                <h1 className="text-2xl font-bold text-foreground mb-1.5">{mod.title}</h1>
+                {mod.subtitle && (
+                  <p className="text-muted-foreground text-sm leading-relaxed mb-5">{mod.subtitle}</p>
                 )}
-                <p className="text-sm text-foreground/70 leading-relaxed mb-6">{module.description}</p>
+                <p className="text-sm text-foreground/70 leading-relaxed mb-6">{mod.description}</p>
 
-                {module.learningObjectives && module.learningObjectives.length > 0 && (
+                {mod.learningObjectives && mod.learningObjectives.length > 0 && (
                   <div className="mb-6">
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/40 mb-2.5">
                       What you&apos;ll learn
                     </p>
                     <ul className="space-y-1.5">
-                      {module.learningObjectives.map((obj) => (
+                      {mod.learningObjectives.map((obj) => (
                         <li key={obj} className="flex items-start gap-2 text-sm text-foreground/80">
                           <Sparkles className="h-3.5 w-3.5 text-violet-400/60 shrink-0 mt-0.5" />
                           {obj}
@@ -255,13 +256,13 @@ export default function ModulePage() {
                   </div>
                 )}
 
-                {module.plannedLessons && module.plannedLessons.length > 0 && (
+                {mod.plannedLessons && mod.plannedLessons.length > 0 && (
                   <div className="mb-2">
                     <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/40 mb-2.5">
-                      Planned lessons ({module.plannedLessons.length})
+                      Planned lessons ({mod.plannedLessons.length})
                     </p>
                     <ol className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
-                      {module.plannedLessons.map((pl, i) => (
+                      {mod.plannedLessons.map((pl, i) => (
                         <li key={pl.title} className="text-xs text-muted-foreground/70 flex gap-2">
                           <span className="text-muted-foreground/40 tabular-nums">{i + 1}.</span>
                           {pl.title}
@@ -311,7 +312,7 @@ export default function ModulePage() {
                 <ChevronRight className="h-3.5 w-3.5 opacity-40" />
               </>
             )}
-            <span className="text-foreground">{module.title}</span>
+            <span className="text-foreground">{mod.title}</span>
           </div>
 
           {/* Module hero */}
@@ -325,14 +326,14 @@ export default function ModulePage() {
                 <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-violet-400/60 mb-1.5">
                   Module
                 </p>
-                <h1 className="text-2xl font-bold text-foreground mb-1.5">{module.title}</h1>
+                <h1 className="text-2xl font-bold text-foreground mb-1.5">{mod.title}</h1>
                 <p className="text-muted-foreground text-sm leading-relaxed mb-4">
-                  {module.description}
+                  {mod.description}
                 </p>
 
                 {/* Concept tags */}
                 <div className="flex flex-wrap gap-1.5 mb-4">
-                  {module.concept_ids.map((c) => (
+                  {mod.concept_ids.map((c) => (
                     <span
                       key={c}
                       className="text-[10px] px-2.5 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/18 text-violet-400/70 font-semibold"
@@ -350,7 +351,7 @@ export default function ModulePage() {
                   </span>
                   <span className="flex items-center gap-1.5 text-xs text-amber-400">
                     <Zap className="h-3.5 w-3.5" />
-                    {module.xp_reward} XP reward
+                    {mod.xp_reward} XP reward
                   </span>
                   {firstIncomplete && (
                     <Link

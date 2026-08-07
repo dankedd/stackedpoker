@@ -5,9 +5,14 @@
  * overview, and the module page all share so status logic lives in one place.
  */
 
-import type { LearningModule, Lesson, JourneyStage } from './types'
+import type { LearningModule, PublicLesson, JourneyStage } from './types'
 import type { LessonProgressEntry } from './api'
-import { LEARNING_MODULES, LESSONS, LESSONS_BY_MODULE } from './curriculum'
+// Metadata only (title/slug/estimated_min/...) — never `../curriculum`, whose
+// Lesson objects embed full interactive step content. journey.ts is pure
+// helper code imported by several client components (Hero, the Learn hub,
+// the module page, ContinueLearningCard), so anything it imports here ships
+// to every visitor's browser. See scripts/generateCurriculumPublic.ts.
+import { LEARNING_MODULES, PUBLIC_LESSONS as LESSONS, LESSONS_BY_MODULE } from './curriculumPublic.generated'
 import { JOURNEY_STAGES } from './curriculumRoadmap'
 
 export type ModuleDisplayStatus = 'complete' | 'available' | 'coming_soon'
@@ -110,7 +115,7 @@ export function getStageStatus(stage: JourneyStage, completedModuleIds: Set<stri
 /** First not-yet-completed lesson among modules that are actually playable today, in Journey order. */
 export function getNextLessonTarget(
   lessons: Record<string, LessonProgressEntry>,
-): { lesson: Lesson; module: LearningModule } | null {
+): { lesson: PublicLesson; module: LearningModule } | null {
   for (const mod of ROADMAP_ORDERED) {
     if (mod.contentStatus && mod.contentStatus !== 'complete') continue
     const modLessons = (LESSONS_BY_MODULE[mod.id] ?? []).slice().sort((a, b) => a.sort_order - b.sort_order)

@@ -25,7 +25,8 @@ import { AchievementsPanel } from "@/components/learn/AchievementBadge";
 import { MasteryRing } from "@/components/learn/MasteryRing";
 import { useAuth } from "@/hooks/useAuth";
 import { useLearnProgress } from "@/contexts/LearnProgressContext";
-import { LESSONS_BY_ID, LEARNING_MODULES, LESSONS, LEARNING_PATHS } from "@/lib/learn/curriculum";
+// Metadata only — never '@/lib/learn/curriculum'. See scripts/generateCurriculumPublic.ts.
+import { LESSONS_BY_ID, LEARNING_MODULES, PUBLIC_LESSONS as LESSONS, LEARNING_PATHS } from "@/lib/learn/curriculumPublic.generated";
 import { ACHIEVEMENTS } from "@/lib/learn/types";
 import { xpToNextLevel } from "@/lib/learn/types";
 import type { MasteryLevel } from "@/lib/learn/types";
@@ -509,7 +510,7 @@ export default function LearnPage() {
                       <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
                         <span className="flex items-center gap-1">
                           <Zap className="h-3.5 w-3.5 text-amber-400" />
-                          Today's XP
+                          Today&apos;s XP
                         </span>
                         <span>{todayXP} / {dailyXP}</span>
                       </div>

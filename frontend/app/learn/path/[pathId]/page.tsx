@@ -15,7 +15,8 @@ import {
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { useLearnProgress } from "@/contexts/LearnProgressContext";
-import { LEARNING_PATHS, MODULES_BY_PATH, LESSONS_BY_MODULE } from "@/lib/learn/curriculum";
+// Metadata only — never '@/lib/learn/curriculum'. See scripts/generateCurriculumPublic.ts.
+import { LEARNING_PATHS, MODULES_BY_PATH, LESSONS_BY_MODULE } from "@/lib/learn/curriculumPublic.generated";
 import {
   getCompletedModuleIds,
   getNextLessonTarget,

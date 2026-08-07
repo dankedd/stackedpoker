@@ -4,7 +4,9 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import { getJourneyOverview } from "@/lib/learn/journey";
-import { LESSONS } from "@/lib/learn/curriculum";
+// Metadata only — never '@/lib/learn/curriculum', whose Lesson objects embed
+// full interactive step content. See scripts/generateCurriculumPublic.ts.
+import { PUBLIC_LESSONS as LESSONS } from "@/lib/learn/curriculumPublic.generated";
 import { CASH_100BB_OPEN_RESPONSE_CHARTS } from "@/lib/learn/cash100bbOpenResponseBaselines";
 import { fromActionDict, type RangeStrategyMap } from "@/lib/learn/rangeStrategy";
 import { PokerRangeGrid } from "@/components/learn/visuals/PokerRangeGrid";

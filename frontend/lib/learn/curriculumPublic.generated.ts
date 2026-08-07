@@ -3258,6 +3258,12 @@ export const LEARNING_PATHS: LearningPath[] = [
 export const LESSONS_BY_SLUG: Record<string, PublicLesson> =
   Object.fromEntries(PUBLIC_LESSONS.map((l) => [l.slug, l]))
 
+/** Keyed by lesson.id — the identifier persisted to progress records (see
+ *  curriculum.ts's own LESSONS_BY_ID docstring; never substitute
+ *  LESSONS_BY_SLUG for this). */
+export const LESSONS_BY_ID: Record<string, PublicLesson> =
+  Object.fromEntries(PUBLIC_LESSONS.map((l) => [l.id, l]))
+
 export const MODULES_BY_SLUG: Record<string, LearningModule> =
   Object.fromEntries(LEARNING_MODULES.map((m) => [m.slug, m]))
 

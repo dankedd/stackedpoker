@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { LEARNING_MODULES } from "@/lib/learn/curriculum";
+// Metadata only — never '@/lib/learn/curriculum'. See scripts/generateCurriculumPublic.ts.
+import { LEARNING_MODULES } from "@/lib/learn/curriculumPublic.generated";
 import { JOURNEY_STAGES } from "@/lib/learn/curriculumRoadmap";
 import { getJourneyOverview } from "@/lib/learn/journey";
 import { StatusBadge } from "@/components/layout/StatusBadge";
