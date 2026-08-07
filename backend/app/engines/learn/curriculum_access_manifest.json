@@ -1,0 +1,473 @@
+{
+  "lessons": {
+    "how-poker-works": {
+      "module_id": "poker-fundamentals-module",
+      "sort_order": 1
+    },
+    "your-seat-at-the-table": {
+      "module_id": "poker-fundamentals-module",
+      "sort_order": 2
+    },
+    "speak-the-language": {
+      "module_id": "poker-fundamentals-module",
+      "sort_order": 3
+    },
+    "hands-boards-and-what-can-change": {
+      "module_id": "poker-fundamentals-module",
+      "sort_order": 4
+    },
+    "think-in-ranges": {
+      "module_id": "poker-fundamentals-module",
+      "sort_order": 5
+    },
+    "foundation-lab": {
+      "module_id": "poker-fundamentals-module",
+      "sort_order": 6
+    },
+    "the-price-of-a-call": {
+      "module_id": "math-foundations-module",
+      "sort_order": 1
+    },
+    "count-your-ways-to-win": {
+      "module_id": "math-foundations-module",
+      "sort_order": 2
+    },
+    "your-share-of-the-pot": {
+      "module_id": "math-foundations-module",
+      "sort_order": 3
+    },
+    "think-in-expected-value": {
+      "module_id": "math-foundations-module",
+      "sort_order": 4
+    },
+    "winning-without-showdown": {
+      "module_id": "math-foundations-module",
+      "sort_order": 5
+    },
+    "equity-isnt-everything": {
+      "module_id": "math-foundations-module",
+      "sort_order": 6
+    },
+    "decision-lab": {
+      "module_id": "math-foundations-module",
+      "sort_order": 7
+    },
+    "first-in": {
+      "module_id": "preflop-foundation-module",
+      "sort_order": 1
+    },
+    "more-than-two-cards": {
+      "module_id": "preflop-foundation-module",
+      "sort_order": 2
+    },
+    "stacks-change-the-range": {
+      "module_id": "preflop-foundation-module",
+      "sort_order": 3
+    },
+    "utg-mastery": {
+      "module_id": "preflop-foundation-module",
+      "sort_order": 4
+    },
+    "utg1-mastery": {
+      "module_id": "preflop-foundation-module",
+      "sort_order": 5
+    },
+    "utg2-mastery": {
+      "module_id": "preflop-foundation-module",
+      "sort_order": 6
+    },
+    "lj-mastery": {
+      "module_id": "preflop-foundation-module",
+      "sort_order": 7
+    },
+    "hj-mastery": {
+      "module_id": "preflop-foundation-module",
+      "sort_order": 8
+    },
+    "cutoff-ranges": {
+      "module_id": "preflop-foundation-module",
+      "sort_order": 9
+    },
+    "button-ranges": {
+      "module_id": "preflop-foundation-module",
+      "sort_order": 10
+    },
+    "the-small-blind-is-different": {
+      "module_id": "preflop-foundation-module",
+      "sort_order": 11
+    },
+    "preflop-foundation-lab": {
+      "module_id": "preflop-foundation-module",
+      "sort_order": 12
+    },
+    "the-3-bet": {
+      "module_id": "preflop-aggression-module",
+      "sort_order": 1
+    },
+    "building-a-3bet-range": {
+      "module_id": "preflop-aggression-module",
+      "sort_order": 2
+    },
+    "linear-vs-polarized": {
+      "module_id": "preflop-aggression-module",
+      "sort_order": 3
+    },
+    "position-and-equity-realization": {
+      "module_id": "preflop-aggression-module",
+      "sort_order": 4
+    },
+    "block-the-continue": {
+      "module_id": "preflop-aggression-module",
+      "sort_order": 5
+    },
+    "size-the-pressure": {
+      "module_id": "preflop-aggression-module",
+      "sort_order": 6
+    },
+    "the-squeeze": {
+      "module_id": "preflop-aggression-module",
+      "sort_order": 7
+    },
+    "they-raised-back": {
+      "module_id": "preflop-aggression-module",
+      "sort_order": 8
+    },
+    "raise-again": {
+      "module_id": "preflop-aggression-module",
+      "sort_order": 9
+    },
+    "attack-the-leak": {
+      "module_id": "preflop-aggression-module",
+      "sort_order": 10
+    },
+    "preflop-aggression-lab": {
+      "module_id": "preflop-aggression-module",
+      "sort_order": 11
+    },
+    "someone-opened": {
+      "module_id": "defending-the-open-module",
+      "sort_order": 1
+    },
+    "defending-as-hj": {
+      "module_id": "defending-the-open-module",
+      "sort_order": 2
+    },
+    "defending-as-co": {
+      "module_id": "defending-the-open-module",
+      "sort_order": 3
+    },
+    "the-big-blind-discount": {
+      "module_id": "defending-the-open-module",
+      "sort_order": 6
+    },
+    "position-changes-everything-defense": {
+      "module_id": "defending-the-open-module",
+      "sort_order": 4
+    },
+    "the-small-blind-problem": {
+      "module_id": "defending-the-open-module",
+      "sort_order": 5
+    },
+    "same-hand-different-stack": {
+      "module_id": "defending-the-open-module",
+      "sort_order": 7
+    },
+    "range-architect-defense": {
+      "module_id": "defending-the-open-module",
+      "sort_order": 8
+    },
+    "defense-room": {
+      "module_id": "defending-the-open-module",
+      "sort_order": 9
+    },
+    "the-flop-has-a-language": {
+      "module_id": "flop-fundamentals-module",
+      "sort_order": 1
+    },
+    "board-structure": {
+      "module_id": "flop-fundamentals-module",
+      "sort_order": 2
+    },
+    "read-the-suits": {
+      "module_id": "flop-fundamentals-module",
+      "sort_order": 3
+    },
+    "read-the-ranks": {
+      "module_id": "flop-fundamentals-module",
+      "sort_order": 4
+    },
+    "will-this-board-stay-the-same": {
+      "module_id": "flop-fundamentals-module",
+      "sort_order": 5
+    },
+    "the-board-doesnt-play-alone": {
+      "module_id": "flop-fundamentals-module",
+      "sort_order": 6
+    },
+    "how-strong-is-strong": {
+      "module_id": "flop-fundamentals-module",
+      "sort_order": 7
+    },
+    "the-flop-scanner": {
+      "module_id": "flop-fundamentals-module",
+      "sort_order": 8
+    },
+    "flop-laboratory": {
+      "module_id": "flop-fundamentals-module",
+      "sort_order": 9
+    },
+    "cbet-not-automatic": {
+      "module_id": "cbetting-fundamentals-module",
+      "sort_order": 1
+    },
+    "read-the-battlefield": {
+      "module_id": "cbetting-fundamentals-module",
+      "sort_order": 2
+    },
+    "range-advantage-not-enough": {
+      "module_id": "cbetting-fundamentals-module",
+      "sort_order": 3
+    },
+    "high-frequency-cbets": {
+      "module_id": "cbetting-fundamentals-module",
+      "sort_order": 4
+    },
+    "cbet-slows-down": {
+      "module_id": "cbetting-fundamentals-module",
+      "sort_order": 5
+    },
+    "small-bet-or-big-bet": {
+      "module_id": "cbetting-fundamentals-module",
+      "sort_order": 6
+    },
+    "what-does-my-hand-do": {
+      "module_id": "cbetting-fundamentals-module",
+      "sort_order": 7
+    },
+    "position-changes-everything": {
+      "module_id": "cbetting-fundamentals-module",
+      "sort_order": 8
+    },
+    "cbet-decision-lab": {
+      "module_id": "cbetting-fundamentals-module",
+      "sort_order": 9
+    },
+    "stop-thinking-hand-vs-hand": {
+      "module_id": "range-vs-range-module",
+      "sort_order": 1
+    },
+    "range-advantage": {
+      "module_id": "range-vs-range-module",
+      "sort_order": 2
+    },
+    "x-ray-the-range": {
+      "module_id": "range-vs-range-module",
+      "sort_order": 3
+    },
+    "why-strategy-changes": {
+      "module_id": "range-vs-range-module",
+      "sort_order": 4
+    },
+    "the-range-lab": {
+      "module_id": "range-vs-range-module",
+      "sort_order": 5
+    },
+    "from-hands-to-combos": {
+      "module_id": "blockers-module",
+      "sort_order": 1
+    },
+    "block-the-value": {
+      "module_id": "blockers-module",
+      "sort_order": 2
+    },
+    "same-strength-different-cards": {
+      "module_id": "blockers-module",
+      "sort_order": 3
+    },
+    "the-nut-blocker": {
+      "module_id": "blockers-module",
+      "sort_order": 6
+    },
+    "a-blocker-is-not-always-good": {
+      "module_id": "blockers-module",
+      "sort_order": 7
+    },
+    "blockers-when-calling": {
+      "module_id": "blockers-module",
+      "sort_order": 8
+    },
+    "read-the-removal": {
+      "module_id": "blockers-module",
+      "sort_order": 9
+    },
+    "blocker-lab": {
+      "module_id": "blockers-module",
+      "sort_order": 10
+    },
+    "your-move-changes-mine": {
+      "module_id": "game-theory-foundations-module",
+      "sort_order": 1
+    },
+    "the-exploit-has-a-cost": {
+      "module_id": "game-theory-foundations-module",
+      "sort_order": 2
+    },
+    "the-strategy-loop": {
+      "module_id": "game-theory-foundations-module",
+      "sort_order": 3
+    },
+    "when-neither-player-can-improve": {
+      "module_id": "game-theory-foundations-module",
+      "sort_order": 4
+    },
+    "make-them-indifferent": {
+      "module_id": "game-theory-foundations-module",
+      "sort_order": 5
+    },
+    "the-clairvoyance-game": {
+      "module_id": "game-theory-foundations-module",
+      "sort_order": 6
+    },
+    "how-much-must-you-defend": {
+      "module_id": "game-theory-foundations-module",
+      "sort_order": 7
+    },
+    "mdf-is-not-a-commandment": {
+      "module_id": "game-theory-foundations-module",
+      "sort_order": 8
+    },
+    "equilibrium-lab": {
+      "module_id": "game-theory-foundations-module",
+      "sort_order": 9
+    },
+    "why-we-bet": {
+      "module_id": "polarized-module",
+      "sort_order": 1
+    },
+    "the-same-range-two-faces": {
+      "module_id": "polarized-module",
+      "sort_order": 2
+    },
+    "composition-beats-equity": {
+      "module_id": "polarized-module",
+      "sort_order": 3
+    },
+    "bluffs-have-a-job": {
+      "module_id": "polarized-module",
+      "sort_order": 4
+    },
+    "protect-the-checking-range": {
+      "module_id": "polarized-module",
+      "sort_order": 5
+    },
+    "bet-size-is-a-sentence": {
+      "module_id": "bet-sizing-language-module",
+      "sort_order": 1
+    },
+    "what-a-size-buys-you": {
+      "module_id": "bet-sizing-language-module",
+      "sort_order": 2
+    },
+    "one-size-rarely-fits-all": {
+      "module_id": "bet-sizing-language-module",
+      "sort_order": 3
+    },
+    "the-small-cost-of-simplifying": {
+      "module_id": "bet-sizing-language-module",
+      "sort_order": 4
+    },
+    "why-your-range-shape-picks-your-bet-size": {
+      "module_id": "bet-sizing-language-module",
+      "sort_order": 5
+    }
+  },
+  "modules": {
+    "poker-fundamentals-module": {
+      "order": 1
+    },
+    "math-foundations-module": {
+      "order": 2
+    },
+    "preflop-foundation-module": {
+      "order": 3
+    },
+    "preflop-aggression-module": {
+      "order": 4
+    },
+    "defending-the-open-module": {
+      "order": 5
+    },
+    "flop-fundamentals-module": {
+      "order": 6
+    },
+    "cbetting-fundamentals-module": {
+      "order": 7
+    },
+    "range-vs-range-module": {
+      "order": 8
+    },
+    "blockers-module": {
+      "order": 9
+    },
+    "game-theory-foundations-module": {
+      "order": 10
+    },
+    "polarized-module": {
+      "order": 11
+    },
+    "bet-sizing-language-module": {
+      "order": 12
+    },
+    "defending-bets-module": {
+      "order": 13
+    },
+    "flop-strategy-module": {
+      "order": 14
+    },
+    "turn-strategy-module": {
+      "order": 15
+    },
+    "river-strategy-module": {
+      "order": 16
+    },
+    "multistreet-planning-module": {
+      "order": 17
+    },
+    "three-bet-pots-module": {
+      "order": 18
+    },
+    "four-bet-pots-module": {
+      "order": 19
+    },
+    "blind-vs-blind-module": {
+      "order": 20
+    },
+    "short-stack-strategy-module": {
+      "order": 21
+    },
+    "deep-stack-strategy-module": {
+      "order": 22
+    },
+    "tournament-foundations-module": {
+      "order": 23
+    },
+    "icm-module": {
+      "order": 24
+    },
+    "population-exploits-module": {
+      "order": 25
+    },
+    "player-exploitation-module": {
+      "order": 26
+    },
+    "think-like-solver-module": {
+      "order": 27
+    },
+    "range-reconstruction-module": {
+      "order": 28
+    },
+    "elite-decision-making-module": {
+      "order": 29
+    }
+  }
+}
