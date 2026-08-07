@@ -33,7 +33,6 @@ function calcPotOdds(betPct: number): number {
  *  plain percentages. */
 function valueBluffRatioLabel(alphaPct: number): string {
   const bluffPct = alphaPct
-  const valuePct = 100 - bluffPct
   const bluffRounded = Math.round(bluffPct)
   const valueRounded = 100 - bluffRounded
   if (bluffRounded <= 0) return 'All value — no bluffs needed'
@@ -301,7 +300,7 @@ export function MdfSlider({ step, onAnswer, disabled = false }: MdfSliderProps) 
              the river. The dashed border above is the same signal made visual. */}
           {step.mdf_slider_framing === 'flop' && (
             <p className="text-[10px] text-amber-400/70 italic pt-0.5">
-              Flop/turn: this line is an estimate, not a hard rule — a real "bluff" here often keeps some
+              Flop/turn: this line is an estimate, not a hard rule — a real &quot;bluff&quot; here often keeps some
               backdoor equity, so the true number you need is usually a little lower than this.
             </p>
           )}

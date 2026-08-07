@@ -11,7 +11,6 @@ import type {
   DrillResult,
   DrillSpec,
   DrillType,
-  HandScore,
   LeakProfile,
   MistakeReport,
   SkillSnapshot,

@@ -65,8 +65,8 @@ export function SuitIsomorphism({ step, onAnswer, onComplete, disabled = false }
         <div className="rounded-xl border border-border/30 bg-secondary/10 px-4 py-3">
           <p className="text-xs text-muted-foreground leading-relaxed">
             <span className="font-semibold text-foreground">A♠K♠7♦</span> and <span className="font-semibold text-foreground">A♣K♣7♥</span> are
-            different exact flops, but strategically identical — both are "two cards of one suit, one card of a different suit," with the same
-            ranks. Swapping which physical suit plays which role never changes how the flop plays. That's suit isomorphism, and it's why this
+            different exact flops, but strategically identical — both are &quot;two cards of one suit, one card of a different suit,&quot; with the same
+            ranks. Swapping which physical suit plays which role never changes how the flop plays. That&apos;s suit isomorphism, and it&apos;s why this
             module classifies by <em>pattern</em> instead of memorizing exact boards.
           </p>
         </div>

@@ -29,7 +29,7 @@ const STREET_LABELS: Record<string, string> = {
   river: "River",
 };
 
-export function ActionTimeline({ actions, heroName }: ActionTimelineProps) {
+export function ActionTimeline({ actions }: ActionTimelineProps) {
   const streets = ["preflop", "flop", "turn", "river"] as const;
   const byStreet = streets.reduce((acc, s) => {
     acc[s] = actions.filter((a) => a.street === s);

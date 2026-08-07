@@ -380,7 +380,7 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
           <div className="rounded-xl border border-border/40 bg-secondary/20 px-4 py-3.5 text-center space-y-2">
             <p className="text-sm font-medium text-foreground/80">Daily Coach limit reached</p>
             <p className="text-xs text-muted-foreground/60 leading-relaxed">
-              You've used your {usage!.limit} Coach questions for today. Your questions reset at{' '}
+              You&apos;ve used your {usage!.limit} Coach questions for today. Your questions reset at{' '}
               {formatResetTime(usage!.resetAt)}.
             </p>
             {onLimitReachedContinue && (

@@ -89,7 +89,7 @@ export function ReraiseSizingSlider({ step, onAnswer, disabled = false }: Rerais
           </div>
           <div>
             <p className="text-sm font-bold text-amber-300">{openerCallCost.toFixed(1)}bb</p>
-            <p className="text-[9px] uppercase tracking-wide text-muted-foreground/40">Opener's call cost</p>
+            <p className="text-[9px] uppercase tracking-wide text-muted-foreground/40">Opener&apos;s call cost</p>
           </div>
           <div>
             <p className="text-sm font-bold text-blue-300">{potIfCalled.toFixed(1)}bb</p>

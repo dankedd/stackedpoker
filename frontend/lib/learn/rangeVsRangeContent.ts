@@ -36,12 +36,11 @@
  * file for the full accounting the user's spec asked for.
  */
 
-import { RANKS, HAND_GRID, comboCount, TOTAL_COMBOS } from './handGrid'
+import { HAND_GRID, comboCount, TOTAL_COMBOS } from './handGrid'
 import { RANK_VALUE, type Rank } from './flopClassifier'
 import { MTT_RFI_CHARTS } from './mttRfiBaselines'
 import { chartHandsByAction } from './mttRfiRanges'
 import { DEFEND_DEEP, type RangeEntry } from './defendBaselines'
-import type { ActionQuality } from './types'
 
 // ── CO's real, book-transcribed 40bb opening range ────────────────────────────
 

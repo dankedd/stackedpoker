@@ -158,7 +158,6 @@ function FreqRow({
 
 function DecisionCard({
   decision,
-  index,
 }: {
   decision: HeroDecision;
   index: number;

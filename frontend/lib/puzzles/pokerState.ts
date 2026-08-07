@@ -60,7 +60,7 @@ export interface PokerState {
  */
 export function inferLegalActions(
   context: string,
-  heroIsOop: boolean,
+  _heroIsOop: boolean,
 ): LegalAction[] {
   const c = context.toLowerCase();
 

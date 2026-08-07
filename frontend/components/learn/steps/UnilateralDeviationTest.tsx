@@ -90,7 +90,7 @@ export function UnilateralDeviationTest({ step, onAnswer, disabled = false }: Un
 
       <div className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-600/8 via-card/60 to-blue-600/5 p-5 space-y-5">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground/70">{playerLabel}'s candidate-equilibrium frequency</span>
+          <span className="text-muted-foreground/70">{playerLabel}&apos;s candidate-equilibrium frequency</span>
           <span className="font-black tabular-nums text-foreground">{equilibrium.heroFreq.toFixed(0)}%</span>
         </div>
         <div className="flex items-center justify-between text-xs">

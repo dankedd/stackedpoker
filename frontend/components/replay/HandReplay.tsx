@@ -5,7 +5,6 @@ import {
   Play, Pause, ChevronLeft, ChevronRight, SkipBack, SkipForward,
   AlertTriangle, CheckCircle2, Trophy, RotateCcw,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useReplay } from "@/hooks/useReplay";
 import { buildSeatMap } from "@/lib/replay/seatEngine";
 import { PokerTable } from "./PokerTable";
@@ -890,59 +889,6 @@ function CoachingContent({
   );
 }
 
-/** Compact action log for the current street — provides full context. */
-function StreetActionLog({
-  actions,
-  currentStreet,
-  heroActionIdx,
-}: {
-  actions: ReplayAction[];
-  currentStreet: string;
-  heroActionIdx: number;
-}) {
-  // Get all actions on this street up to and including the hero action
-  const streetActions = actions.filter(
-    (a, i) => a.street === currentStreet && i <= heroActionIdx,
-  );
-  if (streetActions.length <= 1) return null; // no context to show
-
-  return (
-    <div className="px-5 py-3" style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-      <p
-        className="text-[9px] uppercase tracking-[0.22em] font-bold mb-2"
-        style={{ color: "rgba(100,116,139,0.30)" }}
-      >
-        Action Sequence
-      </p>
-      <div className="flex flex-wrap items-center gap-1.5">
-        {streetActions.map((a, i) => {
-          const isHero = a.is_hero;
-          const color = ACTION_COLOR_MAP[a.action] ?? "#94A3B8";
-          return (
-            <div key={i} className="flex items-center gap-1">
-              {i > 0 && (
-                <span style={{ color: "rgba(255,255,255,0.12)", fontSize: "8px" }}>{'>'}</span>
-              )}
-              <span
-                className="text-[10px] font-semibold px-1.5 py-0.5 rounded"
-                style={{
-                  color: isHero ? color : "rgba(148,163,184,0.55)",
-                  background: isHero ? `${color}12` : "transparent",
-                  border: isHero ? `1px solid ${color}30` : "1px solid transparent",
-                }}
-              >
-                {a.player.length > 8 ? a.player.slice(0, 8) : a.player}{" "}
-                {a.action}
-                {a.amount ? ` ${a.amount}` : ""}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 function EmptyAnalysisState({
   handSummary,
   step,
@@ -1275,7 +1221,7 @@ function PremiumVerdict({ verdict }: { verdict: OverallVerdict }) {
 // MAIN EXPORT
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function HandReplay({ analysis, filename, validation, engineVersion, correctionsApplied, solver, trace }: HandReplayProps) {
+export function HandReplay({ analysis, engineVersion, solver, trace }: HandReplayProps) {
   const replay = useReplay(analysis);
   const { hand_summary, overall_verdict } = analysis;
   // Defensive: actions may be undefined if the backend returned a partial response

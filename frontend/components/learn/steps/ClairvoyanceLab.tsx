@@ -155,14 +155,14 @@ export function ClairvoyanceLab({ step, onAnswer, disabled = false }: Clairvoyan
         <div className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-600/8 via-card/60 to-blue-600/5 p-5 space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="rounded-xl border border-border/20 bg-secondary/20 px-4 py-4 text-center space-y-1">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground/50">Hidden — P2 doesn't know which hand</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground/50">Hidden — P2 doesn&apos;t know which hand</p>
               <p className="text-2xl font-black text-violet-300 tabular-nums">${hiddenEV.evP1.toFixed(0)}</p>
-              <p className="text-[10px] text-muted-foreground/40">P1's EV — AA bets 100%, QQ bluffs {Math.round(trueEq.qqBetFreq * 100)}%</p>
+              <p className="text-[10px] text-muted-foreground/40">P1&apos;s EV — AA bets 100%, QQ bluffs {Math.round(trueEq.qqBetFreq * 100)}%</p>
             </div>
             <div className="rounded-xl border border-border/20 bg-secondary/20 px-4 py-4 text-center space-y-1">
               <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground/50">Face-up — P2 sees the exact hand</p>
               <p className="text-2xl font-black text-foreground tabular-nums">${faceUp.evP1.toFixed(0)}</p>
-              <p className="text-[10px] text-muted-foreground/40">P1's EV — betting can no longer force a mistake</p>
+              <p className="text-[10px] text-muted-foreground/40">P1&apos;s EV — betting can no longer force a mistake</p>
             </div>
           </div>
 
@@ -180,7 +180,7 @@ export function ClairvoyanceLab({ step, onAnswer, disabled = false }: Clairvoyan
 
       {mode === 'find_equilibrium' && !submitted && (
         <p className="text-center text-xs text-muted-foreground/40 italic">
-          Adjust the frequencies until neither player's EV can improve, then submit.
+          Adjust the frequencies until neither player&apos;s EV can improve, then submit.
         </p>
       )}
 

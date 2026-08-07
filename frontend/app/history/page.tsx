@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import {
   Star, StarOff, Trash2, MessageSquare, ChevronRight,
   Search, Filter, BarChart3, TrendingUp, Clock, Trophy,
-  Spade, Layers, X, CheckCircle2, AlertCircle, Tag,
+  Spade, Layers, X, CheckCircle2, AlertCircle,
   Loader2, RotateCcw, SlidersHorizontal, BookOpen, Zap,
-  Calendar, FileText, Camera, Target,
+  FileText, Camera,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";

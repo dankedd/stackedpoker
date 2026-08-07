@@ -20,7 +20,7 @@ function LearnPreview() {
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground/60 font-mono">
-        You raised BTN, BB called. Range advantage is yours — what's your c-bet size?
+        You raised BTN, BB called. Range advantage is yours — what&apos;s your c-bet size?
       </p>
       <div className="grid grid-cols-3 gap-1.5">
         {QUIZ_OPTIONS.map(({ label, correct }) => (
@@ -65,7 +65,7 @@ const SURFACES = [
       <div>
         <PokerRangeGrid range={ILLUSTRATIVE_CALLER_RANGE} size="compact" mode="membership" />
         <p className="mt-2.5 text-[11px] text-muted-foreground/60 leading-relaxed">
-          Build and compare ranges yourself instead of memorizing someone else's chart.
+          Build and compare ranges yourself instead of memorizing someone else&apos;s chart.
         </p>
       </div>
     ),
@@ -93,7 +93,7 @@ export function HowDecisionsWork() {
             eyebrow="Built for understanding"
             heading={
               <>
-                Don't just memorize charts.
+                Don&apos;t just memorize charts.
                 <br />
                 Learn how poker decisions actually work.
               </>

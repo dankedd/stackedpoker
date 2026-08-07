@@ -151,8 +151,8 @@ export function RangeXRay({ entries, grid, board, className, onBucketInspected }
         <span className="text-muted-foreground/30">— tap a bucket to inspect</span>
       </div>
       <p className="text-center text-[9px] text-muted-foreground/30">
-        Only the Strong segment's width is an exact, source-cited figure — Good/Weak/Trash bands (hatched) are
-        equal-width placeholders for a direction the source states but doesn't quantify.
+        Only the Strong segment&apos;s width is an exact, source-cited figure — Good/Weak/Trash bands (hatched) are
+        equal-width placeholders for a direction the source states but doesn&apos;t quantify.
       </p>
 
       {grid && board && categoryMap && (

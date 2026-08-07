@@ -6,12 +6,11 @@
  * Kept framework-free (no React) so transitions are unit-testable without rendering
  * MultiActionRangeBuild.tsx.
  */
-import { MTT_RFI_CHARTS, type MttAction, type MttRfiChart } from './mttRfiBaselines'
+import { MTT_RFI_CHARTS, type MttAction } from './mttRfiBaselines'
 import { MTT_RFI_FOUNDATIONS, chartToDominantActionMap } from './mttRfiRanges'
 import {
   THREEBET_RESPONSE_CHARTS,
   type ThreebetResponseAction,
-  type ThreebetResponseChart,
 } from './threebetResponseBaselines'
 import { resolveThreebetResponsePrefilled } from './threebetResponseRanges'
 import { DEFEND_RESPONSE_CHARTS, type DefendResponseAction } from './defendResponseBaselines'

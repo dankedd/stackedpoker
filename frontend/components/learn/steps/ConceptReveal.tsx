@@ -15,7 +15,6 @@ import { ConvergenceIllustration } from '@/components/learn/visuals/ConceptIllus
 // ── Visual type renderers ─────────────────────────────────────────────────────
 
 function EquityBarVisual({
-  conceptId,
   examples: examplesOverride,
 }: {
   conceptId?: string

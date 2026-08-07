@@ -32,7 +32,6 @@ export default async function DashboardPage() {
   const tier = profile?.subscription_tier ?? "free";
   const subStatus = profile?.subscription_status ?? null;
   const hasStripeCustomer = !!profile?.stripe_customer_id;
-  const isUnlimited = tier === "pro" || tier === "admin";
   const limit = profile?.analyses_limit ?? 3;
 
   const planLabel = tier.charAt(0).toUpperCase() + tier.slice(1);

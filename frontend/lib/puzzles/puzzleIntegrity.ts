@@ -173,7 +173,6 @@ function extractSizing(label: string): number | null {
 
 const CLAIMS_FLUSH = /\b(?:you have (?:the|a) flush|made flush|nut flush(?! draw)|rivered (?:the|a) flush)\b/i
 const CLAIMS_STRAIGHT = /\b(?:you have (?:the|a) straight|made (?:the|a)? straight|nut straight|rivered (?:the|a) straight)\b/i
-const CLAIMS_STRONG = /\b(?:near top of range|top of (?:your )?range|bet for value|value bet|strong value)\b/i
 const CLAIMS_OESD = /\bOESD\b/i
 const CLAIMS_COMBO = /\bcombo draw\b/i
 

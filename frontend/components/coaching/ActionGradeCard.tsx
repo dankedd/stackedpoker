@@ -39,7 +39,7 @@ const STREET_LABELS: Record<string, string> = {
   river: "River",
 };
 
-export function ActionGradeCard({ score, index }: ActionGradeCardProps) {
+export function ActionGradeCard({ score }: ActionGradeCardProps) {
   const [expanded, setExpanded] = useState(false);
   const severity = score.mistake?.severity ?? "none";
   const advice = score.advice;

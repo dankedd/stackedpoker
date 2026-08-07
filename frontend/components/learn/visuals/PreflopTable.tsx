@@ -12,7 +12,7 @@ import {
   type ParsedSeatAction,
   type PreflopSeatState,
 } from '@/lib/learn/preflopTableState'
-import { buildPlaybackTimeline, type PlaybackEvent, type PlaybackEventKind } from '@/lib/learn/preflopTablePlayback'
+import { buildPlaybackTimeline, type PlaybackEventKind } from '@/lib/learn/preflopTablePlayback'
 import { ChipStack, type ChipTone } from '@/components/poker/ChipStack'
 import { DealerMarker } from '@/components/poker/DealerMarker'
 import { PotDisplay } from '@/components/poker/PotDisplay'

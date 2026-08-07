@@ -350,7 +350,6 @@ function ActionTimeline({
 function CoachingPanel({
   coaching,
   actionIdx,
-  isCurrentAction,
 }: {
   coaching: ActionCoaching;
   actionIdx: number;

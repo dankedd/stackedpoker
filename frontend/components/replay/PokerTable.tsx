@@ -66,7 +66,6 @@ export function PokerTable({
   currentVillainStack,
   playerStacksAfter,
   allInPlayers = [],
-  sidePots = [],
   pendingAggression = null,
   actions = [],
 }: PokerTableProps) {

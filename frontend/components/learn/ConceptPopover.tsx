@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { BookOpen, X, ArrowRight, ChevronRight } from 'lucide-react'
+import { BookOpen, X, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // ── Static concept data (inline, no API needed) ───────────────────────────────
@@ -841,7 +841,6 @@ export function ConceptPopover({ conceptId, children, className }: ConceptPopove
 
 export function InlineConcept({ conceptId, className }: { conceptId: string; className?: string }) {
   const entry = CONCEPT_DATA[conceptId]
-  const domainCls = entry ? (DOMAIN_COLORS[entry.domain] ?? '') : ''
   return (
     <ConceptPopover conceptId={conceptId} className={className}>
       {entry?.title ?? conceptId.replace(/_/g, ' ')}

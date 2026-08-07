@@ -85,7 +85,7 @@ export function UpgradePrompt({ used, limit, className }: UpgradePromptProps) {
         <Lock className="h-4 w-4 text-amber-400 mt-0.5 shrink-0" />
         <div>
           <p className="text-sm font-medium text-foreground">
-            You've used all {limit} free {limit === 1 ? "analysis" : "analyses"}
+            You&apos;ve used all {limit} free {limit === 1 ? "analysis" : "analyses"}
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">
             Upgrade to Pro for unlimited access — no limits, ever.

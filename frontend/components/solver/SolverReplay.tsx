@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { PlayingCard } from "@/components/poker/PlayingCard";
 import type { SolverNodeResponse, SolverActionDetail } from "@/lib/api";
 import type { UseSolverReplayReturn } from "@/hooks/useSolverReplay";

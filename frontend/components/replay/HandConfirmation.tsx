@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { CheckCircle2, AlertTriangle, XCircle, ChevronDown, ChevronUp, Shield } from "lucide-react";
 import { CardPicker } from "@/components/poker/CardPicker";
-import type { ExtractionResult, ConfirmedPokerState, ExtractedAction } from "@/lib/types";
+import type { ExtractionResult, ConfirmedPokerState } from "@/lib/types";
 
 interface HandConfirmationProps {
   extraction: ExtractionResult;

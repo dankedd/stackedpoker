@@ -88,7 +88,6 @@ export function BetSizeSlider({ step, onAnswer, disabled = false }: BetSizeSlide
       // Fallback: use option order by size bucket
       if (minDelta === Infinity) {
         const buckets = ['small', 'half', 'medium', 'pot', 'overbet']
-        const bucket = sizePct < 42 ? 'small' : sizePct < 60 ? 'half' : sizePct < 80 ? 'medium' : sizePct < 110 ? 'pot' : 'overbet'
         bestOption = options.find(o => buckets.some(b => o.id.includes(b) || o.label.toLowerCase().includes(b))) ?? options[0]
       }
     }

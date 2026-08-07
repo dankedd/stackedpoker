@@ -12,7 +12,7 @@ import type {
   PipelineResult, CanonicalHand, CanonicalPlayer,
   CanonicalAction, PipelineValidationResult,
 } from "@/lib/hand-schema";
-import { getHero, getAllActions } from "@/lib/hand-schema";
+import { getAllActions } from "@/lib/hand-schema";
 
 interface HandRepairUIProps {
   pipeline: PipelineResult;
@@ -44,12 +44,12 @@ export function HandRepairUI({
   );
 
   const canAnalyze = validation.can_analyze;
-  const hero = getHero(hand);
 
   const toggleSection = (key: string) =>
     setExpandedSections(prev => {
       const next = new Set(prev);
-      next.has(key) ? next.delete(key) : next.add(key);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
 
@@ -238,7 +238,7 @@ export function HandRepairUI({
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function RepairSection({
-  id, label, icon, hasError, expanded, onToggle, children,
+  label, icon, hasError, expanded, onToggle, children,
 }: {
   id: string;
   label: string;
@@ -285,7 +285,6 @@ function TablePreview({
   hand: CanonicalHand;
   errorFields: Set<string | null | undefined>;
 }) {
-  const hero = getHero(hand);
   const positions: Record<string, { x: number; y: number }> = {
     BTN: { x: 75, y: 15 }, SB: { x: 90, y: 50 }, BB: { x: 75, y: 85 },
     UTG: { x: 25, y: 85 }, "UTG+1": { x: 10, y: 50 }, LJ: { x: 10, y: 20 },
@@ -439,7 +438,6 @@ function PlayerRow({
 
 function ActionTimeline({
   actions,
-  heroActions,
   errorFields,
   onActionAmountChange,
 }: {

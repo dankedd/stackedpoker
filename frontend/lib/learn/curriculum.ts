@@ -7,7 +7,7 @@
 
 import type { LearningPath, LearningModule, Lesson } from './types'
 import { ROADMAP_MODULES } from './curriculumRoadmap'
-import { RFI_DEEP, entriesToHandList, BAD_LIMP_EXAMPLE } from './preflopBaselines'
+import { RFI_DEEP, entriesToHandList } from './preflopBaselines'
 import { RANGE_TARGETS } from './ranges'
 import { THREEBET_DEEP } from './threebetBaselines'
 import { THREEBET_RESPONSE_CHARTS } from './threebetResponseBaselines'
@@ -38,9 +38,9 @@ import {
   CAPPED_NOT_CONDENSED_EXAMPLE, RANGE_MIRROR, PROTECTION_SURGERY_BOARD,
 } from './module11Content'
 import {
-  RANGE_COMPRESSION_STATES, HAND_RANGE_POOL, HAND_RANGE_337_340_SOURCE,
-  TOY_GAME_A, TOY_GAME_B, TOY_GAME_C, TOY_GAME_D, TOY_GAME_E, TOY_GAMES_A_TO_E_SOURCE,
-  SPR_TABLE_90, SPR_TABLE_90_SOURCE,
+  RANGE_COMPRESSION_STATES, HAND_RANGE_POOL,
+  TOY_GAME_A, TOY_GAME_E,
+  SPR_TABLE_90,
 } from './module12Content'
 
 // ── Learning Paths ────────────────────────────────────────────────────────────

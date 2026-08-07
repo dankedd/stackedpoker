@@ -35,16 +35,6 @@ import {
 // Placeholder user ID — in production, from auth context
 const USER_ID = "demo-user";
 
-// Drill type display names
-const DRILL_LABELS: Record<string, string> = {
-  cbet_or_check: "C-Bet Trainer",
-  defend_or_fold: "Defense Trainer",
-  bet_size_select: "Sizing Trainer",
-  bluff_or_give_up: "Bluff Trainer",
-  value_bet_thin: "Value Bet Trainer",
-  range_construction: "Range Builder",
-};
-
 export default function CoachingDashboard() {
   const [skill, setSkill] = useState<SkillSnapshot | null>(null);
   const [leaks, setLeaks] = useState<LeakProfile[]>([]);

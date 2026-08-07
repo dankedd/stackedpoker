@@ -132,7 +132,7 @@ function IntroMode({
 
       {chosen && (
         <div className="rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-600/8 via-card/60 to-violet-600/5 p-5 space-y-3 animate-in fade-in duration-300">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-blue-400/60">Player B's best response</p>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-blue-400/60">Player B&apos;s best response</p>
           <p className="text-sm text-foreground">
             {villainBestCallFreq === 100
               ? "Call every time. Once Player A bets any hand with no showdown value, calling always wins back more than it risks."

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, TreePine } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
@@ -11,7 +11,6 @@ import SolverReplay from "@/components/solver/SolverReplay";
 
 export default function SolverReplayPage() {
   const params = useParams<{ jobId: string }>();
-  const router = useRouter();
   const replay = useSolverReplay();
 
   const jobId = params.jobId;

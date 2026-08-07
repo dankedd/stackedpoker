@@ -16,7 +16,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import type { DrillSpec, DrillOption } from "@/lib/coaching/types";
+import type { DrillSpec } from "@/lib/coaching/types";
 
 interface DrillCardProps {
   drill: DrillSpec;
@@ -73,9 +73,6 @@ export function DrillCard({
     [phase, startTime, onAnswer],
   );
 
-  const selectedOption = drill.options.find((o) => o.action === selectedAction);
-  const isCorrect = selectedOption?.is_correct ?? false;
-  const isAcceptable = selectedOption?.is_acceptable ?? false;
 
   return (
     <div className="flex flex-col h-full max-w-lg mx-auto">

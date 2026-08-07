@@ -138,6 +138,25 @@ export function RangeHeatmap({ step, onAnswer, disabled = false }: RangeHeatmapP
   const isIdentifyMode = targetHands.size > 0
   const actionMap = step.range_heatmap_action_map
 
+  // Declared BEFORE the action-map early return below: hooks must run in the
+  // same order on every render, and this component is reused across consecutive
+  // steps (LessonPlayer renders it without a key and it re-keys internally on
+  // step.id), so a step that returns early would otherwise change the hook count
+  // mid-life and throw "Rendered fewer hooks than expected".
+  const toggleHand = useCallback(
+    (hand: string, mode?: 'add' | 'remove') => {
+      if (disabled || submitted || !isIdentifyMode) return
+      setSelected((prev) => {
+        const next = new Set(prev)
+        const effectiveMode = mode ?? (next.has(hand) ? 'remove' : 'add')
+        if (effectiveMode === 'add') next.add(hand)
+        else next.delete(hand)
+        return next
+      })
+    },
+    [disabled, submitted, isIdentifyMode],
+  )
+
   function handleActionMapContinue() {
     if (disabled || submitted) return
     setSubmitted(true)
@@ -169,20 +188,6 @@ export function RangeHeatmap({ step, onAnswer, disabled = false }: RangeHeatmapP
       </div>
     )
   }
-
-  const toggleHand = useCallback(
-    (hand: string, mode?: 'add' | 'remove') => {
-      if (disabled || submitted || !isIdentifyMode) return
-      setSelected((prev) => {
-        const next = new Set(prev)
-        const effectiveMode = mode ?? (next.has(hand) ? 'remove' : 'add')
-        if (effectiveMode === 'add') next.add(hand)
-        else next.delete(hand)
-        return next
-      })
-    },
-    [disabled, submitted, isIdentifyMode],
-  )
 
   function handleMouseDown(hand: string) {
     if (disabled || submitted || !isIdentifyMode) return

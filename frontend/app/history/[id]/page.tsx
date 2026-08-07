@@ -4,17 +4,17 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowLeft, Star, StarOff, MessageSquare, Trash2, CheckCircle2,
+  ArrowLeft, Star, StarOff, MessageSquare, CheckCircle2,
   AlertCircle, AlertTriangle, Info, Loader2, Spade, Clock,
-  TrendingUp, Target, Layers, ChevronDown, ChevronUp, X,
-  BookOpen, Trophy,
+  ChevronDown, ChevronUp, X,
+  BookOpen,
 } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
-import type { ReplayAnalysis, ActionCoaching, HandSummaryData } from "@/lib/types";
+import type { ReplayAnalysis, ActionCoaching } from "@/lib/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DB row type
