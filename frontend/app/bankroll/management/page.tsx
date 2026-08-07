@@ -141,8 +141,8 @@ export default function BankrollManagementPage() {
           <BankrollBackLink />
           <h1 className="text-3xl font-black text-foreground tracking-tight">Bankroll management</h1>
           <p className="text-muted-foreground mt-1.5 max-w-2xl">
-            Pick your own buy-in safety rule per game type, and tell us what buy-in size you're currently playing.
-            Your dashboard will automatically flag when you're safe, ready to move up, or should move down.
+            Pick your own buy-in safety rule per game type, and tell us what buy-in size you&apos;re currently playing.
+            Your dashboard will automatically flag when you&apos;re safe, ready to move up, or should move down.
           </p>
         </div>
 

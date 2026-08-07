@@ -18315,13 +18315,13 @@ export const LESSONS: Lesson[] = [
           },
           {
             id: 'equity_size',
-            label: 'A 24-point raw equity edge is always enough on its own to justify a 100% betting frequency',
+            label: 'A 24-point raw equity edge is enough, by itself, to justify a 100% betting frequency',
             quality: 'mistake',
             feedback: "This treats raw equity size as a rule of thumb it isn't. A 24-point edge sitting on top of an EVEN bucket distribution would not come close to justifying betting every hand — it's specifically the extreme Strong-bucket concentration that does that here. Raw equity size alone never sets a frequency.",
           },
           {
             id: 'position_only',
-            label: 'Being in position means you should always bet your whole range on the flop',
+            label: 'Being in position means you should bet your whole range on any flop',
             quality: 'mistake',
             feedback: "Position helps, but it isn't sufficient by itself — Module 7 already showed plenty of boards where the in-position player checks back a large share of their range despite having position. What's different on A76r is the RANGE composition, not the seat.",
           },
@@ -19277,7 +19277,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'What does the book say the optimal bet-sizing strategy looks like here, and why?',
         options: [
           {
-            id: 'all_in_only', label: "Simply all-in — the stack behind a pot-size bet is too shallow to matter", quality: 'perfect',
+            id: 'all_in_only', label: 'Simply all-in', quality: 'perfect',
             feedback: "Correct — this is the simplest band conceptually. When the stack is already this shallow, 'bet pot' and 'go all-in' are close enough to the same action that the added complexity of keeping them separate isn't worth anything.",
           },
           {

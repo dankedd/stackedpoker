@@ -168,7 +168,7 @@ export default function BankrollSessionsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-black text-foreground tracking-tight">Sessions</h1>
-              <p className="text-muted-foreground mt-1.5">Log, edit and review every session you've played.</p>
+              <p className="text-muted-foreground mt-1.5">Log, edit and review every session you&apos;ve played.</p>
             </div>
             <button
               type="button"
