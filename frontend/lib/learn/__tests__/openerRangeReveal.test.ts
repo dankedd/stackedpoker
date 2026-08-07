@@ -155,11 +155,34 @@ describe('evaluateStepLocally — opener direction dispatch + secondaryRange att
     expect(result.range_reveal).toBeUndefined()
   })
 
-  it('sqz-s5b/sqz-s5c (squeeze spots) resolve CO\'s opener range despite BTN\'s intervening call', () => {
-    const b = evaluateStepLocally(findStep('sqz-s5b'), 'call', 0)
-    const c = evaluateStepLocally(findStep('sqz-s5c'), 'fold', 0)
-    expect(b.range_reveal!.label).toBe('CO OPENING RANGE')
-    expect(c.range_reveal!.label).toBe('CO OPENING RANGE')
+  it('sqz-s5b/sqz-s5c (squeeze spots) show NO opener chart — same text/visualization mismatch as pce-s5b, now answered with a theory panel', () => {
+    // These two used to render 'CO OPENING RANGE'. The question they ask is what
+    // HERO does when CO opens and BTN calls; CO's opening range answers a
+    // different question, so the post-answer screen was reinforcing the wrong
+    // concept. There is no chart to swap in — the source has no squeeze-response
+    // range for any position — so both carry a `theory_panel` instead. Pinned
+    // structurally in module4Audit.test.ts.
+    for (const [id, answer] of [['sqz-s5b', 'fold'], ['sqz-s5c', 'fold']] as const) {
+      const step = findStep(id)
+      expect(step.range_reveal_direction, id).toBeUndefined()
+      const result = evaluateStepLocally(step, answer, 0)
+      expect(result.range_reveal, id).toBeUndefined()
+      expect(result.theory_panel, id).toBeDefined()
+    }
+  })
+
+  it('still TOLERATES an intervening call when the step genuinely wants an opener chart (resolver capability, not a curriculum claim)', () => {
+    // The resolver deliberately accepts a raise-then-call sequence — unlike
+    // `isCleanFacingOpen`, "who opened?" has the same answer either way. That
+    // behavior stays covered here now that no shipped step relies on it, so a
+    // future squeeze step that DOES test opener_range_strength can still use it.
+    const step: LessonStep = {
+      id: 'fixture-squeeze', type: 'decision_spot',
+      hero_position: 'SB', villain_position: 'CO', effective_stack_bb: 100,
+      hero_hand: ['Kd', 'Qc'],
+      action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN calls'],
+    }
+    expect(resolveOpenerRangeReveal(step)?.label).toBe('CO OPENING RANGE')
   })
 })
 

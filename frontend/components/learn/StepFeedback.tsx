@@ -10,6 +10,7 @@ import { PreviousButton } from './PreviousButton'
 import { AskCoachTrigger } from './coach/AskCoachTrigger'
 import { RangeRevealCard } from './RangeRevealCard'
 import { NutAdvantageMeter, RangeCoverageBar } from './visuals/NutAdvantageMeter'
+import { TheoryPanel } from './visuals/TheoryPanel'
 
 interface StepFeedbackProps {
   result: StepResult
@@ -278,6 +279,12 @@ export function StepFeedback({ result, onContinue, onRetry, isLast, onPrevious, 
           matchup/stack tier; never shown before this point (the answer + score above),
           so it can never leak the answer ahead of time. */}
       {result.range_reveal && <RangeRevealCard reveal={result.range_reveal} />}
+
+      {/* Hand-authored theory panel — the honest substitute for a range chart in spots
+          the canonical data doesn't cover (see TheoryPanelData in types.ts). Sits in the
+          same post-score slot as range_reveal, and for the same reason: it explains the
+          answer, so it must never appear before the answer. */}
+      {result.theory_panel && <TheoryPanel panel={result.theory_panel} />}
 
       {/* Nut-advantage reveal — "who owns more of the strongest hands," purely
           presentational (see LessonStep.nut_advantage_reveal), never before this point. */}

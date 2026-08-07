@@ -352,7 +352,7 @@ export const LEARNING_MODULES: LearningModule[] = [
       'Recognize what Nash equilibrium actually means (no player can improve by unilaterally changing strategy) and where MDF\'s simplifying assumptions stop applying',
     ],
     difficulty: 'intermediate',
-    estimatedLessons: 10,
+    estimatedLessons: 9,
     stageId: 'game-theory',
     order: 10,
     prerequisiteModuleId: 'blockers-module',
@@ -6158,21 +6158,28 @@ export const LESSONS: Lesson[] = [
         villain_position: 'CO',
         effective_stack_bb: 100,
         action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN calls'],
-        range_bucket_prompt: 'Sort each hand into Hero\'s best response, considering the opener\'s range, the caller\'s range, position, stack depth, blockers and playability.',
+        // Two buckets, not three: from the SB there is no flatting range against an
+        // open — every SB-as-defender chart in the source is "3-bet X% / Fold Y%",
+        // with the stated reason (BB still live behind, poor equity realization OOP
+        // against two players, rake) applying MORE strongly once BTN has already
+        // called. A "Call" bucket here would be a category no hand correctly belongs
+        // in. The narrow exception the book does allow — overcalling with hands that
+        // hold value multiway, e.g. a suited connector — is where it belongs, as the
+        // `acceptable` alternative on sqz-s5c's single-hand 76s decision.
+        range_bucket_prompt: 'Sort each hand into Hero\'s best response, considering the opener\'s range, the caller\'s range, position, blockers and playability. From the SB there is no flatting range here — the choice is squeeze or fold.',
         range_bucket_pool: ['AA', 'AKo', 'A5s', 'KQo', '76s', '92o'],
         range_bucket_categories: [
           { id: 'squeeze', label: 'Squeeze' },
-          { id: 'call', label: 'Call' },
           { id: 'fold', label: 'Fold' },
         ],
         range_bucket_correct: {
           AA: 'squeeze', AKo: 'squeeze', A5s: 'squeeze',
-          KQo: 'call',
-          '76s': 'fold', '92o': 'fold',
+          KQo: 'fold', '76s': 'fold', '92o': 'fold',
         },
         range_bucket_acceptable: {
+          // The genuine boundary hand — a threshold 3-bet for the SB against a lone
+          // CO open, which the extra caller pushes out rather than pulls in.
           KQo: ['squeeze'],
-          '76s': ['call'],
         },
         xp: 18,
       },
@@ -6187,22 +6194,76 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN calls'],
         hero_hand: ['Kd', 'Qc'],
-        // Shows the original opener's (CO) range even though BTN also called — the
-        // "who am I actually up against" question a squeeze spot still has a real
-        // answer to (Example 4's "current opener's range" case).
-        range_reveal_direction: 'opener',
+        source: {
+          book: 'Modern Poker Theory',
+          author: 'Michael Acevedo',
+          section: 'Overcalling (Theoretical Considerations, responding to an open raise); Small Blind defence vs a CO open',
+          type: 'source_reconstructed',
+        },
+        // NO `range_reveal_direction` here — deliberately.
+        //
+        // This previously showed CO's OPENING RANGE, which answers "what does CO
+        // open?" when the question asked is "what does Hero do?". The learner had
+        // just been tested on a squeeze decision and was shown a chart of a
+        // different decision, so the post-answer visual reinforced the wrong
+        // concept. Same audit finding as pce-s5a (see its comment above) — but with
+        // no chart to swap in, because the source has no squeeze-response chart at
+        // all: every published preflop range there answers a SINGLE opener (or a
+        // 4-bet / push-fold spot). Inventing an "SB vs CO open + BTN call" chart to
+        // fill the hole is exactly what CLAUDE.md forbids.
+        //
+        // So this uses `theory_panel` instead — a hand-authored explanation built
+        // only from rules the source states outright. Note the default 'defend'
+        // resolver can't fire here either: it requires a clean single open, and
+        // `action_before_hero` contains BTN's call (see defendRangeReveal.ts's
+        // `isCleanFacingOpen`), so omitting the field genuinely means "no chart",
+        // not "fall back to some other chart". Pinned in module4Audit.test.ts.
+        theory_panel: {
+          label: 'Squeeze strategy — SB vs CO open + BTN call',
+          hand: 'KQo',
+          verdict: 'Fold',
+          verdict_note: 'Squeezing is the defensible boundary alternative. Calling is not — from the SB this spot is squeeze or fold.',
+          factors: [
+            {
+              term: 'Dead money', weight: 'for',
+              description: 'CO\'s open and BTN\'s call are both already in the middle. That is real, and it is why a squeeze is sized 2-3bb larger than a normal out-of-position 3-bet. It is also the only factor here genuinely pulling toward raising.',
+            },
+            {
+              term: 'Tighter, not wider', weight: 'against',
+              description: 'Entering the pot after a raise AND a call calls for a tighter range than entering over the raise alone. The extra dead money is a trap: even with the caller\'s premiums removed, their range is still strong enough to withstand a 3-bet — so squeezing too many marginal hands is where the money leaks, not where it is made.',
+            },
+            {
+              term: 'Domination risk', weight: 'against',
+              description: 'A BTN flat against a CO open is small and broadway-heavy — it is built from exactly the suited broadways and slowplayed pairs (AQs, AJs, ATs, KQs, KJs, KTs, QJs, plus trapped big pairs) that dominate KQo. The hands Hero most wants to make top pair against are the ones already sitting in the caller\'s range.',
+            },
+            {
+              term: 'Fold equity', weight: 'against',
+              description: 'Two players have to fold, not one — and the caller has already shown a hand they were willing to put money in with, so they are not folding to a squeeze as often as the opener is. A raise that gets through less often needs more equity behind it when it gets called than KQo has here.',
+            },
+            {
+              term: 'Playability', weight: 'against',
+              description: 'The hands that hold their value multiway are suited Ax, suited connectors, suited broadways and medium-to-small pairs. Offsuit high-card hands are the stated opposite: usually dominated, and poor at realizing their equity — especially out of position. The SB is out of position on both opponents, with the BB still live behind.',
+            },
+            {
+              term: 'Blockers', weight: 'context',
+              description: 'KQo does block AK, AQ, KK, QQ and KQ, and blockers count for more in multiway pots than raw hand strength does. But blocking the opener\'s premiums is not where this hand is in trouble — it is in trouble against the caller\'s suited broadways, which KQo barely touches.',
+            },
+          ],
+          takeaway: 'A raise plus a call is a signal to tighten, not to widen. Extra dead money never promotes a hand that was already on the threshold — and offsuit broadways out of position are the first hands to drop from a squeezing range, not the last.',
+          caption: 'The reference material contains no squeeze-response chart for any position — every published preflop range in it answers a single opener. This verdict is derived from its overcalling rules and its small-blind strategy rather than from an invented squeeze range.',
+        },
         options: [
           {
-            id: 'call', label: 'Call', quality: 'perfect',
-            feedback: 'Correct as the default here. KQo is a real hand, but it\'s an easily-dominated offsuit broadway against two live ranges that both contain plenty of better broadways and pairs. Calling keeps the hand alive without overcommitting into that much resistance.',
+            id: 'call', label: 'Call', quality: 'mistake',
+            feedback: 'This is the one action that isn\'t part of the strategy here. From the SB you play squeeze-or-fold against an open: flatting leaves Hero out of position against two live ranges with the BB still able to raise behind and push Hero off the equity they just paid for. Overcalling is reserved for hands that hold value multiway — suited Ax, suited connectors, suited broadways, medium and small pairs. An offsuit broadway is none of those.',
           },
           {
             id: '3bet', label: '3-Bet', quality: 'acceptable',
-            feedback: 'Defensible, not wrong — some players squeeze KQo for its raw strength and blocker effect, especially against wider opener/caller ranges. It\'s a genuine boundary hand, right on the edge between squeezing and calling.',
+            feedback: 'Defensible at the boundary. KQo genuinely is a threshold hand in the SB\'s 3-betting range against a lone CO open, so against a loose opener and a loose flatter it can come back in. But a raise-plus-call demands a tighter range than a lone open does, and threshold hands are exactly what tightening removes first.',
           },
           {
-            id: 'fold', label: 'Fold', quality: 'mistake',
-            feedback: 'KQo is too strong to fold outright here — the real question is call vs. squeeze, not whether to continue at all.',
+            id: 'fold', label: 'Fold', quality: 'perfect',
+            feedback: 'Correct. Entering after a raise AND a call calls for a tighter range than facing the open alone — the extra dead money is offset by a caller whose range, even with its premiums stripped out, still withstands a 3-bet comfortably. KQo was already a threshold squeeze at best, and it is an offsuit broadway playing out of position against two ranges, which is the worst shape to take multiway.',
           },
         ],
         xp: 8,
@@ -6218,9 +6279,46 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN calls'],
         hero_hand: ['7h', '6h'],
-        // Same opener-range context as sqz-s5b — helps show why extra resistance
-        // (opener's range, plus a live caller) tightens what 76s can profitably do here.
-        range_reveal_direction: 'opener',
+        source: {
+          book: 'Modern Poker Theory',
+          author: 'Michael Acevedo',
+          section: 'Overcalling (Theoretical Considerations, responding to an open raise); Small Blind defence vs a CO open',
+          type: 'source_reconstructed',
+        },
+        // Same fix as sqz-s5b, same reason — this also showed CO's OPENING RANGE
+        // after a question about what HERO does. The answer key here was already
+        // right (fold default, overcall defensible, squeeze a mistake); only the
+        // post-answer visual was reinforcing the wrong concept. See sqz-s5b's
+        // comment for why there is no chart to swap in.
+        theory_panel: {
+          label: 'Squeeze strategy — SB vs CO open + BTN call',
+          hand: '76s',
+          verdict: 'Fold',
+          verdict_note: 'Overcalling is the defensible alternative here — a suited connector is one of the few shapes that holds value multiway. Squeezing is not.',
+          factors: [
+            {
+              term: 'Playability', weight: 'for',
+              description: 'Suited connectors sit on the short list of hands that retain equity in multiway pots, alongside suited Ax, suited broadways and medium-to-small pairs. This is the whole argument for continuing at all — and it is why an overcall stays on the table for 76s when it was off the table for KQo.',
+            },
+            {
+              term: 'Position', weight: 'against',
+              description: 'Hero is out of position on both the opener and the caller, with the BB still live behind. A suited connector wants cheap flops and the option to see what everyone does first; the SB gets neither, and acts first on every street it does reach.',
+            },
+            {
+              term: 'Tighter, not wider', weight: 'against',
+              description: 'A raise plus a call calls for a tighter range than a raise alone. The caller\'s range still holds up against a 3-bet even after its premiums are removed, so 76s is on the wrong side of that tightening rather than being rescued by the extra dead money.',
+            },
+            {
+              term: 'Fold equity', weight: 'against',
+              description: 'Squeezing needs two players to fold, and 76s blocks essentially nothing either of them continues with — no aces, no kings, no broadway pairs. It is a raise that gets through less often than a squeeze needs to, with nothing to fall back on when it doesn\'t.',
+            },
+            {
+              term: 'Domination risk', weight: 'context',
+              description: 'Unlike an offsuit broadway, 76s is not dominated by the ranges it faces — when it connects it usually connects cleanly. That protects it from KQo\'s specific problem, but it does not make a speculative hand a raise; it is what keeps a call defensible rather than what makes a squeeze correct.',
+            },
+          ],
+          takeaway: 'Suited connectors are the shape that survives a multiway pot, so they are the hands an overcall is actually for. But shape does not beat position — out of position against two live ranges, folding stays the clean default.',
+        },
         options: [
           {
             id: 'fold', label: 'Fold', quality: 'perfect',
@@ -16406,29 +16504,34 @@ export const LESSONS: Lesson[] = [
   },
 
   // ── Module 10 — Game Theory Foundations ─────────────────────────────────────
-  // (3 of 10 lessons built so far — checkpoint 1. Same phased, in-progress
-  // delivery pattern used for Module 9.)
+  // (All 9 lessons built. Originally 10: Lessons 1-2 — "Your Move Changes Mine"
+  // and "Find the Best Response" — were later merged into one longer lesson,
+  // since strategy interdependence and the Maximally Exploitative Strategy are
+  // two halves of one argument and each half was too short to stand alone. Same
+  // merge precedent as Module 9's own Lessons 1-2 / 3-4.)
 
   {
     id: 'your-move-changes-mine',
     module_id: 'game-theory-foundations-module',
     slug: 'your-move-changes-mine',
     title: 'Your Move Changes Mine',
-    subtitle: 'A strategy is never good or bad in isolation.',
+    subtitle: 'A strategy is never good in isolation — only against a specific opponent.',
     lesson_type: 'concept_reveal',
-    concept_ids: ['strategy_interdependence'],
-    estimated_min: 7,
-    xp_reward: 130,
+    concept_ids: ['strategy_interdependence', 'maximally_exploitative_strategy'],
+    estimated_min: 14,
+    xp_reward: 270,
     sort_order: 1,
-    next_lesson_teaser: 'Find the Best Response',
+    next_lesson_teaser: 'The Exploit Has a Cost',
     steps: [
       {
         id: 'ymcm-s1',
         type: 'concept_reveal',
         concept_ids: ['strategy_interdependence'],
         concept_title: 'This module is not a glossary',
-        concept_content: "You already know the poker vocabulary — fold, call, raise. This module asks a different question: what makes a strategy GOOD? The answer is never about the strategy alone. It's about how your opponent responds to it. Here's the smallest possible game that shows why.",
-        narrative: "The setup: Player A holds a hand that has zero chance of winning if it's ever called — a pure bluff. Player A decides how often to bet it. Player B decides how often to call. Pot $100, bet $100.",
+        // The toy-game setup is a second paragraph of concept_content, not a
+        // `narrative` — ConceptReveal only falls back to `narrative` when there
+        // is no concept_content at all, so as a narrative it never rendered.
+        concept_content: "You already know the poker vocabulary — fold, call, raise. This module asks a different question: what makes a strategy GOOD? The answer is never about the strategy alone. It's about how your opponent responds to it. Here's the smallest possible game that shows why.\n\nThe setup: Player A holds a hand that has zero chance of winning if it's ever called — a pure bluff. Player A decides how often to bet it. Player B decides how often to call. Pot $100, bet $100.",
         xp: 8,
       },
       {
@@ -16509,37 +16612,18 @@ export const LESSONS: Lesson[] = [
         xp: 12,
       },
       {
-        id: 'ymcm-s6',
-        type: 'concept_reveal',
-        concept_ids: ['strategy_interdependence'],
-        concept_title: 'Where this goes next',
-        concept_content: "So far Player B's best response was obvious just by looking at it. Real opponents aren't that simple — they commit to specific, fixed frequencies, and finding the single most profitable response to an EXACT fixed strategy is its own skill. We call that a Maximally Exploitative Strategy.",
-        xp: 8,
-      },
-    ],
-  },
-
-  {
-    id: 'find-the-best-response',
-    module_id: 'game-theory-foundations-module',
-    slug: 'find-the-best-response',
-    title: 'Find the Best Response',
-    subtitle: 'The most profitable reply to one exact, fixed opponent.',
-    lesson_type: 'concept_reveal',
-    concept_ids: ['maximally_exploitative_strategy'],
-    estimated_min: 8,
-    xp_reward: 140,
-    sort_order: 2,
-    next_lesson_teaser: 'The Exploit Has a Cost',
-    steps: [
-      {
         id: 'fbr-s1',
         type: 'concept_reveal',
         concept_ids: ['maximally_exploitative_strategy'],
         source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Maximally Exploitative Strategy (MES)', type: 'source_reconstructed' },
         concept_title: 'Maximally Exploitative Strategy',
-        concept_content: "A Maximally Exploitative Strategy (MES) is the single most profitable response to an opponent's fixed, known strategy. Calculating it requires knowing the opponent's FULL strategy — not a guess, the exact thing they do. With one hand on the table, MES means playing that hand with whichever single action earns the most against that exact opponent.",
-        xp: 10,
+        // First paragraph is the hinge of the lesson: it carries the learner
+        // from "strategies depend on each other" (steps 1-5) into "so name the
+        // single best reply to one exact opponent" (steps 6-11), and cashes in
+        // the pure/mixed vocabulary the previous step just established.
+        concept_content: "Player B's best response has been obvious on sight so far — only because Player A kept playing a PURE strategy, all-in on betting or never betting at all. Real opponents sit somewhere in between, locked to one specific frequency, and finding the single most profitable reply to an exact frequency is a skill of its own.\n\nA Maximally Exploitative Strategy (MES) is the single most profitable response to an opponent's fixed, known strategy. Calculating it requires knowing the opponent's FULL strategy — not a guess, the exact thing they do. With one hand on the table, MES means playing that hand with whichever single action earns the most against that exact opponent.",
+        concept_note: "Same toy game from here on — same $100 pot, same $100 bet, same hand that wins nothing when called. Only the names change: Hero takes Player A's seat (bet or check), Villain takes Player B's (call or fold).",
+        xp: 12,
       },
       {
         id: 'fbr-s2',
@@ -16561,7 +16645,7 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_ids: ['maximally_exploitative_strategy'],
         concept_title: 'MAXIMALLY EXPLOITATIVE RESPONSE',
-        concept_content: "Villain calling only 30% is well below the 50% this pot-sized bet needs to break even (you'll derive exactly where that 50% comes from in Lesson 10.8). So the most profitable response is to bet this hand 100% of the time — not 60%, not 90%. Against a truly FIXED opponent, the best response to a single hand is always a pure action, never a mix. There's nothing to balance against — Villain isn't adjusting.",
+        concept_content: "Villain calling only 30% is well below the 50% this pot-sized bet needs to break even (you'll derive exactly where that 50% comes from in Lesson 10.7). So the most profitable response is to bet this hand 100% of the time — not 60%, not 90%. Against a truly FIXED opponent, the best response to a single hand is always a pure action, never a mix. There's nothing to balance against — Villain isn't adjusting, so there's no reason to hide anything from them.",
         xp: 10,
       },
       {
@@ -16591,7 +16675,7 @@ export const LESSONS: Lesson[] = [
         type: 'strategy_response_lab',
         concept_ids: ['maximally_exploitative_strategy'],
         source: PRESSURE_GAME_DEFAULT.source,
-        narrative: 'Verify it yourself against the new, tighter Villain.',
+        narrative: "You predicted the flip — now put it on the slider yourself, against the same game you exploited two steps ago. Nothing has moved except Villain.",
         strategy_response_lab_mode: 'best_response',
         strategy_response_lab_prompt: 'Villain now calls 70% of the time. Find Hero\'s new most profitable response.',
         strategy_response_lab_pot: PRESSURE_GAME_DEFAULT.pot,
@@ -16607,7 +16691,10 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_ids: ['maximally_exploitative_strategy'],
         concept_title: 'MES is not "play aggressive"',
-        concept_content: "MES isn't a style — it's not \"bluff more\" or \"play tight.\" It's whatever action earns the most against THIS exact opponent, and it can point in either direction depending on what that opponent actually does. Next: chasing MES has a real cost, and it's worth being explicit about what that cost is.",
+        // Closes the whole merged arc, not just its MES half — it names the
+        // opening claim (a strategy is never good in isolation) and shows the
+        // learner they just measured it, before handing off to Lesson 10.2.
+        concept_content: "MES isn't a style — it's not \"bluff more\" or \"play tight.\" It's whatever action earns the most against THIS exact opponent, and it can point in either direction depending on what that opponent actually does.\n\nWhich is the claim this lesson opened with, now with a number attached: the SAME bet, at the SAME price, was the single best play available at 30% and a losing one at 70%. Nothing about the hand changed. Next: chasing that edge has a real cost, and it's worth being explicit about what that cost is.",
         xp: 8,
       },
     ],
@@ -16623,7 +16710,7 @@ export const LESSONS: Lesson[] = [
     concept_ids: ['counter_exploitation'],
     estimated_min: 8,
     xp_reward: 140,
-    sort_order: 3,
+    sort_order: 2,
     next_lesson_teaser: 'The Strategy Loop',
     steps: [
       {
@@ -16728,7 +16815,7 @@ export const LESSONS: Lesson[] = [
     concept_ids: ['nash_equilibrium_source'],
     estimated_min: 9,
     xp_reward: 150,
-    sort_order: 4,
+    sort_order: 3,
     next_lesson_teaser: 'When Neither Player Can Improve',
     steps: [
       {
@@ -16782,7 +16869,7 @@ export const LESSONS: Lesson[] = [
             feedback: 'BB\'s guaranteed equilibrium EV (10.45) isn\'t half the pot, and there\'s no rule that equilibria split anything evenly. What\'s guaranteed is stability, not an even split.',
           },
         ],
-        xp: 20,
+        xp: 22,
       },
       {
         id: 'sl-s4',
@@ -16805,7 +16892,7 @@ export const LESSONS: Lesson[] = [
     concept_ids: ['nash_equilibrium_source'],
     estimated_min: 9,
     xp_reward: 160,
-    sort_order: 5,
+    sort_order: 4,
     next_lesson_teaser: 'Make Them Indifferent',
     steps: [
       {
@@ -16814,7 +16901,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['nash_equilibrium_source'],
         source: PRESSURE_GAME_DEFAULT.source,
         concept_title: 'Back to the toy game — a candidate equilibrium',
-        concept_content: "Return to the pot-$100/bet-$100 toy game from Lessons 10.2-10.3, with Hero's hand still worth zero if ever called. Candidate: Hero NEVER bets it, and Villain calls 50% of the time. Test it — can either player unilaterally improve?",
+        concept_content: "Return to the pot-$100/bet-$100 toy game from Lessons 10.1-10.2, with Hero's hand still worth zero if ever called. Candidate: Hero NEVER bets it, and Villain calls 50% of the time. Test it — can either player unilaterally improve?",
         xp: 8,
       },
       {
@@ -16827,7 +16914,7 @@ export const LESSONS: Lesson[] = [
         unilateral_deviation_test_pot: PRESSURE_GAME_DEFAULT.pot,
         unilateral_deviation_test_bet: PRESSURE_GAME_DEFAULT.bet,
         unilateral_deviation_test_equilibrium: { heroFreq: 0, villainFreq: 50 },
-        xp: 20,
+        xp: 24,
       },
       {
         id: 'npi-s3',
@@ -16907,7 +16994,7 @@ export const LESSONS: Lesson[] = [
     concept_ids: ['indifference_principle'],
     estimated_min: 9,
     xp_reward: 150,
-    sort_order: 6,
+    sort_order: 5,
     next_lesson_teaser: 'The Clairvoyance Game',
     steps: [
       {
@@ -16915,7 +17002,7 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_ids: ['indifference_principle'],
         concept_title: 'Why would a hand ever want to mix?',
-        concept_content: "In the real push/fold equilibrium from Lesson 10.4 (BN 58.3% / BB 37.4%), most hands are pure — always push, or always fold. But some hands sit RIGHT on the boundary and mix between the two. What would make a hand indifferent between two actions in the first place?",
+        concept_content: "In the real push/fold equilibrium from Lesson 10.3 (BN 58.3% / BB 37.4%), most hands are pure — always push, or always fold. But some hands sit RIGHT on the boundary and mix between the two. What would make a hand indifferent between two actions in the first place?",
         xp: 8,
       },
       {
@@ -17002,7 +17089,7 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_ids: ['indifference_principle'],
         concept_title: 'One more piece missing',
-        concept_content: "Lesson 10.5 found that a LONE bluff can't anchor a real equilibrium — the defender just calls more and more. But real hands aren't lone bluffs; they're part of a RANGE that also contains genuine value. Next: a toy game showing exactly how a value hand and a bluff, together, create a stable equilibrium neither player wants to leave.",
+        concept_content: "Lesson 10.4 found that a LONE bluff can't anchor a real equilibrium — the defender just calls more and more. But real hands aren't lone bluffs; they're part of a RANGE that also contains genuine value. Next: a toy game showing exactly how a value hand and a bluff, together, create a stable equilibrium neither player wants to leave.",
         xp: 8,
       },
     ],
@@ -17018,7 +17105,7 @@ export const LESSONS: Lesson[] = [
     concept_ids: ['clairvoyance_game'],
     estimated_min: 12,
     xp_reward: 220,
-    sort_order: 7,
+    sort_order: 6,
     next_lesson_teaser: 'How Much Must You Defend?',
     steps: [
       {
@@ -17119,7 +17206,7 @@ export const LESSONS: Lesson[] = [
     concept_ids: ['alpha_mdf_derivation'],
     estimated_min: 10,
     xp_reward: 180,
-    sort_order: 8,
+    sort_order: 7,
     next_lesson_teaser: 'MDF Is Not a Commandment',
     steps: [
       {
@@ -17219,7 +17306,7 @@ export const LESSONS: Lesson[] = [
     concept_ids: ['mdf_limitations'],
     estimated_min: 8,
     xp_reward: 150,
-    sort_order: 9,
+    sort_order: 8,
     next_lesson_teaser: 'Equilibrium Lab',
     steps: [
       {
@@ -17322,7 +17409,7 @@ export const LESSONS: Lesson[] = [
     concept_ids: ['strategy_interdependence', 'maximally_exploitative_strategy', 'counter_exploitation', 'nash_equilibrium_source', 'indifference_principle', 'alpha_mdf_derivation', 'mdf_limitations'],
     estimated_min: 15,
     xp_reward: 260,
-    sort_order: 10,
+    sort_order: 9,
     steps: [
       {
         id: 'el-s1',
@@ -17356,7 +17443,7 @@ export const LESSONS: Lesson[] = [
         strategy_response_lab_tolerance: 0.1,
         tendency_tag: 'best_response_mastery',
         tendency_tag_label: 'Finding the best response to a fixed opponent',
-        tendency_tag_leak_hint: 'Revisit Lesson 10.2 — against a truly fixed opponent, the most profitable response is a pure action, not a mix.',
+        tendency_tag_leak_hint: 'Revisit Lesson 10.1 — against a truly fixed opponent, the most profitable response is a pure action, not a mix.',
         xp: 20,
       },
       {
@@ -17378,7 +17465,7 @@ export const LESSONS: Lesson[] = [
             id: 'strategy_changed',
             label: "The opponent's own strategy is what changed, not some general truth about bluffing",
             quality: 'perfect',
-            feedback: 'Exactly the pattern from Lesson 10.3, again: the exploit was only ever a fact about THIS opponent. Change the opponent, and you need a fresh best response — the exploit itself was never flawed.',
+            feedback: 'Exactly the pattern from Lesson 10.2, again: the exploit was only ever a fact about THIS opponent. Change the opponent, and you need a fresh best response — the exploit itself was never flawed.',
           },
           {
             id: 'always_bad',
@@ -17395,7 +17482,7 @@ export const LESSONS: Lesson[] = [
         ],
         tendency_tag: 'counter_exploitation_mastery',
         tendency_tag_label: "Recognizing that an exploit's value is conditional on the opponent, not intrinsic",
-        tendency_tag_leak_hint: 'Revisit Lesson 10.3 — the FREEZE/UNFREEZE lab shows the exact same EV drop for the same reason.',
+        tendency_tag_leak_hint: 'Revisit Lesson 10.2 — the FREEZE/UNFREEZE lab shows the exact same EV drop for the same reason.',
         xp: 25,
       },
       {
@@ -17419,7 +17506,7 @@ export const LESSONS: Lesson[] = [
         clairvoyance_lab_tolerance: 0.05,
         tendency_tag: 'equilibrium_mastery',
         tendency_tag_label: 'Locating a genuine multi-frequency Nash equilibrium',
-        tendency_tag_leak_hint: 'Revisit Lesson 10.7 — AA bets 100%, QQ bets 50%, KK calls 50%. Nothing here can improve alone.',
+        tendency_tag_leak_hint: 'Revisit Lesson 10.6 — AA bets 100%, QQ bets 50%, KK calls 50%. Nothing here can improve alone.',
         xp: 30,
       },
       {
@@ -17436,7 +17523,7 @@ export const LESSONS: Lesson[] = [
         ev_indifference_balance_equity_when_checked: 0,
         tendency_tag: 'indifference_mastery',
         tendency_tag_label: 'Finding the exact EV crossover between two actions',
-        tendency_tag_leak_hint: "Revisit Lesson 10.6 — the crossover isn't a guess, it's the frequency where both action bars are exactly equal.",
+        tendency_tag_leak_hint: "Revisit Lesson 10.5 — the crossover isn't a guess, it's the frequency where both action bars are exactly equal.",
         xp: 20,
       },
       {
@@ -17461,7 +17548,7 @@ export const LESSONS: Lesson[] = [
             id: 'benchmark_only',
             label: 'No — treat it as a rough benchmark, not an exact number',
             quality: 'perfect',
-            feedback: "Correct, and the same reasoning as Lesson 10.9 — a hand with real outs and a river still to come simply isn't the zero-equity, no-more-cards model MDF was derived from.",
+            feedback: "Correct, and the same reasoning as Lesson 10.8 — a hand with real outs and a river still to come simply isn't the zero-equity, no-more-cards model MDF was derived from.",
           },
           {
             id: 'exact_still',

@@ -2316,6 +2316,7 @@ export function evaluateStepLocally(
     // direct passthrough of hand-authored step data, never computed here.
     nut_advantage_reveal: step.nut_advantage_reveal,
     solver_reveal: step.solver_reveal,
+    theory_panel: step.theory_panel,
     xp_earned,
     level_before,
     level_after,

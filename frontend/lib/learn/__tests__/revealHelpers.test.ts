@@ -95,10 +95,12 @@ describe('computeBucketReveal — acceptable alternates (e.g. bar-s4 style steps
 
 describe('computeBucketReveal — "The Squeeze" (sqz-s5) regression for reported KQo mis-render bug', () => {
   // sqz-s5: pool ['AA', 'AKo', 'A5s', 'KQo', '76s', '92o']
-  // correct: AA/AKo/A5s -> squeeze, KQo -> call, 76s/92o -> fold
+  // categories: squeeze / fold ONLY — from the SB there is no flatting range
+  // against an open, so a 'call' bucket would be one no hand belongs in.
+  // correct: AA/AKo/A5s -> squeeze, KQo/76s/92o -> fold
   // acceptable: KQo -> [squeeze] (a genuine boundary hand — see the companion
-  // decision_spot step sqz-s5b, which grades 3-bet as 'acceptable' quality
-  // for the same KQo spot), 76s -> [call]
+  // decision_spot step sqz-s5b, which grades 3-bet as 'acceptable' quality for
+  // the same KQo spot and folds it by default).
   const step = findStep('sqz-s5')
 
   // TEST A — every hand answered SQUEEZE (the exact reported reproduction)
@@ -110,11 +112,11 @@ describe('computeBucketReveal — "The Squeeze" (sqz-s5) regression for reported
     expect(byHand.AA).toMatchObject({ yourCategoryId: 'squeeze', correctCategoryId: 'squeeze', correct: true })
     expect(byHand.AKo).toMatchObject({ yourCategoryId: 'squeeze', correctCategoryId: 'squeeze', correct: true })
     expect(byHand.A5s).toMatchObject({ yourCategoryId: 'squeeze', correctCategoryId: 'squeeze', correct: true })
-    // KQo: submitted 'squeeze' != canonical best 'call', but 'squeeze' is an
+    // KQo: submitted 'squeeze' != canonical best 'fold', but 'squeeze' is an
     // authored acceptable alternate, so this must be scored correct — and,
     // critically, the reveal must still expose 'squeeze' as what was
-    // actually submitted, not silently swap in 'call'.
-    expect(byHand.KQo).toMatchObject({ yourCategoryId: 'squeeze', correctCategoryId: 'call', correct: true })
+    // actually submitted, not silently swap in 'fold'.
+    expect(byHand.KQo).toMatchObject({ yourCategoryId: 'squeeze', correctCategoryId: 'fold', correct: true })
     expect(byHand['76s']).toMatchObject({ yourCategoryId: 'squeeze', correctCategoryId: 'fold', correct: false })
     expect(byHand['92o']).toMatchObject({ yourCategoryId: 'squeeze', correctCategoryId: 'fold', correct: false })
 
@@ -128,27 +130,41 @@ describe('computeBucketReveal — "The Squeeze" (sqz-s5) regression for reported
     expect(reveal.filter((r) => r.correct)).toHaveLength(6)
   })
 
-  // TEST C — every hand deliberately wrong (and not an accepted alternate)
-  it('scores 0/6 when every hand is assigned a category that is neither correct nor accepted', () => {
+  // TEST C — every hand that CAN be wrong, deliberately wrong
+  it('scores 0 for every hand assigned a category that is neither correct nor accepted', () => {
     // AA/AKo/A5s want 'squeeze' (no accepted alt) -> 'fold' is wrong.
-    // KQo wants 'call', only accepts 'squeeze' -> 'fold' is wrong.
-    // 76s/92o want 'fold', 76s also accepts 'call' -> 'squeeze' is wrong for both.
-    const allWrong = { AA: 'fold', AKo: 'fold', A5s: 'fold', KQo: 'fold', '76s': 'squeeze', '92o': 'squeeze' }
+    // 76s/92o want 'fold' (no accepted alt) -> 'squeeze' is wrong.
+    // KQo is excluded on purpose: it wants 'fold' and accepts 'squeeze', and with
+    // only two buckets on this step there is no third category left that would
+    // score it wrong. That's the boundary hand behaving exactly as authored, not
+    // a gap in the check — TEST E below pins it directly.
+    const allWrong = { AA: 'fold', AKo: 'fold', A5s: 'fold', '76s': 'squeeze', '92o': 'squeeze' }
     const reveal = computeBucketReveal(step, allWrong)
-    expect(reveal.every((r) => !r.correct)).toBe(true)
+    expect(reveal.filter((r) => r.hand !== 'KQo').every((r) => !r.correct)).toBe(true)
   })
 
   // TEST D — mixed answers, verify every row independently
   it('grades a mixed submission row by row', () => {
-    const mixed = { AA: 'squeeze', AKo: 'call', A5s: 'squeeze', KQo: 'call', '76s': 'fold', '92o': 'call' }
+    const mixed = { AA: 'squeeze', AKo: 'fold', A5s: 'squeeze', KQo: 'squeeze', '76s': 'fold', '92o': 'squeeze' }
     const reveal = computeBucketReveal(step, mixed)
     const byHand = Object.fromEntries(reveal.map((r) => [r.hand, r]))
     expect(byHand.AA.correct).toBe(true)
     expect(byHand.AKo.correct).toBe(false)
     expect(byHand.A5s.correct).toBe(true)
-    expect(byHand.KQo.correct).toBe(true)
+    expect(byHand.KQo.correct).toBe(true) // accepted alternate
     expect(byHand['76s'].correct).toBe(true)
     expect(byHand['92o'].correct).toBe(false)
+  })
+
+  // TEST E — the boundary hand scores correct in EITHER bucket, and the reveal
+  // always reports back the bucket the learner actually chose.
+  it('KQo is graded correct whether squeezed or folded, without rewriting what was submitted', () => {
+    for (const chosen of ['squeeze', 'fold'] as const) {
+      const row = computeBucketReveal(step, { KQo: chosen }).find((r) => r.hand === 'KQo')!
+      expect(row.correct, chosen).toBe(true)
+      expect(row.yourCategoryId, chosen).toBe(chosen)
+      expect(row.correctCategoryId, chosen).toBe('fold')
+    }
   })
 
   // TEST G — computing the reveal must never mutate the submitted answers

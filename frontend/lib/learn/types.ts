@@ -231,6 +231,11 @@ export interface LessonStep {
    *  rendered via `RangeCoverageBar` after the score — see `SolverRevealData`. Same
    *  purely-presentational, non-grading contract as `range_reveal_direction`. */
   solver_reveal?: SolverRevealData
+  /** Post-answer hand-authored theory panel — see `TheoryPanelData`. Use INSTEAD of
+   *  `range_reveal_direction` when no canonical chart covers the spot the question
+   *  actually asked about; showing a chart of a different spot is the exact mismatch
+   *  this field exists to replace. Same non-grading passthrough contract. */
+  theory_panel?: TheoryPanelData
   /** Paired with `scenario_b`: the question compares two distinct poker states
    *  (two opener positions, two stack depths, two action sequences, ...), so
    *  `decision_spot`/`table_decision` render a ScenarioComparison switcher —
@@ -871,11 +876,11 @@ export interface LessonStep {
   // Strategy Response Lab — A→B→A strategy feedback loop. All EV math routes through
   // gameTheoryEngine.ts's evOfBetting/evOfChecking on a one-street toy bet/check game
   // (pot/bet/equity below), never hand-authored per-frequency EV numbers.
-  /** 'intro' = pick between two labeled pure strategies, see the fixed opposing response (10.1).
+  /** 'intro' = pick between two labeled pure strategies, see the fixed opposing response (10.1, first half).
    *  'best_response' = Villain's call frequency is fixed/locked; learner searches Hero's bet-frequency
-   *  slider for the MES (10.2). 'counter_exploit' = FREEZE/UNFREEZE Villain; the learner's exploit
-   *  found while frozen gets re-evaluated after Villain adjusts (10.3). 'iterate' = step through a fixed
-   *  sequence of source-cited push/fold states via a "Best Respond" button (10.4). */
+   *  slider for the MES (10.1, second half). 'counter_exploit' = FREEZE/UNFREEZE Villain; the learner's exploit
+   *  found while frozen gets re-evaluated after Villain adjusts (10.2). 'iterate' = step through a fixed
+   *  sequence of source-cited push/fold states via a "Best Respond" button (10.3). */
   strategy_response_lab_mode?: 'intro' | 'best_response' | 'counter_exploit' | 'iterate'
   strategy_response_lab_prompt?: string
   /** The underlying toy game's pot/bet/equity. Falls back to PRESSURE_GAME_DEFAULT (gameTheoryContent.ts). */
@@ -895,7 +900,7 @@ export interface LessonStep {
   /** Tolerance (as a 0-1 frequency fraction) for scoring 'best_response'/'counter_exploit' slider answers. Default 0.05. */
   strategy_response_lab_tolerance?: number
 
-  // Clairvoyance Lab — the AA/QQ-vs-KK polarized toy game (10.7-10.8). `board`/`pot_bb` are not
+  // Clairvoyance Lab — the AA/QQ-vs-KK polarized toy game (10.6-10.7). `board`/`pot_bb` are not
   // used here; see CLAIRVOYANCE_GAME in gameTheoryContent.ts for the fixed pot/bet/board.
   clairvoyance_lab_prompt?: string
   /** 'explore' = free sliders, unscored, for building intuition. 'find_equilibrium' = adjust the
@@ -1212,6 +1217,53 @@ export interface SolverRevealData {
   caption?: string
 }
 
+/** One weighted consideration inside a `TheoryPanelData` — the poker concept
+ *  (`term`) plus what it actually says about THIS decision (`description`).
+ *  `weight` is presentation only: whether the concept argues FOR the panel's
+ *  recommended action, AGAINST it, or is context that cuts neither way. */
+export interface TheoryPanelFactor {
+  term: string
+  description: string
+  weight?: 'for' | 'against' | 'context'
+}
+
+/** Post-answer hand-authored THEORY panel — the fallback for spots where the
+ *  canonical range data genuinely cannot back a chart, so the honest choice is
+ *  a reasoned explanation instead of a chart of a DIFFERENT spot.
+ *
+ *  This exists because of the Module 4 Lesson 7 (squeeze) audit: a squeeze
+ *  decision was being explained with the OPENER's opening range, which answers
+ *  "what does CO open?" rather than the question actually asked ("what does
+ *  Hero do?"). Modern Poker Theory has no squeeze-response chart at all — every
+ *  one of its 482 Hand Ranges is a response to a SINGLE opener (or a 4-bet /
+ *  push-fold spot) — so there is no chart to swap in, and inventing one would
+ *  violate the project's never-fabricate-ranges rule. A structured theory panel
+ *  is what the source can honestly support.
+ *
+ *  Same purely-presentational, never-graded contract as `NutAdvantageRevealData`
+ *  and `SolverRevealData`: a direct passthrough of hand-authored `step` data,
+ *  never computed in `evaluator.ts`, so it can never influence
+ *  `quality`/`score`/`xp_earned`. Rendered by `TheoryPanel.tsx`. */
+export interface TheoryPanelData {
+  /** Eyebrow naming the exact configuration, e.g. "SQUEEZE STRATEGY — SB vs CO OPEN + BTN CALL". */
+  label: string
+  /** The hand the verdict is about, e.g. "KQo". */
+  hand: string
+  /** The recommended action in plain words, e.g. "Fold". */
+  verdict: string
+  /** One line qualifying the verdict, e.g. "Squeezing is the defensible alternative — never calling." */
+  verdict_note?: string
+  /** The concepts that produce the verdict. Only concepts the reference book
+   *  actually supports — see `LessonStep.source` for the traceability record. */
+  factors: TheoryPanelFactor[]
+  /** One sentence the learner can carry to the NEXT spot of this shape. */
+  takeaway: string
+  /** Honest sourcing line, e.g. "No solver chart exists for this exact
+   *  configuration — derived from the book's own SB principle." Mirrors
+   *  `SolverRevealData.caption`. */
+  caption?: string
+}
+
 /** Resolved (never learner-facing-computed) full Hero strategy shown after a decision_spot is
  *  answered — see `defendRangeReveal.ts` (Hero facing an open) and `threebetRangeReveal.ts`
  *  (Hero as the 3-bettor), dispatched by `step.range_reveal_direction` in evaluator.ts.
@@ -1281,6 +1333,9 @@ export interface StepResult {
   /** Post-answer "Solver Strategy" reveal — direct passthrough of `step.solver_reveal`,
    *  see `SolverRevealData`. Same non-grading contract as `range_reveal`. */
   solver_reveal?: SolverRevealData
+  /** Post-answer theory panel — direct passthrough of `step.theory_panel`, see
+   *  `TheoryPanelData`. Same non-grading contract as `range_reveal`. */
+  theory_panel?: TheoryPanelData
   // Evaluation pipeline metadata — always present from v2 onwards
   evaluation_source: EvaluationSource
   confidence: EvaluationConfidence
