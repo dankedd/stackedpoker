@@ -47,21 +47,25 @@ describe("aiCoachDailyLimit", () => {
 });
 
 describe("canAccessModule", () => {
+  // Modeled on the real LEARNING_MODULES shape: `order` is the reliable,
+  // globally-unique 1-28 Poker Journey position. `sort_order` is deliberately
+  // NOT used for module ranking — every roadmap-only module in curriculum.ts
+  // shares sort_order: 0, so it can't distinguish "module 1" from "module 14".
   const modules = [
-    { sort_order: 0 },
-    { sort_order: 1 },
-    { sort_order: 2 },
-    { sort_order: 3 },
+    { order: 1 },
+    { order: 2 },
+    { order: 3 },
+    { order: 4 },
   ];
 
-  it("free tier gets only the first two modules by sort_order", () => {
+  it("free tier gets only the first two modules by `order`", () => {
     expect(canAccessModule("free", modules[0], modules)).toBe(true);
     expect(canAccessModule("free", modules[1], modules)).toBe(true);
     expect(canAccessModule("free", modules[2], modules)).toBe(false);
     expect(canAccessModule("free", modules[3], modules)).toBe(false);
   });
 
-  it("is unaffected by array order — only sort_order matters", () => {
+  it("is unaffected by array order — only `order` matters", () => {
     const shuffled = [modules[3], modules[1], modules[2], modules[0]];
     expect(canAccessModule("free", modules[1], shuffled)).toBe(true);
     expect(canAccessModule("free", modules[2], shuffled)).toBe(false);
@@ -74,16 +78,26 @@ describe("canAccessModule", () => {
     }
   });
 
-  it("a newly-added module (higher sort_order) is automatically locked for free — no code change needed", () => {
-    const withNewModule = [...modules, { sort_order: 4 }];
-    expect(canAccessModule("free", { sort_order: 4 }, withNewModule)).toBe(false);
+  it("a newly-added module (higher order) is automatically locked for free — no code change needed", () => {
+    const withNewModule = [...modules, { order: 5 }];
+    expect(canAccessModule("free", { order: 5 }, withNewModule)).toBe(false);
+  });
+
+  it("roadmap-only modules sharing order: undefined never count as module 1 or 2", () => {
+    const withRoadmapModules = [...modules, {}, {}, {}];
+    for (const roadmap of [{}, {}, {}]) {
+      expect(canAccessModule("free", roadmap, withRoadmapModules)).toBe(false);
+    }
+    // the real first two (order: 1, order: 2) are unaffected by the roadmap noise
+    expect(canAccessModule("free", modules[0], withRoadmapModules)).toBe(true);
+    expect(canAccessModule("free", modules[1], withRoadmapModules)).toBe(true);
   });
 });
 
 describe("canAccessLesson", () => {
-  const module1 = { sort_order: 0 };
-  const module3 = { sort_order: 2 };
-  const allModules = [{ sort_order: 0 }, { sort_order: 1 }, module3, { sort_order: 3 }];
+  const module1 = { order: 1 };
+  const module3 = { order: 3 };
+  const allModules = [{ order: 1 }, { order: 2 }, module3, { order: 4 }];
   const module3Lessons = [{ sort_order: 1 }, { sort_order: 2 }, { sort_order: 3 }, { sort_order: 4 }];
 
   it("every lesson in a fully-free module (module 1 or 2) is accessible", () => {
