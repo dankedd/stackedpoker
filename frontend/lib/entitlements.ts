@@ -52,13 +52,22 @@ export function aiCoachDailyLimit(tier: Tier | string | null | undefined): numbe
 }
 
 // ── Learn module/lesson access ────────────────────────────────────────────────
-// Free tier gets the first two modules (by sort_order) in full, plus the first
-// lesson (lowest sort_order) of every other module. Purely positional — a new
-// module or lesson added to curriculum.ts is correctly gated with zero changes
-// here.
+// Free tier gets the first two modules in full, plus the first lesson of
+// every other module. Purely positional — a new module or lesson added to
+// curriculum.ts is correctly gated with zero changes here.
+//
+// Module ranking uses `order` (LearningModule's global 1-28 Poker Journey
+// position), NOT `sort_order` — `sort_order` is only meaningful within the
+// 12 currently-built modules; every roadmap-only module in curriculum.ts's
+// LEARNING_MODULES array shares `sort_order: 0`, which would make them tie
+// for "module 1" if used for cross-module ranking. `order` is the field
+// that's actually unique and contiguous across all modules, built or not.
+// Lesson ranking still uses `sort_order`, which IS reliably unique within a
+// single module's own lesson list.
 
 export interface ModuleOrderLike {
-  sort_order: number;
+  /** LearningModule.order — defaults to "last" (never free) if unset. */
+  order?: number;
 }
 
 export interface LessonOrderLike {
@@ -67,14 +76,18 @@ export interface LessonOrderLike {
 
 const FREE_FULL_MODULE_COUNT = 2;
 
+function moduleRankKey(m: ModuleOrderLike): number {
+  return m.order ?? Number.POSITIVE_INFINITY;
+}
+
 export function canAccessModule(
   tier: Tier | string | null | undefined,
   targetModule: ModuleOrderLike,
   allModulesSorted: ModuleOrderLike[],
 ): boolean {
   if (isPaidTier(tier)) return true;
-  const ranked = [...allModulesSorted].sort((a, b) => a.sort_order - b.sort_order);
-  const rank = ranked.findIndex((m) => m.sort_order === targetModule.sort_order);
+  const ranked = [...allModulesSorted].sort((a, b) => moduleRankKey(a) - moduleRankKey(b));
+  const rank = ranked.findIndex((m) => moduleRankKey(m) === moduleRankKey(targetModule));
   return rank >= 0 && rank < FREE_FULL_MODULE_COUNT;
 }
 

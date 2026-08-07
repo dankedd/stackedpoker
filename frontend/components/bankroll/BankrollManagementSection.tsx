@@ -101,7 +101,7 @@ export function BankrollManagementSection({ bankroll, currency, buyInRules, rece
       </div>
 
       <p className="text-[10px] text-muted-foreground/40 mt-3">
-        Bankroll: {formatCurrency(bankroll, currency)}. Buy-in rules are set by you — Stacked Poker doesn't prescribe a "correct" number.
+        Bankroll: {formatCurrency(bankroll, currency)}. Buy-in rules are set by you — Stacked Poker doesn&apos;t prescribe a &quot;correct&quot; number.
       </p>
     </div>
   );

@@ -18383,7 +18383,7 @@ export const LESSONS: Lesson[] = [
         options: [
           {
             id: 'ignores_composition',
-            label: "It ignores composition — the book's own numbers show BB's good-hand share nearly triples (17% to 40%) and BB's trash collapses (49% to 18%) versus A76r, while IP's Ax hands degrade into IP's own weak tier",
+            label: "It ignores composition — BB's hand-quality distribution improves sharply here versus A76r",
             quality: 'perfect',
             feedback: "Exactly the mistake this whole lesson warns against. \"Coinflip\" describes the AVERAGE outcome only. Underneath it, BB's range has quietly become much better-shaped — far more Good hands, far less Trash — while IP's seemingly fine Ax hands have degraded into weak holdings. Treating this as symmetric badly under-uses BB's real, composition-driven edge.",
           },

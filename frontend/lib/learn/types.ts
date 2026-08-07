@@ -1046,6 +1046,17 @@ export interface Lesson {
   next_lesson_teaser?: string
 }
 
+/**
+ * A `Lesson` with `steps`/`chapters` — the actual interactive content and
+ * answer keys — stripped, plus a `step_count` so UI that shows "N steps"
+ * still works. This is the ONLY lesson shape safe to import into any client
+ * component: everything except the lesson page itself (and its matching
+ * backend checks) should read lesson data through this type, sourced from
+ * lib/learn/curriculumPublic.generated.ts, never the real `Lesson` from
+ * curriculum.ts — see scripts/generateCurriculumPublic.ts.
+ */
+export type PublicLesson = Omit<Lesson, 'steps' | 'chapters'> & { step_count: number }
+
 // ── Poker Journey roadmap (13 stages, 28 modules — linear academy) ───────────
 
 /** 'complete' = module is live/playable today. 'placeholder' / 'planned' = roadmap-only, not yet built. */

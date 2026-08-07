@@ -815,7 +815,10 @@
         "hj-s3": 8,
         "hj-s4": 8,
         "hj-s5": 30,
-        "hj-s6": 6
+        "hj-lj-decision": 10,
+        "hj-lj-compare": 10,
+        "hj-s6": 6,
+        "hj-s7-takeaway": 6
       }
     },
     "defending-as-co": {
@@ -1623,6 +1626,13 @@
         "cbe-s5": 12,
         "cbe-s6": 12,
         "cbe-s7": 12,
+        "cbe-practice-intro": 4,
+        "cbe-ex1": 12,
+        "cbe-ex1-takeaway": 4,
+        "cbe-ex2": 14,
+        "cbe-ex2-takeaway": 4,
+        "cbe-ex3": 16,
+        "cbe-ex3-takeaway": 4,
         "cbe-s8": 8
       }
     },
