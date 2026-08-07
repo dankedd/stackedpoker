@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const FAQS = [
   {
     q: "What's the difference between the plans?",
-    a: "Free gives you core analysis to try the platform. Pro (€14.99/month) unlocks advanced analysis, AI coaching, extended replay tools, expanded puzzle access, leak detection, and training history. Premium (€34.99/month) includes everything in Pro plus advanced hand analysis, premium coaching, advanced leak intelligence, priority features, and premium study systems.",
+    a: "Free covers Module 1, Module 2, and the first lesson of every other module, plus XP, achievements, streaks, the leaderboard, a limited Range Trainer, and 3 AI Coach messages a day. Plus (€7.99/month) unlocks every Learn module — current and future — the full Range Trainer, the full Bankroll Tracker, your personal dashboard, and 15 AI Coach messages a day. Elite (€11.99/month) adds unlimited AI Coach messages plus the Solver Explorer and Solver Tree Explorer.",
   },
   {
     q: "Can I cancel anytime?",
@@ -22,20 +22,16 @@ const FAQS = [
     a: "All payments go through Stripe, a PCI DSS Level 1 certified processor trusted by millions of businesses. We never see or store your card details.",
   },
   {
-    q: "What happens to my saved hands if I downgrade?",
-    a: "Your previously analyzed hands are always yours. If you downgrade, you revert to the lower plan's daily limits, but every hand history you already saved stays in your account and remains viewable.",
+    q: "What happens to my progress if I downgrade?",
+    a: "Your XP, achievements, streak, and bankroll history are always yours. If you downgrade, you revert to the lower plan's access, but nothing you've already earned or logged is ever deleted.",
   },
   {
-    q: "Is there a free trial for Pro or Premium?",
-    a: "There's no timed trial, but the Free plan lets you run analyses to experience the full coaching quality before upgrading. No credit card required to start.",
+    q: "Is there a free trial for Plus or Elite?",
+    a: "There's no timed trial, but the Free plan lets you experience the platform's core teaching quality before upgrading. No credit card required to start.",
   },
   {
     q: "Does it work on mobile?",
     a: "Yes. The full web app is responsive and runs in any modern mobile browser — no app installation required.",
-  },
-  {
-    q: "Which poker sites are supported?",
-    a: "GGPoker and PokerStars hand history formats are fully supported, including ZIP exports from PokerCraft. Additional sites may be added in future updates.",
   },
 ];
 

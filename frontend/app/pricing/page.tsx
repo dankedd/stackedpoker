@@ -9,40 +9,44 @@ import { PricingFAQ } from "./faq";
 import { cn } from "@/lib/utils";
 
 // ── Configurable prices ───────────────────────────────────────────────────────
+// Internal tier keys ("pro"/"premium") stay as-is — they mirror Supabase's
+// subscription_tier enum and the Stripe checkout plan param. "Plus"/"Elite"
+// below are display labels only.
 
-const PRO_PRICE     = "€14.99";
-const PREMIUM_PRICE = "€34.99";
+const PLUS_PRICE  = "€7.99";
+const ELITE_PRICE = "€11.99";
 
 // ── Plan feature rows ─────────────────────────────────────────────────────────
 
 const FREE_FEATURES = [
-  { text: "3 hand analyses per day",        limit: "Daily limit" },
-  { text: "1 session analysis per day",     limit: "Daily limit" },
-  { text: "1 tournament analysis per day",  limit: "Daily limit" },
-  { text: "3 puzzles per day",              limit: "Daily limit" },
-  { text: "Last 5 hand histories saved",    limit: "Saved history" },
-  { text: "Community updates",             limit: null },
-  { text: "Cancel anytime",               limit: null },
+  { text: "Module 1",                            limit: null },
+  { text: "Module 2",                             limit: null },
+  { text: "First lesson of every remaining module", limit: null },
+  { text: "XP & Levels",                          limit: null },
+  { text: "Achievements",                         limit: null },
+  { text: "Daily Streak",                         limit: null },
+  { text: "Leaderboard",                          limit: null },
+  { text: "Range Trainer",                        limit: "Limited scenarios" },
+  { text: "AI Coach",                             limit: "3 messages per day" },
 ];
 
-const PRO_FEATURES = [
-  { text: "Advanced hand & session analysis", limit: null },
-  { text: "AI coaching & recommendations",    limit: null },
-  { text: "Extended replay tools",            limit: null },
-  { text: "Expanded puzzle access",           limit: null },
-  { text: "Leak detection",                   limit: null },
-  { text: "Training history",                 limit: null },
-  { text: "Cancel anytime",                   limit: null },
+const PLUS_FEATURES = [
+  { text: "Everything in Free",                   limit: null },
+  { text: "Access to all Learn modules",          limit: null },
+  { text: "Access to all future modules",         limit: null },
+  { text: "All interactive lessons & exercises",  limit: null },
+  { text: "AI Coach",                             limit: "15 messages per day" },
+  { text: "Full Range Trainer",                   limit: null },
+  { text: "Full Bankroll Tracker",                limit: "Overview · Wallet · Sessions · Calendar · Goals · Stats · AI Insights" },
+  { text: "Personal Dashboard",                   limit: null },
+  { text: "Full progress tracking",               limit: null },
 ];
 
-const PREMIUM_FEATURES = [
-  { text: "Everything in Pro",                unlimited: false },
-  { text: "Advanced hand analysis",           unlimited: true },
-  { text: "Premium AI coaching",              unlimited: true },
-  { text: "Advanced leak intelligence",       unlimited: true },
-  { text: "Adaptive training (coming soon)",  unlimited: true },
-  { text: "Priority features & access",       unlimited: true },
-  { text: "Premium study systems",            unlimited: true },
+const ELITE_FEATURES = [
+  { text: "Everything in Plus",     unlimited: false },
+  { text: "Unlimited AI Coach",     unlimited: true },
+  { text: "Solver Explorer",        unlimited: false },
+  { text: "Solver Tree Explorer",   unlimited: false },
 ];
 
 // ── Comparison table ──────────────────────────────────────────────────────────
@@ -50,23 +54,24 @@ const PREMIUM_FEATURES = [
 type CompRow = {
   feature: string;
   free: string | boolean;
-  pro: string | boolean;
-  premium: string | boolean;
+  plus: string | boolean;
+  elite: string | boolean;
 };
 
 const COMPARISON: CompRow[] = [
-  { feature: "Advanced analysis",              free: false,  pro: true,    premium: true },
-  { feature: "AI coaching",                    free: false,  pro: true,    premium: true },
-  { feature: "Replay tools",                   free: false,  pro: true,    premium: true },
-  { feature: "Puzzle access",                  free: "Basic", pro: "Full", premium: "Full" },
-  { feature: "Leak detection",                 free: false,  pro: true,    premium: true },
-  { feature: "Training history",               free: false,  pro: true,    premium: true },
-  { feature: "Solver-backed analysis",         free: false,  pro: false,   premium: true },
-  { feature: "Advanced leak intelligence",     free: false,  pro: false,   premium: true },
-  { feature: "Premium coaching",               free: false,  pro: false,   premium: true },
-  { feature: "Priority features",              free: false,  pro: false,   premium: true },
-  { feature: "Community updates",              free: true,   pro: true,    premium: true },
-  { feature: "Cancel anytime",                 free: true,   pro: true,    premium: true },
+  { feature: "Learn modules",        free: "Module 1-2 + first lesson each", plus: "All modules", elite: "All modules" },
+  { feature: "XP & Levels",          free: true,  plus: true,  elite: true },
+  { feature: "Achievements",         free: true,  plus: true,  elite: true },
+  { feature: "Daily Streak",         free: true,  plus: true,  elite: true },
+  { feature: "Leaderboard",          free: true,  plus: true,  elite: true },
+  { feature: "Range Trainer",        free: "Limited", plus: "Full", elite: "Full" },
+  { feature: "AI Coach",             free: "3/day", plus: "15/day", elite: "Unlimited" },
+  { feature: "Bankroll Tracker",     free: false, plus: true,  elite: true },
+  { feature: "Personal Dashboard",   free: false, plus: true,  elite: true },
+  { feature: "Full progress tracking", free: false, plus: true, elite: true },
+  { feature: "Solver Explorer",      free: false, plus: false, elite: true },
+  { feature: "Solver Tree Explorer", free: false, plus: false, elite: true },
+  { feature: "Cancel anytime",       free: true,  plus: true,  elite: true },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -130,8 +135,8 @@ export default async function PricingPage() {
             </h1>
 
             <p className="text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-              Every plan uses the same AI engine. The only difference is
-              how much you can study per day.
+              Every plan shares the same core platform. Plus and Elite unlock
+              more of it as you grow.
             </p>
 
             {isAnyPaid && (
@@ -143,8 +148,8 @@ export default async function PricingPage() {
               )}>
                 <Check className="h-4 w-4" />
                 {isPremium
-                  ? "You're on Premium — unlimited access, no limits"
-                  : "You're on Pro — enjoy 30 analyses per day"}
+                  ? "You're on Elite — unlimited AI Coach and full solver access"
+                  : "You're on Plus — full platform access unlocked"}
               </div>
             )}
           </div>
@@ -177,7 +182,7 @@ export default async function PricingPage() {
                     <span className="text-muted-foreground text-sm">/month</span>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Try the full coaching experience. No credit card required.
+                    Start your poker journey
                   </p>
                 </div>
 
@@ -198,14 +203,14 @@ export default async function PricingPage() {
                 </ul>
 
                 <Link
-                  href={user ? "/analyze" : "/signup"}
+                  href="/signup"
                   className="block w-full rounded-xl border border-border/70 bg-secondary/40 px-6 py-3.5 text-center text-sm font-semibold text-foreground hover:bg-secondary/70 hover:border-border transition-all duration-200"
                 >
-                  {user ? "Continue with Free" : "Start Free"}
+                  Start Free
                 </Link>
               </div>
 
-              {/* ── Pro ── */}
+              {/* ── Plus ── */}
               <div className={cn(
                 "relative rounded-2xl border p-8 flex flex-col gap-6 transition-all duration-300",
                 "border-violet-500/40 bg-gradient-to-b from-violet-500/10 via-violet-500/5 to-transparent",
@@ -227,7 +232,7 @@ export default async function PricingPage() {
 
                 <div>
                   <div className="flex items-center gap-2.5 mb-4">
-                    <span className="text-xs font-bold uppercase tracking-widest text-violet-400">Pro</span>
+                    <span className="text-xs font-bold uppercase tracking-widest text-violet-400">Plus</span>
                     {isPro && (
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-violet-500/20 border border-violet-500/30 text-violet-300">
                         Current plan
@@ -235,16 +240,16 @@ export default async function PricingPage() {
                     )}
                   </div>
                   <div className="flex items-baseline gap-1.5 mb-2">
-                    <span className="text-5xl font-black text-foreground">{PRO_PRICE}</span>
+                    <span className="text-5xl font-black text-foreground">{PLUS_PRICE}</span>
                     <span className="text-muted-foreground text-sm">/month</span>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Billed monthly · Cancel anytime · iDEAL & card
+                    Improve with confidence
                   </p>
                 </div>
 
                 <ul className="space-y-3 flex-1">
-                  {PRO_FEATURES.map((f) => (
+                  {PLUS_FEATURES.map((f) => (
                     <li key={f.text} className="flex items-start gap-3 text-sm">
                       <Check className="h-4 w-4 text-violet-400 shrink-0 mt-0.5" />
                       <div className="flex flex-col gap-0.5">
@@ -275,7 +280,7 @@ export default async function PricingPage() {
                 )}
               </div>
 
-              {/* ── Premium ── */}
+              {/* ── Elite ── */}
               <div className={cn(
                 "relative rounded-2xl border p-8 flex flex-col gap-6 transition-all duration-300",
                 "border-amber-500/25 bg-gradient-to-b from-amber-500/6 via-violet-500/4 to-transparent",
@@ -299,7 +304,7 @@ export default async function PricingPage() {
                 <div>
                   <div className="flex items-center gap-2.5 mb-4">
                     <span className="text-xs font-bold uppercase tracking-widest text-amber-400/80">
-                      Premium
+                      Elite
                     </span>
                     {isPremium && (
                       <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-300">
@@ -308,16 +313,16 @@ export default async function PricingPage() {
                     )}
                   </div>
                   <div className="flex items-baseline gap-1.5 mb-2">
-                    <span className="text-5xl font-black text-foreground">{PREMIUM_PRICE}</span>
+                    <span className="text-5xl font-black text-foreground">{ELITE_PRICE}</span>
                     <span className="text-muted-foreground text-sm">/month</span>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Billed monthly · Cancel anytime · iDEAL & card
+                    Master your game
                   </p>
                 </div>
 
                 <ul className="space-y-3 flex-1">
-                  {PREMIUM_FEATURES.map((f) => (
+                  {ELITE_FEATURES.map((f) => (
                     <li key={f.text} className="flex items-start gap-3 text-sm">
                       {f.unlimited ? (
                         <Infinity className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
@@ -360,7 +365,7 @@ export default async function PricingPage() {
                 "No credit card for free plan",
                 "Stripe-secured payments",
                 "Cancel anytime",
-                "Same AI quality on all plans",
+                "Same AI engine on every plan",
               ].map((t) => (
                 <span key={t} className="flex items-center gap-1.5">
                   <Check className="h-3 w-3 text-muted-foreground/25" />
@@ -379,7 +384,7 @@ export default async function PricingPage() {
                 Compare plans
               </h2>
               <p className="text-muted-foreground">
-                All plans use the same AI engine — the difference is only in daily usage limits.
+                Everything included in each plan, side by side.
               </p>
             </div>
 
@@ -388,8 +393,8 @@ export default async function PricingPage() {
               <div className="grid grid-cols-4 items-center px-6 py-4 border-b border-border/50 bg-secondary/40">
                 <div className="text-sm font-semibold text-foreground">Feature</div>
                 <div className="text-sm font-semibold text-muted-foreground text-center">Free</div>
-                <div className="text-sm font-semibold text-violet-400 text-center">Pro</div>
-                <div className="text-sm font-semibold text-amber-400 text-center">Premium</div>
+                <div className="text-sm font-semibold text-violet-400 text-center">Plus</div>
+                <div className="text-sm font-semibold text-amber-400 text-center">Elite</div>
               </div>
 
               {COMPARISON.map((row, i) => (
@@ -416,29 +421,29 @@ export default async function PricingPage() {
                     )}
                   </div>
 
-                  {/* Pro */}
+                  {/* Plus */}
                   <div className="flex justify-center">
-                    {typeof row.pro === "boolean" ? (
-                      row.pro ? (
+                    {typeof row.plus === "boolean" ? (
+                      row.plus ? (
                         <Check className="h-4 w-4 text-violet-400" />
                       ) : (
                         <span className="h-4 w-4 flex items-center justify-center text-muted-foreground/20 text-base">—</span>
                       )
                     ) : (
-                      <span className="text-xs font-medium text-violet-300">{row.pro}</span>
+                      <span className="text-xs font-medium text-violet-300">{row.plus}</span>
                     )}
                   </div>
 
-                  {/* Premium */}
+                  {/* Elite */}
                   <div className="flex justify-center">
-                    {typeof row.premium === "boolean" ? (
-                      row.premium ? (
+                    {typeof row.elite === "boolean" ? (
+                      row.elite ? (
                         <Infinity className="h-4 w-4 text-amber-400" />
                       ) : (
-                        <Check className="h-4 w-4 text-amber-400/60" />
+                        <span className="h-4 w-4 flex items-center justify-center text-muted-foreground/20 text-base">—</span>
                       )
                     ) : (
-                      <span className="text-xs font-medium text-amber-300">{row.premium}</span>
+                      <span className="text-xs font-medium text-amber-300">{row.elite}</span>
                     )}
                   </div>
                 </div>
@@ -491,10 +496,10 @@ export default async function PricingPage() {
             {isAnyPaid ? (
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link
-                  href="/analyze"
+                  href="/learn"
                   className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 hover:-translate-y-0.5 transition-all duration-200"
                 >
-                  Start analyzing
+                  Continue learning
                 </Link>
                 {hasStripeCustomer && (
                   <ManageSubscriptionButton
@@ -519,7 +524,7 @@ export default async function PricingPage() {
             )}
 
             <p className="mt-6 text-sm text-muted-foreground/35">
-              Free plan · No card required · Same AI quality on all plans
+              Free plan · No card required · Same AI engine on every plan
             </p>
           </div>
         </section>

@@ -57,10 +57,10 @@ export function UpgradePricingCTA({
 
       if (activated) {
         setWaiting(false);
-        toast.success(`Welcome to ${plan === "premium" ? "Premium" : "Pro"}!`, {
+        toast.success(`Welcome to ${plan === "premium" ? "Elite" : "Plus"}!`, {
           description: plan === "premium"
-            ? "Unlimited access to everything is now active."
-            : "30 analyses per day and all Pro features are now active.",
+            ? "Unlimited AI Coach and full solver access are now active."
+            : "Full platform access is now active.",
           duration: 6000,
         });
         router.refresh();
@@ -99,8 +99,8 @@ export function UpgradePricingCTA({
     : waiting
     ? "Waiting for payment…"
     : loggedIn
-    ? isPremium ? "Go Premium" : "Upgrade to Pro"
-    : isPremium ? `Go Premium — €34.99/month` : `Get Pro — €14.99/month`;
+    ? isPremium ? "Become Elite" : "Upgrade to Plus"
+    : isPremium ? `Become Elite — €11.99/month` : `Upgrade to Plus — €7.99/month`;
 
   return (
     <div className="space-y-2">
