@@ -18,7 +18,7 @@ interface UnilateralDeviationTestProps {
 }
 
 /**
- * Unilateral Deviation Test (Module 10, Lesson 10.5) — the Nash equilibrium
+ * Unilateral Deviation Test (Module 10, Lesson 10.4) — the Nash equilibrium
  * test made interactive. The learner gets a control for ONE player's own
  * frequency (`unilateral_deviation_test_player`), holding the opponent fixed
  * at the candidate equilibrium. They try alternatives, watch EV update live

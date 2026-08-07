@@ -31,7 +31,7 @@ function useToyGame(step: LessonStep) {
 
 /**
  * Strategy Response Lab (Module 10) — the A→B→A strategy feedback loop.
- * Four modes covering Lessons 10.1-10.4; every EV number is exact_derived
+ * Four modes covering Lessons 10.1-10.3; every EV number is exact_derived
  * from gameTheoryEngine.ts applied to the explicitly stated toy game
  * (`strategy_response_lab_pot`/`_bet`/`_equity_when_*`, defaulting to
  * PRESSURE_GAME_DEFAULT — a clearly labeled pedagogical model, never a real
@@ -71,7 +71,7 @@ export function StrategyResponseLab({ step, onAnswer, disabled = false }: Strate
   )
 }
 
-// ── Intro mode (10.1) — pick between two pure strategies, watch the fixed response ──
+// ── Intro mode (10.1, first half) — pick between two pure strategies, watch the fixed response ──
 
 function IntroMode({
   step,
@@ -167,7 +167,7 @@ function IntroMode({
   )
 }
 
-// ── Best-response mode (10.2) — Villain fixed, Hero searches for the MES ──
+// ── Best-response mode (10.1, second half) — Villain fixed, Hero searches for the MES ──
 
 function BestResponseMode({
   step,
@@ -241,7 +241,7 @@ function BestResponseMode({
   )
 }
 
-// ── Counter-exploit mode (10.3) — FREEZE/UNFREEZE Villain ──
+// ── Counter-exploit mode (10.2) — FREEZE/UNFREEZE Villain ──
 
 function CounterExploitMode({
   step,
@@ -348,7 +348,7 @@ function CounterExploitMode({
   )
 }
 
-// ── Iterate mode (10.4) — walk the fixed, source-cited push/fold sequence ──
+// ── Iterate mode (10.3) — walk the fixed, source-cited push/fold sequence ──
 
 function IterateMode({
   step,

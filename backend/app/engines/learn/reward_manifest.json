@@ -1478,24 +1478,18 @@
       }
     },
     "your-move-changes-mine": {
-      "xp_reward": 130,
+      "xp_reward": 270,
       "steps": {
         "ymcm-s1": 8,
         "ymcm-s2": 15,
         "ymcm-s3": 15,
         "ymcm-s4": 10,
         "ymcm-s5": 12,
-        "ymcm-s6": 8
-      }
-    },
-    "find-the-best-response": {
-      "xp_reward": 140,
-      "steps": {
-        "fbr-s1": 10,
-        "fbr-s2": 20,
+        "fbr-s1": 12,
+        "fbr-s2": 22,
         "fbr-s3": 10,
         "fbr-s4": 15,
-        "fbr-s5": 20,
+        "fbr-s5": 24,
         "fbr-s6": 8
       }
     },

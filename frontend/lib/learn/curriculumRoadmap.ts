@@ -150,10 +150,13 @@ export const ROADMAP_MODULES: LearningModule[] = [
   // ── Stage 5 — Game Theory ────────────────────────────────────────────────────
   // game-theory-foundations-module has been promoted to real content — see
   // `LEARNING_MODULES` in ./curriculum.ts (same pattern as Modules 1-9). Its
-  // 10 lessons diverge from this stub's original placeholder titles below
+  // lessons diverge from this stub's original placeholder titles below
   // (built around an interactive strategy-manipulation engine rather than a
   // vocabulary-first "What Is Game Theory?" progression) — same judgment-call
-  // precedent as Module 7's rename. All 10 lessons are built (not phased).
+  // precedent as Module 7's rename. All 9 lessons are built (not phased;
+  // originally 10, with Lessons 1-2 later merged into one longer lesson —
+  // same merge precedent as blockers-module above) — `estimatedLessons` on the
+  // promoted entry matches.
   //
   // polarized-module (Module 11, "Polarization & Range Construction") has also
   // been promoted to real content — see `LEARNING_MODULES` in ./curriculum.ts.

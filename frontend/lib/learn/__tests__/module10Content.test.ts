@@ -6,9 +6,11 @@ import type { LessonStep } from '../types'
 
 const MODULE_ID = 'game-theory-foundations-module'
 
+// 9, not 10: the original Lessons 1-2 ("Your Move Changes Mine" /
+// "Find the Best Response") were merged into a single lesson that kept
+// Lesson 1's id, so progress already recorded against it survives the merge.
 const MODULE_10_LESSON_IDS = [
   'your-move-changes-mine',
-  'find-the-best-response',
   'the-exploit-has-a-cost',
   'the-strategy-loop',
   'when-neither-player-can-improve',
@@ -34,11 +36,55 @@ describe('Module 10 (Game Theory Foundations) — registration', () => {
     expect(mod!.prerequisiteModuleId).toBe('blockers-module')
   })
 
-  it('all 10 planned lessons are registered, with contiguous sort_order 1..10', () => {
+  it('all 9 lessons are registered, with contiguous sort_order 1..9', () => {
     const lessons = LESSONS_BY_MODULE[MODULE_ID] ?? []
     expect(lessons.map((l) => l.id).sort()).toEqual([...MODULE_10_LESSON_IDS].sort())
     const orders = lessons.map((l) => l.sort_order).sort((a, b) => a - b)
-    expect(orders).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    expect(orders).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
+  })
+
+  it("the module's advertised lesson count matches the lessons actually registered", () => {
+    const mod = LEARNING_MODULES.find((m) => m.id === MODULE_ID)!
+    expect(mod.estimatedLessons).toBe((LESSONS_BY_MODULE[MODULE_ID] ?? []).length)
+  })
+
+  it('the merged Lesson 1 teaches both halves and carries both lessons\' XP, so Module 10\'s total is unchanged', () => {
+    const merged = LESSONS.find((l) => l.id === 'your-move-changes-mine')!
+    expect(merged.sort_order).toBe(1)
+    // Both concepts, in their original teaching order.
+    expect(merged.concept_ids).toEqual(['strategy_interdependence', 'maximally_exploitative_strategy'])
+    // 130 (old Lesson 1) + 140 (old Lesson 2), so the module total does not move.
+    expect(merged.xp_reward).toBe(270)
+    // Same step XP total as the two lessons had between them (68 + 83).
+    const stepXp = merged.steps.reduce((sum, s) => sum + (s.xp ?? 10), 0)
+    expect(stepXp).toBe(151)
+    // Continues into what used to be Lesson 3.
+    expect(merged.next_lesson_teaser).toBe('The Exploit Has a Cost')
+  })
+
+  it('no lesson still points at the removed "find-the-best-response" lesson', () => {
+    expect(LESSONS.some((l) => l.id === 'find-the-best-response')).toBe(false)
+    for (const l of LESSONS) {
+      expect(l.next_lesson_teaser).not.toBe('Find the Best Response')
+    }
+  })
+
+  it('every "Lesson 10.N" cross-reference points at a lesson that actually has sort_order N', () => {
+    const bySortOrder = new Map(
+      (LESSONS_BY_MODULE[MODULE_ID] ?? []).map((l) => [l.sort_order, l]),
+    )
+    const refs = new Set<number>()
+    for (const step of allModule10Steps()) {
+      const text = JSON.stringify(step)
+      for (const m of text.matchAll(/Lessons? 10\.(\d)(?:-10\.(\d))?/g)) {
+        refs.add(Number(m[1]))
+        if (m[2]) refs.add(Number(m[2]))
+      }
+    }
+    expect(refs.size).toBeGreaterThan(0)
+    for (const n of refs) {
+      expect(bySortOrder.has(n), `Lesson 10.${n} is referenced but no lesson has sort_order ${n}`).toBe(true)
+    }
   })
 
   it('every Module 10 lesson has id === slug and module_id set correctly', () => {

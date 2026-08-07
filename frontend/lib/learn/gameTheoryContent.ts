@@ -27,7 +27,7 @@ import type { LessonSource } from './types'
 export const MPT_SOURCE = 'Modern Poker Theory' as const
 export const MPT_AUTHOR = 'Michael Acevedo' as const
 
-// ── The heads-up push/fold Strategy Loop (Lesson 10.4) ────────────────────────
+// ── The heads-up push/fold Strategy Loop (Lesson 10.3) ────────────────────────
 //
 // Acevedo's iterative push/fold example: BN (the pusher) and BB (the caller)
 // repeatedly best-respond to each other's fixed strategy. Only the frequency/EV
@@ -102,7 +102,7 @@ export const PUSH_FOLD_SOURCE: LessonSource = {
   type: 'source_reconstructed',
 }
 
-// ── The Indifference Principle worked example (Lesson 10.6) ───────────────────
+// ── The Indifference Principle worked example (Lesson 10.5) ───────────────────
 
 export interface MixedHandExample {
   hand: string
@@ -149,7 +149,7 @@ export const INDIFFERENCE_EXAMPLE: {
   },
 }
 
-// ── The Clairvoyance Toy Game (Lessons 10.7-10.8) ──────────────────────────────
+// ── The Clairvoyance Toy Game (Lessons 10.6-10.7) ──────────────────────────────
 
 export const CLAIRVOYANCE_GAME = {
   board: ['3s', '3h', '3c', '2d', '2s'],
@@ -170,7 +170,7 @@ export const CLAIRVOYANCE_GAME = {
   } satisfies LessonSource,
 }
 
-// ── Alpha / MDF worked example (Lesson 10.8) ───────────────────────────────────
+// ── Alpha / MDF worked example (Lesson 10.7) ───────────────────────────────────
 
 export const HALF_POT_ALPHA_MDF_EXAMPLE = {
   pot: 100,
@@ -187,7 +187,7 @@ export const HALF_POT_ALPHA_MDF_EXAMPLE = {
   } satisfies LessonSource,
 }
 
-// ── The generic "Pressure Game" — pedagogical toy model (Lessons 10.1-10.6) ──
+// ── The generic "Pressure Game" — pedagogical toy model (Lessons 10.1-10.5) ──
 //
 // A single simplified bet/check-vs-call/fold spot used purely to let the
 // learner discover best response, counter-exploitation, unilateral deviation,

@@ -27,7 +27,7 @@ const SLIDER_META: Record<'aa_bet' | 'qq_bet' | 'kk_call', { label: string; acce
 }
 
 /**
- * The Clairvoyance Lab (Module 10, Lessons 10.7-10.8) — Acevedo's AA/QQ-vs-KK
+ * The Clairvoyance Lab (Module 10, Lessons 10.6-10.7) — Acevedo's AA/QQ-vs-KK
  * polarized toy game as a three-frequency tug of war. Every EV shown is
  * exact_derived live via gameTheoryEngine.ts's clairvoyanceEV, from the
  * game's explicitly stated rules (pot $100, bet $100, board 3♠3♥3♣2♦2♠) —
