@@ -1064,7 +1064,7 @@ def test_first_message_reports_1_of_3_used(fake_db, captured_reply):
     user = {"sub": "user-quota-1"}
     body = coach_module.CoachMessageBody(message="hi", context={})
     result = run(coach_module.coach_message(body, FakeRequest(), user))
-    assert result["usage"] == {"limit": 3, "used": 1, "remaining": 2, "reset_at": result["usage"]["reset_at"]}
+    assert result["usage"] == {"limit": 3, "used": 1, "remaining": 2, "reset_at": result["usage"]["reset_at"], "unlimited": False}
 
 
 def test_third_message_allowed_fourth_rejected(fake_db, captured_reply):
@@ -1144,6 +1144,9 @@ def test_paid_tier_gets_the_unlimited_daily_limit(fake_db, captured_reply):
     result = run(coach_module.coach_message(body, FakeRequest(ip="10.0.1.5"), user))
     assert result["usage"]["limit"] == 2_147_483_647
     assert result["usage"]["used"] == 1
+    # The frontend must never infer "unlimited" from the limit number being
+    # huge — this explicit flag is the single source of truth for that.
+    assert result["usage"]["unlimited"] is True
 
 
 def test_llm_failure_releases_the_reserved_slot(fake_db, monkeypatch):
@@ -1177,7 +1180,7 @@ def test_get_usage_endpoint_has_no_side_effects(fake_db, captured_reply):
 def test_get_usage_reflects_zero_before_any_message(fake_db):
     user = {"sub": "user-quota-fresh"}
     result = run(coach_module.coach_usage(user))
-    assert result["usage"] == {"limit": 3, "used": 0, "remaining": 3, "reset_at": result["usage"]["reset_at"]}
+    assert result["usage"] == {"limit": 3, "used": 0, "remaining": 3, "reset_at": result["usage"]["reset_at"], "unlimited": False}
 
 
 def test_reset_at_is_next_utc_midnight(fake_db):

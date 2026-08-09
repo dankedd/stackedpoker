@@ -17,7 +17,7 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 
-from app.services.entitlements import ai_coach_daily_limit, get_subscription_tier
+from app.services.entitlements import ai_coach_daily_limit, can_use_unlimited_ai, get_subscription_tier
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +26,14 @@ async def get_ai_coach_entitlement(user_id: str, settings) -> dict:
     """Resolves a user's AI Coach entitlement from their real subscription
     tier. Takes `settings` (mirroring every other function in this module)
     so tests that fake Supabase for the usage RPCs also fake it for the
-    profile/tier lookup, instead of this reaching for the real config."""
+    profile/tier lookup, instead of this reaching for the real config.
+
+    `unlimited` is returned explicitly (not left for the frontend to infer
+    from `daily_messages` happening to be a very large number) so nothing
+    downstream — CoachChat.tsx included — ever has to know or guess what the
+    "unlimited" sentinel value is."""
     tier = await get_subscription_tier(user_id, settings)
-    return {"daily_messages": ai_coach_daily_limit(tier)}
+    return {"daily_messages": ai_coach_daily_limit(tier), "unlimited": can_use_unlimited_ai(tier)}
 
 
 @dataclass
@@ -37,9 +42,13 @@ class CoachUsage:
     used: int
     remaining: int
     reset_at: str  # ISO8601, next UTC midnight
+    unlimited: bool = False
 
     def to_dict(self) -> dict:
-        return {"limit": self.limit, "used": self.used, "remaining": self.remaining, "reset_at": self.reset_at}
+        return {
+            "limit": self.limit, "used": self.used, "remaining": self.remaining,
+            "reset_at": self.reset_at, "unlimited": self.unlimited,
+        }
 
 
 def compute_reset_at() -> str:
@@ -96,7 +105,10 @@ async def reserve_coach_usage(user_id: str, settings) -> tuple[CoachUsage, bool]
     row = rows[0] if rows else {"message_count": 0, "allowed": False}
     used = row.get("message_count", 0)
     allowed = bool(row.get("allowed", False))
-    usage = CoachUsage(limit=limit, used=used, remaining=max(limit - used, 0), reset_at=compute_reset_at())
+    usage = CoachUsage(
+        limit=limit, used=used, remaining=max(limit - used, 0),
+        reset_at=compute_reset_at(), unlimited=entitlement["unlimited"],
+    )
     return usage, allowed
 
 
@@ -124,4 +136,7 @@ async def get_coach_usage(user_id: str, settings) -> CoachUsage:
         settings,
     )
     used = rows[0]["message_count"] if rows else 0
-    return CoachUsage(limit=limit, used=used, remaining=max(limit - used, 0), reset_at=compute_reset_at())
+    return CoachUsage(
+        limit=limit, used=used, remaining=max(limit - used, 0),
+        reset_at=compute_reset_at(), unlimited=entitlement["unlimited"],
+    )

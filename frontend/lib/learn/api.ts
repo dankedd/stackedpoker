@@ -390,6 +390,11 @@ export interface CoachUsage {
   used: number
   remaining: number
   resetAt: string
+  /** True for Plus/Elite — the backend's entitlements.can_use_unlimited_ai,
+   *  never inferred here from `limit` happening to be a huge number. This is
+   *  the ONLY thing that should ever decide whether the UI shows a numeric
+   *  counter or an "Unlimited" state — see CoachChat.tsx. */
+  unlimited: boolean
 }
 
 interface CoachUsageWire {
@@ -397,10 +402,11 @@ interface CoachUsageWire {
   used: number
   remaining: number
   reset_at: string
+  unlimited: boolean
 }
 
 function normalizeUsage(wire: CoachUsageWire): CoachUsage {
-  return { limit: wire.limit, used: wire.used, remaining: wire.remaining, resetAt: wire.reset_at }
+  return { limit: wire.limit, used: wire.used, remaining: wire.remaining, resetAt: wire.reset_at, unlimited: wire.unlimited }
 }
 
 /** The shape of a 429 quota-exceeded error's `detail` — checked via

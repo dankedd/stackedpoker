@@ -187,7 +187,7 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
   // (e.g. after a refresh). Refreshed from every send() response either way.
   const [usage, setUsage] = useState<CoachUsage | null>(initialUsage ?? null)
   // Honest degraded state: a failed usage fetch must never be silently
-  // presented as "0 of 10" (that would look like healthy quota when we
+  // presented as "0 of {limit}" (that would look like healthy quota when we
   // actually just don't know) — only shown when we truly have no usage
   // number at all, never overriding a real (even if stale) value.
   const [usageLoadFailed, setUsageLoadFailed] = useState(false)
@@ -227,7 +227,11 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
     ta.style.height = `${Math.min(ta.scrollHeight, 96)}px`
   }
 
-  const limitReached = usage != null && usage.remaining <= 0
+  // `!usage.unlimited` first, always — Plus/Elite's `remaining` is a large
+  // finite number (today's usage subtracted from the entitlement limit),
+  // never literally Infinity, so this can never be inferred from `remaining`
+  // alone without risking a false "limit reached" for a heavy paid user.
+  const limitReached = usage != null && !usage.unlimited && usage.remaining <= 0
 
   const send = async (text?: string, action?: CoachAction) => {
     const msg = (text ?? input).trim()
@@ -262,7 +266,7 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
         // the transcript as if it had been asked. Roll back the optimistic
         // user message and switch to the limit-reached state instead of
         // adding a generic error bubble.
-        setUsage({ limit: detail.limit, used: detail.used, remaining: detail.remaining, resetAt: detail.reset_at })
+        setUsage({ limit: detail.limit, used: detail.used, remaining: detail.remaining, resetAt: detail.reset_at, unlimited: detail.unlimited })
         setMessages(prev => prev.slice(0, -1))
         return
       }
@@ -372,22 +376,30 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
         <div ref={bottomRef} />
       </div>
 
-      {/* Input area — replaced by a calm limit-reached panel once the daily
-          quota is exhausted (spec: disable input/send/quick-actions, no
-          alarming banner, no subscription upsell). */}
+      {/* Input area — replaced by a limit-reached panel once the daily quota
+          is exhausted (send/quick-actions disabled, a clear upgrade path
+          instead of a generic error — never a silent failure). Only a
+          Free-tier user can ever land here: limitReached is false whenever
+          usage.unlimited is true, so no Plus/Elite conditioning is needed. */}
       <div className="border-t border-border/40 p-3 shrink-0">
         {limitReached ? (
-          <div className="rounded-xl border border-border/40 bg-secondary/20 px-4 py-3.5 text-center space-y-2">
+          <div className="rounded-xl border border-violet-500/25 bg-gradient-to-b from-violet-500/8 to-secondary/20 px-4 py-3.5 text-center space-y-2.5">
             <p className="text-sm font-medium text-foreground/80">Daily Coach limit reached</p>
             <p className="text-xs text-muted-foreground/60 leading-relaxed">
-              You&apos;ve used your {usage!.limit} Coach questions for today. Your questions reset at{' '}
+              You&apos;ve used your {usage!.limit} free Coach questions for today. Your questions reset at{' '}
               {formatResetTime(usage!.resetAt)}.
             </p>
+            <a
+              href="/pricing"
+              className="inline-flex items-center justify-center gap-1.5 w-full rounded-lg bg-gradient-to-r from-violet-600 to-blue-500 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-violet-500/25 hover:shadow-violet-500/40 transition-all duration-150"
+            >
+              Upgrade for unlimited Coach access
+            </a>
             {onLimitReachedContinue && (
               <button
                 type="button"
                 onClick={onLimitReachedContinue}
-                className="mt-1 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors"
+                className="text-xs font-semibold text-muted-foreground/60 hover:text-foreground transition-colors"
               >
                 Continue lesson
               </button>
@@ -430,17 +442,24 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
             <p className="text-[10px] text-muted-foreground/25 text-center mt-1.5">
               Enter to send · Shift+Enter for new line
             </p>
-            {usage ? (
+            {usage?.unlimited ? (
+              <p className="text-[10px] text-center mt-1 text-violet-400/50 font-medium">
+                Unlimited AI Coach
+              </p>
+            ) : usage ? (
               <p
                 className={cn(
                   'text-[10px] text-center mt-1',
-                  usage.used >= 8 ? 'text-amber-400/60' : 'text-muted-foreground/35',
+                  // Relative to this user's own limit, not a number tuned for
+                  // the old flat 10/day quota — "near the limit" means the
+                  // same thing whether the limit is 3 or 15.
+                  usage.limit - usage.used <= 1 ? 'text-amber-400/60' : 'text-muted-foreground/35',
                 )}
               >
                 {usage.used} of {usage.limit} questions used today
               </p>
             ) : usageLoadFailed ? (
-              // Honest degraded state — never silently shown as "0 of 10"
+              // Honest degraded state — never silently shown as "0 of {limit}"
               // (which would look like healthy quota) when it's actually
               // just unknown. The daily limit is still enforced server-side
               // regardless of whether this number loaded.
