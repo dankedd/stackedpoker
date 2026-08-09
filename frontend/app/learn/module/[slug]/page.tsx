@@ -19,11 +19,15 @@ import { useLearnProgress } from "@/contexts/LearnProgressContext";
 // Metadata only — never '@/lib/learn/curriculum'. See scripts/generateCurriculumPublic.ts.
 import {
   MODULES_BY_SLUG,
+  LEARNING_MODULES,
   LEARNING_PATHS,
   LESSONS_BY_MODULE,
 } from "@/lib/learn/curriculumPublic.generated";
 import { getStageForModule } from "@/lib/learn/journey";
 import type { PublicLesson } from "@/lib/learn/types";
+import { useSubscription } from "@/hooks/useSubscription";
+import { canAccessLesson } from "@/lib/entitlements";
+import { LockedLessonCard } from "@/components/learn/LockedLessonCard";
 import { cn } from "@/lib/utils";
 
 // ── Lesson type badge ─────────────────────────────────────────────────────────
@@ -141,6 +145,7 @@ function LessonCard({
 export default function ModulePage() {
   const { slug } = useParams<{ slug: string }>();
   const { progress, recordModuleComplete } = useLearnProgress();
+  const { subscription } = useSubscription();
 
   const mod = MODULES_BY_SLUG[slug];
 
@@ -199,9 +204,15 @@ export default function ModulePage() {
   const firstIncomplete = lessons.find((l) => !completedLessonIds.has(l.id));
 
   // ── Poker Journey roadmap states ─────────────────────────────────────────
-  // Every implemented module is open to every user — see lib/learn/journey.ts.
-  // The only thing that can keep a module unreachable is not having any
-  // playable content yet, handled by the Coming Soon branch below.
+  // Every implemented module's PAGE is reachable by every user — the module
+  // tile/hero itself is never hidden (see lib/entitlements.ts's module/lesson
+  // rule and the ticket's "niet verwijderen uit de UI" requirement). Whether
+  // a given LESSON inside it is actually playable is decided per-lesson in
+  // the list below (canAccessLesson) — Modules 1-2 are fully free; every
+  // other module's first lesson is free and the rest render as
+  // LockedLessonCard for a Free-tier viewer. The only thing that can keep a
+  // module unreachable entirely is not having any playable content yet,
+  // handled by the Coming Soon branch below.
   const isComingSoon = !!mod.contentStatus && mod.contentStatus !== "complete";
   const stage = getStageForModule(mod.id);
 
@@ -371,20 +382,33 @@ export default function ModulePage() {
           {/* Lesson list */}
           <div className="space-y-2.5">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/40 mb-3">Lessons</p>
-            {lessons.map((lesson, i) => (
-              <LessonCard
-                key={lesson.id}
-                lesson={lesson}
-                idx={i}
-                status={
-                  completedLessonIds.has(lesson.id)
-                    ? "completed"
-                    : progress.lessons[lesson.id]?.status === "in_progress"
-                    ? "in_progress"
-                    : "not_started"
-                }
-              />
-            ))}
+            {lessons.map((lesson, i) => {
+              const unlocked = canAccessLesson(subscription?.tier, mod, lesson, LEARNING_MODULES, lessons);
+              if (!unlocked) {
+                return (
+                  <LockedLessonCard
+                    key={lesson.id}
+                    title={lesson.title}
+                    estimatedMin={lesson.estimated_min}
+                    variant="row"
+                  />
+                );
+              }
+              return (
+                <LessonCard
+                  key={lesson.id}
+                  lesson={lesson}
+                  idx={i}
+                  status={
+                    completedLessonIds.has(lesson.id)
+                      ? "completed"
+                      : progress.lessons[lesson.id]?.status === "in_progress"
+                      ? "in_progress"
+                      : "not_started"
+                  }
+                />
+              );
+            })}
 
             {lessons.length === 0 && (
               <div className="rounded-xl border border-border/40 bg-card/40 p-8 text-center">

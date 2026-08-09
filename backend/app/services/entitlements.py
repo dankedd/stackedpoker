@@ -11,8 +11,6 @@ frontend display labels only — never used as a value here.
 """
 from __future__ import annotations
 
-from app.services.usage_service import get_user_profile
-
 PAID_TIERS = {"pro", "premium", "admin"}
 
 # Matches usage_service.py's existing "effectively unlimited" sentinel for
@@ -44,6 +42,13 @@ def ai_coach_daily_limit(tier: str | None) -> int:
 async def get_subscription_tier(user_id: str, settings=None) -> str:
     """Fetches the user's current tier via usage_service's existing
     service-role profile lookup — never a second, independent Supabase call.
-    `settings` is forwarded as-is (see get_user_profile's own docstring)."""
+    `settings` is forwarded as-is (see get_user_profile's own docstring).
+
+    Imported locally (not at module level) because usage_service.py itself
+    imports is_paid_tier from this module for assert_usage_allowed — a
+    module-level import here would be circular.
+    """
+    from app.services.usage_service import get_user_profile
+
     profile = await get_user_profile(user_id, settings)
     return profile.get("subscription_tier") or "free"

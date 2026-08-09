@@ -17,10 +17,9 @@ import httpx
 from fastapi import HTTPException, status
 
 from app.config import get_settings
+from app.services.entitlements import is_paid_tier
 
 logger = logging.getLogger(__name__)
-
-_UNLIMITED_PLANS = {"admin", "pro", "premium"}
 
 
 def _supabase_headers() -> dict[str, str]:
@@ -124,7 +123,7 @@ async def get_user_profile(user_id: str, settings=None) -> dict:
 def assert_usage_allowed(profile: dict) -> None:
     """Raise 403 if the user has hit their analysis limit. Admin/pro always pass."""
     plan = profile.get("subscription_tier") or "free"
-    if plan in _UNLIMITED_PLANS:
+    if is_paid_tier(plan):
         return
 
     used: int  = int(profile.get("hands_analyzed_count") or 0)

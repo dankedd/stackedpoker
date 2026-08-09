@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { LayoutDashboard, BookOpen, Settings, LogOut, ChevronDown, CreditCard } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLearnProgress } from '@/contexts/LearnProgressContext'
+import { useSubscription } from '@/hooks/useSubscription'
+import { PlanBadge } from '@/components/layout/PlanBadge'
 import {
   MENU_Z_INDEX,
   useAnchoredMenuPosition,
@@ -18,6 +20,7 @@ const DROPDOWN_W = 224 // w-56 = 14rem
 export function UserMenu() {
   const { user, signOut, loading } = useAuth()
   const { progress } = useLearnProgress()
+  const { subscription } = useSubscription()
   const [open, setOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const { pos, triggerRef, computePos } = useAnchoredMenuPosition({ width: DROPDOWN_W })
@@ -43,7 +46,7 @@ export function UserMenu() {
   const menuItems = [
     { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { href: '/history',   icon: BookOpen,        label: 'Hand History' },
-    { href: '/pricing',   icon: CreditCard,      label: 'Upgrade to Pro' },
+    { href: '/pricing',   icon: CreditCard,      label: 'Upgrade to Plus' },
     { href: '/settings',  icon: Settings,        label: 'Settings' },
   ]
 
@@ -78,6 +81,11 @@ export function UserMenu() {
               </span>
             )}
           </div>
+          {subscription && (
+            <div className="mt-2.5">
+              <PlanBadge tier={subscription.tier} />
+            </div>
+          )}
         </div>
 
         {/* Nav links */}

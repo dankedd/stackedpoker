@@ -38,6 +38,8 @@ from app.engines.learn.reward_resolver import (
 )
 from app.engines.learn.srs_engine import compute_next_review
 from app.engines.learn.leak_detector import detect_leaks_from_step
+from app.engines.learn.curriculum_access import can_access_lesson
+from app.services.entitlements import get_subscription_tier
 from app.engines.learn.achievements import check_and_award_achievements
 
 logger = logging.getLogger(__name__)
@@ -517,6 +519,14 @@ async def submit_step_result(
     settings = get_settings()
     user_id: str = current_user.get("sub", "")
 
+    # Server-side lesson-lock enforcement — the lesson page already blocks
+    # this in the UI (see app/learn/lesson/[slug]/page.tsx), but that must
+    # never be the only gate: a locked lesson's steps must be rejected here
+    # too, or a direct POST bypasses the UI entirely.
+    tier = await get_subscription_tier(user_id, settings)
+    if not can_access_lesson(tier, lesson_id):
+        raise HTTPException(status_code=403, detail="This lesson requires a Plus or Elite subscription.")
+
     try:
         existing_step_rows = await _supabase_get(
             "user_step_progress",
@@ -709,6 +719,12 @@ async def complete_lesson(
     of per-step XP already earned). Replays only update best/last score."""
     settings = get_settings()
     user_id: str = current_user.get("sub", "")
+
+    # See submit_step_result's identical check above — the same lesson-lock
+    # rule applies to completion, not just individual steps.
+    tier = await get_subscription_tier(user_id, settings)
+    if not can_access_lesson(tier, lesson_id):
+        raise HTTPException(status_code=403, detail="This lesson requires a Plus or Elite subscription.")
 
     try:
         existing = await _get_lesson_row(user_id, lesson_id, settings)

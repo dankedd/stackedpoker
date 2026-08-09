@@ -42,9 +42,18 @@ export function canUseUnlimitedAI(tier: Tier | string | null | undefined): boole
   return isPaidTier(tier);
 }
 
-/** Whole-page premium features: Bankroll Tracker, Community, etc. */
+/** Whole-page premium (Plus+) features: Community, etc. */
 export function canAccessPremium(tier: Tier | string | null | undefined): boolean {
   return isPaidTier(tier);
+}
+
+/** Elite-exclusive features (not even Plus): the Solver Explorer / Solver
+ *  Tree Explorer per the pricing page. Kept as its own predicate — not
+ *  `isPaidTier` — specifically so Elite can keep gaining exclusive features
+ *  over Plus without every other paid-gate check accidentally granting them. */
+export function canAccessElite(tier: Tier | string | null | undefined): boolean {
+  const t = normalizeTier(tier);
+  return t === "premium" || t === "admin";
 }
 
 export function aiCoachDailyLimit(tier: Tier | string | null | undefined): number {

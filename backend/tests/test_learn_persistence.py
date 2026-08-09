@@ -121,9 +121,11 @@ def _row_matches(row: dict, filters: dict) -> bool:
 
 
 class FakeResponse:
-    def __init__(self, data, headers=None):
+    def __init__(self, data, headers=None, status_code: int = 200):
         self._data = data
         self.headers = headers or {}
+        self.status_code = status_code
+        self.text = "" if data is None else str(data)
 
     def raise_for_status(self):
         pass
@@ -371,7 +373,7 @@ class FakeAsyncClient:
             path, query = rest, ""
         return path, query
 
-    async def get(self, url, headers=None):
+    async def get(self, url, headers=None, params=None):
         # A real yield point (unlike a bare `async def` with no internal
         # await, which asyncio never actually interleaves) — needed so
         # asyncio.gather-driven "simultaneous requests" tests genuinely
@@ -379,6 +381,12 @@ class FakeAsyncClient:
         # back-to-back, which would make a race-condition test meaningless.
         await asyncio.sleep(0)
         path, query = self._split(url)
+        # usage_service.get_user_profile (called for the lesson-access tier
+        # lookup) passes filters via httpx's `params=` kwarg rather than
+        # pre-baked into the URL — fold them into the same query string.
+        if params:
+            extra = "&".join(f"{k}={v}" for k, v in params.items())
+            query = f"{query}&{extra}" if query else extra
         if path in self.db.broken_tables:
             request = httpx.Request("GET", url)
             response = httpx.Response(
@@ -469,6 +477,14 @@ def fake_db(monkeypatch):
     # reward_manifest.json (curriculum content) in tests — replace its data
     # source with a small, fully-controlled fake manifest instead.
     monkeypatch.setattr(reward_resolver_module, "_load_manifest", lambda: FAKE_REWARD_MANIFEST)
+    # This suite is about progress/XP persistence mechanics, not lesson
+    # access control (that has its own dedicated test_curriculum_access.py)
+    # — its synthetic lesson ids ("lesson-a", "lesson-repro-y", ...) don't
+    # exist in the real curriculum, so the server-side lesson-lock check
+    # learn.py now runs (see submit_step_result/complete_lesson) would
+    # otherwise 403 every one of these tests. Bypass it here the same way
+    # reward resolution is faked above.
+    monkeypatch.setattr(learn_module, "can_access_lesson", lambda tier, lesson_id: True)
     return db
 
 

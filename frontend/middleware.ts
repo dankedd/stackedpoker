@@ -1,8 +1,27 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { canAccessPremium, canAccessElite } from '@/lib/entitlements'
 
-const PROTECTED_PATHS = ['/dashboard', '/history', '/settings']
+// Guest -> /login. Per the membership-system plan, this is now every /learn
+// route too (no more anonymous trial) — see that plan for why.
+const PROTECTED_PATHS = [
+  '/dashboard', '/history', '/settings',
+  '/learn', '/bankroll', '/coach', '/coaching', '/community', '/challenges', '/solver',
+]
 const AUTH_PATHS = ['/login', '/signup']
+
+// Logged in but Free tier -> /pricing. Community is Plus+ per the pricing
+// page's plan comparison; Bankroll is deliberately NOT here — the
+// membership-system ticket lists "Bankroll Tracker" as a Free-tier feature,
+// which conflicts with the pricing page's own "Bankroll Tracker: Plus+"
+// comparison row (built in an earlier task). This follows the more recent,
+// explicit instruction; the conflict is flagged in that work's report for
+// the two to be reconciled.
+const PREMIUM_PATHS = ['/community']
+
+// Logged in but not Elite (Free OR Plus) -> /pricing. Solver Explorer is
+// explicitly Elite-exclusive on the pricing page — Plus does not unlock it.
+const ELITE_PATHS = ['/solver']
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -49,6 +68,26 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
+  }
+
+  // Tier gate — only look up the profile when the route actually needs it,
+  // so every other request stays a single getUser() call as before.
+  const needsPremium = PREMIUM_PATHS.some((p) => pathname.startsWith(p))
+  const needsElite = ELITE_PATHS.some((p) => pathname.startsWith(p))
+  if (user && (needsPremium || needsElite)) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('subscription_tier')
+      .eq('id', user.id)
+      .single()
+    const tier = profile?.subscription_tier ?? 'free'
+
+    const allowed = needsElite ? canAccessElite(tier) : canAccessPremium(tier)
+    if (!allowed) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/pricing'
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse

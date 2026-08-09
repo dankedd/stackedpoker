@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { isPaidTier } from "@/lib/entitlements";
 
 export interface UsageData {
   plan: string;          // 'free' | 'pro' | 'admin'
@@ -40,7 +41,7 @@ export function useUsage() {
       const plan: string = data.subscription_tier ?? "free";
       const used: number = data.hands_analyzed_count ?? 0;
       const limit: number = data.analyses_limit ?? 3;
-      const isUnlimited = plan === "admin" || plan === "pro";
+      const isUnlimited = isPaidTier(plan);
 
       setUsage({
         plan,

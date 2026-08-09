@@ -5,13 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { ManageSubscriptionButton } from "@/components/billing/ManageSubscriptionButton";
+import { PlanBadge } from "@/components/layout/PlanBadge";
+import { isPaidTier } from "@/lib/entitlements";
 import { cn } from "@/lib/utils";
-
-const PLAN_STYLE: Record<string, { label: string; color: string; bg: string; border: string }> = {
-  free:  { label: "Free",  color: "text-muted-foreground", bg: "bg-secondary/60",    border: "border-border/50" },
-  pro:   { label: "Pro",   color: "text-blue-400",         bg: "bg-blue-500/10",     border: "border-blue-500/20" },
-  admin: { label: "Admin", color: "text-violet-400",       bg: "bg-violet-500/10",   border: "border-violet-500/20" },
-};
 
 const STATUS_STYLE: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
   active:     { icon: <CheckCircle2 className="h-4 w-4" />, label: "Active",     color: "text-emerald-400" },
@@ -38,9 +34,8 @@ export default async function SettingsPage() {
     ? new Date(profile.current_period_end).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
     : null;
   const hasStripeCustomer = !!profile?.stripe_customer_id;
-  const planStyle = PLAN_STYLE[tier] ?? PLAN_STYLE.free;
   const statusInfo = status ? STATUS_STYLE[status] ?? null : null;
-  const isUnlimited = tier === "pro" || tier === "admin";
+  const isUnlimited = isPaidTier(tier);
   const used = profile?.hands_analyzed_count ?? 0;
   const limit = profile?.analyses_limit ?? 3;
 
@@ -66,9 +61,7 @@ export default async function SettingsPage() {
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4">
             <h2 className="font-semibold text-foreground">Subscription</h2>
-            <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full border", planStyle.bg, planStyle.border, planStyle.color)}>
-              {planStyle.label}
-            </span>
+            <PlanBadge tier={tier} />
           </div>
 
           {/* Details */}
@@ -116,7 +109,7 @@ export default async function SettingsPage() {
           <div className="px-6 py-4 flex flex-wrap gap-3">
             {tier === "free" && (
               <Button variant="poker" size="sm" asChild>
-                <Link href="/pricing">Upgrade to Pro →</Link>
+                <Link href="/pricing">Upgrade to Plus →</Link>
               </Button>
             )}
             {hasStripeCustomer && (

@@ -4,6 +4,7 @@ import {
   isPaidTier,
   canUseUnlimitedAI,
   canAccessPremium,
+  canAccessElite,
   aiCoachDailyLimit,
   canAccessModule,
   canAccessLesson,
@@ -34,6 +35,16 @@ describe("isPaidTier / canUseUnlimitedAI / canAccessPremium", () => {
       expect(fn(null)).toBe(false);
       expect(fn(undefined)).toBe(false);
     }
+  });
+});
+
+describe("canAccessElite", () => {
+  it("is true only for premium/admin — Plus (pro) does not qualify", () => {
+    expect(canAccessElite("premium")).toBe(true);
+    expect(canAccessElite("admin")).toBe(true);
+    expect(canAccessElite("pro")).toBe(false);
+    expect(canAccessElite("free")).toBe(false);
+    expect(canAccessElite(null)).toBe(false);
   });
 });
 

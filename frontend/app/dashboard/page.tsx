@@ -9,8 +9,10 @@ import { Navbar } from "@/components/layout/Navbar";
 import { UpgradeBanner } from "@/components/billing/UpgradeBanner";
 import { ManageSubscriptionButton } from "@/components/billing/ManageSubscriptionButton";
 import { StatusBadge } from "@/components/layout/StatusBadge";
+import { PlanBadge } from "@/components/layout/PlanBadge";
 import { ContinueLearningCard } from "@/components/dashboard/ContinueLearningCard";
 import { LearningPathSummary } from "@/components/dashboard/LearningPathSummary";
+import { isPaidTier, canAccessElite, getSubscription } from "@/lib/entitlements";
 import { cn } from "@/lib/utils";
 
 // Client component just for the upgrade CTA (needs onClick)
@@ -34,8 +36,7 @@ export default async function DashboardPage() {
   const hasStripeCustomer = !!profile?.stripe_customer_id;
   const limit = profile?.analyses_limit ?? 3;
 
-  const planLabel = tier.charAt(0).toUpperCase() + tier.slice(1);
-  const planColor = tier === "pro" ? "text-blue-400" : tier === "admin" ? "text-violet-400" : "text-muted-foreground";
+  const planColor = canAccessElite(tier) ? "text-amber-400" : isPaidTier(tier) ? "text-violet-400" : "text-muted-foreground";
   const planSub = tier === "free"
     ? `${handsAnalyzed}/${limit} free analyses used`
     : subStatus === "past_due" ? "Payment past due" : "Active";
@@ -55,7 +56,10 @@ export default async function DashboardPage() {
           <div aria-hidden className="pointer-events-none absolute -bottom-10 right-0 h-48 w-48 rounded-full bg-blue-500/8 blur-3xl" />
           <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-violet-400/60 mb-2">Dashboard</p>
+              <div className="flex items-center gap-2.5 mb-2">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-violet-400/60">Dashboard</p>
+                <PlanBadge tier={tier} />
+              </div>
               <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
                 Welcome back, <span className="bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">{displayName}</span>
               </h1>
@@ -88,15 +92,15 @@ export default async function DashboardPage() {
           {/* Plan tile — tier-responsive */}
           <div className={cn(
             "rounded-2xl border p-6 space-y-3 card-lift stagger-item",
-            tier === "pro"   ? "border-blue-500/25 bg-gradient-to-br from-blue-950/40 via-card/70 to-card/60" :
-            tier === "admin" ? "border-violet-500/25 bg-gradient-to-br from-violet-950/40 via-card/70 to-card/60" :
+            canAccessElite(tier) ? "border-amber-500/25 bg-gradient-to-br from-amber-950/30 via-card/70 to-card/60" :
+            isPaidTier(tier)     ? "border-violet-500/25 bg-gradient-to-br from-violet-950/40 via-card/70 to-card/60" :
             "border-border/50 bg-card/60"
           )} style={{ animationDelay: "120ms" }}>
             <div className="flex items-center gap-2 text-muted-foreground/70">
               <TrendingUp className="h-4 w-4" />
               <span className="text-xs font-semibold uppercase tracking-wider">Plan</span>
             </div>
-            <p className={cn("text-4xl font-black", planColor)}>{planLabel}</p>
+            <p className={cn("text-4xl font-black", planColor)}>{getSubscription(tier).label}</p>
             <p className="text-xs text-muted-foreground/50">{planSub}</p>
           </div>
 
@@ -120,9 +124,9 @@ export default async function DashboardPage() {
                 <Zap className="h-4 w-4 text-violet-400" />
               </div>
               <div>
-                <p className="font-semibold text-foreground text-sm">Upgrade to Pro</p>
+                <p className="font-semibold text-foreground text-sm">Upgrade to Plus</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Unlock advanced learning paths, priority support & more — €14.99/month · iDEAL & card
+                  Unlock every Learn module, full Bankroll Tracker, and more AI Coach — €7.99/month · iDEAL & card
                 </p>
               </div>
             </div>
@@ -130,11 +134,11 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {tier === "pro" && hasStripeCustomer && (
+        {isPaidTier(tier) && hasStripeCustomer && (
           <div className="mb-8 flex items-center justify-between rounded-xl border border-border/60 bg-card/40 px-5 py-3.5 animate-fade-in">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Settings className="h-4 w-4" />
-              <span>Manage your Pro subscription, invoices, or payment method</span>
+              <span>Manage your {getSubscription(tier).label} subscription, invoices, or payment method</span>
             </div>
             <ManageSubscriptionButton size="sm" />
           </div>

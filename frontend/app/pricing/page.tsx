@@ -6,6 +6,7 @@ import { LandingFooter } from "@/components/landing/LandingFooter";
 import { ManageSubscriptionButton } from "@/components/billing/ManageSubscriptionButton";
 import { UpgradePricingCTA } from "./upgrade-cta";
 import { PricingFAQ } from "./faq";
+import { isPaidTier, canAccessElite } from "@/lib/entitlements";
 import { cn } from "@/lib/utils";
 
 // ── Configurable prices ───────────────────────────────────────────────────────
@@ -93,9 +94,9 @@ export default async function PricingPage() {
     hasStripeCustomer = !!profile?.stripe_customer_id;
   }
 
-  const isPremium = tier === "premium" || tier === "admin";
+  const isPremium = canAccessElite(tier);
   const isPro     = tier === "pro";
-  const isAnyPaid = isPro || isPremium;
+  const isAnyPaid = isPaidTier(tier);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
