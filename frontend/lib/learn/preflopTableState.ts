@@ -333,6 +333,15 @@ interface ActionPattern {
    *  hero_position by the caller). */
   positionGroup: number | 'SELF'
   sizeGroup?: number
+  /** Drop the claim when it lands on Hero's OWN seat. Only set on the unsized
+   *  raise pattern: an unsized mention of Hero's seat raising is normally the
+   *  decision the step is ASKING about, not history ("BTN opens at a 15bb
+   *  effective stack. Which factor matters MOST for hand selection right now?"
+   *  — scr-s9, where Hero is the BTN and hasn't acted yet). An unsized mention
+   *  of an OPPONENT raising is history by necessity: it has to have happened
+   *  already for Hero to be facing it. Sized patterns don't need this — a chip
+   *  amount is itself the disambiguator. */
+  skipHeroSeat?: boolean
 }
 
 const NARRATIVE_ACTION_PATTERNS: ActionPattern[] = [
@@ -354,6 +363,14 @@ const NARRATIVE_ACTION_PATTERNS: ActionPattern[] = [
   // to 2.5bb. Hero calls.").
   { re: new RegExp(`(?:^|[.—]\\s+)(${POSITION_TOKEN})\\s+${JAM_VERB}\\b`, 'gi'), kind: 'allin', positionGroup: 1 },
   { re: new RegExp(`(?:^|[.—]\\s+)Hero\\s+${JAM_VERB}\\b`, 'gi'), kind: 'allin', positionGroup: 'SELF' },
+  // UNSIZED raises, same sentence-initial guard. Without these, a terminology
+  // narrative written entirely without chip amounts ("UTG opens. Hero (BTN)
+  // 3-bets. UTG reraises again.") yields NO claims at all, so the cross-check
+  // below has nothing to verify and a table missing two of those three actions
+  // passes silently — exactly how lab-r1d shipped showing only the open.
+  // `dedupeClaims` drops these whenever a sized claim already covers the same
+  // seat+kind, so adding them never double-reports an already-sized action.
+  { re: new RegExp(`(?:^|[.—]\\s+)(${POSITION_TOKEN})\\s+${RAISE_VERB}\\b`, 'gi'), kind: 'raise', positionGroup: 1, skipHeroSeat: true },
   { re: new RegExp(`(?:^|[.—]\\s+)(${POSITION_TOKEN})\\s+folds?\\b`, 'gi'), kind: 'fold', positionGroup: 1 },
   { re: new RegExp(`(?:^|[.—]\\s+)(${POSITION_TOKEN})\\s+calls?\\b`, 'gi'), kind: 'call', positionGroup: 1 },
   { re: new RegExp(`(?:^|[.—]\\s+)(${POSITION_TOKEN})\\s+limps?\\b`, 'gi'), kind: 'limp', positionGroup: 1 },
@@ -395,9 +412,10 @@ function dedupeClaims(claims: NarrativeActionClaim[]): NarrativeActionClaim[] {
 export function extractNarrativeActionClaims(narrative: string, heroPosition: string): NarrativeActionClaim[] {
   const heroPos = normalizePosition(heroPosition)
   const claims: NarrativeActionClaim[] = []
-  for (const { re, kind, positionGroup, sizeGroup } of NARRATIVE_ACTION_PATTERNS) {
+  for (const { re, kind, positionGroup, sizeGroup, skipHeroSeat } of NARRATIVE_ACTION_PATTERNS) {
     for (const m of narrative.matchAll(re)) {
       const position = positionGroup === 'SELF' ? heroPos : normalizePosition(m[positionGroup])
+      if (skipHeroSeat && position === heroPos) continue
       const betBb = sizeGroup !== undefined && m[sizeGroup] !== undefined ? parseFloat(m[sizeGroup]) : undefined
       claims.push({ position, kind, betBb })
     }

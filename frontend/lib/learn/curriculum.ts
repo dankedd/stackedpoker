@@ -7488,11 +7488,31 @@ export const LESSONS: Lesson[] = [
         id: 'lab-r1d',
         type: 'decision_spot',
         concept_ids: ['four_bet'],
-        narrative: 'UTG opens. Hero (BTN) 3-bets. UTG reraises again. What is UTG\'s reraise called?',
+        narrative: 'UTG opens to 2.5bb. Hero (BTN) 3-bets to 8bb. UTG reraises to 20bb. What is UTG\'s reraise called?',
         table_size: 6,
         hero_position: 'BTN',
         villain_position: 'UTG',
-        action_before_hero: ['UTG raises to 2.5bb'],
+        // The FULL sequence the question is about, so the learner reads it off the
+        // table instead of reconstructing it from the prose. Previously this was
+        // just ['UTG raises to 2.5bb'] — the 3-bet and the 4-bet the question
+        // actually turns on were invisible.
+        //
+        // Three mechanics make this render correctly, all pre-existing:
+        //   - 'Hero raises to 8bb' is flagged `isHero` by parseActionBeforeHero,
+        //     so it lands on Hero's own seat rather than being read as an opponent.
+        //   - UTG appears TWICE; latestActionBySeat keeps the most recent, so the
+        //     seat shows its 20bb reraise, not the 2.5bb open.
+        //   - computeCommitments treats "raises to N" as a new ABSOLUTE total, so
+        //     the pot is 20 + 8 + 0.5 + 1 = 29.5bb, not a double-count.
+        //
+        // Seat labels stay generic ('RAISE'), never '4-BET' — the table must show
+        // WHAT happened without naming it, since naming it is the answer.
+        action_before_hero: [
+          'UTG raises to 2.5bb', 'HJ folds', 'CO folds',
+          'Hero raises to 8bb',
+          'SB folds', 'BB folds',
+          'UTG raises to 20bb',
+        ],
         options: [
           { id: '4bet', label: '4-Bet', quality: 'perfect', feedback: 'Correct — open (1st raise), 3-bet (2nd raise), UTG\'s reraise is the third raise overall, the fourth bet counting the blind: a 4-bet.' },
           { id: '3bet', label: 'A 3-bet', quality: 'mistake', feedback: 'UTG already opened and is now reraising Hero\'s 3-bet — that reraise is a 4-bet, one step further along the sequence.' },
@@ -7914,6 +7934,11 @@ export const LESSONS: Lesson[] = [
         table_size: 9,
         hero_position: 'BTN',
         villain_position: 'CO',
+        // Same MTT spot as lab-fb1 — the antes and the 40bb stacks must ride along,
+        // or the table silently changes underneath a narrative that says "same spot"
+        // (the pot would drop 4.7bb -> 3.8bb and the stacks would vanish mid-chain).
+        effective_stack_bb: 40,
+        ante_bb: 0.1,
         action_before_hero: ['UTG folds', 'UTG+1 folds', 'UTG+2 folds', 'LJ folds', 'HJ folds', 'CO raises to 2.3bb'],
         options: [
           { id: 'sb_bb', label: 'The SB and the BB', quality: 'perfect', feedback: 'Correct — from the BTN, only the two blinds remain live behind Hero.' },
@@ -7929,6 +7954,11 @@ export const LESSONS: Lesson[] = [
         table_size: 9,
         hero_position: 'BTN',
         villain_position: 'CO',
+        // Same MTT spot as lab-fb1 — the antes and the 40bb stacks must ride along,
+        // or the table silently changes underneath a narrative that says "same spot"
+        // (the pot would drop 4.7bb -> 3.8bb and the stacks would vanish mid-chain).
+        effective_stack_bb: 40,
+        ante_bb: 0.1,
         action_before_hero: ['UTG folds', 'UTG+1 folds', 'UTG+2 folds', 'LJ folds', 'HJ folds', 'CO raises to 2.3bb'],
         options: [
           { id: 'yes', label: 'Yes — Hero is last to act', quality: 'perfect', feedback: 'Correct — the Button has position on every remaining player for the rest of the hand.' },
@@ -7944,7 +7974,11 @@ export const LESSONS: Lesson[] = [
         table_size: 9,
         hero_position: 'BTN',
         villain_position: 'CO',
+        // Same MTT spot as lab-fb1 — the antes and the 40bb stacks must ride along,
+        // or the table silently changes underneath a narrative that says "same spot"
+        // (the pot would drop 4.7bb -> 3.8bb and the stacks would vanish mid-chain).
         effective_stack_bb: 40,
+        ante_bb: 0.1,
         action_before_hero: ['UTG folds', 'UTG+1 folds', 'UTG+2 folds', 'LJ folds', 'HJ folds', 'CO raises to 2.3bb'],
         hero_hand: ['Ks', 'Js'],
         options: [
@@ -7996,7 +8030,11 @@ export const LESSONS: Lesson[] = [
         table_size: 9,
         hero_position: 'SB',
         villain_position: 'CO',
+        // Same MTT spot as lab-fb1 — the antes and the 40bb stacks must ride along,
+        // or the table silently changes underneath a narrative that says "same spot"
+        // (the pot would drop 4.7bb -> 3.8bb and the stacks would vanish mid-chain).
         effective_stack_bb: 40,
+        ante_bb: 0.1,
         action_before_hero: ['UTG folds', 'UTG+1 folds', 'UTG+2 folds', 'LJ folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN folds'],
         hero_hand: ['Ks', 'Js'],
         options: [
@@ -8014,7 +8052,11 @@ export const LESSONS: Lesson[] = [
         table_size: 9,
         hero_position: 'SB',
         villain_position: 'CO',
+        // Same MTT spot as lab-fb1 — the antes and the 40bb stacks must ride along,
+        // or the table silently changes underneath a narrative that says "same spot"
+        // (the pot would drop 4.7bb -> 3.8bb and the stacks would vanish mid-chain).
         effective_stack_bb: 40,
+        ante_bb: 0.1,
         action_before_hero: ['UTG folds', 'UTG+1 folds', 'UTG+2 folds', 'LJ folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN folds'],
         hero_hand: ['Ks', 'Js'],
         options: [

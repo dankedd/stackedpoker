@@ -203,12 +203,19 @@ export function validateStep(lesson: Lesson, step: LessonStep): ScenarioIssue[] 
   // ── 2. villain_position vs. who the action data actually says Hero faces ──
   if (step.villain_position && parsed) {
     const aggressor = lastAggressorBeforeHero(parsed)
-    pushIf(
-      issues, lesson, step,
-      aggressor !== undefined && normalizePosition(step.villain_position) !== aggressor.position,
-      'villain_position',
-      `villain_position is "${step.villain_position}" but action_before_hero's last raise/all-in is ${aggressor!.position} — Hero isn't actually facing who the step says`,
-    )
+    // Guarded with an `if` rather than pushIf's boolean: pushIf takes the message
+    // as an ALREADY-EVALUATED argument, so building it here when `aggressor` is
+    // undefined threw a TypeError before the false condition was ever consulted.
+    // No shipped step hits that path today, but a validator that crashes on the
+    // data it is meant to audit reports nothing at all.
+    if (aggressor !== undefined) {
+      pushIf(
+        issues, lesson, step,
+        normalizePosition(step.villain_position) !== aggressor.position,
+        'villain_position',
+        `villain_position is "${step.villain_position}" but action_before_hero's last raise/all-in is ${aggressor.position} — Hero isn't actually facing who the step says`,
+      )
+    }
   }
 
   // ── 2b. villain_position with NO action_before_hero at all ─────────────────
