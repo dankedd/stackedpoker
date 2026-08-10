@@ -13,6 +13,8 @@ import {
   clairvoyanceEquilibrium,
   faceUpEV,
   potOddsRequiredEquity,
+  geometricBetSizing,
+  minimumBetToDenyEquity,
   type ActionEV,
 } from '../gameTheoryEngine'
 
@@ -60,6 +62,65 @@ describe('potOddsRequiredEquity (Module 12) — distinct from alpha', () => {
   it('rejects negative inputs', () => {
     expect(() => potOddsRequiredEquity(-1, 10)).toThrow()
     expect(() => potOddsRequiredEquity(10, -1)).toThrow()
+  })
+})
+
+// GATE (Module 12, Lesson 6): must pass before GeometricBetLadder is built —
+// see docs/module-12-architecture.md Section 5/15/16's explicitly flagged
+// discrepancy between this re-derived formula and theory/math.ts's existing,
+// unused, untested one (which gives ~206% instead of ~103% at these numbers).
+describe('geometricBetSizing (Module 12) — source lock against the book\'s own worked example', () => {
+  it('$70 starting pot, $965 effective stack behind, 3 streets -> R ≈ 3.057, bet-fraction ≈ 102.85% (Ch.10 pp.612-614)', () => {
+    // Book's own numbers: starting pot $70, final (all-in) pot $2,000 (=70+2*965), 3 streets.
+    const { growthRate, betFraction } = geometricBetSizing(70, 965, 3)
+    expect(growthRate).toBeCloseTo(3.0567, 3)
+    expect(betFraction).toBeCloseTo(1.0284, 3)
+  })
+
+  it('is NOT the same as theory/math.ts\'s existing (unused) R-1 formula — that would give ≈206%, not ≈103%', () => {
+    const { growthRate, betFraction } = geometricBetSizing(70, 965, 3)
+    const wrongFormulaResult = growthRate - 1
+    expect(betFraction).not.toBeCloseTo(wrongFormulaResult, 1)
+    expect(wrongFormulaResult).toBeCloseTo(2.057, 2) // confirms the flagged discrepancy is real, not hypothetical
+  })
+
+  it('a 1-street case with equal pot/stack reduces to a sane pot-size-ish bet (sanity check, not book-cited)', () => {
+    // startingPot=100, effectiveStack=100 -> finalPot=300, 1 street -> R=3 -> betFraction=(3-1)/2=1.0 (pot-size)
+    const { growthRate, betFraction } = geometricBetSizing(100, 100, 1)
+    expect(growthRate).toBeCloseTo(3, 6)
+    expect(betFraction).toBeCloseTo(1.0, 6)
+  })
+
+  it('rejects invalid inputs', () => {
+    expect(() => geometricBetSizing(0, 100, 3)).toThrow()
+    expect(() => geometricBetSizing(100, -1, 3)).toThrow()
+    expect(() => geometricBetSizing(100, 100, 0)).toThrow()
+  })
+})
+
+// GATE (Module 12, Lesson 9): must pass before RiverSizingCalculator is built.
+describe('minimumBetToDenyEquity (Module 12) — source lock against the book\'s own two cited results', () => {
+  it('10% opponent equity -> 12.5% of the pot (Ch.10 pp.786-788)', () => {
+    expect(minimumBetToDenyEquity(0.10)).toBeCloseTo(0.125, 6)
+  })
+
+  it('40% opponent equity -> 200% of the pot (2x pot), the book\'s own explicit example', () => {
+    expect(minimumBetToDenyEquity(0.40)).toBeCloseTo(2.0, 6)
+  })
+
+  it('returns Infinity at or above 50% equity — the formula stops producing a meaningful answer, and must not be silently clamped', () => {
+    expect(minimumBetToDenyEquity(0.5)).toBe(Infinity)
+    expect(minimumBetToDenyEquity(0.6)).toBe(Infinity)
+  })
+
+  it('is monotonically increasing — more opponent equity always requires a bigger denying bet', () => {
+    expect(minimumBetToDenyEquity(0.05)).toBeLessThan(minimumBetToDenyEquity(0.10))
+    expect(minimumBetToDenyEquity(0.10)).toBeLessThan(minimumBetToDenyEquity(0.25))
+    expect(minimumBetToDenyEquity(0.25)).toBeLessThan(minimumBetToDenyEquity(0.40))
+  })
+
+  it('rejects negative equity', () => {
+    expect(() => minimumBetToDenyEquity(-0.1)).toThrow()
   })
 })
 

@@ -59,6 +59,71 @@ export function mdf(pot: number, bet: number): number {
 // example in the test suite, specifically to guard against a test that
 // accidentally treats the two as equal.
 
+// ── Geometric bet-sizing (Module 12, Lesson 6) ──────────────────────────────
+//
+// Acevedo, Ch.10 "Geometrical Bet-sizing" (pp.612-614): the optimal multi-street
+// bet-size for a perfectly polarized range is the same POT FRACTION on every
+// street, chosen so the pot grows by a constant ratio R each street and the
+// final bet is exactly all-in. The book states FP = SP · R^S and gives one
+// fully worked example (pot=$70, final pot=$2,000, 3 streets) but its own
+// printed bet-fraction formula did not survive this project's PDF text
+// extraction (a diagram, like several others in this book — see the file
+// header's Source Discipline note) — only the RESULT numbers are book-cited.
+//
+// Re-derived here from the standard model both this bet AND Villain's matching
+// call add to the pot each street (the same model Alpha/MDF above already use):
+//   pot_new = pot_old · (1 + 2f)   where f = bet as a fraction of pot_old
+// For the pot to grow by ratio R every street, (1 + 2f) = R, so f = (R-1)/2.
+// `frontend/lib/theory/math.ts`'s existing (unused, zero call sites, zero test
+// coverage) `geometricBetSize` instead returns R-1 directly — silently assuming
+// only HERO's bet grows the pot, ignoring Villain's call. At this function's
+// book-cited numbers that produces ≈206% instead of the correct ≈103%. That
+// function is left untouched (a separate content layer, not this module's to
+// fix) and NOT reused here — see docs/module-12-architecture.md Section 5's
+// explicitly gated resolution of this exact discrepancy.
+
+export interface GeometricBetSizingResult {
+  /** Pot growth rate per street (R). */
+  growthRate: number
+  /** Bet as a fraction of the CURRENT street's pot (the same fraction every street). */
+  betFraction: number
+}
+
+export function geometricBetSizing(startingPot: number, effectiveStack: number, streetsRemaining: number): GeometricBetSizingResult {
+  if (startingPot <= 0) throw new Error('geometricBetSizing: startingPot must be positive')
+  if (effectiveStack < 0) throw new Error('geometricBetSizing: effectiveStack must be non-negative')
+  if (streetsRemaining <= 0) throw new Error('geometricBetSizing: streetsRemaining must be positive')
+  const finalPot = startingPot + 2 * effectiveStack
+  const growthRate = Math.pow(finalPot / startingPot, 1 / streetsRemaining)
+  const betFraction = (growthRate - 1) / 2
+  return { growthRate, betFraction }
+}
+
+// ── Minimum bet to deny equity (Module 12, Lesson 9) ────────────────────────
+//
+// Acevedo, "River Calling Strategies" (Ch.10 pp.786-788): when P1's range beats
+// P2's range except for a small equity share EQ, the smallest bet-size that
+// still forces P2 to fold their ENTIRE range (denying that equity completely)
+// is found by making P2 indifferent to calling — i.e. the bet-size at which
+// the pot odds P1 offers exactly equal P2's equity. As with geometric sizing
+// above, the book's own printed formula (captioned "Where: Starting pot = 1,
+// EQ is P2 equity, B is P1 bet-size") is a diagram that did not survive text
+// extraction — only the two worked RESULTS are book-cited text: EQ=10% -> B
+// = 12.5% of the pot; EQ=40% -> B = 2x the pot (200%). Both are reproduced
+// exactly by re-deriving B from the pot-odds-equals-equity indifference
+// condition: EQ = B / (1 + 2B)  =>  B = EQ / (1 - 2EQ) — the same "P2's price
+// on a call" structure `potOddsRequiredEquity` above already uses, solved for
+// B instead of for the price. Undefined/Infinity at EQ >= 50%, which the
+// caller must handle as a distinct UI state (Lesson 9's own "the formula stops
+// producing a meaningful answer past that point" teaching moment) rather than
+// silently clamped or hidden.
+
+export function minimumBetToDenyEquity(opponentEquity: number): number {
+  if (opponentEquity < 0) throw new Error('minimumBetToDenyEquity: opponentEquity must be non-negative')
+  if (opponentEquity >= 0.5) return Infinity
+  return opponentEquity / (1 - 2 * opponentEquity)
+}
+
 export function potOddsRequiredEquity(pot: number, bet: number): number {
   if (pot < 0 || bet < 0) throw new Error('potOddsRequiredEquity: pot and bet must be non-negative')
   if (pot + 2 * bet === 0) return 0
