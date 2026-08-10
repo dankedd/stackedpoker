@@ -174,12 +174,11 @@ export const ROADMAP_MODULES: LearningModule[] = [
   // bet-sizing-language-module (Module 12, "The Language of Bet Sizing") has also been
   // promoted to real content — see `LEARNING_MODULES` in ./curriculum.ts. Built from
   // `docs/module-12-blueprint.md` (Part 1), `docs/module-12-lessons.md` (Part 2), and
-  // `docs/module-12-architecture.md` (Part 3A). Only 5 of its 10 lessons are built so far
-  // (Lessons 1-5, a phased delivery per Part 3B's own explicit scope) — same "phased,
-  // in-progress delivery" precedent as polarized-module's own promotion above. Lessons 1-5
-  // diverge from this stub's original placeholder titles below (built around the six
-  // approved flagship interactions rather than a "Small Bets"/"Medium Bets" progression) —
-  // same judgment-call precedent as Module 7/10/11's own renames.
+  // `docs/module-12-architecture.md` (Part 3A). All 10 lessons are now built (Lessons 1-5
+  // in Part 3B; Lessons 6-10 in Part 3C) — `contentStatus: 'complete'` on the real module
+  // entry. Its lesson titles diverge from this stub's original placeholder titles below
+  // (built around the six approved flagship interactions rather than a "Small Bets"/
+  // "Medium Bets" progression) — same judgment-call precedent as Module 7/10/11's own renames.
   {
     ...ROADMAP_DEFAULTS,
     id: 'defending-bets-module',
