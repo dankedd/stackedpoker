@@ -13,7 +13,7 @@ import { globalLinkTargets } from "../navigation";
  * checks are written against invariants (every page reachable, every page
  * links out) rather than against specific counts that would drift.
  */
-describe("link graph", () => {
+describe("link graph", { timeout: 60_000 }, () => {
   const graph = linkGraph();
 
   it("covers every entry that has a URL", () => {

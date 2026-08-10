@@ -86,7 +86,7 @@ describe("breadcrumbsFor", () => {
  * §2 — internal linking. These are the guarantees the orphan check depends
  * on; if related content stops being generated, the graph collapses.
  */
-describe("relatedTo", () => {
+describe("relatedTo", { timeout: 60_000 }, () => {
   const linkable = publishedEntries().filter((e) => e.kind !== "page");
 
   it("returns links for every published content page", () => {

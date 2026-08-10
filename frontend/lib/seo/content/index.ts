@@ -87,6 +87,8 @@ export function kindsListedByHub(hubPath: string): SeoEntry["kind"][] {
  */
 export function resetEntryCache(): void {
   cache = null;
+  clusterCache = null;
+  clusterMembersCache = null;
 }
 
 // ── Clusters ─────────────────────────────────────────────────────────────────
@@ -98,11 +100,14 @@ export function resetEntryCache(): void {
  * order of the ones it names. Paths in a pathway that no longer resolve are
  * dropped rather than rendered as dead links.
  */
+let clusterCache: TopicCluster[] | null = null;
+
 export function resolvedClusters(): TopicCluster[] {
+  if (clusterCache) return clusterCache;
   const published = publishedEntries();
   const byPath = new Map(allEntries().map((e) => [e.path, e]));
 
-  return TOPIC_CLUSTERS.map((cluster) => {
+  clusterCache = TOPIC_CLUSTERS.map((cluster) => {
     const members =
       cluster.id === ROOT_CLUSTER_ID
         ? published.filter((e) => e.kind !== "page")
@@ -122,19 +127,35 @@ export function resolvedClusters(): TopicCluster[] {
       memberPaths: [...ordered, ...rest],
     };
   });
+  return clusterCache;
 }
 
 export function clusterWithMembers(id: string): TopicCluster | undefined {
   return resolvedClusters().find((c) => c.id === id);
 }
 
+let clusterMembersCache: Map<string, SeoEntry[]> | null = null;
+
+/**
+ * Entries in a cluster, memoised.
+ *
+ * `relatedTo` calls this once per cluster per entry, so rebuilding the
+ * path→entry index each time made related-content resolution quadratic over
+ * the whole corpus — noticeable during static generation, not just in tests.
+ */
 export function entriesInCluster(id: string): SeoEntry[] {
-  const cluster = clusterWithMembers(id);
-  if (!cluster) return [];
-  const byPath = new Map(allEntries().map((e) => [e.path, e]));
-  return cluster.memberPaths
-    .map((p) => byPath.get(p))
-    .filter((e): e is SeoEntry => Boolean(e));
+  if (!clusterMembersCache) {
+    const byPath = new Map(allEntries().map((e) => [e.path, e]));
+    clusterMembersCache = new Map(
+      resolvedClusters().map((cluster) => [
+        cluster.id,
+        cluster.memberPaths
+          .map((p) => byPath.get(p))
+          .filter((e): e is SeoEntry => Boolean(e)),
+      ]),
+    );
+  }
+  return clusterMembersCache.get(id) ?? [];
 }
 
 // ── Internal search (§8) ─────────────────────────────────────────────────────

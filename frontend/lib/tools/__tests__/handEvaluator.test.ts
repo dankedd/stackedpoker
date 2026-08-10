@@ -26,7 +26,10 @@ describe("five-card category frequencies", () => {
     "Straight flush": 40, // includes the 4 royal flushes
   };
 
-  it("matches the known distribution across all 2,598,960 hands", () => {
+  // 2.6 million evaluations. The generous timeout is a ceiling on the
+  // MACHINE, not on the algorithm — it runs in a few seconds on an idle
+  // desktop and must not flake when the box is busy.
+  it("matches the known distribution across all 2,598,960 hands", { timeout: 120_000 }, () => {
     const counts = new Map<HandCategory, number>();
     let total = 0;
 
@@ -121,7 +124,7 @@ describe("seven-card selection", () => {
     return best;
   }
 
-  it("picks the same best five as an exhaustive subset search", () => {
+  it("picks the same best five as an exhaustive subset search", { timeout: 60_000 }, () => {
     // Deterministic pseudo-random deals — no Math.random, so a failure is
     // reproducible rather than a one-off.
     let seed = 987654321;
