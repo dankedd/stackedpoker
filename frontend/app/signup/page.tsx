@@ -6,6 +6,12 @@ import { Eye, EyeOff, AlertCircle, CheckCircle2, Loader2, Spade } from 'lucide-r
 import { createClient } from '@/lib/supabase/client'
 import { getSiteUrl } from '@/lib/site-url'
 import { Button } from '@/components/ui/button'
+import {
+  SEO_EVENTS,
+  clearToolAttribution,
+  readToolAttribution,
+  trackEvent,
+} from '@/lib/seo/analytics'
 
 function GoogleIcon() {
   return (
@@ -93,6 +99,15 @@ export default function SignupPage() {
       setLoading(false)
       return
     }
+    // Credit the signup to a free tool when one was used earlier this
+    // session (§ "account created after using tool"). The attribution is a
+    // slug in sessionStorage, set by ToolPanel — no identifiers, no inputs.
+    const tool = readToolAttribution()
+    if (tool) {
+      trackEvent(SEO_EVENTS.toolAttributedSignup, { tool_slug: tool })
+      clearToolAttribution()
+    }
+
     setSuccess(true)
     setLoading(false)
   }

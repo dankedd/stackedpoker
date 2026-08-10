@@ -58,7 +58,12 @@ describe('DecisionSpot — preflop table gating', () => {
   })
 })
 
-describe('DecisionSpot — curriculum sweep: no postflop step ever renders a preflop table', () => {
+// Postflop scenarios used to be barred from the table entirely and rendered a
+// text "Action so far" list instead. They now use the SAME table, switched into
+// postflop mode — so the invariant this sweep protects is no longer "no table",
+// it's "never the PREFLOP table": a flop/turn/river step must show its board and
+// name its real street, never claim to be preflop.
+describe('DecisionSpot — curriculum sweep: postflop steps render a postflop table, never a preflop one', () => {
   const allSteps = LESSONS.flatMap((l) => l.steps)
   const postflopDecisionSpots = allSteps.filter(
     (s) => (s.type === 'decision_spot' || s.type === 'bet_size_choose') && s.hero_position && (s.board?.length ?? 0) > 0,
@@ -69,9 +74,28 @@ describe('DecisionSpot — curriculum sweep: no postflop step ever renders a pre
   })
 
   for (const step of postflopDecisionSpots.slice(0, 20)) {
-    it(`${step.id} does not render the preflop table`, () => {
+    it(`${step.id} never claims to be preflop`, () => {
       const html = renderToStaticMarkup(<DecisionSpot step={step} onAnswer={noop} />)
-      expect(html).not.toContain('preflop-table-root')
+      if (!html.includes('preflop-table-root')) return // board-only illustration — keeps the compact card
+      expect(html).not.toContain('PREFLOP ·')
+      // The board belongs on the felt, not in a separate text panel.
+      expect(html).not.toContain('Action so far')
     })
   }
+
+  it('the reported scene (csd-s4b) renders a real flop table with its board and street', () => {
+    const step = allSteps.find((s) => s.id === 'csd-s4b')!
+    const html = renderToStaticMarkup(<DecisionSpot step={step} onAnswer={noop} />)
+
+    expect(html).toContain('preflop-table-root')
+    expect(html).not.toContain('Action so far')
+    // Board on the felt — all three flop cards, by their accessible names.
+    expect(html).toContain('Jack of spades')
+    expect(html).toContain('6 of hearts')
+    expect(html).toContain('6 of diamonds')
+    // Street-aware status bar, not the hardcoded preflop one.
+    expect(html).toContain('FLOP · 40BB EFFECTIVE')
+    expect(html).toContain('FLOP · BB CHECKS')
+    expect(html).not.toContain('PREFLOP ·')
+  })
 })

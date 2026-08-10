@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import type { Metadata } from "next";
 import { getSiteUrl } from "@/lib/site-url";
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, SITE_DESCRIPTION } from "./config";
@@ -7,8 +9,9 @@ import { findOrphans, MIN_OUTGOING_LINKS, type OrphanReport } from "./graph";
 import { validateJsonLd, type JsonLdNode } from "./jsonld";
 import { entryMetadata } from "./metadata";
 import { resolveOgImageFile } from "./ogAssets";
+import { interactiveToolSlugs } from "./content/tools";
 import { REDIRECT_SOURCES } from "./redirects";
-import { absoluteUrl } from "./routes";
+import { absoluteUrl, toolPath } from "./routes";
 import { entriesForSection, nonEmptySections } from "./sitemap";
 import { hubListEntries, structuredDataFor } from "./structuredData";
 import type { SeoEntry } from "./types";
@@ -429,6 +432,93 @@ export function validateInternalLinking(report: OrphanReport = findOrphans()): S
   return issues;
 }
 
+// ── Free tools (Module 14) ───────────────────────────────────────────────────
+
+/** Sections every published tool page must carry. */
+const REQUIRED_TOOL_SECTIONS = [
+  /^(What|Why|Which|How)/, // an introduction, phrased as the question it answers
+  /^How .* works$/i,
+  /^Practical examples$/i,
+  /^Common mistakes$/i,
+  /^Key takeaway$/i,
+];
+
+/**
+ * Fails the build when a tool ships without its calculator or without its
+ * educational content.
+ *
+ * A tool page that lost its widget still renders, still ranks and is still
+ * useless — nothing else in the pipeline would notice. The widget registry is
+ * read as TEXT rather than imported: it points at client components that pull
+ * in React, recharts and next/navigation, none of which belong in a build
+ * script.
+ */
+export function validateTools(): SeoIssue[] {
+  const issues: SeoIssue[] = [];
+  const tools = indexableEntries().filter((entry) => entry.kind === "tool");
+
+  let registrySource = "";
+  try {
+    registrySource = readFileSync(
+      path.resolve(process.cwd(), "components/tools/index.tsx"),
+      "utf8",
+    );
+  } catch {
+    issues.push(error("tools", "components/tools/index.tsx", "widget registry is missing"));
+  }
+
+  for (const slug of interactiveToolSlugs()) {
+    if (registrySource && !registrySource.includes(`"${slug}"`)) {
+      issues.push(
+        error(
+          "tools",
+          toolPath(slug),
+          "declares an interactive widget but has no entry in components/tools/index.tsx",
+        ),
+      );
+    }
+  }
+
+  for (const entry of tools) {
+    // The educational content is not optional: the brief is explicit that a
+    // calculator must never exist without it.
+    const headings = (entry.body ?? []).map((section) => section.heading);
+    if (!headings.length) {
+      issues.push(error("tools", entry.path, "published tool page has no educational content"));
+      continue;
+    }
+
+    for (const required of REQUIRED_TOOL_SECTIONS) {
+      if (!headings.some((heading) => required.test(heading))) {
+        issues.push(
+          error("tools", entry.path, `missing a section matching ${required} (has: ${headings.join(", ")})`),
+        );
+      }
+    }
+
+    if (headings.at(-1) !== "Key takeaway") {
+      issues.push(error("tools", entry.path, "\"Key takeaway\" must be the last section"));
+    }
+
+    if ((entry.faqs?.length ?? 0) < 2) {
+      issues.push(error("tools", entry.path, "needs at least two FAQs"));
+    }
+
+    // Worked examples are computed by the same functions the widget calls, so
+    // an empty examples table means a calculator returned nothing.
+    const examples = (entry.body ?? []).find((section) => section.heading === "Practical examples");
+    if (examples && !examples.definitions?.length) {
+      issues.push(error("tools", entry.path, "\"Practical examples\" produced no rows"));
+    }
+
+    if (!entry.sourceNote) {
+      issues.push(error("tools", entry.path, "no provenance note"));
+    }
+  }
+
+  return issues;
+}
+
 // ── Aggregate ────────────────────────────────────────────────────────────────
 
 export interface ValidationResult {
@@ -445,6 +535,7 @@ export function validateSeo(origin = getSiteUrl()): ValidationResult {
     ...validateStructuredData(origin),
     ...validateSitemaps(origin),
     ...validateInternalLinking(),
+    ...validateTools(),
   ];
 
   const errors = issues.filter((i) => i.severity === "error");

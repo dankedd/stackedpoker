@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { ContentPage } from "@/components/seo/ContentPage";
 import { TrackedLink } from "@/components/seo/TrackedLink";
+import { toolWidgetFor } from "@/components/tools";
 import { toolEntries, toolEntryBySlug, toolLivePath } from "@/lib/seo/content/tools";
 import { entryMetadata } from "@/lib/seo/metadata";
 
@@ -40,6 +41,9 @@ export default async function ToolPage({ params }: { params: Promise<{ slug: str
 
   const livePath = toolLivePath(slug);
   const context = { contentKind: entry.kind, contentSlug: entry.slug, cluster: entry.clusters?.[0] };
+  // The interactive widget, when this tool has one. The page around it stays
+  // a Server Component — only the calculator itself is client-side (§UX).
+  const Widget = toolWidgetFor(slug);
 
   return (
     <ContentPage
@@ -48,7 +52,9 @@ export default async function ToolPage({ params }: { params: Promise<{ slug: str
       ctaHeading="Get the reps, not just the formula"
       ctaBody="StackedPoker turns this maths into decisions you actually have to make, hand after hand. Free account, no card required."
       intro={
-        livePath ? (
+        Widget ? (
+          <Widget />
+        ) : livePath ? (
           <div className="mt-8 rounded-xl border border-violet-500/25 bg-violet-500/[0.07] p-5">
             <p className="text-sm text-muted-foreground">
               This one is live already — no account needed.

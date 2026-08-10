@@ -29,6 +29,31 @@ export interface OgImageInput {
   badges?: string[];
 }
 
+/**
+ * Characters the built-in OG font does not cover.
+ *
+ * `next/og` reacts to an unknown glyph by downloading a font for it at build
+ * time — a network call on a code path that must never fail, and a blank box
+ * in the image if it does. Substituting the ASCII equivalent removes both.
+ */
+const GLYPH_SUBSTITUTIONS: [RegExp, string][] = [
+  [/[≥]/g, ">="],
+  [/[≤]/g, "<="],
+  [/[≠]/g, "!="],
+  [/[×]/g, "x"],
+  [/[—–]/g, "-"],
+  [/[‘’]/g, "'"],
+  [/[“”]/g, '"'],
+  [/[…]/g, "..."],
+];
+
+export function sanitizeForOg(text: string): string {
+  return GLYPH_SUBSTITUTIONS.reduce(
+    (result, [pattern, replacement]) => result.replace(pattern, replacement),
+    text,
+  );
+}
+
 /** Longer titles step down a size so they never overflow the card. */
 function titleFontSize(title: string): number {
   if (title.length > 90) return 44;
@@ -38,7 +63,10 @@ function titleFontSize(title: string): number {
 }
 
 export function ogImageResponse(input: OgImageInput): ImageResponse {
-  const { title, eyebrow, subtitle, badges = [] } = input;
+  const title = sanitizeForOg(input.title);
+  const eyebrow = input.eyebrow ? sanitizeForOg(input.eyebrow) : undefined;
+  const subtitle = input.subtitle ? sanitizeForOg(input.subtitle) : undefined;
+  const badges = (input.badges ?? []).map(sanitizeForOg);
 
   return new ImageResponse(
     (
@@ -151,5 +179,6 @@ export function ogImageResponse(input: OgImageInput): ImageResponse {
 
 /** Trims a title to something that still reads as a headline on a card. */
 export function ogTitle(title: string, max = 96): string {
-  return title.length <= max ? title : `${title.slice(0, max - 1).trimEnd()}…`;
+  const clean = sanitizeForOg(title);
+  return clean.length <= max ? clean : `${clean.slice(0, max - 1).trimEnd()}...`;
 }

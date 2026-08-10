@@ -8342,6 +8342,23 @@ export const LESSONS: Lesson[] = [
         range_build_multi_chart: 'HJ_vs_UTG_60BB',
         range_build_multi_actions: ['3bet', 'call', 'fold'],
         range_build_multi_puzzle_hands: ['QQ', '76s', 'AJs'],
+        range_build_multi_puzzle_notes: [
+          {
+            hand: 'QQ', action: '3bet', concept: 'Value 3-betting a premium pair',
+            explanation: "QQ sits comfortably above UTG's flatting range for value — it wants to build the pot now rather than let CO/BTN/the blinds see a cheap flop behind a big pocket pair.",
+            rule: "With premium pairs facing an early open, 3-betting for value beats keeping the pot small — there's nothing to be afraid of behind you with a hand this strong.",
+          },
+          {
+            hand: '76s', action: 'fold', concept: 'Domination and players behind',
+            explanation: "76s is a real, playable suited connector — but UTG's range is tight and strong, and three players are still live behind Hero. Both factors push a hand like this below the bar here.",
+            rule: "A speculative hand's value depends on the range it's facing and how many players are still left to act — the same hand isn't always worth the same price.",
+          },
+          {
+            hand: 'AJs', action: 'call', concept: 'Domination risk vs a 3-bet',
+            explanation: "AJs is good enough to continue against UTG's range, but it runs into AK/AQ/AA-JJ often enough that 3-betting risks blowing up a hand that isn't a clear favorite. Calling keeps it in cheaply instead.",
+            rule: 'Domination risk against a specific opener, not raw hand strength alone, decides whether a hand plays as a value 3-bet or a call.',
+          },
+        ],
         range_build_multi_show_diff: true,
         range_build_multi_prefilled_key: 'HJ_vs_UTG_60BB_foundation',
         range_build_multi_prefilled_note:
@@ -8655,6 +8672,28 @@ export const LESSONS: Lesson[] = [
         range_build_multi_chart: 'CO_vs_HJ_60BB',
         range_build_multi_actions: ['3bet', 'call', 'fold'],
         range_build_multi_puzzle_hands: ['AJo', 'A5s', '76s', '44'],
+        range_build_multi_puzzle_notes: [
+          {
+            hand: 'AJo', action: 'call', concept: 'Suitedness decides HOW a hand continues',
+            explanation: "Against HJ's wider range than UTG's, AJo has enough raw equity and blocker value to continue — but it's still offsuit and disconnected, so it plays as a call rather than a hand that wants to build the pot.",
+            rule: "A hand's suitedness and connectedness decide HOW it continues (call vs 3-bet), even once its raw strength already clears the bar to continue at all.",
+          },
+          {
+            hand: 'A5s', action: '3bet', concept: 'Blocker/semi-bluff 3-betting',
+            explanation: "A5s doesn't win by showing down the best hand — it wins as a blocker/semi-bluff 3-bet, removing some of HJ's strongest continuing combos (AA, AK, big Ax) while keeping real flush and straight potential if called.",
+            rule: 'A suited wheel-Ace can be a 3-bet even without raw showdown value, because of what it blocks and how well it plays when called.',
+          },
+          {
+            hand: '76s', action: 'call', concept: 'Suitedness and connectedness earn a call',
+            explanation: 'Suited and connected with no domination risk at all, 76s has real flush and straight potential against a wider HJ open — enough to call and see a flop, without the equity or blockers to lead with a 3-bet.',
+            rule: 'Suitedness and connectedness earn a hand a profitable call long before they earn it a 3-bet.',
+          },
+          {
+            hand: '44', action: 'call', concept: 'Set-mining depends on price',
+            explanation: "A small pocket pair's whole case is flopping a well-disguised set — HJ's price and range are wide enough to make that speculative call worth it, even though 44 has no other way to develop a hand.",
+            rule: "A small pair's value depends entirely on getting a cheap enough look to profitably set-mine — not on the pair's own raw strength.",
+          },
+        ],
         range_build_multi_show_diff: true,
         range_hint: 'HJ\'s open is wider than UTG\'s — CO can call more suited broadways and connectors here than it could against an early open.',
         xp: 30,
@@ -9111,6 +9150,38 @@ export const LESSONS: Lesson[] = [
         range_build_multi_chart: 'BB_vs_BTN',
         range_build_multi_actions: ['3bet', 'call', 'fold'],
         range_build_multi_puzzle_hands: ['KTs', 'K9o', '76s', 'AJo', 'JJ', '97s'],
+        range_build_multi_puzzle_notes: [
+          {
+            hand: 'KTs', action: '3bet', concept: 'A wide enough opener turns a broadway into a 3-bet',
+            explanation: "KTs blocks a chunk of BTN's continuing range and plays well when called, so it's a real value-and-blocker 3-bet against one of the widest opens at the table — 3-betting is by far the more common action here, though a small calling frequency remains part of the mix.",
+            rule: 'Against a wide enough opener, a suited broadway with blocker value becomes a genuine 3-bet, not just a call.',
+          },
+          {
+            hand: 'K9o', action: 'call', concept: "The opener's range decides the floor",
+            explanation: "K9o has just enough equity and playability against BTN's wide, weak range to continue — but it's offsuit with no real blocker value, so it plays as a straightforward call rather than a hand that wants to build the pot.",
+            rule: "The same hand can be too weak to continue against a tight opener and a clean call against a wide one — the opener's range decides the floor, not the hand alone.",
+          },
+          {
+            hand: '76s', action: 'call', concept: 'Price and playability, without needing to 3-bet',
+            explanation: "Suited and connected with no domination risk, 76s has a great price and real playability against BTN's wide open — a comfortable call that keeps its plan simple: realize its equity in position after the flop.",
+            rule: "A speculative suited connector doesn't need to 3-bet to be profitable — a good price plus real playability is often enough on its own.",
+          },
+          {
+            hand: 'AJo', action: 'call', concept: 'A genuinely mixed hand',
+            explanation: 'AJo is genuinely mixed here: calling is the larger share of the strategy, since it plays well enough in position-reversed pots to just continue most of the time, but a real 3-betting frequency remains too, using its blockers against BTN\'s strongest hands.',
+            rule: 'Not every hand has one clean answer — a genuinely mixed hand can be correct playing more than one way, with one action simply more common than the other.',
+          },
+          {
+            hand: 'JJ', action: '3bet', concept: "The opener's range strength changes the answer",
+            explanation: "Against BTN's much wider, weaker range, JJ is strong enough to 3-bet outright rather than just flat and hope to flop well — the exact same hand that's a real mix against a tight UTG open isn't close here.",
+            rule: "The same pocket pair's ideal action can shift entirely once the opener's range strength changes — a hand's play is never fixed in isolation.",
+          },
+          {
+            hand: '97s', action: '3bet', concept: 'Recognizing a genuine toss-up',
+            explanation: "This suited one-gapper is about as close to a genuine 50/50 as this chart gets — 3-betting is the marginally larger share against BTN's wide range, but calling is right nearly as often.",
+            rule: 'Some hands sit right on the boundary between two actions — recognizing a genuine toss-up is as important as recognizing a clear answer.',
+          },
+        ],
         range_build_multi_show_diff: true,
         range_hint: 'BB\'s price and closed action support calling almost anything with real playability — save 3-bets for genuine value and blockers.',
         xp: 34,
@@ -9293,6 +9364,18 @@ export const LESSONS: Lesson[] = [
         range_build_multi_chart: 'BTN_vs_CO_60BB',
         range_build_multi_actions: ['3bet', 'call', 'fold'],
         range_build_multi_puzzle_hands: ['QJs', '87s'],
+        range_build_multi_puzzle_notes: [
+          {
+            hand: 'QJs', action: '3bet', concept: 'Position widens the 3-betting range',
+            explanation: "Position lets BTN attack CO's opening range hard — QJs has enough equity, blockers and playability against a range this wide to 3-bet for value rather than just call and give up the initiative.",
+            rule: 'Being guaranteed to act last for the rest of the hand lets a hand 3-bet wider than the exact same hand could from an earlier seat.',
+          },
+          {
+            hand: '87s', action: 'call', concept: 'Position turns playability into a call',
+            explanation: "87s doesn't have the raw value or blockers to lead with aggression, but its suitedness and connectedness make it a comfortable call in position — real playability across a wide range of flops.",
+            rule: "Position turns speculative, playable hands into profitable calls even when they aren't strong enough to 3-bet.",
+          },
+        ],
         range_build_multi_show_diff: true,
         range_hint: 'Position lets BTN call much deeper into offsuit broadways and Ax than CO or HJ could against the same open — that width is the whole point of this lesson.',
         xp: 30,
@@ -9509,6 +9592,13 @@ export const LESSONS: Lesson[] = [
         range_build_multi_chart: 'SB_vs_BTN_60BB',
         range_build_multi_actions: ['3bet', 'call', 'fold'],
         range_build_multi_puzzle_hands: ['AJs'],
+        range_build_multi_puzzle_notes: [
+          {
+            hand: 'AJs', action: '3bet', concept: 'One player behind changes the incentive to 3-bet',
+            explanation: "Only the BB is left to act behind, and BTN's range is wide and weak — AJs has enough equity and blocker value to apply pressure with a 3-bet rather than leave BB a cheap look by just calling.",
+            rule: 'When only one player is left behind and the opener\'s range is weak, an SB call is far more likely to become a 3-bet than a call.',
+          },
+        ],
         range_build_multi_show_diff: true,
         range_hint: 'SB leans on 3-betting more than calling relative to the other defenders you\'ve built so far — a flat leaves the BB a free look to squeeze.',
         xp: 30,

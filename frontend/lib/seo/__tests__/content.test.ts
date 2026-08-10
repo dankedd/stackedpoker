@@ -166,13 +166,28 @@ describe("glossary", () => {
 
 describe("tools and blog", () => {
   it("marks tools without an engine as planned", () => {
+    // The equity calculator, position trainer, bankroll calculator, variance
+    // calculator and starting-hand quiz all shipped in Module 14. The range
+    // viewer is the one left: it needs range data StackedPoker does not
+    // publish outside the lessons.
     const planned = toolEntries().filter((t) => t.status === "planned");
-    expect(planned.map((t) => t.slug)).toEqual([
-      "equity-calculator",
-      "range-viewer",
-      "position-trainer",
-    ]);
+    expect(planned.map((t) => t.slug)).toEqual(["range-viewer"]);
     for (const tool of planned) expect(tool.body).toBeUndefined();
+  });
+
+  it("ships the interactive tools as published pages with real content", () => {
+    for (const slug of [
+      "pot-odds-calculator",
+      "equity-calculator",
+      "bankroll-calculator",
+      "variance-calculator",
+      "position-trainer",
+      "starting-hand-quiz",
+    ]) {
+      const tool = toolEntries().find((t) => t.slug === slug);
+      expect(tool?.status, slug).toBe("published");
+      expect(tool?.body?.length, slug).toBeGreaterThan(3);
+    }
   });
 
   it("ships no placeholder blog posts", () => {

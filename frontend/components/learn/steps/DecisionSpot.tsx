@@ -6,6 +6,7 @@ import type { LessonStep } from '@/lib/learn/types'
 import { orderStepOptions, isPokerActionSet } from '@/lib/learn/interactionSafety'
 import { PreflopTable } from '@/components/learn/visuals/PreflopTable'
 import { PostflopScenarioCard } from '@/components/learn/visuals/PostflopScenarioCard'
+import { canRenderPostflopTable } from '@/lib/learn/postflopTableState'
 import { ScenarioComparison } from '@/components/learn/visuals/ScenarioComparison'
 import { ScenarioSideBySide } from '@/components/learn/visuals/ScenarioSideBySide'
 import { BoardScenarioComparison, isBoardOnlyScenarioPair } from '@/components/learn/visuals/BoardScenarioComparison'
@@ -143,10 +144,29 @@ export function DecisionSpot({ step, onAnswer, disabled = false }: DecisionSpotP
         />
       )}
 
-      {/* Postflop equivalent of the table above — a board is set, so this is a
-          flop/turn/river spot, never the preflop seat table. */}
+      {/* Postflop spot — the SAME table, switched into postflop mode by the
+          board (community cards on the felt, street-aware status bar, dead pot
+          carried forward). A postflop scene that can't be drawn as a table —
+          no parseable action history to place seats from — still falls back to
+          the compact scenario card rather than rendering a half-empty table. */}
       {!hasFullScenarioComparison && step.hero_position && !!step.board?.length && (
-        <PostflopScenarioCard step={step} />
+        canRenderPostflopTable(step) ? (
+          <PreflopTable
+            tableSize={step.table_size ?? 9}
+            heroPosition={step.hero_position}
+            heroHand={step.hero_hand}
+            effectiveStackBb={step.effective_stack_bb}
+            stackOverridesBb={step.stack_overrides_bb}
+            anteBb={step.ante_bb}
+            actionBeforeHero={step.action_before_hero}
+            board={step.board}
+            postflopAction={step.postflop_action}
+            street={step.street === 'preflop' ? undefined : step.street}
+            potBb={step.pot_bb}
+          />
+        ) : (
+          <PostflopScenarioCard step={step} />
+        )
       )}
 
       {/* Narrative / context */}

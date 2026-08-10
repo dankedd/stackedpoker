@@ -45,6 +45,8 @@ describe("completeness report", () => {
 
   it("names every high-priority topic that is still unpublished", () => {
     const text = renderCompletenessReport(report);
+    // The tool gaps closed in Module 14 except the range viewer, which still
+    // has no public range data behind it.
     const expected = [
       "/wiki/equity",
       "/wiki/3bet",
@@ -52,9 +54,7 @@ describe("completeness report", () => {
       "/wiki/check-raise",
       "/wiki/thin-value",
       "/wiki/fold-equity",
-      "/tools/equity-calculator",
       "/tools/range-viewer",
-      "/tools/position-trainer",
     ];
     for (const path of expected) expect(text, path).toContain(path);
   });
