@@ -7,6 +7,8 @@ import {
   isPokerActionSet,
   isCardNotationSet,
   isNumericOnlySet,
+  auditContentLeakage,
+  ENFORCED_CONTENT_LEAK_REASONS,
 } from '@/lib/learn/answerLeakageAudit'
 import type { StepOption } from '@/lib/learn/types'
 
@@ -30,7 +32,10 @@ import type { StepOption } from '@/lib/learn/types'
  * comment explaining why, never raise it to paper over a real regression.
  */
 
-const BASELINE_MAX_FLAGGED = 99
+// 99 -> 98: the content-leakage pass rewrote the option labels on fl2-s8,
+// dip-s8a-reason, dip-s8b-reason, pce-s3b and hfc-s6b to be parallel bare
+// categories, which also cleared one of them from the form heuristics.
+const BASELINE_MAX_FLAGGED = 98
 
 function fixtureOption(id: string, label: string, quality: StepOption['quality'] = 'mistake'): StepOption {
   return { id, label, quality, feedback: 'fixture feedback' }
@@ -224,5 +229,124 @@ describe('curriculum-wide ratchet — total flagged steps must not increase', ()
       expect(typeof row.stepId).toBe('string')
       expect(row.stepId.length).toBeGreaterThan(0)
     }
+  })
+})
+
+// ── Content leakage ──────────────────────────────────────────────────────────
+// The second, independent class: option labels that hand over the specific
+// hands/boards/figures the question asks the learner to derive. The form
+// heuristics above cannot see this — in the motivating bug (`rtr-s3`, "did
+// Hero's blocker remove value or bluffs?" with options `Value (AA)` /
+// `Bluffs (76s)` / `Both` / `Neither`) TWO options carried a parenthetical, so
+// `structural_parens_leakage` stayed silent while the answer sat on screen.
+//
+// Unlike the form ratchet above this is ZERO-TOLERANCE, which is only
+// affordable because the enforced rule is deliberately narrow — see
+// `ENFORCED_CONTENT_LEAK_REASONS`. The broader `names_specific_*` signals are
+// advisory: a "which board favours the raiser?" question must name boards.
+
+describe('content leakage — unit behavior', () => {
+  it('flags the original rtr-s3 shape: category labels with the reasoning appended', () => {
+    const flags = auditContentLeakage([
+      fixtureOption('value', 'Value (AA)', 'perfect'),
+      fixtureOption('bluffs', 'Bluffs (76s)'),
+      fixtureOption('both', 'Both'),
+      fixtureOption('neither', 'Neither'),
+    ])
+    expect(flags.some((f) => f.reason === 'appended_hand_leakage')).toBe(true)
+  })
+
+  it('passes the same question once the hands are moved into the feedback', () => {
+    const flags = auditContentLeakage([
+      fixtureOption('value', 'Value', 'perfect'),
+      fixtureOption('bluffs', 'Bluffs'),
+      fixtureOption('both', 'Both'),
+      fixtureOption('neither', 'Neither'),
+    ])
+    expect(flags).toEqual([])
+  })
+
+  it('does NOT flag identifier labels, where the parenthetical defines the option', () => {
+    // "Board A" is unanswerable without being told which board it is — the
+    // parenthetical is the option's meaning, not evidence for choosing it.
+    const flags = auditContentLeakage([
+      fixtureOption('a', 'Board A (8♥7♥3♦)', 'perfect'),
+      fixtureOption('b', 'Board B (K♠7♦2♥)'),
+      fixtureOption('same', 'About the same'),
+    ])
+    expect(flags.some((f) => f.reason === 'appended_hand_leakage')).toBe(false)
+  })
+
+  // ── names_specific_hand ────────────────────────────────────────────────
+  // The pocket-pair branch of this pattern carried a backreference to a group
+  // that was never opened, which is a TypeScript error rather than a silently
+  // wrong regex — so the shapes it is meant to catch had never actually been
+  // exercised. These pin them down.
+
+  it('flags a pocket pair appended to one option but not the others', () => {
+    const flags = auditContentLeakage([
+      fixtureOption('value', 'Value AA', 'perfect'),
+      fixtureOption('bluffs', 'Bluffs'),
+      fixtureOption('both', 'Both'),
+    ])
+    expect(flags.some((f) => f.reason === 'names_specific_hand')).toBe(true)
+  })
+
+  it('flags suited, offsuit and concrete-combo notation', () => {
+    for (const label of ['Value 76s', 'Value T8o', 'Value A♣']) {
+      const flags = auditContentLeakage([
+        fixtureOption('value', label, 'perfect'),
+        fixtureOption('bluffs', 'Bluffs'),
+        fixtureOption('both', 'Both'),
+      ])
+      expect(flags.some((f) => f.reason === 'names_specific_hand'), label).toBe(true)
+    }
+  })
+
+  it('does NOT read ordinary prose as a hand', () => {
+    // A single rank letter, two DIFFERENT ranks with no suited/offsuit marker,
+    // and plain English all have to stay quiet or the advisory signal is noise.
+    for (const label of ['Ace high', 'Value', 'The turn card', 'Neither', 'A pair']) {
+      const flags = auditContentLeakage([
+        fixtureOption('a', label, 'perfect'),
+        fixtureOption('b', 'Bluffs'),
+        fixtureOption('c', 'Both'),
+      ])
+      expect(flags.some((f) => f.reason === 'names_specific_hand'), label).toBe(false)
+    }
+  })
+
+  it('stays quiet when every option names a hand — that is the answer space', () => {
+    // The minority rule, and the reason the pair branch must not fire here.
+    expect(auditContentLeakage([
+      fixtureOption('aa', 'Value AA', 'perfect'),
+      fixtureOption('kk', 'Value KK'),
+      fixtureOption('qq', 'Value QQ'),
+    ]).some((f) => f.reason === 'names_specific_hand')).toBe(false)
+  })
+
+  it('does NOT flag an answer space genuinely made of hands', () => {
+    expect(auditContentLeakage([
+      fixtureOption('aa', 'AA', 'perfect'),
+      fixtureOption('kk', 'KK'),
+      fixtureOption('qq', 'QQ'),
+    ])).toEqual([])
+  })
+})
+
+describe('curriculum-wide content leakage — zero tolerance on the enforced rule', () => {
+  it('no step appends the answer to a categorical option label', () => {
+    const offenders: string[] = []
+    for (const lesson of LESSONS) {
+      for (const step of lesson.steps) {
+        if (!step.options?.length) continue
+        const enforced = auditContentLeakage(step.options)
+          .filter((f) => ENFORCED_CONTENT_LEAK_REASONS.has(f.reason))
+        for (const f of enforced) {
+          offenders.push(`${lesson.id}/${step.id}: ${f.detail}`)
+        }
+      }
+    }
+    expect(offenders).toEqual([])
   })
 })

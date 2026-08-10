@@ -9316,7 +9316,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['btn_defense'],
         narrative: 'What is the MAIN reason that call is correct?',
         options: [
-          { id: 'hand_properties', label: 'Hand properties — QJs plays well across many textures', quality: 'perfect', feedback: 'Correct — this spot is decided primarily by what QJs does well as a hand: suited, connected, good coverage across textures.' },
+          { id: 'hand_properties', label: 'Hand properties', quality: 'perfect', feedback: 'Correct — this spot is decided primarily by what QJs does well as a hand: suited, connected, good coverage across textures.' },
           { id: 'players_behind', label: 'Players behind', quality: 'mistake', feedback: 'Players behind is real (SB, BB) but it is not the deciding factor here — the hand\'s own properties are doing the heavy lifting in this specific decision.' },
           { id: 'price', label: 'Price', quality: 'mistake', feedback: 'Price matters in every spot, but it is not the standout reason this particular hand calls — its playability and board coverage are.' },
         ],
@@ -9345,8 +9345,8 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['players_behind_aggression'],
         narrative: 'What is the MAIN reason this is closer to a fold than the previous BTN spot with a similar hand?',
         options: [
-          { id: 'players_behind', label: 'Players behind — three opponents are still live to act', quality: 'perfect', feedback: "Correct — three players still to act is a much heavier resistance load than the BTN's two, and that alone meaningfully tightens what's worth calling from the CO." },
-          { id: 'hand_properties', label: 'Hand properties — 87s is a much worse hand than QJs', quality: 'mistake', feedback: '87s and QJs are both perfectly playable suited hands with real board coverage — the deciding difference here is the seat and the players left behind, not the hand itself.' },
+          { id: 'players_behind', label: 'Players behind', quality: 'perfect', feedback: "Correct — three players still to act is a much heavier resistance load than the BTN's two, and that alone meaningfully tightens what's worth calling from the CO." },
+          { id: 'hand_properties', label: 'Hand properties', quality: 'mistake', feedback: '87s and QJs are both perfectly playable suited hands with real board coverage — the deciding difference here is the seat and the players left behind, not the hand itself.' },
           { id: 'price', label: 'Price', quality: 'mistake', feedback: 'The price is essentially the same open size as the BTN spot — the real difference is the extra player left to act behind the CO.' },
         ],
         xp: 6,
@@ -10889,8 +10889,8 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['flop_structure'],
         narrative: `Quick recall check: which structure is rarer — TRIPS or PAIRED?`,
         options: [
-          { id: 'trips', label: `Trips (${FLOP_STRUCTURE_FREQUENCY.trips.toFixed(2)}% of flops)`, quality: 'perfect', feedback: `Correct. Trips shows up on only ${FLOP_STRUCTURE_FREQUENCY.trips.toFixed(2)}% of flops — you need all three community cards to land on the exact same rank. Paired is far more common at ${FLOP_STRUCTURE_FREQUENCY.paired.toFixed(1)}%, since it only needs two of the three to match.` },
-          { id: 'paired', label: `Paired (${FLOP_STRUCTURE_FREQUENCY.paired.toFixed(1)}% of flops)`, quality: 'mistake', feedback: `The other way around. Paired needs only two ranks to match, so it happens on ${FLOP_STRUCTURE_FREQUENCY.paired.toFixed(1)}% of flops. Trips needs all three to match the same rank, which is far more restrictive — only ${FLOP_STRUCTURE_FREQUENCY.trips.toFixed(2)}% of flops.` },
+          { id: 'trips', label: 'Trips', quality: 'perfect', feedback: `Correct. Trips shows up on only ${FLOP_STRUCTURE_FREQUENCY.trips.toFixed(2)}% of flops — you need all three community cards to land on the exact same rank. Paired is far more common at ${FLOP_STRUCTURE_FREQUENCY.paired.toFixed(1)}%, since it only needs two of the three to match.` },
+          { id: 'paired', label: 'Paired', quality: 'mistake', feedback: `The other way around. Paired needs only two ranks to match, so it happens on ${FLOP_STRUCTURE_FREQUENCY.paired.toFixed(1)}% of flops. Trips needs all three to match the same rank, which is far more restrictive — only ${FLOP_STRUCTURE_FREQUENCY.trips.toFixed(2)}% of flops.` },
           { id: 'equal', label: 'About equally rare', quality: 'mistake', feedback: `Not close — trips (${FLOP_STRUCTURE_FREQUENCY.trips.toFixed(2)}%) is roughly 70 times rarer than paired (${FLOP_STRUCTURE_FREQUENCY.paired.toFixed(1)}%). Requiring all three cards to match is a much narrower target than requiring just two.` },
         ],
         xp: 6,
@@ -13040,15 +13040,15 @@ export const LESSONS: Lesson[] = [
         scenario_layout: 'side_by_side',
         options: [
           {
-            id: 'aq3r', label: 'A♥Q♦3♠ — UTG can bet 100% of the range profitably', quality: 'perfect',
+            id: 'aq3r', label: 'A♥Q♦3♠', quality: 'perfect',
             feedback: 'Correct. On A♥Q♦3♠, UTG holds 72% equity and captures 85% of the pot — BB\'s flop x/r frequency is only about 5%, so UTG\'s edge is lopsided enough to support betting everything. On 9♥8♥4♦, UTG still has the better range (59% equity, 69.04% pot share) but forcing a 100% c-bet strategy there actually LOSES EV — -4.25% of the pot (-24bb/100) — because BB can counter-attack with a 48.42% x/r frequency against a range that wide, versus only ~4% at the real equilibrium mix.',
           },
           {
-            id: '984hh', label: '9♥8♥4♦ — its extra connectivity means UTG needs to bet everything to deny draws fast', quality: 'mistake',
+            id: '984hh', label: '9♥8♥4♦', quality: 'mistake',
             feedback: 'That reasoning has it backwards. The extra connectivity on 9♥8♥4♦ is exactly what gives BB real hands to check-raise BACK with — pushing UTG to a 100% c-bet strategy there actually costs -24bb/100, because BB\'s x/r frequency balloons to 48.42% against it. A76r-style dry boards like A♥Q♦3♠ are where "bet everything" is actually free.',
           },
           {
-            id: 'both', label: 'Both — UTG holds a real range edge on each board, so both support a 100% strategy', quality: 'mistake',
+            id: 'both', label: 'Both boards', quality: 'mistake',
             feedback: "UTG's range edge alone doesn't guarantee a 100% ceiling — it only holds on A♥Q♦3♠. On 9♥8♥4♦, that same edge exists but BB's extra connectivity gives real raise-back potential, capping the profitable frequency below 100% even though UTG is still betting a lot.",
           },
         ],
@@ -14055,15 +14055,15 @@ export const LESSONS: Lesson[] = [
         scenario_layout: 'side_by_side',
         options: [
           {
-            id: 'oop_more', label: 'Hero OOP c-bets more often — 77% vs only 53% IP', quality: 'perfect',
+            id: 'oop_more', label: 'Hero out of position', quality: 'perfect',
             feedback: 'Correct, and it\'s a real inversion of this module\'s usual pattern. Despite similar equity distributions either way, Hero c-bets Axx 77% of the time OOP but only 53% IP. The reason is exactly the asymmetry from earlier in this lesson: IP\'s check ends the street for free, so IP can afford to check back more. OOP\'s check does NOT end the street — Hero would have to act first on the turn with less information — so Hero bets now instead, denying that disadvantage rather than walking into it.',
           },
           {
-            id: 'ip_more', label: 'Hero IP c-bets more often — position always means more aggression', quality: 'mistake',
+            id: 'ip_more', label: 'Hero in position', quality: 'mistake',
             feedback: "That's the pattern this whole module has mostly shown, which makes this board a useful exception to notice: on this specific Axx/3-bet-pot combination, it's OOP that bets MORE (77% vs 53%) — precisely because OOP loses the free, no-cost check that IP gets to rely on.",
           },
           {
-            id: 'about_same', label: "About the same — the equity distribution is described as similar either way, so frequency should be too", quality: 'mistake',
+            id: 'about_same', label: 'About the same', quality: 'mistake',
             feedback: "The equity distribution really is similar in both spots — that's exactly what makes the frequency gap (77% vs 53%) so informative. It isn't an equity difference driving it at all; it's purely the positional information asymmetry from earlier in this lesson.",
           },
         ],
@@ -16070,24 +16070,24 @@ export const LESSONS: Lesson[] = [
         id: 'btv-s4',
         type: 'decision_spot',
         concept_ids: ['blocker_classification'],
-        narrative: 'Compare what happened to the value region against the bluffs (76s, 65s) — neither shares a card with A♣T♦.',
+        narrative: "Work through Hero's two cards against each region of Villain's range in turn.",
         decision_spot_question: "What did Hero's cards mostly remove from Villain's range?",
         options: [
           {
-            id: 'value', label: 'Value combinations — specifically AA', quality: 'perfect',
-            feedback: "Correct — Hero's ace only collides with AA, the value class that shares its rank. 94s, 76s and 65s are completely untouched.",
+            id: 'value', label: 'Value combinations', quality: 'perfect',
+            feedback: "Correct. Hero's A♣ collides only with AA — together with the board's ace it takes out 5 of AA's 6 combos. The other value class (94s) and both bluff classes (76s, 65s) share no card with A♣T♦, so all of them are fully intact.",
           },
           {
-            id: 'bluffs', label: 'Bluff combinations (76s, 65s)', quality: 'mistake',
-            feedback: 'No card in A♣T♦ shares a rank with 7, 6 or 5 — the bluff classes are fully unaffected here.',
+            id: 'bluffs', label: 'Bluff combinations', quality: 'mistake',
+            feedback: "The bluff classes here are 76s and 65s, and neither an ace nor a ten shares a rank with a 7, 6 or 5 — all 8 of those combos survive. What Hero's cards actually removed is 5 of AA's 6 value combos. Removal only ever follows a shared card.",
           },
           {
-            id: 'both', label: 'Both value and bluffs, roughly evenly', quality: 'mistake',
-            feedback: 'Only the value side was touched — specifically AA. The bluff classes share no card with A♣T♦.',
+            id: 'both', label: 'Both, roughly evenly', quality: 'mistake',
+            feedback: "Only the value side moved, and not evenly at all: AA lost 5 of its 6 combos while 94s, 76s and 65s each lost none. Removal lands exactly where a card is shared, so it is almost never spread evenly across a range.",
           },
           {
-            id: 'neither', label: 'Neither — card removal never applies to a whole range at once', quality: 'mistake',
-            feedback: "Card removal is real here — it just wasn't spread evenly. AA lost 5 of its 6 combinations; 94s, 76s and 65s lost none.",
+            id: 'neither', label: 'Neither', quality: 'mistake',
+            feedback: "Removal is real here — AA lost 5 of its 6 combinations to the board's ace and Hero's own A♣ together. It simply didn't reach the rest of the range, because 94s, 76s and 65s contain no card Hero or the board is holding.",
           },
         ],
         xp: 15,
@@ -16627,13 +16627,24 @@ export const LESSONS: Lesson[] = [
         id: 'rtr-s3',
         type: 'decision_spot',
         concept_ids: ['blocker_classification'],
-        narrative: '76s shares no card with Hero\'s ace.',
-        decision_spot_question: 'EFFECT — what did Hero\'s ace remove: value, bluffs, both, or neither?',
+        decision_spot_question: "EFFECT — which side of Villain's range did Hero's ace remove?",
         options: [
-          { id: 'value', label: 'Value (AA)', quality: 'perfect', feedback: "Correct. Hero's ace only collides with AA — 76s is completely untouched." },
-          { id: 'bluffs', label: 'Bluffs (76s)', quality: 'mistake', feedback: "An ace shares no rank with 7 or 6 — 76s is fully unaffected." },
-          { id: 'both', label: 'Both', quality: 'mistake', feedback: 'Only AA was touched here.' },
-          { id: 'neither', label: 'Neither', quality: 'mistake', feedback: '3 of 6 AA combinations became impossible — that is real removal.' },
+          {
+            id: 'value', label: 'Value', quality: 'perfect',
+            feedback: "Correct. Hero's A♣ pairs with each of the three aces nobody can see, so 3 of AA's 6 value combos are impossible. The bluff class — 76s — shares no rank with an ace, so all 4 of its combos are still live. Blocking value while leaving the bluffs alone is the best profile a caller can have.",
+          },
+          {
+            id: 'bluffs', label: 'Bluffs', quality: 'mistake',
+            feedback: "The bluff class here is 76s, and an ace shares no rank with a seven or a six — not one of its 4 combos is touched. What Hero's A♣ actually removed is 3 of AA's 6 value combos, the three that pair it with another ace. Removal only ever follows a shared card, so start by asking which of Villain's hands literally contain one of yours.",
+          },
+          {
+            id: 'both', label: 'Both', quality: 'mistake',
+            feedback: "Only the value side moved. Hero's A♣ kills 3 of AA's 6 combos; 76s contains no ace at all, so all 4 of its combos survive. Removal is never spread evenly across a range — it lands only on the hands that share a card with yours, which is usually one region and not the other.",
+          },
+          {
+            id: 'neither', label: 'Neither', quality: 'mistake',
+            feedback: "Removal did happen: Hero's A♣ makes 3 of AA's 6 combinations impossible, because each of those three pairs the club ace with one of the other aces. Only the bluff class escaped. Holding one card of a rank always halves a pocket pair — it just never touches a hand that shares no rank with it.",
+          },
         ],
         xp: 15,
       },
@@ -16658,12 +16669,24 @@ export const LESSONS: Lesson[] = [
         id: 'rtr-s5',
         type: 'decision_spot',
         concept_ids: ['blocker_classification'],
-        decision_spot_question: 'Value, bluffs, both, or neither?',
+        decision_spot_question: "Which side of Villain's range did Hero's jack remove?",
         options: [
-          { id: 'value', label: 'Value (JJ)', quality: 'perfect', feedback: "Correct — 54s shares no card with Hero's jack." },
-          { id: 'bluffs', label: 'Bluffs (54s)', quality: 'mistake', feedback: 'A jack shares no rank with 5 or 4.' },
-          { id: 'both', label: 'Both', quality: 'mistake', feedback: 'Only JJ was touched here.' },
-          { id: 'neither', label: 'Neither', quality: 'mistake', feedback: '3 of 6 JJ combinations became impossible.' },
+          {
+            id: 'value', label: 'Value', quality: 'perfect',
+            feedback: "Correct. Hero's J♣ pairs with the other three jacks, so 3 of JJ's 6 value combos are gone. The bluff class — 54s — shares no rank with a jack, so all 4 combos remain. Same mechanic as Scenario 1 with the ranks swapped, which is the point: it never depends on which pair it is.",
+          },
+          {
+            id: 'bluffs', label: 'Bluffs', quality: 'mistake',
+            feedback: "The bluff class is 54s, and a jack shares no rank with a five or a four — all 4 of its combos are untouched. Hero's J♣ removed 3 of JJ's 6 value combos instead. Check your own two cards against each region of the range separately; a card can only delete hands that literally contain it.",
+          },
+          {
+            id: 'both', label: 'Both', quality: 'mistake',
+            feedback: "Only the value side was touched: 3 of JJ's 6 combos are impossible once Hero holds the J♣, while all 4 of 54s's combos survive because they contain no jack. Removal follows shared cards, so it almost never hits value and bluffs in equal measure.",
+          },
+          {
+            id: 'neither', label: 'Neither', quality: 'mistake',
+            feedback: "There is real removal here — the J♣ pairs with each of the three unseen jacks, so 3 of JJ's 6 combos cannot exist. The bluff class is the part that escaped. One held card always halves a pocket pair and leaves everything that shares no rank with it completely alone.",
+          },
         ],
         xp: 15,
       },
@@ -16688,12 +16711,24 @@ export const LESSONS: Lesson[] = [
         id: 'rtr-s7',
         type: 'decision_spot',
         concept_ids: ['blocker_classification'],
-        decision_spot_question: 'Value, bluffs, both, or neither?',
+        decision_spot_question: "Which side of Villain's range did Hero's queen remove?",
         options: [
-          { id: 'value', label: 'Value (QQ)', quality: 'perfect', feedback: 'Correct — T8s shares no card with Hero\'s queen.' },
-          { id: 'bluffs', label: 'Bluffs (T8s)', quality: 'mistake', feedback: 'A queen shares no rank with T or 8.' },
-          { id: 'both', label: 'Both', quality: 'mistake', feedback: 'Only QQ was touched here.' },
-          { id: 'neither', label: 'Neither', quality: 'mistake', feedback: '3 of 6 QQ combinations became impossible.' },
+          {
+            id: 'value', label: 'Value', quality: 'perfect',
+            feedback: "Correct. Hero's Q♣ pairs with the other three queens — 3 of QQ's 6 value combos impossible. The bluff class, T8s, contains neither a queen nor Hero's club, so all 4 of its combos survive. Three scenarios, three different ranks, one identical answer: that is the mechanic, not a coincidence.",
+          },
+          {
+            id: 'bluffs', label: 'Bluffs', quality: 'mistake',
+            feedback: "The bluff class is T8s, and a queen shares no rank with a ten or an eight — none of its 4 combos can be removed. Hero's Q♣ took out 3 of QQ's 6 value combos. The question to run every time is which of Villain's hands literally contain a card you are holding.",
+          },
+          {
+            id: 'both', label: 'Both', quality: 'mistake',
+            feedback: "Only the value side. The Q♣ makes 3 of QQ's 6 combos impossible; T8s shares no card with Hero at all, so it is fully intact. Removal is never even across a range — it lands exactly where a card is shared, and nowhere else.",
+          },
+          {
+            id: 'neither', label: 'Neither', quality: 'mistake',
+            feedback: "Removal did occur: the Q♣ pairs with each of the three queens still unseen, so 3 of QQ's 6 combos are gone. Only the bluff class was spared. Holding one card of a rank halves a pocket pair every single time, and leaves any hand that shares no rank with it untouched.",
+          },
         ],
         xp: 15,
       },

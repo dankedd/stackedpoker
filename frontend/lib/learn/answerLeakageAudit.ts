@@ -201,6 +201,127 @@ export function auditStepOptions(options: StepOption[]): LeakageAuditResult {
   return { exempt: null, flags }
 }
 
+// ── Content leakage ───────────────────────────────────────────────────────────
+// A second, independent class from the form heuristics above. Those ask "can I
+// spot the correct option from how it's WRITTEN?" — this one asks "does the
+// option set hand me the reasoning I'm supposed to produce?"
+//
+// The motivating bug: a step asking "did Hero's blocker remove value, bluffs,
+// both, or neither?" whose options read `Value (AA)` / `Bluffs (76s)` /
+// `Both` / `Neither`. The parentheticals name the exact hand classes the
+// learner is meant to work out, turning a reasoning question into a
+// read-the-label question. Note the form detector CANNOT catch this: two
+// different options carry parentheticals, so `structural_parens_leakage`
+// stays silent.
+//
+// Detector, not verdict — same contract as `auditStepOptions`. Categorical
+// answer sets legitimately made OF hands or numbers (pick the hand, pick the
+// frequency) are exempt via the same eligibility filters, because there the
+// notation IS the answer rather than a hint toward it.
+
+/** Concrete hand-class notation: AA, AKs, 76s, T8o, JJ. Requires two ranks so
+ *  a bare 'A' or a stray 'K' in prose can't trip it. */
+const HAND_CLASS_RE = /\b([2-9TJQKA])\1?[2-9TJQKA]?(?:s|o)?\b/
+
+/**
+ * Advisory-only signals. These were run curriculum-wide during the content
+ * leakage pass and produced ~46 hits, of which all but three were legitimate:
+ * a question like "which board favors the raiser?" MUST name boards in its
+ * options, "which is rarer, trips or paired?" must name the structures, and a
+ * reasoning option may quote a figure the step's own narrative already gave.
+ *
+ * They are therefore reported by `auditContentLeakage` for a human to triage
+ * but are NOT part of the enforced gate — see `ENFORCED_CONTENT_LEAK_REASONS`.
+ * The enforced rule is `appended_hand_leakage`, which is the shape that is
+ * essentially always a real bug.
+ */
+const CONTENT_LEAK_PATTERNS: { reason: string; re: RegExp }[] = [
+  // A specific hand class or concrete combo: AA, 76s, T8o, A♣T♦, K♥.
+  //
+  // Three shapes, because each needs a different anchor. The suited/offsuit
+  // branch REQUIRES its s/o marker, so a pocket pair — which has none — needs
+  // a branch of its own, and that is what the backreference is for: the same
+  // rank twice ('AA'), not any two ranks ('AK' is not a hand class without a
+  // marker). The concrete-combo branch sits outside the leading \b because a
+  // suit symbol is not a word character.
+  {
+    reason: 'names_specific_hand',
+    re: /\b(?:[2-9TJQKA]{2}(?:s|o)\b|([2-9TJQKA])\1\b)|[2-9TJQKA][♠♥♦♣]/,
+  },
+  // A concrete board: three or more cards written out.
+  { reason: 'names_specific_board', re: /(?:[2-9TJQKA][♠♥♦♣]\s*){3,}/ },
+  // An exact frequency/EV figure the learner is being asked to derive.
+  { reason: 'names_exact_frequency', re: /\b\d+(?:\.\d+)?\s*%/ },
+]
+
+/** A hand class inside a parenthetical or after a dash — the specific shape
+ *  that appends "here's the answer" to an otherwise clean categorical label
+ *  ("Value (AA)"), as opposed to a label that legitimately IS a hand. */
+const APPENDED_HAND_RE = /[(–—-]\s*[^)]*(?:[2-9TJQKA]{2}(?:s|o)\b|[2-9TJQKA][♠♥♦♣])/
+
+export interface ContentLeakageFlag extends LeakageFlag {
+  /** Which option labels tripped it. */
+  optionIds: string[]
+}
+
+/** The subset of content-leak reasons that are a hard failure rather than a
+ *  review prompt. Keep this tight: a gate that cries wolf gets muted. */
+export const ENFORCED_CONTENT_LEAK_REASONS = new Set(['appended_hand_leakage'])
+
+/**
+ * Audits an option set for CONTENT leakage — option labels that name the
+ * specific hands, boards, or figures the question asks the learner to derive.
+ *
+ * Exempt when the options are themselves the categorical answer space (pure
+ * card notation, numeric-only, poker actions): "which hand blocks more?" with
+ * hand-notation options is a legitimate question, not a leak.
+ */
+export function auditContentLeakage(options: StepOption[]): ContentLeakageFlag[] {
+  if (options.length < 2) return []
+  if (isCardNotationSet(options)) return []
+  if (isNumericOnlySet(options)) return []
+  if (isPokerActionSet(options)) return []
+
+  // The signature case: SOME options are a bare category word and others append
+  // a hand. A set where every label names a hand is a hand-comparison question.
+  //
+  // One principled exception: when the text BEFORE the parenthetical is a bare
+  // referent ("Board A", "Hand B", "Option 1"), the parenthetical is what the
+  // option even MEANS, not evidence for it — the learner cannot pick "Board A"
+  // without being told which board that is. Contrast "Value (AA)", where
+  // "Value" is already a complete, answerable label and "(AA)" only supplies
+  // the reasoning the question asked for.
+  const IDENTIFIER_LABEL_RE = /^(board|hand|option|scenario|line|player|spot)\s+[A-Z0-9]\b/i
+  const appended = options.filter(
+    (o) => APPENDED_HAND_RE.test(o.label) && !IDENTIFIER_LABEL_RE.test(o.label.trim()),
+  )
+  const bare = options.filter((o) => !HAND_CLASS_RE.test(o.label) && wordCount(o.label) <= 3)
+  const flags: ContentLeakageFlag[] = []
+
+  if (appended.length > 0 && bare.length > 0) {
+    flags.push({
+      reason: 'appended_hand_leakage',
+      detail: `${appended.length} option(s) append a specific hand to a category label while ${bare.length} stay bare — the appended hands name the reasoning the learner should produce`,
+      optionIds: appended.map((o) => o.id),
+    })
+  }
+
+  for (const { reason, re } of CONTENT_LEAK_PATTERNS) {
+    const hits = options.filter((o) => re.test(o.label))
+    // Only interesting when it's a MINORITY of the set: if every option names a
+    // board or a percentage, that's the answer space, not a hint.
+    if (hits.length > 0 && hits.length < options.length) {
+      flags.push({
+        reason,
+        detail: `${hits.length} of ${options.length} options name a specific ${reason.replace('names_specific_', '').replace('names_exact_', '')}: ${hits.map((o) => `"${o.label}"`).join(', ')}`,
+        optionIds: hits.map((o) => o.id),
+      })
+    }
+  }
+
+  return flags
+}
+
 export interface LeakageAuditRow extends LeakageAuditResult {
   stepId: string
   stepType: string

@@ -217,6 +217,42 @@ resolvable question (no `decision_spot_question`, no `narrative` ending in
 options. Extend that test's checks first if you find a new shape of this
 bug, rather than patching curriculum entries ad hoc.
 
+### 9. Option labels carry the reasoning the question asks for
+
+A step asking *"did Hero's blocker remove value, bluffs, both, or neither?"*
+whose options read **Value (AA)** / **Bluffs (76s)** / **Both** / **Neither**
+prints the answer next to the choice. The learner never has to work out which
+part of Villain's range the ace collides with — the label pairs the category
+with its evidence. Same bug with an appended clause instead of a
+parenthetical: *"Hero OOP c-bets more often — 77% vs only 53% IP"* against two
+distractors carrying no figures at all.
+
+This is distinct from form leakage (§5 and `answerLeakageAudit.ts`'s length /
+connector / dash heuristics), and the form detector cannot catch it: in the
+`Value (AA)` case **two** options carry a parenthetical, so
+`structural_parens_leakage` never fires.
+
+**Rule**: an option label states the CHOICE, never the evidence for it. Every
+specific hand, combo, board, frequency or solver figure the question asks the
+learner to derive belongs in `feedback`, which they only read after answering.
+Keep the labels mutually parallel — if one option needs a qualifier to be
+meaningful, they all get one.
+
+**Legitimate exceptions** (the answer space genuinely IS the notation):
+
+- The options are the hands/boards being compared — *"which board favours the
+  raiser?"* must name the boards.
+- The options are the numbers — *"what is this bet as a fraction of the
+  pot?"* → Half pot / Pot-sized / 25% pot.
+- The label is an identifier whose parenthetical defines it — **Board A
+  (8♥7♥3♦)** is unanswerable without being told which board A is.
+
+**Automated guard**: `auditContentLeakage` in `answerLeakageAudit.ts`, gated
+zero-tolerance in `answerLeakageAudit.test.ts`. Only
+`appended_hand_leakage` is enforced; the broader `names_specific_*` signals
+are advisory (they fire on the legitimate exceptions above), so triage those
+by hand rather than adding step-id allowlists.
+
 ## Data-authenticity rules (poker-specific)
 
 - Prefer porting real existing app data (`backend/app/ranges/...`,
