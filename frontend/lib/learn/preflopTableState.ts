@@ -306,7 +306,11 @@ const POSITION_TOKEN = 'UTG\\+2|UTG\\+1|UTG|LJ|HJ|CO|BTN|SB|BB'
 // re-raise-count words (3-bet/4-bet/5-bet) — a plain "opens?|raises?" alone
 // missed "SB 3-bets to 9bb"/"CO 3-bets to a standard 8bb" entirely.
 const RAISE_VERB = '(?:opens?|raises?|re-?raises?|3-?bets?|4-?bets?|5-?bets?)'
-const JAM_VERB = '(?:jams?|shoves?|goes all-?in|raises? all-?in)'
+// `re-?raises? all-in` is spelled out rather than left to the `raises? all-in`
+// alternative: every pattern anchors the verb with `\b`, and there is no word
+// boundary inside "reraises", so "Hero (BB) reraises all-in for 15bb" (lab-r1c)
+// matched nothing at all before.
+const JAM_VERB = '(?:jams?|shoves?|goes all-?in|(?:re-?)?raises? all-?in)'
 // Tolerates a short sizing caveat between the verb and the amount — "SB 3-bets
 // (non-all-in) to 7bb", "BB 3-bets large, to 13bb" — without opening the door
 // to matching across an entire unrelated sentence (bounded, non-greedy).
@@ -351,11 +355,21 @@ const NARRATIVE_ACTION_PATTERNS: ActionPattern[] = [
   { re: new RegExp(`\\b(${POSITION_TOKEN})\\s+${RAISE_VERB}\\b${FILLER}\\bto\\s+([\\d.]+)\\s*bb`, 'gi'), kind: 'raise', positionGroup: 1, sizeGroup: 2 },
   // "Hero opens BTN to 2bb" — Hero's own seat restated after the verb.
   { re: new RegExp(`\\bHero\\s+${RAISE_VERB}\\s+(${POSITION_TOKEN})\\s+to\\s+([\\d.]+)\\s*bb`, 'gi'), kind: 'raise', positionGroup: 1, sizeGroup: 2 },
+  // "Hero (BTN) reraises to 8bb" — seat in parentheses, the shape Round 1 of the
+  // Preflop Aggression Lab uses. The parenthesis broke BOTH Hero patterns (each
+  // wants the verb straight after "Hero"), so Hero's own already-taken action was
+  // invisible to the cross-check — which is how lab-r1a/r1b/r1e all shipped with
+  // the table stopping one action short of what the narrative described.
+  { re: new RegExp(`\\bHero\\s*\\((${POSITION_TOKEN})\\)[^.]{0,40}?\\b${RAISE_VERB}\\b${FILLER}\\bto\\s+([\\d.]+)\\s*bb`, 'gi'), kind: 'raise', positionGroup: 1, sizeGroup: 2 },
   // "Hero raises to 2.2bb" / "Hero opens to 2.5bb" — no seat named, it's Hero's own.
   { re: new RegExp(`\\bHero\\s+${RAISE_VERB}\\b${FILLER}\\bto\\s+([\\d.]+)\\s*bb`, 'gi'), kind: 'raise', positionGroup: 'SELF', sizeGroup: 1 },
   // Sized jam/shove — "BB jams all-in for 15bb", "BTN jams all-in for 100bb".
   { re: new RegExp(`\\b(${POSITION_TOKEN})\\s+${JAM_VERB}\\b[^.]{0,20}?\\b(?:to|for)\\s+([\\d.]+)\\s*bb`, 'gi'), kind: 'allin', positionGroup: 1, sizeGroup: 2 },
   { re: new RegExp(`\\bHero\\s+${JAM_VERB}\\b[^.]{0,20}?\\b(?:to|for)\\s+([\\d.]+)\\s*bb`, 'gi'), kind: 'allin', positionGroup: 'SELF', sizeGroup: 1 },
+  // "Hero (BB) reraises all-in for 15bb" — the parenthetical-seat form again, for
+  // jams (lab-r1c). Same reason as the raise variant above: the parenthesis sits
+  // between "Hero" and the verb, so neither existing Hero pattern reaches it.
+  { re: new RegExp(`\\bHero\\s*\\((${POSITION_TOKEN})\\)[^.]{0,40}?\\b${JAM_VERB}\\b[^.]{0,20}?\\b(?:to|for)\\s+([\\d.]+)\\s*bb`, 'gi'), kind: 'allin', positionGroup: 1, sizeGroup: 2 },
   // Fold/call/limp/check/unsized-jam carry no numeric disambiguator, so — to
   // avoid tripping on hypothetical/conditional prose ("if BTN folds here...")
   // — these only match a SENTENCE-INITIAL seat+verb, the same short

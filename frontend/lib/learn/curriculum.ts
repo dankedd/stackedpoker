@@ -7444,11 +7444,24 @@ export const LESSONS: Lesson[] = [
         id: 'lab-r1a',
         type: 'decision_spot',
         concept_ids: ['three_bet'],
-        narrative: 'CO opens. Hero (BTN) reraises. What is Hero\'s action called?',
+        narrative: 'CO opens to 2.3bb. Hero (BTN) reraises to 8bb. What is Hero\'s action called?',
         table_size: 6,
         hero_position: 'BTN',
         villain_position: 'CO',
-        action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb'],
+        // Hero's own reraise belongs on the table — the narrative says it already
+        // happened, so stopping at CO's open made the learner imagine half the
+        // spot. `parseActionBeforeHero` flags a 'Hero raises to Nbb' entry as
+        // isHero, so it renders on Hero's seat. Pot: 8 + 2.3 + 1 + 0.5 = 11.8bb.
+        //
+        // 8bb is this curriculum's standard in-position 3-bet over a ~2.3bb open
+        // (same size as the-3-bet's CO-open/BTN-3-bet spot and lab-r1d), and the
+        // closest round number to Modern Poker Theory's 8.5bb IP 3-bet (p.180).
+        //
+        // The seat badge deliberately reads the generic 'RAISE' (PreflopTable's
+        // only vocabulary for this action) and never '3-BET': naming the action
+        // IS the answer to this question. The table shows WHAT happened; the
+        // options are where the learner names it.
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'Hero raises to 8bb'],
         options: [
           { id: '3bet', label: '3-Bet', quality: 'perfect', feedback: 'Correct — one open, then Hero\'s reraise: the third bet in the sequence.' },
           { id: 'squeeze', label: 'Squeeze', quality: 'mistake', feedback: 'No call has happened between the open and Hero\'s raise — this is a plain heads-up 3-bet, not a squeeze.' },
@@ -7460,11 +7473,15 @@ export const LESSONS: Lesson[] = [
         id: 'lab-r1b',
         type: 'decision_spot',
         concept_ids: ['squeeze'],
-        narrative: 'CO opens. BTN calls. Hero (SB) reraises. What is Hero\'s action called?',
+        narrative: 'CO opens to 2.3bb. BTN calls. Hero (SB) reraises to 12bb. What is Hero\'s action called?',
         table_size: 6,
         hero_position: 'SB',
         villain_position: 'CO',
-        action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN calls'],
+        // Same fix as lab-r1a. 12bb is an exact derivation from Modern Poker
+        // Theory's own 6-max sizing table (p.180): a 10bb out-of-position 3-bet,
+        // plus the "when squeezing you can add 2-3bb" the dead money justifies.
+        // Pot: 12 (Hero) + 2.3 (CO) + 2.3 (BTN's call) + 1 (BB) = 17.6bb.
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN calls', 'Hero raises to 12bb'],
         options: [
           { id: 'squeeze', label: 'Squeeze', quality: 'perfect', feedback: 'Correct — a 3-bet made after an open has already been called is a squeeze. There are two ranges and extra dead money to account for.' },
           { id: '3bet', label: 'A plain 3-bet', quality: 'mistake', feedback: 'The extra call from BTN before Hero\'s raise is exactly what makes this a squeeze rather than a plain heads-up 3-bet.' },
@@ -7529,11 +7546,16 @@ export const LESSONS: Lesson[] = [
         id: 'lab-r1e',
         type: 'decision_spot',
         concept_ids: ['cold_four_bet'],
-        narrative: 'HJ opens. CO 3-bets. Hero (BTN), who has not yet entered this pot, raises. What is Hero\'s raise called?',
+        narrative: 'HJ opens to 2.3bb. CO 3-bets to 8bb. Hero (BTN), who has not yet entered this pot, raises to 20bb. What is Hero\'s raise called?',
         table_size: 6,
         hero_position: 'BTN',
         villain_position: 'CO',
-        action_before_hero: ['UTG folds', 'HJ raises to 2.3bb', 'CO raises to 8bb'],
+        // Same fix as lab-r1a/lab-r1b. 20bb is the 4-bet size this curriculum
+        // already uses everywhere else (and lab-r1d's UTG 4-bet), a round step
+        // down from Modern Poker Theory's 23bb 6-max 4-bet (p.180). Hero's seat
+        // shows chips arriving from zero, which is the "cold" part of the answer
+        // made visible. Pot: 20 + 8 + 2.3 + 1 + 0.5 = 31.8bb.
+        action_before_hero: ['UTG folds', 'HJ raises to 2.3bb', 'CO raises to 8bb', 'Hero raises to 20bb'],
         options: [
           { id: 'cold4bet', label: 'A cold 4-bet', quality: 'perfect', feedback: 'Correct — Hero is reraising the third bet of the sequence (open, 3-bet, Hero\'s raise) without having invested anything beforehand: a cold 4-bet.' },
           { id: 'squeeze', label: 'A squeeze', quality: 'mistake', feedback: 'A squeeze follows an open that has been called — here the open was 3-bet, not called. This is a cold 4-bet.' },

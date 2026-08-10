@@ -103,6 +103,57 @@ describe('lab-r1d (step 4) — the table shows the whole 3-bet/4-bet sequence', 
   })
 })
 
+// ── Round 1: every action the prose says already happened is on the table ────
+
+describe('Round 1 terminology steps show Hero\'s own action too', () => {
+  // These five ask what a COMPLETED action is called, so the narrative is written
+  // in the past tense ("Hero (BTN) reraises"). r1a/r1b/r1e originally stopped the
+  // table one action short of the prose, exactly like r1d did — the learner was
+  // asked to name an action they couldn't see. Each row is
+  // [step, hero seat, hero's committed bb, total pot].
+  const ROUND_1: [string, string, number, number][] = [
+    ['lab-r1a', 'BTN', 8, 11.8],   // 8 + 2.3 + 1 + 0.5
+    ['lab-r1b', 'SB', 12, 17.6],   // 12 + 2.3 + 2.3 + 1
+    ['lab-r1c', 'BB', 15, 17.5],   // already correct before this pass
+    ['lab-r1d', 'BTN', 8, 29.5],   // 20 + 8 + 1 + 0.5
+    ['lab-r1e', 'BTN', 20, 31.8],  // 20 + 8 + 2.3 + 1 + 0.5
+  ]
+
+  it.each(ROUND_1)('%s puts Hero\'s completed action on Hero\'s own seat', (id, seat, committed) => {
+    const state = buildPreflopTableRenderState(step(id))!
+    const hero = state.seats.find((s) => s.isHero)!
+    expect(hero.position).toBe(seat)
+    expect(hero.action, `${id}: Hero's seat shows no action at all`).toBeDefined()
+    expect(hero.action!.isHero).toBe(true)
+    expect(hero.action!.betBb).toBe(committed)
+  })
+
+  it.each(ROUND_1)('%s pot reflects every chip on the table', (id, _seat, _committed, pot) => {
+    expect(buildPreflopTableRenderState(step(id))!.potBb).toBeCloseTo(pot, 5)
+  })
+
+  it.each(ROUND_1)('%s never labels a seat with the answer', (id) => {
+    // PreflopTable's only badge vocabulary for these is RAISE/BET — there is no
+    // "3-BET"/"SQUEEZE"/"COLD 4-BET" badge, and there must not be: naming the
+    // action is precisely what these steps are asking the learner to do.
+    const state = buildPreflopTableRenderState(step(id))!
+    for (const s of state.seats) {
+      if (!s.action) continue
+      expect(['raise', 'allin', 'call', 'fold', 'limp', 'check']).toContain(s.action.kind)
+    }
+  })
+
+  it('the narrative names the same size the table commits, for every Round 1 step', () => {
+    for (const [id, seat, committed] of ROUND_1) {
+      const s = step(id)
+      const heroClaim = extractNarrativeActionClaims(s.narrative!, s.hero_position!)
+        .find((c) => c.position === seat && (c.kind === 'raise' || c.kind === 'allin'))
+      expect(heroClaim, `${id}: narrative never states Hero's own action with a size`).toBeDefined()
+      expect(heroClaim!.betBb, `${id}: prose and table disagree on Hero's size`).toBe(committed)
+    }
+  })
+})
+
 // ── The second defect: a "same spot" chain that silently changed underneath ──
 
 describe('the lab-fb chain holds one spot constant across every step', () => {
