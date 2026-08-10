@@ -17,6 +17,11 @@ export interface ParsedSeatAction {
   position: string
   kind: SeatActionKind
   betBb?: number
+  /** True when the entry was authored as a postflop "bets Nbb" rather than a
+   *  "raises to Nbb". Same `kind` (the amount is an absolute street total
+   *  either way) — this only decides whether the seat's badge reads BET or
+   *  RAISE, which are different actions to a player reading the table. */
+  isBet?: boolean
   /** True when this entry is Hero's own already-completed action (e.g. a rejam
    *  spot: Hero opened, then got shoved on, and now faces a new decision). */
   isHero?: boolean
@@ -53,9 +58,15 @@ export const BB_BB = 1
  *  (e.g. the "15-20bb" jam-threshold language in the-big-blind-discount lesson). */
 export const SHORT_STACK_THRESHOLD_BB = 20
 
-const ENTRY_PATTERNS: { re: RegExp; kind: SeatActionKind }[] = [
+const ENTRY_PATTERNS: { re: RegExp; kind: SeatActionKind; isBet?: boolean }[] = [
   { re: /^(.+?) raises all-in to ([\d.]+)\s*bb$/i, kind: 'allin' },
   { re: /^(.+?) raises to ([\d.]+)\s*bb$/i, kind: 'raise' },
+  // Postflop opening bet — no preflop equivalent (preflop always faces the BB),
+  // so it only ever appears in `postflop_action`. Same 'raise' kind because the
+  // amount is likewise an absolute current-street total, but flagged so the
+  // seat badge can say BET instead of RAISE.
+  { re: /^(.+?) bets all-in for ([\d.]+)\s*bb$/i, kind: 'allin', isBet: true },
+  { re: /^(.+?) bets ([\d.]+)\s*bb$/i, kind: 'raise', isBet: true },
   { re: /^(.+?) calls$/i, kind: 'call' },
   { re: /^(.+?) checks$/i, kind: 'check' },
   { re: /^(.+?) limps$/i, kind: 'limp' },
@@ -96,14 +107,14 @@ export function parseActionBeforeHero(
   for (const raw of entries) {
     const trimmed = raw.trim()
     let matched = false
-    for (const { re, kind } of ENTRY_PATTERNS) {
+    for (const { re, kind, isBet } of ENTRY_PATTERNS) {
       const m = trimmed.match(re)
       if (!m) continue
       const rawPos = m[1].trim()
       const isHero = /^hero$/i.test(rawPos)
       const position = isHero ? normalizePosition(heroPosition) : normalizePosition(rawPos)
       const betBb = m[2] !== undefined ? parseFloat(m[2]) : undefined
-      parsed.push({ position, kind, betBb, ...(isHero ? { isHero: true } : {}) })
+      parsed.push({ position, kind, betBb, ...(isBet ? { isBet: true } : {}), ...(isHero ? { isHero: true } : {}) })
       matched = true
       break
     }
