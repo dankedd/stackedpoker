@@ -1751,6 +1751,27 @@
         "wsrc-s7": 10,
         "wsrc-s8": 10
       }
+    },
+    "reading-the-board-like-the-solver-does": {
+      "xp_reward": 230,
+      "steps": {
+        "bg-s1": 10,
+        "bg-s2": 14,
+        "bg-s3": 16,
+        "bg-s4": 10,
+        "bg-s5": 20,
+        "bg-s5-explain": 10,
+        "bg-s6": 16,
+        "bg-s7": 16,
+        "bg-s8": 18,
+        "bg-s9": 16,
+        "bg-s10": 16,
+        "bg-s11": 16,
+        "bg-s12": 16,
+        "bg-s13": 18,
+        "bg-s14": 10,
+        "bg-s15": 10
+      }
     }
   },
   "modules": {

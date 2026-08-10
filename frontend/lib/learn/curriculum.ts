@@ -42,7 +42,7 @@ import {
   TOY_GAME_A, TOY_GAME_E,
   SPR_TABLE_90,
   J22_SIZING_MISTAKE, REVERSE_LINEAR_654R,
-  BOARD_GALLERY,
+  BOARD_GALLERY, BOARD_GALLERY_SOURCE,
   TRAP_CURVE_DATA,
   CAPSTONE_SCENARIO,
 } from './module12Content'
@@ -19799,6 +19799,253 @@ export const LESSONS: Lesson[] = [
         concept_reveal_optional: true,
         concept_title: 'Elite Insight',
         concept_content: "The reverse-linear result generalizes far beyond the one donk-betting example that produced it. Whenever you're unsure how often a specific combo within a hand class should bet, stop asking 'how strong is this hand' and start asking 'how much value does this specific hand LOSE by checking instead.' A hand that keeps most of its worth even when checked doesn't need to bet as often to realize it. A hand that keeps almost none of its worth when checked needs to bet, and bet often, simply to not waste the only real source of its value. This reframing resolves a surprisingly large fraction of confusing in-range frequency questions, not just the one example that introduced it.",
+      },
+    ],
+  },
+
+  // Lesson 8 authoring note (disclosed architectural adaptation, not a silent workaround):
+  // module-12-architecture.md Section 3.5 left the gallery's "Compare mode" (a live, simultaneous
+  // side-by-side board panel) explicitly gated on an unresolved cross-module design decision that
+  // Module 11's own architecture doc first flagged and never resolved (ScenarioComparison's
+  // PreflopTable coupling doesn't generalize to postflop A/B panels). Per this phase's instruction
+  // ("if implementation requires an architectural deviation: STOP, document the problem, do not
+  // invent a solution independently"), Compare mode's specific reasoning goal — comparing two
+  // boards' evidence directly — is instead satisfied by bg-s12/bg-s13: two sequential decision_spot
+  // steps where the second step's narrative explicitly references the first board's already-revealed
+  // evidence ("Compare this directly against the dynamic 9♥8♥4♦ turn..."). This is a real substitute
+  // for the reasoning goal, not a cosmetic stand-in, but it is not a live side-by-side panel; that
+  // remains blocked on the same still-open Section 3.5 decision. All other gallery content (every
+  // board's predict-then-reveal tile) is unaffected by this and fully implemented below.
+  {
+    id: 'reading-the-board-like-the-solver-does',
+    module_id: 'bet-sizing-language-module',
+    slug: 'reading-the-board-like-the-solver-does',
+    title: 'Reading the Board Like the Solver Does',
+    subtitle: 'The same relative-polarization logic, walked across real boards you\'ll actually see.',
+    lesson_type: 'concept_reveal',
+    concept_ids: ['monotone_board_sizing', 'polarization_sizing_direction'],
+    estimated_min: 16,
+    xp_reward: 230,
+    sort_order: 8,
+    next_lesson_teaser: "The River's Blunt Instruments",
+    steps: [
+      {
+        id: 'bg-s1',
+        type: 'concept_reveal',
+        concept_title: 'One Sentence, Applied to Every Board',
+        concept_content: "Lesson 5 proved, in the abstract, that relative polarization alone drives a range's sizing direction. Lesson 7 showed you two isolated, real-board instances of getting that wrong. This lesson does what neither could alone: it walks the book's own board-by-board evidence — structure, texture, donk-bet tiers, and a light turn confirmation — so the principle stops being something you can only apply to boards a lesson already handed you.",
+        concept_note: "Anchor everything that follows to one causal statement: \"the more strong hands your range has compared to your opponent's, the more frequently you can bet... [this] also allows the use [of] bigger bet-sizes more frequently.\" Every board below is that one sentence, applied to a specific structural or textural difference.",
+        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Overall Flop Metrics (Ch.12 p.660)', type: 'source_reconstructed' },
+      },
+      {
+        id: 'bg-s2',
+        type: 'decision_spot',
+        concept_ids: ['polarization_sizing_direction'],
+        hero_position: 'IP', villain_position: 'OOP',
+        board: BOARD_GALLERY[0].board,
+        narrative: `Structure, category 1 of 3: ${BOARD_GALLERY[0].label}. IP captures an average of 81% of the pot on this texture — the largest range-advantage gap of any structural category.`,
+        decision_spot_question: 'Given how large that gap is, does IP\'s typical sizing here go all the way to the extreme (overbet-heavy), or does it stay more moderate?',
+        options: [
+          { id: 'moderate', label: 'Stays moderate — 1/3-pot remains the single most-used size even here', quality: 'perfect', feedback: `Correct. Even the largest structural advantage in the book's evidence set doesn't automatically demand the biggest possible size — Lesson 5's Toy Game D already prepared you for this: a strong edge earns a scaled response, not an automatic leap to the extreme.` },
+          { id: 'extreme', label: 'Goes to the extreme — the biggest edge should draw the biggest possible size', quality: 'mistake', feedback: `Not on trips specifically — 1/3-pot remains the single most frequently used size overall, even with the largest structural edge in the book's evidence. "Biggest edge" doesn't automatically mean "biggest size"; Lesson 5's Toy Game D already showed a strong-but-not-maximal edge earns a scaled, not extreme, response.` },
+        ],
+        xp: 14,
+      },
+      {
+        id: 'bg-s3',
+        type: 'decision_spot',
+        concept_ids: ['polarization_sizing_direction'],
+        hero_position: 'IP', villain_position: 'OOP',
+        board: J22_SIZING_MISTAKE.board,
+        narrative: "Structure, category 2 of 3: paired boards — the same J♠2♥2♦ structure from Lesson 7's UTG-vs-BB case, now placed in its general category.",
+        decision_spot_question: 'Why does min-bet dominate on paired boards specifically — in one sentence, from the mechanism, not the memorized result?',
+        options: [
+          { id: 'mechanism', label: 'A paired board polarizes the checker\'s continuing range around holding a matching card, so a cheap bet already extracts the maximum this gap allows', quality: 'perfect', feedback: 'Correct — this is the exact mechanism, not just the memorized "min-bet wins on J22" fact. Because the checking range\'s gap (matching card vs. nothing) is already so stark, a minimum bet already gets the maximum available fold equity; risking more to accomplish the identical fold just gives away EV for nothing.' },
+          { id: 'safe', label: 'Paired boards are generally "safe," so a smaller bet is enough to protect the advantage', quality: 'mistake', feedback: "This isn't about the board being \"safe\" — it's about the SPECIFIC gap a paired board creates in the checking range (matching card vs. nothing). That gap is already fully exploitable at minimum risk; a bigger bet wouldn't extract more, it would just risk more to accomplish the same fold." },
+        ],
+        xp: 16,
+      },
+      {
+        id: 'bg-s4',
+        type: 'concept_reveal',
+        concept_title: 'Unpaired: The Category That Needs More Information',
+        concept_content: `${BOARD_GALLERY[2].label.replace(' (82.82% of all flops)', '')} boards make up 82.82% of all flops — the overwhelming majority. "Unpaired" alone doesn't yet specify enough about the relative-polarization structure to predict sizing on its own; it needs the finer-grained texture read that follows: monotone, two-tone, or rainbow.`,
+        source: BOARD_GALLERY_SOURCE,
+      },
+      {
+        id: 'bg-s5',
+        type: 'decision_spot',
+        concept_ids: ['monotone_board_sizing'],
+        hero_position: 'IP', villain_position: 'OOP',
+        board: BOARD_GALLERY[3].board,
+        narrative: `Texture, category 1 of 3: ${BOARD_GALLERY[3].label}. By raw frequency this is the MOST c-bet texture of the three — and simultaneously the LOWEST-EV texture for IP.`,
+        decision_spot_question: 'IP holds the range advantage before this flop. Does the monotone texture help IP\'s range, or OOP\'s?',
+        options: [
+          { id: 'oop', label: "OOP's range — a lot of OOP's previously-worthless hands just became live flush draws", quality: 'perfect', feedback: "Correct. The shared suit disproportionately upgrades OOP's range (many previously-worthless hands are now live draws) while disproportionately hurting IP's range (many previously-strong hands lose relative equity to the new flush possibilities). This POLARIZES OOP and DEPOLARIZES IP — the reverse of what the texture's scary appearance suggests." },
+          { id: 'ip', label: "IP's range — the flush possibility protects IP's already-strong hands", quality: 'mistake', feedback: "This is exactly backward, and it's the single most common real-board misread in the game. The shared suit helps the side that WASN'T already ahead — OOP — by turning previously-worthless hands into live draws. IP is the DEPOLARIZED side on this specific texture, not the protected one." },
+        ],
+        xp: 20,
+        remediation_ladder: [
+          {
+            id: 'bg-s5-remediate-1',
+            type: 'decision_spot',
+            concept_ids: ['monotone_board_sizing'],
+            narrative: "Isolating the mechanism, one question at a time.",
+            decision_spot_question: 'On a monotone flop, which range gains MORE new equity from the shared suit: the range that already held the advantage before the flop, or the range that was previously behind?',
+            options: [
+              { id: 'behind', label: 'The range that was previously behind', quality: 'perfect', feedback: 'Correct — it had more "previously worthless" hands available to be upgraded into live flush draws. The already-advantaged range has fewer such hands to gain from the same shared suit.' },
+              { id: 'ahead', label: 'The range that already held the advantage', quality: 'mistake', feedback: 'Backwards — the range that was already ahead has fewer "worthless" hands left to upgrade. The previously-BEHIND range gains more, because it has more hands the shared suit can turn into live draws.' },
+            ],
+            xp: 6,
+          },
+          {
+            id: 'bg-s5-remediate-2',
+            type: 'decision_spot',
+            concept_ids: ['monotone_board_sizing'],
+            narrative: 'Given that the previously-behind range gains more equity from the shared suit —',
+            decision_spot_question: "does the previously-advantaged range's edge get bigger or smaller on this specific texture?",
+            options: [
+              { id: 'smaller', label: 'Smaller', quality: 'perfect', feedback: "Correct — and that's the whole answer to why monotone wants a small bet. IP was ahead pre-flop, but the shared suit shrinks that edge specifically by handing OOP a wave of new equity. A shrinking edge calls for a smaller, more careful size (Lesson 5's curve), not a bigger protective one." },
+              { id: 'bigger', label: 'Bigger', quality: 'mistake', feedback: "It gets smaller, not bigger. The shared suit hands OOP's range a wave of new equity (live flush draws from previously-worthless hands), which shrinks IP's edge on this specific texture — the opposite of what \"protect a good hand with a big bet\" assumes." },
+            ],
+            xp: 6,
+          },
+        ],
+      },
+      {
+        id: 'bg-s5-explain',
+        type: 'concept_reveal',
+        concept_title: 'The Book\'s Own Warning',
+        concept_content: "\"I often see players making the mistake of betting large on monotone flops, thinking that they need to protect their good hands... if your bet-size is too large, you force the BB to fold the weak hands that would continue against a smaller bet and will be isolating yourself against the top of their range that will either have you beat or have a ton of equity.\" A big bet here doesn't protect a depolarized range — it isolates that range against exactly the part of the opponent's range it least wants to face.",
+        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Overall Flop Metrics — monotone texture (Ch.12 pp.671-672)', type: 'exact_derived' },
+      },
+      {
+        id: 'bg-s6',
+        type: 'decision_spot',
+        concept_ids: ['polarization_sizing_direction'],
+        hero_position: 'IP', villain_position: 'OOP',
+        board: BOARD_GALLERY[4].board,
+        narrative: `Texture, category 2 of 3: ${BOARD_GALLERY[4].label}. IP holds roughly ${BOARD_GALLERY[4].heroStrongPct}% Strong-bucket hands against OOP's roughly ${BOARD_GALLERY[4].villainStrongPct}% — a real, meaningfully larger range-advantage gap than monotone produces.`,
+        decision_spot_question: 'Relative to monotone, does two-tone call for a smaller, similar, or bigger typical IP sizing — and why?',
+        options: [
+          { id: 'bigger', label: `Bigger — the one extra off-suit card removes much of monotone's flush-completing symmetry, so IP keeps more of its edge`, quality: 'perfect', feedback: `Correct. Two-tone's ${BOARD_GALLERY[4].heroStrongPct}%-vs-${BOARD_GALLERY[4].villainStrongPct}% Strong-bucket gap is real and meaningfully larger than monotone's — the extra off-suit card means fewer of OOP's hands get upgraded into live draws, so IP's edge survives more intact, and a bigger gap earns a bigger size lean by Lesson 5's own curve.` },
+          { id: 'similar', label: 'About the same — both textures have a flush draw present, so the logic should be similar', quality: 'mistake', feedback: `Not the same — two-tone's Strong-bucket gap (${BOARD_GALLERY[4].heroStrongPct}% vs ${BOARD_GALLERY[4].villainStrongPct}%) is meaningfully larger than monotone's, precisely because one off-suit card removes much of monotone's flush-completing symmetry. A "flush draw present" isn't a single on/off switch — how MANY hands it upgrades matters, and two-tone upgrades far fewer of OOP's hands than monotone does.` },
+        ],
+        xp: 16,
+      },
+      {
+        id: 'bg-s7',
+        type: 'decision_spot',
+        concept_ids: ['polarization_sizing_direction'],
+        hero_position: 'IP', villain_position: 'OOP',
+        board: BOARD_GALLERY[5].board,
+        narrative: `Texture, category 3 of 3: ${BOARD_GALLERY[5].label}. IP's advantage here is the LARGEST of the three textures.`,
+        decision_spot_question: "Beyond just having the biggest current edge, what's the NEW reason (not covered by monotone or two-tone) that rainbow pushes sizing even further?",
+        options: [
+          { id: 'durable', label: "Rainbow strength holds up turn-to-river more reliably — no flush-completing card is lurking to abruptly swing the texture", quality: 'perfect', feedback: 'Correct — a bigger edge that\'s also more likely to persist across future streets is exactly the combination Lesson 5\'s multi-street evidence predicts should produce the most aggressive, most frequent sizing of the three textures. It\'s not just "biggest edge right now" — it\'s "biggest edge, and it\'s the one most likely to still be there next card."' },
+          { id: 'biggest_only', label: "Nothing new — it's just the same logic as two-tone, with a bigger current gap", quality: 'mistake', feedback: 'There IS something new: durability across streets. Rainbow\'s edge isn\'t just bigger right now — with no flush-completing card able to abruptly swing the texture, that edge is also more likely to still be there on the turn and river, which is its own independent reason (beyond raw gap size) to lean into bigger, more frequent sizing.' },
+        ],
+        xp: 16,
+      },
+      {
+        id: 'bg-s8',
+        type: 'decision_spot',
+        concept_ids: ['polarization_sizing_direction'],
+        hero_position: 'OOP', villain_position: 'IP',
+        board: BOARD_GALLERY[6].board,
+        narrative: `Donk-bet tiers, 1 of 4 — High frequency (50%+, ~34 flops): ${BOARD_GALLERY[6].label}. Structurally, this resembles the Clairvoyance Toy Game directly — OOP holds the polarization advantage.`,
+        decision_spot_question: 'At a SHALLOWER 20bb stack (vs. 30-40bb), does the preferred donk-bet size go up or down?',
+        options: [
+          { id: 'up', label: 'Up — 2/3-pot at 20bb, vs. only 1/4-pot at 30-40bb', quality: 'perfect', feedback: "Correct — this is Lesson 4's Table 90 SPR logic, reappearing on a real board for the first time. The lower SPR makes stacking off with the range's genuinely good equity hands attractive, and the bigger size gets the money in efficiently at that shallower depth. Polarization tells you WHICH direction to lean; SPR tells you how far you can go in that direction before the stack runs out." },
+          { id: 'down', label: 'Down — shallower stacks always call for smaller, safer sizing', quality: 'mistake', feedback: "It's the opposite here: 2/3-pot at the shallower 20bb, only 1/4-pot at 30-40bb. \"Shallower = smaller\" isn't a universal rule — Table 90 (Lesson 4) already showed SPR's effect depends on the specific spot's structure, and on a high-donk board like this one, the lower SPR makes a BIGGER size the efficient way to get stacks in." },
+        ],
+        xp: 18,
+      },
+      {
+        id: 'bg-s9',
+        type: 'decision_spot',
+        concept_ids: ['polarization_sizing_direction'],
+        hero_position: 'OOP', villain_position: 'IP',
+        board: BOARD_GALLERY[7].board,
+        narrative: `Donk-bet tiers, 2 of 4 — Mid frequency (25-50%, ~100 flops): ${BOARD_GALLERY[7].label}. A smaller but still-real polarization edge for OOP.`,
+        decision_spot_question: 'Within this tier, where does the bigger size get used — paired sub-families, or unpaired ones?',
+        options: [
+          { id: 'paired', label: 'Paired sub-families — bigger there, smaller on unpaired ones', quality: 'perfect', feedback: "Correct. Even within one donk-tier, structure still matters: paired sub-families lean bigger, unpaired ones smaller — and this tier is ALSO more polarized and bigger-sizing-leaning at the shallower 20bb than at 30-40bb, confirming Table 90's SPR logic yet again." },
+          { id: 'unpaired', label: 'Unpaired sub-families — bigger there, smaller on paired ones', quality: 'mistake', feedback: "It's the reverse — bigger on paired sub-families, smaller on unpaired ones. The same structural logic from the Structure section (paired boards create a starker checking-range gap) still applies even inside a single donk-frequency tier." },
+        ],
+        xp: 16,
+      },
+      {
+        id: 'bg-s10',
+        type: 'decision_spot',
+        concept_ids: ['polarization_sizing_direction'],
+        hero_position: 'OOP', villain_position: 'IP',
+        board: BOARD_GALLERY[8].board,
+        narrative: `Donk-bet tiers, 3 of 4 — Low frequency (10-25%, ~181 flops): ${BOARD_GALLERY[8].label}. OOP's donking range becomes "a little more polarized," even as overall frequency DROPS.`,
+        decision_spot_question: "As the relative advantage shrinks and OOP bets less often overall, does the size OOP uses (when it does bet) shrink too, or grow?",
+        options: [
+          { id: 'grows', label: `Grows — 67%-pot is preferred over 25%-pot here, despite the lower overall frequency`, quality: 'perfect', feedback: "Correct — this is Lesson 5's central curve, confirmed on a real board: a smaller relative advantage still trends toward a BIGGER size when it does bet, it just bets less often overall. \"Smaller edge\" and \"smaller size\" are not the same thing." },
+          { id: 'shrinks', label: 'Shrinks — a smaller edge should mean a smaller size across the board', quality: 'mistake', feedback: "It actually grows — 67%-pot beats 25%-pot as the preferred size here, even as overall donk frequency drops. A smaller relative advantage reduces how OFTEN the range bets, not necessarily how big it bets when it does — Lesson 5's curve already showed frequency and size can move in different directions." },
+        ],
+        xp: 16,
+      },
+      {
+        id: 'bg-s11',
+        type: 'decision_spot',
+        concept_ids: ['polarization_sizing_direction'],
+        hero_position: 'OOP', villain_position: 'IP',
+        board: BOARD_GALLERY[9].board,
+        narrative: `Donk-bet tiers, 4 of 4 — No-donk boards (0-10% frequency, the large majority of flops): ${BOARD_GALLERY[9].label}. IP's advantage here is simply too large for OOP to profitably split at all.`,
+        decision_spot_question: 'What is the recommended OOP strategy on this tier, and at what EV cost relative to donk-betting some of the time?',
+        options: [
+          { id: 'check_100', label: 'Check 100% of the time — near-zero EV cost to removing the donk-bet option entirely', quality: 'perfect', feedback: "Correct — this is the real-board analogue of Toy Game A's pure-check result (Lesson 5). When one side's advantage is large enough, the disadvantaged side's best response really is a single simple action, not an elaborate mixed strategy — and most flops fall into exactly this tier." },
+          { id: 'small_donk', label: 'A small, low-frequency donk-bet — some pressure is still better than none', quality: 'mistake', feedback: "The book's evidence recommends checking 100% here, with near-zero EV cost to removing the donk-bet option entirely — IP's advantage is simply too large to profitably split at all. This is the real-board version of Toy Game A's pure-check result, not a case for a small mixed donk." },
+        ],
+        xp: 16,
+      },
+      {
+        id: 'bg-s12',
+        type: 'decision_spot',
+        concept_ids: ['polarization_sizing_direction'],
+        hero_position: 'IP', villain_position: 'OOP',
+        board: BOARD_GALLERY[10].board,
+        narrative: `Turn shift, board 1 of 2 — dynamic turn: ${BOARD_GALLERY[10].label}. IP has just checked back the flop.`,
+        decision_spot_question: "After a check-back on a texture this DYNAMIC, whose range is more capped — IP's (having already bet its strongest hands on the flop) or OOP's (which stayed wide)?",
+        options: [
+          { id: 'ip_capped', label: "IP's — the check-back caps IP; OOP stays wide and uncapped, reversing the polarization relationship", quality: 'perfect', feedback: 'Correct. Because IP already bet its strongest hands on the flop, checking back reveals IP is unlikely to hold the very best hands — capping (depolarizing) IP\'s range, while OOP\'s stayed wide. This is why IP still prefers a real stab here (2/3-pot) rather than giving up: OOP checking twice on a texture this dynamic is unlikely to hold many genuine monsters either.' },
+          { id: 'oop_capped', label: "OOP's — OOP already showed weakness by not donk-betting the flop", quality: 'mistake', feedback: "It's IP that gets capped by the check-back, not OOP — IP already used its strongest hands to bet the flop, so checking back reveals IP's range is missing its best holdings. OOP staying wide (not donking) doesn't cap OOP the same way, especially on a dynamic texture." },
+        ],
+        xp: 16,
+      },
+      {
+        id: 'bg-s13',
+        type: 'decision_spot',
+        concept_ids: ['polarization_sizing_direction'],
+        hero_position: 'IP', villain_position: 'OOP',
+        board: BOARD_GALLERY[11].board,
+        narrative: `Turn shift, board 2 of 2 — static turn: ${BOARD_GALLERY[11].label}. Compare this directly against the dynamic 9♥8♥4♦ turn from the previous board: same "IP checked back the flop" setup, a much less dynamic texture.`,
+        decision_spot_question: 'Relative to the dynamic board\'s 2/3-pot stab, does this static board call for a bigger, similar, or smaller turn stab — and why?',
+        options: [
+          { id: 'smaller', label: `Smaller — 1/3-pot. OOP's range stays meaningfully MORE polarized even after checking twice on a static texture`, quality: 'perfect', feedback: "Correct — this is the direct compare-mode contrast the lesson is built around. On the dynamic board, two checks made OOP's range look uncapped and threatening enough to demand a real 2/3-pot stab. On THIS static board, OOP's range stays more polarized even after the same two checks, so a smaller 1/3-pot stab already collects enough folds. Same underlying logic (relative polarization sets the size); a texture-driven difference in how quickly a checked range loses or retains its strong hands is what changes the number." },
+          { id: 'bigger', label: 'Bigger — a static, unchanging board means IP\'s advantage is safer to press harder', quality: 'mistake', feedback: "It's smaller here (1/3-pot vs. the dynamic board's 2/3-pot), not bigger. OOP's range stays MORE polarized on this static texture even after two checks, so a smaller stab already does the job — \"static = safer to bet big\" isn't the mechanism; the checked range's actual composition is." },
+        ],
+        xp: 18,
+      },
+      {
+        id: 'bg-s14',
+        type: 'concept_reveal',
+        concept_title: 'Mental Model Shift',
+        concept_structured_items: [
+          { term: 'Before this lesson', description: 'A scary-looking, draw-heavy board calls for a big bet to protect my hand — the more dangerous the texture looks, the bigger I should bet.' },
+          { term: 'After this lesson', description: "A board's texture only matters through what it does to each range's RELATIVE composition — and on some of the scariest-looking boards, like monotone flops, it's MY range that got weaker, which calls for a smaller bet, not a bigger one. The board's drama and the correct sizing direction are sometimes pointing in opposite directions." },
+        ],
+      },
+      {
+        id: 'bg-s15',
+        type: 'concept_reveal',
+        concept_reveal_optional: true,
+        concept_title: 'Elite Insight',
+        concept_content: "The single most useful generalization buried inside the monotone-board correction: separate \"how much can this board swing outcomes\" from \"which side gets the better half of that swing.\" A monotone flop is genuinely volatile — a lot can change about who's ahead as more cards come — but volatility itself is directionless; it doesn't automatically favor whichever range currently looks stronger. Elite players train themselves to ask the two questions separately and in order — first \"how volatile is this texture,\" then, only second, \"and which side does that volatility actually help\" — precisely because conflating them (treating \"volatile\" as a synonym for \"bet big\") is the single most common texture-reading error even among otherwise strong intermediate players.",
       },
     ],
   },

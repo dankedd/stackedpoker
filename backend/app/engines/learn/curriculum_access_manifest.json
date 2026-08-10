@@ -387,6 +387,10 @@
     "wrong-size-real-cost": {
       "module_id": "bet-sizing-language-module",
       "sort_order": 7
+    },
+    "reading-the-board-like-the-solver-does": {
+      "module_id": "bet-sizing-language-module",
+      "sort_order": 8
     }
   },
   "modules": {
