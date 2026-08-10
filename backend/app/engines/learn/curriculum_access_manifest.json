@@ -391,6 +391,10 @@
     "reading-the-board-like-the-solver-does": {
       "module_id": "bet-sizing-language-module",
       "sort_order": 8
+    },
+    "the-rivers-blunt-instruments": {
+      "module_id": "bet-sizing-language-module",
+      "sort_order": 9
     }
   },
   "modules": {

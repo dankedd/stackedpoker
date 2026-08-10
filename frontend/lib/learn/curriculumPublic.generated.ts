@@ -1841,6 +1841,23 @@ export const PUBLIC_LESSONS: PublicLesson[] = [
     "sort_order": 8,
     "next_lesson_teaser": "The River's Blunt Instruments",
     "step_count": 16
+  },
+  {
+    "id": "the-rivers-blunt-instruments",
+    "module_id": "bet-sizing-language-module",
+    "slug": "the-rivers-blunt-instruments",
+    "title": "The River's Blunt Instruments",
+    "subtitle": "No more cards to come — river sizing stops being judgment and becomes calculation.",
+    "lesson_type": "concept_reveal",
+    "concept_ids": [
+      "minimum_bet_formula",
+      "trap_cap_mechanism"
+    ],
+    "estimated_min": 15,
+    "xp_reward": 220,
+    "sort_order": 9,
+    "next_lesson_teaser": "Designing a Sizing Strategy",
+    "step_count": 13
   }
 ]
 
