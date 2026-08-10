@@ -151,7 +151,7 @@ export function GeometricBetLadder({ step, onAnswer, disabled = false }: Geometr
             )}
           </div>
           {phase !== 'r' && (
-            <p className={cn('text-xs font-semibold', rWithinTolerance ? 'text-emerald-400' : 'text-amber-400')}>
+            <p role="status" className={cn('text-xs font-semibold', rWithinTolerance ? 'text-emerald-400' : 'text-amber-400')}>
               Actual R ≈ {correctR.toFixed(3)} {rWithinTolerance ? '— within tolerance' : `— your guess: ${rGuess}`}
             </p>
           )}
@@ -192,7 +192,7 @@ export function GeometricBetLadder({ step, onAnswer, disabled = false }: Geometr
               )}
             </div>
             {phase === 'ladder' && (
-              <p className={cn('text-xs font-semibold', fractionWithinTolerance ? 'text-emerald-400' : 'text-amber-400')}>
+              <p role="status" className={cn('text-xs font-semibold', fractionWithinTolerance ? 'text-emerald-400' : 'text-amber-400')}>
                 Actual bet-fraction ≈ {(correctBetFraction * 100).toFixed(1)}% of pot {fractionWithinTolerance ? '— within tolerance' : `— your guess: ${fractionGuess}%`}
               </p>
             )}

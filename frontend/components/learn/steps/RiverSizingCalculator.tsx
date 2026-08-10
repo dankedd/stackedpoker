@@ -97,7 +97,7 @@ export function RiverSizingCalculator({ step, onAnswer, disabled = false }: Rive
           </button>
         </div>
         {submitted && (
-          <p className={cn('text-center text-xs font-semibold', withinTolerance ? 'text-emerald-400' : 'text-amber-400')}>
+          <p role="status" className={cn('text-center text-xs font-semibold', withinTolerance ? 'text-emerald-400' : 'text-amber-400')}>
             Actual minimum: {fmtBet(correctMinBet)} of the pot {withinTolerance ? '— within tolerance' : `— your guess: ${guess}%`}
           </p>
         )}
