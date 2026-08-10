@@ -347,6 +347,20 @@ export interface LessonStep {
    *  one of them on the Baseline Strategy grid (Module 5's "connect the puzzle hands back to
    *  the full range" requirement). Purely a display hint — never affects grading. */
   range_build_multi_puzzle_hands?: string[]
+  /** range_build_multi only — explains WHY each `range_build_multi_puzzle_hands` entry sits
+   *  where it does in the Baseline Strategy grid, surfaced when the learner taps that ringed
+   *  hand on the post-submit reveal. `action` must match the target chart's own dominant action
+   *  for `hand` (see rangeAnswerValidator.ts's sibling check) — this is explanatory copy for an
+   *  already-graded fact, never a second source of truth for it. A puzzle hand with no matching
+   *  entry here renders with no tap affordance rather than an empty/broken panel — see
+   *  MultiActionRangeReveal.tsx. */
+  range_build_multi_puzzle_notes?: {
+    hand: string
+    action: string
+    concept: string
+    explanation: string
+    rule: string
+  }[]
   // ── Table decision (Module 3 structural redesign) — table_decision only ──
   /** MTT_RFI_CHARTS key — the sole grading source, mirroring range_build_multi_chart's convention. */
   table_decision_chart?: string
