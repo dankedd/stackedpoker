@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { BookOpen, X, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ExpandableTagList } from '@/components/ui/ExpandableTagList'
 
 // ── Static concept data (inline, no API needed) ───────────────────────────────
 
@@ -853,17 +854,19 @@ export function InlineConcept({ conceptId, className }: { conceptId: string; cla
 export function ConceptTagRow({
   conceptIds,
   className,
+  previewCount = 6,
 }: {
   conceptIds: string[]
   className?: string
+  previewCount?: number
 }) {
-  if (!conceptIds.length) return null
   return (
-    <div className={cn('flex flex-wrap items-center gap-1.5', className)}>
-      {conceptIds.map(id => (
-        <ConceptPopover key={id} conceptId={id} />
-      ))}
-    </div>
+    <ExpandableTagList
+      items={conceptIds}
+      previewCount={previewCount}
+      className={className}
+      renderItem={id => <ConceptPopover conceptId={id} />}
+    />
   )
 }
 

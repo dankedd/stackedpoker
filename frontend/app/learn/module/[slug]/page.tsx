@@ -28,6 +28,7 @@ import type { PublicLesson } from "@/lib/learn/types";
 import { useSubscription } from "@/hooks/useSubscription";
 import { canAccessLesson } from "@/lib/entitlements";
 import { LockedLessonCard } from "@/components/learn/LockedLessonCard";
+import { ExpandableTagList } from "@/components/ui/ExpandableTagList";
 import { cn } from "@/lib/utils";
 
 // ── Lesson type badge ─────────────────────────────────────────────────────────
@@ -342,17 +343,18 @@ export default function ModulePage() {
                   {mod.description}
                 </p>
 
-                {/* Concept tags */}
-                <div className="flex flex-wrap gap-1.5 mb-4">
-                  {mod.concept_ids.map((c) => (
-                    <span
-                      key={c}
-                      className="text-[10px] px-2.5 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/18 text-violet-400/70 font-semibold"
-                    >
+                {/* Concept tags — collapsed to a short preview so this doesn't
+                    outgrow the description and push the lesson list down. */}
+                <ExpandableTagList
+                  items={mod.concept_ids}
+                  previewCount={6}
+                  className="mb-4"
+                  renderItem={(c) => (
+                    <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-violet-500/10 border border-violet-500/18 text-violet-400/70 font-semibold">
                       {c.replace(/-/g, " ")}
                     </span>
-                  ))}
-                </div>
+                  )}
+                />
 
                 {/* Stats + CTA row */}
                 <div className="flex items-center gap-6 flex-wrap">
