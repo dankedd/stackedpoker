@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { getNeutralSliderStart } from '@/lib/learn/interactionSafety'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 import { RangeEquityMeter } from '@/components/learn/visuals/RangeEquityMeter'
+import { LessonSlider } from '@/components/learn/visuals/LessonSlider'
 
 interface RangeEquityPredictProps {
   step: LessonStep
@@ -70,27 +70,18 @@ export function RangeEquityPredict({ step, onAnswer, disabled = false }: RangeEq
           <span className="text-blue-300">{bLabel} 100%</span>
         </div>
 
-        <input
-          type="range"
-          min={0}
-          max={100}
-          step={1}
+        {/* One track split between two players: the unfilled side is B's share,
+            not slack, so it keeps B's blue rather than the neutral track colour. */}
+        <LessonSlider
+          label={`${aLabel} equity percentage estimate`}
           value={value}
+          onChange={(next) => { setValue(next); setInteracted(true) }}
           disabled={disabled || submitted}
-          onChange={(e) => { setValue(Number(e.target.value)); setInteracted(true) }}
-          aria-label={`${aLabel} equity percentage estimate`}
-          className={cn(
-            'w-full h-2 rounded-full appearance-none cursor-pointer bg-secondary/50',
-            '[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5',
-            '[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-violet-500',
-            '[&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-violet-300',
-            '[&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:shadow-violet-500/40',
-            '[&::-webkit-slider-thumb]:cursor-grab [&::-webkit-slider-thumb]:active:cursor-grabbing',
-            (disabled || submitted) && 'opacity-50 cursor-default',
-          )}
-          style={{
-            background: `linear-gradient(to right, rgb(124,58,237) 0%, rgb(124,58,237) ${value}%, rgb(59,130,246) ${value}%, rgb(59,130,246) 100%)`,
-          }}
+          showLabel={false}
+          format={(v) => `${aLabel} ${v}% / ${bLabel} ${100 - v}%`}
+          trackGradient="rgb(124,58,237)"
+          trackBase="rgb(59,130,246)"
+          hint={null}
         />
 
         <p className="text-center text-lg font-black tabular-nums text-foreground">

@@ -13,6 +13,7 @@ import { PostflopScenarioCard } from '@/components/learn/visuals/PostflopScenari
 import { canRenderPostflopTable } from '@/lib/learn/postflopTableState'
 import { ConvergenceIllustration } from '@/components/learn/visuals/ConceptIllustration'
 import { TermDescriptionRow } from '@/components/ui/TermDescriptionRow'
+import { LessonSlider } from '@/components/learn/visuals/LessonSlider'
 
 // ── Visual type renderers ─────────────────────────────────────────────────────
 
@@ -70,14 +71,13 @@ function MdfVisual() {
       </p>
       <FoldFreqBar foldFreq={foldFreq} mdf={mdf} />
       <div className="space-y-1.5">
-        <input
-          type="range"
-          min={0}
-          max={100}
-          step={1}
+        <LessonSlider
+          label="Fold frequency"
           value={foldFreq}
-          onChange={e => setFoldFreq(Number(e.target.value))}
-          className="w-full accent-violet-500"
+          onChange={setFoldFreq}
+          format={(v) => `${Math.round(v)}%`}
+          showLabel={false}
+          hint="Drag to explore different fold frequencies"
         />
         <p className={cn(
           'text-xs text-center font-semibold',

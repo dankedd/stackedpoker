@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { alpha as engineAlpha, mdf as engineMdf, potOddsRequiredEquity } from '@/lib/learn/gameTheoryEngine'
+import { LessonSlider } from '@/components/learn/visuals/LessonSlider'
 
 // ── Math helpers ──────────────────────────────────────────────────────────────
 // Delegates to gameTheoryEngine.ts's canonical, tested alpha()/mdf() (pot=1,
@@ -129,9 +130,9 @@ export function MdfSlider({ step, onAnswer, disabled = false }: MdfSliderProps) 
   const potOdds = calcPotOdds(betPct)
   const variant = step.mdf_slider_variant ?? 'standard'
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleValueChange(next: number) {
     if (disabled || submitted) return
-    setBetPct(Number(e.target.value))
+    setBetPct(next)
     setInteracted(true)
   }
 
@@ -179,30 +180,17 @@ export function MdfSlider({ step, onAnswer, disabled = false }: MdfSliderProps) 
 
         {/* Slider */}
         <div className="space-y-3">
-          <input
-            type="range"
+          <LessonSlider
+            label="Bet size, as a percentage of the pot"
+            value={betPct}
+            onChange={handleValueChange}
             min={10}
             max={200}
             step={1}
-            value={betPct}
             disabled={disabled || submitted}
-            onChange={handleChange}
-            className={cn(
-              'w-full h-2 rounded-full appearance-none cursor-pointer',
-              'bg-secondary/50',
-              '[&::-webkit-slider-thumb]:appearance-none',
-              '[&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5',
-              '[&::-webkit-slider-thumb]:rounded-full',
-              '[&::-webkit-slider-thumb]:bg-violet-500',
-              '[&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-violet-300',
-              '[&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:shadow-violet-500/40',
-              '[&::-webkit-slider-thumb]:cursor-grab [&::-webkit-slider-thumb]:active:cursor-grabbing',
-              '[&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110',
-              (disabled || submitted) && 'opacity-50 cursor-default',
-            )}
-            style={{
-              background: `linear-gradient(to right, rgb(124,58,237) 0%, rgb(124,58,237) ${((betPct - 10) / 190) * 100}%, rgb(30,30,40) ${((betPct - 10) / 190) * 100}%, rgb(30,30,40) 100%)`,
-            }}
+            showLabel={false}
+            format={(v) => betLabel(v)}
+            hint="Drag to change the bet size"
           />
 
           {/* Preset buttons */}

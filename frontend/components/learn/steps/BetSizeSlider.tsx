@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
+import { LessonSlider } from '@/components/learn/visuals/LessonSlider'
 
 // ── Common bet-size anchors ────────────────────────────────────────────────────
 
@@ -144,29 +145,21 @@ export function BetSizeSlider({ step, onAnswer, disabled = false }: BetSizeSlide
           </div>
         </div>
 
-        {/* Slider */}
-        <div className="space-y-1.5">
-          <input
-            type="range"
-            min={10}
-            max={200}
-            step={1}
-            value={sizePct}
-            disabled={disabled || submitted}
-            onChange={e => setSizePct(Number(e.target.value))}
-            className={cn(
-              'w-full accent-violet-500 cursor-pointer',
-              (disabled || submitted) && 'cursor-default opacity-50'
-            )}
-          />
-          <div className="flex justify-between text-[9px] text-muted-foreground/30 font-mono">
-            <span>10%</span>
-            <span>50%</span>
-            <span>Pot</span>
-            <span>150%</span>
-            <span>200%</span>
-          </div>
-        </div>
+        {/* Slider — the big number above already reports the value, so the
+            slider's own label row is suppressed to avoid showing it twice. */}
+        <LessonSlider
+          label="Bet size, as a percentage of the pot"
+          value={sizePct}
+          onChange={setSizePct}
+          min={10}
+          max={200}
+          step={1}
+          disabled={disabled || submitted}
+          showLabel={false}
+          format={(v) => `${Math.round(v)}%`}
+          ticks={['10%', '50%', 'Pot', '150%', '200%']}
+          hint="Drag to choose a size"
+        />
 
         {/* MDF / Alpha row */}
         <div className="flex items-center gap-3 pt-2 border-t border-border/20">

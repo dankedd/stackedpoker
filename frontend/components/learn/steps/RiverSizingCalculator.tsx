@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { minimumBetToDenyEquity } from '@/lib/learn/gameTheoryEngine'
 import { TRAP_CURVE_DATA } from '@/lib/learn/module12Content'
+import { LessonSlider } from '@/components/learn/visuals/LessonSlider'
 
 interface RiverSizingCalculatorProps {
   step: LessonStep
@@ -106,15 +107,17 @@ export function RiverSizingCalculator({ step, onAnswer, disabled = false }: Rive
       {/* Free-exploration slider — feel the formula approach its undefined boundary at 50% */}
       <div className="rounded-2xl border border-border/30 bg-card/60 p-4 space-y-2">
         <p className="text-xs font-semibold text-muted-foreground/70">Explore: drag opponent equity toward 50%</p>
-        <input
-          type="range"
+        <LessonSlider
+          label="Villain's equity, as a percentage"
+          value={exploreEquity}
+          onChange={setExploreEquity}
           min={1}
           max={60}
           step={1}
-          value={exploreEquity}
           disabled={disabled}
-          onChange={(e) => setExploreEquity(Number(e.target.value))}
-          className="w-full accent-violet-500 cursor-pointer"
+          showLabel={false}
+          format={(v) => `${v}%`}
+          hint="Drag to explore different equities"
         />
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground/60">Equity: <span className="font-bold text-foreground tabular-nums">{exploreEquity}%</span></span>

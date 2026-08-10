@@ -818,3 +818,99 @@
     transform: none !important;
   }
 }
+
+/* ── LessonSlider — the one slider look across the Learn platform ──────────
+   Thumb styling has to live in real CSS: ::-webkit-slider-thumb and
+   ::-moz-range-thumb cannot share a selector (browsers drop the whole rule
+   if one pseudo-element is unknown), so Tailwind arbitrary variants would
+   have to duplicate every declaration per engine at every call site. One
+   class here keeps all ~19 sliders identical and keeps the accent colour
+   swappable via --sp-slider-accent.
+
+   The input itself is transparent and sits ON TOP of a painted track div —
+   that is what lets the fill, ticks and value bubble be styled freely while
+   the element the user actually drags stays a native <input type="range">
+   (free keyboard support, touch dragging, and role="slider" for AT). */
+.sp-slider {
+  --sp-slider-accent: rgb(139, 92, 246);
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: grab;
+  /* Tall, transparent hit area: easy to grab on touch without changing the
+     2px visual track underneath. */
+  height: 2.25rem;
+  width: 100%;
+  touch-action: pan-y;
+}
+.sp-slider:active { cursor: grabbing; }
+.sp-slider:disabled { cursor: default; }
+
+.sp-slider::-webkit-slider-runnable-track { background: transparent; height: 2.25rem; }
+.sp-slider::-moz-range-track { background: transparent; height: 2.25rem; }
+
+.sp-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 1.5rem;
+  width: 1.5rem;
+  border-radius: 9999px;
+  background: var(--sp-slider-accent);
+  border: 3px solid rgb(255 255 255 / 0.92);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.45), 0 0 0 1px rgb(0 0 0 / 0.25);
+  cursor: inherit;
+  margin-top: calc((2.25rem - 1.5rem) / 2);
+  transition: transform 120ms var(--sp-ease-out, ease-out);
+}
+.sp-slider::-moz-range-thumb {
+  height: 1.5rem;
+  width: 1.5rem;
+  border-radius: 9999px;
+  background: var(--sp-slider-accent);
+  border: 3px solid rgb(255 255 255 / 0.92);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 0.45), 0 0 0 1px rgb(0 0 0 / 0.25);
+  cursor: inherit;
+  transition: transform 120ms var(--sp-ease-out, ease-out);
+}
+
+.sp-slider:hover:not(:disabled)::-webkit-slider-thumb { transform: scale(1.12); }
+.sp-slider:hover:not(:disabled)::-moz-range-thumb     { transform: scale(1.12); }
+.sp-slider:active:not(:disabled)::-webkit-slider-thumb { transform: scale(1.2); }
+.sp-slider:active:not(:disabled)::-moz-range-thumb     { transform: scale(1.2); }
+
+/* Focus ring lives on the thumb, not the (invisible, full-width) input box. */
+.sp-slider:focus { outline: none; }
+.sp-slider:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgb(139 92 246 / 0.45), 0 2px 10px rgb(0 0 0 / 0.45);
+}
+.sp-slider:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 4px rgb(139 92 246 / 0.45), 0 2px 10px rgb(0 0 0 / 0.45);
+}
+.sp-slider:disabled::-webkit-slider-thumb { opacity: 0.5; box-shadow: none; }
+.sp-slider:disabled::-moz-range-thumb     { opacity: 0.5; box-shadow: none; }
+
+/* "This is draggable" — a small one-shot rock of the thumb, shown only until
+   the learner first touches the control. */
+@keyframes sp-slider-nudge {
+  0%, 60%, 100% { transform: translateX(0); }
+  70%           { transform: translateX(-5px); }
+  85%           { transform: translateX(5px); }
+}
+.sp-slider-nudge::-webkit-slider-thumb { animation: sp-slider-nudge 2.2s var(--sp-ease-out, ease-out) 2; }
+.sp-slider-nudge::-moz-range-thumb     { animation: sp-slider-nudge 2.2s var(--sp-ease-out, ease-out) 2; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sp-slider-nudge::-webkit-slider-thumb,
+  .sp-slider-nudge::-moz-range-thumb,
+  .sp-slider::-webkit-slider-thumb,
+  .sp-slider::-moz-range-thumb {
+    animation: none !important;
+    transition: none !important;
+  }
+  .sp-slider:hover:not(:disabled)::-webkit-slider-thumb,
+  .sp-slider:hover:not(:disabled)::-moz-range-thumb,
+  .sp-slider:active:not(:disabled)::-webkit-slider-thumb,
+  .sp-slider:active:not(:disabled)::-moz-range-thumb {
+    transform: none !important;
+  }
+}

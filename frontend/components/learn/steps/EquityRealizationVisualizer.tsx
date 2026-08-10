@@ -6,6 +6,7 @@ import type { LessonStep } from '@/lib/learn/types'
 import { calculateSimpleEqR } from '@/lib/theory/math'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 import { orderStepOptions, bindVisualOptions } from '@/lib/learn/interactionSafety'
+import { LessonSlider } from '@/components/learn/visuals/LessonSlider'
 
 interface EquityRealizationVisualizerProps {
   step: LessonStep
@@ -207,15 +208,17 @@ export function EquityRealizationVisualizer({ step, onAnswer, disabled = false }
             <p className="text-2xl font-black tabular-nums text-violet-300">{sprValue.toFixed(0)}</p>
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/40">Stack-to-pot ratio</p>
           </div>
-          <input
-            type="range"
+          <LessonSlider
+            label="Stack-to-pot ratio"
+            value={sprValue}
+            onChange={setSprValue}
             min={1}
             max={30}
             step={1}
-            value={sprValue}
             disabled={disabled || submitted}
-            onChange={(e) => setSprValue(Number(e.target.value))}
-            className={cn('w-full accent-violet-500 cursor-pointer', (disabled || submitted) && 'opacity-50')}
+            showLabel={false}
+            format={(v) => `SPR ${v}`}
+            hint="Drag to explore different stack depths"
           />
           <div className="rounded-xl border border-violet-500/20 bg-violet-500/8 p-3 text-center space-y-1">
             <p className="text-xs font-bold text-violet-300">{SPRZoneLabel(sprValue).label}</p>
@@ -235,15 +238,17 @@ export function EquityRealizationVisualizer({ step, onAnswer, disabled = false }
           <div className="text-center">
             <span className="text-3xl font-black tabular-nums text-violet-300">{answer}%</span>
           </div>
-          <input
-            type="range"
+          <LessonSlider
+            label="Your equity-realization estimate, as a percentage"
+            value={answer}
+            onChange={setAnswer}
             min={0}
             max={150}
             step={1}
-            value={answer}
             disabled={disabled || submitted}
-            onChange={(e) => setAnswer(Number(e.target.value))}
-            className={cn('w-full accent-violet-500 cursor-pointer', (disabled || submitted) && 'opacity-50')}
+            showLabel={false}
+            format={(v) => `${v}%`}
+            hint="Drag to set your answer"
           />
           <button
             type="button"

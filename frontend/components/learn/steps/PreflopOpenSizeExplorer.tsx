@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { bluffBreakEvenFrequency } from '@/lib/theory/math'
 import { getNeutralSliderStart } from '@/lib/learn/interactionSafety'
+import { LessonSlider } from '@/components/learn/visuals/LessonSlider'
 
 interface PreflopOpenSizeExplorerProps {
   step: LessonStep
@@ -81,19 +82,19 @@ export function PreflopOpenSizeExplorer({ step, onAnswer, disabled = false }: Pr
         </div>
 
         <div className="space-y-1.5">
-          <input
-            type="range"
+          <LessonSlider
+            label="Open-raise size, in big blinds"
+            value={size}
+            onChange={setSize}
             min={sliderSizes[0]}
             max={sliderSizes[sliderSizes.length - 1]}
             step={0.25}
-            value={size}
             disabled={disabled || submitted}
-            onChange={(e) => setSize(Number(e.target.value))}
-            className={cn('w-full accent-violet-500 cursor-pointer', (disabled || submitted) && 'opacity-50')}
+            showLabel={false}
+            format={(v) => `${v}x`}
+            ticks={sliderSizes.map((s) => `${s}x`)}
+            hint="Drag to change the open size"
           />
-          <div className="flex justify-between text-[9px] text-muted-foreground/30 font-mono">
-            {sliderSizes.map((s) => <span key={s}>{s}x</span>)}
-          </div>
         </div>
 
         <div className="flex items-center gap-2.5 pt-1">
@@ -116,15 +117,17 @@ export function PreflopOpenSizeExplorer({ step, onAnswer, disabled = false }: Pr
           <div className="text-center">
             <span className="text-3xl font-black tabular-nums text-violet-300">{answer}%</span>
           </div>
-          <input
-            type="range"
+          <LessonSlider
+            label="Your answer, as a percentage"
+            value={answer}
+            onChange={setAnswer}
             min={0}
             max={100}
             step={0.5}
-            value={answer}
             disabled={disabled || submitted}
-            onChange={(e) => setAnswer(Number(e.target.value))}
-            className={cn('w-full accent-violet-500 cursor-pointer', (disabled || submitted) && 'opacity-50')}
+            showLabel={false}
+            format={(v) => `${v}%`}
+            hint="Drag to set your answer"
           />
           <button
             type="button"

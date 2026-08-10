@@ -15,6 +15,7 @@ import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 import { orderStepOptions } from '@/lib/learn/interactionSafety'
 import { rangeEntriesToStrategyMap, type RangeSemantics, type RangeStrategyMap } from '@/lib/learn/rangeStrategy'
 import { RangeExplanationCallout } from '@/components/poker/RangeExplanationCallout'
+import { LessonSlider } from '@/components/learn/visuals/LessonSlider'
 
 /** 'defend_response' (DEFEND_RESPONSE_CHARTS) is a genuine complete_strategy at 4
  *  discrete depths (15/25/40/60bb), not the 3-world shallow/medium/deep bucketing
@@ -157,19 +158,19 @@ export function StackDepthRangeMorph({ step, onAnswer, disabled = false }: Stack
         )}
 
         <div className="space-y-1.5 pt-2 border-t border-border/20">
-          <input
-            type="range"
+          <LessonSlider
+            label="Stack depth"
+            value={worldIndex}
+            onChange={setWorldIndex}
             min={0}
             max={2}
             step={1}
-            value={worldIndex}
             disabled={disabled || selected !== null}
-            onChange={(e) => setWorldIndex(Number(e.target.value))}
-            className={cn('w-full accent-violet-500 cursor-pointer', (disabled || selected !== null) && 'opacity-50')}
+            showLabel={false}
+            format={(v) => WORLDS[v].label}
+            ticks={WORLDS.map((w) => w.label)}
+            hint="Drag to change stack depth"
           />
-          <div className="flex justify-between text-[9px] text-muted-foreground/30 font-mono">
-            {WORLDS.map((w) => <span key={w.world}>{w.label}</span>)}
-          </div>
         </div>
         <p className="text-center text-[9px] text-muted-foreground/30">
           Deep is ported from the app&apos;s baseline range data; medium/shallow are simplified, clearly pedagogical reductions — not solver output.

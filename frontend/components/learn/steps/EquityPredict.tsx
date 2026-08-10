@@ -6,6 +6,7 @@ import type { LessonStep } from '@/lib/learn/types'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 import { RangeExplanationCallout } from '@/components/poker/RangeExplanationCallout'
+import { LessonSlider } from '@/components/learn/visuals/LessonSlider'
 
 interface EquityPredictProps {
   step: LessonStep
@@ -51,7 +52,6 @@ export function EquityPredict({ step, onAnswer, disabled = false }: EquityPredic
       ? 'text-amber-400'
       : 'text-red-400'
 
-  const trackFill = `${equity}%`
 
   const heroHand = step.hero_hand ?? []
   const board = step.board ?? []
@@ -134,49 +134,20 @@ export function EquityPredict({ step, onAnswer, disabled = false }: EquityPredic
       </div>
 
       {/* Slider */}
-      <div className="space-y-2 px-1">
-        <div className="relative h-10 flex items-center">
-          {/* Custom track background */}
-          <div className="absolute inset-x-0 h-2 rounded-full bg-secondary/60">
-            <div
-              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-red-500 via-amber-400 to-emerald-500 transition-all duration-100"
-              style={{ width: trackFill }}
-            />
-          </div>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={1}
-            value={equity}
-            disabled={disabled || submitted}
-            onChange={e => setEquity(Number(e.target.value))}
-            className={cn(
-              'relative w-full h-2 appearance-none bg-transparent cursor-pointer',
-              '[&::-webkit-slider-thumb]:appearance-none',
-              '[&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5',
-              '[&::-webkit-slider-thumb]:rounded-full',
-              '[&::-webkit-slider-thumb]:bg-white',
-              '[&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-violet-400',
-              '[&::-webkit-slider-thumb]:shadow-lg [&::-webkit-slider-thumb]:shadow-violet-500/30',
-              '[&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:duration-100',
-              '[&::-webkit-slider-thumb]:hover:scale-110',
-              '[&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:w-5',
-              '[&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-white',
-              '[&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-violet-400',
-              (disabled || submitted) ? 'opacity-50 cursor-default' : ''
-            )}
-          />
-        </div>
-
-        {/* Scale labels */}
-        <div className="flex justify-between text-[10px] text-muted-foreground/40 font-medium px-0.5">
-          <span>0%</span>
-          <span>25%</span>
-          <span>50%</span>
-          <span>75%</span>
-          <span>100%</span>
-        </div>
+      <div className="px-1">
+        {/* The red -> amber -> emerald ramp IS the equity scale, so the fill
+            keeps its own gradient instead of the default accent. */}
+        <LessonSlider
+          label="Your equity estimate, as a percentage"
+          value={equity}
+          onChange={setEquity}
+          disabled={disabled || submitted}
+          showLabel={false}
+          format={(v) => `${Math.round(v)}%`}
+          trackGradient="linear-gradient(to right, rgb(239,68,68), rgb(251,191,36), rgb(16,185,129))"
+          ticks={['0%', '25%', '50%', '75%', '100%']}
+          hint="Drag to set your estimate"
+        />
       </div>
 
       {/* Equity bar visual */}

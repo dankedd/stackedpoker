@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 import { getNeutralSliderStart } from '@/lib/learn/interactionSafety'
+import { LessonSlider } from '@/components/learn/visuals/LessonSlider'
 import {
   drawProbabilityNextCard,
   drawProbabilityByRiver,
@@ -290,15 +291,16 @@ export function OutsDeckVisualizer({ step, onAnswer, disabled = false, reviewMod
               {answer}{mode === 'clean_dirty' ? '' : '%'}
             </span>
           </div>
-          <input
-            type="range"
+          <LessonSlider
+            label="Your answer"
+            value={answer}
+            onChange={setAnswer}
             min={0}
             max={maxAnswer}
             step={mode === 'clean_dirty' ? 1 : 0.5}
-            value={answer}
             disabled={disabled || submitted}
-            onChange={(e) => setAnswer(Number(e.target.value))}
-            className={cn('w-full accent-violet-500 cursor-pointer', (disabled || submitted) && 'opacity-50')}
+            showLabel={false}
+            hint="Drag to set your answer"
           />
           <button
             type="button"

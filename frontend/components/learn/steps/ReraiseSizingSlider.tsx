@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { calculateCallCost, calculatePotAfterCall, calculateRaiseRisk, computeSPR } from '@/lib/theory/math'
 import { orderStepOptions } from '@/lib/learn/interactionSafety'
+import { LessonSlider } from '@/components/learn/visuals/LessonSlider'
 
 interface ReraiseSizingSliderProps {
   step: LessonStep
@@ -68,19 +69,19 @@ export function ReraiseSizingSlider({ step, onAnswer, disabled = false }: Rerais
           <p className="text-2xl font-black text-violet-300">{raiseTo}bb</p>
         </div>
 
-        <input
-          type="range"
+        <LessonSlider
+          label="Re-raise size, in big blinds"
+          value={sizeIndex}
+          onChange={setSizeIndex}
           min={0}
           max={Math.max(sizes.length - 1, 0)}
           step={1}
-          value={sizeIndex}
           disabled={disabled || selected !== null}
-          onChange={(e) => setSizeIndex(Number(e.target.value))}
-          className={cn('w-full accent-violet-500 cursor-pointer', (disabled || selected !== null) && 'opacity-50')}
+          showLabel={false}
+          format={(v) => `${sizes[v]}bb`}
+          ticks={sizes.map((s) => `${s}bb`)}
+          hint="Drag to choose a size"
         />
-        <div className="flex justify-between text-[9px] text-muted-foreground/30 font-mono">
-          {sizes.map((s) => <span key={s}>{s}bb</span>)}
-        </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-border/20 text-center">
           <div>

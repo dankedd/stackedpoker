@@ -6,6 +6,7 @@ import type { LessonStep } from '@/lib/learn/types'
 import { bluffBreakEvenFrequency } from '@/lib/theory/math'
 import { getNeutralSliderStart } from '@/lib/learn/interactionSafety'
 import { PotDisplay } from '@/components/learn/steps/PotDisplay'
+import { LessonSlider } from '@/components/learn/visuals/LessonSlider'
 
 interface BluffBreakEvenVisualizerProps {
   step: LessonStep
@@ -128,19 +129,18 @@ export function BluffBreakEvenVisualizer({ step, onAnswer, disabled = false, rev
 
           {mode === 'slider' && (
             <div className="space-y-1.5 pt-2 border-t border-border/20">
-              <input
-                type="range"
+              <LessonSlider
+                label="Hero's bluff size, in chips"
+                value={betOverride}
+                onChange={setBetOverride}
                 min={sliderSizes[0]}
                 max={sliderSizes[sliderSizes.length - 1]}
                 step={1}
-                value={betOverride}
                 disabled={disabled || submitted}
-                onChange={(e) => setBetOverride(Number(e.target.value))}
-                className={cn('w-full accent-violet-500 cursor-pointer', (disabled || submitted) && 'opacity-50')}
+                showLabel={false}
+                ticks={sliderSizes}
+                hint="Drag to resize the bluff"
               />
-              <div className="flex justify-between text-[9px] text-muted-foreground/30 font-mono">
-                {sliderSizes.map((s) => <span key={s}>{s}</span>)}
-              </div>
               <p className="text-center text-[11px] text-muted-foreground/50">
                 Hero&apos;s bluff: <span className="font-bold text-foreground">{betOverride}</span> chips
               </p>
@@ -162,15 +162,17 @@ export function BluffBreakEvenVisualizer({ step, onAnswer, disabled = false, rev
           <div className="text-center">
             <span className="text-3xl font-black tabular-nums text-violet-300">{answer}%</span>
           </div>
-          <input
-            type="range"
+          <LessonSlider
+            label="How often Villain must fold, as a percentage"
+            value={answer}
+            onChange={setAnswer}
             min={0}
             max={100}
             step={0.5}
-            value={answer}
             disabled={disabled || submitted}
-            onChange={(e) => setAnswer(Number(e.target.value))}
-            className={cn('w-full accent-violet-500 cursor-pointer', (disabled || submitted) && 'opacity-50')}
+            showLabel={false}
+            format={(v) => `${v}%`}
+            hint="Drag to set your answer"
           />
           <button
             type="button"

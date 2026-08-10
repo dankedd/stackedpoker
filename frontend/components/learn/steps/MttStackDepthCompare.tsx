@@ -8,6 +8,7 @@ import { chartToDisplayActionMap, computeChartDiff } from '@/lib/learn/mttRfiRan
 import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 import { orderStepOptions } from '@/lib/learn/interactionSafety'
 import { RangeExplanationCallout } from '@/components/poker/RangeExplanationCallout'
+import { LessonSlider } from '@/components/learn/visuals/LessonSlider'
 
 interface MttStackDepthCompareProps {
   step: LessonStep
@@ -108,21 +109,19 @@ export function MttStackDepthCompare({ step, onAnswer, disabled = false }: MttSt
         )}
 
         <div className="space-y-1.5 pt-2 border-t border-border/20">
-          <input
-            type="range"
+          <LessonSlider
+            label="Effective stack depth"
+            value={stopIndex}
+            onChange={setStopIndex}
             min={0}
             max={STOPS.length - 1}
             step={1}
-            value={stopIndex}
             disabled={disabled || selected !== null}
-            onChange={(e) => setStopIndex(Number(e.target.value))}
-            className={cn('w-full accent-violet-500 cursor-pointer', (disabled || selected !== null) && 'opacity-50')}
+            showLabel={false}
+            format={(v) => `${STOPS[v]}bb`}
+            ticks={STOPS.map((bb) => `${bb}bb`)}
+            hint="Drag to change stack depth"
           />
-          <div className="flex justify-between text-[9px] text-muted-foreground/30 font-mono">
-            {STOPS.map((bb) => (
-              <span key={bb}>{bb}bb</span>
-            ))}
-          </div>
         </div>
       </div>
 

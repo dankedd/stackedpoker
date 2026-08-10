@@ -6,6 +6,7 @@ import type { LessonStep } from '@/lib/learn/types'
 import { requiredEquityFromPot, formatPokerAmount } from '@/lib/theory/math'
 import { getNeutralSliderStart } from '@/lib/learn/interactionSafety'
 import { PotDisplay } from '@/components/learn/steps/PotDisplay'
+import { LessonSlider } from '@/components/learn/visuals/LessonSlider'
 
 interface PotOddsExplorerProps {
   step: LessonStep
@@ -103,21 +104,18 @@ export function PotOddsExplorer({ step, onAnswer, disabled = false, reviewMode =
 
         {mode === 'slider' && (
           <div className="space-y-1.5 pt-2 border-t border-border/20">
-            <input
-              type="range"
+            <LessonSlider
+              label="Villain's bet size, in chips"
+              value={betOverride}
+              onChange={setBetOverride}
               min={sliderSizes[0]}
               max={sliderSizes[sliderSizes.length - 1]}
               step={1}
-              value={betOverride}
               disabled={disabled || submitted}
-              onChange={(e) => setBetOverride(Number(e.target.value))}
-              className={cn('w-full accent-violet-500 cursor-pointer', (disabled || submitted) && 'opacity-50')}
+              showLabel={false}
+              ticks={sliderSizes}
+              hint="Drag to resize Villain's bet"
             />
-            <div className="flex justify-between text-[9px] text-muted-foreground/30 font-mono">
-              {sliderSizes.map((s) => (
-                <span key={s}>{s}</span>
-              ))}
-            </div>
             <p className="text-center text-[11px] text-muted-foreground/50">
               Villain&apos;s bet: <span className="font-bold text-foreground">{formatPokerAmount(betOverride)}</span> chips
             </p>
@@ -138,15 +136,17 @@ export function PotOddsExplorer({ step, onAnswer, disabled = false, reviewMode =
           <div className="text-center">
             <span className="text-3xl font-black tabular-nums text-violet-300">{answer}%</span>
           </div>
-          <input
-            type="range"
+          <LessonSlider
+            label="Your answer, as a percentage"
+            value={answer}
+            onChange={setAnswer}
             min={0}
             max={100}
             step={0.5}
-            value={answer}
             disabled={disabled || submitted}
-            onChange={(e) => setAnswer(Number(e.target.value))}
-            className={cn('w-full accent-violet-500 cursor-pointer', (disabled || submitted) && 'opacity-50')}
+            showLabel={false}
+            format={(v) => `${v}%`}
+            hint="Drag to set your answer"
           />
           <button
             type="button"
