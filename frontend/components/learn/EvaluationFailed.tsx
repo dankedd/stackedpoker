@@ -20,15 +20,22 @@ export function EvaluationFailed({ errorType, onRetry, onContinue, isLast, onPre
     <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
       {/* Main card — neutral, non-alarming */}
       <div className="rounded-2xl border border-slate-700/50 bg-slate-800/40 p-5">
-        <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-600/40 bg-slate-700/40">
-            <AlertCircle className="h-6 w-6 text-slate-400" />
+        {/* Same mobile/desktop grid as StepFeedback's result card (see the
+            comment there, including why the breakpoint is 480px): icon + title
+            on row 1, explanation full-width underneath below 480px, unchanged
+            two-column layout above it. */}
+        <div className="grid grid-cols-[auto_1fr] items-start gap-x-4 gap-y-3 min-[480px]:gap-y-1">
+          <div className="col-start-1 row-start-1 min-[480px]:row-span-2">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-slate-600/40 bg-slate-700/40">
+              <AlertCircle className="h-6 w-6 text-slate-400" />
+            </div>
           </div>
 
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-slate-300 mb-1">
-              Analysis unavailable
-            </p>
+          <p className="col-start-2 row-start-1 min-w-0 self-center text-sm font-semibold text-slate-300 min-[480px]:self-start">
+            Analysis unavailable
+          </p>
+
+          <div className="row-start-2 col-start-1 col-span-2 min-w-0 min-[480px]:col-start-2 min-[480px]:col-span-1">
             <p className="text-sm text-slate-400/80 leading-relaxed">
               We could not evaluate this decision right now. No score or XP has been
               awarded — your progress is still saved and you can retry without penalty.

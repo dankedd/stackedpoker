@@ -206,26 +206,51 @@ export function StepFeedback({ result, onContinue, onRetry, isLast, onPrevious, 
           isSolver ? 'border-blue-500/40 bg-blue-500/6' : QUALITY_BG[result.quality]
         )}
       >
-        <div className="flex items-start gap-4">
-          <QualityIcon quality={result.quality} />
+        {/* Two columns (icon | everything else) from 480px up, where the 64px
+            icon gutter costs nothing. Below 480px the same grid re-flows: the
+            icon and badges keep row 1, and the score/explanation block drops to
+            row 2 spanning BOTH columns — so the prose starts at the card's left
+            padding and runs the full content width instead of being squeezed
+            into the ~60% column left over beside the icon. One DOM, two
+            layouts: nothing is duplicated or conditionally rendered.
 
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <span
-                className={cn(
-                  'text-xs font-semibold px-2.5 py-1 rounded-full border uppercase tracking-wider',
-                  QUALITY_BADGE[result.quality]
-                )}
-              >
-                {QUALITY_LABELS[result.quality]}
-              </span>
-              {result.ev_loss_bb > 0 && (
-                <span className="text-xs text-orange-400/80 font-semibold">
-                  −{result.ev_loss_bb.toFixed(1)} BB EV
-                </span>
+            480px, not the usual `sm:` (640px), because that is where the trade
+            actually turns: stacking costs a dedicated ~64px icon row, and it
+            only pays for itself while the freed width removes more than about
+            three wrapped lines. Measured on a 397-character explanation, the
+            stacked layout is 78px shorter at 375px wide and 10px shorter at
+            430px, but 58px TALLER at 639px for zero lines saved. Every phone in
+            portrait (320-430px) sits well inside the winning side. */}
+        <div className="grid grid-cols-[auto_1fr] items-start gap-x-4 gap-y-4 min-[480px]:gap-y-2">
+          {/* Icon — row 1 only on mobile (the text passes underneath it);
+              spans both rows on desktop, reproducing the old flex layout. */}
+          <div className="col-start-1 row-start-1 min-[480px]:row-span-2">
+            <QualityIcon quality={result.quality} />
+          </div>
+
+          {/* Badges — beside the icon at every width. They wrap to a second
+              line on narrow phones, which is what stacks "Perfect Play" over
+              "Theory Engine" next to the icon. */}
+          <div className="col-start-2 row-start-1 min-w-0 flex items-center gap-2 flex-wrap self-center min-[480px]:self-start">
+            <span
+              className={cn(
+                'text-xs font-semibold px-2.5 py-1 rounded-full border uppercase tracking-wider',
+                QUALITY_BADGE[result.quality]
               )}
-              <SourceBadge source={result.evaluation_source} />
-            </div>
+            >
+              {QUALITY_LABELS[result.quality]}
+            </span>
+            {result.ev_loss_bb > 0 && (
+              <span className="text-xs text-orange-400/80 font-semibold">
+                −{result.ev_loss_bb.toFixed(1)} BB EV
+              </span>
+            )}
+            <SourceBadge source={result.evaluation_source} />
+          </div>
+
+          {/* Score + explanation — full card width on mobile, the right-hand
+              column on desktop. */}
+          <div className="row-start-2 col-start-1 col-span-2 min-w-0 min-[480px]:col-start-2 min-[480px]:col-span-1">
             <p className={cn('text-sm font-semibold mb-1', QUALITY_COLORS[result.quality])}>
               Score: {result.score}/100
             </p>
@@ -235,10 +260,15 @@ export function StepFeedback({ result, onContinue, onRetry, isLast, onPrevious, 
               <StructuredFeedbackList items={result.structured_points} />
             )}
             {onAskCoach && (
-              <div className="mt-3">
+              // Generous separation from the explanation on mobile, and a real
+              // 44px touch target — the inline trigger is otherwise a bare
+              // ~16px line of text. Desktop keeps both the old 12px gap and the
+              // button's original inline-block box.
+              <div className="mt-5 min-[480px]:mt-3">
                 <AskCoachTrigger
                   variant="inline"
                   onClick={onAskCoach}
+                  className="inline-flex min-h-[44px] items-center min-[480px]:inline-block min-[480px]:min-h-0"
                   label={
                     CORRECT_ENOUGH_QUALITIES.has(result.quality)
                       ? 'Ask Coach why'

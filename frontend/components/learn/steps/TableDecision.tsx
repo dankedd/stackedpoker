@@ -65,9 +65,14 @@ function InlineReveal({ evaluation, chartKey, hand, onContinue }: InlineRevealPr
        *  container is widened for this step type — only the visualization below should
        *  use the extra room. */}
       <div className="max-w-2xl mx-auto w-full space-y-4">
+        {/* Same mobile/desktop grid as StepFeedback's result card (see that
+            comment for why the breakpoint is 480px): the quality label sits
+            beside the icon, and the explanation drops to its own full-width row
+            on phones instead of wrapping in the narrow column left over beside
+            a 40px circle. Unchanged above 480px. */}
         <div
           className={cn(
-            'flex items-start gap-3 rounded-xl border px-4 py-3.5',
+            'grid grid-cols-[auto_1fr] items-start gap-x-3 gap-y-2.5 rounded-xl border px-4 py-3.5 min-[480px]:gap-y-1',
             evaluation.quality === 'perfect' || evaluation.quality === 'good'
               ? 'border-emerald-500/30 bg-emerald-500/8'
               : evaluation.quality === 'acceptable'
@@ -75,13 +80,20 @@ function InlineReveal({ evaluation, chartKey, hand, onContinue }: InlineRevealPr
               : 'border-red-500/30 bg-red-500/8',
           )}
         >
-          <QualityIcon quality={evaluation.quality} />
-          <div className="space-y-1">
-            <p className={cn('text-sm font-bold', QUALITY_COLORS[evaluation.quality])}>
-              {QUALITY_LABELS[evaluation.quality]}
-            </p>
-            <p className="text-sm text-muted-foreground leading-relaxed">{evaluation.feedback}</p>
+          <div className="col-start-1 row-start-1 min-[480px]:row-span-2">
+            <QualityIcon quality={evaluation.quality} />
           </div>
+          <p
+            className={cn(
+              'col-start-2 row-start-1 min-w-0 self-center text-sm font-bold min-[480px]:self-start',
+              QUALITY_COLORS[evaluation.quality],
+            )}
+          >
+            {QUALITY_LABELS[evaluation.quality]}
+          </p>
+          <p className="row-start-2 col-start-1 col-span-2 min-w-0 text-sm text-muted-foreground leading-relaxed min-[480px]:col-start-2 min-[480px]:col-span-1">
+            {evaluation.feedback}
+          </p>
         </div>
 
         <div className="space-y-1.5">

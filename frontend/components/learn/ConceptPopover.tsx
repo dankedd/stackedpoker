@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { BookOpen, X, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ExpandableTagList } from '@/components/ui/ExpandableTagList'
@@ -678,8 +679,125 @@ const DOMAIN_COLORS: Record<string, string> = {
   advanced: 'text-rose-400 border-rose-500/30 bg-rose-500/10',
 }
 
+// ── Concept body ──────────────────────────────────────────────────────────────
+// Summary / formula / example / related — shared by the desktop popover and the
+// mobile modal so the two can never drift apart in content.
+//
+// `size` is the only difference: 'compact' reproduces the desktop popover's
+// original type scale exactly; 'comfortable' bumps it for reading at arm's
+// length on a phone. Related concepts render as plain chips in the modal
+// because tapping one does nothing (the desktop popover's related buttons have
+// always had an empty onClick) — a dead button inside a focus-trapped dialog
+// would be a tab stop that leads nowhere, so the modal doesn't make one.
+
+function ConceptBody({
+  entry,
+  size,
+}: {
+  entry: ConceptEntry
+  size: 'compact' | 'comfortable'
+}) {
+  const comfortable = size === 'comfortable'
+  const body = comfortable ? 'text-sm' : 'text-xs'
+  const label = comfortable ? 'text-[10px]' : 'text-[9px]'
+
+  return (
+    <div className={cn('space-y-3', comfortable ? 'space-y-3.5' : undefined)}>
+      {/* Summary */}
+      <p className={cn(body, 'text-muted-foreground leading-relaxed')}>{entry.summary}</p>
+
+      {/* Formula */}
+      {entry.formula && (
+        <div className="rounded-lg border border-violet-500/20 bg-violet-500/8 px-3 py-2">
+          <p className={cn(label, 'font-semibold uppercase tracking-wider text-violet-400/60 mb-1')}>
+            Formula
+          </p>
+          <code className={cn(body, 'font-mono text-violet-200/90 leading-relaxed break-words')}>
+            {entry.formula}
+          </code>
+        </div>
+      )}
+
+      {/* Example */}
+      {entry.example && (
+        <div className="rounded-lg border border-amber-500/15 bg-amber-500/6 px-3 py-2">
+          <p className={cn(label, 'font-semibold uppercase tracking-wider text-amber-400/60 mb-1')}>
+            Example
+          </p>
+          <p className={cn(body, 'text-amber-200/70 leading-relaxed')}>{entry.example}</p>
+        </div>
+      )}
+
+      {/* Related */}
+      {entry.related && entry.related.length > 0 && (
+        <div>
+          <p className={cn(label, 'font-semibold uppercase tracking-wider text-muted-foreground/40 mb-1.5')}>
+            Related concepts
+          </p>
+          <div className={cn('flex flex-wrap', comfortable ? 'gap-1.5' : 'gap-1')}>
+            {entry.related.map(rel => {
+              const relEntry = CONCEPT_DATA[rel]
+              if (!relEntry) return null
+              const relCls = DOMAIN_COLORS[relEntry.domain] ?? ''
+              if (comfortable) {
+                return (
+                  <span
+                    key={rel}
+                    className={cn(
+                      'flex items-center gap-0.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold',
+                      relCls,
+                    )}
+                  >
+                    {relEntry.title}
+                  </span>
+                )
+              }
+              return (
+                <button
+                  key={rel}
+                  type="button"
+                  onClick={() => {
+                    // Navigate to related — caller can handle via context
+                  }}
+                  className={cn(
+                    'flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold',
+                    'transition-opacity hover:opacity-80',
+                    relCls
+                  )}
+                >
+                  {relEntry.title}
+                  <ArrowRight className="h-2 w-2" />
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── ConceptPopover ─────────────────────────────────────────────────────────────
-// A small badge that expands into a full concept card on click
+// A small badge that expands into a full concept card on click.
+//
+// Two genuinely different interactions, chosen at open time from the viewport:
+//
+//  - Desktop (>=640px): the original anchored popover, unchanged — a 288px card
+//    hanging off the badge's bottom-left corner.
+//  - Mobile (<640px): a centered modal dialog, portalled to <body>. The
+//    anchored popover cannot work on a phone: it is absolutely positioned
+//    inside lesson cards that clip and scroll, it is a fixed 288px wide with a
+//    hard-left origin (so a badge in the right half of the screen pushes the
+//    panel off the edge), and it drags the reader's eye away from the tag they
+//    just tapped. The modal is centred, capped to the viewport, and dims the
+//    page behind it.
+//
+// The breakpoint is read with matchMedia rather than CSS because the two
+// variants are structurally different (portal vs. in-flow) — rendering both and
+// hiding one would double the DOM and break the focus trap. There is no
+// hydration risk: the panel only exists after a click, i.e. post-mount.
+
+const MOBILE_QUERY = '(max-width: 639px)'
 
 interface ConceptPopoverProps {
   conceptId: string
@@ -689,45 +807,120 @@ interface ConceptPopoverProps {
 
 export function ConceptPopover({ conceptId, children, className }: ConceptPopoverProps) {
   const [open, setOpen] = useState(false)
+  // Which presentation the *currently open* panel is using. Read on open and
+  // kept live while open, so rotating a phone into landscape (>=640px) swaps
+  // the modal for the popover instead of stranding one mid-interaction.
+  const [isMobile, setIsMobile] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const titleId = useId()
+  const descId = useId()
   const entry = CONCEPT_DATA[conceptId]
 
+  const close = useCallback(() => setOpen(false), [])
+
   useEffect(() => {
+    if (!open) return
+    const mql = window.matchMedia(MOBILE_QUERY)
+    setIsMobile(mql.matches)
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mql.addEventListener('change', onChange)
+    return () => mql.removeEventListener('change', onChange)
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key === 'Escape') {
+        setOpen(false)
+        return
+      }
+      // Focus trap — only the modal traps; the desktop popover stays a normal
+      // part of the tab order, exactly as before.
+      if (e.key !== 'Tab' || !isMobile || !dialogRef.current) return
+      const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      )
+      if (focusable.length === 0) {
+        e.preventDefault()
+        return
+      }
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
     }
+
+    // Outside-click for the anchored popover only. The modal's content is
+    // portalled to <body>, so it is never inside panelRef — this listener would
+    // close it on the very first tap inside the card. The overlay handles
+    // dismissal there instead.
     function onOutside(e: MouseEvent) {
+      if (isMobile) return
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
         setOpen(false)
       }
     }
-    if (open) {
-      document.addEventListener('keydown', onKey)
-      document.addEventListener('mousedown', onOutside)
-    }
+
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('mousedown', onOutside)
     return () => {
       document.removeEventListener('keydown', onKey)
       document.removeEventListener('mousedown', onOutside)
     }
-  }, [open])
+  }, [open, isMobile])
+
+  // Move focus into the dialog on open and hand it back to the tapped concept
+  // on close — the trigger is what the learner was reading, so that is where
+  // the caret belongs afterwards. Also locks page scroll behind the modal.
+  useEffect(() => {
+    if (!open || !isMobile) return
+    const previous = document.activeElement as HTMLElement | null
+    // Captured now, not in cleanup: the badge is the same node for as long as
+    // the modal is open, and reading the ref during teardown is exactly the
+    // stale-ref pattern the lint rule warns about.
+    const trigger = triggerRef.current
+    dialogRef.current?.focus()
+    const { overflow } = document.body.style
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = overflow
+      const restoreTo = trigger ?? previous
+      restoreTo?.focus?.()
+    }
+  }, [open, isMobile])
 
   // No dictionary entry for this concept id — render nothing rather than leak the
   // raw internal identifier (e.g. "utg_rfi") into learner-facing UI.
   if (!entry) return null
 
   const domainCls = DOMAIN_COLORS[entry.domain] ?? DOMAIN_COLORS.strategy
+  const showModal = open && isMobile
 
   return (
     <span className="relative inline-block" ref={panelRef}>
       {/* Trigger badge */}
       <button
         type="button"
+        ref={triggerRef}
         onClick={() => setOpen(o => !o)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
         className={cn(
           'inline-flex items-center gap-1 rounded-full border px-2 py-0.5',
           'text-[11px] font-semibold cursor-pointer transition-all duration-150',
           'hover:scale-105 active:scale-100',
           domainCls,
+          // Keeps the tapped concept visibly "the one on screen" while the
+          // modal covers the page behind it.
+          showModal && 'ring-2 ring-violet-400/60 ring-offset-2 ring-offset-background',
           className
         )}
       >
@@ -735,8 +928,85 @@ export function ConceptPopover({ conceptId, children, className }: ConceptPopove
         {children ?? entry.title}
       </button>
 
-      {/* Expanded panel */}
-      {open && (
+      {/* ── Mobile: centered modal ───────────────────────────────────────── */}
+      {showModal &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
+            // Padding keeps the card off every edge, and never inside a notch,
+            // home indicator or rounded corner.
+            style={{
+              paddingTop: 'max(1rem, env(safe-area-inset-top))',
+              paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+              paddingLeft: 'max(1rem, env(safe-area-inset-left))',
+              paddingRight: 'max(1rem, env(safe-area-inset-right))',
+            }}
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) close()
+            }}
+          >
+            <div
+              ref={dialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={titleId}
+              aria-describedby={descId}
+              tabIndex={-1}
+              // max-h-full is measured against the padded overlay, so the card
+              // can never exceed the safe viewport — no vh/dvh guesswork.
+              className={cn(
+                'flex w-full max-w-sm max-h-full flex-col overflow-hidden rounded-2xl',
+                'border border-border/60 bg-card shadow-2xl shadow-black/60 outline-none',
+                'animate-in fade-in zoom-in-95 duration-200',
+              )}
+            >
+              {/* Header — stays put while the body scrolls */}
+              <div className="flex shrink-0 items-center gap-3 px-5 pt-5 pb-4">
+                <div
+                  className={cn(
+                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border',
+                    domainCls,
+                  )}
+                >
+                  <BookOpen className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className={cn('text-[10px] font-bold uppercase tracking-widest', domainCls.split(' ')[0])}>
+                    {entry.domain.replace(/_/g, ' ')}
+                  </p>
+                  <h3 id={titleId} className="text-base font-bold leading-tight text-foreground">
+                    {entry.title}
+                  </h3>
+                </div>
+              </div>
+
+              <div className="h-px shrink-0 bg-border/30" />
+
+              {/* Only this region scrolls, so a long explanation never pushes
+                  the concept name or the Close button out of reach. */}
+              <div id={descId} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
+                <ConceptBody entry={entry} size="comfortable" />
+              </div>
+
+              <div className="h-px shrink-0 bg-border/30" />
+
+              <div className="shrink-0 p-3">
+                <button
+                  type="button"
+                  onClick={close}
+                  className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-border/50 bg-secondary/30 text-sm font-semibold text-foreground/80 transition-colors hover:bg-secondary/50 active:bg-secondary/60"
+                >
+                  <X className="h-4 w-4" />
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {/* ── Desktop: anchored popover (unchanged) ────────────────────────── */}
+      {open && !isMobile && (
         <div
           className={cn(
             'absolute z-50 left-0 top-full mt-2 w-72 rounded-2xl border border-border/60',
@@ -773,64 +1043,8 @@ export function ConceptPopover({ conceptId, children, className }: ConceptPopove
 
           <div className="h-px bg-border/30 mx-4" />
 
-          <div className="p-4 pt-3 space-y-3">
-            {/* Summary */}
-            <p className="text-xs text-muted-foreground leading-relaxed">{entry.summary}</p>
-
-            {/* Formula */}
-            {entry.formula && (
-              <div className="rounded-lg border border-violet-500/20 bg-violet-500/8 px-3 py-2">
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-violet-400/60 mb-1">
-                  Formula
-                </p>
-                <code className="text-xs font-mono text-violet-200/90 leading-relaxed">
-                  {entry.formula}
-                </code>
-              </div>
-            )}
-
-            {/* Example */}
-            {entry.example && (
-              <div className="rounded-lg border border-amber-500/15 bg-amber-500/6 px-3 py-2">
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-amber-400/60 mb-1">
-                  Example
-                </p>
-                <p className="text-xs text-amber-200/70 leading-relaxed">{entry.example}</p>
-              </div>
-            )}
-
-            {/* Related */}
-            {entry.related && entry.related.length > 0 && (
-              <div>
-                <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/40 mb-1.5">
-                  Related concepts
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  {entry.related.map(rel => {
-                    const relEntry = CONCEPT_DATA[rel]
-                    if (!relEntry) return null
-                    const relCls = DOMAIN_COLORS[relEntry.domain] ?? ''
-                    return (
-                      <button
-                        key={rel}
-                        type="button"
-                        onClick={() => {
-                          // Navigate to related — caller can handle via context
-                        }}
-                        className={cn(
-                          'flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold',
-                          'transition-opacity hover:opacity-80',
-                          relCls
-                        )}
-                      >
-                        {relEntry.title}
-                        <ArrowRight className="h-2 w-2" />
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
+          <div className="p-4 pt-3">
+            <ConceptBody entry={entry} size="compact" />
           </div>
         </div>
       )}
