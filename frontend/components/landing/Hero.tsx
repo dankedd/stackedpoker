@@ -150,7 +150,12 @@ export function Hero() {
         <div className="absolute top-1/2 -translate-y-1/2 -right-64 w-[600px] h-[600px] rounded-full bg-blue-600/8 blur-[130px]" />
       </div>
 
-      <div className="container relative mx-auto max-w-7xl px-4 sm:px-6 py-20 lg:py-28">
+      {/* Top padding is the real measured Navbar height (--sp-header-height,
+          see useMeasuredHeightVar) plus comfortable breathing room — never a
+          bare hardcoded value that can silently drift out of sync with the
+          fixed header and let it overlap the heading. Bottom padding is
+          unrelated to the header, so it keeps its own independent rhythm. */}
+      <div className="container relative mx-auto max-w-7xl px-4 sm:px-6 pt-[calc(var(--sp-header-height,5rem)+2.5rem)] lg:pt-[calc(var(--sp-header-height,5rem)+4rem)] pb-20 lg:pb-28">
         <div className="text-center max-w-3xl mx-auto mb-14 lg:mb-16">
           <FadeInUp delayMs={0} variant="fade">
             <MarketingEyebrow className="mb-6">The modern way to learn poker</MarketingEyebrow>

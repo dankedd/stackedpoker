@@ -84,9 +84,12 @@ const SURFACES = [
   },
 ];
 
+// scroll-mt tracks the real measured header height (--sp-header-height, see
+// Navbar.tsx/useMeasuredHeightVar) so a same-page #how-it-works link clears
+// the fixed nav exactly, not a hardcoded guess.
 export function HowDecisionsWork() {
   return (
-    <section id="how-it-works" className="relative py-20 md:py-28 bg-background scroll-mt-24">
+    <section id="how-it-works" className="relative py-20 md:py-28 bg-background scroll-mt-[var(--sp-header-height,6rem)]">
       <div className="container mx-auto max-w-6xl px-4 sm:px-6">
         <RevealOnScroll>
           <MarketingSectionHeader

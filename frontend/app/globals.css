@@ -754,6 +754,12 @@
   --sp-motion-slow: 900ms;
   --sp-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --sp-float-distance: 6px;
+  /* SSR-safe fallback for the sticky Navbar's real measured height (see
+     useMeasuredHeightVar + Navbar.tsx), refined the instant it mounts.
+     Approximates the unscrolled header so there's no visible jump, but
+     every consumer (Hero's top padding, scroll-mt anchors) should still
+     read this var rather than a hardcoded number of its own. */
+  --sp-header-height: 5rem;
 }
 
 /* Shared ambient float — amplitude/duration/delay supplied per-instance via

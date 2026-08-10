@@ -14,6 +14,7 @@ import {
   useDismissOnOutsideOrEscape,
   useRecomputeOnScrollResize,
 } from "@/hooks/useAnchoredMenu";
+import { useMeasuredHeightVar } from "@/hooks/useMeasuredHeightVar";
 import { cn } from "@/lib/utils";
 
 const DEV_MENU_W = 256; // w-64 = 16rem
@@ -86,6 +87,15 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
   const isSticky = variant === "sticky";
   const devActive = DEV_ITEMS.some((item) => isItemActive(pathname, item.href));
 
+  // Real measured height of the fixed header wrapper (safe-area inset +
+  // padding + the nav pill itself, including its scroll-shrink transition) —
+  // written to --sp-header-height so any section below (Hero's top padding,
+  // scroll-mt anchors) can clear it exactly, never a hardcoded guess. Only
+  // the sticky variant occupies fixed screen space; "static" is in-flow and
+  // needs no such var.
+  const stickyWrapperRef = useRef<HTMLDivElement>(null);
+  useMeasuredHeightVar(stickyWrapperRef, "--sp-header-height");
+
   // Portaled to document.body (see the dropdown render below) so it always paints
   // above page content, regardless of what stacking contexts a given page creates —
   // see the useAnchoredMenu hooks' doc comments.
@@ -122,10 +132,15 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
         "rounded-2xl backdrop-blur-xl px-5 transition-all duration-300 ease-out",
         isSticky
           ? scrolled
-            ? "py-2.5 bg-[#060C18]/97 border border-white/[0.10] shadow-2xl shadow-black/60 backdrop-saturate-150"
+            ? "py-2.5 border border-white/[0.10] shadow-2xl shadow-black/60 backdrop-saturate-150"
             : "py-3.5 bg-[#0D1526]/85 border border-white/[0.07] shadow-xl shadow-black/25"
           : "py-2.5 bg-[#080D1A]/95 border border-white/[0.09] shadow-xl shadow-black/40"
       )}
+      // bg-[#060C18]/97 (the scrolled-state background) has the same
+      // pre-existing Tailwind arbitrary-value bug as the mobile dropdown
+      // above — the class silently generates no CSS rule at all. Same fix:
+      // an inline style instead, only when actually scrolled.
+      style={isSticky && scrolled ? { backgroundColor: "rgba(6, 12, 24, 0.97)" } : undefined}
     >
       {/* ── Logo ── */}
       <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
@@ -238,9 +253,23 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
   );
 
   // ── Mobile menu ───────────────────────────────────────────────────────────
+  // top-[var(--sp-header-height)] instead of a hardcoded 68px — otherwise this
+  // silently drifts out of alignment (a visible gap or overlap) the moment the
+  // header's real height differs from that guess (safe-area inset, a longer
+  // translated nav label, a font-metrics difference across platforms, ...).
   const mobileMenu = mobileOpen ? (
-    <div className="md:hidden fixed inset-x-0 top-[68px] px-4 animate-dropdown-in" style={{ zIndex: MENU_Z_INDEX }}>
-      <div className="rounded-2xl border border-white/[0.09] bg-[#060B18]/98 backdrop-blur-xl backdrop-saturate-150 shadow-2xl shadow-black/70 overflow-hidden">
+    <div className="md:hidden fixed inset-x-0 top-[var(--sp-header-height,68px)] px-4 animate-dropdown-in" style={{ zIndex: MENU_Z_INDEX }}>
+      {/* backgroundColor as an inline style, not a bg-[#060B18]/98 Tailwind
+          arbitrary-value class — that class silently fails to generate any
+          CSS rule at all (confirmed via computed-style + generated-CSS
+          inspection, pre-existing and unrelated to this file's other
+          changes), leaving this dropdown fully transparent over page
+          content. Pre-existing bug, found while testing the required mobile
+          viewports for the header-overlap fix. */}
+      <div
+        className="rounded-2xl border border-white/[0.09] backdrop-blur-xl backdrop-saturate-150 shadow-2xl shadow-black/70 overflow-hidden"
+        style={{ backgroundColor: "rgba(6, 11, 24, 0.98)" }}
+      >
         <nav className="p-2">
           {NAV_ITEMS.map((item) => (
             <Link
@@ -312,7 +341,15 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
   if (isSticky) {
     return (
       <>
-        <div className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 pt-4">
+        {/* pt-[max(1rem,env(safe-area-inset-top))] — unchanged 1rem gap on
+            ordinary screens, grows automatically to clear a device's notch/
+            Dynamic Island on those that report a safe-area inset. This
+            wrapper (not just the nav pill inside it) is what's measured
+            into --sp-header-height, so that var already accounts for both. */}
+        <div
+          ref={stickyWrapperRef}
+          className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 pt-[max(1rem,env(safe-area-inset-top))]"
+        >
           {nav}
         </div>
         {portaledMobileMenu}

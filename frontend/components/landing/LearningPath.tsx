@@ -22,9 +22,13 @@ const STAGES_SHOWN = JOURNEY_STAGES.slice(0, 6);
 
 export const FEATURED_MODULE_IDS = ["poker-fundamentals-module", "blockers-module", "game-theory-foundations-module"];
 
+// scroll-mt tracks the real measured header height (--sp-header-height, see
+// Navbar.tsx/useMeasuredHeightVar) so Hero's "Explore the curriculum" link
+// (which jumps to #curriculum) clears the fixed nav exactly, not a
+// hardcoded guess.
 export function LearningPath() {
   return (
-    <section id="curriculum" className="relative py-20 md:py-28 bg-card/10 scroll-mt-24">
+    <section id="curriculum" className="relative py-20 md:py-28 bg-card/10 scroll-mt-[var(--sp-header-height,6rem)]">
       <div className="container mx-auto max-w-5xl px-4 sm:px-6">
         <RevealOnScroll>
           <MarketingSectionHeader
