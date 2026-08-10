@@ -5,6 +5,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { LearnProgressProvider } from "@/contexts/LearnProgressContext";
 import { Toaster } from "sonner";
 import { getSiteUrl } from "@/lib/site-url";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -61,6 +62,7 @@ export default function RootLayout({
             }}
           />
         </AuthProvider>
+        <GoogleAnalytics />
       </body>
     </html>
   );
