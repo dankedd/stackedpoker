@@ -8,7 +8,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, getErrorMessage } from "@/lib/utils";
 import {
   CATEGORY_META, CATEGORY_ORDER, evaluateBankrollStatus,
   type BankrollCategory, type BuyInRules,
@@ -122,8 +122,7 @@ export default function BankrollManagementPage() {
       toast.success("Bankroll rules saved");
     } catch (err) {
       console.error("[bankroll] save management rules failed:", err);
-      const detail = err instanceof Error ? err.message : String(err);
-      toast.error(`Couldn't save your bankroll rules: ${detail}`);
+      toast.error(`Couldn't save your bankroll rules: ${getErrorMessage(err)}`);
     } finally {
       setSaving(false);
     }

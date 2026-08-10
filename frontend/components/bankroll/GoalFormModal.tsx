@@ -6,7 +6,7 @@ import { Loader2, Wallet, TrendingUp, Clock, Hash, Layers, type LucideIcon } fro
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { cn } from "@/lib/utils";
+import { cn, getErrorMessage } from "@/lib/utils";
 import { GOAL_TYPE_META, GOAL_TYPE_ORDER, type GoalType } from "@/lib/bankroll/goals";
 import { parseLocaleNumber } from "@/lib/bankroll/parseNumberInput";
 
@@ -75,8 +75,7 @@ export function GoalFormModal({ open, userId, currency, onClose, onSaved }: Goal
       onClose();
     } catch (err) {
       console.error("[bankroll] save goal failed:", err);
-      const detail = err instanceof Error ? err.message : String(err);
-      toast.error(`Couldn't save the goal: ${detail}`);
+      toast.error(`Couldn't save the goal: ${getErrorMessage(err)}`);
     } finally {
       setSaving(false);
     }

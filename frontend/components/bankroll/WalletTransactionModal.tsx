@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Modal } from "@/components/ui/modal";
-import { cn } from "@/lib/utils";
+import { cn, getErrorMessage } from "@/lib/utils";
 import { parseLocaleNumber } from "@/lib/bankroll/parseNumberInput";
 
 const inputCls =
@@ -77,8 +77,7 @@ export function WalletTransactionModal({ open, type, userId, currency, onClose, 
       onClose();
     } catch (err) {
       console.error("[bankroll] save transaction failed:", err);
-      const detail = err instanceof Error ? err.message : String(err);
-      toast.error(`Couldn't save the transaction: ${detail}`);
+      toast.error(`Couldn't save the transaction: ${getErrorMessage(err)}`);
     } finally {
       setSaving(false);
     }

@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Modal } from "@/components/ui/modal";
-import { cn } from "@/lib/utils";
+import { cn, getErrorMessage } from "@/lib/utils";
 import { buildSessionTimestamps, splitSessionTimestamps, computeSessionResult } from "@/lib/bankroll/sessionForm";
 import { parseLocaleNumber } from "@/lib/bankroll/parseNumberInput";
 import type { BankrollSessionRow } from "@/lib/bankroll/types";
@@ -18,6 +18,9 @@ const labelCls = "text-xs font-semibold text-muted-foreground/70 mb-1.5 block";
 
 const SITE_SUGGESTIONS = ["PokerStars", "GGPoker", "partypoker", "888poker", "WPN", "Winamax", "Live — Casino", "Live — Home Game"];
 const VARIANT_SUGGESTIONS = ["NLHE", "PLO", "PLO5", "PLO6", "Short Deck", "Mixed", "Stud"];
+
+/** Rounds to cents, avoiding floating-point artifacts like 5.4 - 1.35 = 4.050000000000001 before it round-trips through a numeric(14,2) DB column. */
+const round2 = (n: number) => Math.round(n * 100) / 100;
 
 type SessionKind = "cash" | "tournament";
 
@@ -157,7 +160,11 @@ export function SessionFormModal({ open, userId, editing, onClose, onSaved }: Se
     const buyIn = parseLocaleNumber(form.buyIn) || 0;
     const fee = parseLocaleNumber(form.fee) || 0;
     const prize = parseLocaleNumber(form.prize) || 0;
-    const calculated = String(prize - buyIn - fee);
+    // Rounded to cents — raw floating-point subtraction produces artifacts
+    // like 4.050000000000001 (5.4 - 1.35), which is both an ugly display
+    // value and, once it round-trips through cash_out_amount = buy_in +
+    // net_result, a needlessly imprecise number to store.
+    const calculated = (Math.round((prize - buyIn - fee) * 100) / 100).toString();
     setForm((f) => (f.netResult === calculated ? f : { ...f, netResult: calculated }));
   }, [form.kind, form.buyIn, form.fee, form.prize, netResultTouched]);
 
@@ -218,7 +225,7 @@ export function SessionFormModal({ open, userId, editing, onClose, onSaved }: Se
           setSaving(false);
           return;
         }
-        const effectiveBuyIn = buyIn + fee;
+        const effectiveBuyIn = round2(buyIn + fee);
         if (netResultValue < -effectiveBuyIn) {
           toast.error(`Net result can't be lower than -${effectiveBuyIn.toFixed(2)} (you can't lose more than the buy-in + fee).`);
           setSaving(false);
@@ -230,9 +237,9 @@ export function SessionFormModal({ open, userId, editing, onClose, onSaved }: Se
           site: form.site.trim() || null,
           tournament_name: form.tournamentName.trim() || null,
           buy_in_amount: effectiveBuyIn,
-          fee_amount: form.fee.trim() === "" ? null : fee,
-          prize_amount: form.prize.trim() === "" ? null : prize,
-          cash_out_amount: effectiveBuyIn + netResultValue,
+          fee_amount: form.fee.trim() === "" ? null : round2(fee),
+          prize_amount: form.prize.trim() === "" ? null : round2(prize),
+          cash_out_amount: round2(effectiveBuyIn + netResultValue),
           field_size: form.fieldSize.trim() === "" ? null : Math.max(1, Math.round(parseLocaleNumber(form.fieldSize))),
           finishing_position: form.finishingPosition.trim() === "" ? null : Math.max(1, Math.round(parseLocaleNumber(form.finishingPosition))),
           started_at: startedAt,
@@ -283,8 +290,7 @@ export function SessionFormModal({ open, userId, editing, onClose, onSaved }: Se
       onClose();
     } catch (err) {
       console.error("[bankroll] save session failed:", err);
-      const detail = err instanceof Error ? err.message : String(err);
-      toast.error(`Couldn't save the session: ${detail}`);
+      toast.error(`Couldn't save the session: ${getErrorMessage(err)}`);
     } finally {
       setSaving(false);
     }

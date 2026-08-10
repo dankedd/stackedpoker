@@ -8,6 +8,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { BankrollStatCard } from "@/components/bankroll/BankrollStatCard";
 import { BankrollChart } from "@/components/bankroll/BankrollChart";
 import { BankrollManagementSection } from "@/components/bankroll/BankrollManagementSection";
+import { LogSessionButton } from "@/components/bankroll/LogSessionButton";
 import { formatCurrency, formatPercent } from "@/lib/utils";
 import { buildBankrollSeries } from "@/lib/bankroll/series";
 import { categorizeSession, CATEGORY_ORDER, type BankrollCategory, type BuyInRules } from "@/lib/bankroll/management";
@@ -146,25 +147,32 @@ export default async function BankrollPage() {
                 Every deposit, session and result rolled into one running total.
               </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {[
-                { href: "/bankroll/wallet", label: "Wallet", icon: Wallet },
-                { href: "/bankroll/sessions", label: "Sessions", icon: Layers },
-                { href: "/bankroll/management", label: "Rules", icon: Settings2 },
-                { href: "/bankroll/goals", label: "Goals", icon: Target },
-                { href: "/bankroll/stats", label: "Stats", icon: BarChart3 },
-                { href: "/bankroll/calendar", label: "Calendar", icon: CalendarDays },
-                { href: "/bankroll/insights", label: "Insights", icon: Bot },
-              ].map(({ href, label, icon: Icon }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border/50 bg-card/60 text-foreground text-sm font-semibold hover:border-violet-500/40 hover:bg-card/80 transition-all"
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </Link>
-              ))}
+            <div className="flex flex-col items-stretch sm:items-end gap-3 shrink-0">
+              {/* Logging a session is the single most-used action in the whole
+                  bankroll section — everything else here is downstream of it —
+                  so it gets its own prominent gradient CTA, not just another
+                  nav pill among the destination links below. */}
+              <LogSessionButton className="w-full sm:w-auto justify-center" />
+              <div className="flex flex-wrap items-center gap-2">
+                {[
+                  { href: "/bankroll/wallet", label: "Wallet", icon: Wallet },
+                  { href: "/bankroll/sessions", label: "Sessions", icon: Layers },
+                  { href: "/bankroll/management", label: "Rules", icon: Settings2 },
+                  { href: "/bankroll/goals", label: "Goals", icon: Target },
+                  { href: "/bankroll/stats", label: "Stats", icon: BarChart3 },
+                  { href: "/bankroll/calendar", label: "Calendar", icon: CalendarDays },
+                  { href: "/bankroll/insights", label: "Insights", icon: Bot },
+                ].map(({ href, label, icon: Icon }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border/50 bg-card/60 text-foreground text-xs font-semibold hover:border-violet-500/40 hover:bg-card/80 transition-all"
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {label}
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </div>

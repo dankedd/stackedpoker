@@ -26,6 +26,24 @@ export function formatPercent(value: number | null | undefined, opts?: { decimal
   return `${sign}${value.toFixed(decimals)}%`;
 }
 
+/**
+ * Extracts a human-readable message from a caught error, for use in toasts.
+ * Not just `err instanceof Error ? err.message : String(err)` — Supabase's
+ * PostgrestError (what every bankroll_* insert/update throws on failure) is
+ * a plain object shaped `{message, details, hint, code}`, not an Error
+ * instance, so that check always fell through to `String(err)`, which on a
+ * plain object produces the literal text "[object Object]" instead of the
+ * actual database error. This checks for a string `.message` property
+ * first, which covers both real Errors and PostgrestError alike.
+ */
+export function getErrorMessage(err: unknown): string {
+  if (err && typeof err === "object" && "message" in err && typeof (err as { message: unknown }).message === "string") {
+    return (err as { message: string }).message;
+  }
+  if (err instanceof Error) return err.message;
+  return String(err);
+}
+
 /** "1st", "2nd", "3rd", "4th", ... — used for tournament finishing positions. */
 export function formatOrdinal(n: number): string {
   const rounded = Math.round(n);
