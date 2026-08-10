@@ -306,6 +306,15 @@ function evalOptionBased(step: LessonStep, response: unknown): EvalCore {
 
 // ── Numeric steps (equity_predict, mdf_slider) ────────────────────────────────
 
+/** Rounds to 1 decimal place and strips a trailing ".0" (66.66666666666667 -> 66.7, 70.0 -> 70)
+ *  — the shared display format for every learner-facing numeric echo. A slider-computed value
+ *  (e.g. MDF from 1 - bet/(bet+pot)) can carry a raw JS floating-point artifact all the way into
+ *  feedback text otherwise. Display only — never used for the underlying tolerance comparison,
+ *  which must keep comparing the true, unrounded value. */
+function roundForDisplay(n: number): number {
+  return Math.round(n * 10) / 10
+}
+
 function evalNumeric(opts: {
   actual: number
   tolerance: number
@@ -344,9 +353,18 @@ function evalNumeric(opts: {
   // Every numeric slider/challenge step (pot odds, outs, bluff break-even,
   // equity realization, MDF, SPR, combo counts...) shares this evaluator, so
   // echoing the learner's own answer here is the one reliable place the
-  // "your answer vs correct answer" reveal reaches every one of them.
-  const yourAnswer = `You answered ${value}${unit}.`
-  const yourDisplay = `${value}${unit}`
+  // "your answer vs correct answer" reveal reaches every one of them. A
+  // slider-computed value (e.g. MDF from 1 - bet/(bet+pot)) can carry a raw
+  // JS float artifact (66.66666666666667) — round for display, but keep
+  // comparing the true `value` above for tolerance. `actual` is left
+  // untouched: it's always an author-set literal (never a repeating
+  // decimal in practice), and several callers' correctFeedback/wrongFeedback
+  // strings do a literal `.includes(correctDisplay)` check against it —
+  // rounding it here would silently break that match and reintroduce the
+  // doubled-up "the correct answer is X. The correct answer is X." bug this
+  // same file already fixed once.
+  const yourAnswer = `You answered ${roundForDisplay(value)}${unit}.`
+  const yourDisplay = `${roundForDisplay(value)}${unit}`
   // Only computed/attached when a caller opts in (alwaysReveal) — signed
   // distance from the reference value, e.g. "+0.3%" or "Exact match".
   const signedDelta = Math.round((value - actual) * 10) / 10
@@ -491,7 +509,7 @@ function evalRiverSizingCalculator(step: LessonStep, response: unknown): EvalCor
     score: QUALITY_SCORES[quality],
     feedback,
     ev_loss_bb: 0,
-    answer_reveal: { term: 'Minimum bet to deny', correct: `${correctPct.toFixed(1)}%`, yours: `${guessNum}%` },
+    answer_reveal: { term: 'Minimum bet to deny', correct: `${correctPct.toFixed(1)}%`, yours: `${roundForDisplay(guessNum)}%` },
   }
 }
 
@@ -530,7 +548,9 @@ function evalEquityPredict(step: LessonStep, response: unknown): EvalCore {
   }
 
   const delta = Math.abs(value - actual)
-  const header = `Your estimate: ${value}%. Actual equity: ${actual}%.`
+  // See evalNumeric's identical roundForDisplay comment above — `value` is a raw slider input
+  // and can carry a JS float artifact; `actual` is an author-set literal, left untouched.
+  const header = `Your estimate: ${roundForDisplay(value)}%. Actual equity: ${actual}%.`
 
   if (delta <= tolerance) {
     return {
@@ -550,7 +570,7 @@ function evalEquityPredict(step: LessonStep, response: unknown): EvalCore {
       ev_loss_bb: 0,
       concept_triggered,
       concept_explanation,
-      answer_reveal: { term: 'Actual equity', correct: `${actual}%`, yours: `${value}%` },
+      answer_reveal: { term: 'Actual equity', correct: `${actual}%`, yours: `${roundForDisplay(value)}%` },
     }
   }
   if (delta <= tolerance * 3.5) {
@@ -561,7 +581,7 @@ function evalEquityPredict(step: LessonStep, response: unknown): EvalCore {
       ev_loss_bb: 0,
       concept_triggered,
       concept_explanation,
-      answer_reveal: { term: 'Actual equity', correct: `${actual}%`, yours: `${value}%` },
+      answer_reveal: { term: 'Actual equity', correct: `${actual}%`, yours: `${roundForDisplay(value)}%` },
     }
   }
   return {
@@ -571,7 +591,7 @@ function evalEquityPredict(step: LessonStep, response: unknown): EvalCore {
     ev_loss_bb: 0,
     concept_triggered,
     concept_explanation,
-    answer_reveal: { term: 'Actual equity', correct: `${actual}%`, yours: `${value}%` },
+    answer_reveal: { term: 'Actual equity', correct: `${actual}%`, yours: `${roundForDisplay(value)}%` },
   }
 }
 
@@ -2231,13 +2251,15 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
     case 'river_sizing_calculator':
       return evalRiverSizingCalculator(step, response)
 
+    // Per-step correct_feedback/wrong_feedback are optional overrides for the generic
+    // template — same convention bluff_breakeven/equity_realization already use below.
     case 'mdf_slider':
       return evalNumeric({
         actual:         step.mdf_slider_target    ?? 0,
         tolerance:      step.mdf_slider_tolerance ?? 3,
         response,
-        correctFeedback: `Correct — ${step.mdf_slider_target}%.`,
-        wrongFeedback:   `The correct value is ${step.mdf_slider_target}%.`,
+        correctFeedback: step.correct_feedback ?? `Correct — ${step.mdf_slider_target}%.`,
+        wrongFeedback:   step.wrong_feedback   ?? `The correct value is ${step.mdf_slider_target}%.`,
         unit: '%',
         term: 'Correct MDF',
       })

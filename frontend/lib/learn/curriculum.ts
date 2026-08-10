@@ -19003,6 +19003,8 @@ export const LESSONS: Lesson[] = [
         mdf_slider_initial_bet_pct: 100,
         mdf_slider_target: 66.67,
         mdf_slider_tolerance: 2,
+        correct_feedback: "That's the half-pot MDF: Alpha = bet ÷ (bet+pot) = 50 ÷ 150 = 33.3% — the frequency this bet needs to work as a bluff — and MDF = 1 − Alpha = 66.67%, the minimum share of their range Villain must continue with to deny an automatic profit. Shrink the bet toward 25%-pot and Alpha drops to 20%, so MDF climbs to 80% — a cheaper bet has to be defended against far more often. Push it toward a full pot-size bet and Alpha climbs to 50%, so MDF falls to 50% — a bigger bet lets Villain fold a much wider range and still be fine. General rule: bet-size and required defense move in opposite directions — they're the same one input, viewed from two sides of the table.",
+        wrong_feedback: "MDF is 1 − Alpha, and Alpha is bet ÷ (bet+pot) — for this $50-into-$100 bet, that's 50 ÷ 150 = 33.3%, so MDF = 66.67%. The most common slip is computing bet ÷ pot instead (50 ÷ 100 = 50%): that's a different, wrong formula. The pot in the denominator has to include your own bet, because once you've bet, that money is already part of what's being fought over.",
         xp: 14,
       },
       {
