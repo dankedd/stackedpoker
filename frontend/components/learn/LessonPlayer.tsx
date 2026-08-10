@@ -943,12 +943,25 @@ export function LessonPlayer({
 
       {/* Progress — measured against the lesson's authored step count, not the dynamically
           extended one, so an injected remediation/reinforcement step doesn't make the bar
-          jump backward in perceived percentage. */}
-      <div className="flex items-center justify-between gap-3">
+          jump backward in perceived percentage.
+
+          Hidden below `sm:` — the redesigned mobile header (LessonHeader.tsx) already
+          carries "Step 5 of 14", the percentage and a full-width bar a few pixels above
+          this one, and showing both is the exact duplication that made the mobile lesson
+          view feel cluttered. Desktop keeps it: there the header shows dots, not a bar. */}
+      <div
+        className={cn(
+          'items-center justify-end sm:justify-between gap-3',
+          // With the bar hidden on mobile, a row holding only a hidden child would
+          // still spend one `gap-5` of vertical rhythm, so it collapses entirely
+          // there unless the coach trigger — the row's other occupant — is showing.
+          authToken && phase === 'step' ? 'flex' : 'hidden sm:flex',
+        )}
+      >
         <ProgressBar
           current={Math.min(currentStepIndex, Math.max(lesson.steps.length - 1, 0))}
           total={lesson.steps.length}
-          className="flex-1"
+          className="hidden sm:block flex-1"
         />
         {authToken && phase === 'step' && (
           <AskCoachTrigger onClick={() => setCoachOpen(true)} className="mb-0.5" />
