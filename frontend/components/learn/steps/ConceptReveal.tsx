@@ -10,7 +10,9 @@ import { FoldFreqBar } from '@/components/learn/visuals/PressureGauge'
 import { NutAdvantageMeter } from '@/components/learn/visuals/NutAdvantageMeter'
 import { PreflopTable } from '@/components/learn/visuals/PreflopTable'
 import { PostflopScenarioCard } from '@/components/learn/visuals/PostflopScenarioCard'
+import { canRenderPostflopTable } from '@/lib/learn/postflopTableState'
 import { ConvergenceIllustration } from '@/components/learn/visuals/ConceptIllustration'
+import { TermDescriptionRow } from '@/components/ui/TermDescriptionRow'
 
 // ── Visual type renderers ─────────────────────────────────────────────────────
 
@@ -169,10 +171,27 @@ function resolveVisual(step: LessonStep, conceptId?: string) {
       />
     )
   }
-  // Postflop scenes (a board is set) never get the preflop seat table above —
-  // this is the postflop equivalent, built from the same poker-context fields.
+  // Postflop scenes (a board is set) get the SAME table in postflop mode,
+  // whenever the step carries enough real action data to place seats and a pot.
+  // Board-only illustration steps (no hand attached) keep the compact card.
   if (step.hero_position && step.board?.length) {
-    return <PostflopScenarioCard step={step} />
+    return canRenderPostflopTable(step) ? (
+      <PreflopTable
+        tableSize={step.table_size ?? 9}
+        heroPosition={step.hero_position}
+        heroHand={step.hero_hand}
+        effectiveStackBb={step.effective_stack_bb}
+        stackOverridesBb={step.stack_overrides_bb}
+        anteBb={step.ante_bb}
+        actionBeforeHero={step.action_before_hero}
+        board={step.board}
+        postflopAction={step.postflop_action}
+        street={step.street === 'preflop' ? undefined : step.street}
+        potBb={step.pot_bb}
+      />
+    ) : (
+      <PostflopScenarioCard step={step} />
+    )
   }
   if (visualType === 'equity_bar') return <EquityBarVisual conceptId={conceptId} examples={step.equity_bar_examples} />
   if (visualType === 'mdf_bar' || conceptId === 'mdf' || conceptId === 'alpha') return <MdfVisual />
@@ -188,12 +207,15 @@ function StructuredTheoryList({ items }: { items: { term: string; description: s
   return (
     <div className="rounded-xl border border-violet-500/15 bg-secondary/20 divide-y divide-border/20 overflow-hidden">
       {items.map((item, i) => (
-        <div key={i} className="flex items-start gap-3 px-4 py-3">
-          <span className="shrink-0 rounded-md border border-violet-500/30 bg-violet-500/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-300 leading-4">
-            {item.term}
-          </span>
-          <p className="text-sm text-muted-foreground leading-relaxed pt-0.5">{item.description}</p>
-        </div>
+        <TermDescriptionRow
+          key={i}
+          badge={
+            <span className="shrink-0 rounded-md border border-violet-500/30 bg-violet-500/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-300 leading-4">
+              {item.term}
+            </span>
+          }
+          description={item.description}
+        />
       ))}
     </div>
   )

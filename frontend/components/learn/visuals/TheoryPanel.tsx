@@ -3,6 +3,7 @@
 import { BookOpen, TrendingUp, TrendingDown, Minus, Lightbulb } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { TheoryPanelData, TheoryPanelFactor } from '@/lib/learn/types'
+import { TermDescriptionRow } from '@/components/ui/TermDescriptionRow'
 
 interface TheoryPanelProps {
   panel: TheoryPanelData
@@ -27,19 +28,21 @@ function FactorRow({ factor }: { factor: TheoryPanelFactor }) {
   const style = WEIGHT_STYLES[factor.weight ?? 'context']
   const Icon = style.icon
   return (
-    <div className="flex items-start gap-3 px-4 py-3">
-      <span
-        className={cn(
-          'shrink-0 inline-flex items-center gap-1.5 rounded-md border px-2 py-1',
-          'text-[10px] font-bold uppercase tracking-wider leading-4',
-          style.chip
-        )}
-      >
-        <Icon className={cn('h-3 w-3 shrink-0', style.iconColor)} aria-hidden />
-        {factor.term}
-      </span>
-      <p className="text-sm text-muted-foreground leading-relaxed pt-0.5">{factor.description}</p>
-    </div>
+    <TermDescriptionRow
+      badge={
+        <span
+          className={cn(
+            'shrink-0 inline-flex items-center gap-1.5 rounded-md border px-2 py-1',
+            'text-[10px] font-bold uppercase tracking-wider leading-4',
+            style.chip
+          )}
+        >
+          <Icon className={cn('h-3 w-3 shrink-0', style.iconColor)} aria-hidden />
+          {factor.term}
+        </span>
+      }
+      description={factor.description}
+    />
   )
 }
 

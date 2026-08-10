@@ -11,6 +11,7 @@ import { AskCoachTrigger } from './coach/AskCoachTrigger'
 import { RangeRevealCard } from './RangeRevealCard'
 import { NutAdvantageMeter, RangeCoverageBar } from './visuals/NutAdvantageMeter'
 import { TheoryPanel } from './visuals/TheoryPanel'
+import { TermDescriptionRow } from '@/components/ui/TermDescriptionRow'
 
 interface StepFeedbackProps {
   result: StepResult
@@ -100,12 +101,15 @@ function StructuredFeedbackList({ items }: { items: { term: string; description:
   return (
     <div className="rounded-xl border border-violet-500/15 bg-secondary/20 divide-y divide-border/20 overflow-hidden mt-3">
       {items.map((item, i) => (
-        <div key={i} className="flex items-start gap-3 px-4 py-3">
-          <span className="shrink-0 rounded-md border border-violet-500/30 bg-violet-500/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-300 leading-4">
-            {item.term}
-          </span>
-          <p className="text-sm text-muted-foreground leading-relaxed pt-0.5">{item.description}</p>
-        </div>
+        <TermDescriptionRow
+          key={i}
+          badge={
+            <span className="shrink-0 rounded-md border border-violet-500/30 bg-violet-500/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-violet-300 leading-4">
+              {item.term}
+            </span>
+          }
+          description={item.description}
+        />
       ))}
     </div>
   )
