@@ -27,7 +27,7 @@ import { resolveOpenerRangePanel, resolveOpenerRangeReveal } from './openerRange
 import { resolveFacingThreebetRangeReveal } from './facingThreebetRangeReveal'
 import {
   evOfBetting, evOfChecking, bestResponse, isIndifferent, testUnilateralDeviation,
-  clairvoyanceEV, clairvoyanceEquilibrium, type ActionEV,
+  clairvoyanceEV, clairvoyanceEquilibrium, geometricBetSizing, minimumBetToDenyEquity, type ActionEV,
 } from './gameTheoryEngine'
 import { PRESSURE_GAME_DEFAULT } from './gameTheoryContent'
 import {
@@ -401,6 +401,107 @@ function evalNumeric(opts: {
     answer_reveal: { term, correct: correctDisplay, yours: yourDisplay, ...(alwaysReveal ? { source, delta: deltaLabel } : {}) },
   }
 }
+
+// ── Geometric Bet Ladder (Module 12, Lesson 6) ─────────────────────────────────
+// Two linked numeric sub-judgments (R, then bet-fraction derived from R) submitted
+// together as one response — evalNumeric's shape assumes a single number, so this
+// is a small, standalone resolver rather than a forced reuse, following the exact
+// structural precedent evalRangeSurgeryProtection already established (a narrow,
+// independently-testable function, dispatched from one new switch case).
+function evalGeometricBetLadder(step: LessonStep, response: unknown): EvalCore {
+  const startingPot = step.geometric_ladder_starting_pot ?? 70
+  const effectiveStack = step.geometric_ladder_effective_stack ?? 965
+  const streets = step.geometric_ladder_streets ?? 3
+  const tolerance = step.geometric_ladder_tolerance ?? 0.05
+  const { growthRate: correctR, betFraction: correctFraction } = geometricBetSizing(startingPot, effectiveStack, streets)
+
+  const r = response && typeof response === 'object' ? (response as { rGuess?: unknown }).rGuess : undefined
+  const frac = response && typeof response === 'object' ? (response as { betFractionGuess?: unknown }).betFractionGuess : undefined
+  const rNum = Number(r)
+  const fracNum = Number(frac)
+
+  if (isNaN(rNum) || isNaN(fracNum)) {
+    return { quality: 'punt', score: QUALITY_SCORES.punt, feedback: 'No answer submitted.', ev_loss_bb: 0 }
+  }
+
+  const rCorrect = Math.abs(rNum - correctR) <= correctR * tolerance
+  const fractionCorrect = Math.abs(fracNum - correctFraction) <= Math.max(0.02, correctFraction * tolerance)
+
+  const sentences: string[] = []
+  if (rCorrect && fractionCorrect) {
+    sentences.push(`Both correct — R ≈ ${correctR.toFixed(2)}, bet-fraction ≈ ${(correctFraction * 100).toFixed(0)}% of the pot.`)
+    sentences.push('The pot needs to grow by that same multiple every remaining street to land exactly on an all-in by the final one — by construction, not coincidence.')
+  } else if (!rCorrect && fractionCorrect) {
+    sentences.push(`Your bet-fraction is right (${(correctFraction * 100).toFixed(0)}%), but R itself was off (actual R ≈ ${correctR.toFixed(2)}).`)
+    sentences.push('The most common R mistake: computing (Final Pot ÷ Starting Pot) and stopping there — that number is the TOTAL growth needed across every street combined, not the per-street rate. You still need to take the 1/streets root of it.')
+  } else if (rCorrect && !fractionCorrect) {
+    sentences.push(`R is right (≈${correctR.toFixed(2)}), but the bet-fraction conversion was off (actual ≈ ${(correctFraction * 100).toFixed(0)}% of pot).`)
+    sentences.push('Remember why it\'s (R−1)÷2, not R itself: the pot grows because BOTH players put a bet-sized amount in, not just one. Forgetting the ÷2 produces a bet nearly twice too large.')
+  } else {
+    sentences.push(`Actual R ≈ ${correctR.toFixed(2)}, actual bet-fraction ≈ ${(correctFraction * 100).toFixed(0)}% of the pot — both were off.`)
+    sentences.push('Isolate the two steps separately: first Final Pot ÷ Starting Pot, then take the 1/streets root to get R. Then (R−1)÷2 converts R into the per-street bet-fraction.')
+  }
+
+  const quality: ActionQuality = rCorrect && fractionCorrect ? 'perfect' : rCorrect || fractionCorrect ? 'acceptable' : 'mistake'
+
+  return {
+    quality,
+    score: QUALITY_SCORES[quality],
+    feedback: sentences.join(' '),
+    ev_loss_bb: 0,
+    reasoning_stages: [
+      { stage: 'computation_correct', label: 'Growth rate (R)', correct: rCorrect, detail: `Actual R ≈ ${correctR.toFixed(3)}` },
+      { stage: 'formula_cited', label: 'Bet-fraction = (R−1)÷2', correct: fractionCorrect, detail: `Actual bet-fraction ≈ ${(correctFraction * 100).toFixed(1)}%` },
+    ],
+  }
+}
+
+// ── River Sizing Calculator (Module 12, Lesson 9) ───────────────────────────────
+function evalRiverSizingCalculator(step: LessonStep, response: unknown): EvalCore {
+  const equityPct = step.river_calc_opponent_equity_pct ?? 25
+  const tolerance = step.river_calc_tolerance ?? 0.05
+  const correctMinBet = minimumBetToDenyEquity(equityPct / 100)
+
+  const guess = response && typeof response === 'object' ? (response as { minimumBetGuessPct?: unknown }).minimumBetGuessPct : undefined
+  const guessNum = Number(guess)
+
+  if (isNaN(guessNum)) {
+    return { quality: 'punt', score: QUALITY_SCORES.punt, feedback: 'No answer submitted.', ev_loss_bb: 0 }
+  }
+
+  const correctPct = correctMinBet * 100
+  const delta = Math.abs(guessNum / 100 - correctMinBet)
+  const withinTolerance = delta <= Math.max(0.02, correctMinBet * tolerance)
+
+  let quality: ActionQuality
+  let feedback: string
+  if (withinTolerance) {
+    quality = 'perfect'
+    feedback = `Correct — B = ${equityPct}% ÷ (100% − 2×${equityPct}%) = ${correctPct.toFixed(1)}% of the pot. Below this size, Villain has a profitable call somewhere in their range; at or above it, their entire range is a losing call.`
+  } else if (delta <= Math.max(0.05, correctMinBet * tolerance * 3)) {
+    quality = 'acceptable'
+    feedback = `Close, but not quite — the exact minimum is B = EQ ÷ (1 − 2×EQ) = ${equityPct}% ÷ ${(100 - 2 * equityPct).toFixed(0)}% = ${correctPct.toFixed(1)}% of the pot. Isolate the denominator first (1 − 2×EQ), then divide.`
+  } else {
+    quality = 'mistake'
+    feedback = `The correct minimum is ${correctPct.toFixed(1)}% of the pot, computed as B = EQ ÷ (1 − 2×EQ) = ${equityPct}% ÷ ${(100 - 2 * equityPct).toFixed(0)}%. This is the bet-size at which Villain's pot odds on a call exactly equal their stated equity — anything smaller leaves them a profitable call somewhere in their range.`
+  }
+
+  return {
+    quality,
+    score: QUALITY_SCORES[quality],
+    feedback,
+    ev_loss_bb: 0,
+    answer_reveal: { term: 'Minimum bet to deny', correct: `${correctPct.toFixed(1)}%`, yours: `${guessNum}%` },
+  }
+}
+
+// Module 12, Lesson 10 (capstone): per Part 2's own Interactive Lesson spec, "No street's
+// submission is revealed against a single 'correct answer'... the Sizing Strategy Report is
+// generated only after all three streets are submitted" — i.e. three SEPARATE, independently-
+// scored submissions with a synthesized report at the end, not one combined multi-part
+// submission. That is exactly the existing decision_spot (per street) + tendency_summary
+// (final report) pattern every prior capstone (Modules 7/8/10/11) already uses — no new
+// resolver, no new StepType, no new response shape required.
 
 // ── Equity predict (hand vs range) ────────────────────────────────────────────
 // Scored like evalNumeric, but always echoes the learner's own estimate next to
@@ -2120,6 +2221,15 @@ function resolveCore(step: LessonStep, response: unknown): EvalCore {
     // Numeric steps
     case 'equity_predict':
       return evalEquityPredict(step, response)
+
+    // Module 12, Lesson 6 — geometricBetSizing(), gated (Section 15/16) and source-locked
+    // against the book's own worked example before this branch was written.
+    case 'geometric_bet_ladder':
+      return evalGeometricBetLadder(step, response)
+
+    // Module 12, Lesson 9 — minimumBetToDenyEquity(), gated and source-locked the same way.
+    case 'river_sizing_calculator':
+      return evalRiverSizingCalculator(step, response)
 
     case 'mdf_slider':
       return evalNumeric({
