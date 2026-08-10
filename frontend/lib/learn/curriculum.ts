@@ -19649,6 +19649,159 @@ export const LESSONS: Lesson[] = [
       },
     ],
   },
+
+  {
+    id: 'wrong-size-real-cost',
+    module_id: 'bet-sizing-language-module',
+    slug: 'wrong-size-real-cost',
+    title: 'Wrong Size, Real Cost',
+    subtitle: 'What specifically breaks, and by how much, when a sizing choice is wrong.',
+    lesson_type: 'concept_reveal',
+    concept_ids: ['size_vs_frequency_fix', 'reverse_linear_mechanism'],
+    estimated_min: 12,
+    xp_reward: 190,
+    sort_order: 7,
+    next_lesson_teaser: 'Reading the Board Like the Solver Does',
+    steps: [
+      {
+        id: 'wsrc-s1',
+        type: 'concept_reveal',
+        concept_title: 'The J22 Sizing Mistake',
+        concept_content: `BB, 30bb effective, calls a UTG min-raise. Flop J♠2♥2♦ — a paired board. UTG's correct GTO play when checked to is min-bet, 100% of range, for an EV of ${J22_SIZING_MISTAKE.correct.ev}. Why min-bet? Paired boards polarize the checking range around whether it holds a matching card — a cheap bet already extracts the maximum this specific gap allows. Now watch UTG reach for a bigger, more "standard-feeling" 2/3-pot instead, same range, same frequency. An aware BB shifts to a check-raise-only response, and UTG's EV drops to ${J22_SIZING_MISTAKE.wrongSizeUnchangedFrequency.ev} — a swing of six EV units from ONE decision, nothing else changed.`,
+        concept_note: `If UTG then corrects FREQUENCY to the new 2/3-pot equilibrium (c-betting only 42.45% instead of 100%), EV partially recovers — to ${J22_SIZING_MISTAKE.wrongSizeCorrectedFrequency.ev}. Partially, not fully. Even the best possible frequency correction at the wrong size still falls short of what the originally correct size would have produced.`,
+        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Overall Flop Metrics — J♠2♥2♦ (Ch.10 p.620)', type: 'source_reconstructed' },
+      },
+      {
+        id: 'wsrc-s2',
+        type: 'decision_spot',
+        concept_ids: ['size_vs_frequency_fix'],
+        narrative: "UTG's correct line: min-bet, 100% of range, EV 77.05. Instead, UTG uses 2/3-pot at the SAME frequency, and BB responds with an aware check-raise-only strategy.",
+        decision_spot_question: 'Roughly how many EV units does this cost, from changing ONLY the size?',
+        options: [
+          { id: 'six', label: 'Roughly 6 EV units', quality: 'perfect', feedback: `Correct — 77.05 down to 71.01. And notice this cost came from changing exactly ONE thing, size, with everything else held identical. There's no ambiguity about what caused the loss, because nothing else changed.` },
+          { id: 'one', label: 'Roughly 1 EV unit — a small, mostly cosmetic difference', quality: 'mistake', feedback: 'The real cost is much larger — about 6 EV units (77.05 down to 71.01). An aware check-raise-only response to an oversized bet is a serious, not cosmetic, punishment.' },
+          { id: 'twenty', label: 'Roughly 20 EV units — a catastrophic error', quality: 'mistake', feedback: 'Real, but smaller than that — about 6 EV units (77.05 down to 71.01). Serious, but not catastrophic on its own.' },
+        ],
+        xp: 16,
+      },
+      {
+        id: 'wsrc-s3',
+        type: 'decision_spot',
+        concept_ids: ['size_vs_frequency_fix'],
+        narrative: "UTG, having made the sizing mistake, corrects FREQUENCY to the new 2/3-pot equilibrium (42.45%) rather than switching back to min-bet.",
+        decision_spot_question: 'Does EV fully recover to 77.05, partially recover, or not recover at all?',
+        options: [
+          {
+            id: 'partial', label: 'Climbs back part-way, still short of the original EV', quality: 'perfect',
+            feedback: "Correct — and this is the single most important distinction in this lesson. Adjusting frequency after choosing the wrong size is a real improvement (71.01 → 74.10), but it never reaches 77.05, because the SIZE itself is still wrong for this board's structure. A frequency fix can make a wrong size less bad. It cannot make a wrong size correct.",
+          },
+          {
+            id: 'full', label: 'Climbs all the way back — frequency correction fixes the whole problem', quality: 'mistake',
+            ev_loss_bb: 2,
+            feedback: "It doesn't fully recover. EV does climb, from 71.01 to 74.10 — a real, genuine improvement — but it never gets back to the original 77.05. The size itself has to be right for EV to fully recover; frequency alone can't substitute for it.",
+          },
+          {
+            id: 'none', label: 'Stays flat — frequency correction does nothing here', quality: 'mistake',
+            feedback: "It's not zero recovery either — EV does climb meaningfully, from 71.01 to 74.10. The precise lesson isn't 'a wrong size can never be repaired at all' — it's 'a wrong size can be partially repaired by frequency, but never FULLY repaired that way.'",
+          },
+        ],
+        xp: 20,
+        remediation_ladder: [
+          {
+            id: 'wsrc-s3-remediate',
+            type: 'decision_spot',
+            concept_ids: ['size_vs_frequency_fix'],
+            narrative: "Isolating the core distinction.",
+            decision_spot_question: 'True or false: if a player chooses the wrong bet-size for a spot, there is always SOME frequency adjustment that fully restores the EV the correct size would have gotten.',
+            options: [
+              { id: 'false', label: 'False', quality: 'perfect', feedback: "Correct — 74.10, the best achievable frequency-corrected EV at the wrong size, still falls short of 77.05, the correct-size EV. Fixing frequency is fixing a symptom (the wrong-size range now bets too often relative to what it can support), not the underlying cause (the size itself doesn't fit this board)." },
+              { id: 'true', label: 'True', quality: 'mistake', feedback: 'Not true — 74.10 (the best frequency-corrected EV) still falls short of 77.05 (the correct-size EV). Adjusting frequency helps, but never fully substitutes for choosing the right size.' },
+            ],
+            xp: 8,
+          },
+        ],
+      },
+      {
+        id: 'wsrc-s4',
+        type: 'concept_reveal',
+        concept_title: 'The Reverse-Linear Pattern',
+        concept_content: `A different kind of mistake: assuming every hand WITHIN a hand class should be treated identically. On 6♠5♥4♦, BB-vs-UTG, 30bb, look at the Ace-high class in BB's donk-betting range: A9s and AQs. Naive intuition says the stronger kicker (AQs) should bet at least as often. The actual result is the precise opposite: A9s bets ${REVERSE_LINEAR_654R.weakerCombo.betFrequency}% of the time; AQs bets only ${REVERSE_LINEAR_654R.strongerCombo.betFrequency}%.`,
+        concept_note: "AQs has real showdown value here and wants POT CONTROL — keep the pot small, reach a cheap showdown, protect that value. A9s has little showdown value; its worth comes almost entirely from FOLD EQUITY, which only betting provides. A hand that needs fold equity to realize its value bets, and bets often, precisely because checking forfeits the only real source of that hand's worth.",
+        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Donk-betting Ranges — 6♠5♥4♦ (Ch.11 p.642)', type: 'source_reconstructed' },
+      },
+      {
+        id: 'wsrc-s5',
+        type: 'equity_realization',
+        concept_ids: ['reverse_linear_mechanism'],
+        narrative: 'Both hands are Ace-high, no pair, on 6♠5♥4♦ — same broad hand-strength category.',
+        equity_realization_mode: 'card_compare',
+        equity_realization_hands: [
+          { label: 'A♠9♦ (A9s)', cards: ['As', '9d'], option_id: 'a9s' },
+          { label: 'A♠Q♦ (AQs)', cards: ['As', 'Qd'], option_id: 'aqs' },
+        ],
+        equity_realization_prompt: 'Which combo bets more often in a well-constructed GTO donk-betting range?',
+        options: [
+          {
+            id: 'a9s', label: 'A♠9♦ (A9s) — the weaker kicker', quality: 'perfect',
+            feedback: "Correct — A9s bets 99% of the time versus AQs's 40%. This isn't about A9s being 'scarier.' It's about where each combo's value comes from: AQs has real showdown value and wants pot control (checking keeps most of its worth). A9s has little showdown value here — its whole case for being in this range depends on the fold equity betting provides, so it has to bet, and bet often, to realize any of its worth at all.",
+          },
+          {
+            id: 'aqs', label: 'A♠Q♦ (AQs) — the stronger kicker', quality: 'mistake',
+            feedback: "This is the natural guess, and it's exactly backward here. AQs has enough genuine showdown value to want to keep the pot small and get there cheaply — betting big and often risks that value for no good reason. A9s has much less of that value to protect, so betting is its ONLY path to realizing any value. Reread this as 'which hand NEEDS to bet to realize its value,' not 'which hand deserves to bet because it's stronger.'",
+          },
+        ],
+        xp: 20,
+        remediation_ladder: [
+          {
+            id: 'wsrc-s5-remediate',
+            type: 'decision_spot',
+            concept_ids: ['reverse_linear_mechanism'],
+            narrative: "Reframing the question. Combo X has strong showdown value and low fold-equity dependency. Combo Y has weak showdown value and high fold-equity dependency.",
+            decision_spot_question: 'Which combo loses more value by checking instead of betting — and which should therefore bet more often?',
+            options: [
+              { id: 'y', label: 'Combo Y loses more by checking, and bets more often', quality: 'perfect', feedback: "Correct. Ask 'if this hand checks instead of bets, how much value does it actually keep?' A hand with real showdown value (Combo X) keeps most of its worth even by checking. A hand with little showdown value (Combo Y) keeps almost nothing by checking, because checking forfeits the fold equity carrying almost all of its worth." },
+              { id: 'x', label: 'Combo X loses more by checking, and bets more often', quality: 'mistake', feedback: 'Backwards — Combo X (strong showdown value) keeps most of its worth even when checked. Combo Y (weak showdown value, fold-equity-dependent) loses almost everything by checking, which is exactly why IT bets more often.' },
+            ],
+            xp: 8,
+          },
+        ],
+      },
+      {
+        id: 'wsrc-s6',
+        type: 'decision_spot',
+        concept_ids: ['reverse_linear_mechanism'],
+        narrative: "A new hand class contains two combos: one with strong genuine showdown value against the current range, one with almost none.",
+        decision_spot_question: 'Without being told the specific hands, which combo bets more frequently in a well-constructed GTO strategy?',
+        options: [
+          {
+            id: 'low_showdown', label: 'The low-showdown-value combo, which needs betting for its value', quality: 'perfect',
+            feedback: "Correct — this transfers the exact mechanism from A9s/AQs, not just the memorized pair of hands. A combo with little genuine showdown value has almost nothing to lose by betting and almost everything to lose by checking (its whole case for being profitable depends on folds it won't get by staying passive). The combo with real showdown value can afford pot control instead.",
+          },
+          {
+            id: 'sounds_stronger', label: "Whichever combo 'sounds' stronger within the class", quality: 'mistake',
+            feedback: "This is exactly the naive, hand-strength-based guess this lesson exists to overturn. The driver isn't which hand sounds stronger — it's which hand's value depends on betting to be realized at all. That's frequently the WEAKER-sounding combo, not the stronger one.",
+          },
+        ],
+        xp: 18,
+      },
+      {
+        id: 'wsrc-s7',
+        type: 'concept_reveal',
+        concept_title: 'Mental Model Shift',
+        concept_structured_items: [
+          { term: 'Before this lesson', description: 'If I choose the wrong bet-size in a spot, I can just fix it later by adjusting how often I bet at that size.' },
+          { term: 'After this lesson', description: 'A wrong size is only ever partially repairable by frequency — real EV is lost the moment the wrong size is chosen, no matter how well I play from there. And even within a single hand-strength class, it\'s often the WEAKEST combo, not the strongest, that should bet the most, because value can come from fold equity instead of showdown strength.' },
+        ],
+      },
+      {
+        id: 'wsrc-s8',
+        type: 'concept_reveal',
+        concept_reveal_optional: true,
+        concept_title: 'Elite Insight',
+        concept_content: "The reverse-linear result generalizes far beyond the one donk-betting example that produced it. Whenever you're unsure how often a specific combo within a hand class should bet, stop asking 'how strong is this hand' and start asking 'how much value does this specific hand LOSE by checking instead.' A hand that keeps most of its worth even when checked doesn't need to bet as often to realize it. A hand that keeps almost none of its worth when checked needs to bet, and bet often, simply to not waste the only real source of its value. This reframing resolves a surprisingly large fraction of confusing in-range frequency questions, not just the one example that introduced it.",
+      },
+    ],
+  },
 ]
 
 // ── Derived lookup maps ───────────────────────────────────────────────────────
