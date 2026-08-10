@@ -1,9 +1,17 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { canAccessPremium, canAccessElite } from '@/lib/entitlements'
+import { isPublicSeoPath } from '@/lib/seo/routes'
 
 // Guest -> /login. Per the membership-system plan, this is now every /learn
 // route too (no more anonymous trial) — see that plan for why.
+//
+// The one exception is `/learn/<lesson-slug>`: the public, crawlable overview
+// of a lesson (app/learn/[slug]/page.tsx). It has to be reachable signed-out
+// or it cannot be indexed, while /learn, /learn/lesson/*, /learn/module/*,
+// /learn/journey and /learn/path/* stay gated. `isPublicSeoPath` — shared
+// with app/robots.ts — is the single place that split is defined, so
+// robots.txt can never advertise a URL this file redirects.
 const PROTECTED_PATHS = [
   '/dashboard', '/history', '/settings',
   '/learn', '/bankroll', '/coach', '/coaching', '/community', '/challenges', '/solver',
@@ -54,7 +62,8 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  const isProtected = PROTECTED_PATHS.some((p) => pathname.startsWith(p))
+  const isProtected =
+    PROTECTED_PATHS.some((p) => pathname.startsWith(p)) && !isPublicSeoPath(pathname)
   const isAuthPage = AUTH_PATHS.some((p) => pathname.startsWith(p))
 
   if (isProtected && !user) {
@@ -99,7 +108,10 @@ export const config = {
   // API request AND could write a refreshed token to the response cookie
   // while FastAPI still receives the original (potentially stale) Bearer
   // token — causing spurious 401s on long-lived sessions.
+  // robots.txt, the sitemaps, llms.txt and ai-sitemap.json are also excluded:
+  // they are public by definition, and running a Supabase getUser() on every
+  // crawler request would add a round trip to the files crawlers hit most.
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api/|robots\\.txt|sitemap\\.xml|sitemaps/|llms\\.txt|ai-sitemap\\.json|opengraph-image|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

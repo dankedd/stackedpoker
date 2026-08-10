@@ -1,30 +1,13 @@
 import Link from "next/link";
 import { Spade } from "lucide-react";
+import { LANDING_FOOTER_NAV } from "@/lib/seo/navigation";
 
-const LINKS = {
-  Product: [
-    { label: "Learn",         href: "/learn" },
-    { label: "Bankroll",      href: "/bankroll" },
-    { label: "Leaderboard",   href: "/leaderboard" },
-    { label: "Curriculum",    href: "/#curriculum" },
-    { label: "How It Works",  href: "/#how-it-works" },
-  ],
-  Account: [
-    { label: "Sign in",     href: "/login" },
-    { label: "Get started", href: "/signup" },
-  ],
-  Legal: [
-    { label: "Privacy Policy",    href: "/privacy" },
-    { label: "Terms of Service",  href: "/terms" },
-    { label: "Educational use",   href: "/terms#disclaimer" },
-  ],
-};
 
 export function LandingFooter() {
   return (
     <footer className="bg-[#070B14] border-t border-white/[0.05]">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-14">
-        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-5">
           {/* Brand */}
           <div className="lg:col-span-1">
             <Link href="/" className="inline-flex items-center gap-2 mb-4">
@@ -41,7 +24,7 @@ export function LandingFooter() {
           </div>
 
           {/* Link columns */}
-          {Object.entries(LINKS).map(([group, items]) => (
+          {LANDING_FOOTER_NAV.map(({ group, items }) => (
             <div key={group}>
               <p className="mb-4 text-[12px] font-semibold uppercase tracking-widest text-slate-500">
                 {group}

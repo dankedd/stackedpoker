@@ -15,6 +15,7 @@ import {
   useRecomputeOnScrollResize,
 } from "@/hooks/useAnchoredMenu";
 import { useMeasuredHeightVar } from "@/hooks/useMeasuredHeightVar";
+import { PRIMARY_NAV } from "@/lib/seo/navigation";
 import { cn } from "@/lib/utils";
 
 const DEV_MENU_W = 256; // w-64 = 16rem
@@ -37,11 +38,11 @@ interface DevNavItem {
 
 // Learn dominates. Bankroll is the one other reliable tool. Everything still
 // being rebuilt lives in the separate "in development" cluster below.
-const NAV_ITEMS: NavItem[] = [
-  { label: "Learn",       href: "/learn", primary: true },
-  { label: "Bankroll",    href: "/bankroll" },
-  { label: "Leaderboard", href: "/leaderboard" },
-];
+//
+// The list itself lives in lib/seo/navigation.ts: these links appear on every
+// page, which makes them the backbone of the internal-link graph, and the
+// orphan check reads the same source (see lib/seo/graph.ts).
+const NAV_ITEMS: NavItem[] = PRIMARY_NAV;
 
 const DEV_ITEMS: DevNavItem[] = [
   { label: "Practice", href: "/practice", status: "next" },

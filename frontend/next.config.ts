@@ -110,12 +110,24 @@ const nextConfig: NextConfig = {
       "stackedpoker.vercel.app",
       "stacked-poker.vercel.app",
     ];
-    return vercelProductionHosts.map((value) => ({
-      source: "/:path*",
-      has: [{ type: "host" as const, value }],
-      destination: "https://stackedpokerai.com/:path*",
-      permanent: true,
-    }));
+    return [
+      ...vercelProductionHosts.map((value) => ({
+        source: "/:path*",
+        has: [{ type: "host" as const, value }],
+        destination: "https://stackedpokerai.com/:path*",
+        permanent: true,
+      })),
+      // The glossary is listed as a "free tool" in the product's tool line-up,
+      // but it already lives at /glossary. Two indexable URLs about the same
+      // thing split the ranking signal for the same query, so the tool URL is
+      // a permanent redirect rather than a second page.
+      // See lib/seo/content/tools.ts.
+      {
+        source: "/tools/poker-glossary",
+        destination: "/glossary",
+        permanent: true,
+      },
+    ];
   },
 };
 

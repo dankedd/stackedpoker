@@ -8,6 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
+    "prebuild": "npm run seo:validate",
+    "seo:validate": "node scripts/run-ts.js scripts/validate-seo.ts",
+    "seo:report": "node scripts/run-ts.js scripts/seo-report.ts",
     "generate:reward-manifest": "node scripts/run-ts.js scripts/generate-reward-manifest.ts",
     "generate:curriculum-public": "node scripts/run-ts.js scripts/generateCurriculumPublic.ts",
     "generate:curriculum-access-manifest": "node scripts/run-ts.js scripts/generate-curriculum-access-manifest.ts"
