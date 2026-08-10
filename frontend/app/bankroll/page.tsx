@@ -137,42 +137,49 @@ export default async function BankrollPage() {
         <div className="relative mb-10 overflow-hidden rounded-3xl border border-violet-500/12 bg-gradient-to-br from-violet-950/40 via-background/70 to-blue-950/20 px-8 py-8 sm:px-10 animate-fade-in">
           <div aria-hidden className="pointer-events-none absolute -top-20 -left-10 h-72 w-72 rounded-full bg-violet-600/12 blur-3xl" />
           <div aria-hidden className="pointer-events-none absolute -bottom-10 right-0 h-48 w-48 rounded-full bg-blue-500/8 blur-3xl" />
-          <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-violet-400/60 mb-2">Bankroll</p>
-              <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
-                Your <span className="bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">bankroll</span>, at a glance
-              </h1>
-              <p className="text-muted-foreground mt-2 leading-relaxed max-w-xl">
-                Every deposit, session and result rolled into one running total.
-              </p>
-            </div>
-            <div className="flex flex-col items-stretch sm:items-end gap-3 shrink-0">
+          <div className="relative flex flex-col gap-6">
+            {/* Title + primary action. Stacked at every width up to `lg` (the
+                button goes full-width there, which is also what makes it
+                impossible to miss on mobile) and only sits beside the title
+                on wide screens — no shrink-0/no-wrap combination here that
+                could force this row to overflow past the hero's clipped
+                edges the way the old single sm:flex-row layout could. */}
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-violet-400/60 mb-2">Bankroll</p>
+                <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
+                  Your <span className="bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">bankroll</span>, at a glance
+                </h1>
+                <p className="text-muted-foreground mt-2 leading-relaxed max-w-xl">
+                  Every deposit, session and result rolled into one running total.
+                </p>
+              </div>
               {/* Logging a session is the single most-used action in the whole
                   bankroll section — everything else here is downstream of it —
-                  so it gets its own prominent gradient CTA, not just another
-                  nav pill among the destination links below. */}
-              <LogSessionButton className="w-full sm:w-auto justify-center" />
-              <div className="flex flex-wrap items-center gap-2">
-                {[
-                  { href: "/bankroll/wallet", label: "Wallet", icon: Wallet },
-                  { href: "/bankroll/sessions", label: "Sessions", icon: Layers },
-                  { href: "/bankroll/management", label: "Rules", icon: Settings2 },
-                  { href: "/bankroll/goals", label: "Goals", icon: Target },
-                  { href: "/bankroll/stats", label: "Stats", icon: BarChart3 },
-                  { href: "/bankroll/calendar", label: "Calendar", icon: CalendarDays },
-                  { href: "/bankroll/insights", label: "Insights", icon: Bot },
-                ].map(({ href, label, icon: Icon }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border/50 bg-card/60 text-foreground text-xs font-semibold hover:border-violet-500/40 hover:bg-card/80 transition-all"
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    {label}
-                  </Link>
-                ))}
-              </div>
+                  so it gets its own big, glowing CTA, not just another nav
+                  pill among the destination links below. */}
+              <LogSessionButton className="w-full lg:w-auto shrink-0" />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { href: "/bankroll/wallet", label: "Wallet", icon: Wallet },
+                { href: "/bankroll/sessions", label: "Sessions", icon: Layers },
+                { href: "/bankroll/management", label: "Rules", icon: Settings2 },
+                { href: "/bankroll/goals", label: "Goals", icon: Target },
+                { href: "/bankroll/stats", label: "Stats", icon: BarChart3 },
+                { href: "/bankroll/calendar", label: "Calendar", icon: CalendarDays },
+                { href: "/bankroll/insights", label: "Insights", icon: Bot },
+              ].map(({ href, label, icon: Icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border/50 bg-card/60 text-foreground text-xs font-semibold hover:border-violet-500/40 hover:bg-card/80 transition-all"
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {label}
+                </Link>
+              ))}
             </div>
           </div>
         </div>
