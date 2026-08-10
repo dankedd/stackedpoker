@@ -208,8 +208,17 @@ export interface LessonStep {
   rake_pct?: number
   /** Number of players still left to act behind Hero (preflop RFI context). */
   players_behind?: number
-  /** Action already taken before Hero, in order, e.g. ["UTG folds", "HJ folds"]. */
+  /** Action already taken before Hero, in order, e.g. ["UTG folds", "HJ folds"].
+   *  On a postflop step this is the PREFLOP history only — whatever built the
+   *  pot. Current-street action belongs in `postflop_action`. */
   action_before_hero?: string[]
+  /** Action on the CURRENT street, in order, e.g. ["BB checks"] or
+   *  ["BB bets 3bb"]. Postflop steps only. Kept separate from
+   *  `action_before_hero` because the street boundary decides which chips are
+   *  already in the pot and which are still in front of a seat — a distinction
+   *  no parser can safely infer from one flat list, so it is always authored.
+   *  See `postflopTableState.ts`. */
+  postflop_action?: string[]
   /** Which canonical chart family the post-answer range reveal (see `DecisionSpotRangeReveal`)
    *  should resolve `hero_position`/`villain_position`/`hero_hand`/`effective_stack_bb` against.
    *  Omit (or `'defend'`) for the original Module 5 behavior — Hero as the one facing an open,
