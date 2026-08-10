@@ -4,7 +4,7 @@ import Script from "next/script";
 // public (it ends up in the rendered page source for every visitor
 // regardless), so there's no need to route it through an env var the way
 // NEXT_PUBLIC_SUPABASE_URL/NEXT_PUBLIC_API_URL are.
-const GA_MEASUREMENT_ID = "G-6X2VJBQDCG";
+const GA_MEASUREMENT_ID = "G-73F5D7609C";
 
 /**
  * Google Analytics 4, loaded the official Next.js way (two next/script tags,
