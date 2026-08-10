@@ -1017,17 +1017,6 @@ export interface LessonStep {
   /** Tolerance band for the learner's own minimum-bet-size entry, as a fraction (default 0.05). */
   river_calc_tolerance?: number
 
-  // Capstone (Module 12, Lesson 10) — per-street design submission (sizing choice + principle
-  // citation + any required computed numbers), graded via a combined-key resolver generalizing
-  // cbet_frequency_size's own `${a}|${b}` precedent to 3 streets. Authored once, this lesson only.
-  capstone_streets?: {
-    street: 'flop' | 'turn' | 'river'
-    boardOrCase: string
-    requiredPrinciple: string
-    /** The specific sizing-direction option ids this street's submission is graded against. */
-    options: StepOption[]
-  }[]
-
   // Visual
   visual?: 'table' | 'range_grid' | 'equity_bar' | 'heatmap' | 'pressure_chart'
   /** Overrides the default 3-example carousel shown by the 'equity_bar' visual, so a

@@ -21,6 +21,16 @@ import {
   TOY_GAMES_A_TO_E_SOURCE,
   SPR_TABLE_90,
   SPR_TABLE_90_SOURCE,
+  J22_SIZING_MISTAKE,
+  J22_SIZING_MISTAKE_SOURCE,
+  REVERSE_LINEAR_654R,
+  REVERSE_LINEAR_654R_SOURCE,
+  BOARD_GALLERY,
+  BOARD_GALLERY_SOURCE,
+  TRAP_CURVE_DATA,
+  TRAP_CURVE_DATA_SOURCE,
+  CAPSTONE_SCENARIO,
+  CAPSTONE_SCENARIO_SOURCE,
   MISCONCEPTION_BY_CONCEPT_ID,
   MENTAL_MODEL_AUDIT,
 } from '../module12Content'
@@ -173,7 +183,98 @@ describe('SPR_TABLE_90 — the four SPR bands (Ch.10 pp.609-610)', () => {
   })
 })
 
-describe('MISCONCEPTION_BY_CONCEPT_ID — every Lesson 1-5 concept_id used by this phase has a traceability entry', () => {
+describe('J22_SIZING_MISTAKE (Lesson 7) — three exact, book-cited EV figures', () => {
+  it('has a valid source classification', () => {
+    expect(VALID_TYPES).toContain(J22_SIZING_MISTAKE_SOURCE.type)
+  })
+  it('correct min-bet line beats the wrong-size unchanged-frequency line, which is worse than the corrected-frequency line', () => {
+    expect(J22_SIZING_MISTAKE.correct.ev).toBe(77.05)
+    expect(J22_SIZING_MISTAKE.wrongSizeUnchangedFrequency.ev).toBe(71.01)
+    expect(J22_SIZING_MISTAKE.wrongSizeCorrectedFrequency.ev).toBe(74.10)
+    // Partial recovery, never full: unchanged < corrected < correct.
+    expect(J22_SIZING_MISTAKE.wrongSizeUnchangedFrequency.ev).toBeLessThan(J22_SIZING_MISTAKE.wrongSizeCorrectedFrequency.ev)
+    expect(J22_SIZING_MISTAKE.wrongSizeCorrectedFrequency.ev).toBeLessThan(J22_SIZING_MISTAKE.correct.ev)
+  })
+})
+
+describe('REVERSE_LINEAR_654R (Lesson 7) — the weaker combo bets far more often', () => {
+  it('has a valid source classification', () => {
+    expect(VALID_TYPES).toContain(REVERSE_LINEAR_654R_SOURCE.type)
+  })
+  it('A9s (little showdown value) bets far more often than AQs (real showdown value)', () => {
+    expect(REVERSE_LINEAR_654R.weakerCombo.hand).toBe('A9s')
+    expect(REVERSE_LINEAR_654R.weakerCombo.betFrequency).toBe(99)
+    expect(REVERSE_LINEAR_654R.strongerCombo.hand).toBe('AQs')
+    expect(REVERSE_LINEAR_654R.strongerCombo.betFrequency).toBe(40)
+    expect(REVERSE_LINEAR_654R.weakerCombo.betFrequency).toBeGreaterThan(REVERSE_LINEAR_654R.strongerCombo.betFrequency)
+  })
+})
+
+describe('BOARD_GALLERY (Lesson 8) — every entry has real evidence, no invented 4-bucket data', () => {
+  it('has a valid source classification', () => {
+    expect(VALID_TYPES).toContain(BOARD_GALLERY_SOURCE.type)
+  })
+  it('covers all four categories: structure, texture, donk_tier, turn_shift', () => {
+    const categories = new Set(BOARD_GALLERY.map((b) => b.category))
+    expect(categories).toEqual(new Set(['structure', 'texture', 'donk_tier', 'turn_shift']))
+  })
+  it('every entry has a non-empty evidence citation and a 3-card board', () => {
+    for (const b of BOARD_GALLERY) {
+      expect(b.evidence.length, b.id).toBeGreaterThan(20)
+      expect(b.board.length, b.id).toBe(3)
+    }
+  })
+  it('monotone predicts small sizing; trips/two-tone/rainbow predict large — the misconception-correcting core of Lesson 8', () => {
+    const monotone = BOARD_GALLERY.find((b) => b.id === 'monotone')
+    const rainbow = BOARD_GALLERY.find((b) => b.id === 'rainbow')
+    expect(monotone?.direction).toBe('small')
+    expect(rainbow?.direction).toBe('large')
+  })
+  it('two-tone is the only entry carrying exact Strong-bucket percentages (24% vs 5%), and no entry invents the other 3 buckets', () => {
+    const twoTone = BOARD_GALLERY.find((b) => b.id === 'two_tone')
+    expect(twoTone?.heroStrongPct).toBe(24)
+    expect(twoTone?.villainStrongPct).toBe(5)
+    // No entry has a `good`/`weak`/`trash` field at all (the whole point of this data shape).
+    for (const b of BOARD_GALLERY) {
+      expect(b).not.toHaveProperty('heroGoodPct')
+      expect(b).not.toHaveProperty('heroWeakPct')
+      expect(b).not.toHaveProperty('heroTrashPct')
+    }
+  })
+})
+
+describe('TRAP_CURVE_DATA (Lesson 9) — Diagrams 132-133\'s cited anchor points, never interpolated', () => {
+  it('has a valid source classification', () => {
+    expect(VALID_TYPES).toContain(TRAP_CURVE_DATA_SOURCE.type)
+  })
+  it('no-traps curve rises to 90% by 4x pot and 95% by 10x pot', () => {
+    const points = TRAP_CURVE_DATA.noTraps.points
+    expect(points.find((p) => p.betSizeMultiple === 4)?.evPctOfPot).toBe(90)
+    expect(points.find((p) => p.betSizeMultiple === 10)?.evPctOfPot).toBe(95)
+  })
+  it('10%-traps curve is flagged as declining, and its peak SPR is the book\'s own cited 1.25 — no invented peak EV value', () => {
+    expect(TRAP_CURVE_DATA.tenPctTraps.shape).toBe('rises then declines')
+    expect(TRAP_CURVE_DATA.tenPctTraps.peakSPR).toBe(1.25)
+    // The peak EV itself is never stated — only anchor points the book actually gives.
+    expect(TRAP_CURVE_DATA.tenPctTraps.points.every((p) => p.betSizeMultiple === 0)).toBe(true)
+  })
+})
+
+describe('CAPSTONE_SCENARIO (Lesson 10) — explicitly pedagogical_model, at a stack depth used nowhere else', () => {
+  it('is labeled pedagogical_model, not source/source_reconstructed — this hand is Module 12\'s own construction', () => {
+    expect(CAPSTONE_SCENARIO_SOURCE.type).toBe('pedagogical_model')
+  })
+  it('uses 25bb effective — a stack depth no other Module 12 lesson uses, by design', () => {
+    expect(CAPSTONE_SCENARIO.effectiveStackBb).toBe(25)
+  })
+  it('spans all three streets, each citing a real Module 12/11 principle', () => {
+    expect(CAPSTONE_SCENARIO.flop.principle).toMatch(/Lesson 8/)
+    expect(CAPSTONE_SCENARIO.turn.principle).toMatch(/Module 11|Lesson 5/)
+    expect(CAPSTONE_SCENARIO.river.principle).toMatch(/Lesson 9/)
+  })
+})
+
+describe('MISCONCEPTION_BY_CONCEPT_ID — every Lesson 1-10 concept_id used by Module 12 has a traceability entry', () => {
   it.each([
     'sizing_as_action_abstraction',
     'alpha_size_dependence',
@@ -181,14 +282,21 @@ describe('MISCONCEPTION_BY_CONCEPT_ID — every Lesson 1-5 concept_id used by th
     'simplification_ev_cost',
     'one_size_fits_board_caveat',
     'polarization_sizing_direction',
+    'geometric_sizing_formula',
+    'size_vs_frequency_fix',
+    'reverse_linear_mechanism',
+    'monotone_board_sizing',
+    'minimum_bet_formula',
+    'trap_cap_mechanism',
+    'capstone_synthesis',
   ])('%s is present and non-empty', (id) => {
     expect(MISCONCEPTION_BY_CONCEPT_ID[id]).toBeTruthy()
   })
 })
 
-describe('MENTAL_MODEL_AUDIT — Lessons 1-5 each have exactly one Before/After row, referencing a real conceptId', () => {
-  it('covers lessons 1 through 5, in order, no duplicates', () => {
-    expect(MENTAL_MODEL_AUDIT.map((r) => r.lesson)).toEqual([1, 2, 3, 4, 5])
+describe('MENTAL_MODEL_AUDIT — Lessons 1-10 each have exactly one Before/After row, referencing a real conceptId', () => {
+  it('covers lessons 1 through 10, in order, no duplicates', () => {
+    expect(MENTAL_MODEL_AUDIT.map((r) => r.lesson)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
   })
 
   it('every row\'s conceptId is a real, traceable entry in MISCONCEPTION_BY_CONCEPT_ID', () => {

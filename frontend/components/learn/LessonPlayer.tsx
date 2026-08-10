@@ -23,6 +23,8 @@ import { ClassifyStep } from '@/components/learn/steps/ClassifyStep'
 import { BetSizeSlider } from '@/components/learn/steps/BetSizeSlider'
 import { MdfSlider } from '@/components/learn/steps/MdfSlider'
 import { RangeCompressionToggle } from '@/components/learn/steps/RangeCompressionToggle'
+import { GeometricBetLadder } from '@/components/learn/steps/GeometricBetLadder'
+import { RiverSizingCalculator } from '@/components/learn/steps/RiverSizingCalculator'
 import { ScenarioTree } from '@/components/learn/steps/ScenarioTree'
 import { RangeHeatmap } from '@/components/learn/steps/RangeHeatmap'
 import { PositionTable } from '@/components/learn/steps/PositionTable'
@@ -248,6 +250,14 @@ function StepRenderer({
 
   if (step.type === 'range_compression_toggle') {
     return <RangeCompressionToggle step={step} onAnswer={(id, ms) => evaluate(id, ms)} />
+  }
+
+  if (step.type === 'geometric_bet_ladder') {
+    return <GeometricBetLadder step={step} onAnswer={(response, ms) => evaluate(response, ms)} />
+  }
+
+  if (step.type === 'river_sizing_calculator') {
+    return <RiverSizingCalculator step={step} onAnswer={(response, ms) => evaluate(response, ms)} />
   }
 
   if (step.type === 'scenario_tree') {
