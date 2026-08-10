@@ -84,6 +84,8 @@ export type StepType =
   | 'unilateral_deviation_test' // "can this player improve by changing strategy alone?" — the Nash-equilibrium test, one player at a time
   // ── The Language of Bet Sizing (Module 12) ──────────────────────────────────
   | 'range_compression_toggle' // toggle across N authored raise-pressure states over one range (PokerRangeGrid 'strategy' mode), each with an EV readout
+  | 'geometric_bet_ladder'     // constructs the multi-street geometric bet-sizing sequence from a starting pot/effective stack/street count
+  | 'river_sizing_calculator'  // minimum-bet-to-deny-equity slider + trap-capped EV curve (accessible data table by default)
 
 export type ActionQuality = 'perfect' | 'good' | 'acceptable' | 'mistake' | 'punt'
 export type LessonType = 'micro' | 'range_trainer' | 'puzzle_drill' | 'concept_reveal' | 'simulation'
@@ -989,6 +991,42 @@ export interface LessonStep {
     evLabel: string
   }[]
   range_compression_toggle_prompt?: string
+
+  // Geometric Bet Ladder (Module 12, Lesson 6) — constructs the multi-street geometric
+  // bet-sizing sequence (Ch.10 pp.612-614) from a starting pot, effective (remaining-behind)
+  // stack, and street count, using gameTheoryEngine.ts's geometricBetSizing() live — no
+  // authored numeric answer key, the formula computes it, matching pot_odds_explorer's own
+  // "computed, not authored" precedent.
+  geometric_ladder_starting_pot?: number
+  geometric_ladder_effective_stack?: number
+  geometric_ladder_streets?: number
+  geometric_ladder_prompt?: string
+  /** Tolerance band for the learner's own R/bet-fraction entry, as a fraction (default 0.05 = 5%). */
+  geometric_ladder_tolerance?: number
+
+  // River Sizing Calculator (Module 12, Lesson 9) — minimum-bet-to-deny-equity slider
+  // (gameTheoryEngine.ts's minimumBetToDenyEquity(), live) + the trap-capped EV curve
+  // (module12Content.ts's TRAP_CURVE_DATA, a static, non-interpolated lookup — never a formula,
+  // since the book attributes the full trap-adjusted formula to Tipton and doesn't reproduce it).
+  river_calc_opponent_equity_pct?: number
+  /** Only 0 | 10 are meaningfully supported — TRAP_CURVE_DATA only carries the book's own two
+   *  cited curves. 20 is accepted as a qualitative "more traps than 10%" state (Item 3's transfer
+   *  question) but renders no dedicated curve data of its own. */
+  river_calc_trap_pct?: 0 | 10 | 20
+  river_calc_prompt?: string
+  /** Tolerance band for the learner's own minimum-bet-size entry, as a fraction (default 0.05). */
+  river_calc_tolerance?: number
+
+  // Capstone (Module 12, Lesson 10) — per-street design submission (sizing choice + principle
+  // citation + any required computed numbers), graded via a combined-key resolver generalizing
+  // cbet_frequency_size's own `${a}|${b}` precedent to 3 streets. Authored once, this lesson only.
+  capstone_streets?: {
+    street: 'flop' | 'turn' | 'river'
+    boardOrCase: string
+    requiredPrinciple: string
+    /** The specific sizing-direction option ids this street's submission is graded against. */
+    options: StepOption[]
+  }[]
 
   // Visual
   visual?: 'table' | 'range_grid' | 'equity_bar' | 'heatmap' | 'pressure_chart'
