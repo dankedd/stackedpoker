@@ -231,10 +231,20 @@ const BTN_VS_HJ_60BB_ENTRIES: [string, DefendResponseAction][] = [
 
 // ── BTN vs CO (60bb) ───────────────────────────────────────────────────────────
 // Source: Ch.8 "Defending the BN" (60bb) — 3-bet 11.5% / Call 16.9% / Fold 71.6%.
+// CORRECTION: AJs, KTo and QTo were originally missing entirely (silently
+// rendering as Fold) despite sitting strictly between two already-included,
+// non-fold neighbors in the same suited/offsuit-by-kicker family (AQs call /
+// ATs 3bet bracketing AJs; KJo 3bet / K9o call bracketing KTo; QJo 3bet / Q9o
+// call bracketing QTo) — a hand-strength-order gap, not an intentional
+// exclusion (confirmed via a repo-wide monotonicity sweep across every chart
+// in this file). Filled to the stronger of their two bracketing neighbors'
+// actions where that's the book-consistent "value broadway" reading (AJs ->
+// 3bet, alongside ATs/KJs/KTs), or the weaker/more conservative one where no
+// stronger claim is book-supported (KTo/QTo -> call, matching K9o/Q9o).
 const BTN_VS_CO_60BB_ENTRIES: [string, DefendResponseAction][] = [
   ['AA', '3bet'], ['KK', '3bet'], ['QQ', '3bet'], ['JJ', '3bet'], ['TT', '3bet'], ['99', '3bet'], ['88', '3bet'], ['77', '3bet'], ['66', '3bet'],
   ['AKs', '3bet'], ['AKo', '3bet'],
-  ['A9s', '3bet'], ['A8s', '3bet'], ['A5s', '3bet'], ['A4s', '3bet'], ['A3s', '3bet'], ['A2s', '3bet'],
+  ['A9s', '3bet'], ['A8s', '3bet'], ['AJs', '3bet'], ['A5s', '3bet'], ['A4s', '3bet'], ['A3s', '3bet'], ['A2s', '3bet'],
   ['KQs', '3bet'], ['KJs', '3bet'], ['KTs', '3bet'],
   ['QJs', '3bet'],
   ['ATs', '3bet'], ['JTs', '3bet'],
@@ -246,8 +256,8 @@ const BTN_VS_CO_60BB_ENTRIES: [string, DefendResponseAction][] = [
   ['J9s', 'call'], ['J8s', 'call'],
   ['T9s', 'call'], ['T8s', 'call'], ['98s', 'call'], ['87s', 'call'], ['76s', 'call'], ['65s', 'call'], ['54s', 'call'],
   ['AQo', 'call'], ['ATo', 'call'], ['A9o', 'call'], ['A8o', 'call'], ['A7o', 'call'],
-  ['KJo', 'call'], ['K9o', 'call'], ['K8o', 'call'],
-  ['Q9o', 'call'],
+  ['KJo', 'call'], ['KTo', 'call'], ['K9o', 'call'], ['K8o', 'call'],
+  ['QTo', 'call'], ['Q9o', 'call'],
   ['JTo', 'call'], ['T9o', 'call'],
 ]
 
@@ -261,12 +271,34 @@ const BTN_VS_CO_60BB_ENTRIES: [string, DefendResponseAction][] = [
 // SB prose) a flat leaves the BB live to squeeze and SB is OOP for the rest
 // of the hand — SB leans on 3-betting/jamming, not calling, far more than any
 // other defender in this file.
+// KNOWN LIMITATION (SB_VS_UTG/HJ/CO_60BB and SB_VS_BTN_25/40BB below): even
+// after the A6s-A9s correction, these five extrapolated charts' own
+// combo-weighted totals still run noticeably under their `aggregate` targets
+// (confirmed via scripts/verifyChartAggregates.ts) — e.g. SB_vs_UTG_60BB
+// computes ~4.4%/4.7% against a stated 8%/6% target. This predates today's
+// fix; it was not introduced by it and the fix does not paper over it. Closing
+// that gap honestly would mean adding many more individual hand judgment
+// calls with no book-named anchor for most of them — exactly the "don't
+// invent a range from an aggregate % alone" risk this file's own header
+// warns against — so it is flagged here as a real, separate follow-up rather
+// than either silently left as a misleading "close to the aggregate" claim
+// or papered over with invented hands. SB_VS_BTN_60BB (the one directly
+// book-stated chart) and HJ_VS_LJ_60BB do NOT have this problem.
+// CORRECTION (all three charts below): A6s-A9s were originally missing
+// entirely from each of these three extrapolated charts (silently rendering
+// as Fold) despite sitting strictly between two already-included, non-fold
+// neighbors in the same suited-Ax family — a hand-strength-order gap, not an
+// intentional exclusion (confirmed via a repo-wide monotonicity sweep). The
+// one directly BOOK-STATED SB chart in this file, SB_VS_BTN_60BB_ENTRIES
+// below, has no such gap: it runs A9s(3bet)/A8s-A6s(call)/A5s-A2s(3bet)
+// fully contiguously. Filled here to match that same confirmed, book-stated
+// shape rather than inventing a new one.
 const SB_VS_UTG_60BB_ENTRIES: [string, DefendResponseAction][] = [
   ['AA', '3bet'], ['KK', '3bet'], ['QQ', '3bet'], ['JJ', '3bet'], ['TT', '3bet'],
   ['AKs', '3bet'], ['AKo', '3bet'], ['AQs', '3bet'],
   ['A5s', '3bet'], ['A4s', '3bet'],
   ['99', 'call'], ['88', 'call'], ['77', 'call'],
-  ['AJs', 'call'], ['ATs', 'call'],
+  ['AJs', 'call'], ['ATs', 'call'], ['A9s', 'call'], ['A8s', 'call'], ['A7s', 'call'], ['A6s', 'call'],
   ['KQs', 'call'],
   ['JTs', 'call'],
   ['AQo', 'call'],
@@ -278,7 +310,7 @@ const SB_VS_HJ_60BB_ENTRIES: [string, DefendResponseAction][] = [
   ['A5s', '3bet'], ['A4s', '3bet'], ['A3s', '3bet'],
   ['KQs', '3bet'],
   ['88', 'call'], ['77', 'call'], ['66', 'call'],
-  ['ATs', 'call'], ['A9s', 'call'],
+  ['ATs', 'call'], ['A9s', 'call'], ['A8s', 'call'], ['A7s', 'call'], ['A6s', 'call'],
   ['KJs', 'call'], ['KTs', 'call'],
   ['JTs', 'call'],
   ['AQo', 'call'], ['AJo', 'call'],
@@ -291,7 +323,7 @@ const SB_VS_CO_60BB_ENTRIES: [string, DefendResponseAction][] = [
   ['KQs', '3bet'], ['KJs', '3bet'],
   ['AQo', '3bet'],
   ['77', 'call'], ['66', 'call'], ['55', 'call'],
-  ['A9s', 'call'], ['A8s', 'call'],
+  ['A9s', 'call'], ['A8s', 'call'], ['A7s', 'call'], ['A6s', 'call'],
   ['KTs', 'call'], ['K9s', 'call'],
   ['QJs', 'call'],
   ['JTs', 'call'], ['T9s', 'call'],
@@ -331,7 +363,7 @@ const SB_VS_BTN_15BB_ENTRIES: [string, DefendResponseAction][] = [
 const SB_VS_BTN_25BB_ENTRIES: [string, DefendResponseAction][] = [
   ['AA', 'jam'], ['KK', 'jam'], ['QQ', 'jam'], ['JJ', 'jam'], ['TT', 'jam'], ['99', 'jam'], ['88', 'jam'], ['77', 'jam'], ['66', 'jam'], ['55', 'jam'],
   ['AKs', 'jam'], ['AKo', 'jam'], ['AQs', 'jam'], ['AQo', 'jam'], ['AJs', 'jam'], ['ATs', 'jam'],
-  ['A9s', 'jam'], ['A8s', 'jam'], ['A5s', 'jam'], ['A4s', 'jam'], ['A3s', 'jam'], ['A2s', 'jam'],
+  ['A9s', 'jam'], ['A8s', 'jam'], ['A7s', 'jam'], ['A6s', 'jam'], ['A5s', 'jam'], ['A4s', 'jam'], ['A3s', 'jam'], ['A2s', 'jam'],
   ['KQs', 'jam'], ['KJs', 'jam'],
   ['44', 'call'], ['33', 'call'], ['22', 'call'],
   ['AJo', 'call'], ['ATo', 'call'], ['KTs', 'call'], ['K9s', 'call'],
@@ -345,7 +377,7 @@ const SB_VS_BTN_40BB_ENTRIES: [string, DefendResponseAction][] = [
   ['KQs', '3bet'], ['KJs', '3bet'],
   ['AQo', '3bet'],
   ['77', 'call'], ['66', 'call'], ['55', 'call'], ['44', 'call'], ['33', 'call'], ['22', 'call'],
-  ['A8s', 'call'], ['A7s', 'call'], ['A2s', 'call'],
+  ['A8s', 'call'], ['A7s', 'call'], ['A6s', 'call'], ['A2s', 'call'],
   ['KTs', 'call'], ['K9s', 'call'],
   ['QJs', 'call'], ['QTs', 'call'],
   ['JTs', 'call'], ['T9s', 'call'], ['98s', 'call'], ['87s', 'call'], ['76s', 'call'], ['65s', 'call'],
@@ -368,8 +400,11 @@ const SB_VS_BTN_40BB_ENTRIES: [string, DefendResponseAction][] = [
 // width goes into 3-betting, not calling -- its calling aggregate (8.8%) is
 // actually LOWER than UTG's (9.3%) -- so hands moved into the 3-bet bucket
 // here are simply not re-added to calling, rather than widening both.
-// 3-bet 96 combos (7.24%), call 106 combos (7.99%) -- close to, not exactly
+// 3-bet 96 combos (7.24%), call 114 combos (8.60%) -- close to, not exactly
 // on, the book's 7.4%/8.8% (same calibration discipline as every chart here).
+// (A4s/A3s corrected to 'call', joining A2s, rather than left as an
+// unassigned gap between the A5s 3-bet and A2s call -- see the repo-wide
+// monotonicity sweep that caught this across several charts in this file.)
 const HJ_VS_LJ_60BB_ENTRIES: [string, DefendResponseAction][] = [
   ['AA', '3bet'], ['KK', '3bet'], ['QQ', '3bet'], ['JJ', '3bet'], ['TT', '3bet'], ['99', '3bet'],
   ['AKs', '3bet'], ['AKo', '3bet'],
@@ -377,7 +412,7 @@ const HJ_VS_LJ_60BB_ENTRIES: [string, DefendResponseAction][] = [
   ['KQs', '3bet'], ['KQo', '3bet'],
   ['KJs', '3bet'], ['KTs', '3bet'],
   ['88', 'call'], ['77', 'call'], ['66', 'call'], ['55', 'call'], ['44', 'call'], ['33', 'call'], ['22', 'call'],
-  ['AQs', 'call'], ['AJs', 'call'], ['ATs', 'call'], ['A2s', 'call'],
+  ['AQs', 'call'], ['AJs', 'call'], ['ATs', 'call'], ['A4s', 'call'], ['A3s', 'call'], ['A2s', 'call'],
   ['QJs', 'call'], ['QTs', 'call'],
   ['JTs', 'call'],
   ['T9s', 'call'], ['98s', 'call'], ['87s', 'call'],
