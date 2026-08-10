@@ -144,6 +144,18 @@ export interface ChipStackProps {
    *  omitted/false renders exactly as before (resting position, no transition). */
   animateIn?: boolean
   travelDurationMs?: number
+  /** Mobile: the already-resolved resting position, in container percentages.
+   *  When supplied it wins outright — `pullFactor`/`protectedZone` are not
+   *  consulted, because the caller placed this chip on its own geometry band
+   *  rather than by pulling it along the seat→center ray. Desktop omits it and
+   *  keeps the original ray-and-clamp placement byte for byte. */
+  at?: { x: string; y: string }
+  /** Mobile: this seat's action verb (OPEN / 3-BET / CALL …), rendered BENEATH
+   *  the amount instead of in the seat's own rail pod. On a phone the pod sits
+   *  outside the rail where a third line would either collide with a
+   *  neighbouring seat or run off the container; attached to the chip it stays
+   *  next to the thing it describes and inside the felt. */
+  actionLabel?: string
 }
 
 /** A small 2-chip pile (a diagonal overlap, not a flat stack) plus the
@@ -161,6 +173,8 @@ export function ChipStack({
   sizePx,
   animateIn = false,
   travelDurationMs = 450,
+  at,
+  actionLabel,
 }: ChipStackProps) {
   const [settled, setSettled] = useState(!animateIn)
 
@@ -175,11 +189,18 @@ export function ChipStack({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animateIn, x, y])
 
-  const pos = towardCenter(x, y, settled ? pullFactor : 0, protectedZone)
+  // `at` is the resolved mobile band position. The seat point stays the
+  // travel-in ORIGIN on both layouts, so the chip animation reads identically.
+  const resting = at
+    ? { left: at.x, top: at.y }
+    : towardCenter(x, y, pullFactor, protectedZone)
+  const origin = at ? { left: x, top: y } : towardCenter(x, y, 0, protectedZone)
+  const pos = settled ? resting : origin
   const spread = Math.max(3, Math.round(sizePx * 0.22))
 
   return (
     <div
+      data-tt="chip"
       className="absolute z-20 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-[2px]"
       style={{
         left: pos.left,
@@ -199,6 +220,11 @@ export function ChipStack({
       >
         {formatBb(amount)}
       </span>
+      {actionLabel && (
+        <span className="text-[9px] font-bold uppercase leading-none tracking-wide whitespace-nowrap text-sky-300/90">
+          {actionLabel}
+        </span>
+      )}
     </div>
   )
 }

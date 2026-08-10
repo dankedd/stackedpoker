@@ -602,9 +602,16 @@
 
 /* ── Puzzle: seat-level action pill entrance ──────────────────── */
 
+/* The only element that carries this class is the seat's position label, which
+   is centered on its rail anchor with `-translate-x-1/2 -translate-y-1/2`.
+   A keyframe that sets bare `translateY` REPLACES that centering transform —
+   and with `forwards` it does so permanently — dropping the label half its own
+   width to the right and half its height down the moment its seat acts. On the
+   mobile table that is enough to push a label onto its neighbour's chip. So the
+   centering is restated in both keyframes and the entrance rides on top of it. */
 @keyframes seat-action-in {
-  from { opacity: 0; transform: translateY(-3px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translate(-50%, calc(-50% - 3px)); }
+  to   { opacity: 1; transform: translate(-50%, -50%); }
 }
 
 .animate-seat-action-in {

@@ -1,9 +1,14 @@
 import { describe, it, expect } from 'vitest'
+import { renderToStaticMarkup } from 'react-dom/server'
 import {
   computeHeroRotatedSeats,
   railCenterlinePoint,
+  bandPoint,
+  pushOutOfZone,
   DESKTOP_LAYOUT,
   MOBILE_LAYOUT,
+  NARROW_MOBILE_LAYOUT,
+  PreflopTable,
 } from '../PreflopTable'
 
 // PreflopTable itself always renders desktop-shaped markup in these node-environment
@@ -36,11 +41,28 @@ describe('mobile layout config — a dedicated map, not a scaled-down desktop', 
     expect(mw / mh).toBeLessThan(1)
   })
 
-  it('mobile keeps the same 2.5-unit rail-thickness spacing as desktop', () => {
+  it('keeps a real rail band between the seat ring and the felt on both breakpoints', () => {
     expect(DESKTOP_LAYOUT.ellipseRadius - DESKTOP_LAYOUT.railOuterRadius).toBe(2.5)
     expect(DESKTOP_LAYOUT.railOuterRadius - DESKTOP_LAYOUT.railInnerRadius).toBe(2.5)
-    expect(MOBILE_LAYOUT.ellipseRadius - MOBILE_LAYOUT.railOuterRadius).toBe(2)
-    expect(MOBILE_LAYOUT.railOuterRadius - MOBILE_LAYOUT.railInnerRadius).toBe(2.5)
+    // Mobile's rail sits further out than it used to: once seat pods moved to
+    // their own outer band, the felt could expand into the dark margin that the
+    // old rail left behind. The band itself is still a band, which is what this
+    // guards — its exact thickness is a visual-tuning value, not a contract.
+    expect(MOBILE_LAYOUT.ellipseRadius - MOBILE_LAYOUT.railOuterRadius).toBeGreaterThan(0)
+    expect(MOBILE_LAYOUT.railOuterRadius - MOBILE_LAYOUT.railInnerRadius).toBeGreaterThan(0)
+  })
+
+  it('keeps every seat pod off the felt and every chip on it', () => {
+    const bands = MOBILE_LAYOUT.bands!
+    // The redesign rests on these rings never crossing: seat pods outside the
+    // felt (on the rail, where a name plate belongs), chips on the felt, and a
+    // clear radial gap between the two so no amount of label text can reach a
+    // chip. Pods ride the rail rather than clearing it entirely — at the top
+    // and bottom of the ellipse there is no room to sit further out and still
+    // fit the pod's second row inside the container.
+    expect(Math.min(bands.label.rx, bands.label.ry)).toBeGreaterThan(MOBILE_LAYOUT.railInnerRadius)
+    expect(Math.max(bands.chip.rx, bands.chip.ry)).toBeLessThan(MOBILE_LAYOUT.railInnerRadius)
+    expect(Math.min(bands.label.rx, bands.label.ry) - Math.max(bands.chip.rx, bands.chip.ry)).toBeGreaterThanOrEqual(8)
   })
 })
 
@@ -72,6 +94,82 @@ describe('computeHeroRotatedSeats — mobile radius produces a smaller, still-sy
       const my = Math.abs(parseFloat(mobileSeats[i].y) - 50)
       expect(mx).toBeLessThanOrEqual(dx + 0.01)
       expect(my).toBeLessThanOrEqual(dy + 0.01)
+    }
+  })
+})
+
+describe('bandPoint — the mobile placement rings', () => {
+  it('is a plain ellipse at exponent 2, so the default matches the old behaviour', () => {
+    const p = bandPoint(1, 8, 40, 30, 0, 2)
+    const angle = (2 * Math.PI) / 8
+    expect(parseFloat(p.x)).toBeCloseTo(50 - 40 * Math.sin(angle), 1)
+    expect(parseFloat(p.y)).toBeCloseTo(50 + 30 * Math.cos(angle), 1)
+  })
+
+  it('pushes DIAGONAL seats outward at a higher exponent but leaves the four axis seats put', () => {
+    // Slot 0 is bottom-center — dead on an axis, so squaring the band off must
+    // not move it (that is where the container edge, not the felt, is binding).
+    const bottomEllipse = bandPoint(0, 8, 42, 37, 0, 2)
+    const bottomSquircle = bandPoint(0, 8, 42, 37, 0, 4)
+    expect(bottomSquircle.y).toBe(bottomEllipse.y)
+
+    // Slot 1 is a 45° diagonal — the cramped seat the exponent exists for.
+    const diagEllipse = bandPoint(1, 8, 42, 37, 0, 2)
+    const diagSquircle = bandPoint(1, 8, 42, 37, 0, 4)
+    expect(Math.abs(parseFloat(diagSquircle.x) - 50)).toBeGreaterThan(
+      Math.abs(parseFloat(diagEllipse.x) - 50),
+    )
+    expect(Math.abs(parseFloat(diagSquircle.y) - 50)).toBeGreaterThan(
+      Math.abs(parseFloat(diagEllipse.y) - 50),
+    )
+  })
+})
+
+describe('pushOutOfZone — chips never sit on the pot or Hero cards', () => {
+  const zone = { cxPct: 50, cyPct: 50, halfWidthPct: 20, halfHeightPct: 20 }
+
+  it('leaves a point that is already clear exactly where it is', () => {
+    const p = pushOutOfZone('10.00%', '50.00%', zone, 3)
+    expect(p).toEqual({ x: '10.00%', y: '50.00%' })
+  })
+
+  it('moves an intruding point out to the boundary WITHOUT crossing the table center', () => {
+    // A chip must stay on its own player's side — shoving it through the middle
+    // would read as somebody else's bet.
+    const p = pushOutOfZone('45.00%', '58.00%', zone, 3)
+    expect(parseFloat(p.x)).toBeLessThan(50)
+    expect(parseFloat(p.y)).toBeGreaterThan(50)
+    const escaped =
+      Math.abs(parseFloat(p.x) - 50) >= 23 - 0.01 || Math.abs(parseFloat(p.y) - 50) >= 23 - 0.01
+    expect(escaped).toBe(true)
+  })
+})
+
+describe('narrow phones (<360px) drop a card tier rather than overlapping', () => {
+  it('keeps every other dimension identical to the standard mobile layout', () => {
+    expect(NARROW_MOBILE_LAYOUT.heroCardSize).toBe('lg')
+    expect(MOBILE_LAYOUT.heroCardSize).toBe('xl')
+    expect(NARROW_MOBILE_LAYOUT.bands).toEqual(MOBILE_LAYOUT.bands)
+    expect(NARROW_MOBILE_LAYOUT.aspectRatio).toBe(MOBILE_LAYOUT.aspectRatio)
+  })
+})
+
+describe('layout instrumentation', () => {
+  it('tags the elements the mobile collision audit measures', () => {
+    // These hooks are how the table is checked for overlaps at real phone
+    // widths in a browser; unit tests cannot measure rendered boxes. Losing
+    // them silently would leave the mobile geometry unverifiable.
+    const html = renderToStaticMarkup(
+      <PreflopTable
+        tableSize={9}
+        heroPosition="BB"
+        heroHand={['As', 'Kh']}
+        effectiveStackBb={100}
+        actionBeforeHero={['CO raises to 2.5bb']}
+      />,
+    )
+    for (const hook of ['seat-pos', 'seat-meta', 'chip', 'dealer', 'hero-cards']) {
+      expect(html).toContain(`data-tt="${hook}"`)
     }
   })
 })

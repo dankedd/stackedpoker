@@ -16,6 +16,11 @@ const SIZE_CONFIG = {
   // Hero-card target for the preflop table's visual polish pass — noticeably larger
   // than 'md', the biggest tier used anywhere else.
   lg: { outer: 'w-[54px] h-[76px] rounded-[8px]', inset: 6, rank: 'text-[21px]', suit: 'text-[16px]' },
+  // Mobile hero cards. The phone table is the one place where the cards are the
+  // single most-read element on screen and there is vertical room to spend, so
+  // they get their own tier rather than reusing the desktop 'lg' — a shrunken
+  // desktop card is exactly what the mobile redesign exists to avoid.
+  xl: { outer: 'w-[64px] h-[90px] rounded-[9px]', inset: 7, rank: 'text-[25px]', suit: 'text-[19px]' },
 }
 
 const RANK_NAME: Record<string, string> = {
@@ -26,7 +31,7 @@ const SUIT_NAME: Record<string, string> = { h: 'hearts', d: 'diamonds', c: 'club
 
 interface PlayingCardMiniProps {
   card: string
-  size?: 'xs' | 'sm' | 'md' | 'lg'
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
   className?: string
 }
 

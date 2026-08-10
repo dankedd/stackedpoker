@@ -20,6 +20,7 @@
 import { cn } from '@/lib/utils'
 import { formatBb } from '@/components/poker/tableTokens'
 import { StackDepthBadge } from '@/components/poker/StackDepthBadge'
+import { InlineDealerMarker } from '@/components/poker/DealerMarker'
 
 // ── Centralized vertical rhythm for the rail label stack ────────────────────
 // Row 1 (the position label) is vertically CENTERED on the rail point via
@@ -47,6 +48,22 @@ export interface PreflopSeatRowProps {
   verbText?: string
   seatStackBb?: number
   stackBehindBb?: number
+  /** Mobile: this seat's action verb is rendered on its CHIP instead (see
+   *  ChipStack.actionLabel), so the pod drops to two lines — position, then
+   *  what the player has left. The verb still reaches assistive tech through
+   *  this component's `aria-label`, which is unchanged either way; only the
+   *  visible row moves. */
+  verbShownOnChip?: boolean
+  /** Mobile: stack rows 2/3 ABOVE the position label instead of below it, for
+   *  seats in the top half of the table — see PreflopTable's `podAbove`. */
+  podAbove?: boolean
+  /** Mobile: render the dealer button inline after the position label rather
+   *  than positioning it separately on the table — see `InlineDealerMarker`. */
+  dealerInline?: boolean
+  /** Narrow phones: drop this seat's stack row because it repeats the
+   *  table-wide effective stack already printed in the status bar — see
+   *  PreflopTable's `suppressStackRow`. */
+  suppressStackRow?: boolean
   railPoint: { x: string; y: string }
   /** True for the one frame in which this seat just raised/called/checked —
    *  a brief highlight pulse (`.animate-seat-action-in`) so it's visible the
@@ -67,15 +84,25 @@ export function PreflopSeatRow({
   verbText,
   seatStackBb,
   stackBehindBb,
+  verbShownOnChip = false,
+  podAbove = false,
+  dealerInline = false,
+  suppressStackRow = false,
   railPoint,
   highlighted = false,
   fadeDurationMs = 300,
 }: PreflopSeatRowProps) {
+  // With the verb on the chip, row 2 reverts to a stack readout — and the
+  // honest number there is what the player has LEFT, not their starting stack,
+  // which the raise they just made has already spent.
+  const resolvedStackBb = verbShownOnChip ? stackBehindBb ?? seatStackBb : seatStackBb
+  const podStackBb = suppressStackRow ? undefined : resolvedStackBb
   return (
     <div aria-label={`${position}${folded ? ', folded' : hasVerb ? `, ${verbText}` : ''}`}>
       {/* Row 1 — position label, dead center on the rail. Hero's "HERO ·" prefix
           shares the exact same anchor/baseline as the position itself. */}
       <span
+        data-tt="seat-pos"
         className={cn(
           'absolute z-10 -translate-x-1/2 -translate-y-1/2 text-center whitespace-nowrap transition-opacity',
           folded && 'opacity-35',
@@ -96,6 +123,7 @@ export function PreflopSeatRow({
         >
           {position}
         </span>
+        {dealerInline && <InlineDealerMarker />}
       </span>
 
       {/* Rows 2+3 — FOLD/action-verb/stack, then (only alongside a real action)
@@ -108,13 +136,27 @@ export function PreflopSeatRow({
           styling ever again. Mobile hides a folded seat's row 2 entirely
           (dimmed position label only) to cut clutter. */}
       {(() => {
-        const showRow2 = !(isMobile && folded) && (folded || hasVerb || seatStackBb != null)
-        const showRow3 = hasVerb && !folded && stackBehindBb != null
+        const showVerbHere = hasVerb && !verbShownOnChip
+        const showRow2 = !(isMobile && folded) && (folded || showVerbHere || podStackBb != null)
+        // "N BB behind" only earns its line next to a verb that is actually here;
+        // when the verb moved to the chip, row 2 is already showing that number.
+        const showRow3 = showVerbHere && !folded && stackBehindBb != null
         if (!showRow2 && !showRow3) return null
         return (
           <div
-            className="absolute z-10 flex -translate-x-1/2 flex-col items-center"
-            style={{ left: railPoint.x, top: `calc(${railPoint.y} + ${ROW2_TOP_OFFSET_PX}px)`, gap: `${ROW_GAP_PX}px` }}
+            data-tt="seat-meta"
+            className={cn(
+              'absolute z-10 flex -translate-x-1/2 items-center',
+              // Growing upward mirrors the whole block: it hangs from its own
+              // bottom edge, and the row order reverses so whichever row was
+              // nearest the position label stays nearest to it.
+              podAbove ? '-translate-y-full flex-col-reverse' : 'flex-col',
+            )}
+            style={{
+              left: railPoint.x,
+              top: `calc(${railPoint.y} ${podAbove ? '-' : '+'} ${ROW2_TOP_OFFSET_PX}px)`,
+              gap: `${ROW_GAP_PX}px`,
+            }}
           >
             {showRow2 && (
               <span
@@ -122,7 +164,7 @@ export function PreflopSeatRow({
                   'text-center whitespace-nowrap transition-opacity',
                   folded
                     ? 'text-[10px] font-semibold text-muted-foreground/40 opacity-35'
-                    : hasVerb
+                    : showVerbHere
                     ? cn('text-[10px] font-semibold', isHero ? 'text-violet-300/90' : 'text-sky-300/80')
                     : undefined, // stack-depth case: StackDepthBadge owns its own styling
                 )}
@@ -130,10 +172,10 @@ export function PreflopSeatRow({
               >
                 {folded ? (
                   'FOLD'
-                ) : hasVerb ? (
+                ) : showVerbHere ? (
                   verbText
-                ) : seatStackBb != null ? (
-                  <StackDepthBadge stackBb={seatStackBb} />
+                ) : podStackBb != null ? (
+                  <StackDepthBadge stackBb={podStackBb} />
                 ) : null}
               </span>
             )}

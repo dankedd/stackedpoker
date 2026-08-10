@@ -485,8 +485,12 @@ describe('PreflopTable — dark green felt (not casino-bright), outer rail uncha
     )
     // Felt: dark green radial gradient.
     expect(html).toMatch(/radial-gradient\(ellipse at 50% 40%, rgba\(21,63,46/)
-    // Outer rail: unchanged inset (10% desktop) and gradient.
-    expect(html).toContain('inset-[10%]')
+    // Outer rail: unchanged inset (10% desktop) and gradient. The inset is now
+    // derived from DESKTOP_LAYOUT.railOuterRadius (50 - 40) and emitted as an
+    // inline style rather than a hardcoded `inset-[10%]` class, so that the
+    // drawn ring and the geometry cannot drift apart. Same rendered value.
+    expect(html).toContain('inset:10%')
+    expect(50 - DESKTOP_LAYOUT.railOuterRadius).toBe(10)
     expect(html).toContain('linear-gradient(180deg, rgba(255,255,255,0.05)')
   })
 })
