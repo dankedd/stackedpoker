@@ -379,6 +379,14 @@
     "why-your-range-shape-picks-your-bet-size": {
       "module_id": "bet-sizing-language-module",
       "sort_order": 5
+    },
+    "the-geometry-of-maximum-pressure": {
+      "module_id": "bet-sizing-language-module",
+      "sort_order": 6
+    },
+    "wrong-size-real-cost": {
+      "module_id": "bet-sizing-language-module",
+      "sort_order": 7
     }
   },
   "modules": {

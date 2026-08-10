@@ -1725,6 +1725,32 @@
         "wyrsp-s8": 10,
         "wyrsp-s9": 10
       }
+    },
+    "the-geometry-of-maximum-pressure": {
+      "xp_reward": 200,
+      "steps": {
+        "gomp-s1": 10,
+        "gomp-s2": 10,
+        "gomp-s3": 24,
+        "gomp-s4": 18,
+        "gomp-s5": 22,
+        "gomp-s6": 16,
+        "gomp-s7": 10,
+        "gomp-s8": 10
+      }
+    },
+    "wrong-size-real-cost": {
+      "xp_reward": 190,
+      "steps": {
+        "wsrc-s1": 10,
+        "wsrc-s2": 16,
+        "wsrc-s3": 20,
+        "wsrc-s4": 10,
+        "wsrc-s5": 20,
+        "wsrc-s6": 18,
+        "wsrc-s7": 10,
+        "wsrc-s8": 10
+      }
     }
   },
   "modules": {

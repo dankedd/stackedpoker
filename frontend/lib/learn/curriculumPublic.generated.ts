@@ -1791,6 +1791,39 @@ export const PUBLIC_LESSONS: PublicLesson[] = [
     "sort_order": 5,
     "next_lesson_teaser": "The Geometry of Maximum Pressure",
     "step_count": 9
+  },
+  {
+    "id": "the-geometry-of-maximum-pressure",
+    "module_id": "bet-sizing-language-module",
+    "slug": "the-geometry-of-maximum-pressure",
+    "title": "The Geometry of Maximum Pressure",
+    "subtitle": "A precise, computable ceiling for how hard a maximal, multi-street advantage can press.",
+    "lesson_type": "concept_reveal",
+    "concept_ids": [
+      "geometric_sizing_formula"
+    ],
+    "estimated_min": 13,
+    "xp_reward": 200,
+    "sort_order": 6,
+    "next_lesson_teaser": "Wrong Size, Real Cost",
+    "step_count": 8
+  },
+  {
+    "id": "wrong-size-real-cost",
+    "module_id": "bet-sizing-language-module",
+    "slug": "wrong-size-real-cost",
+    "title": "Wrong Size, Real Cost",
+    "subtitle": "What specifically breaks, and by how much, when a sizing choice is wrong.",
+    "lesson_type": "concept_reveal",
+    "concept_ids": [
+      "size_vs_frequency_fix",
+      "reverse_linear_mechanism"
+    ],
+    "estimated_min": 12,
+    "xp_reward": 190,
+    "sort_order": 7,
+    "next_lesson_teaser": "Reading the Board Like the Solver Does",
+    "step_count": 8
   }
 ]
 
