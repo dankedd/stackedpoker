@@ -32,6 +32,21 @@
     @apply border-border;
   }
 
+  /* The page never scrolls sideways. This is a BACKSTOP, not the fix: the real
+     causes are dealt with where they occur (the range-grid tooltip that used to
+     hang ~70px past an edge column is the one this audit found). It exists
+     because a single stray element anywhere in the app turns a phone into
+     something the user can swipe off the edge of, and that reads as a web page
+     rather than an app.
+
+     `clip`, deliberately, not `hidden`: `hidden` makes the root a scroll
+     container, which silently breaks every `position: sticky` on the site —
+     the lesson header among them. `clip` suppresses the scroll without
+     creating one. */
+  html {
+    overflow-x: clip;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     background-image:

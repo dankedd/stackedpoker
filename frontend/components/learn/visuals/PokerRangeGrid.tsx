@@ -479,7 +479,19 @@ export function PokerRangeGrid({
                     <div
                       role="tooltip"
                       className={cn(
-                        'pointer-events-none absolute bottom-full left-1/2 z-30 mb-1 w-max max-w-[9rem] -translate-x-1/2',
+                        'pointer-events-none absolute bottom-full z-30 mb-1 w-max max-w-[9rem]',
+                        // Anchored by column, not always centred. This tooltip
+                        // is always in the DOM and merely faded out, so a
+                        // centred one on an edge column adds ~70px of scroll
+                        // width to the PAGE even though nothing is visible —
+                        // which is exactly how a phone ends up able to swipe
+                        // sideways on a lesson. Edge columns hang inward
+                        // instead; the middle of the grid is unchanged.
+                        colIdx <= 2
+                          ? 'left-0'
+                          : colIdx >= RANKS.length - 3
+                          ? 'right-0'
+                          : 'left-1/2 -translate-x-1/2',
                         'rounded-md border border-border/30 bg-popover px-2 py-1 text-left text-[9px] font-medium leading-tight text-popover-foreground shadow-lg',
                         'opacity-0 scale-95 transition-all duration-100',
                         'group-hover:opacity-100 group-hover:scale-100 group-focus:opacity-100 group-focus:scale-100 group-focus-within:opacity-100 group-focus-within:scale-100',

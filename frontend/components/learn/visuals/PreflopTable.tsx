@@ -93,7 +93,11 @@ interface TableLayoutConfig {
    *  cover both the pot readout and Hero's card zone with margin. */
   protectedZone: { cxPct: number; cyPct: number; halfWidthPct: number; halfHeightPct: number }
   /** Size tier for Hero's two hole cards. */
-  heroCardSize: 'lg' | 'xl'
+  heroCardSize: 'md' | 'lg'
+  /** Gap (px) between the two hole cards. Mobile only — desktop's row is a
+   *  fixed-width `justify-between` pair. Never negative: the cards must not
+   *  overlap at any width. */
+  heroCardGapPx: number
   /** MOBILE ONLY — three concentric placement BANDS with INDEPENDENT x/y radii.
    *
    *  Desktop leaves this undefined and keeps its original geometry byte for
@@ -162,6 +166,7 @@ export const DESKTOP_LAYOUT: TableLayoutConfig = {
     protectedZone: { cxPct: 50, cyPct: 48, halfWidthPct: 21, halfHeightPct: 28 },
   },
   heroCardSize: 'lg',
+  heroCardGapPx: 0, // desktop's pair is spaced by its fixed-width row, not a gap
   // No `bands` — desktop keeps the rail-centerline/pull-factor geometry.
 }
 
@@ -214,7 +219,8 @@ export const MOBILE_LAYOUT: TableLayoutConfig = {
     cardZoneYPct: 63,
     protectedZone: { cxPct: 50, cyPct: 47, halfWidthPct: 23, halfHeightPct: 26 },
   },
-  heroCardSize: 'xl',
+  heroCardSize: 'lg',
+  heroCardGapPx: 10,
   // Radii are in the same percent-of-container units the seat math already
   // uses (x against width, y against height). Horizontal radii are the scarce
   // axis on a phone, so each band is pulled in horizontally and pushed out
@@ -318,17 +324,29 @@ export function pushOutOfZone(
  */
 export const NARROW_MOBILE_LAYOUT: TableLayoutConfig = {
   ...MOBILE_LAYOUT,
-  heroCardSize: 'lg',
+  // 51 + 6 + 51 = 108px, against 118px on a standard phone. The pair still has
+  // to clear a seat's chip and its label either side on a 270px table, and a
+  // gap costs width that an overlap did not.
+  heroCardSize: 'md',
+  heroCardGapPx: 6,
   // Not simply "smaller cards, smaller zone": the zone has to out-reach the
   // cards by the chip's own half-width plus a visible gap, and the chip is at
   // its widest (~28px) exactly when it carries an action verb. Tuned until the
   // measured card-to-chip clearance across all 82 curriculum configs stopped
   // being hairline.
-  protectedZone: { ...MOBILE_LAYOUT.protectedZone, halfWidthPct: 21 },
+  protectedZone: { ...MOBILE_LAYOUT.protectedZone, halfWidthPct: 21, halfHeightPct: 18 },
   postflop: {
     ...MOBILE_LAYOUT.postflop,
     protectedZone: { ...MOBILE_LAYOUT.postflop.protectedZone, halfWidthPct: 22 },
   },
+  // A 320px table is 387px tall against 466px at 375px, and the furniture that
+  // has to fit between a seat's label and its own chip — the dealer button —
+  // does not shrink with it. So the chip ring moves in, and the protected
+  // rectangle it must clear shortens to let it (the shorter card tier here
+  // needs less vertical cover anyway). Purely a vertical change: the horizontal
+  // radius still has to clear Hero's cards, which is the binding constraint on
+  // that axis.
+  bands: { ...MOBILE_LAYOUT.bands!, chip: { ...MOBILE_LAYOUT.bands!.chip, ry: 23 } },
 }
 
 /** Rescales a seat's anchor point (on the `ellipseRadius` circle) onto the rail
@@ -588,19 +606,23 @@ export function PreflopTable({
           never shifts layout (absolutely positioned behind the cards). */}
       <div aria-hidden className="pointer-events-none absolute h-16 w-28 rounded-full bg-violet-500/10 blur-xl" />
 
-      {/* Mobile cards are a tier larger AND slightly overlapped, the way a hand
-          is actually held. The overlap is what makes the bigger tier possible:
-          two 64px cards laid out side by side would need ~136px of the felt's
-          middle, which at 320px leaves too little room either side for the
-          seat pods and their chips. Overlapped they occupy ~118px — narrower
-          than the desktop row while each card is 19% wider. */}
+      {/* Mobile cards sit side by side with a real gap — never overlapping.
+          An earlier pass fanned them the way a hand is held, which bought room
+          for a bigger card tier but left the left card's right edge tucked
+          under its neighbour: two half-hidden cards read worse than two whole
+          smaller ones, and a hole card you have to decode is the one thing on
+          this table that must be instant.
+          The row's total width is what the seat geometry is tuned against
+          (see `bands` and `protectedZone`), so the tier is chosen to keep that
+          width, not to fill the felt: 54 + 10 + 54 = 118px, the same span the
+          fanned pair occupied. */}
       {bands ? (
-        <div data-tt="hero-cards" className="relative flex items-center">
-          <PlayingCardMini
-            card={cards[0]}
-            size={layout.heroCardSize}
-            className="relative -mr-[10px]"
-          />
+        <div
+          data-tt="hero-cards"
+          className="relative flex items-center"
+          style={{ gap: `${layout.heroCardGapPx}px` }}
+        >
+          <PlayingCardMini card={cards[0]} size={layout.heroCardSize} className="relative" />
           <PlayingCardMini card={cards[1]} size={layout.heroCardSize} className="relative" />
         </div>
       ) : (

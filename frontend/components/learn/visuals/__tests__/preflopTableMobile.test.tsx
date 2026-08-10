@@ -147,10 +147,42 @@ describe('pushOutOfZone — chips never sit on the pot or Hero cards', () => {
 
 describe('narrow phones (<360px) drop a card tier rather than overlapping', () => {
   it('keeps every other dimension identical to the standard mobile layout', () => {
-    expect(NARROW_MOBILE_LAYOUT.heroCardSize).toBe('lg')
-    expect(MOBILE_LAYOUT.heroCardSize).toBe('xl')
-    expect(NARROW_MOBILE_LAYOUT.bands).toEqual(MOBILE_LAYOUT.bands)
+    expect(NARROW_MOBILE_LAYOUT.heroCardSize).toBe('md')
+    expect(MOBILE_LAYOUT.heroCardSize).toBe('lg')
     expect(NARROW_MOBILE_LAYOUT.aspectRatio).toBe(MOBILE_LAYOUT.aspectRatio)
+    // Same rings, except the chip ring moves in vertically to buy room for the
+    // dealer button between a seat's label and its own chip on a shorter table.
+    expect(NARROW_MOBILE_LAYOUT.bands!.label).toEqual(MOBILE_LAYOUT.bands!.label)
+    expect(NARROW_MOBILE_LAYOUT.bands!.chip.rx).toBe(MOBILE_LAYOUT.bands!.chip.rx)
+    expect(NARROW_MOBILE_LAYOUT.bands!.chip.ry).toBeLessThan(MOBILE_LAYOUT.bands!.chip.ry)
+    // ...and must still clear the protected rectangle it is pushed out of.
+    expect(NARROW_MOBILE_LAYOUT.bands!.chip.ry).toBeGreaterThanOrEqual(
+      NARROW_MOBILE_LAYOUT.protectedZone.halfHeightPct,
+    )
+  })
+})
+
+describe('hole cards never overlap', () => {
+  it('spaces the pair with a real positive gap on every mobile tier', () => {
+    // A negative gap (the old fanned pair) tucks the left card's edge under its
+    // neighbour. Two whole smaller cards beat two half-hidden bigger ones.
+    expect(MOBILE_LAYOUT.heroCardGapPx).toBeGreaterThan(0)
+    expect(NARROW_MOBILE_LAYOUT.heroCardGapPx).toBeGreaterThan(0)
+  })
+
+  it('keeps the pair within the width the seat geometry was tuned against', () => {
+    // The protected rectangle has to cover the card row at the NARROWEST table
+    // the tier is used on, or a chip can be pushed onto a card.
+    const CARD_W = { md: 51, lg: 54 }
+    const rowWidth = (l: typeof MOBILE_LAYOUT) => CARD_W[l.heroCardSize] * 2 + l.heroCardGapPx
+    expect(rowWidth(MOBILE_LAYOUT)).toBeLessThanOrEqual(118)
+    expect(rowWidth(NARROW_MOBILE_LAYOUT)).toBeLessThanOrEqual(118)
+    // Narrowest table each tier renders on: 310px at the 360px breakpoint,
+    // 270px at the 320px floor.
+    expect(rowWidth(MOBILE_LAYOUT) / 2 / 310 * 100).toBeLessThan(MOBILE_LAYOUT.protectedZone.halfWidthPct)
+    expect(rowWidth(NARROW_MOBILE_LAYOUT) / 2 / 270 * 100).toBeLessThan(
+      NARROW_MOBILE_LAYOUT.protectedZone.halfWidthPct,
+    )
   })
 })
 

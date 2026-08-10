@@ -123,7 +123,8 @@ export function PreflopSeatRow({
         >
           {position}
         </span>
-        {dealerInline && <InlineDealerMarker />}
+        {/* Sits on the side the stack row leaves free — see InlineDealerMarker. */}
+        {dealerInline && <InlineDealerMarker below={podAbove} />}
       </span>
 
       {/* Rows 2+3 — FOLD/action-verb/stack, then (only alongside a real action)
