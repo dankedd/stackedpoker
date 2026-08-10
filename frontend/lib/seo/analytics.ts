@@ -22,8 +22,16 @@ export const SEO_EVENTS = {
   searchResultsView: "search_results_view",
   /** A reader crossed a scroll-depth threshold on a content page. */
   scrollDepth: "scroll_depth",
-  /** A free tool was used (as opposed to merely viewed). */
-  toolUse: "tool_use",
+  /** A tool page was opened — the denominator for every tool funnel. */
+  toolOpen: "tool_open",
+  /** A calculation or quiz answer completed successfully. */
+  toolCalculate: "tool_calculate",
+  /** An input changed. Reported once per field per session, not per keystroke. */
+  toolInputChange: "tool_input_change",
+  /** A result was copied or shared. */
+  toolShare: "tool_share",
+  /** An account was created by someone who had used a tool first. */
+  toolAttributedSignup: "tool_attributed_signup",
 } as const;
 
 export type SeoEventName = (typeof SEO_EVENTS)[keyof typeof SEO_EVENTS];
@@ -67,3 +75,42 @@ export function contentParams(context: ContentContext): GtagParams {
 
 /** Scroll-depth thresholds, in percent of document height. */
 export const SCROLL_DEPTH_THRESHOLDS = [25, 50, 75, 100] as const;
+
+// ── Tool attribution (§ "account created after using tool") ──────────────────
+
+const TOOL_ATTRIBUTION_KEY = "sp_tool_attribution";
+
+/**
+ * Remembers that this visitor used a tool, so a later signup can be credited
+ * to it.
+ *
+ * sessionStorage, not a cookie: it needs no consent banner, dies with the tab,
+ * and never leaves the browser. It carries a slug and nothing else — no
+ * identifiers, no inputs, nothing about the hand anybody analysed.
+ */
+export function rememberToolUse(toolSlug: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(TOOL_ATTRIBUTION_KEY, toolSlug);
+  } catch {
+    // Private mode or a full quota — attribution is optional, the tool is not.
+  }
+}
+
+export function readToolAttribution(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(TOOL_ATTRIBUTION_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function clearToolAttribution(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(TOOL_ATTRIBUTION_KEY);
+  } catch {
+    // Nothing to do — the value expires with the session anyway.
+  }
+}
