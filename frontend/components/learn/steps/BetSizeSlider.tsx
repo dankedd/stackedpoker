@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
+import { answerGridClass, stackedAnswerClass } from '@/lib/learn/answerLayout'
 import { LessonSlider } from '@/components/learn/visuals/LessonSlider'
 
 // ── Common bet-size anchors ────────────────────────────────────────────────────
@@ -207,7 +208,7 @@ export function BetSizeSlider({ step, onAnswer, disabled = false }: BetSizeSlide
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/30 text-center">
             Or select directly
           </p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className={cn('grid gap-2', answerGridClass(options.length))}>
             {options.map(opt => {
               const active = submitted
 
@@ -224,6 +225,7 @@ export function BetSizeSlider({ step, onAnswer, disabled = false }: BetSizeSlide
                   }}
                   className={cn(
                     'rounded-xl px-3 py-3 text-xs font-semibold border text-left transition-all duration-150',
+                    stackedAnswerClass(options.length),
                     'border-border/40 bg-secondary/30 text-muted-foreground',
                     'hover:bg-secondary/60 hover:border-violet-500/25 hover:text-foreground',
                     active && 'opacity-50 cursor-default'
