@@ -44,7 +44,7 @@ import {
   J22_SIZING_MISTAKE, REVERSE_LINEAR_654R,
   BOARD_GALLERY, BOARD_GALLERY_SOURCE,
   TRAP_CURVE_DATA, TRAP_CURVE_DATA_SOURCE, RIVER_MODEL_SOURCE,
-  CAPSTONE_SCENARIO,
+  CAPSTONE_SCENARIO, CAPSTONE_SCENARIO_SOURCE,
 } from './module12Content'
 
 // ── Learning Paths ────────────────────────────────────────────────────────────
@@ -407,7 +407,8 @@ export const LEARNING_MODULES: LearningModule[] = [
       'Predict a strategy\'s sizing direction — from pure-check to all-in-dominant — directly from a range\'s polarization relative to its opponent\'s, without needing raw equity numbers',
     ],
     difficulty: 'intermediate',
-    estimatedLessons: 5,
+    estimatedLessons: 10,
+    contentStatus: 'complete',
     stageId: 'bet-sizing-defense',
     order: 12,
     prerequisiteModuleId: 'polarized-module',
@@ -20205,6 +20206,143 @@ export const LESSONS: Lesson[] = [
         concept_reveal_optional: true,
         concept_title: 'Elite Insight',
         concept_content: "There's a specific moment worth training yourself to notice: the exact instant you feel the urge to jam a massive overbet on the river because the spot \"looks great\" on the surface. That urge is itself information — and not in the direction it feels like it should point. The trap-cap mechanism means the biggest, most tempting overbets are exactly where a well-constructed opponent range does its best, quietest work against you. A disciplined opponent doesn't need many traps — just 10-20% of their range — to make your own enthusiasm the thing that costs you. Elite players learn to treat the urge to overbet as a prompt to ask \"does this range have a reason to be trapping here,\" not as a green light to size up further.",
+      },
+    ],
+  },
+
+  // Lesson 10 authoring note (disclosed adaptation, not a silent workaround): Part 2's own
+  // Section 4 specifies a free-construction, rubric-scored capstone interaction ("no street's
+  // submission is revealed against a single 'correct answer'") combining three sub-tools. No
+  // open rubric-scoring engine exists in this codebase (or was Part-3A-approved), and building
+  // one would be new architecture this phase's instruction forbids inventing independently. Per
+  // the same reuse-first, decision_spot-plus-tendency_summary pattern already proven by every
+  // prior module's capstone (7/8/10/11), each street is instead a forced-choice decision_spot
+  // scored against the specific resolution CAPSTONE_SCENARIO's own pre-authored fields commit to
+  // (see module12Content.ts: flop/turn/river `principle` and `note` fields) — a structured,
+  // gradable version of the same reasoning task, not a different task. The river street reuses
+  // river_sizing_calculator directly (rsc-s5) for its genuine, required computation, exactly as
+  // Lesson 9 already established. Zero new resolver or step-type code was written for this lesson.
+  {
+    id: 'designing-a-sizing-strategy',
+    module_id: 'bet-sizing-language-module',
+    slug: 'designing-a-sizing-strategy',
+    title: 'Designing a Sizing Strategy',
+    subtitle: 'One continuous hand, three streets, every tool this module built — no chart to fall back on.',
+    lesson_type: 'concept_reveal',
+    concept_ids: ['capstone_synthesis'],
+    estimated_min: 18,
+    xp_reward: 260,
+    sort_order: 10,
+    steps: [
+      {
+        id: 'l10-s1',
+        type: 'concept_reveal',
+        concept_title: 'One Sentence, Nine Lessons',
+        concept_content: "This capstone introduces no new theory — everything it needs was already built across Lessons 1-9. A bet-size is never a number chosen in isolation, and never a report on how strong one hand happens to be. It's a claim, made on behalf of an entire range, about how expensive and how information-revealing a specific street's decision should be. What follows is a single continuous hand, BB versus CO, 25bb effective — a stack depth this module hasn't used anywhere else, chosen so no lesson's specific numbers can be recalled without genuine re-reasoning. You'll design CO's sizing across all three streets.",
+        source: CAPSTONE_SCENARIO_SOURCE,
+      },
+      {
+        id: 'l10-s2',
+        type: 'decision_spot',
+        concept_ids: ['capstone_synthesis'],
+        hero_position: 'CO', villain_position: 'BB',
+        board: CAPSTONE_SCENARIO.flop.board,
+        narrative: `Flop: ${CAPSTONE_SCENARIO.flop.texture}. BB checks — CO to act.`,
+        decision_spot_question: "What's the calibrated sizing lean here, and why — not just a direction, but a magnitude?",
+        options: [
+          { id: 'calibrated', label: 'A real lean toward bigger than a monotone or paired board, but well short of a rainbow-style maximal size', quality: 'perfect', feedback: `Correct — this is exactly the calibration this capstone tests for. Two-tone sits in the middle of Lesson 8's three-texture progression: a real range-advantage gap for CO (roughly 24% strong hands to 5%), meaningfully larger than monotone's, but smaller than rainbow's. At 25bb, Lesson 4's own EV-cost evidence is the reason a single well-chosen size, not a genuine multi-size split, is the right call here — no need to overengineer it.` },
+          { id: 'small', label: 'A small size, protecting the hand the way a paired or monotone board would call for', quality: 'mistake', feedback: `This board isn't monotone or paired — it's two-tone, and per Lesson 8, two-tone sits meaningfully toward the bigger-size end relative to monotone, since CO holds a real (roughly 24% vs. 5%) range-advantage gap here, not the depolarized position monotone puts CO in.` },
+          { id: 'max', label: 'The single biggest size available, since CO holds the range edge here', quality: 'mistake', feedback: `The direction (lean bigger) is right, but the magnitude overshoots. Lesson 5's Toy Game D already taught this: a real-but-not-maximal edge earns a scaled response, not an automatic leap to the extreme. Two-tone's gap is genuine but smaller than rainbow's — treat every "advantaged range bets bigger" situation identically, without calibrating to how big THIS gap is, and you lose the actual skill Lesson 8 built.` },
+        ],
+        tendency_tag: 'flop_calibration',
+        tendency_tag_label: 'Calibrating a two-tone flop lean by gap size, not just direction',
+        tendency_tag_leak_hint: 'Revisit Lesson 8\'s monotone/two-tone/rainbow progression — direction alone (bigger vs. smaller) isn\'t the full skill; matching the SIZE of the lean to the actual gap is.',
+        xp: 22,
+      },
+      {
+        id: 'l10-s3',
+        type: 'decision_spot',
+        concept_ids: ['capstone_synthesis'],
+        hero_position: 'CO', villain_position: 'BB',
+        board: [...CAPSTONE_SCENARIO.flop.board, CAPSTONE_SCENARIO.turn.card],
+        narrative: `Turn: ${CAPSTONE_SCENARIO.turn.card.replace('d', '♦')} — completing a possible flush. BB called the flop; CO to act again.`,
+        decision_spot_question: "Does this card shift CO's relative polarization advantage, and how should CO's sizing respond?",
+        options: [
+          { id: 'merged', label: 'It compresses CO\'s edge — respond with a merged, smaller, broader-frequency approach, not the flop\'s size unchanged', quality: 'perfect', feedback: `Correct — you asked Lesson 8's core question (which range gains more from this specific card) instead of defaulting to "CO was ahead, CO stays ahead." A flush-completing card is exactly the kind that can compress a flop-street gap: it hands BB's previously-worthless hands new equity, the same mechanism Lesson 8's monotone correction trained. Module 11's range-merging concept, and Lesson 5's Toy Game C (the multi-street, symmetric case), are exactly the tools for a genuinely reshaped polarization relationship — not a reason to mechanically repeat the flop's size.` },
+          { id: 'unchanged', label: 'It changes nothing worth reacting to: CO was ahead on the flop, so CO stays ahead and keeps firing the same size', quality: 'mistake', feedback: `This is worth flagging directly: carrying the flop's conclusion forward without re-asking whether the turn card changed anything is exactly the error this street is built to catch. A flush-completing diamond is exactly the kind of card that CAN compress CO's edge — it's not automatic, but it has to be checked, not assumed away. Every street in this module treats each new card as a fresh application of "which range just changed," never a simple continuation of the previous street's answer.` },
+        ],
+        tendency_tag: 'turn_reassessment',
+        tendency_tag_label: 'Reassessing relative polarization fresh on a texture-shifting turn card',
+        tendency_tag_leak_hint: 'Revisit Module 11\'s range-merging concept and Lesson 5\'s Toy Game C — a card that helps the previously-behind range compresses the previously-ahead range\'s edge; it doesn\'t leave it untouched.',
+        xp: 24,
+      },
+      {
+        id: 'l10-s4',
+        type: 'river_sizing_calculator',
+        concept_ids: ['minimum_bet_formula', 'capstone_synthesis'],
+        narrative: `River: ${CAPSTONE_SCENARIO.river.card}, changing little about either range's composition. BB checks again — CO's range is genuinely polarized (made flushes and busted draws); BB's range, having called down twice, mixes real showdown value with a meaningful number of slowplayed traps.`,
+        river_calc_prompt: `BB's stated equity against CO's range is ${CAPSTONE_SCENARIO.river.villainEquityPct}%. Compute the minimum bet-size that forces a full fold from BB's entire range.`,
+        river_calc_opponent_equity_pct: CAPSTONE_SCENARIO.river.villainEquityPct,
+        river_calc_trap_pct: CAPSTONE_SCENARIO.river.villainTrapPct as 10,
+        river_calc_tolerance: 0.05,
+        tendency_tag: 'river_minimum_bet',
+        tendency_tag_label: "Computing the river's minimum bet-size to deny from a stated equity",
+        tendency_tag_leak_hint: 'Revisit Lesson 9\'s B = EQ ÷ (1 − 2×EQ) — isolate the denominator first, then divide.',
+        xp: 22,
+      },
+      {
+        id: 'l10-s5',
+        type: 'decision_spot',
+        concept_ids: ['trap_cap_mechanism', 'capstone_synthesis'],
+        narrative: `BB's range carries a stated ${CAPSTONE_SCENARIO.river.villainTrapPct}% traps. You've just computed the minimum bet that denies BB's entire range.`,
+        decision_spot_question: 'Should CO bet well past that minimum, since bigger bets deny even more equity?',
+        options: [
+          { id: 'stay_near_minimum', label: 'No — stay close to the computed minimum; a much bigger bet hands BB\'s traps a live check-raise to punish it with', quality: 'perfect', feedback: `Correct, and both halves of this street's reasoning fit together rather than pulling apart: the minimum-bet-size calculation tells you the smallest bet that does the full job. The trap-cap reasoning tells you why not to overshoot it by much once real traps are on the table. Together they point to a specific, disciplined zone — enough to deny BB's stated equity, not so much more that CO's own value bets become check-raise bait.` },
+          { id: 'go_bigger', label: 'Yes — bigger bets deny more equity, so CO should bet well past the minimum for extra safety', quality: 'mistake', feedback: `The calculation was right, but this conclusion isn't following Lesson 9's core correction. You've found the FLOOR — the minimum bet that denies BB's stated equity — but "more is safer" stops being true past that floor once real traps are on the table. Past a certain point, EV doesn't just plateau, it DECLINES, because a bigger, non-all-in bet is exactly what gives BB's traps a live check-raise to punish CO's now-vulnerable value bets with.` },
+        ],
+        tendency_tag: 'river_trap_discipline',
+        tendency_tag_label: 'Stopping at the trap-adjusted ceiling instead of "bigger is always safer"',
+        tendency_tag_leak_hint: 'Revisit Lesson 9\'s trap-cap curve — with real traps in range, EV declines past the peak, it doesn\'t just flatten.',
+        xp: 20,
+      },
+      {
+        id: 'l10-s6',
+        type: 'decision_spot',
+        concept_ids: ['trap_cap_mechanism', 'minimum_bet_formula', 'capstone_synthesis'],
+        narrative: `A final, unseen transfer check — a different hand entirely. On a river spot with a stated opponent equity of 30% and a stated trap percentage of 15%, a player bets 4x pot "because bigger bets deny more equity, and I want to be as safe as possible."`,
+        decision_spot_question: "What's the core flaw in this reasoning?",
+        options: [
+          { id: 'trap_ceiling', label: "Bigger isn't automatically safer — 15% traps puts 4x pot well past the trap-adjusted ceiling, inviting a punishing check-raise", quality: 'perfect', feedback: `Correct — and notice a second, independent error worth naming too: the stated justification never references the 30% equity figure at all, despite Lesson 9's minimum-bet-size formula depending directly on it. "Bigger bets deny more equity" is Misconception #7's exact error, restated almost word for word — true only up to the trap-defined ceiling, past which it actively costs EV rather than adding safety.` },
+          { id: 'nothing_wrong', label: 'Nothing is wrong here — bigger bets simply deny more equity, making this good, sound sizing', quality: 'mistake', feedback: `This restates the exact misconception the reasoning is built on, rather than catching it. With 15% traps stated, 4x pot is almost certainly well past the trap-adjusted optimal ceiling — "bigger bets deny more equity" stops being safe advice the moment real traps are on the table, and this player's own justification never even references the 30% equity figure the minimum-bet formula would need.` },
+        ],
+        tendency_tag: 'transfer_diagnosis',
+        tendency_tag_label: 'Diagnosing "bigger is always safer" on a wholly unseen river spot',
+        tendency_tag_leak_hint: 'Revisit Lesson 9 Misconception #7 — a stated trap percentage this high means the bet described is almost certainly well past the safe ceiling.',
+        xp: 20,
+      },
+      {
+        id: 'l10-s7',
+        type: 'tendency_summary',
+        concept_ids: ['capstone_synthesis'],
+        tendency_summary_intro: 'Your Sizing Strategy Report — built only from what you actually did across this hand\'s three streets, plus the final transfer check.',
+        summary_source_step_ids: ['l10-s2', 'l10-s3', 'l10-s4', 'l10-s5', 'l10-s6'],
+        xp: 20,
+      },
+      {
+        id: 'l10-s8',
+        type: 'concept_reveal',
+        concept_title: 'Mental Model Shift',
+        concept_structured_items: [
+          { term: 'Before this lesson', description: "I understand each of Module 12's sizing principles individually — Lesson 5's polarization curve, Lesson 8's board corrections, Lesson 9's river formulas, as separate, well-practiced facts." },
+          { term: 'After this lesson', description: 'I can look at an unfamiliar hand, street by street, and know which specific principle each street\'s decision calls for, apply it, and move to the next street having reassessed the range relationship fresh. Sizing reasoning is one integrated skill exercised in sequence, not nine separate facts recalled in isolation.' },
+        ],
+      },
+      {
+        id: 'l10-s9',
+        type: 'concept_reveal',
+        concept_reveal_optional: true,
+        concept_title: 'Elite Insight',
+        concept_content: "Nobody who plays this well actually runs through nine named principles consciously, hand after hand — there isn't time. What happens instead, with enough repetition, is that all nine compress into one fast, recurring question asked at every decision point: \"which range just changed, how, and what does that change now allow?\" A flop asks it for the first time. A turn card asks it again — sometimes with the same answer, sometimes flipped entirely, as in this capstone's own diamond turn. A river asks it one final time, with the added gift that the answer can usually be computed rather than estimated. Weaker players keep treating each street as a fresh, unrelated decision, disconnected from what the previous street's action just revealed. The elite habit is the opposite: treat every new card as new information about which range just changed, and let the sizing answer fall out of that single, repeated question.",
       },
     ],
   },

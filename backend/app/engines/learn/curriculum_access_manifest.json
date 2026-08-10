@@ -395,6 +395,10 @@
     "the-rivers-blunt-instruments": {
       "module_id": "bet-sizing-language-module",
       "sort_order": 9
+    },
+    "designing-a-sizing-strategy": {
+      "module_id": "bet-sizing-language-module",
+      "sort_order": 10
     }
   },
   "modules": {

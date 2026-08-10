@@ -1858,6 +1858,21 @@ export const PUBLIC_LESSONS: PublicLesson[] = [
     "sort_order": 9,
     "next_lesson_teaser": "Designing a Sizing Strategy",
     "step_count": 13
+  },
+  {
+    "id": "designing-a-sizing-strategy",
+    "module_id": "bet-sizing-language-module",
+    "slug": "designing-a-sizing-strategy",
+    "title": "Designing a Sizing Strategy",
+    "subtitle": "One continuous hand, three streets, every tool this module built — no chart to fall back on.",
+    "lesson_type": "concept_reveal",
+    "concept_ids": [
+      "capstone_synthesis"
+    ],
+    "estimated_min": 18,
+    "xp_reward": 260,
+    "sort_order": 10,
+    "step_count": 9
   }
 ]
 
@@ -2331,7 +2346,8 @@ export const LEARNING_MODULES: LearningModule[] = [
       "Predict a strategy's sizing direction — from pure-check to all-in-dominant — directly from a range's polarization relative to its opponent's, without needing raw equity numbers"
     ],
     "difficulty": "intermediate",
-    "estimatedLessons": 5,
+    "estimatedLessons": 10,
+    "contentStatus": "complete",
     "stageId": "bet-sizing-defense",
     "order": 12,
     "prerequisiteModuleId": "polarized-module",
