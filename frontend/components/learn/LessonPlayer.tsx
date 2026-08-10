@@ -83,6 +83,7 @@ import { ConceptTagRow } from '@/components/learn/ConceptPopover'
 import { LessonCompletionScreen } from '@/components/learn/LessonCompletionScreen'
 import { recordConceptResult, pickInjectedStep } from '@/lib/learn/adaptiveEngine'
 import { buildLessonCoachContext } from '@/lib/learn/lessonCoachContext'
+import { LESSON_CARD_ATTR, scrollLessonCardIntoViewAfterPaint } from '@/lib/learn/lessonScroll'
 import { LessonCoachDrawer } from '@/components/learn/coach/LessonCoachDrawer'
 import { AskCoachTrigger } from '@/components/learn/coach/AskCoachTrigger'
 
@@ -860,6 +861,26 @@ export function LessonPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentStepIndex])
 
+  // Every transition that swaps what's inside the step card puts the learner
+  // back at the top of it: answering (step -> feedback, where a one-line
+  // question is replaced by a much taller result card), Continue (the next
+  // step), Previous, Retry, and the intro/summary screens. Without this the
+  // browser keeps the old scroll offset and the "Perfect Play" heading, the
+  // score and the explanation's first lines all open above the fold — the
+  // taller the feedback, the worse it reads.
+  //
+  // Skipped on the very first commit: the page has just loaded (or resumed
+  // mid-lesson) at its natural position, and yanking it would be the same
+  // unexplained jump this fixes.
+  const didInitialRenderRef = useRef(false)
+  useEffect(() => {
+    if (!didInitialRenderRef.current) {
+      didInitialRenderRef.current = true
+      return
+    }
+    return scrollLessonCardIntoViewAfterPaint()
+  }, [phase, currentStepIndex])
+
   // ── Intro ──────────────────────────────────────────────────────────────────
   if (phase === 'intro') {
     return <IntroScreen lesson={lesson} onStart={handleStart} />
@@ -1001,6 +1022,7 @@ export function LessonPlayer({
           all sizes. Vertical padding (py-6) never changes, and a small px-3 (12px)
           gutter is always kept — the card must never touch the viewport edge. */}
       <div
+        {...{ [LESSON_CARD_ATTR]: '' }}
         className={cn(
           'rounded-2xl border border-border/50 bg-card/60 py-6',
           currentStep.type === 'range_collision' || currentStep.type === 'range_xray'

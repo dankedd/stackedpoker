@@ -14,6 +14,7 @@ import { buildHandDecisionOptions } from '@/lib/learn/mttRfiLabPool'
 import { evaluateTableDecision, type TableDecisionEvaluation } from '@/lib/learn/tableDecisionEngine'
 import { chartToStrategyMap } from '@/lib/learn/mttRfiRanges'
 import { canonicalCombo } from '@/lib/learn/combos'
+import { scrollLessonCardIntoViewAfterPaint } from '@/lib/learn/lessonScroll'
 
 interface TableDecisionProps {
   step: LessonStep
@@ -185,6 +186,16 @@ export function TableDecision({ step, onAnswer, disabled = false }: TableDecisio
     mountTime.current = Date.now()
     setAnswered(null)
   }, [step.id])
+
+  // This step type grades itself: the reveal below appears while LessonPlayer
+  // is still in its 'step' phase, so the player's own scroll-to-top on phase
+  // change never fires for it. Without this the learner is left mid-page while
+  // a full range grid and explanation unfold above them — the same bug the
+  // player fixes for every step that hands its answer straight to StepFeedback.
+  useEffect(() => {
+    if (!answered) return
+    return scrollLessonCardIntoViewAfterPaint()
+  }, [answered])
 
   const chartKey = step.table_decision_chart ?? ''
   const chart = MTT_RFI_CHARTS[chartKey]

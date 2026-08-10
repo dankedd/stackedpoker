@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { scrollLessonCardIntoViewAfterPaint } from '@/lib/learn/lessonScroll'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { orderStepOptions } from '@/lib/learn/interactionSafety'
@@ -35,6 +36,14 @@ export function RangeCollision({ step, onAnswer, disabled = false }: RangeCollis
   const [activeBoardId, setActiveBoardId] = useState<string | undefined>(boards?.[0]?.id)
   const [selected, setSelected] = useState<string | null>(null)
   const [revealed, setRevealed] = useState(false)
+
+  // Self-graded reveal: this appears while LessonPlayer is still in its 'step'
+  // phase, so the player's scroll-to-top on phase change never fires here.
+  // See lessonScroll.ts.
+  useEffect(() => {
+    if (!revealed) return
+    return scrollLessonCardIntoViewAfterPaint()
+  }, [revealed])
 
   useEffect(() => {
     mountTime.current = Date.now()

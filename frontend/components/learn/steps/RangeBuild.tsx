@@ -1,6 +1,7 @@
 'use client'
 
 import { Fragment, useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { scrollLessonCardIntoViewAfterPaint } from '@/lib/learn/lessonScroll'
 import { Lightbulb, RotateCcw, Eraser, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
@@ -90,6 +91,14 @@ export function RangeBuild({ step, onAnswer, disabled = false }: RangeBuildProps
   const [isDragging, setIsDragging] = useState(false)
   const [dragMode, setDragMode] = useState<'add' | 'remove'>('add')
   const [reviewingDiff, setReviewingDiff] = useState(false)
+
+  // Self-graded reveal: this appears while LessonPlayer is still in its 'step'
+  // phase, so the player's scroll-to-top on phase change never fires here.
+  // See lessonScroll.ts.
+  useEffect(() => {
+    if (!reviewingDiff) return
+    return scrollLessonCardIntoViewAfterPaint()
+  }, [reviewingDiff])
 
   const selected = rangeState.selected
 

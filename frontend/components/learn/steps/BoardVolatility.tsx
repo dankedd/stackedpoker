@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { scrollLessonCardIntoViewAfterPaint } from '@/lib/learn/lessonScroll'
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
@@ -63,6 +64,14 @@ const NO_IMPACT_EXPLANATION =
 function RunoutStormMode({ step, onAnswer, disabled, mountTime }: BoardVolatilityProps & { mountTime: React.RefObject<number> }) {
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [phase, setPhase] = useState<'select' | 'reviewed'>('select')
+
+  // Self-graded reveal: this appears while LessonPlayer is still in its 'step'
+  // phase, so the player's scroll-to-top on phase change never fires here.
+  // See lessonScroll.ts.
+  useEffect(() => {
+    if (phase !== 'reviewed') return
+    return scrollLessonCardIntoViewAfterPaint()
+  }, [phase])
   const board = step.board_volatility_board ?? step.board ?? []
   const pool = useMemo(() => shuffleBySeed(step.board_volatility_storm_pool ?? [], step.id), [step.board_volatility_storm_pool, step.id])
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { Fragment, useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { scrollLessonCardIntoViewAfterPaint } from '@/lib/learn/lessonScroll'
 import { Lightbulb, RotateCcw, Eraser, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
@@ -92,6 +93,14 @@ export function MultiActionRangeBuild({ step, onAnswer, disabled = false }: Mult
   const [dragAction, setDragAction] = useState<MultiRangeAction | null>(null)
   const [reviewingDiff, setReviewingDiff] = useState(false)
 
+  // Self-graded reveal: this appears while LessonPlayer is still in its 'step'
+  // phase, so the player's scroll-to-top on phase change never fires here.
+  // See lessonScroll.ts.
+  useEffect(() => {
+    if (!reviewingDiff) return
+    return scrollLessonCardIntoViewAfterPaint()
+  }, [reviewingDiff])
+
   useEffect(() => {
     mountTime.current = Date.now()
     setState(createInitialMultiSelection(prefilled))
@@ -166,6 +175,7 @@ export function MultiActionRangeBuild({ step, onAnswer, disabled = false }: Mult
           yourAssignments={finalAssignments}
           chart={chart}
           puzzleHands={step.range_build_multi_puzzle_hands}
+          puzzleNotes={step.range_build_multi_puzzle_notes}
         />
         <button
           type="button"

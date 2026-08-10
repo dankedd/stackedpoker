@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ChevronLeft, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LESSON_HEADER_ATTR } from "@/lib/learn/lessonScroll";
 
 /**
  * The lesson-page header — the one place a learner reads "where am I, what am
@@ -61,10 +62,17 @@ function HeaderDots({ total, current }: { total: number; current: number }) {
 
 // ── Shared pieces ─────────────────────────────────────────────────────────────
 
-/** The sticky, blurred bar every lesson-page header sits in. */
+/** The sticky, blurred bar every lesson-page header sits in.
+ *
+ *  The data attribute is how lessonScroll.ts measures how much of the viewport
+ *  this header covers, so scrolling a step card "to the top" parks it just
+ *  below the header instead of behind it. */
 function HeaderShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative z-40 sticky top-0 border-b border-border/25 bg-background/90 backdrop-blur-md">
+    <div
+      {...{ [LESSON_HEADER_ATTR]: '' }}
+      className="relative z-40 sticky top-0 border-b border-border/25 bg-background/90 backdrop-blur-md"
+    >
       {children}
     </div>
   );

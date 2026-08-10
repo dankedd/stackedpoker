@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { scrollLessonCardIntoViewAfterPaint } from '@/lib/learn/lessonScroll'
 import { CheckCircle2, XCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
@@ -54,6 +55,14 @@ export function MorphologyBuilder({ step, onAnswer, disabled = false }: Morpholo
   const [polarSet, setPolarSet] = useState<Set<string>>(new Set())
   const [submitted, setSubmitted] = useState(false)
   const [reviewing, setReviewing] = useState(false)
+
+  // Self-graded reveal: this appears while LessonPlayer is still in its 'step'
+  // phase, so the player's scroll-to-top on phase change never fires here.
+  // See lessonScroll.ts.
+  useEffect(() => {
+    if (!reviewing) return
+    return scrollLessonCardIntoViewAfterPaint()
+  }, [reviewing])
   const [frozenResponse, setFrozenResponse] = useState<{ linear: string[]; polarized: string[] } | null>(null)
 
   useEffect(() => {
