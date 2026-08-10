@@ -8552,7 +8552,8 @@ export const LESSONS: Lesson[] = [
         id: 're-s8a',
         type: 'decision_spot',
         concept_ids: ['equity_realization_preflop'],
-        narrative: 'Cash game, 100bb effective. BTN opens to 2.3bb. Hero is in the BB with A♣J♦ (AJo). Easier or harder to realize its equity here?',
+        narrative: 'Cash game, 100bb effective. BTN opens to 2.3bb. Hero is in the BB with A♣J♦ (AJo).',
+        decision_spot_question: "Compared to its raw preflop equity against BTN's range, does AJo generally realize MORE of that equity by the river, or LESS?",
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'BTN',
@@ -8560,8 +8561,8 @@ export const LESSONS: Lesson[] = [
         action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds'],
         hero_hand: ['Ac', 'Jd'],
         options: [
-          { id: 'harder', label: 'Harder to realize', quality: 'perfect', feedback: 'Correct — AJo is offsuit and disconnected, easily dominated by the stronger Ax combos in Villain\'s range, and plays a difficult, one-dimensional postflop game despite having real raw equity on paper.' },
-          { id: 'easier', label: 'Easier to realize', quality: 'mistake', feedback: 'Despite decent raw equity, AJo\'s lack of suitedness/connectedness and its domination risk make it one of the harder hands here to actually convert into pot share.' },
+          { id: 'less', label: 'Realizes LESS than its raw equity', quality: 'perfect', feedback: 'Correct — despite having real raw equity on paper, AJo is offsuit and disconnected, easily dominated by the stronger Ax combos in Villain\'s range, and plays a difficult, one-dimensional postflop game. It ends up capturing less of the pot than its raw equity number alone would suggest.' },
+          { id: 'more', label: 'Realizes MORE than its raw equity', quality: 'mistake', feedback: 'Despite decent raw equity, AJo\'s lack of suitedness/connectedness and its domination risk mean it typically falls short of realizing that full raw share, not exceeds it.' },
         ],
         xp: 6,
       },
@@ -8569,7 +8570,8 @@ export const LESSONS: Lesson[] = [
         id: 're-s8b',
         type: 'decision_spot',
         concept_ids: ['equity_realization_preflop'],
-        narrative: 'Same spot. Hero holds A♠5♠ (A5s). Easier or harder to realize?',
+        narrative: 'Same spot. Hero holds A♠5♠ (A5s).',
+        decision_spot_question: 'Compared to its raw preflop equity against BTN\'s range, does A5s generally realize MORE of that equity by the river, or LESS?',
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'BTN',
@@ -8577,8 +8579,8 @@ export const LESSONS: Lesson[] = [
         action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds'],
         hero_hand: ['As', '5s'],
         options: [
-          { id: 'easier', label: 'Easier to realize', quality: 'perfect', feedback: 'Correct — the Ace blocker, suitedness (flush potential) and straight-drawing shape all give A5s real, flexible ways to continue and grow the pot after the flop.' },
-          { id: 'harder', label: 'Harder to realize', quality: 'mistake', feedback: 'A5s\'s blocker value, suitedness and playability all make it comparatively easy to navigate — one of the friendlier hands here, not one of the tougher ones.' },
+          { id: 'more', label: 'Realizes MORE than its raw equity', quality: 'perfect', feedback: 'Correct — the Ace blocker, suitedness (flush potential) and straight-drawing shape all give A5s real, flexible ways to continue and grow the pot after the flop, capturing more than its raw equity number alone would suggest.' },
+          { id: 'less', label: 'Realizes LESS than its raw equity', quality: 'mistake', feedback: 'A5s\'s blocker value, suitedness and playability all make it comparatively easy to navigate — one of the hands here that realizes MORE of its raw equity, not less.' },
         ],
         xp: 6,
       },
@@ -8586,7 +8588,8 @@ export const LESSONS: Lesson[] = [
         id: 're-s8c',
         type: 'decision_spot',
         concept_ids: ['equity_realization_preflop'],
-        narrative: 'Same spot. Hero holds 7♠6♠ (76s). Easier or harder to realize?',
+        narrative: 'Same spot. Hero holds 7♠6♠ (76s).',
+        decision_spot_question: 'Compared to its raw preflop equity against BTN\'s range, does 76s generally realize MORE of that equity by the river, or LESS?',
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'BTN',
@@ -8594,8 +8597,8 @@ export const LESSONS: Lesson[] = [
         action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds'],
         hero_hand: ['7s', '6s'],
         options: [
-          { id: 'easier', label: 'Easier to realize', quality: 'perfect', feedback: 'Correct — suited AND connected gives 76s flush and straight potential together, with no domination risk to worry about at all. It plays comfortably across a wide range of flops.' },
-          { id: 'harder', label: 'Harder to realize', quality: 'mistake', feedback: '76s has none of the domination risk that plagues offsuit broadways, plus real flush and straight potential — it is one of the easier hands here to realize.' },
+          { id: 'more', label: 'Realizes MORE than its raw equity', quality: 'perfect', feedback: 'Correct — suited AND connected gives 76s flush and straight potential together, with no domination risk to worry about at all, so it comfortably captures more than its raw equity number alone would suggest.' },
+          { id: 'less', label: 'Realizes LESS than its raw equity', quality: 'mistake', feedback: '76s has none of the domination risk that plagues offsuit broadways, plus real flush and straight potential — it is one of the hands here that realizes MORE of its raw equity, not less.' },
         ],
         xp: 6,
       },
@@ -8603,7 +8606,8 @@ export const LESSONS: Lesson[] = [
         id: 're-s8d',
         type: 'decision_spot',
         concept_ids: ['equity_realization_preflop', 'pocket_pair_value'],
-        narrative: 'Same spot. Hero holds 4♣4♦ (44). Easier or harder to realize?',
+        narrative: 'Same spot. Hero holds 4♣4♦ (44).',
+        decision_spot_question: 'Compared to its raw preflop equity against BTN\'s range, does 44 generally realize MORE of that equity by the river, or LESS?',
         table_size: 6,
         hero_position: 'BB',
         villain_position: 'BTN',
@@ -8611,8 +8615,8 @@ export const LESSONS: Lesson[] = [
         action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds'],
         hero_hand: ['4c', '4d'],
         options: [
-          { id: 'harder', label: 'Harder to realize', quality: 'perfect', feedback: 'Correct — a tiny pair has essentially one plan (flop a set) and folds to most other textures. Compared to 76s or A5s, it has far fewer ways to develop a hand across different flops.' },
-          { id: 'easier', label: 'Easier to realize', quality: 'mistake', feedback: 'A small pair with no other properties (not suited, no real connectedness beyond itself) has a narrower plan than a hand like 76s or A5s — it is comparatively harder to realize, not easier.' },
+          { id: 'less', label: 'Realizes LESS than its raw equity', quality: 'perfect', feedback: 'Correct — a tiny pair has essentially one plan (flop a set) and folds to most other textures. Compared to 76s or A5s, it has far fewer ways to develop a hand across different flops, so it captures less of the pot than its raw equity number alone would suggest.' },
+          { id: 'more', label: 'Realizes MORE than its raw equity', quality: 'mistake', feedback: 'A small pair with no other properties (not suited, no real connectedness beyond itself) has a narrower plan than a hand like 76s or A5s — it realizes LESS of its raw equity, not more.' },
         ],
         xp: 6,
       },
@@ -12302,7 +12306,8 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BTN',
         villain_position: 'BB',
         effective_stack_bb: 100,
-        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds', 'BB calls', 'BB checks'],
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds', 'BB calls'],
+        postflop_action: ['BB checks'],
         board: ['As', '7d', '2c'],
         options: [
           {
@@ -12327,7 +12332,8 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BTN',
         villain_position: 'BB',
         effective_stack_bb: 100,
-        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds', 'BB calls', 'BB checks'],
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds', 'BB calls'],
+        postflop_action: ['BB checks'],
         board: ['6s', '5d', '4c'],
         options: [
           {
@@ -12352,7 +12358,8 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BTN',
         villain_position: 'BB',
         effective_stack_bb: 100,
-        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds', 'BB calls', 'BB checks'],
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds', 'BB calls'],
+        postflop_action: ['BB checks'],
         board: ['Ks', 'Qd', 'Jh'],
         options: [
           {
@@ -12832,7 +12839,8 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BTN',
         villain_position: 'BB',
         effective_stack_bb: 100,
-        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds', 'BB calls', 'BB checks'],
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds', 'BB calls'],
+        postflop_action: ['BB checks'],
         board: ['As', '9d', '3c'],
         decision_spot_question: 'What is BTN\'s aggregate c-bet frequency here?',
         options: [
@@ -12875,7 +12883,8 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BTN',
         villain_position: 'BB',
         effective_stack_bb: 100,
-        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds', 'BB calls', 'BB checks'],
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds', 'BB calls'],
+        postflop_action: ['BB checks'],
         board: ['Ks', 'Qs', 'Td'],
         decision_spot_question: 'What is BTN\'s aggregate c-bet frequency here?',
         options: [
@@ -13059,7 +13068,8 @@ export const LESSONS: Lesson[] = [
         hero_position: 'BTN',
         villain_position: 'BB',
         effective_stack_bb: 40,
-        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds', 'BB calls', 'BB checks'],
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.3bb', 'SB folds', 'BB calls'],
+        postflop_action: ['BB checks'],
         board: ['Js', '6h', '6d'],
         decision_spot_question: "BB's Strong-hand share here is a real 14% (8.9% of it is trip sixes alone) — much closer to BTN's 23% than on most boards this module has shown. Shouldn't that push BTN's c-bet frequency DOWN, the way 654r did?",
         options: [
@@ -13422,7 +13432,8 @@ export const LESSONS: Lesson[] = [
         hero_position: 'CO',
         villain_position: 'BB',
         effective_stack_bb: 100,
-        action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN folds', 'SB folds', 'BB calls', 'BB checks'],
+        action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN folds', 'SB folds', 'BB calls'],
+        postflop_action: ['BB checks'],
         board: ['Qd', '8c', '3s'],
         cbet_frequency_size_prompt: 'Choose the aggregate frequency, then the primary sizing.',
         cbet_frequency_size_frequency_options: CBET_FREQUENCY_OPTIONS,
@@ -13571,7 +13582,8 @@ export const LESSONS: Lesson[] = [
         hero_position: 'HJ',
         villain_position: 'CO',
         effective_stack_bb: 100,
-        action_before_hero: ['UTG folds', 'HJ raises to 2.3bb', 'CO calls', 'BTN folds', 'SB folds', 'BB folds', 'CO checks'],
+        action_before_hero: ['UTG folds', 'HJ raises to 2.3bb', 'CO calls', 'BTN folds', 'SB folds', 'BB folds'],
+        postflop_action: ['CO checks'],
         board: ['Ac', 'Kc', '4d'],
         cbet_frequency_size_prompt: 'Choose the aggregate frequency, then the primary sizing.',
         cbet_frequency_size_frequency_options: CBET_FREQUENCY_OPTIONS,
@@ -15678,6 +15690,7 @@ export const LESSONS: Lesson[] = [
         table_size: 9,
         effective_stack_bb: 76,
         action_before_hero: ['HJ raises to 2.5bb', 'Hero calls'],
+        postflop_action: [],
         source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Hand Ranges as Combinations', example: 'HJ Open vs BB Call — A♣J♥9♥ Flop', type: 'source_reconstructed' },
       },
       {
@@ -15911,6 +15924,12 @@ export const LESSONS: Lesson[] = [
         board: ['Ah', '9d', '4c', '2s', '7h'],
         hero_hand: ['Ac', 'Td'],
         street: 'river',
+        // Same spot btv-rd1/rd2/rd3 return to later in this lesson — identical
+        // table, pot and bet, so the scene the learner meets here is the scene
+        // they decide on.
+        table_size: 6,
+        pot_bb: 20,
+        postflop_action: ['BTN bets 20bb'],
         source: { book: 'Modern Poker Theory', section: 'River Calling Strategies — Blockers', type: 'pedagogical_model' },
       },
       {
@@ -16061,7 +16080,8 @@ export const LESSONS: Lesson[] = [
         street: 'river',
         pot_bb: 20,
         effective_stack_bb: 40,
-        action_before_hero: ['BTN bets pot on the river'],
+        table_size: 6,
+        postflop_action: ['BTN bets 20bb'],
         source: { book: 'Modern Poker Theory', section: 'River Calling Strategies — Blockers', type: 'pedagogical_model' },
       },
       {
@@ -16076,7 +16096,8 @@ export const LESSONS: Lesson[] = [
         street: 'river',
         pot_bb: 20,
         effective_stack_bb: 40,
-        action_before_hero: ['BTN bets pot on the river'],
+        table_size: 6,
+        postflop_action: ['BTN bets 20bb'],
         decision_spot_question: 'Hero holds A♣T♦. Call or fold?',
         options: [
           {
@@ -16102,7 +16123,8 @@ export const LESSONS: Lesson[] = [
         street: 'river',
         pot_bb: 20,
         effective_stack_bb: 40,
-        action_before_hero: ['BTN bets pot on the river'],
+        table_size: 6,
+        postflop_action: ['BTN bets 20bb'],
         decision_spot_question: 'Hero holds A♣7♣. Call or fold?',
         options: [
           {
