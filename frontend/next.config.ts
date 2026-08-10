@@ -32,11 +32,11 @@ const securityHeaders = [
   },
   // Content-Security-Policy
   // Allows:
-  //   - Scripts: same origin + nonces (Next.js inlines small scripts)
+  //   - Scripts: same origin + nonces (Next.js inlines small scripts) + GA4's gtag.js
   //   - Styles:  same origin + 'unsafe-inline' (Tailwind requires this)
   //   - Images:  same origin + data URIs (base64 screenshots) + Supabase storage
   //   - Fonts:   same origin
-  //   - Connect: same origin + Supabase + backend API (localhost in dev)
+  //   - Connect: same origin + Supabase + backend API (localhost in dev) + GA4's collect beacon
   //   - Frames:  none (DENY)
   //   - Objects: none (no Flash/plugins)
   {
@@ -46,13 +46,24 @@ const securityHeaders = [
       // Next.js requires 'unsafe-inline' for its inline runtime scripts in dev;
       // in production it uses nonces — but we keep unsafe-inline here as a
       // safe default until nonce injection is wired in.
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      // googletagmanager.com is GA4's gtag.js loader (see
+      // components/analytics/GoogleAnalytics.tsx) — without it explicitly
+      // allowed here, the browser silently blocks the script entirely (the
+      // <script> tag still renders in the HTML, so this looked "installed"
+      // from a plain curl/view-source check, but nothing ever actually loads
+      // or reports data).
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com",
       "style-src 'self' 'unsafe-inline'",
-      // data: for base64 screenshots; blob: for canvas exports
-      `img-src 'self' data: blob: ${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}`,
+      // data: for base64 screenshots; blob: for canvas exports; GA4's
+      // fallback beacon can fire as an image pixel on very old browsers.
+      `img-src 'self' data: blob: https://www.googletagmanager.com https://www.google-analytics.com ${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}`,
       "font-src 'self'",
       // Backend API (dev: localhost, prod: same origin via rewrite) + Supabase
-      `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""} ${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}`,
+      // + GA4's own collect endpoints (www.google-analytics.com and its
+      // regional subdomains, e.g. region1.google-analytics.com — gtag.js
+      // picks one at runtime, so the wildcard covers all of them) + gtag.js's
+      // own config fetches back to googletagmanager.com.
+      `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""} ${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"} https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com`,
       "frame-src 'none'",
       "object-src 'none'",
       "base-uri 'self'",
