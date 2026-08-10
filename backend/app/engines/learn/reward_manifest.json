@@ -1772,6 +1772,24 @@
         "bg-s14": 10,
         "bg-s15": 10
       }
+    },
+    "the-rivers-blunt-instruments": {
+      "xp_reward": 220,
+      "steps": {
+        "rsc-s1": 10,
+        "rsc-s2": 10,
+        "rsc-s3": 16,
+        "rsc-s4": 20,
+        "rsc-s5": 10,
+        "rsc-s6": 22,
+        "rsc-s7": 20,
+        "rsc-s7-explain": 10,
+        "rsc-s8": 16,
+        "rsc-s9": 18,
+        "rsc-s10": 18,
+        "rsc-s11": 10,
+        "rsc-s12": 10
+      }
     }
   },
   "modules": {
