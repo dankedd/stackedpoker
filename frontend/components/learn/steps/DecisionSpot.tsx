@@ -10,6 +10,7 @@ import { canRenderPostflopTable } from '@/lib/learn/postflopTableState'
 import { ScenarioComparison } from '@/components/learn/visuals/ScenarioComparison'
 import { ScenarioSideBySide } from '@/components/learn/visuals/ScenarioSideBySide'
 import { BoardScenarioComparison, isBoardOnlyScenarioPair } from '@/components/learn/visuals/BoardScenarioComparison'
+import { answerGridClass, stackedAnswerClass } from '@/lib/learn/answerLayout'
 
 interface DecisionSpotProps {
   step: LessonStep
@@ -55,12 +56,10 @@ export function DecisionSpot({ step, onAnswer, disabled = false }: DecisionSpotP
     () => (step.type === 'bet_size_choose' ? rawOptions : orderStepOptions(rawOptions, step.id)),
     [rawOptions, step.id, step.type],
   )
-  const gridCols =
-    options.length === 2
-      ? 'grid-cols-2'
-      : options.length === 3
-      ? 'grid-cols-3'
-      : 'grid-cols-2'
+  // 3 options kept their own 3-across desktop row; everything else falls back
+  // to 2. Below `sm:` both stack — see answerLayout.ts.
+  const gridCols = answerGridClass(options.length, options.length === 3 ? 3 : 2)
+  const stackedOption = stackedAnswerClass(options.length)
 
   // The visible heading must describe the actual cognitive task, never a
   // generic action label slapped over non-action answers. Precedence:
@@ -201,6 +200,7 @@ export function DecisionSpot({ step, onAnswer, disabled = false }: DecisionSpotP
                 onClick={() => handleSelect(opt.id)}
                 className={cn(
                   'relative rounded-xl px-4 py-4 text-sm font-semibold transition-all duration-150 active:scale-[0.97] border text-left overflow-hidden',
+                  stackedOption,
                   isSelected
                     ? 'border-violet-500/50 bg-violet-500/15 text-violet-200 shadow-lg shadow-violet-900/20'
                     : hasSelected

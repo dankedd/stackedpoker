@@ -6,6 +6,7 @@ import type { LessonStep } from '@/lib/learn/types'
 import { PlayingCardMini } from '@/components/learn/PlayingCardMini'
 import { orderStepOptions } from '@/lib/learn/interactionSafety'
 import type { FlopDimensionKey } from '@/lib/learn/flopClassifier'
+import { answerGridClass, stackedAnswerClass } from '@/lib/learn/answerLayout'
 
 interface FlopClassifyDrillProps {
   step: LessonStep
@@ -117,7 +118,7 @@ export function FlopClassifyDrill({ step, onAnswer, disabled = false }: FlopClas
         <p className="text-center text-sm font-semibold text-foreground">{step.flop_classify_drill_prompt}</p>
       )}
 
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className={cn('grid gap-2.5', answerGridClass(options.length))}>
         {options.map((opt) => {
           const isSelected = picked === opt.id
           return (
@@ -128,6 +129,7 @@ export function FlopClassifyDrill({ step, onAnswer, disabled = false }: FlopClas
               onClick={() => handlePick(opt.id)}
               className={cn(
                 'rounded-xl border px-4 py-3 text-sm font-semibold transition-all duration-150 active:scale-[0.97]',
+                  stackedAnswerClass(options.length),
                 isSelected
                   ? 'border-violet-500/50 bg-violet-500/15 text-violet-200'
                   : picked !== null

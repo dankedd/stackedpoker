@@ -10,6 +10,7 @@ import { RangeRevealComparison } from '@/components/learn/visuals/RangeRevealCom
 import { orderStepOptions } from '@/lib/learn/interactionSafety'
 import { diagnoseMorphologyBuild, type MorphologyPanelDiagnostic } from '@/lib/learn/evaluator'
 import { RangeExplanationCallout } from '@/components/poker/RangeExplanationCallout'
+import { answerGridClass, stackedAnswerClass } from '@/lib/learn/answerLayout'
 
 interface MorphologyBuilderProps {
   step: LessonStep
@@ -104,7 +105,7 @@ export function MorphologyBuilder({ step, onAnswer, disabled = false }: Morpholo
           <p className="text-center text-base font-semibold text-foreground">{step.morphology_builder_prompt}</p>
         )}
 
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className={cn('grid gap-2.5', answerGridClass(options.length))}>
           {options.map((opt) => {
             const isSelected = classifySelected === opt.id
             const hasSelected = classifySelected !== null
@@ -116,6 +117,7 @@ export function MorphologyBuilder({ step, onAnswer, disabled = false }: Morpholo
                 onClick={() => handleSelect(opt.id)}
                 className={cn(
                   'relative rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-150 active:scale-[0.97] border text-center overflow-hidden',
+                  stackedAnswerClass(options.length),
                   isSelected
                     ? 'border-violet-500/50 bg-violet-500/15 text-violet-200 shadow-lg shadow-violet-900/20'
                     : hasSelected

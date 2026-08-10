@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { orderStepOptions } from '@/lib/learn/interactionSafety'
+import { answerGridClass, stackedAnswerClass } from '@/lib/learn/answerLayout'
 
 interface FrequencySizeLabProps {
   step: LessonStep
@@ -101,7 +102,7 @@ export function FrequencySizeLab({ step, onAnswer, disabled = false }: Frequency
           <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground/50 text-center">
             Stage 2 — Primary sizing ({frequencyLabel})
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className={cn('grid gap-2', answerGridClass(sizingOptions.length, 4))}>
             {sizingOptions.map((opt) => {
               const isSelected = sizingId === opt.id
               return (
@@ -112,6 +113,7 @@ export function FrequencySizeLab({ step, onAnswer, disabled = false }: Frequency
                   onClick={() => pickSizing(opt.id)}
                   className={cn(
                     'rounded-xl px-3 py-3 text-sm font-semibold border text-center transition-all',
+                    stackedAnswerClass(sizingOptions.length),
                     isSelected
                       ? 'border-violet-500/50 bg-violet-500/15 text-violet-200'
                       : 'border-border/50 bg-secondary/40 text-foreground hover:bg-secondary/70 hover:border-violet-500/30',

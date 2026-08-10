@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
 import { orderStepOptions } from '@/lib/learn/interactionSafety'
+import { answerGridClass, stackedAnswerClass } from '@/lib/learn/answerLayout'
 
 interface EquityBalanceProps {
   step: LessonStep
@@ -103,7 +104,7 @@ export function EquityBalance({ step, onAnswer, disabled = false, reviewMode = f
       )}
 
       {options.length > 0 && (
-        <div className="grid grid-cols-2 gap-3">
+        <div className={cn('grid gap-3', answerGridClass(options.length))}>
           {options.map((opt) => {
             const isSelected = selected === opt.id
             const hasSelected = selected !== null
@@ -116,6 +117,7 @@ export function EquityBalance({ step, onAnswer, disabled = false, reviewMode = f
                 onClick={() => handleSelect(opt.id)}
                 className={cn(
                   'relative rounded-xl px-4 py-4 text-sm font-semibold transition-all duration-150 active:scale-[0.97] border text-center overflow-hidden',
+                  stackedAnswerClass(options.length),
                   isSelected
                     ? 'border-violet-500/50 bg-violet-500/15 text-violet-200 shadow-lg shadow-violet-900/20'
                     : hasSelected

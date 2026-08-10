@@ -9,6 +9,7 @@ import { RangeCollisionViewer } from '@/components/learn/visuals/RangeCollisionV
 import { RangeEquityMeter } from '@/components/learn/visuals/RangeEquityMeter'
 import { ShowMeWhy } from '@/components/learn/ShowMeWhy'
 import { ReviewContinueButton } from '@/components/learn/RevealKit'
+import { answerGridClass, stackedAnswerClass } from '@/lib/learn/answerLayout'
 
 interface RangeCollisionProps {
   step: LessonStep
@@ -126,13 +127,16 @@ export function RangeCollision({ step, onAnswer, disabled = false }: RangeCollis
             <p className="text-center text-xs font-semibold text-foreground">
               {step.range_collision_prompt ?? 'Which range does this flop favor?'}
             </p>
-            <div className={cn('grid gap-2', options.length > 3 ? 'grid-cols-5' : 'grid-cols-3')}>
+            <div className={cn('grid gap-2', answerGridClass(options.length, options.length > 3 ? 5 : 3))}>
               {options.map((opt) => (
                 <button
                   key={opt.id}
                   type="button"
                   onClick={() => handleSelect(opt.id)}
-                  className="rounded-lg border border-border/40 bg-secondary/30 px-2 py-2.5 text-[10px] font-semibold text-foreground hover:border-violet-500/40 hover:bg-violet-500/10 transition-colors"
+                  className={cn(
+                    'rounded-lg border border-border/40 bg-secondary/30 px-2 py-2.5 text-[10px] font-semibold text-foreground hover:border-violet-500/40 hover:bg-violet-500/10 transition-colors',
+                    stackedAnswerClass(options.length),
+                  )}
                 >
                   {opt.label}
                 </button>

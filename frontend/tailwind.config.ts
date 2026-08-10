@@ -6,6 +6,12 @@ const config: Config = {
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    // lib/ holds class strings too — the answer-layout helpers, the quality
+    // colour/badge maps in learn/types.ts, and anything else that returns a
+    // className. Those only rendered before because the same utilities happened
+    // to appear in a component file; a class unique to lib/ was silently never
+    // generated (min-h-[3.5rem] on stacked answers was exactly that).
+    "./lib/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {

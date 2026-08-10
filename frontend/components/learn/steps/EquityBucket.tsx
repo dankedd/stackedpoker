@@ -8,6 +8,7 @@ import { PokerRangeGrid } from '@/components/learn/visuals/PokerRangeGrid'
 import { orderStepOptions } from '@/lib/learn/interactionSafety'
 import { equityBucket, type EquityBucketId } from '@/lib/learn/flopClassifier'
 import { RangeExplanationCallout } from '@/components/poker/RangeExplanationCallout'
+import { answerGridClass, stackedAnswerClass } from '@/lib/learn/answerLayout'
 
 interface EquityBucketProps {
   step: LessonStep
@@ -153,7 +154,7 @@ export function EquityBucket({ step, onAnswer, disabled = false }: EquityBucketP
         {step.equity_bucket_prompt ?? 'Which bucket does this belong in?'}
       </p>
 
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className={cn('grid gap-2.5', answerGridClass(BUCKETS.length))}>
         {BUCKETS.map((b) => {
           const isSelected = picked === b.id
           const hasSelected = picked !== null
@@ -165,6 +166,7 @@ export function EquityBucket({ step, onAnswer, disabled = false }: EquityBucketP
               onClick={() => pick(b.id)}
               className={cn(
                 'rounded-xl border px-4 py-3.5 text-left transition-all duration-150 active:scale-[0.97]',
+                stackedAnswerClass(BUCKETS.length, 'block'),
                 isSelected ? b.color : hasSelected ? 'border-border/20 bg-secondary/15 text-muted-foreground/30 opacity-50' : 'border-border/50 bg-secondary/40 text-foreground hover:bg-secondary/70',
               )}
             >
