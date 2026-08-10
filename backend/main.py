@@ -76,7 +76,7 @@ try:
     from app.api.routes import (
         health, parse, analyze, image_analyze, image_extract,
         session, stripe_routes, history, tournament, learn,
-        coach, train, debug, leaderboard,
+        coach, train, debug, leaderboard, skill_assessment,
     )
     from app.api.routes import pipeline as pipeline_routes
 
@@ -95,6 +95,7 @@ try:
     app.include_router(train.router, prefix="/api")
     app.include_router(pipeline_routes.router, prefix="/api")
     app.include_router(debug.router, prefix="/api")
+    app.include_router(skill_assessment.router, prefix="/api")
     print("[BOOT] Core routes registered OK")
 except Exception as e:
     print(f"[BOOT] Core routes FAILED: {e}")

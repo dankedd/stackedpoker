@@ -8,6 +8,7 @@ import { ManageSubscriptionButton } from "@/components/billing/ManageSubscriptio
 import { PlanBadge } from "@/components/layout/PlanBadge";
 import { isPaidTier } from "@/lib/entitlements";
 import { cn } from "@/lib/utils";
+import { RetakeAssessmentButton } from "./RetakeAssessmentButton";
 
 const STATUS_STYLE: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
   active:     { icon: <CheckCircle2 className="h-4 w-4" />, label: "Active",     color: "text-emerald-400" },
@@ -138,6 +139,22 @@ export default async function SettingsPage() {
                 {new Date(user.created_at).toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
               </span>
             </div>
+          </div>
+        </div>
+
+        {/* Learning card */}
+        <div className="rounded-xl border border-border/60 bg-card/60 divide-y divide-border/40 mt-6">
+          <div className="px-6 py-4">
+            <h2 className="font-semibold text-foreground">Learning</h2>
+          </div>
+          <div className="px-6 py-5 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-foreground">Skill assessment</p>
+              <p className="text-xs text-muted-foreground/70 mt-0.5">
+                Retake the onboarding quiz to re-estimate your skill league.
+              </p>
+            </div>
+            <RetakeAssessmentButton />
           </div>
         </div>
       </main>

@@ -382,6 +382,14 @@ async def generate_coach_reply(
     if context.get("active_leaks"):
         leaks = context["active_leaks"][:2]
         ctx_parts.append(f"Known leaks: {', '.join(leaks)}")
+    # Onboarding assessment signal — a one-time self-contained quiz estimate,
+    # kept separate from active_leaks (which comes from real lesson mistakes)
+    # so the two signals don't get diluted together.
+    if context.get("estimated_league"):
+        ctx_parts.append(f"Estimated skill league from onboarding assessment: {context['estimated_league']}.")
+    if context.get("assessment_weak_topics"):
+        topics = context["assessment_weak_topics"][:2]
+        ctx_parts.append(f"Topics the learner scored weakest on in their initial assessment: {', '.join(topics)}.")
     if context.get("concept_ids"):
         ctx_parts.append(f"Concepts in focus: {', '.join(context['concept_ids'])}")
     if context.get("hint_level"):

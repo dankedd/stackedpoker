@@ -22,6 +22,7 @@ from app.engines.learn.coach_context import (
     sanitize_context,
 )
 from app.engines.learn.coach_usage import get_coach_usage, release_coach_usage, reserve_coach_usage
+from app.engines.learn.xp_calculator import level_for_xp
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["coach"])
@@ -208,17 +209,41 @@ async def coach_message(
         messages.append({"role": "user", "content": effective_message, "ts": now})
 
         # ── Determine user skill level from progress ──────────────────────────
+        # Was querying a table called "user_progress" which doesn't exist in
+        # the schema — user_level silently always fell back to 1, so the
+        # Coach's beginner/intermediate/advanced hint never actually moved.
+        # The real aggregate table is user_skill_progress (total_xp), the
+        # same source get_full_progress uses (learn.py) — level is derived
+        # via the same level_for_xp helper for consistency.
         user_level = 1
         try:
             progress_rows = await _supabase_get(
-                "user_progress",
-                f"user_id=eq.{user_id}&select=level",
+                "user_skill_progress",
+                f"user_id=eq.{user_id}&select=total_xp",
                 settings,
             )
             if progress_rows:
-                user_level = progress_rows[0].get("level", 1)
+                user_level = level_for_xp(progress_rows[0].get("total_xp", 0))
         except Exception:
             pass  # non-critical — fall back to level 1
+
+        # ── Onboarding assessment signal — separate from XP-derived level;
+        # this is a one-time self-contained quiz estimate, not progress
+        # through the curriculum, so it's kept as its own context keys rather
+        # than blended into user_level. ──────────────────────────────────────
+        estimated_league: str | None = None
+        assessment_weak_topics: list[str] = []
+        try:
+            assessment_rows = await _supabase_get(
+                "user_skill_assessment",
+                f"user_id=eq.{user_id}&select=estimated_league,weakest_topics",
+                settings,
+            )
+            if assessment_rows:
+                estimated_league = assessment_rows[0].get("estimated_league")
+                assessment_weak_topics = assessment_rows[0].get("weakest_topics") or []
+        except Exception:
+            pass  # non-critical — Coach just won't see an assessment signal
 
         stage = "CONTEXT"
         # ── Resolve coaching mode + sanitize context (server-enforced) ─────────
@@ -242,6 +267,10 @@ async def coach_message(
         # the narrow conditions this activates under).
         canonical = lookup_canonical_open_range(safe_context)
         llm_context = {**safe_context, **canonical} if canonical else safe_context
+        if estimated_league:
+            llm_context = {**llm_context, "estimated_league": estimated_league}
+        if assessment_weak_topics:
+            llm_context = {**llm_context, "assessment_weak_topics": assessment_weak_topics}
 
         logger.info(
             "coach_request req_id=%s user=%s mode=%s action=%s lesson_id=%s step_id=%s theory_ids=%s canonical=%s",

@@ -31,6 +31,16 @@ const PREMIUM_PATHS = ['/community']
 // explicitly Elite-exclusive on the pricing page — Plus does not unlock it.
 const ELITE_PATHS = ['/solver']
 
+// Logged in, hasn't completed the new-user skill assessment yet -> the
+// onboarding flow, before the curriculum is ever shown. Excludes the
+// onboarding route itself (redirect loop) and the public SEO lesson-slug
+// route (same exemption PROTECTED_PATHS already gives it, for the same
+// reason — it must stay reachable signed-out and this check never runs for
+// signed-out requests anyway, but keeping the two exemptions in sync avoids
+// a future drift).
+const ONBOARDING_GATED_PATHS = ['/learn']
+const ONBOARDING_EXEMPT_PATHS = ['/learn/onboarding']
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
@@ -79,23 +89,40 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Tier gate — only look up the profile when the route actually needs it,
-  // so every other request stays a single getUser() call as before.
+  // Tier + onboarding gates — only look up the profile when the route
+  // actually needs it, so every other request stays a single getUser() call
+  // as before. Both gates share the one query since they can both apply to
+  // the same request (e.g. a Free-tier user who also hasn't onboarded).
   const needsPremium = PREMIUM_PATHS.some((p) => pathname.startsWith(p))
   const needsElite = ELITE_PATHS.some((p) => pathname.startsWith(p))
-  if (user && (needsPremium || needsElite)) {
+  const needsOnboarding =
+    ONBOARDING_GATED_PATHS.some((p) => pathname.startsWith(p)) &&
+    !ONBOARDING_EXEMPT_PATHS.some((p) => pathname.startsWith(p)) &&
+    !isPublicSeoPath(pathname)
+
+  if (user && (needsPremium || needsElite || needsOnboarding)) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('subscription_tier')
+      .select('subscription_tier, assessment_completed')
       .eq('id', user.id)
       .single()
-    const tier = profile?.subscription_tier ?? 'free'
 
-    const allowed = needsElite ? canAccessElite(tier) : canAccessPremium(tier)
-    if (!allowed) {
+    // Onboarding takes priority — no point tier-gating a learner into
+    // /pricing before they've even seen the curriculum once.
+    if (needsOnboarding && !profile?.assessment_completed) {
       const url = request.nextUrl.clone()
-      url.pathname = '/pricing'
+      url.pathname = '/learn/onboarding'
       return NextResponse.redirect(url)
+    }
+
+    if (needsPremium || needsElite) {
+      const tier = profile?.subscription_tier ?? 'free'
+      const allowed = needsElite ? canAccessElite(tier) : canAccessPremium(tier)
+      if (!allowed) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/pricing'
+        return NextResponse.redirect(url)
+      }
     }
   }
 

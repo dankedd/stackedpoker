@@ -12,6 +12,7 @@ import { StatusBadge } from "@/components/layout/StatusBadge";
 import { PlanBadge } from "@/components/layout/PlanBadge";
 import { ContinueLearningCard } from "@/components/dashboard/ContinueLearningCard";
 import { LearningPathSummary } from "@/components/dashboard/LearningPathSummary";
+import { SkillProfileWidget, type SkillProfileData } from "@/components/dashboard/SkillProfileWidget";
 import { isPaidTier, canAccessElite, getSubscription } from "@/lib/entitlements";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +29,20 @@ export default async function DashboardPage() {
     .select("username, subscription_tier, hands_analyzed_count, analyses_limit, subscription_status, stripe_customer_id")
     .eq("id", user.id)
     .single();
+
+  const { data: assessmentRow } = await supabase
+    .from("user_skill_assessment")
+    .select("estimated_league, weakest_topics, completed_at")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  const skillProfile: SkillProfileData | null = assessmentRow
+    ? {
+        estimatedLeague: assessmentRow.estimated_league,
+        weakestTopics: assessmentRow.weakest_topics ?? [],
+        completedAt: assessmentRow.completed_at,
+      }
+    : null;
 
   const displayName = profile?.username ?? user.email?.split("@")[0] ?? "Player";
   const handsAnalyzed = profile?.hands_analyzed_count ?? 0;
@@ -150,6 +165,11 @@ export default async function DashboardPage() {
             Continue learning
           </p>
           <ContinueLearningCard />
+        </div>
+
+        {/* Skill profile — from the onboarding assessment */}
+        <div className="mb-6">
+          <SkillProfileWidget data={skillProfile} />
         </div>
 
         {/* Your Learning Path */}
