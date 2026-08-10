@@ -149,30 +149,32 @@ export default function PathPage() {
             <span className="text-foreground">{path.title}</span>
           </div>
 
-          {/* Path header */}
+          {/* Path header — icon is beside the title only, never indenting the
+              description/stats below on mobile (they'd otherwise lose a
+              desktop-icon's width of a narrow phone screen for no reason). */}
           <div className="mb-10">
-            <div className="flex items-start gap-4 mb-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-blue-500 shrink-0">
-                <BookOpen className="h-6 w-6 text-white" />
+            <div className="flex items-center sm:items-start gap-3 sm:gap-4 mb-3">
+              <div className="flex h-9 w-9 sm:h-12 sm:w-12 items-center justify-center rounded-lg sm:rounded-xl bg-gradient-to-br from-violet-600 to-blue-500 shrink-0">
+                <BookOpen className="h-4.5 w-4.5 sm:h-6 sm:w-6 text-white" />
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-violet-400/70 mb-1">
                   Learning Path
                 </p>
-                <h1 className="text-3xl font-bold text-foreground">{path.title}</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{path.title}</h1>
               </div>
             </div>
-            <p className="text-muted-foreground ml-16">{path.description}</p>
+            <p className="text-muted-foreground">{path.description}</p>
 
             {/* Stats — available now vs full roadmap, never conflated */}
-            <div className="flex flex-wrap gap-x-6 gap-y-1.5 mt-4 ml-16 text-sm text-muted-foreground">
+            <div className="flex flex-wrap gap-x-6 gap-y-1.5 mt-4 text-sm text-muted-foreground">
               <span>
                 <span className="font-semibold text-foreground">{availableModules}</span> available modules
                 {" · "}
                 <span className="font-semibold text-foreground">{totalModules}</span> total modules
               </span>
             </div>
-            <div className="flex flex-wrap gap-x-6 gap-y-1.5 mt-1 ml-16 text-sm text-muted-foreground">
+            <div className="flex flex-wrap gap-x-6 gap-y-1.5 mt-1 text-sm text-muted-foreground">
               <span>
                 <span className="font-semibold text-foreground">{availableLessons}</span> available lessons
               </span>
@@ -246,20 +248,20 @@ export default function PathPage() {
                   const card = (
                     <div
                       className={cn(
-                        "rounded-2xl border p-5 transition-all duration-200",
+                        "rounded-2xl border p-4 sm:p-5 transition-all duration-200",
                         styles.card,
                         "cursor-pointer"
                       )}
                     >
-                      <div className="flex items-start gap-4">
+                      <div className="flex items-start gap-3 sm:gap-4">
                         {/* Node icon */}
                         <div
                           className={cn(
-                            "relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 bg-background",
+                            "relative z-10 flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border-2 bg-background",
                             styles.ring
                           )}
                         >
-                          <Icon className={cn("h-4 w-4", styles.icon)} />
+                          <Icon className={cn("h-3.5 w-3.5 sm:h-4 sm:w-4", styles.icon)} />
                         </div>
 
                         {/* Content */}

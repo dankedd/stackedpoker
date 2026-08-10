@@ -328,14 +328,23 @@ export default function ModulePage() {
           </div>
 
           {/* Module hero */}
-          <div className="relative mb-8 overflow-hidden rounded-2xl border border-violet-500/15 bg-gradient-to-br from-violet-950/40 via-card/80 to-blue-950/20 px-6 py-7 sm:px-8">
+          <div className="relative mb-8 overflow-hidden rounded-2xl border border-violet-500/15 bg-gradient-to-br from-violet-950/40 via-card/80 to-blue-950/20 px-5 py-7 sm:px-8">
             <div aria-hidden className="pointer-events-none absolute -top-12 -right-12 h-48 w-48 rounded-full bg-violet-500/12 blur-3xl" />
-            <div className="relative flex items-start gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600/30 to-blue-600/20 border border-violet-500/25 shrink-0">
-                <Layers className="h-6 w-6 text-violet-400" />
+            {/* Mobile: icon + "Module" sit in a compact top row so the title/
+                description below aren't indented by a desktop-sized icon
+                column — they get almost the full card width instead. Desktop
+                keeps the icon beside the whole text block, unchanged. */}
+            <div className="relative flex flex-col sm:flex-row sm:items-start gap-2.5 sm:gap-4">
+              <div className="flex items-center gap-2 sm:contents">
+                <div className="flex h-8 w-8 sm:h-12 sm:w-12 items-center justify-center rounded-lg sm:rounded-xl bg-gradient-to-br from-violet-600/30 to-blue-600/20 border border-violet-500/25 shrink-0">
+                  <Layers className="h-4 w-4 sm:h-6 sm:w-6 text-violet-400" />
+                </div>
+                <p className="sm:hidden text-[11px] font-bold uppercase tracking-[0.2em] text-violet-400/60">
+                  Module
+                </p>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-violet-400/60 mb-1.5">
+                <p className="hidden sm:block text-[11px] font-bold uppercase tracking-[0.2em] text-violet-400/60 mb-1.5">
                   Module
                 </p>
                 <h1 className="text-2xl font-bold text-foreground mb-1.5">{mod.title}</h1>
