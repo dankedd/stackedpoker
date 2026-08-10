@@ -81,7 +81,14 @@ describe('confidence check removal — curriculum data', () => {
     // srtf-s5, bhj-s4, ptcr-s3) — bringing the total to 8. Module 12 (Part 3B, Lessons
     // 1-5) added 4 more per docs/module-12-architecture.md Section 8's adaptive-flow
     // table (bsis-s5, osrfa-s3, wsby-s4, tscos-s4) — bringing the total to 12.
-    expect(laddersFound.length).toBe(12)
+    // The later bet-sizing and river lessons added 5 more on the same pattern
+    // (gomp-s3, wsrc-s3, wsrc-s5, bg-s5, rsc-s6), bringing the total to 17.
+    //
+    // The count is a guard against ladders being silently DELETED — the
+    // per-rung assertions above are what prove the surviving ones are real.
+    // It is a floor rather than an equality so that adding a ladder to a new
+    // lesson is not a test failure; removing one still is.
+    expect(laddersFound.length).toBeGreaterThanOrEqual(17)
   })
 })
 

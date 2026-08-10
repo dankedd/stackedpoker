@@ -48,7 +48,21 @@ describe('Module 4 range_build_multi exercises fixed by this pass have a real fo
   it('trb-range-lab ("They Raised Back") starts with a substantial, book-grounded foundation', () => {
     const step = multiBuildSteps.find((s) => s.id === 'trb-range-lab')!
     const prefilled = resolveMultiPrefilledAssignments(step)
-    expect(Object.keys(prefilled).length).toBeGreaterThan(40) // was 3 before this pass
+    // KNOWN FAILING, deliberately left red — see the sprint report.
+    //
+    // `BTN_vs_BB_3bet_response_foundation` (threebetResponseBaselines.ts) still
+    // holds the 3-hand core { AA, KK, QQ }, the same shape as every other
+    // foundation in that file. The larger foundation this assertion describes
+    // was never actually landed. Satisfying it means DESIGNING a ~40-hand
+    // book-grounded core for BTN vs BB 3-bet response, which is per-step poker
+    // content work — not something to be back-filled by guessing a range, and
+    // not something to be hidden by relaxing the number.
+    expect(
+      Object.keys(prefilled).length,
+      'trb-range-lab still starts from the 3-hand AA/KK/QQ core. Either design the ' +
+        'larger foundation in THREEBET_RESPONSE_FOUNDATIONS, or move this step into ' +
+        'KNOWN_GAPS_PENDING_FOLLOWUP above if the 3-hand core is judged sufficient.',
+    ).toBeGreaterThan(40)
   })
 })
 
@@ -101,6 +115,16 @@ describe('Every foundation is a genuine, correctly-labeled subset of its own tar
   for (const step of multiBuildSteps) {
     const prefilled = resolveMultiPrefilledAssignments(step)
     if (Object.keys(prefilled).length === 0) continue
+
+    // Transform-seed steps are EXCLUDED from this assertion, for the same
+    // reason the "never the whole target" check below excludes them: their
+    // seed is deliberately a DIFFERENT chart from the target — a neighbouring
+    // position's range, or in trb-repair-fix's case a chart literally named
+    // `..._flawed_example`. Finding where the seed disagrees with the target
+    // IS the exercise, so requiring the seed to agree with the target asserts
+    // that these steps have nothing for the learner to do. The guard was
+    // applied to the second assertion and missed on this one.
+    if (step.range_build_multi_transform_from_chart) continue
 
     it(`${step.id}: every prefilled hand exists in the target chart with the SAME assigned action`, () => {
       const chart = resolveMultiActionTargetChart(step)
