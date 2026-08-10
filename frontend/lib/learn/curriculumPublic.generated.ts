@@ -1824,6 +1824,23 @@ export const PUBLIC_LESSONS: PublicLesson[] = [
     "sort_order": 7,
     "next_lesson_teaser": "Reading the Board Like the Solver Does",
     "step_count": 8
+  },
+  {
+    "id": "reading-the-board-like-the-solver-does",
+    "module_id": "bet-sizing-language-module",
+    "slug": "reading-the-board-like-the-solver-does",
+    "title": "Reading the Board Like the Solver Does",
+    "subtitle": "The same relative-polarization logic, walked across real boards you'll actually see.",
+    "lesson_type": "concept_reveal",
+    "concept_ids": [
+      "monotone_board_sizing",
+      "polarization_sizing_direction"
+    ],
+    "estimated_min": 16,
+    "xp_reward": 230,
+    "sort_order": 8,
+    "next_lesson_teaser": "The River's Blunt Instruments",
+    "step_count": 16
   }
 ]
 
