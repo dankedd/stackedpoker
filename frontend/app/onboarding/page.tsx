@@ -23,6 +23,7 @@ export default function OnboardingPage() {
   const [phase, setPhase] = useState<Phase>('welcome')
   const [recommendation, setRecommendation] = useState<Recommendation | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   useEffect(() => {
     trackEvent(SEO_EVENTS.onboardingStarted)
@@ -46,18 +47,25 @@ export default function OnboardingPage() {
 
   async function finish(level: ExperienceLevel) {
     setSubmitting(true)
+    setSubmitError(null)
     const rec = recommendation ?? computeRecommendation(level, subscription?.tier)
+    trackEvent(SEO_EVENTS.onboardingStartLearningClicked, { level })
     try {
       await submitAssessment(session?.access_token ?? '', {
         experience_level: level,
         recommended_module_id: rec.startModuleId,
       })
       trackEvent(SEO_EVENTS.onboardingCompleted, { level })
-    } catch {
-      // Non-fatal — worst case the gate catches them again next visit.
-    } finally {
-      trackEvent(SEO_EVENTS.onboardingStartLearningClicked, { level })
+      // Only navigate on a confirmed save — middleware gates every
+      // authenticated route on assessment_completed, so pushing to
+      // /dashboard before the write actually lands just bounces straight
+      // back here with no visible error, which looks like the page hung.
       router.push('/dashboard')
+    } catch (err) {
+      setSubmitting(false)
+      setSubmitError(
+        err instanceof Error ? err.message : 'Something went wrong saving your answer.',
+      )
     }
   }
 
@@ -81,6 +89,21 @@ export default function OnboardingPage() {
 
           {submitting && (
             <p className="mt-4 text-center text-xs text-muted-foreground/50">Saving…</p>
+          )}
+
+          {submitError && (
+            <div className="mt-4 rounded-xl border border-red-500/25 bg-red-500/[0.05] px-4 py-3 text-center">
+              <p className="text-xs text-red-300/90 mb-2">
+                Couldn&apos;t save your answer — {submitError}
+              </p>
+              <button
+                type="button"
+                onClick={() => finish(recommendation?.level ?? 'beginner')}
+                className="text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors"
+              >
+                Try again
+              </button>
+            </div>
           )}
         </div>
       </main>

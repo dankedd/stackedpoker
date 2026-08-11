@@ -6,11 +6,31 @@ import type { ExperienceLevel } from './experienceLevel'
 
 const API_BASE = ''
 
-async function assessmentFetch<T>(path: string, token: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-    ...init,
-  })
+async function assessmentFetch<T>(
+  path: string,
+  token: string,
+  init?: RequestInit,
+  timeoutMs = 15_000,
+): Promise<T> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+
+  let res: Response
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      signal: controller.signal,
+      ...init,
+    })
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') {
+      throw new Error('Request timed out. Please try again.')
+    }
+    throw e
+  } finally {
+    clearTimeout(timeout)
+  }
+
   if (!res.ok) {
     const body = await res.json().catch(() => ({ detail: 'Unknown error' }))
     throw new Error(typeof body.detail === 'string' ? body.detail : `HTTP ${res.status}`)
