@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, MessageCircle, History, Wallet, Layers, Search } from "lucide-react";
+import { BookOpen, MessageCircle, Wallet, Layers, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ExperienceLevel } from "@/lib/learn/experienceLevel";
 
@@ -30,7 +30,6 @@ function actionsForLevel(level: ExperienceLevel, recommendedModuleId: string | n
     case "intermediate":
       return [
         { href: continueModuleHref, icon: BookOpen, title: "Continue recommended module", description: "Keep building on your plan." },
-        { href: "/history", icon: History, title: "Review recent hands", description: "See where decisions went wrong." },
         { href: "/learn", icon: Layers, title: "Study today's lesson", description: "Short, focused, and on-track." },
       ];
     case "advanced":
@@ -42,6 +41,14 @@ function actionsForLevel(level: ExperienceLevel, recommendedModuleId: string | n
       ];
   }
 }
+
+/** Literal classes — Tailwind cannot see an interpolated column count. */
+const COLUMNS: Record<number, string> = {
+  1: "sm:grid-cols-1",
+  2: "sm:grid-cols-2",
+  3: "sm:grid-cols-3",
+  4: "sm:grid-cols-4",
+};
 
 export function PersonalizedActionsWidget({
   level,
@@ -56,7 +63,9 @@ export function PersonalizedActionsWidget({
     <div
       className={cn(
         "grid grid-cols-1 gap-3",
-        actions.length === 4 ? "sm:grid-cols-4" : "sm:grid-cols-3",
+        // Follows the real count — removing an action must not leave an
+        // empty column standing where it used to be.
+        COLUMNS[actions.length] ?? "sm:grid-cols-3",
       )}
     >
       {actions.map((a) => (

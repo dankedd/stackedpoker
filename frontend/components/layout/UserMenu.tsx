@@ -3,11 +3,13 @@
 import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
-import { LayoutDashboard, BookOpen, Settings, LogOut, ChevronDown, CreditCard } from 'lucide-react'
+import { LayoutDashboard, Settings, LogOut, ChevronDown, CreditCard, Loader2, type LucideIcon } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLearnProgress } from '@/contexts/LearnProgressContext'
 import { useSubscription } from '@/hooks/useSubscription'
+import { useManageSubscription } from '@/hooks/useManageSubscription'
 import { PlanBadge } from '@/components/layout/PlanBadge'
+import { isPaidTier } from '@/lib/entitlements'
 import {
   MENU_Z_INDEX,
   useAnchoredMenuPosition,
@@ -17,10 +19,23 @@ import {
 
 const DROPDOWN_W = 224 // w-56 = 14rem
 
+/** One row style, so the upgrade link and the billing-portal button are
+ *  indistinguishable to the eye. */
+const ROW_CLASS =
+  'flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-slate-400 hover:text-violet-300 hover:bg-violet-500/10 transition-all duration-150 group disabled:opacity-60 disabled:hover:bg-transparent disabled:hover:text-slate-400'
+
+const ROW_ICON_CLASS =
+  'h-4 w-4 shrink-0 text-slate-600 group-hover:text-violet-400 transition-colors duration-150'
+
+type MenuEntry =
+  | { kind: 'link'; href: string; icon: LucideIcon; label: string }
+  | { kind: 'action'; onClick: () => void; icon: LucideIcon; label: string; busy: boolean }
+
 export function UserMenu() {
   const { user, signOut, loading } = useAuth()
   const { progress } = useLearnProgress()
   const { subscription } = useSubscription()
+  const { handleManage, loading: managingSubscription } = useManageSubscription()
   const [open, setOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const { pos, triggerRef, computePos } = useAnchoredMenuPosition({ width: DROPDOWN_W })
@@ -43,11 +58,30 @@ export function UserMenu() {
     user.user_metadata?.username ?? user.email?.split('@')[0] ?? 'Player'
   const initials = displayName.slice(0, 2).toUpperCase()
 
-  const menuItems = [
-    { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { href: '/history',   icon: BookOpen,        label: 'Hand History' },
-    { href: '/pricing',   icon: CreditCard,      label: 'Upgrade to Plus' },
-    { href: '/settings',  icon: Settings,        label: 'Settings' },
+  // Dashboard -> subscription -> Settings, then Sign out below the divider.
+  //
+  // The middle entry is the only one that changes: a free account is offered
+  // the upgrade, a paying one gets the billing portal instead of being sold
+  // something it already has. It is a button rather than a link there, so the
+  // two shapes are modelled explicitly and share one row style below.
+  //
+  // "Hand History" used to sit between Dashboard and the subscription entry.
+  // It pointed at /history, which is not a finished feature — the menu is not
+  // the place to advertise it, so it is gone rather than disabled.
+  const isPaid = isPaidTier(subscription?.tier)
+
+  const menuItems: MenuEntry[] = [
+    { kind: 'link', href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    isPaid
+      ? {
+          kind: 'action',
+          onClick: handleManage,
+          icon: CreditCard,
+          label: 'Manage subscription',
+          busy: managingSubscription,
+        }
+      : { kind: 'link', href: '/pricing', icon: CreditCard, label: 'Upgrade to Plus' },
+    { kind: 'link', href: '/settings', icon: Settings, label: 'Settings' },
   ]
 
   const dropdown = (
@@ -90,17 +124,36 @@ export function UserMenu() {
 
         {/* Nav links */}
         <div className="p-1.5">
-          {menuItems.map(({ href, icon: Icon, label }) => (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-slate-400 hover:text-violet-300 hover:bg-violet-500/10 transition-all duration-150 group"
-            >
-              <Icon className="h-4 w-4 shrink-0 text-slate-600 group-hover:text-violet-400 transition-colors duration-150" />
-              {label}
-            </Link>
-          ))}
+          {menuItems.map((item) => {
+            const Icon = item.icon
+            if (item.kind === 'action') {
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  disabled={item.busy}
+                  onClick={() => { setOpen(false); item.onClick() }}
+                  className={ROW_CLASS}
+                >
+                  {item.busy
+                    ? <Loader2 className={`${ROW_ICON_CLASS} animate-spin`} />
+                    : <Icon className={ROW_ICON_CLASS} />}
+                  {item.label}
+                </button>
+              )
+            }
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className={ROW_CLASS}
+              >
+                <Icon className={ROW_ICON_CLASS} />
+                {item.label}
+              </Link>
+            )
+          })}
         </div>
 
         {/* Sign out */}

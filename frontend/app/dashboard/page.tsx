@@ -224,12 +224,10 @@ export default async function DashboardPage() {
         {/* Account */}
         <div className="mb-10">
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground/50 mb-4">Account</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Link href="/history" className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card/40 hover:bg-card/70 hover:border-border/80 px-4 py-3.5 transition-colors">
-              <BookOpen className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span className="text-sm text-foreground font-medium flex-1">Hand History</span>
-              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
-            </Link>
+          {/* Settings is the only account entry — Hand History pointed at an
+              unreleased feature and was removed, so this is a single column
+              rather than a 2-up row with a hole in it. */}
+          <div className="grid grid-cols-1 gap-3">
             <Link href="/settings" className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card/40 hover:bg-card/70 hover:border-border/80 px-4 py-3.5 transition-colors">
               <Settings className="h-4 w-4 text-muted-foreground shrink-0" />
               <span className="text-sm text-foreground font-medium flex-1">Settings</span>
