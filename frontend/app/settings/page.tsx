@@ -8,7 +8,8 @@ import { ManageSubscriptionButton } from "@/components/billing/ManageSubscriptio
 import { PlanBadge } from "@/components/layout/PlanBadge";
 import { isPaidTier } from "@/lib/entitlements";
 import { cn } from "@/lib/utils";
-import { RetakeAssessmentButton } from "./RetakeAssessmentButton";
+import { PokerExperiencePicker } from "./PokerExperiencePicker";
+import type { ExperienceLevel } from "@/lib/learn/experienceLevel";
 
 const STATUS_STYLE: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
   active:     { icon: <CheckCircle2 className="h-4 w-4" />, label: "Active",     color: "text-emerald-400" },
@@ -28,6 +29,13 @@ export default async function SettingsPage() {
     .select("username, subscription_tier, hands_analyzed_count, analyses_limit, subscription_status, current_period_end, stripe_customer_id")
     .eq("id", user.id)
     .single();
+
+  const { data: assessmentRow } = await supabase
+    .from("user_skill_assessment")
+    .select("experience_level")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const currentLevel = (assessmentRow?.experience_level ?? null) as ExperienceLevel | null;
 
   const tier = profile?.subscription_tier ?? "free";
   const status = profile?.subscription_status ?? null;
@@ -145,16 +153,13 @@ export default async function SettingsPage() {
         {/* Learning card */}
         <div className="rounded-xl border border-border/60 bg-card/60 divide-y divide-border/40 mt-6">
           <div className="px-6 py-4">
-            <h2 className="font-semibold text-foreground">Learning</h2>
+            <h2 className="font-semibold text-foreground">Poker Experience</h2>
           </div>
-          <div className="px-6 py-5 flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium text-foreground">Skill assessment</p>
-              <p className="text-xs text-muted-foreground/70 mt-0.5">
-                Retake the onboarding quiz to re-estimate your skill league.
-              </p>
-            </div>
-            <RetakeAssessmentButton />
+          <div className="px-6 py-5 space-y-3">
+            <p className="text-xs text-muted-foreground/70">
+              Changes your recommendations — your course progress is never affected.
+            </p>
+            <PokerExperiencePicker currentLevel={currentLevel} />
           </div>
         </div>
       </main>

@@ -28,16 +28,16 @@ export function OnboardingWelcome({
 
         <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground/70 mb-3">
           <Clock className="h-3.5 w-3.5" />
-          This assessment takes about <span className="font-semibold text-foreground/80">2 minutes</span>.
+          This takes under <span className="font-semibold text-foreground/80">1 minute</span>.
         </div>
 
         <p className="text-sm text-muted-foreground leading-relaxed mb-1.5">
-          We&apos;ll ask a few short questions to estimate your current poker skill
-          and recommend the best learning path.
+          One quick question about your poker experience is all it takes to
+          recommend the best learning path for you.
         </p>
         <div className="flex items-center justify-center gap-1.5 text-xs text-emerald-400/80 mb-8">
           <ShieldCheck className="h-3.5 w-3.5" />
-          There are no wrong answers — you can&apos;t fail this assessment.
+          There are no wrong answers.
         </div>
 
         <button
@@ -46,7 +46,7 @@ export function OnboardingWelcome({
           className="group relative w-full overflow-hidden inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all duration-200"
         >
           <div aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-          Start Assessment
+          Get Started
         </button>
 
         <button

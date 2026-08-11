@@ -227,21 +227,19 @@ async def coach_message(
         except Exception:
             pass  # non-critical — fall back to level 1
 
-        # ── Onboarding assessment signal — separate from XP-derived level;
-        # this is a one-time self-contained quiz estimate, not progress
-        # through the curriculum, so it's kept as its own context keys rather
+        # ── Onboarding self-assessment signal — separate from XP-derived
+        # level; this is a self-reported experience level, not progress
+        # through the curriculum, so it's kept as its own context key rather
         # than blended into user_level. ──────────────────────────────────────
-        estimated_league: str | None = None
-        assessment_weak_topics: list[str] = []
+        experience_level: str | None = None
         try:
             assessment_rows = await _supabase_get(
                 "user_skill_assessment",
-                f"user_id=eq.{user_id}&select=estimated_league,weakest_topics",
+                f"user_id=eq.{user_id}&select=experience_level",
                 settings,
             )
             if assessment_rows:
-                estimated_league = assessment_rows[0].get("estimated_league")
-                assessment_weak_topics = assessment_rows[0].get("weakest_topics") or []
+                experience_level = assessment_rows[0].get("experience_level")
         except Exception:
             pass  # non-critical — Coach just won't see an assessment signal
 
@@ -267,10 +265,8 @@ async def coach_message(
         # the narrow conditions this activates under).
         canonical = lookup_canonical_open_range(safe_context)
         llm_context = {**safe_context, **canonical} if canonical else safe_context
-        if estimated_league:
-            llm_context = {**llm_context, "estimated_league": estimated_league}
-        if assessment_weak_topics:
-            llm_context = {**llm_context, "assessment_weak_topics": assessment_weak_topics}
+        if experience_level:
+            llm_context = {**llm_context, "experience_level": experience_level}
 
         logger.info(
             "coach_request req_id=%s user=%s mode=%s action=%s lesson_id=%s step_id=%s theory_ids=%s canonical=%s",

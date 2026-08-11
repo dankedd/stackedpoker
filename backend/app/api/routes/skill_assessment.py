@@ -1,10 +1,14 @@
-"""New-user onboarding skill-assessment routes.
+"""New-user onboarding self-assessment routes.
 
-Persists the one-time adaptive assessment result (see
-frontend/lib/learn/assessmentEngine.ts for the scoring/league logic, which is
+Persists a single self-reported poker experience level (see
+frontend/lib/learn/experienceLevel.ts for the level->recommendation mapping,
 computed client-side and simply stored here — same "client computes, server
 durably stores" split learn.py uses for step results). Also flips
-profiles.assessment_completed, the flag middleware.ts gates /learn on.
+profiles.assessment_completed, the flag middleware.ts gates the app on.
+
+Changing the level later (Settings) re-POSTs to /submit — there is no
+separate "retake" flow since there's no multi-step quiz to redo, and this
+endpoint never touches course-progress tables, so it can't reset progress.
 """
 
 import logging
@@ -72,28 +76,12 @@ async def _supabase_post(table: str, data: dict, settings) -> dict:
 
 # ── Request/response models ───────────────────────────────────────────────────
 
+VALID_LEVELS = {"beginner", "recreational", "intermediate", "advanced"}
+
+
 class SubmitAssessmentBody(BaseModel):
-    self_experience: str | None = None
-    self_stakes: str | None = None
-    self_confidence: int = 5
-    questions_answered: int = 0
-    correct_count: int = 0
-    assessment_score: int = 0
-    final_challenge_offered: bool = False
-    final_challenge_passed: bool | None = None
-    answer_trace: list[dict] = []
-    estimated_league: str = "foundation"
-    recommended_league: str = "foundation"
-    chosen_start_league: str = "foundation"
-    fast_track_taken: bool = False
-    fast_track_passed: bool | None = None
+    experience_level: str
     recommended_module_id: str | None = None
-    strongest_topics: list[str] = []
-    weakest_topics: list[str] = []
-    estimated_study_hours: float = 0.0
-
-
-VALID_LEAGUES = {"foundation", "intermediate", "advanced", "expert", "master"}
 
 
 # ── POST /learn/assessment/submit ─────────────────────────────────────────────
@@ -106,21 +94,17 @@ async def submit_assessment(
     settings = get_settings()
     user_id: str = current_user.get("sub", "")
 
-    # Defense-in-depth: never let a malformed/tampered league value into a
-    # column the dashboard widget and AI Coach both trust downstream.
-    for field_name, value in (
-        ("estimated_league", body.estimated_league),
-        ("recommended_league", body.recommended_league),
-        ("chosen_start_league", body.chosen_start_league),
-    ):
-        if value not in VALID_LEAGUES:
-            raise HTTPException(status_code=422, detail=f"Invalid {field_name}: {value!r}")
+    # Defense-in-depth: never let a malformed/tampered level into a column
+    # the dashboard widget and AI Coach both trust downstream.
+    if body.experience_level not in VALID_LEVELS:
+        raise HTTPException(status_code=422, detail=f"Invalid experience_level: {body.experience_level!r}")
 
     try:
         existing = await _supabase_get(
-            "user_skill_assessment", f"user_id=eq.{user_id}&select=estimated_league", settings,
+            "user_skill_assessment", f"user_id=eq.{user_id}&select=experience_level", settings,
         )
-        league_before = existing[0].get("estimated_league") if existing else None
+        level_before = existing[0].get("experience_level") if existing else None
+        is_first_completion = not existing
 
         await _supabase_upsert(
             "user_skill_assessment",
@@ -134,14 +118,14 @@ async def submit_assessment(
         )
 
         # Stub table for the deferred reassessment phase — one row per
-        # completion, never read elsewhere in this delivery.
+        # completion/change, never read elsewhere in this delivery.
         await _supabase_post(
             "skill_check_history",
             {
                 "user_id": user_id,
-                "check_type": "initial_onboarding",
-                "league_before": league_before,
-                "league_after": body.estimated_league,
+                "check_type": "initial_onboarding" if is_first_completion else "periodic_recheck",
+                "league_before": level_before,
+                "league_after": body.experience_level,
             },
             settings,
         )
@@ -173,16 +157,15 @@ async def get_assessment_status(current_user: dict = Depends(get_current_user)) 
 
         rows = await _supabase_get(
             "user_skill_assessment",
-            f"user_id=eq.{user_id}&select=estimated_league,recommended_module_id,weakest_topics,completed_at",
+            f"user_id=eq.{user_id}&select=experience_level,recommended_module_id,completed_at",
             settings,
         )
         row = rows[0] if rows else None
 
         return {
             "assessment_completed": assessment_completed,
-            "estimated_league": row.get("estimated_league") if row else None,
+            "experience_level": row.get("experience_level") if row else None,
             "recommended_module_id": row.get("recommended_module_id") if row else None,
-            "weakest_topics": row.get("weakest_topics", []) if row else [],
             "completed_at": row.get("completed_at") if row else None,
         }
 
@@ -192,27 +175,3 @@ async def get_assessment_status(current_user: dict = Depends(get_current_user)) 
     except Exception:
         logger.exception("Assessment status error user=%s", user_id)
         raise HTTPException(status_code=500, detail="Assessment status unavailable.")
-
-
-# ── POST /learn/assessment/retake ─────────────────────────────────────────────
-
-@router.post("/learn/assessment/retake")
-async def retake_assessment(current_user: dict = Depends(get_current_user)) -> dict:
-    """Flips assessment_completed back to false so the existing middleware
-    gate re-triggers naturally on the learner's next /learn visit — no
-    separate retake route/middleware path needed. The prior result row in
-    user_skill_assessment is left in place (overwritten on next submit)."""
-    settings = get_settings()
-    user_id: str = current_user.get("sub", "")
-
-    try:
-        await _supabase_patch(
-            "profiles", f"id=eq.{user_id}", {"assessment_completed": False}, settings,
-        )
-        return {"ok": True}
-    except httpx.HTTPError as e:
-        logger.error("Retake assessment DB error user=%s: %s", user_id, e)
-        raise HTTPException(status_code=502, detail="Could not start retake.")
-    except Exception:
-        logger.exception("Retake assessment error user=%s", user_id)
-        raise HTTPException(status_code=500, detail="Retake failed.")

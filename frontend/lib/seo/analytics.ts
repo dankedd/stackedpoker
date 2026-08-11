@@ -32,6 +32,16 @@ export const SEO_EVENTS = {
   toolShare: "tool_share",
   /** An account was created by someone who had used a tool first. */
   toolAttributedSignup: "tool_attributed_signup",
+  /** The post-signup onboarding flow was reached (Welcome screen shown). */
+  onboardingStarted: "onboarding_started",
+  /** A poker-experience level was picked on the onboarding self-assessment. */
+  onboardingLevelSelected: "onboarding_level_selected",
+  /** The post-selection recommendation screen was shown. */
+  onboardingRecommendationShown: "onboarding_recommendation_shown",
+  /** Onboarding was submitted and the result persisted. */
+  onboardingCompleted: "onboarding_completed",
+  /** "Start Learning" was clicked on the onboarding recommendation screen. */
+  onboardingStartLearningClicked: "onboarding_start_learning_clicked",
 } as const;
 
 export type SeoEventName = (typeof SEO_EVENTS)[keyof typeof SEO_EVENTS];

@@ -13,7 +13,7 @@ import { isPublicSeoPath } from '@/lib/seo/routes'
 // with app/robots.ts — is the single place that split is defined, so
 // robots.txt can never advertise a URL this file redirects.
 const PROTECTED_PATHS = [
-  '/dashboard', '/history', '/settings',
+  '/dashboard', '/history', '/settings', '/onboarding',
   '/learn', '/bankroll', '/coach', '/coaching', '/community', '/challenges', '/solver',
 ]
 const AUTH_PATHS = ['/login', '/signup']
@@ -31,15 +31,17 @@ const PREMIUM_PATHS = ['/community']
 // explicitly Elite-exclusive on the pricing page — Plus does not unlock it.
 const ELITE_PATHS = ['/solver']
 
-// Logged in, hasn't completed the new-user skill assessment yet -> the
-// onboarding flow, before the curriculum is ever shown. Excludes the
-// onboarding route itself (redirect loop) and the public SEO lesson-slug
+// Logged in, hasn't completed the post-signup onboarding self-assessment yet
+// -> /onboarding, before ANY authenticated page is shown (not just /learn —
+// per the redesigned flow, onboarding sits between account creation and the
+// dashboard, so it gates the same surface PROTECTED_PATHS does). Excludes
+// the onboarding route itself (redirect loop) and the public SEO lesson-slug
 // route (same exemption PROTECTED_PATHS already gives it, for the same
 // reason — it must stay reachable signed-out and this check never runs for
 // signed-out requests anyway, but keeping the two exemptions in sync avoids
 // a future drift).
-const ONBOARDING_GATED_PATHS = ['/learn']
-const ONBOARDING_EXEMPT_PATHS = ['/learn/onboarding']
+const ONBOARDING_GATED_PATHS = PROTECTED_PATHS
+const ONBOARDING_EXEMPT_PATHS = ['/onboarding']
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -111,7 +113,7 @@ export async function middleware(request: NextRequest) {
     // /pricing before they've even seen the curriculum once.
     if (needsOnboarding && !profile?.assessment_completed) {
       const url = request.nextUrl.clone()
-      url.pathname = '/learn/onboarding'
+      url.pathname = '/onboarding'
       return NextResponse.redirect(url)
     }
 

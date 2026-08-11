@@ -13,6 +13,9 @@ import { PlanBadge } from "@/components/layout/PlanBadge";
 import { ContinueLearningCard } from "@/components/dashboard/ContinueLearningCard";
 import { LearningPathSummary } from "@/components/dashboard/LearningPathSummary";
 import { SkillProfileWidget, type SkillProfileData } from "@/components/dashboard/SkillProfileWidget";
+import { PersonalizedActionsWidget } from "@/components/dashboard/PersonalizedActionsWidget";
+// Metadata only — never '@/lib/learn/curriculum'. See scripts/generateCurriculumPublic.ts.
+import { MODULES_BY_SLUG } from "@/lib/learn/curriculumPublic.generated";
 import { isPaidTier, canAccessElite, getSubscription } from "@/lib/entitlements";
 import { cn } from "@/lib/utils";
 
@@ -32,15 +35,18 @@ export default async function DashboardPage() {
 
   const { data: assessmentRow } = await supabase
     .from("user_skill_assessment")
-    .select("estimated_league, weakest_topics, completed_at")
+    .select("experience_level, recommended_module_id")
     .eq("user_id", user.id)
     .maybeSingle();
 
+  const recommendedModuleTitle = assessmentRow?.recommended_module_id
+    ? MODULES_BY_SLUG[assessmentRow.recommended_module_id]?.title ?? null
+    : null;
+
   const skillProfile: SkillProfileData | null = assessmentRow
     ? {
-        estimatedLeague: assessmentRow.estimated_league,
-        weakestTopics: assessmentRow.weakest_topics ?? [],
-        completedAt: assessmentRow.completed_at,
+        experienceLevel: assessmentRow.experience_level,
+        recommendedModuleTitle,
       }
     : null;
 
@@ -167,7 +173,20 @@ export default async function DashboardPage() {
           <ContinueLearningCard />
         </div>
 
-        {/* Skill profile — from the onboarding assessment */}
+        {/* Personalized for the learner's self-reported experience level */}
+        {skillProfile && (
+          <div className="mb-6">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-3">
+              Recommended for you
+            </p>
+            <PersonalizedActionsWidget
+              level={skillProfile.experienceLevel}
+              recommendedModuleId={assessmentRow?.recommended_module_id ?? null}
+            />
+          </div>
+        )}
+
+        {/* Skill profile — from the onboarding self-assessment */}
         <div className="mb-6">
           <SkillProfileWidget data={skillProfile} />
         </div>
