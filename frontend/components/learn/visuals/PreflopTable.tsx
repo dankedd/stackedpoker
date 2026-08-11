@@ -125,7 +125,23 @@ interface TableLayoutConfig {
     label: { rx: number; ry: number }
     /** Bet/blind chip pile + amount + (mobile) the action verb. Inside the felt. */
     chip: { rx: number; ry: number }
-    /** Superellipse exponent for the label band — see `bandPoint`.
+    /** The drawn rail ring, as the two superellipses that bound it.
+     *
+     *  The rail has to be described here, in the same terms as the seats,
+     *  because the seat ring is a SUPERELLIPSE and a CSS rounded box is not.
+     *  A `rounded-[999px]` box is a capsule: its sides run straight and its
+     *  shoulders turn in early, so it only coincides with the seat ring near
+     *  the four axis points and falls tens of pixels short of it on the
+     *  diagonals — which is why the corner seats' labels floated off the rail
+     *  entirely. Bending the seats onto the capsule instead is not an option:
+     *  that pulls the diagonal seats inward, straight into their own chips.
+     *
+     *  So the ring is drawn from the same curve the seats sit on (via
+     *  `clip-path`, whose percentages are the same units as everything else
+     *  here), with the label band as its exact midline. Every label is then
+     *  centred in the rail by construction rather than by per-seat nudging. */
+    rail: { outerRx: number; outerRy: number; innerRx: number; innerRy: number }
+    /** Superellipse exponent for the label band and the rail — see `bandPoint`.
      *
      *  There is deliberately no dealer-button band: on a phone every direction
      *  away from a seat is already spoken for (the container edge outward, the
@@ -231,12 +247,16 @@ export const MOBILE_LAYOUT: TableLayoutConfig = {
     // rows (~41px from the label's center to the stack's baseline) and that
     // block has to fit between the label and the container edge at the top and
     // bottom of the ellipse, where there is no rail to spill onto.
-    label: { rx: 42, ry: 37 },
+    label: { rx: 43, ry: 38 },
+    // Brackets the label band by ±1.5 on each axis, so 42/37 is dead centre of
+    // the ring. Widening the felt to reach the seats is free: it moves no
+    // content, only the shape the content is drawn on.
+    rail: { outerRx: 44.5, outerRy: 39.5, innerRx: 41.5, innerRy: 36.5 },
     // The chip band sits just outside the protected rectangle. Any tighter and
     // every chip gets pushed out to the same radius, which reads as a ring of
     // chips rather than each player's own bet in front of them.
     chip: { rx: 28, ry: 26 },
-    labelExponent: 4,
+    labelExponent: 3.5,
   },
 }
 
@@ -278,6 +298,26 @@ export function bandPoint(
   }
 }
 
+/** How many points to sample a superellipse outline at for `clip-path`. 72 is
+ *  one point every 5° — past the resolution at which the polygon's flat edges
+ *  are distinguishable from a curve at phone sizes. */
+const CLIP_SAMPLES = 72
+
+/** A `clip-path: polygon()` tracing the superellipse with these radii.
+ *
+ *  clip-path percentages resolve against the element's own width and height —
+ *  the same x-of-width / y-of-height convention every other measurement in this
+ *  file uses — so the shape here and the seat positions are in one coordinate
+ *  system with no conversion. */
+export function superellipseClipPath(rx: number, ry: number, exponent: number): string {
+  const points: string[] = []
+  for (let i = 0; i < CLIP_SAMPLES; i++) {
+    const p = bandPoint(i, CLIP_SAMPLES, rx, ry, 0, exponent)
+    points.push(`${p.x} ${p.y}`)
+  }
+  return `polygon(${points.join(', ')})`
+}
+
 /** Pushes a point radially out of the protected rectangle (pot + Hero's cards)
  *  if it landed inside, along the ray from the rectangle's own center.
  *
@@ -299,8 +339,16 @@ export function pushOutOfZone(
   const dy = y - zone.cyPct
   const hw = zone.halfWidthPct + marginPct
   const hh = zone.halfHeightPct + marginPct
-  // How far along its own ray the point sits, measured in "rectangle radii":
-  // >= 1 is already outside, < 1 is inside and must be scaled out to 1.
+  // How far along its own ray the point sits, in "zone radii": >= 1 is already
+  // outside, < 1 is inside and must be scaled out to 1.
+  //
+  // Rectangular on purpose. Rounding it off looks tempting — the corners cover
+  // felt rather than content, and they do push the diagonal seats' chips
+  // further out than strictly needed. But what the zone protects, Hero's card
+  // row, IS a rectangle, and a chip approaching on the diagonal presents its
+  // own full box to that rectangle's corner. Measured: rounding the zone
+  // bought ~1px of label clearance on one 8-max table and put chips through
+  // the hole cards on eight others.
   const reach = Math.max(Math.abs(dx) / hw, Math.abs(dy) / hh)
   if (reach >= 1 || reach === 0) return { x: xPct, y: yPct }
   const k = 1 / reach
@@ -699,26 +747,57 @@ export function PreflopTable({
           </button>
         )}
 
+        {/* LAYER 0 — the rail's drop shadow, on its own element because
+            `clip-path` clips box-shadows away. Mobile only; desktop's ring
+            still casts its own. */}
+        {bands && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute"
+            style={{
+              inset: `${50 - bands.rail.outerRy}% ${50 - bands.rail.outerRx}%`,
+              borderRadius: '999px',
+              boxShadow: '0 18px 44px rgba(0,0,0,0.45)',
+            }}
+          />
+        )}
+
         {/* LAYER 1 — rail: a thin premium border ring, distinct from the inner felt */}
         <div
-          className="absolute rounded-[999px]"
+          className={cn('absolute', !bands && 'rounded-[999px]')}
           style={{
             // Derived from the radii rather than a hardcoded per-breakpoint
             // class, so the drawn ring and the geometry that reasons about it
-            // can never drift apart.
-            inset: `${50 - layout.railOuterRadius}%`,
+            // can never drift apart. On mobile the shape is the seat ring's own
+            // superellipse (see bands.rail) rather than a rounded box, so the
+            // labels land exactly on it.
+            inset: bands
+              ? `${50 - bands.rail.outerRy}% ${50 - bands.rail.outerRx}%`
+              : `${50 - layout.railOuterRadius}%`,
+            clipPath: bands
+              ? superellipseClipPath(50, 50, bands.labelExponent)
+              : undefined,
             background: 'linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.015) 100%)',
-            boxShadow: '0 18px 44px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.04) inset',
+            boxShadow: bands ? undefined : '0 18px 44px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.04) inset',
           }}
         />
         {/* LAYER 2 — playing field: dark, professional poker-green felt (not casino-bright) */}
         <div
-          className="absolute rounded-[999px] border border-emerald-950/40"
+          className={cn('absolute', !bands && 'rounded-[999px] border border-emerald-950/40')}
           style={{
-            inset: `${50 - layout.railInnerRadius}%`,
+            inset: bands
+              ? `${50 - bands.rail.innerRy}% ${50 - bands.rail.innerRx}%`
+              : `${50 - layout.railInnerRadius}%`,
+            clipPath: bands ? superellipseClipPath(50, 50, bands.labelExponent) : undefined,
             background:
-              'radial-gradient(ellipse at 50% 40%, rgba(21,63,46,0.92) 0%, rgba(13,44,32,0.95) 55%, rgba(7,26,20,0.97) 100%)',
-            boxShadow: 'inset 0 0 46px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03)',
+              // The felt's edge vignette normally comes from an inset shadow,
+              // which `clip-path` would leave tracing the element's RECTANGLE
+              // instead of its clipped outline. On mobile the darkening is
+              // folded into the gradient itself, so it follows the real shape.
+              bands
+                ? 'radial-gradient(ellipse at 50% 40%, rgba(21,63,46,0.92) 0%, rgba(13,44,32,0.95) 45%, rgba(6,22,17,0.99) 100%)'
+                : 'radial-gradient(ellipse at 50% 40%, rgba(21,63,46,0.92) 0%, rgba(13,44,32,0.95) 55%, rgba(7,26,20,0.97) 100%)',
+            boxShadow: bands ? undefined : 'inset 0 0 46px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03)',
           }}
         />
 

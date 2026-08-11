@@ -5,6 +5,7 @@ import {
   railCenterlinePoint,
   bandPoint,
   pushOutOfZone,
+  superellipseClipPath,
   DESKTOP_LAYOUT,
   MOBILE_LAYOUT,
   NARROW_MOBILE_LAYOUT,
@@ -54,14 +55,20 @@ describe('mobile layout config — a dedicated map, not a scaled-down desktop', 
 
   it('keeps every seat pod off the felt and every chip on it', () => {
     const bands = MOBILE_LAYOUT.bands!
-    // The redesign rests on these rings never crossing: seat pods outside the
-    // felt (on the rail, where a name plate belongs), chips on the felt, and a
-    // clear radial gap between the two so no amount of label text can reach a
-    // chip. Pods ride the rail rather than clearing it entirely — at the top
-    // and bottom of the ellipse there is no room to sit further out and still
-    // fit the pod's second row inside the container.
-    expect(Math.min(bands.label.rx, bands.label.ry)).toBeGreaterThan(MOBILE_LAYOUT.railInnerRadius)
-    expect(Math.max(bands.chip.rx, bands.chip.ry)).toBeLessThan(MOBILE_LAYOUT.railInnerRadius)
+    // The redesign rests on these rings never crossing: seat pods on the rail
+    // (where a name plate belongs), chips on the felt inside it, and a clear
+    // radial gap between the two so no amount of label text can reach a chip.
+    //
+    // Measured against the rail the mobile table actually DRAWS — bands.rail —
+    // not the legacy uniform `railInnerRadius`, which only the desktop rings
+    // still read. Checking the stale one would keep passing while the drawn
+    // ring moved out from under the labels.
+    expect(Math.min(bands.label.rx, bands.label.ry)).toBeGreaterThan(
+      Math.min(bands.rail.innerRx, bands.rail.innerRy),
+    )
+    expect(Math.max(bands.chip.rx, bands.chip.ry)).toBeLessThan(
+      Math.min(bands.rail.innerRx, bands.rail.innerRy),
+    )
     expect(Math.min(bands.label.rx, bands.label.ry) - Math.max(bands.chip.rx, bands.chip.ry)).toBeGreaterThanOrEqual(8)
   })
 })
@@ -159,6 +166,36 @@ describe('narrow phones (<360px) drop a card tier rather than overlapping', () =
     expect(NARROW_MOBILE_LAYOUT.bands!.chip.ry).toBeGreaterThanOrEqual(
       NARROW_MOBILE_LAYOUT.protectedZone.halfHeightPct,
     )
+  })
+})
+
+describe('the rail is drawn on the seat ring, so labels sit centred in it', () => {
+  const bands = MOBILE_LAYOUT.bands!
+
+  it('puts the label band exactly halfway between the rail edges on both axes', () => {
+    // This is what makes "centred in the rail" true by construction rather than
+    // by eye: the ring is defined AROUND the label band, not the other way
+    // round. If these drift apart, every seat's label drifts off the rail.
+    expect((bands.rail.outerRx + bands.rail.innerRx) / 2).toBeCloseTo(bands.label.rx, 5)
+    expect((bands.rail.outerRy + bands.rail.innerRy) / 2).toBeCloseTo(bands.label.ry, 5)
+  })
+
+  it('draws the ring on the same curve the seats are placed on', () => {
+    // A CSS rounded box is a capsule and only meets a superellipse near the
+    // axes — that mismatch is what left the corner seats floating off the rail.
+    const seat = bandPoint(1, 8, bands.label.rx, bands.label.ry, 0, MOBILE_LAYOUT.bands!.labelExponent)
+    const outer = bandPoint(1, 8, bands.rail.outerRx, bands.rail.outerRy, 0, MOBILE_LAYOUT.bands!.labelExponent)
+    const inner = bandPoint(1, 8, bands.rail.innerRx, bands.rail.innerRy, 0, MOBILE_LAYOUT.bands!.labelExponent)
+    // A diagonal seat (slot 1 of 8 = 45°) must land between the two edges.
+    const between = (a: number, b: number, c: number) => (a - b) * (a - c) < 0
+    expect(between(parseFloat(seat.x), parseFloat(outer.x), parseFloat(inner.x))).toBe(true)
+    expect(between(parseFloat(seat.y), parseFloat(outer.y), parseFloat(inner.y))).toBe(true)
+  })
+
+  it('emits a closed polygon clip-path in container percentages', () => {
+    const clip = superellipseClipPath(50, 50, 4)
+    expect(clip.startsWith('polygon(')).toBe(true)
+    expect(clip.match(/%/g)!.length).toBeGreaterThan(100)
   })
 })
 
