@@ -1,5 +1,6 @@
 import { resetBlogCache } from "./blog";
 import { resetGlossaryCache } from "./glossary";
+import { resetLandingCache } from "./landing";
 import { resetEntryCache } from "./index";
 import { resetLessonCaches } from "./lessons";
 import { resetSearchCache } from "./search";
@@ -20,6 +21,7 @@ export function resetSeoCaches(): void {
   resetEntryCache();
   resetWikiCache();
   resetGlossaryCache();
+  resetLandingCache();
   resetLessonCaches();
   resetToolCache();
   resetBlogCache();

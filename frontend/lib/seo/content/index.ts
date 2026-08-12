@@ -3,6 +3,7 @@ import type { SeoEntry, TopicCluster } from "../types";
 import { blogEntries } from "./blog";
 import { ROOT_CLUSTER_ID, TOPIC_CLUSTERS } from "./clusters";
 import { glossaryEntries } from "./glossary";
+import { landingEntries } from "./landing";
 import { courseEntries, lessonEntries } from "./lessons";
 import { toolEntries } from "./tools";
 import { wikiEntries } from "./wiki";
@@ -24,6 +25,7 @@ let cache: SeoEntry[] | null = null;
 export function allEntries(): SeoEntry[] {
   cache ??= [
     ...staticPageEntries(),
+    ...landingEntries(),
     ...courseEntries(),
     ...lessonEntries(),
     ...wikiEntries(),

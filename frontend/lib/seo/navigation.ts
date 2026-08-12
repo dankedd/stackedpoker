@@ -37,6 +37,7 @@ export const FOOTER_NAV: NavGroup[] = [
   {
     group: "Learn",
     items: [
+      { label: "Poker training", href: "/poker-training" },
       { label: "Poker courses", href: ROUTES.courses },
       { label: "Learning hub", href: "/learn" },
       { label: "Pricing", href: ROUTES.pricing },
@@ -68,6 +69,7 @@ export const LANDING_FOOTER_NAV: NavGroup[] = [
     group: "Product",
     items: [
       { label: "Learn", href: "/learn" },
+      { label: "Poker training", href: "/poker-training" },
       { label: "Poker courses", href: ROUTES.courses },
       { label: "Bankroll", href: "/bankroll" },
       { label: "Leaderboard", href: "/leaderboard" },
