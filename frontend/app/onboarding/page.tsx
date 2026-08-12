@@ -8,7 +8,7 @@ import { OnboardingWelcome } from '@/components/onboarding/OnboardingWelcome'
 import { LevelSelectStep } from '@/components/onboarding/LevelSelectStep'
 import { RecommendationScreen } from '@/components/onboarding/RecommendationScreen'
 import { computeRecommendation, type ExperienceLevel, type Recommendation } from '@/lib/learn/experienceLevel'
-import { submitAssessment } from '@/lib/learn/assessmentApi'
+import { submitAssessment, describeAssessmentError } from '@/lib/learn/assessmentApi'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSubscription } from '@/hooks/useSubscription'
 import { trackEvent, SEO_EVENTS } from '@/lib/seo/analytics'
@@ -63,9 +63,7 @@ export default function OnboardingPage() {
       router.push('/dashboard')
     } catch (err) {
       setSubmitting(false)
-      setSubmitError(
-        err instanceof Error ? err.message : 'Something went wrong saving your answer.',
-      )
+      setSubmitError(describeAssessmentError(err))
     }
   }
 
@@ -93,9 +91,7 @@ export default function OnboardingPage() {
 
           {submitError && (
             <div className="mt-4 rounded-xl border border-red-500/25 bg-red-500/[0.05] px-4 py-3 text-center">
-              <p className="text-xs text-red-300/90 mb-2">
-                Couldn&apos;t save your answer — {submitError}
-              </p>
+              <p className="text-xs text-red-300/90 mb-2">{submitError}</p>
               <button
                 type="button"
                 onClick={() => finish(recommendation?.level ?? 'beginner')}

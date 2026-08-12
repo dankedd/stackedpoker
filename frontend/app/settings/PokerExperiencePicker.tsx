@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EXPERIENCE_LEVEL_OPTIONS, computeRecommendation, type ExperienceLevel } from "@/lib/learn/experienceLevel";
-import { submitAssessment } from "@/lib/learn/assessmentApi";
+import { submitAssessment, describeAssessmentError } from "@/lib/learn/assessmentApi";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 
@@ -34,7 +34,7 @@ export function PokerExperiencePicker({ currentLevel }: { currentLevel: Experien
       setLevel(next);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't save — try again.");
+      setError(describeAssessmentError(err));
     } finally {
       setSaving(null);
     }
