@@ -6,6 +6,8 @@ import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, SITE_DESCRIPTION } from "./config";
 import { allEntries } from "./content";
 import { searchTopicEntries } from "./content/search";
 import { findOrphans, MIN_OUTGOING_LINKS, type OrphanReport } from "./graph";
+import { clusterHealth } from "./opportunity";
+import { entryText, wordCount } from "./reading";
 import { validateJsonLd, type JsonLdNode } from "./jsonld";
 import { entryMetadata } from "./metadata";
 import { resolveOgImageFile } from "./ogAssets";
@@ -519,6 +521,95 @@ export function validateTools(): SeoIssue[] {
   return issues;
 }
 
+// ── Growth gates (§14) ───────────────────────────────────────────────────────
+
+/**
+ * Words of real prose a published content page must carry.
+ *
+ * Set at the level that separates "a page" from "a stub": below this there is
+ * nothing for a search engine to rank or an assistant to quote. It is not a
+ * length target — §13 is explicit that pages must not be padded — it is a
+ * floor that catches a page shipped empty by accident.
+ */
+const MIN_BODY_WORDS = 120;
+
+/** Kinds whose job is to LIST other pages, so prose length is not the measure. */
+const INDEX_LIKE_KINDS = new Set<SeoEntry["kind"]>(["search", "glossary"]);
+
+/**
+ * Catches thin pages, weak titles, unowned clusters and dead internal links.
+ *
+ * Each of these is a way a technically-valid page still fails to earn traffic,
+ * which the structural validators above cannot see: a page can have a perfect
+ * canonical, valid JSON-LD and a sitemap entry while being empty.
+ */
+export function validateContentQuality(): SeoIssue[] {
+  const issues: SeoIssue[] = [];
+  const indexable = indexableEntries();
+  const known = new Set([...validatableEntries().map((e) => e.path), "/"]);
+
+  for (const entry of indexable) {
+    // Thin content.
+    if (!INDEX_LIKE_KINDS.has(entry.kind) && entry.kind !== "page") {
+      const words = wordCount(entryText(entry));
+      if (words < MIN_BODY_WORDS) {
+        issues.push(
+          error("thin-content", entry.path, `only ${words} words of content (minimum ${MIN_BODY_WORDS})`),
+        );
+      }
+    }
+
+    // A title that does not name its subject cannot match a query for it. The
+    // check is deliberately weak — it asks that the title contain something
+    // from the slug, not that it contain a keyword.
+    //
+    // Comparison is on letters only, and on a 4-character stem, so "C-Bet"
+    // matches the slug "cbet" and "Polarization" matches "polarized". Without
+    // both, punctuation and ordinary word endings produce false alarms, and a
+    // warning nobody trusts gets ignored along with the real ones.
+    const lettersOnly = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const title = lettersOnly(entry.title);
+    const slugWords = entry.slug.split("-").filter((w) => w.length > 3);
+    if (
+      entry.kind !== "page" &&
+      slugWords.length > 0 &&
+      !slugWords.some((word) => title.includes(lettersOnly(word).slice(0, 4)))
+    ) {
+      issues.push(
+        warning("weak-title", entry.path, `title "${entry.title}" shares no word with its slug`),
+      );
+    }
+
+    // Internal links that go nowhere.
+    for (const related of entry.relatedPaths ?? []) {
+      if (!known.has(related)) {
+        issues.push(error("broken-link", entry.path, `links to ${related}, which does not exist`));
+      }
+    }
+  }
+
+  // A cluster with no authoritative page cannot rank for its own topic, no
+  // matter how many lessons sit inside it. A hub page counts as an anchor —
+  // /glossary is the authority for terminology just as a wiki article is for a
+  // concept — so this only fires where the topic genuinely has no explainer.
+  const anchoredByHub = new Set(
+    indexable.filter((e) => e.kind === "page").flatMap((e) => e.clusters ?? []),
+  );
+  for (const cluster of clusterHealth()) {
+    if (!cluster.roles.wiki && !anchoredByHub.has(cluster.id) && cluster.size > 0) {
+      issues.push(
+        warning(
+          "cluster-authority",
+          `cluster:${cluster.id}`,
+          `${cluster.size} pages but no wiki article to anchor the topic`,
+        ),
+      );
+    }
+  }
+
+  return issues;
+}
+
 // ── Aggregate ────────────────────────────────────────────────────────────────
 
 export interface ValidationResult {
@@ -536,6 +627,7 @@ export function validateSeo(origin = getSiteUrl()): ValidationResult {
     ...validateSitemaps(origin),
     ...validateInternalLinking(),
     ...validateTools(),
+    ...validateContentQuality(),
   ];
 
   const errors = issues.filter((i) => i.severity === "error");

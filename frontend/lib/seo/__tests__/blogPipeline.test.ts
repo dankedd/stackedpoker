@@ -33,12 +33,31 @@ const POST: BlogPostSource = {
   tags: ["mdf", "river", "poker strategy"],
   clusters: ["game-theory"],
   difficulty: "intermediate",
+  // Long enough to clear the thin-content gate, because the fixture has to
+  // stand in for a REAL post — a 60-word stub would prove the pipeline
+  // accepts something the validator would reject in production.
   sections: [
     {
       heading: "What MDF is",
-      paragraphs: ["MDF is the share of your range you must continue with facing a bet."],
+      paragraphs: [
+        "Minimum defense frequency is the share of your range you have to continue with when facing a bet, so that the bettor cannot profit by bluffing with any two cards.",
+        "It falls out of the price the bet lays itself: MDF = pot / (pot + bet). A half-pot bet asks you to continue with two thirds of your range; a pot-sized bet asks for half.",
+      ],
+      formula: "MDF = pot / (pot + bet) = 1 - alpha",
     },
-    { heading: "Key takeaway", paragraphs: ["Bigger bets let you fold more often."] },
+    {
+      heading: "Why the river is where it bites",
+      paragraphs: [
+        "On earlier streets a bluff is rarely dead — it usually holds a backdoor draw or some pair equity, so folding above MDF costs the bettor less than the formula suggests.",
+        "By the river hand strengths are final. There is no equity left to fall back on, which is why the number is at its most literal there and why over-folding rivers is the most expensive habit in a low-stakes player's game.",
+      ],
+    },
+    {
+      heading: "Key takeaway",
+      paragraphs: [
+        "Bigger bets let you fold more often, and smaller ones oblige you to continue wider. Read the size as an instruction about your whole range rather than as a question about one hand.",
+      ],
+    },
   ],
   faqs: [{ question: "What is MDF?", answer: "The minimum share of a range that must continue." }],
   sourceNote: "Test fixture — quotes the StackedPoker concept registry entry for MDF.",
