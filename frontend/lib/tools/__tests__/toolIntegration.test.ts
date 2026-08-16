@@ -32,6 +32,7 @@ const TOOL_COMPONENT_DIR = path.resolve(process.cwd(), "components/tools");
 const REGISTRY = readFileSync(path.join(TOOL_COMPONENT_DIR, "index.tsx"), "utf8");
 
 const INTERACTIVE = [
+  "poker-hand-analyzer",
   "pot-odds-calculator",
   "equity-calculator",
   "bankroll-calculator",
@@ -52,7 +53,7 @@ function widgetSource(slug: string): string {
 }
 
 describe("widget registry", () => {
-  it("ships all six tools from the brief", () => {
+  it("ships every tool that declares a widget", () => {
     expect(interactiveToolSlugs().sort()).toEqual([...INTERACTIVE].sort());
   });
 
@@ -263,10 +264,16 @@ describe("widget implementation requirements", () => {
     const fields = readFileSync(path.join(TOOL_COMPONENT_DIR, "ToolFields.tsx"), "utf8");
     expect(fields).toContain("SEO_EVENTS.toolInputChange");
 
+    // Every widget must report that a use COMPLETED. Most do it with the
+    // generic `toolCalculate`; the hand analyzer has its own, more specific
+    // `analysisCompleted` (the event name this feature's brief specifies),
+    // which satisfies the same invariant.
     for (const slug of INTERACTIVE) {
-      expect(widgetSource(slug), `${slug} never reports a completed calculation`).toContain(
-        "SEO_EVENTS.toolCalculate",
-      );
+      const source = widgetSource(slug);
+      const reportsCompletion =
+        source.includes("SEO_EVENTS.toolCalculate") ||
+        source.includes("SEO_EVENTS.analysisCompleted");
+      expect(reportsCompletion, `${slug} never reports a completed use`).toBe(true);
     }
   });
 

@@ -93,11 +93,13 @@ describe("topic map", () => {
 
   it("only counts a page as covering a topic when it covers the whole phrase", () => {
     const coverage = topicCoverage();
-    // "poker hand analyzer" has no page at all; a permissive matcher would
-    // report dozens because most pages contain "hand".
+    // "poker hand analyzer" now HAS a page — it was the top-scoring content
+    // gap this model identified, and it has since been built. What the strict
+    // matcher still guarantees is that coverage stays small and specific
+    // rather than counting every page containing the word "hand".
     const analyzer = coverage.find((c) => c.topic.id === "hand-analyzer")!;
-    expect(analyzer.matches).toHaveLength(0);
-    expect(analyzer.anchor).toBeUndefined();
+    expect(analyzer.anchor?.path).toBe("/tools/poker-hand-analyzer");
+    expect(analyzer.matches.length).toBeLessThan(5);
 
     // A topic that IS covered still reports coverage.
     const potOdds = coverage.find((c) => c.topic.id === "pot-odds")!;

@@ -16,6 +16,7 @@ import {
   bankrollExamples,
   equityExamples,
   evExamples,
+  handAnalyzerExamples,
   outsExamples,
   positionExamples,
   potOddsExamples,
@@ -325,6 +326,139 @@ const TOOLS: ToolSource[] = [
     ],
     sourceNote:
       "Break-even frequencies are computed at build time by lib/theory/math.ts (alpha).",
+  },
+  {
+    slug: "poker-hand-analyzer",
+    title: "Poker Hand Analyzer",
+    summary:
+      "Paste or enter a hand and get the facts, the exact maths and the concepts that decide it — with the limits stated, not hidden.",
+    status: "published",
+    clusters: ["postflop", "equity"],
+    lessonKey: "hand_vs_hand_equity",
+    wikiSlugs: ["position", "mdf", "equity-realization"],
+    widget: true,
+    glossarySlugs: ["minimum-defense-frequency-mdf", "equity-realization", "bluff-catcher"],
+    examples: handAnalyzerExamples,
+    sections: [
+      {
+        heading: "What this analyser does",
+        paragraphs: [
+          "Enter a hand — your cards, your seat, the board, what happened — and it tells you three separate things: what happened, what the arithmetic says, and which poker concepts the spot turns on.",
+          "The separation is the point. Most hand analysis blurs a calculation into an opinion. Here the pot odds are a calculation, the equity is a count, and the strategy is quoted from reviewed material rather than generated.",
+          "The result always leads with the conclusion, then the reason for it: the decision the hand turned on, the factors that bear on it, and how they combine. Where they do not combine into an answer, it says that too — and names the missing input that would change it.",
+        ],
+      },
+      {
+        heading: "How the analysis works",
+        paragraphs: [
+          "Facts are read straight back from what you entered. Calculations come from the same functions the StackedPoker lessons run on — required equity, minimum defense frequency, alpha, stack-to-pot ratio, board texture and your made hand.",
+          "If you know villain's cards, equity is EXACT: every remaining runout is dealt and counted, not simulated. That is the one case where the maths can settle whether a call beat its price, and the analyser says so plainly.",
+        ],
+        formula: "Required equity = call / (pot after the bet + call)",
+      },
+      {
+        heading: "What it can and cannot determine",
+        definitions: [
+          {
+            term: "It can tell you the price",
+            description:
+              "Pot odds, minimum defense frequency and the fold frequency a bet needs are arithmetic. They do not depend on anyone's opinion.",
+          },
+          {
+            term: "It can settle a known-versus-known spot",
+            description:
+              "With both hands visible, equity is a counting problem. The analyser compares it to the price and tells you whether the call beat it.",
+          },
+          {
+            term: "It cannot guess villain's range",
+            description:
+              "Equity against a RANGE needs assumptions StackedPoker has no reviewed source for, so no number is produced. The analyser reports the spot as needing review instead of inventing a percentage.",
+          },
+          {
+            term: "It is not a solver",
+            description:
+              "No optimal frequencies, no GTO ranges, no EV figures. Where the reviewed theory runs out, the analysis says so rather than filling the gap.",
+          },
+        ],
+      },
+      {
+        heading: "Common mistakes",
+        definitions: [
+          {
+            term: "Judging the decision by the result",
+            description:
+              "Losing a hand does not make the call wrong, and winning does not make it right. The price and your equity decide that, and both are knowable before the river.",
+          },
+          {
+            term: "Analysing your cards instead of the spot",
+            description:
+              "Position, the board texture and the size you are facing change the answer far more than the exact two cards do — which is why the analysis leads with those.",
+          },
+          {
+            term: "Only reviewing the hands you lost",
+            description:
+              "The expensive leaks are in the pots you won with a play that was wrong anyway. A hand is worth reviewing when the decision was close, not when the outcome was bad.",
+          },
+          {
+            term: "Trusting a confident-sounding number",
+            description:
+              "A tool that gives you an EV figure for a spot where villain's range is unknown has guessed at the range. Check what any analyser is assuming before you act on it.",
+          },
+        ],
+      },
+      {
+        heading: "How reviewing hands makes you better",
+        paragraphs: [
+          "The gap between knowing a concept and using it under pressure closes by seeing the concept inside a hand you actually played. That is why every analysis ends with the concepts it exercised and the lesson that drills them.",
+          "Ask the AI Coach about the same hand and it starts from the analysis you just read, with the concepts already in scope, so you can push on the part you did not follow.",
+        ],
+      },
+      {
+        heading: "Key takeaway",
+        paragraphs: [
+          "Do not just find out whether your decision was good. Find out which number or which concept decided it — and then go and learn that one.",
+        ],
+      },
+    ],
+    faqs: [
+      {
+        question: "How do I analyse a poker hand?",
+        answer:
+          "Start with the facts — your position, the board, the size you faced. Then work out the price the pot laid you and your equity against what villain can hold. The analyser above does the arithmetic and names the concepts; the judgement about villain's range stays yours.",
+      },
+      {
+        question: "Is this poker hand analyzer free?",
+        answer:
+          "Yes, and no account is needed. Create a free account only if you want to save analysed hands and carry them into the AI Coach.",
+      },
+      {
+        question: "Can it tell me if my play was a mistake?",
+        answer:
+          "Only when the maths settles it — which means both hands are known and there is a price to compare against. Otherwise it reports the spot as needing review and shows you the numbers rather than inventing a verdict.",
+      },
+      {
+        question: "Does it work like a solver?",
+        answer:
+          "No. It produces no optimal frequencies, ranges or EV figures. It reports what happened, what the arithmetic says and which reviewed concepts apply.",
+      },
+      {
+        question: "Which hand histories can I paste?",
+        answer:
+          "PokerStars and GGPoker 6-max text histories, and any format using the *** HOLE CARDS *** / *** FLOP *** street markers. A history that only partly parses is not thrown away: whatever was read is filled in for you, and the fields it could not determine are listed so you can complete them.",
+      },
+      {
+        question: "Is this poker hand analysis software I need to download?",
+        answer:
+          "No. It runs in the browser, with nothing to install and no account required. It is also not a tracker or a HUD — it does not read your hand histories from disk, watch your tables or store statistics on opponents. It analyses one hand at a time, the one you give it.",
+      },
+      {
+        question: "What do I do when it says the hand needs review?",
+        answer:
+          "Read the rest. A needs-review result still lists what happened, every number that can be calculated, exactly what could not be determined and why, the concepts the spot turns on and the lesson that drills them. It also names the one input — usually villain's cards — that would let the maths settle it outright.",
+      },
+    ],
+    sourceNote:
+      "Facts are read from your input. Calculations come from lib/theory/math.ts, lib/tools/equity.ts and lib/learn/flopClassifier.ts — the maths and the board classifier the StackedPoker lessons use. Strategic explanations are quoted from the StackedPoker poker-theory concept registry; nothing is generated.",
   },
   {
     slug: "equity-calculator",

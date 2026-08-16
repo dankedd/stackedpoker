@@ -4,6 +4,11 @@ import { ArrowRight } from "lucide-react";
 import { ContentPage } from "@/components/seo/ContentPage";
 import { TrackedLink } from "@/components/seo/TrackedLink";
 import { toolWidgetFor } from "@/components/tools";
+import { PokerHandAnalyzer } from "@/components/tools/PokerHandAnalyzer";
+import {
+  conceptRecommendations,
+  DETECTABLE_CONCEPT_IDS,
+} from "@/lib/tools/handAnalysis/recommendations";
 import { toolEntries, toolEntryBySlug, toolLivePath } from "@/lib/seo/content/tools";
 import { entryMetadata } from "@/lib/seo/metadata";
 
@@ -45,6 +50,17 @@ export default async function ToolPage({ params }: { params: Promise<{ slug: str
   // a Server Component — only the calculator itself is client-side (§UX).
   const Widget = toolWidgetFor(slug);
 
+  // The analyzer is the one widget that needs data from the content index —
+  // its "what to study next" links. Resolving them HERE, in the Server
+  // Component, keeps the registries out of the browser bundle; every other
+  // widget is self-contained and renders through the generic lookup.
+  const widget =
+    slug === "poker-hand-analyzer" ? (
+      <PokerHandAnalyzer recommendations={conceptRecommendations([...DETECTABLE_CONCEPT_IDS])} />
+    ) : Widget ? (
+      <Widget />
+    ) : null;
+
   return (
     <ContentPage
       entry={entry}
@@ -52,8 +68,8 @@ export default async function ToolPage({ params }: { params: Promise<{ slug: str
       ctaHeading="Get the reps, not just the formula"
       ctaBody="StackedPoker turns this maths into decisions you actually have to make, hand after hand. Free account, no card required."
       intro={
-        Widget ? (
-          <Widget />
+        widget ? (
+          widget
         ) : livePath ? (
           <div className="mt-8 rounded-xl border border-violet-500/25 bg-violet-500/[0.07] p-5">
             <p className="text-sm text-muted-foreground">

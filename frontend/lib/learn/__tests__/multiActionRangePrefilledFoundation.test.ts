@@ -44,25 +44,84 @@ const KNOWN_GAPS_PENDING_FOLLOWUP: Record<string, string> = {
   'sb-s-build': 'Module 5 SB defend-range build (46 cells) — same gap pattern, not yet designed',
 }
 
-describe('Module 4 range_build_multi exercises fixed by this pass have a real foundation', () => {
-  it('trb-range-lab ("They Raised Back") starts with a substantial, book-grounded foundation', () => {
-    const step = multiBuildSteps.find((s) => s.id === 'trb-range-lab')!
+/**
+ * Steps whose foundation is deliberately SMALL, with the reason recorded.
+ *
+ * Distinct from KNOWN_GAPS_PENDING_FOLLOWUP above: those have no foundation at
+ * all and want one. These have a real, verified foundation that is short on
+ * purpose, and enlarging it would either invent theory or give away the
+ * exercise. The reason is stored, not just asserted, so a future reader does
+ * not re-open a decision that has already been made.
+ */
+const DELIBERATELY_MINIMAL_FOUNDATIONS: Record<string, { hands: Record<string, string>; why: string }> = {
+  'trb-range-lab': {
+    hands: { AA: '4bet', KK: '4bet', QQ: '4bet' },
+    why:
+      'Two independent reasons, either of which is sufficient. (1) NO SOURCE: this step\'s ' +
+      'target chart, BTN_vs_BB_3bet_response, is documented in threebetResponseBaselines.ts as ' +
+      'an ILLUSTRATIVE CONSTRUCTION — Modern Poker Theory gives only AGGREGATE frequencies for ' +
+      'the 3-bet RESPONSE side (8.6/47.3/44.5 for BTN vs BB), and no hand-level chart exists ' +
+      'anywhere in the book or in this codebase. There is therefore nothing book-grounded to ' +
+      'expand a foundation FROM; a larger core would be a hand-picked selection presented as ' +
+      'reviewed theory. (2) PEDAGOGY: the step\'s own on-screen note promises exactly "the clear ' +
+      'value 4-bets (AA-QQ)", and the concept_reveal that follows it (trb-range-lab-rule) teaches ' +
+      'the blocker 4-bets A5s/A4s as its payoff. Prefilling those would hand the learner the ' +
+      'lesson\'s own punchline, and prefilling 40 of the chart\'s 78 hands would leave barely ' +
+      'half a decision behind the 6-hand tolerance.',
+  },
+}
+
+describe('trb-range-lab has the foundation its own copy promises, and no more', () => {
+  const step = multiBuildSteps.find((s) => s.id === 'trb-range-lab')!
+  const expected = DELIBERATELY_MINIMAL_FOUNDATIONS['trb-range-lab']
+
+  it('starts from exactly the premium 4-bet core the step tells the learner it filled in', () => {
+    // The real invariant worth defending here is not a hand COUNT — it is that
+    // the on-screen promise and the data agree. A step that says "we filled in
+    // AA-QQ" and then fills in something else is a bug a learner will hit; a
+    // step that fills in three hands when someone once expected forty is not.
+    expect(resolveMultiPrefilledAssignments(step)).toEqual(expected.hands)
+  })
+
+  it('says on screen what it actually prefilled', () => {
+    expect(step.range_build_multi_prefilled_note).toMatch(/AA-QQ/)
+  })
+
+  it('does NOT give away the blocker 4-bets the following lesson step exists to teach', () => {
+    // trb-range-lab-rule's payoff is "A5s/A4s aren't strong hands, but the Ace
+    // blocker plus suited playability makes them better 4-bets than calls".
+    // Prefilling them would answer the question before it is asked.
     const prefilled = resolveMultiPrefilledAssignments(step)
-    // KNOWN FAILING, deliberately left red — see the sprint report.
-    //
-    // `BTN_vs_BB_3bet_response_foundation` (threebetResponseBaselines.ts) still
-    // holds the 3-hand core { AA, KK, QQ }, the same shape as every other
-    // foundation in that file. The larger foundation this assertion describes
-    // was never actually landed. Satisfying it means DESIGNING a ~40-hand
-    // book-grounded core for BTN vs BB 3-bet response, which is per-step poker
-    // content work — not something to be back-filled by guessing a range, and
-    // not something to be hidden by relaxing the number.
-    expect(
-      Object.keys(prefilled).length,
-      'trb-range-lab still starts from the 3-hand AA/KK/QQ core. Either design the ' +
-        'larger foundation in THREEBET_RESPONSE_FOUNDATIONS, or move this step into ' +
-        'KNOWN_GAPS_PENDING_FOLLOWUP above if the 3-hand core is judged sufficient.',
-    ).toBeGreaterThan(40)
+    expect(Object.keys(prefilled)).not.toContain('A5s')
+    expect(Object.keys(prefilled)).not.toContain('A4s')
+  })
+
+  it('leaves the overwhelming majority of the chart for the learner to build', () => {
+    const chart = resolveMultiActionTargetChart(step)!
+    const prefilled = Object.keys(resolveMultiPrefilledAssignments(step)).length
+    expect(prefilled / chart.cells.length).toBeLessThan(0.1)
+  })
+})
+
+describe('every deliberately-minimal foundation is still minimal and still documented', () => {
+  it('none has quietly grown or been emptied', () => {
+    const offenders: string[] = []
+    for (const [id, entry] of Object.entries(DELIBERATELY_MINIMAL_FOUNDATIONS)) {
+      const step = multiBuildSteps.find((s) => s.id === id)
+      if (!step) {
+        offenders.push(`${id}: documented as deliberately minimal but no longer exists`)
+        continue
+      }
+      const prefilled = resolveMultiPrefilledAssignments(step)
+      if (Object.keys(prefilled).length !== Object.keys(entry.hands).length) {
+        offenders.push(
+          `${id}: foundation is now ${Object.keys(prefilled).length} hands, documented as ` +
+            `${Object.keys(entry.hands).length}. Update the entry (and its reason) or revert.`,
+        )
+      }
+      if (!entry.why.trim()) offenders.push(`${id}: no reason recorded`)
+    }
+    expect(offenders).toEqual([])
   })
 })
 

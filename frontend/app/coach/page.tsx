@@ -9,8 +9,10 @@ import { Footer } from "@/components/layout/Footer";
 import { CoachChat, type CoachChatHandle } from "@/components/learn/CoachChat";
 import { useAuth } from "@/hooks/useAuth";
 import { useLearnProgress } from "@/contexts/LearnProgressContext";
-import { COACH_REVIEW_STORAGE_KEY } from "@/lib/learn/coachReviewStorage";
+import { COACH_HAND_STORAGE_KEY, COACH_REVIEW_STORAGE_KEY } from "@/lib/learn/coachReviewStorage";
 import type { CoachLessonReviewContext } from "@/lib/learn/coachReview";
+import type { CoachHandContext } from "@/lib/tools/handAnalysis/coachContext";
+import { coachOpeningQuestion } from "@/lib/tools/handAnalysis/coachContext";
 import { cn } from "@/lib/utils";
 
 // ── Suggested questions ───────────────────────────────────────────────────────
@@ -52,6 +54,7 @@ function CoachPageContent() {
 
   const [review, setReview] = useState<CoachLessonReviewContext | null>(null);
   const [reviewLoaded, setReviewLoaded] = useState(false);
+  const [handContext, setHandContext] = useState<CoachHandContext | null>(null);
 
   // Read (and consume) the pending Coach Review payload LessonPlayer left in
   // sessionStorage right before navigating here — real per-lesson performance
@@ -72,6 +75,22 @@ function CoachPageContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // The same handoff as the lesson review above, for a hand analysed on
+  // /tools/poker-hand-analyzer. Read (and consumed) once on mount; its
+  // `returnPath` is what lets the user go back to the analyser with the hand
+  // still loaded, which is the round trip the analyser promises.
+  useEffect(() => {
+    if (searchParams.get("hand") !== "1") return;
+    try {
+      const raw = sessionStorage.getItem(COACH_HAND_STORAGE_KEY);
+      sessionStorage.removeItem(COACH_HAND_STORAGE_KEY);
+      if (raw) setHandContext(JSON.parse(raw) as CoachHandContext);
+    } catch {
+      // Missing or corrupt payload — falls through to general coaching.
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const activeLeaks = progress.leaks.filter((l) => !l.resolved).slice(0, 3);
   const weakConcepts = Object.entries(progress.concepts)
     .filter(([, entry]) => entry.mastery_level <= 2)
@@ -79,10 +98,25 @@ function CoachPageContent() {
     .slice(0, 5)
     .map(([id]) => id);
 
-  const coachContext = review
-    ? { source: "lesson_review", lessonReview: review }
-    : { source: "coach_page" };
-  const initialMessage = review ? `Review my "${review.lessonTitle}" lesson.` : undefined;
+  // A hand in context wins over a lesson review: the user clicked through
+  // from a specific hand and expects to talk about that hand.
+  const coachContext = handContext
+    ? {
+        source: "hand_analyzer",
+        handAnalysis: handContext.analysis,
+        hand: handContext.hand,
+        // The key coach_context.py already grounds theory on.
+        concept_ids: handContext.concept_ids,
+      }
+    : review
+      ? { source: "lesson_review", lessonReview: review }
+      : { source: "coach_page" };
+
+  const initialMessage = handContext
+    ? coachOpeningQuestion(handContext.analysis)
+    : review
+      ? `Review my "${review.lessonTitle}" lesson.`
+      : undefined;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -104,13 +138,24 @@ function CoachPageContent() {
                   AI Coaching
                 </p>
                 <h1 className="text-3xl sm:text-4xl font-black text-foreground mb-2 tracking-tight">
-                  {review ? "Lesson Review" : "Your Personal Coach"}
+                  {handContext ? "Hand Review" : review ? "Lesson Review" : "Your Personal Coach"}
                 </h1>
                 <p className="text-muted-foreground max-w-lg leading-relaxed">
-                  {review
-                    ? `Reviewing "${review.lessonTitle}" — scored ${review.avgScore}/100.`
-                    : "Concept-driven, Socratic coaching — adapts to your leaks, study history, and current skill level."}
+                  {handContext
+                    ? `Discussing ${handContext.analysis.summary.heroCards} in the ${handContext.analysis.summary.heroPosition}${handContext.analysis.summary.board === "—" ? " preflop" : ` on ${handContext.analysis.summary.board}`}.`
+                    : review
+                      ? `Reviewing "${review.lessonTitle}" — scored ${review.avgScore}/100.`
+                      : "Concept-driven, Socratic coaching — adapts to your leaks, study history, and current skill level."}
                 </p>
+                {handContext && (
+                  <Link
+                    href={handContext.returnPath}
+                    className="mt-3 inline-flex items-center gap-1.5 rounded text-sm text-violet-400 underline-offset-4 transition-colors hover:text-violet-300 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <ChevronRight aria-hidden="true" className="h-3.5 w-3.5 rotate-180" />
+                    Back to hand analysis
+                  </Link>
+                )}
               </div>
             </div>
           </div>
@@ -249,6 +294,47 @@ function CoachPageContent() {
 
             {/* ── Right: Context panel ── */}
             <div className="lg:w-72 xl:w-80 shrink-0 space-y-4">
+
+              {/* The hand under review — pinned, so the way back is never
+                  more than a glance away once the chat has scrolled. */}
+              {handContext && (
+                <div className="rounded-2xl border border-violet-500/25 bg-violet-500/[0.06] p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-violet-300/60 mb-3">
+                    The hand you brought
+                  </p>
+                  <p className="text-sm font-semibold text-foreground">
+                    {handContext.analysis.summary.heroCards} · {handContext.analysis.summary.heroPosition}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {handContext.analysis.summary.board === "—"
+                      ? "Preflop"
+                      : `on ${handContext.analysis.summary.board}`}
+                  </p>
+                  {handContext.analysis.keyDecision?.question && (
+                    <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground/80">
+                      {handContext.analysis.keyDecision.question}
+                    </p>
+                  )}
+                  {/* Villain's hand was modelled, not known. Said here as well
+                      as in the payload, so a reader of the screen knows it too. */}
+                  {handContext.analysis.conditional && (
+                    <p className="mt-2.5 rounded-lg border border-sky-500/30 bg-sky-500/[0.07] px-2.5 py-2 text-[11px] leading-relaxed text-sky-100/90">
+                      Conditional analysis — run against the{" "}
+                      <span className="font-semibold">
+                        {handContext.analysis.conditional.presetLabel}
+                      </span>{" "}
+                      range, not against known cards.
+                    </p>
+                  )}
+                  <Link
+                    href={handContext.returnPath}
+                    className="mt-3.5 flex items-center gap-1.5 rounded text-xs font-medium text-violet-400 transition-colors hover:text-violet-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <ChevronRight aria-hidden="true" className="h-3 w-3 rotate-180" />
+                    Back to hand analysis
+                  </Link>
+                </div>
+              )}
 
               {/* Active leaks */}
               <div className="rounded-2xl border border-border/40 bg-card/60 p-4">

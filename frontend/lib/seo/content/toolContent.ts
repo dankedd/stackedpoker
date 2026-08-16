@@ -13,6 +13,8 @@ import {
   BB_DEFENSE_COMPLETE_100BB_PROVENANCE,
 } from "@/lib/learn/bbDefenseComplete";
 import { POSITIONS, positionById } from "@/lib/tools/positions";
+import { analyzeHand } from "@/lib/tools/handAnalysis/analyze";
+import type { HandInput } from "@/lib/tools/handAnalysis/types";
 import type { ArticleSection } from "../types";
 
 /**
@@ -261,5 +263,61 @@ export function positionExamples(): ArticleSection {
           .join(", ")} — the button acts last on the flop, turn and river.`,
       },
     ],
+  };
+}
+
+// ── Hand analyzer ────────────────────────────────────────────────────────────
+
+/**
+ * Worked examples produced by running the analyser itself at build time.
+ *
+ * Same discipline as every other tool page here: the page cannot show a
+ * conclusion the tool would not reach, because the tool reached it. Both
+ * spots use known villain cards, which is the only case where the analyser is
+ * entitled to a verdict — showing an example where it says "needs review"
+ * would be honest but would teach nothing about the output.
+ */
+export function handAnalyzerExamples(): ArticleSection {
+  const spots: { label: string; hand: HandInput }[] = [
+    {
+      label: "Flush draw facing a half-pot flop bet",
+      hand: {
+        heroPosition: "BTN",
+        heroCards: ["Ah", "Kh"],
+        villainCards: ["Qs", "Qd"],
+        board: ["Jh", "7h", "2c"],
+        potBb: 10,
+        effectiveStackBb: 100,
+        actions: [{ street: "flop", actor: "villain", type: "bet", amountBb: 5 }],
+      },
+    },
+    {
+      label: "Bottom pair facing a pot-sized turn bet",
+      hand: {
+        heroPosition: "BB",
+        heroCards: ["8c", "7d"],
+        villainCards: ["As", "Ad"],
+        board: ["Kc", "Qd", "7s", "2h"],
+        potBb: 20,
+        effectiveStackBb: 80,
+        actions: [{ street: "turn", actor: "villain", type: "bet", amountBb: 20 }],
+      },
+    },
+  ];
+
+  return {
+    heading: "Practical examples",
+    definitions: spots.map(({ label, hand }) => {
+      const analysis = analyzeHand(hand);
+      const equity = analysis.calculations.find((c) => c.id === "equity")?.value ?? "n/a";
+      const required = analysis.calculations.find((c) => c.id === "required-equity")?.value ?? "n/a";
+      return {
+        term: label,
+        description:
+          `${analysis.summary.heroCards} on ${analysis.summary.board}: you need ${required} to call ` +
+          `and hold ${equity} against that exact hand. ${analysis.verdictBasis} ` +
+          `Concepts raised: ${analysis.concepts.map((c) => c.name).join(", ")}.`,
+      };
+    }),
   };
 }

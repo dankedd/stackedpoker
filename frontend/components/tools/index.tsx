@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import { BankrollCalculator } from "./BankrollCalculator";
 import { EquityCalculator } from "./EquityCalculator";
+import { PokerHandAnalyzer } from "./PokerHandAnalyzer";
 import { PositionTrainer } from "./PositionTrainer";
 import { PotOddsCalculator } from "./PotOddsCalculator";
 import { StartingHandQuiz } from "./StartingHandQuiz";
@@ -22,6 +23,7 @@ import { VarianceCalculator } from "./VarianceCalculator";
 export const TOOL_WIDGETS: Record<string, ComponentType> = {
   "pot-odds-calculator": PotOddsCalculator,
   "equity-calculator": EquityCalculator,
+  "poker-hand-analyzer": PokerHandAnalyzer,
   "bankroll-calculator": BankrollCalculator,
   "variance-calculator": VarianceCalculator,
   "position-trainer": PositionTrainer,

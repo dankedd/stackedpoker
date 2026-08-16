@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, type ReactNode } from "react";
+import { useId, useRef, type ReactNode, type RefObject } from "react";
 import { SEO_EVENTS, trackEvent } from "@/lib/seo/analytics";
 
 /**
@@ -34,6 +34,7 @@ export function NumberField({
   unit,
   hint,
   invalid = false,
+  inputRef,
 }: {
   toolSlug: string;
   label: string;
@@ -44,6 +45,8 @@ export function NumberField({
   unit?: string;
   hint?: string;
   invalid?: boolean;
+  /** Lets a caller move focus here — used by "add missing information". */
+  inputRef?: RefObject<HTMLInputElement | null>;
 }) {
   const id = useId();
   const hintId = `${id}-hint`;
@@ -57,6 +60,7 @@ export function NumberField({
       <div className="relative mt-1.5">
         <input
           id={id}
+          ref={inputRef}
           type="number"
           inputMode="decimal"
           min={min}
@@ -99,6 +103,7 @@ export function TextField({
   hint,
   invalid = false,
   autoCapitalize = "characters",
+  inputRef,
 }: {
   toolSlug: string;
   label: string;
@@ -108,6 +113,8 @@ export function TextField({
   hint?: string;
   invalid?: boolean;
   autoCapitalize?: "none" | "characters";
+  /** Lets a caller move focus here — used by "add missing information". */
+  inputRef?: RefObject<HTMLInputElement | null>;
 }) {
   const id = useId();
   const hintId = `${id}-hint`;
@@ -120,6 +127,7 @@ export function TextField({
       </label>
       <input
         id={id}
+        ref={inputRef}
         type="text"
         value={value}
         placeholder={placeholder}
