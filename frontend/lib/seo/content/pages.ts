@@ -31,7 +31,7 @@ const PAGES: SeoEntry[] = [
     kind: "page",
     slug: "courses",
     path: ROUTES.courses,
-    title: "Poker Courses",
+    title: "Poker Courses: Preflop to Postflop Lessons",
     summary:
       "Every StackedPoker module, in the order they are meant to be taken — from the rules of Hold'em to range construction.",
     status: "published",
@@ -44,7 +44,7 @@ const PAGES: SeoEntry[] = [
     kind: "page",
     slug: "wiki",
     path: ROUTES.wiki,
-    title: "Poker Wiki",
+    title: "Poker Strategy Wiki: Concepts Explained",
     summary:
       "Plain-English reference articles on the concepts that decide poker hands: MDF, range advantage, polarization, blockers and more.",
     status: "published",
@@ -110,7 +110,7 @@ const PAGES: SeoEntry[] = [
     kind: "page",
     slug: "pricing",
     path: ROUTES.pricing,
-    title: "Pricing",
+    title: "Pricing: Free Poker Training and Paid Plans",
     summary:
       "StackedPoker plans: a free tier with two full modules, plus Plus and Elite for the complete curriculum.",
     status: "published",

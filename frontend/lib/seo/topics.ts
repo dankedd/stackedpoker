@@ -47,6 +47,40 @@ export interface TopicDefinition {
  * ones — which would be a doorway page. They are recorded so the opportunity
  * is visible when someone decides to localise, not so it can be faked now.
  */
+/**
+ * Queries deliberately left unowned, and why.
+ *
+ * A keyword tool cannot tell the difference between a gap worth filling and a
+ * gap that exists for a reason. Without this list, every future audit
+ * rediscovers these as "missing pages" and someone eventually writes one.
+ *
+ * Nothing here is rendered on a public page — it is a record for whoever runs
+ * the next audit.
+ */
+export interface DeclinedTopic {
+  queries: string[];
+  /** What would have to change for this to become publishable. */
+  reconsiderIf: string;
+  rationale: string;
+}
+
+export const DECLINED_TOPICS: DeclinedTopic[] = [
+  {
+    queries: ["gto wizard preflop ranges", "gto wizard ranges", "gto wizard alternative"],
+    rationale:
+      "Serving this query means one of two pages. Publishing GTO Wizard's ranges would be redistributing another company's product — StackedPoker has no licence to them, and no way to verify a copy is faithful. A comparison page ranking for a competitor's trademark would need claims about their product that this codebase cannot source, on a page whose only real purpose is to intercept their brand traffic. Both fail the content-quality gate: the honest answer to \"what does StackedPoker offer instead\" is /preflop-charts, which names its own sources and makes no claim about anyone else.",
+    reconsiderIf:
+      "A licensing arrangement exists, or the page can be written as a factual description of solver-derived preflop ranges in general — with no competitor's name in the title, branding or URL, and no claim about their product.",
+  },
+  {
+    queries: ["texas hold em strategie", "poker strategie nederlands"],
+    rationale:
+      "The Dutch phrasing of a query the English pillar at /texas-holdem-strategy already answers. Putting Dutch keywords on an English page is the definition of a doorway page, and the site is English-only with no translation pipeline (see the nl- topics above).",
+    reconsiderIf:
+      "The site gains a real Dutch locale. Then this is a translation of /texas-holdem-strategy, not a second page.",
+  },
+];
+
 export const TOPICS: TopicDefinition[] = [
   // ── Education ─────────────────────────────────────────────────────────────
   {
@@ -323,12 +357,23 @@ export const TOPICS: TopicDefinition[] = [
   },
   {
     id: "affordable-poker-training",
-    queries: ["affordable poker training", "cheap poker coaching", "free poker training"],
+    queries: ["affordable poker training", "cheap poker coaching", "budget poker study"],
     category: "commercial",
     intent: "commercial",
     priority: "medium",
     language: "en",
-    rationale: "A genuine strength — two full modules and every tool are free — and currently stated only on the pricing page.",
+    rationale:
+      "Still unowned, and deliberately: this is the price-comparison intent, which /pricing serves without competing for the query. Kept separate from the free-tier intent below — a searcher looking for cheap and one looking for free want different pages, and one page written for both serves neither.",
+  },
+  {
+    id: "free-poker-training",
+    queries: ["free poker training", "poker training online free", "free poker lessons"],
+    category: "commercial",
+    intent: "commercial",
+    priority: "high",
+    language: "en",
+    rationale:
+      "A genuine strength — every calculator needs no account and two modules open on the free tier — and previously stated only in passing on /pricing and /poker-training. /free-poker-training now itemises it from the entitlement code itself.",
   },
 
   // ── Dutch ─────────────────────────────────────────────────────────────────

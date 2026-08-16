@@ -30,6 +30,8 @@ export interface BuildMetadataInput {
   /** Page-specific title, WITHOUT the brand suffix. */
   title: string;
   description: string;
+  /** Another page that owns this content canonically. See SeoEntry.canonicalTo. */
+  canonicalTo?: string;
   /** Root-relative canonical path, e.g. "/wiki/mdf". */
   path: string;
   keywords?: string[];
@@ -93,7 +95,9 @@ export function buildDescription(...parts: (string | undefined | null)[]): strin
 export function buildMetadata(input: BuildMetadataInput): Metadata {
   const origin = input.origin ?? getSiteUrl();
   const path = normalizePath(input.path);
-  const canonical = absoluteUrl(path, origin);
+  // A page that declares another page canonical is pointed there instead of
+  // at itself — the one place this is resolved, so nothing can disagree.
+  const canonical = absoluteUrl(input.canonicalTo ?? path, origin);
   const title = buildTitle(input.title);
   const description = buildDescription(input.description);
   const indexable = input.index !== false;
@@ -180,6 +184,7 @@ export function entryMetadata(entry: SeoEntry, overrides: Partial<BuildMetadataI
     title: qualifier ? `${entry.title} — ${qualifier}` : entry.title,
     description: entry.summary,
     path: entry.path,
+    canonicalTo: entry.canonicalTo,
     keywords: entry.tags,
     // `planned` content is real routing with no published body behind it —
     // indexing it would be a thin-content signal against the whole domain.

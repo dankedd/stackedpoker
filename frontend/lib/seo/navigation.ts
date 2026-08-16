@@ -38,6 +38,8 @@ export const FOOTER_NAV: NavGroup[] = [
     group: "Learn",
     items: [
       { label: "Poker training", href: "/poker-training" },
+      { label: "Free poker training", href: "/free-poker-training" },
+      { label: "Texas Hold'em strategy", href: "/texas-holdem-strategy" },
       { label: "Poker courses", href: ROUTES.courses },
       { label: "Learning hub", href: "/learn" },
       { label: "Pricing", href: ROUTES.pricing },
@@ -47,6 +49,7 @@ export const FOOTER_NAV: NavGroup[] = [
     group: "Reference",
     items: [
       { label: "Poker wiki", href: ROUTES.wiki },
+      { label: "Preflop charts", href: "/preflop-charts" },
       { label: "Glossary", href: ROUTES.glossary },
       { label: "Topics", href: ROUTES.search },
       { label: "Blog", href: ROUTES.blog },

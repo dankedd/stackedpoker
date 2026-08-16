@@ -3,7 +3,7 @@ import path from "node:path";
 import type { Metadata } from "next";
 import { getSiteUrl } from "@/lib/site-url";
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, SITE_DESCRIPTION } from "./config";
-import { allEntries } from "./content";
+import { allEntries, entryByPath } from "./content";
 import { searchTopicEntries } from "./content/search";
 import { findOrphans, MIN_OUTGOING_LINKS, type OrphanReport } from "./graph";
 import { clusterHealth } from "./opportunity";
@@ -101,11 +101,33 @@ export function validateCanonicalMetadata(
       return issues;
     }
 
-    const expected = absoluteUrl(entry.path, origin);
+    // Normally self-canonical. A page may point elsewhere only by declaring
+    // it on the entry, which keeps "this page defers to that one" a property
+    // of the content record rather than something a template decided.
+    const expected = absoluteUrl(entry.canonicalTo ?? entry.path, origin);
     if (href !== expected) {
       issues.push(
         error("canonical", entry.path, `canonical points at ${href}, expected ${expected}`),
       );
+    }
+
+    // A declared target must be a real, indexable page — otherwise the site is
+    // consolidating its signals onto a URL that cannot receive them.
+    if (entry.canonicalTo) {
+      const target = entryByPath(entry.canonicalTo);
+      if (!target) {
+        issues.push(
+          error("canonical", entry.path, `canonicalTo "${entry.canonicalTo}" is not a known page`),
+        );
+      } else if (target.status !== "published") {
+        issues.push(
+          error("canonical", entry.path, `canonicalTo "${entry.canonicalTo}" is not published`),
+        );
+      } else if (target.canonicalTo) {
+        issues.push(
+          error("canonical", entry.path, `canonicalTo "${entry.canonicalTo}" itself defers to another page`),
+        );
+      }
     }
 
     // Duplicate canonicals across pages = two URLs claiming to be the same
@@ -138,7 +160,12 @@ export function validateCanonicals(
     const meta = entryMetadata(entry, { origin });
     issues.push(...validateCanonicalMetadata(entry, meta, origin));
 
-    // Cross-page rule: two URLs must never claim the same canonical.
+    // Cross-page rule: two URLs must never claim the same canonical BY
+    // ACCIDENT. A page that declares `canonicalTo` is doing it deliberately —
+    // that is the entire mechanism — so only self-canonical pages compete for
+    // ownership of a URL here.
+    if (entry.canonicalTo) continue;
+
     const canonical = meta.alternates?.canonical;
     const href = typeof canonical === "string" ? canonical : undefined;
     if (!href) continue;
@@ -398,9 +425,22 @@ export function validateSitemaps(origin = getSiteUrl()): SeoIssue[] {
   const issues = validateSitemapRows(rows, origin);
 
   // Everything indexable should be IN a sitemap, not merely absent from the
-  // wrong one.
+  // wrong one — except a page that names a different canonical, whose absence
+  // is the point rather than an oversight.
   const inSitemaps = new Set(rows.map((r) => r.entry.path));
   for (const entry of indexableEntries()) {
+    if (entry.canonicalTo) {
+      if (inSitemaps.has(entry.path)) {
+        issues.push(
+          error(
+            "sitemap",
+            entry.path,
+            `submitted in a sitemap while declaring ${entry.canonicalTo} canonical`,
+          ),
+        );
+      }
+      continue;
+    }
     if (!inSitemaps.has(entry.path)) {
       issues.push(warning("sitemap", entry.path, "indexable page is in no sitemap"));
     }

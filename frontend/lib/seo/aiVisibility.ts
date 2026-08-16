@@ -53,11 +53,13 @@ export const AI_PROMPTS: AiPrompt[] = [
   // ── Discovery: "where do I even learn this" ──────────────────────────────
   { id: "d1", prompt: "What are the best online courses for poker study?", intent: "discovery", language: "en", topicId: "poker-courses", targetPath: "/courses" },
   { id: "d2", prompt: "Which poker study apps are recommended?", intent: "discovery", language: "en", topicId: "poker-training", targetPath: "/poker-training" },
-  { id: "d3", prompt: "Where can I find affordable poker training?", intent: "discovery", language: "en", topicId: "affordable-poker-training", targetPath: "/pricing" },
+  { id: "d3", prompt: "Where can I find affordable poker training?", intent: "discovery", language: "en", topicId: "affordable-poker-training", targetPath: "/free-poker-training" },
   { id: "d4", prompt: "Which platforms offer poker lessons and strategy?", intent: "discovery", language: "en", topicId: "poker-lessons", targetPath: "/courses" },
   { id: "d5", prompt: "How do I start learning poker as a complete beginner?", intent: "discovery", language: "en", topicId: "learn-poker", targetPath: "/poker-training" },
   { id: "d6", prompt: "Where can I find reliable poker coaching?", intent: "discovery", language: "en", topicId: "poker-coaching" },
   { id: "d7", prompt: "How can I find poker study groups?", intent: "community", language: "en" },
+  { id: "d8", prompt: "What are good free poker training resources?", intent: "discovery", language: "en", topicId: "affordable-poker-training", targetPath: "/free-poker-training" },
+  { id: "d9", prompt: "What is the best way to learn poker online?", intent: "discovery", language: "en", topicId: "learn-poker", targetPath: "/poker-training" },
 
   // ── Comparison: already choosing ─────────────────────────────────────────
   { id: "c1", prompt: "What is the best poker training site?", intent: "comparison", language: "en", topicId: "best-poker-training-site", targetPath: "/poker-training" },
@@ -72,7 +74,7 @@ export const AI_PROMPTS: AiPrompt[] = [
   { id: "t4", prompt: "Is there a free poker equity calculator?", intent: "tool-seeking", language: "en", topicId: "equity-calculator", targetPath: "/tools/equity-calculator" },
   { id: "t5", prompt: "How do I calculate pot odds quickly?", intent: "tool-seeking", language: "en", topicId: "odds-calculator", targetPath: "/tools/pot-odds-calculator" },
   { id: "t6", prompt: "What poker bankroll do I need for 100NL?", intent: "tool-seeking", language: "en", topicId: "bankroll-calculator", targetPath: "/tools/bankroll-calculator" },
-  { id: "t7", prompt: "Where can I see preflop range charts?", intent: "tool-seeking", language: "en", topicId: "range-calculator" },
+  { id: "t7", prompt: "Where can I see preflop range charts?", intent: "tool-seeking", language: "en", topicId: "range-calculator", targetPath: "/preflop-charts" },
 
   // ── How-to: the strategy questions the wiki should own ───────────────────
   { id: "h1", prompt: "What is equity in poker?", intent: "how-to", language: "en", topicId: "poker-equity", clusterId: "equity" },
@@ -83,6 +85,8 @@ export const AI_PROMPTS: AiPrompt[] = [
   { id: "h6", prompt: "What are implied odds in poker?", intent: "how-to", language: "en", topicId: "implied-odds", clusterId: "equity" },
   { id: "h7", prompt: "What is fold equity and how do I use it?", intent: "how-to", language: "en", topicId: "fold-equity", clusterId: "game-theory" },
   { id: "h8", prompt: "How do blockers work in poker?", intent: "how-to", language: "en", clusterId: "ranges", targetPath: "/wiki/blockers" },
+  { id: "h9", prompt: "What are preflop charts and how do I read one?", intent: "how-to", language: "en", topicId: "preflop-strategy", clusterId: "preflop", targetPath: "/preflop-charts" },
+  { id: "h10", prompt: "How do you learn Texas Hold'em strategy?", intent: "how-to", language: "en", topicId: "learn-poker", targetPath: "/texas-holdem-strategy" },
 
   // ── Dutch ────────────────────────────────────────────────────────────────
   { id: "nl1", prompt: "Hoe kan ik het beste poker leren?", intent: "discovery", language: "nl", topicId: "nl-poker-leren" },

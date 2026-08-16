@@ -3,6 +3,17 @@ import { DEFAULT_CONTENT_DATE } from "./config";
 import { absoluteUrl } from "./routes";
 import type { SeoEntry } from "./types";
 import { publishedEntries } from "./content";
+
+/**
+ * Everything eligible for a sitemap.
+ *
+ * A sitemap is a list of the URLs a site wants indexed. A page that names a
+ * different page as its canonical is, by its own declaration, not one of
+ * them — submitting it anyway is the site contradicting itself.
+ */
+function sitemapEntries() {
+  return publishedEntries().filter((entry) => !entry.canonicalTo);
+}
 import { searchTopicEntries } from "./content/search";
 
 /**
@@ -48,10 +59,10 @@ const KIND_BY_SECTION: Partial<Record<SitemapSection, SeoEntry["kind"]>> = {
 /** The entries belonging in one section. Always `published` only. */
 export function entriesForSection(section: SitemapSection): SeoEntry[] {
   if (section === "topics") return searchTopicEntries();
-  if (section === "images") return publishedEntries().filter((e) => (e.images?.length ?? 0) > 0);
+  if (section === "images") return sitemapEntries().filter((e) => (e.images?.length ?? 0) > 0);
 
   const kind = KIND_BY_SECTION[section];
-  return kind ? publishedEntries().filter((e) => e.kind === kind) : [];
+  return kind ? sitemapEntries().filter((e) => e.kind === kind) : [];
 }
 
 /** Sections that currently have at least one URL — empty files are omitted. */

@@ -54,18 +54,18 @@ const WIKI_SOURCES: WikiSource[] = [
   { slug: "equity-realization", conceptId: "equity_realization", shortName: "equity realization", clusters: ["equity"], difficulty: "intermediate" },
   { slug: "spr", conceptId: "spr_theory", title: "Stack-to-Pot Ratio (SPR)", shortName: "SPR", lessonKey: "spr", clusters: ["postflop"], difficulty: "intermediate" },
   { slug: "range-advantage", conceptId: "range_advantage", shortName: "range advantage", clusters: ["ranges", "postflop"], difficulty: "intermediate" },
-  { slug: "nut-advantage", conceptId: "nut_advantage", shortName: "nut advantage", clusters: ["ranges", "postflop"], difficulty: "advanced" },
-  { slug: "capped-range", conceptId: "capped_range", shortName: "a capped range", clusters: ["ranges"], difficulty: "intermediate" },
+  { slug: "nut-advantage", conceptId: "nut_advantage", title: "Nut Advantage: Who Holds the Best Hands", shortName: "nut advantage", clusters: ["ranges", "postflop"], difficulty: "advanced" },
+  { slug: "capped-range", conceptId: "capped_range", title: "Capped Range: Spotting It and Attacking It", shortName: "a capped range", clusters: ["ranges"], difficulty: "intermediate" },
   { slug: "equity-buckets", conceptId: "equity_bucket", shortName: "an equity bucket", lessonKey: "equity_bucket", clusters: ["equity", "ranges"], difficulty: "intermediate" },
   { slug: "cbet", conceptId: "cbet_theory", title: "Continuation Bet (C-Bet)", shortName: "a c-bet", lessonKey: "cbet", clusters: ["postflop"], difficulty: "beginner" },
   { slug: "donk-bet", conceptId: "donk_bet", shortName: "a donk bet", clusters: ["postflop"], difficulty: "advanced" },
   { slug: "overbet", conceptId: "overbet", shortName: "an overbet", clusters: ["bet-sizing"], difficulty: "advanced" },
-  { slug: "polarization", conceptId: "polarized_betting", title: "Polarization", shortName: "polarization", lessonKey: "polarized", clusters: ["ranges", "bet-sizing"], difficulty: "intermediate" },
+  { slug: "polarization", conceptId: "polarized_betting", title: "Polarization: Betting Nuts and Bluffs", shortName: "polarization", lessonKey: "polarized", clusters: ["ranges", "bet-sizing"], difficulty: "intermediate" },
   { slug: "merged-betting", conceptId: "merged_betting", shortName: "merged betting", clusters: ["bet-sizing"], difficulty: "intermediate" },
   { slug: "geometric-sizing", conceptId: "geometric_sizing", shortName: "geometric sizing", clusters: ["bet-sizing"], difficulty: "advanced" },
   { slug: "exploitative-play", conceptId: "exploitative_play", shortName: "exploitative play", clusters: ["exploitative"], difficulty: "advanced" },
-  { slug: "position", conceptId: "position_value", title: "Position", shortName: "position", lessonKey: "position", clusters: ["preflop", "postflop"], difficulty: "beginner" },
-  { slug: "blockers", conceptId: "blockers", shortName: "a blocker", clusters: ["ranges"], difficulty: "intermediate" },
+  { slug: "position", conceptId: "position_value", title: "Position in Poker: Why Acting Last Wins More", shortName: "position", lessonKey: "position", clusters: ["preflop", "postflop"], difficulty: "beginner" },
+  { slug: "blockers", conceptId: "blockers", title: "Blockers in Poker: Card Removal Explained", shortName: "a blocker", clusters: ["ranges"], difficulty: "intermediate" },
 ];
 
 /**

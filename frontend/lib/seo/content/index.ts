@@ -4,6 +4,7 @@ import { blogEntries } from "./blog";
 import { ROOT_CLUSTER_ID, TOPIC_CLUSTERS } from "./clusters";
 import { glossaryEntries } from "./glossary";
 import { landingEntries } from "./landing";
+import { pillarEntries } from "./pillars";
 import { courseEntries, lessonEntries } from "./lessons";
 import { toolEntries } from "./tools";
 import { wikiEntries } from "./wiki";
@@ -26,6 +27,7 @@ export function allEntries(): SeoEntry[] {
   cache ??= [
     ...staticPageEntries(),
     ...landingEntries(),
+    ...pillarEntries(),
     ...courseEntries(),
     ...lessonEntries(),
     ...wikiEntries(),

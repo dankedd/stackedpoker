@@ -137,6 +137,18 @@ function letterEntry(letter: string): SeoEntry {
       .map((t) => t.term)
       .join(", ")}.`,
     status: "published",
+    /**
+     * `/glossary` renders every term in the vocabulary, grouped by letter.
+     * Each of these pages renders a strict subset of that — so as index
+     * entries they are 20 near-duplicates of one page, and eight of them
+     * carry two terms or fewer. Browsing by letter is worth keeping; ranking
+     * by letter is not, and "poker terms starting with W" is not a query
+     * anybody types.
+     *
+     * So they stay published, linked and crawlable, and hand their ranking
+     * signals to the page that holds the whole glossary.
+     */
+    canonicalTo: ROUTES.glossary,
     tags: ["poker glossary", "poker terms", ...terms.slice(0, 12).map((t) => t.term.toLowerCase())],
     clusters: ["glossary"],
     body: [

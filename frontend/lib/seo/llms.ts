@@ -130,20 +130,22 @@ export interface AiIndexDocument {
  * it can pick the right URL in one step instead of crawling six.
  */
 export function renderAiIndex(origin = getSiteUrl()) {
-  const documents: AiIndexDocument[] = publishedEntries().map((entry) => ({
-    url: absoluteUrl(entry.path, origin),
-    path: entry.path,
-    type: entry.kind,
-    title: entry.title,
-    summary: entry.summary,
-    topics: entry.clusters ?? [],
-    updated: entry.authority?.updated,
-    readingTimeMin: entry.authority?.readingTimeMin,
-    difficulty: entry.authority?.difficulty,
-    outline: entry.body?.map((s) => s.heading),
-    answers: entry.faqs?.map((f) => f.question),
-    provenance: entry.sourceNote,
-  }));
+  const documents: AiIndexDocument[] = publishedEntries()
+    .filter((entry) => !entry.canonicalTo)
+    .map((entry) => ({
+      url: absoluteUrl(entry.path, origin),
+      path: entry.path,
+      type: entry.kind,
+      title: entry.title,
+      summary: entry.summary,
+      topics: entry.clusters ?? [],
+      updated: entry.authority?.updated,
+      readingTimeMin: entry.authority?.readingTimeMin,
+      difficulty: entry.authority?.difficulty,
+      outline: entry.body?.map((s) => s.heading),
+      answers: entry.faqs?.map((f) => f.question),
+      provenance: entry.sourceNote,
+    }));
 
   return {
     name: SITE_NAME,

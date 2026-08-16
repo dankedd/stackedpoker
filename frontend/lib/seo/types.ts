@@ -80,6 +80,27 @@ export interface SeoEntry {
   /** One sentence. Becomes the meta description and the llms.txt summary. */
   summary: string;
   status: ContentStatus;
+  /**
+   * A page whose content is genuinely published, but which is NOT the
+   * canonical home for it — it points at the page that is.
+   *
+   * The case this exists for: a navigation slice of a larger page. The 20
+   * glossary letter pages each render a subset of what `/glossary` already
+   * renders in full, so as index entries they are 20 thin duplicates
+   * competing with the one page that holds the whole vocabulary. They are
+   * still worth having, and worth crawling, for the reader who wants to
+   * browse by letter — they are just not what should rank.
+   *
+   * `planned` would be the wrong tool here and saying so matters: `planned`
+   * means "the content does not exist yet" and renders a placeholder. This
+   * content exists. What it lacks is primacy.
+   *
+   * Effects: the canonical points to `canonicalTo`, the page leaves the
+   * sitemap and llms.txt (a URL a site does not consider canonical has no
+   * business being submitted as one), and it stays fully linked and
+   * crawlable so its outgoing links keep working.
+   */
+  canonicalTo?: string;
   /** Freeform topical tags — the substrate the related-content engine matches on. */
   tags: string[];
   /** Cluster ids this entry belongs to (§7). */

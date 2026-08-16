@@ -129,9 +129,18 @@ describe("llms.txt", () => {
 describe("ai-sitemap.json", () => {
   const index = renderAiIndex(ORIGIN);
 
-  it("describes every published document", () => {
-    expect(index.documentCount).toBe(publishedEntries().length);
+  it("describes every published document that is its own canonical", () => {
+    // A page that names another page canonical is a navigation slice of it —
+    // handing an assistant both would be offering the same content twice and
+    // inviting it to cite the copy rather than the original.
+    const canonical = publishedEntries().filter((entry) => !entry.canonicalTo);
+    expect(index.documentCount).toBe(canonical.length);
     expect(index.documents.length).toBe(index.documentCount);
+
+    const listed = new Set(index.documents.map((doc) => doc.path));
+    for (const entry of publishedEntries()) {
+      expect(listed.has(entry.path), entry.path).toBe(!entry.canonicalTo);
+    }
   });
 
   it("gives documents an outline and provenance where the page has them", () => {

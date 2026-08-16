@@ -159,6 +159,9 @@ function pokerTrainingEntry(): SeoEntry {
       },
     ],
     relatedPaths: [
+      "/free-poker-training",
+      "/texas-holdem-strategy",
+      "/preflop-charts",
       ROUTES.courses,
       ROUTES.tools,
       ROUTES.wiki,
