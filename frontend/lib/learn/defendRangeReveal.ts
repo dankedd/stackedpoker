@@ -80,8 +80,24 @@ function stepHasJamOption(step: LessonStep): boolean {
   return !!step.options?.some((o) => /\bjam\b|all-?in|shove/i.test(`${o.id} ${o.label}`))
 }
 
+/** True when the step's decision happens after the flop. Every chart in this
+ *  module answers one preflop question — "how does Hero defend against an
+ *  open?" — so it cannot back a postflop answer. `isCleanFacingOpen` treats a
+ *  step with no `action_before_hero` as "facing a clean open", which is right
+ *  for a preflop step and wrong for a river one: Module 9's river bluff-catch
+ *  steps carry hero_position/villain_position/hero_hand purely so the table
+ *  renders Hero's cards, and that was enough to attach a "BB CALLING RANGE vs
+ *  BTN OPEN" chart to a question about calling a river bet. Any of the three
+ *  postflop markers is sufficient — a step needs only one to be postflop. */
+function isPostflopStep(step: LessonStep): boolean {
+  if (step.street === 'flop' || step.street === 'turn' || step.street === 'river') return true
+  if ((step.board?.length ?? 0) >= 3) return true
+  return (step.postflop_action?.length ?? 0) > 0
+}
+
 export function resolveDefendRangeReveal(step: LessonStep): DecisionSpotRangeReveal | undefined {
   if (step.type !== 'decision_spot') return undefined
+  if (isPostflopStep(step)) return undefined
 
   const { hero_position: heroPosition, villain_position: villainPosition, hero_hand: heroHand, effective_stack_bb: stackBb } = step
   if (!heroPosition || !villainPosition || !heroHand || heroHand.length !== 2 || stackBb == null) return undefined

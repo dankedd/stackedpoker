@@ -26,9 +26,10 @@ import { resolveThreebetRangeReveal } from './threebetRangeReveal'
 import { resolveOpenerRangePanel, resolveOpenerRangeReveal } from './openerRangeReveal'
 import { resolveFacingThreebetRangeReveal } from './facingThreebetRangeReveal'
 import {
-  evOfBetting, evOfChecking, bestResponse, isIndifferent, testUnilateralDeviation,
+  evOfBetting, evOfChecking, bestResponse, isIndifferent,
   clairvoyanceEV, clairvoyanceEquilibrium, geometricBetSizing, minimumBetToDenyEquity, type ActionEV,
 } from './gameTheoryEngine'
+import { deviationSides, deviationVerdict, resolveDeviationPanel } from './unilateralDeviation'
 import { PRESSURE_GAME_DEFAULT } from './gameTheoryContent'
 import {
   classifyFlop, dimensionValue, equityBucket, estimateVolatility, turnImpact,
@@ -1765,7 +1766,16 @@ function evalBoardRankSort(step: LessonStep, response: unknown): EvalCore {
   const pct = Math.round(accuracy * 100)
 
   if (inversions === 0) {
-    return { quality: 'perfect', score: 100, feedback: 'That ordering matches — from bets most to bets least.', ev_loss_bb: 0 }
+    // The default line names c-bet frequency, which is what this UI was built
+    // for. A step that re-labels the spectrum to rank something else must say
+    // what its own order means, or a correct answer gets congratulated for
+    // solving a different question.
+    return {
+      quality: 'perfect',
+      score: 100,
+      feedback: step.board_rank_sort_explanation ?? 'That ordering matches — from bets most to bets least.',
+      ev_loss_bb: 0,
+    }
   }
 
   const quality: ActionQuality = accuracy >= 0.75 ? 'good' : accuracy >= 0.5 ? 'acceptable' : 'mistake'
@@ -2129,36 +2139,26 @@ function evalEVIndifferenceBalance(step: LessonStep, response: unknown): EvalCor
       }
 }
 
-/** Player A = the bettor (a zero-equity bluff hand); Player B = the defender (call frequency). */
-function deviationTestEV(step: LessonStep, player: 'A' | 'B', heroFreqPct: number, villainFreqPct: number): number {
-  const pot = step.unilateral_deviation_test_pot ?? 100
-  const bet = step.unilateral_deviation_test_bet ?? 100
-  if (player === 'A') {
-    const betEV = evOfBetting({ pot, bet, equityWhenCalled: 0 }, villainFreqPct / 100)
-    const checkEV = evOfChecking({ pot, equityWhenChecked: 0 })
-    return (heroFreqPct / 100) * betEV + (1 - heroFreqPct / 100) * checkEV
-  }
-  const callFreq = heroFreqPct / 100
-  const bettorFreq = villainFreqPct / 100
-  const callEV = pot - evOfBetting({ pot, bet, equityWhenCalled: 0 }, 1)
-  return bettorFreq * (callFreq * callEV + (1 - callFreq) * 0)
-}
-
 function evalUnilateralDeviationTest(step: LessonStep, response: unknown): EvalCore {
   const r = (response ?? {}) as Record<string, unknown>
-  const player = step.unilateral_deviation_test_player ?? 'A'
-  const equilibrium = step.unilateral_deviation_test_equilibrium ?? { heroFreq: 50, villainFreq: 50 }
-  const tolerance = step.unilateral_deviation_test_tolerance ?? 1
-
-  const baselineEV = deviationTestEV(step, player, equilibrium.heroFreq, equilibrium.villainFreq)
-  const alternatives: ActionEV[] = [0, 10, 25, 40, 60, 75, 90, 100].map((f) => ({
-    id: `f${f}`,
-    label: `${f}%`,
-    ev: deviationTestEV(step, player, f, equilibrium.villainFreq),
-  }))
-  const test = testUnilateralDeviation(baselineEV, alternatives, tolerance)
+  // Same resolver the step's component renders from — including its reading of
+  // WHICH side of the candidate equilibrium this step actually tests (a B-side
+  // step tests villainFreq and holds heroFreq fixed, not the other way round).
+  const sides = deviationSides(step)
+  const panel = resolveDeviationPanel(step, sides.testedBaselinePct)
+  const test = deviationVerdict(step)
+  const baselineEV = panel.baselineEV
   const truth: 'can_improve' | 'no_improvement' = test.canImprove ? 'can_improve' : 'no_improvement'
   const verdict = String(r.verdict ?? '')
+
+  // "Nothing improves" has two distinct shapes, and saying the wrong one is a
+  // theory error: every alternative can be strictly WORSE, or every alternative
+  // can TIE (the opponent is defending at exactly the frequency that makes this
+  // player indifferent — Acevedo's mixed-strategy condition). `panel.flat`
+  // separates them.
+  const noImprovementWhy = panel.flat
+    ? `every alternative earns exactly the same $${baselineEV.toFixed(2)} — this player is indifferent, so no deviation can improve`
+    : `every alternative earns less than $${baselineEV.toFixed(2)}`
 
   const correct = verdict === truth
   return correct
@@ -2166,7 +2166,7 @@ function evalUnilateralDeviationTest(step: LessonStep, response: unknown): EvalC
         quality: 'perfect',
         score: 100,
         feedback: truth === 'no_improvement'
-          ? `Correct — no frequency change for this player alone improves on $${baselineEV.toFixed(2)}. This is exactly Acevedo's Nash-equilibrium test: no profitable unilateral deviation.`
+          ? `Correct — ${noImprovementWhy}. This is exactly Acevedo's Nash-equilibrium test: no profitable unilateral deviation.`
           : `Correct — this player CAN improve alone here (best alternative gains $${test.gain.toFixed(2)}), which means this is NOT an equilibrium yet.`,
         ev_loss_bb: 0,
       }
@@ -2174,7 +2174,7 @@ function evalUnilateralDeviationTest(step: LessonStep, response: unknown): EvalC
         quality: 'mistake',
         score: QUALITY_SCORES.mistake,
         feedback: truth === 'no_improvement'
-          ? `Not quite — every alternative frequency you could try actually earns less than $${baselineEV.toFixed(2)}. No profitable unilateral deviation exists here.`
+          ? `Not quite — ${noImprovementWhy}. No profitable unilateral deviation exists here.`
           : `Not quite — this player CAN improve by changing strategy alone (best alternative gains $${test.gain.toFixed(2)}), so this isn't a stable equilibrium yet.`,
         ev_loss_bb: 0,
         answer_reveal: { term: 'Can this player improve alone?', correct: truth === 'can_improve' ? 'Yes' : 'No' },

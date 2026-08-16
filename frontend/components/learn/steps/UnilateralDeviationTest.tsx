@@ -1,14 +1,16 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { LessonStep } from '@/lib/learn/types'
-import { evOfBetting, evOfChecking } from '@/lib/learn/gameTheoryEngine'
+import { deviationSides, resolveDeviationPanel } from '@/lib/learn/unilateralDeviation'
 import { FrequencySlider } from '@/components/learn/visuals/FrequencySlider'
 
 export interface UnilateralDeviationAnswer {
   triedFreqPct: number
   verdict: 'can_improve' | 'no_improvement'
+  /** Every distinct frequency the learner actually tried, in the order they tried them. */
+  exploredFreqPcts?: number[]
 }
 
 interface UnilateralDeviationTestProps {
@@ -20,58 +22,59 @@ interface UnilateralDeviationTestProps {
 /**
  * Unilateral Deviation Test (Module 10, Lesson 10.4) — the Nash equilibrium
  * test made interactive. The learner gets a control for ONE player's own
- * frequency (`unilateral_deviation_test_player`), holding the opponent fixed
- * at the candidate equilibrium. They try alternatives, watch EV update live
- * (exact_derived via gameTheoryEngine.ts), then render a verdict: can this
+ * frequency, holding the opponent fixed at the candidate equilibrium. They try
+ * alternatives, watch the EV update live, then render a verdict: can this
  * player improve by changing strategy alone?
+ *
+ * Every number on screen is derived from `resolveDeviationPanel(step, freq)` —
+ * the same pure resolver evaluator.ts grades the answer with, so the display
+ * and the grade can never disagree. Nothing here is hardcoded, and the panel
+ * is recomputed on every slider tick.
+ *
+ * The branch breakdown under the EV readout matters more than it looks: when
+ * the opponent is defending at exactly the frequency that makes the tested
+ * player indifferent, the TOTAL is flat by definition (Acevedo: at equilibrium
+ * a hand can only be mixed if the choices have equal EV). The branches are what
+ * still move — the learner watches "they fold" and "they call" grow in equal
+ * and opposite amounts, which is why the total refuses to budge. Showing only
+ * the total there reads as a dead control.
  */
 export function UnilateralDeviationTest({ step, onAnswer, disabled = false }: UnilateralDeviationTestProps) {
   const mountTime = useRef(Date.now())
-  const pot = step.unilateral_deviation_test_pot ?? 100
-  const bet = step.unilateral_deviation_test_bet ?? 100
-  const equilibrium = step.unilateral_deviation_test_equilibrium ?? { heroFreq: 50, villainFreq: 50 }
-  const player = step.unilateral_deviation_test_player ?? 'A'
-  const playerLabel = player === 'A' ? 'Player A' : 'Player B'
+  // The slider starts at the tested player's OWN candidate-equilibrium frequency
+  // — i.e. "no deviation yet" — which for a B-side step is the candidate's
+  // villainFreq, not its heroFreq. See `deviationSides`.
+  const baseline = deviationSides(step).testedBaselinePct
 
-  const [tryFreq, setTryFreq] = useState(equilibrium.heroFreq)
-  const [hasTried, setHasTried] = useState(false)
+  const [tryFreq, setTryFreq] = useState(baseline)
+  const [explored, setExplored] = useState<number[]>([])
   const [submitted, setSubmitted] = useState(false)
 
   useEffect(() => {
     mountTime.current = Date.now()
-    setTryFreq(equilibrium.heroFreq)
-    setHasTried(false)
+    setTryFreq(baseline)
+    setExplored([])
     setSubmitted(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step.id])
 
-  // Player A = the bettor (bet frequency with a zero-equity bluff hand); Player B = the defender (call frequency).
-  function evAt(freqPct: number, villainFreqPct: number): number {
-    if (player === 'A') {
-      // Player A's OWN frequency here is how often they bet (vs. check) this hand — the blend
-      // must actually depend on freqPct, not just on the fixed Villain call frequency.
-      const betEV = evOfBetting({ pot, bet, equityWhenCalled: 0 }, villainFreqPct / 100)
-      const checkEV = evOfChecking({ pot, equityWhenChecked: 0 })
-      return (freqPct / 100) * betEV + (1 - freqPct / 100) * checkEV
-    }
-    // Player B's own frequency here is the CALL frequency; `villainFreqPct` is the bettor's
-    // (a zero-equity bluff) bet frequency. When the bettor doesn't bet, there's no decision
-    // node for B to reach, so it contributes 0 marginal EV to this specific comparison.
-    const callFreq = freqPct / 100
-    const bettorFreq = villainFreqPct / 100
-    const callEV = pot - evOfBetting({ pot, bet, equityWhenCalled: 0 }, 1) // pot − Hero's called-branch EV = Villain's EV from calling
-    return bettorFreq * (callFreq * callEV + (1 - callFreq) * 0)
-  }
+  // Recomputed on every render — i.e. on every slider tick, since `tryFreq` is
+  // this component's own state and is the only frequency input.
+  const panel = useMemo(() => resolveDeviationPanel(step, tryFreq), [step, tryFreq])
 
-  const equilibriumEV =
-    player === 'A' ? evAt(equilibrium.heroFreq, equilibrium.villainFreq) : evAt(equilibrium.heroFreq, equilibrium.villainFreq)
-  const triedEV = evAt(tryFreq, equilibrium.villainFreq)
-  const gain = triedEV - equilibriumEV
+  const hasTried = explored.length > 0
+  const money = (v: number) => `$${Math.abs(v).toFixed(2)}`
+
+  function handleFreqChange(next: number) {
+    if (disabled || submitted) return
+    setTryFreq(next)
+    setExplored((prev) => (prev[prev.length - 1] === next || prev.includes(next) ? prev : [...prev, next]))
+  }
 
   function submitVerdict(verdict: 'can_improve' | 'no_improvement') {
     if (disabled || submitted) return
     setSubmitted(true)
-    onAnswer({ triedFreqPct: tryFreq, verdict }, Date.now() - mountTime.current)
+    onAnswer({ triedFreqPct: tryFreq, verdict, exploredFreqPcts: explored }, Date.now() - mountTime.current)
   }
 
   return (
@@ -90,25 +93,26 @@ export function UnilateralDeviationTest({ step, onAnswer, disabled = false }: Un
 
       <div className="rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-600/8 via-card/60 to-blue-600/5 p-5 space-y-5">
         <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground/70">{playerLabel}&apos;s candidate-equilibrium frequency</span>
-          <span className="font-black tabular-nums text-foreground">{equilibrium.heroFreq.toFixed(0)}%</span>
+          <span className="text-muted-foreground/70">{panel.playerLabel}&apos;s candidate-equilibrium frequency</span>
+          <span className="font-black tabular-nums text-foreground">{panel.testedBaselinePct.toFixed(0)}%</span>
+        </div>
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-muted-foreground/70">Held fixed — {panel.fixedMeaning}</span>
+          <span className="font-black tabular-nums text-muted-foreground">{panel.fixedPct.toFixed(0)}%</span>
         </div>
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground/70">Equilibrium EV (baseline)</span>
-          <span className="font-black tabular-nums text-foreground">${equilibriumEV.toFixed(2)}</span>
+          <span className="font-black tabular-nums text-foreground">${panel.baselineEV.toFixed(2)}</span>
         </div>
 
         <div className="h-px bg-gradient-to-r from-transparent via-violet-500/20 to-transparent" />
 
         <FrequencySlider
-          label={`Try a different ${playerLabel} frequency`}
+          label={`Try a different ${panel.playerLabel} frequency`}
           value={tryFreq}
-          onChange={(v) => {
-            if (submitted) return
-            setTryFreq(v)
-            setHasTried(true)
-          }}
+          onChange={handleFreqChange}
           disabled={disabled || submitted}
+          hint={hasTried ? null : `Drag to change how often ${panel.playerLabel} ${panel.testedMeaning}`}
         />
 
         <div className="rounded-xl bg-secondary/20 border border-border/20 px-4 py-3 flex items-center justify-between">
@@ -116,24 +120,60 @@ export function UnilateralDeviationTest({ step, onAnswer, disabled = false }: Un
           <span
             className={cn(
               'font-black tabular-nums text-base',
-              gain > 0.01 ? 'text-emerald-400' : gain < -0.01 ? 'text-rose-400' : 'text-foreground',
+              panel.gain > 0.01 ? 'text-emerald-400' : panel.gain < -0.01 ? 'text-rose-400' : 'text-foreground',
             )}
           >
-            ${triedEV.toFixed(2)}
+            ${panel.currentEV.toFixed(2)}
             {hasTried && (
               <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide">
-                {gain > 0.01 ? `(+$${gain.toFixed(2)})` : gain < -0.01 ? `(−$${Math.abs(gain).toFixed(2)})` : '(no change)'}
+                {panel.gain > 0.01
+                  ? `(+${money(panel.gain)})`
+                  : panel.gain < -0.01
+                    ? `(−${money(panel.gain)})`
+                    : '(no change)'}
               </span>
             )}
           </span>
+        </div>
+
+        {/* Where that EV comes from. Every row is live: reach and $ both respond
+            to the slider even on a game whose TOTAL is flat. */}
+        <div className="space-y-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/50">
+            Where that ${panel.currentEV.toFixed(2)} comes from
+          </p>
+          {panel.branches.map((branch) => (
+            <div key={branch.id} className="flex items-center justify-between gap-3 text-xs">
+              <span className="flex min-w-0 items-baseline gap-2">
+                <span className="truncate text-muted-foreground/80">{branch.label}</span>
+                <span className="shrink-0 tabular-nums text-[10px] text-muted-foreground/40">
+                  {(branch.reach * 100).toFixed(0)}% of the time
+                </span>
+              </span>
+              <span
+                className={cn(
+                  'shrink-0 font-bold tabular-nums',
+                  branch.ev > 0.005 ? 'text-emerald-400' : branch.ev < -0.005 ? 'text-rose-400' : 'text-muted-foreground/50',
+                )}
+              >
+                {branch.ev < -0.005 ? '−' : '+'}
+                {money(branch.ev)}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 
       {!submitted && (
         <div className="space-y-2">
           <p className="text-center text-xs text-muted-foreground/50">
-            Try several frequencies above, then answer: can {playerLabel} improve by changing strategy alone?
+            Try several frequencies above, then answer: can {panel.playerLabel} improve by changing strategy alone?
           </p>
+          {hasTried && (
+            <p className="text-center text-[10px] text-muted-foreground/40 tabular-nums">
+              {explored.length} {explored.length === 1 ? 'frequency' : 'frequencies'} tried
+            </p>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
@@ -141,7 +181,7 @@ export function UnilateralDeviationTest({ step, onAnswer, disabled = false }: Un
               onClick={() => submitVerdict('can_improve')}
               className="rounded-xl border border-border/40 bg-secondary/30 px-4 py-3 text-sm font-semibold text-foreground hover:border-violet-500/40 transition-colors"
             >
-              Yes — {playerLabel} can improve alone
+              Yes — {panel.playerLabel} can improve alone
             </button>
             <button
               type="button"

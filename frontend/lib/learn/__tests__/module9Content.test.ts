@@ -93,15 +93,194 @@ describe('Module 9 content — combo math the lessons state must stay true', () 
     for (const t of tiers) if (t.tierLabel !== 'K' && t.tierLabel !== 'nut') expect(khBlocked.get(t.tierLabel)).toBe(0)
   })
 
-  // ── Lesson 9.7 (Read the Removal): each scenario gives Hero exactly ONE
-  // card of the value pair's rank (no board overlap) — removes 3 of 6 combos,
-  // leaving 3, same mechanic as Lesson 9.1's original AA/A♠ exercise.
-  it('rtr scenarios (AA/Ac, JJ/Jc, QQ/Qc) each remove exactly 3 of 6 combos with no board interference', () => {
-    for (const [hand, card] of [['AA', 'Ac'], ['JJ', 'Jc'], ['QQ', 'Qc']] as const) {
-      const combos = expandHandClass(hand)
-      expect(combos.length).toBe(6)
-      expect(getBlockedCombos(combos, [card]).length).toBe(3)
+  // ── Lesson 9.7 (Read the Removal). The lesson used to run the SAME
+  // 3-of-6 pocket-pair exercise three times (AA/A♣, JJ/J♣, QQ/Q♣) with a
+  // matching "which side did it remove?" question after each — six steps
+  // testing two things. Scenario 1 (rtr-s2/s3) survives as the counting +
+  // classification pair; scenarios 2-5 now each test a distinct skill, and
+  // the numbers each one's copy states are locked below.
+
+  // Scenario 1 (rtr-s2) — unchanged: one held ace, half of AA gone.
+  it('rtr scenario 1: AA vs Hero A♣ removes exactly 3 of 6 combos', () => {
+    const combos = expandHandClass('AA')
+    expect(combos.length).toBe(6)
+    expect(getBlockedCombos(combos, ['Ac']).length).toBe(3)
+  })
+
+  // Scenario 2 (rtr-s4) — the point is that the SAME card removes the same
+  // three tiles from both classes while taking a very different FRACTION:
+  // half of a paired class, a quarter of an unpaired one. The step's copy
+  // also claims the T♦ removes nothing and that a suited class would lose 1
+  // of 4; both are asserted here.
+  it('rtr scenario 2: Q♣ removes 3 of 6 QQ (half) but 3 of 12 AQo (a quarter), and T♦ removes nothing', () => {
+    const step = LESSONS_BY_ID['read-the-removal'].steps.find((s) => s.id === 'rtr-s4')!
+    expect(step.combo_removal_range).toEqual(['QQ', 'AQo'])
+    expect(step.combo_removal_hero_cards).toEqual(['Qc', 'Td'])
+
+    const qq = expandHandClass('QQ')
+    const aqo = expandHandClass('AQo')
+    expect([qq.length, aqo.length]).toEqual([6, 12])
+    expect(getBlockedCombos(qq, ['Qc']).length).toBe(3)
+    expect(getBlockedCombos(aqo, ['Qc']).length).toBe(3)
+    // Same count, different fraction — the whole lesson of the step.
+    expect(getBlockedCombos(qq, ['Qc']).length / qq.length).toBe(0.5)
+    expect(getBlockedCombos(aqo, ['Qc']).length / aqo.length).toBe(0.25)
+    // The second card is a genuine blank against both classes.
+    expect(getBlockedCombos([...qq, ...aqo], ['Td']).length).toBe(0)
+    // ...and the suited comparison the partial-credit note makes.
+    expect(getBlockedCombos(expandHandClass('AQs'), ['Qc']).length).toBe(1)
+  })
+
+  // Scenario 3 (rtr-s5) — Hero is the BETTOR. A bluff's only relevant region
+  // is the part of Villain's range that CONTINUES, so blocking the folding
+  // region actively hurts. Locks the three fold frequencies the option
+  // feedback states (16/25, 16/28, 12/24) and their strict ordering.
+  it('rtr scenario 3: blocking the callers raises the fold frequency, blocking the folders lowers it', () => {
+    const board = ['Ks', '8h', '5d', '3c', '2s']
+    const continues = (hero: string[]) => removeBlocked(expandGenericUnpaired('K', 'Q'), [...board, ...hero]).length
+    const folds = (hero: string[]) => removeBlocked(expandGenericUnpaired('J', 'T'), [...board, ...hero]).length
+
+    // The board's K♠ alone already cuts KQ from 16 to 12.
+    expect(continues([])).toBe(12)
+    expect(folds([])).toBe(16)
+
+    const foldFreq = (hero: string[]) => folds(hero) / (continues(hero) + folds(hero))
+    // Q♥7♦ blocks 3 callers and no folders.
+    expect([continues(['Qh', '7d']), folds(['Qh', '7d'])]).toEqual([9, 16])
+    // 7♦6♣ blocks neither side.
+    expect([continues(['7d', '6c']), folds(['7d', '6c'])]).toEqual([12, 16])
+    // J♥9♦ blocks 4 folders and no callers.
+    expect([continues(['Jh', '9d']), folds(['Jh', '9d'])]).toEqual([12, 12])
+
+    expect(foldFreq(['Qh', '7d'])).toBeCloseTo(0.64, 4)
+    expect(foldFreq(['7d', '6c'])).toBeCloseTo(16 / 28, 4)
+    expect(foldFreq(['Jh', '9d'])).toBeCloseTo(0.5, 4)
+    // The best bluff blocks calls; the worst blocks folds. Strict, not tied.
+    expect(foldFreq(['Qh', '7d'])).toBeGreaterThan(foldFreq(['7d', '6c']))
+    expect(foldFreq(['7d', '6c'])).toBeGreaterThan(foldFreq(['Jh', '9d']))
+
+    const step = LESSONS_BY_ID['read-the-removal'].steps.find((s) => s.id === 'rtr-s5')!
+    expect(step.options!.find((o) => o.quality === 'perfect')!.id).toBe('qh7d')
+  })
+
+  // Scenario 4 (rtr-s6) — a mixed blocker, netted by proportion. The queen
+  // removes a bluff AND half the value, and still wins: the authored sort
+  // order must match the remaining bluff:value ratios exactly.
+  it('rtr scenario 4: the rank-sort order matches the computed remaining bluff:value ratios', () => {
+    const board = ['Ts', '8h', '5d', '3c', '2s']
+    const value = (hero: string[]) => removeBlocked(expandHandClass('QQ'), [...board, ...hero]).length
+    const bluffs = (hero: string[]) =>
+      ['QJs', 'J9s', '76s'].reduce((sum, h) => sum + removeBlocked(expandHandClass(h), [...board, ...hero]).length, 0)
+
+    expect([value([]), bluffs([])]).toEqual([6, 12])
+
+    const step = LESSONS_BY_ID['read-the-removal'].steps.find((s) => s.id === 'rtr-s6')!
+    expect(step.type).toBe('board_rank_sort')
+    const handOf = (id: string) => step.board_rank_sort_boards!.find((b) => b.id === id)!.board
+
+    const ratios = step.board_rank_sort_target!.map((id) => {
+      const hero = handOf(id)
+      return bluffs(hero) / value(hero)
+    })
+    // Authored best-to-worst order really is strictly decreasing.
+    for (let i = 1; i < ratios.length; i++) expect(ratios[i - 1]).toBeGreaterThan(ratios[i])
+    expect(step.board_rank_sort_target).toEqual(['q-kicker', 'a-kicker', 'j-kicker'])
+
+    // The exact figures the item notes state.
+    expect([value(['Qh', 'Td']), bluffs(['Qh', 'Td'])]).toEqual([3, 11])
+    expect([value(['Ah', 'Td']), bluffs(['Ah', 'Td'])]).toEqual([6, 12])
+    expect([value(['Jh', 'Td']), bluffs(['Jh', 'Td'])]).toEqual([6, 10])
+  })
+
+  // Scenario 5 (rtr-s7) — the capstone question: board removal, hole-card
+  // removal on both sides, and a price. Hero beats every bluff combo and
+  // loses to every value combo with no ties, so Hero's equity against the
+  // bet IS the bluff share — which is why comparing it to the pot odds is
+  // exact rather than an estimate.
+  it('rtr scenario 5: J♥K♠ folds and J♥Q♠ calls against the same 25-into-20 price', () => {
+    const board = ['As', 'Jd', '8h', '3c', '2s']
+    const value = (hero: string[]) => {
+      const known = [...board, ...hero]
+      return (
+        removeBlocked(expandGenericUnpaired('A', 'Q'), known).length +
+        removeBlocked(expandHandClass('88'), known).length +
+        removeBlocked(expandHandClass('33'), known).length
+      )
     }
+    const bluffs = (hero: string[]) => removeBlocked(expandHandClass('KQo'), [...board, ...hero]).length
+
+    // Board removal alone: A♠ cuts AQ 16→12, 8♥ and 3♣ cut each set 6→3.
+    expect(removeBlocked(expandGenericUnpaired('A', 'Q'), board).length).toBe(12)
+    expect(removeBlocked(expandHandClass('88'), board).length).toBe(3)
+    expect(removeBlocked(expandHandClass('33'), board).length).toBe(3)
+    expect([value([]), bluffs([])]).toEqual([18, 12])
+
+    // 25bb to win a 70bb pot.
+    const requiredEquity = 25 / (20 + 25 + 25)
+    expect(requiredEquity).toBeCloseTo(0.3571, 4)
+    // Pre-removal the range clears the price — which is why the removal is
+    // what decides this hand, exactly as the 350-vs-324 threshold did in 9.1.
+    expect(bluffs([]) / (bluffs([]) + value([]))).toBeCloseTo(0.4, 4)
+
+    const share = (hero: string[]) => bluffs(hero) / (bluffs(hero) + value(hero))
+    // The king strips 3 bluffs and no value: below the price → fold.
+    expect([value(['Jh', 'Ks']), bluffs(['Jh', 'Ks'])]).toEqual([18, 9])
+    expect(share(['Jh', 'Ks'])).toBeCloseTo(0.3333, 4)
+    expect(share(['Jh', 'Ks'])).toBeLessThan(requiredEquity)
+    // The queen strips the same 3 bluffs AND 3 value: above the price → call.
+    expect([value(['Jh', 'Qs']), bluffs(['Jh', 'Qs'])]).toEqual([15, 9])
+    expect(share(['Jh', 'Qs'])).toBeCloseTo(0.375, 4)
+    expect(share(['Jh', 'Qs'])).toBeGreaterThan(requiredEquity)
+
+    const step = LESSONS_BY_ID['read-the-removal'].steps.find((s) => s.id === 'rtr-s7')!
+    expect(step.hero_hand).toEqual(['Jh', 'Ks'])
+    expect(step.options!.find((o) => o.quality === 'perfect')!.id).toBe('fold_price')
+  })
+
+  // The regression this whole rewrite exists to prevent: two steps in one
+  // lesson that ask the learner for the same thing.
+  it('no Module 9 lesson asks the same graded question, prompt or sort target twice', () => {
+    for (const lessonId of MODULE_9_LESSON_IDS) {
+      const lesson = LESSONS_BY_ID[lessonId]
+      const asked: string[] = []
+      for (const step of lesson.steps) {
+        for (const text of [
+          step.decision_spot_question,
+          step.combo_removal_prompt,
+          step.board_rank_sort_prompt,
+          step.range_bucket_prompt,
+          step.flush_pyramid_prompt,
+        ]) {
+          if (text) asked.push(`${step.type}::${text.trim().toLowerCase()}`)
+        }
+      }
+      expect(asked.length, `${lessonId} has duplicate question text`).toBe(new Set(asked).size)
+    }
+  })
+
+  it('read-the-removal still has exactly 8 steps, every graded one carrying its authored XP', () => {
+    const lesson = LESSONS_BY_ID['read-the-removal']
+    expect(lesson.steps.length).toBe(8)
+    expect(lesson.steps.map((s) => s.id)).toEqual([
+      'rtr-s1', 'rtr-s2', 'rtr-s3', 'rtr-s4', 'rtr-s5', 'rtr-s6', 'rtr-s7', 'rtr-s8',
+    ])
+    // 6 graded steps at 15xp — unchanged by the rewrite, so the checked-in
+    // reward manifest stays valid without regeneration.
+    expect(lesson.steps.filter((s) => s.xp === 15).length).toBe(6)
+    expect(lesson.xp_reward).toBe(150)
+  })
+
+  // Each of the five scenarios must test a different skill. The cheapest
+  // machine-checkable proxy: no two graded steps share a step TYPE and a
+  // correct-answer shape at once, and every graded step carries its own
+  // takeaway (the rule the learner leaves with) rather than repeating one.
+  it('read-the-removal: the five scenarios do not repeat a takeaway', () => {
+    const lesson = LESSONS_BY_ID['read-the-removal']
+    const takeaways = lesson.steps
+      .map((s) => s.combo_removal_takeaway ?? s.board_rank_sort_takeaway)
+      .filter(Boolean) as string[]
+    expect(takeaways.length).toBe(new Set(takeaways).size)
+    expect(takeaways.length).toBeGreaterThan(0)
   })
 
   // ── Lesson 9.8 (Blocker Lab) reuses bl-s2 (KK/Kd) and bl-s5 (flush pyramid,

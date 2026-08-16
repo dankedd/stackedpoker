@@ -1451,13 +1451,13 @@ export const PUBLIC_LESSONS: PublicLesson[] = [
     "module_id": "blockers-module",
     "slug": "read-the-removal",
     "title": "Read the Removal",
-    "subtitle": "Same five stages. Less help each time.",
+    "subtitle": "One scanner. A harder question every time.",
     "lesson_type": "concept_reveal",
     "concept_ids": [
       "card_removal",
       "blocker_classification"
     ],
-    "estimated_min": 8,
+    "estimated_min": 10,
     "xp_reward": 150,
     "sort_order": 9,
     "next_lesson_teaser": "Blocker Lab",

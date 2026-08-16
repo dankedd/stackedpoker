@@ -797,6 +797,13 @@ export interface LessonStep {
   board_rank_sort_partial_credit_note?: string
   /** See `combo_removal_takeaway`. */
   board_rank_sort_takeaway?: string
+  /** Shown when the learner gets the order exactly right. Without it, a correct
+   *  answer falls back to the shared "from bets most to bets least" line, which
+   *  is only true for the c-bet-frequency steps this UI was built for — any step
+   *  overriding `board_rank_sort_high_label`/`_low_label` to rank something else
+   *  (Module 9 ranks blocker profiles) must author this too, or its success
+   *  message describes a question it never asked. */
+  board_rank_sort_explanation?: string
   // ── Range vs Range (Module 8) ───────────────────────────────────────────────
   // Range Collision Viewer — two full 13x13 ranges rendered against a board, in one
   // of four modes. Per-cell "does this hand connect with the board" highlighting is

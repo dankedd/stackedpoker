@@ -16278,6 +16278,8 @@ export const LESSONS: Lesson[] = [
         board_rank_sort_target: ['act-td', 'ac-7c', 'ac-6c'],
         board_rank_sort_high_label: 'Best blocker',
         board_rank_sort_low_label: 'Worst blocker',
+        board_rank_sort_explanation:
+          "Correct. All three block value identically — 5 of AA's 6 combos — so the order turns entirely on how many of Villain's bluffs each kicker kills: A♣T♦ none, A♣7♣ one (7♣6♣), A♣6♣ two (7♣6♣ and 6♣5♣). Same hand at showdown, three different amounts of collateral damage to the bluffs a caller needs to face.",
         board_rank_sort_item_notes: {
           'act-td': "Blocks 5 of AA's 6 combos and touches neither bluff class. Maximum pressure on the value hands, zero cost to the bluffs Hero needs Villain to still be holding — the best profile a caller can have.",
           'ac-7c': "Blocks the same 5 AA combos, but the 7♣ also kills 7♣6♣ — 1 of 76s's 4 bluff combos. Same value removed, one fewer bluff left alive, so it has to rank below A♣T♦.",
@@ -16585,10 +16587,10 @@ export const LESSONS: Lesson[] = [
     module_id: 'blockers-module',
     slug: 'read-the-removal',
     title: 'Read the Removal',
-    subtitle: 'Same five stages. Less help each time.',
+    subtitle: 'One scanner. A harder question every time.',
     lesson_type: 'concept_reveal',
     concept_ids: ['card_removal', 'blocker_classification'],
-    estimated_min: 8,
+    estimated_min: 10,
     xp_reward: 150,
     sort_order: 9,
     next_lesson_teaser: 'Blocker Lab',
@@ -16597,14 +16599,15 @@ export const LESSONS: Lesson[] = [
         id: 'rtr-s1',
         type: 'concept_reveal',
         concept_title: 'The Five-Stage Scanner',
-        concept_content: "Every blocker question in this module reduces to the same five stages. This lesson runs that scanner across three quick situations — with less help each time.",
+        concept_content: "Every blocker question in this module reduces to the same five stages. This lesson runs that scanner across five situations, and each one asks for something the one before it did not: count the removal, weigh it as a fraction, switch sides of the bet, net two opposing effects, and finally put a price on the answer.",
         concept_structured_items: [
           { term: '1. Range', description: 'What can Villain have here?' },
-          { term: '2. Region', description: 'Which part of that range matters to this decision?' },
+          { term: '2. Region', description: 'Which part of that range decides THIS decision?' },
           { term: '3. Combos', description: 'What concrete combinations make up that region?' },
           { term: '4. Removal', description: 'Which of those combinations does a known card eliminate?' },
           { term: '5. Effect', description: 'Helpful, harmful, mixed, or irrelevant?' },
         ],
+        concept_note: 'Stage 4 is the arithmetic and it is the easy part. Stage 2 is the one that moves — the region that decides a call is not the region that decides a bluff — and stage 5 has four possible answers, not one. This lesson produces all four.',
       },
       {
         id: 'rtr-s2',
@@ -16651,92 +16654,141 @@ export const LESSONS: Lesson[] = [
       {
         id: 'rtr-s4',
         type: 'combo_removal',
-        concept_ids: ['card_removal'],
-        narrative: 'Scenario 2. Board: T♥6♦2♣. Villain\'s range: JJ as value, 54s as a busted bluff. Hero holds J♣.',
-        board: ['Th', '6d', '2c'],
-        combo_removal_subject: 'JJ',
-        combo_removal_hero_cards: ['Jc'],
-        combo_removal_prompt: 'Tap every JJ combination Hero\'s jack removes.',
+        concept_ids: ['card_removal', 'combo_counting'],
+        narrative: "Scenario 2. Preflop — no board yet. Hero 3-bets from the BB with Q♣T♦, and two of the classes CO continues with are built around a queen: the pocket pair QQ, and offsuit AQ.",
+        combo_removal_range: ['QQ', 'AQo'],
+        combo_removal_hero_cards: ['Qc', 'Td'],
+        combo_removal_prompt: "Tap every combination Hero's cards make impossible — across both classes.",
         combo_removal_explanation:
-          "Hero's J♣ pairs with the other three jacks — 3 of JJ's 6 combos gone, 3 remaining. 54s shares no card with a jack, so the bluff side is untouched.",
+          "Three combos from each class, and that is exactly the trap in counting removal by tiles. QQ is built from the queen rank twice, so the Q♣ pairs with each of the other three queens: 3 of 6, half the class gone. AQo uses the queen once, next to an ace of a different suit, so the Q♣ only appears alongside A♠, A♥ and A♦: 3 of 12, a quarter of the class gone. The T♦ removes nothing at all — neither class contains a ten.",
         combo_removal_partial_credit_note:
-          'Same shape as Scenario 1 with the ranks swapped, which is exactly what the drill is testing: the arithmetic does not care whether the pair is aces or jacks.',
+          "The count is the same three tiles per class, so a near-miss here is a suit-reading slip rather than a counting one. What the two classes do not share is the FRACTION: a paired class contains its rank twice, so one card of that rank reaches half of it, while an unpaired class contains that rank once, so the same card reaches a quarter of it — 3 of 12 offsuit, or 1 of 4 had the class been suited.",
         combo_removal_takeaway:
-          'The mechanic is rank-independent. One held card halves a pocket pair and leaves every hand that does not contain it completely alone.',
+          'Removal only means something as a fraction of the class it lands on. One held card halves a pocket pair and trims a quarter off an unpaired class, so the same blocker does very different amounts of work depending on the shape of what it touches.',
+        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Hand Ranges as Combinations', type: 'exact_derived' },
         xp: 15,
       },
       {
         id: 'rtr-s5',
         type: 'decision_spot',
         concept_ids: ['blocker_classification'],
-        decision_spot_question: "Which side of Villain's range did Hero's jack remove?",
+        narrative: "Scenario 3. Hero is now the one betting. River: K♠8♥5♦3♣2♠. Villain checks, and Hero holds nothing at all — this is a pure bluff, and the only question is which worthless hand to do it with. Villain's range splits into exactly two parts: KQ, which calls any bet, and JT, which folds to any bet.",
+        board: ['Ks', '8h', '5d', '3c', '2s'],
+        street: 'river',
+        hero_position: 'BTN',
+        villain_position: 'BB',
+        table_size: 6,
+        pot_bb: 20,
+        postflop_action: ['BB checks'],
+        decision_spot_question: 'Which of these three hands is the best one to bluff with?',
         options: [
           {
-            id: 'value', label: 'Value', quality: 'perfect',
-            feedback: "Correct. Hero's J♣ pairs with the other three jacks, so 3 of JJ's 6 value combos are gone. The bluff class — 54s — shares no rank with a jack, so all 4 combos remain. Same mechanic as Scenario 1 with the ranks swapped, which is the point: it never depends on which pair it is.",
+            id: 'qh7d', label: 'Q♥7♦', quality: 'perfect',
+            feedback: "Correct. The only region that decides a bluff is the part of Villain's range that CONTINUES. The board's K♠ already cuts KQ from 16 combos to 12, and Hero's Q♥ removes three more — K♥Q♥, K♦Q♥, K♣Q♥ — while touching nothing in JT. Villain is left with 9 callers and all 16 folders, so this bet now gets through 16 times out of 25 instead of 16 out of 28.",
           },
           {
-            id: 'bluffs', label: 'Bluffs', quality: 'mistake',
-            feedback: "The bluff class is 54s, and a jack shares no rank with a five or a four — all 4 of its combos are untouched. Hero's J♣ removed 3 of JJ's 6 value combos instead. Check your own two cards against each region of the range separately; a card can only delete hands that literally contain it.",
+            id: '7d6c', label: '7♦6♣', quality: 'acceptable',
+            feedback: "Not a mistake, but not the best. 7♦6♣ shares no rank with KQ or with JT, so Villain's range is exactly as it started: 12 callers, 16 folders, 16 folds out of 28. That is the neutral benchmark. Q♥7♦ beats it by deleting three of the twelve hands that were going to call, which is the only thing a bluff ever gets paid for.",
           },
           {
-            id: 'both', label: 'Both', quality: 'mistake',
-            feedback: "Only the value side was touched: 3 of JJ's 6 combos are impossible once Hero holds the J♣, while all 4 of 54s's combos survive because they contain no jack. Removal follows shared cards, so it almost never hits value and bluffs in equal measure.",
-          },
-          {
-            id: 'neither', label: 'Neither', quality: 'mistake',
-            feedback: "There is real removal here — the J♣ pairs with each of the three unseen jacks, so 3 of JJ's 6 combos cannot exist. The bluff class is the part that escaped. One held card always halves a pocket pair and leaves everything that shares no rank with it completely alone.",
+            id: 'jh9d', label: 'J♥9♦', quality: 'mistake',
+            feedback: "This is the worst of the three, and it is worth understanding why. The J♥ removes four of JT's sixteen combos — every pairing of the jack of hearts with a ten — and not one of KQ's twelve. Those four were hands that were folding to the bet, so what is left is 12 callers against 12 folders: the bluff now works half the time instead of 16 out of 28. As the bettor you want to block the calls and leave the folds alone, which is the exact reverse of a caller's rule.",
           },
         ],
+        // The principle is the book's, stated at p.214 about a preflop 3-bet
+        // bluff: K♦2♠ is valuable because the K♦ "has a valuable blocker to
+        // Villain's CONTINUING range". This step transplants that same
+        // continuing-range test onto a river bluff, which is why it is labelled
+        // a model rather than a reconstruction of the book's own example.
+        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Exploitative 3-betting', example: "Blocker to Villain's continuing range (p.214)", type: 'pedagogical_model' },
         xp: 15,
       },
       {
         id: 'rtr-s6',
-        type: 'combo_removal',
-        concept_ids: ['card_removal'],
-        narrative: 'Scenario 3. Board: 9♠4♥2♦. Villain\'s range: QQ as value, T8s as a busted bluff. Hero holds Q♣.',
-        board: ['9s', '4h', '2d'],
-        combo_removal_subject: 'QQ',
-        combo_removal_hero_cards: ['Qc'],
-        combo_removal_prompt: 'Tap the impossible combinations.',
-        combo_removal_explanation:
-          "Hero's Q♣ pairs with the other three queens — 3 of QQ's 6 combos impossible. T8s contains neither a queen nor a club Hero holds, so all of it survives.",
-        combo_removal_partial_credit_note:
-          'Third run of the same pattern, and the answer is the same 3-of-6 every time. If this one slipped, it is worth checking whether the tiles were read by suit rather than by rank.',
-        combo_removal_takeaway:
-          'Once you can do this in one pass — which of my cards, in which of their hands, how many combos — you can do it at the table, where nobody hands you a grid.',
+        type: 'board_rank_sort',
+        concept_ids: ['blocker_classification', 'card_removal'],
+        narrative: "Scenario 4. Back to calling, and this time a card cuts both ways. River: T♠8♥5♦3♣2♠. CO bets into Hero, who has top pair tens. CO's betting range: QQ for value — an overpair — plus three busted draws as bluffs, QJs, J9s and 76s. That is 6 value combos against 12 bluff combos before anything of Hero's is accounted for. All three hands below show down as exactly the same pair of tens; only the kicker changes.",
+        board: ['Ts', '8h', '5d', '3c', '2s'],
+        street: 'river',
+        board_rank_sort_prompt: 'Rank these three kickers from the BEST hand to hold as a caller to the WORST.',
+        board_rank_sort_boards: [
+          { id: 'q-kicker', label: 'Q♥T♦', board: ['Qh', 'Td'] },
+          { id: 'a-kicker', label: 'A♥T♦', board: ['Ah', 'Td'] },
+          { id: 'j-kicker', label: 'J♥T♦', board: ['Jh', 'Td'] },
+        ],
+        board_rank_sort_target: ['q-kicker', 'a-kicker', 'j-kicker'],
+        board_rank_sort_high_label: 'Best to call with',
+        board_rank_sort_low_label: 'Worst to call with',
+        board_rank_sort_explanation:
+          "Correct — and Q♥T♦ first is the hard part. It blocks a bluff, which every earlier lesson in this module treated as a cost, and it is still comfortably the best hand here: 3 of QQ's 6 value combos against 1 of the 12 bluffs leaves 11 bluffs to 3 value hands. A♥T♦ blocks nothing and holds the ratio at 12 to 6. J♥T♦ takes 2 bluffs and no value, dropping it to 10 to 6 — the same pair of tens, now facing relatively more of what beats it.",
+        board_rank_sort_item_notes: {
+          'q-kicker': "The Q♥ halves the value: 3 of QQ's 6 combos are impossible. It also kills exactly one bluff, Q♥J♥, one of the twelve — which is what makes this hand look worse than it is. Half the value against a twelfth of the bluffs leaves 11 bluffs to 3 value hands, far the best ratio of the three.",
+          'a-kicker': 'The A♥ touches nothing: no queen, no jack, no seven and no six. All 6 value combos and all 12 bluffs survive, so the ratio stays exactly where it started at 12 to 6. This is the benchmark, not the winner.',
+          'j-kicker': 'The J♥ blocks bluffs and only bluffs: Q♥J♥ out of QJs and J♥9♥ out of J9s, 2 of the 12, with all 6 value combos left standing. 10 bluffs to 6 value is the worst ratio here — the same made hand, now facing relatively more of what beats it.',
+        },
+        board_rank_sort_partial_credit_note:
+          "Q♥T♦ is the hand this question turns on, and it is the one a bluff-count habit gets wrong: it removes a bluff, so the rule built earlier in this module says demote it. What actually settles the order is the fraction each side loses — half the value against a twelfth of the bluffs — and not the number of tiles removed.",
+        board_rank_sort_takeaway:
+          'Net a mixed blocker by proportion, never by combo count. A card that deletes half of a 6-combo value class and one combo of a 12-combo bluff pool has helped you as a caller, even though it blocked a bluff.',
+        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'River Calling Strategies', example: 'Blockers', type: 'pedagogical_model' },
         xp: 15,
       },
       {
         id: 'rtr-s7',
         type: 'decision_spot',
-        concept_ids: ['blocker_classification'],
-        decision_spot_question: "Which side of Villain's range did Hero's queen remove?",
+        concept_ids: ['blocker_classification', 'card_removal'],
+        narrative: "Scenario 5, and the hardest one. River: A♠J♦8♥3♣2♠. Hero checks; BTN bets 25bb into a 20bb pot. Hero holds a pair of jacks. BTN's betting range: AQ for value, the two sets this board allows — 88 and 33 — and one bluff class, offsuit KQ, the broadway gutshot that never found its ten. Run all five stages before answering, and remember that a call has a price.",
+        hero_position: 'BB',
+        villain_position: 'BTN',
+        board: ['As', 'Jd', '8h', '3c', '2s'],
+        hero_hand: ['Jh', 'Ks'],
+        street: 'river',
+        table_size: 6,
+        pot_bb: 20,
+        effective_stack_bb: 60,
+        postflop_action: ['Hero checks', 'BTN bets 25bb'],
+        decision_spot_question: 'Hero holds J♥K♠. Call or fold?',
         options: [
           {
-            id: 'value', label: 'Value', quality: 'perfect',
-            feedback: "Correct. Hero's Q♣ pairs with the other three queens — 3 of QQ's 6 value combos impossible. The bluff class, T8s, contains neither a queen nor Hero's club, so all 4 of its combos survive. Three scenarios, three different ranks, one identical answer: that is the mechanic, not a coincidence.",
+            id: 'fold_price', label: 'Fold, the bluffs still live are too few for this price', quality: 'perfect',
+            feedback: "Correct, and it takes all five stages to see it. RANGE: AQ, 88 and 33 for value, offsuit KQ as the bluff. REGION: the whole betting range, because a pair of jacks beats every KQ combo and loses to all three value classes, so Hero wins exactly when Villain is bluffing. COMBOS: the board's A♠ cuts AQ from 16 to 12, the 8♥ and 3♣ cut each set from 6 to 3, so 18 value combos — against a full 12 for offsuit KQ. REMOVAL: Hero's J♥ touches none of them, and the K♠ takes out K♠Q♥, K♠Q♦ and K♠Q♣ — 3 of the 12 bluffs, while every one of the 18 value combos survives. EFFECT: harmful. That leaves 9 bluffs against 18 value, a 33.3% bluff share, and 25bb to win a 70bb pot needs 35.7%. Fold. Now swap the king for the Q♠ and the identical pair of jacks becomes a call: a queen removes 3 bluff combos too, but it also cuts AQ from 12 to 9, which lifts the bluff share to 37.5%.",
           },
           {
-            id: 'bluffs', label: 'Bluffs', quality: 'mistake',
-            feedback: "The bluff class is T8s, and a queen shares no rank with a ten or an eight — none of its 4 combos can be removed. Hero's Q♣ took out 3 of QQ's 6 value combos. The question to run every time is which of Villain's hands literally contain a card you are holding.",
+            id: 'call_beats', label: 'Call, a pair of jacks beats every bluff in range', quality: 'mistake',
+            feedback: "True, and not enough. A pair of jacks does beat every KQ combo, which is precisely why Hero's equity against this bet equals the share of it that is bluffing — but a bluff-catcher is priced, never simply compared. 25bb to win a 70bb pot demands 35.7%, and once the K♠ has removed 3 of KQ's 12 combos there are 9 bluffs left against 18 value combos: 33.3%. Beating the bluffs is what makes this a decision at all. It is not what makes it a call.",
           },
           {
-            id: 'both', label: 'Both', quality: 'mistake',
-            feedback: "Only the value side. The Q♣ makes 3 of QQ's 6 combos impossible; T8s shares no card with Hero at all, so it is fully intact. Removal is never even across a range — it lands exactly where a card is shared, and nowhere else.",
+            id: 'call_blocker', label: 'Call, the king takes three combos off the bluff class', quality: 'mistake',
+            feedback: "It does, and that is the removal working against Hero rather than for it. Those 3 combos were the hands Hero needed Villain to be holding: the K♠ strips them out of a 12-combo bluff class and leaves all 18 value combos untouched, which drops the bluff share to 33.3% against the 35.7% this price demands. Removal only helps a caller when it lands on the hands that beat them, and here it landed on the hands that pay them.",
           },
           {
-            id: 'neither', label: 'Neither', quality: 'mistake',
-            feedback: "Removal did occur: the Q♣ pairs with each of the three queens still unseen, so 3 of QQ's 6 combos are gone. Only the bluff class was spared. Holding one card of a rank halves a pocket pair every single time, and leaves any hand that shares no rank with it untouched.",
+            id: 'fold_weak', label: 'Fold, second pair is far too weak to face an overbet', quality: 'acceptable',
+            feedback: "Right action, wrong reason — and the reason matters, because it does not survive a change of kicker. A pair of jacks is a real bluff-catcher here: it beats every combo of KQ, and against this range before any removal, 12 bluffs to 18 value is a 40% bluff share, comfortably above the 35.7% the price demands. What kills the call is the K♠ specifically, which strips 3 of those 12 bluff combos and none of the 18 value combos, leaving 33.3%. Hold the Q♠ instead of the K♠ and the same second pair calls.",
           },
         ],
+        // Two book results, one spot. "Bluff Catcher: a hand that can only beat
+        // a bluff" is the book's own definition, which is exactly why Hero's
+        // equity against this bet equals the bluff share of it. And the price it
+        // is measured against is the book's calling-indifference result (p.102):
+        // the frequency a caller must win at to be indifferent "is the exact
+        // same number as his pot odds." Villain's range is a stated premise, so
+        // the step is a model; everything computed on top of it is arithmetic.
+        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Minimum Defense Frequency', example: 'Calling indifference equals pot odds (p.102)', type: 'pedagogical_model' },
         xp: 15,
       },
       {
         id: 'rtr-s8',
         type: 'concept_reveal',
-        concept_title: 'Faster Each Time',
-        concept_content: 'Same five stages, every time: range, region, combos, removal, effect. The mechanics never change — only how much you have to hold in your head at once. That is the whole skill this module builds.',
+        concept_title: 'Same Scanner, Harder Questions',
+        concept_content: 'Five runs, five different jobs for the same five stages. Counting the removal is stage 4, and it never got any harder than it was in Scenario 1 — everything that made these questions difficult lived in stage 2 and stage 5. Which region of the range does THIS decision turn on, and how do you weigh a card that helps and hurts at the same time? No card is a good or a bad blocker on its own. It is good when the combos it deletes are the combos that were going to beat you, at the price you are being asked to pay.',
+        concept_structured_items: [
+          { term: 'Scenario 1 — direction', description: "One ace against one range: 3 of AA's 6 value combos gone, all 4 bluff combos alive. Verdict: helpful." },
+          { term: 'Scenario 2 — proportion', description: 'One queen against two shapes: 3 tiles off each, but half of QQ against a quarter of AQo. The fraction is the effect, not the tile count.' },
+          { term: 'Scenario 3 — region', description: 'Bluffing flips which region matters. Block the hands that call, leave the hands that fold — the exact reverse of a caller\'s rule.' },
+          { term: 'Scenario 4 — netting', description: 'A card that removes value AND bluffs is settled by which side loses the bigger fraction, not by how many combos went.' },
+          { term: 'Scenario 5 — price', description: 'A ratio only becomes a decision once you compare it to what the bet is charging you.' },
+        ],
+        concept_note: "Every Villain range in this lesson is a stated premise, deliberately simplified to isolate one effect at a time. Nothing was estimated on top of them: each combo count, ratio and required-equity figure is arithmetic on cards that are already visible.",
       },
     ],
   },
@@ -17306,7 +17358,7 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_ids: ['nash_equilibrium_source'],
         concept_title: 'A CAN\'T improve alone',
-        concept_content: "Correct — with Villain calling 50% (above the 50% breakeven point for a zero-equity bet), betting this hand more only loses money. Checking it 100% of the time is Hero's genuine best response here. Now test the other side.",
+        concept_content: "Correct — and look at WHY the EV never moved. A pot-sized bet needs folds 50% of the time just to break even as a pure bluff, and Villain is calling exactly 50%, so every bet you added won the pot half the time and lost $100 the other half: the two branches grew in equal and opposite amounts, and the total stayed pinned at $0.00. No betting frequency beats checking here — and none loses to it either. That is what \"no profitable deviation\" looks like when a player is exactly indifferent. Now test the other side.",
         xp: 8,
       },
       {
