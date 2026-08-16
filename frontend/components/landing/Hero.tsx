@@ -157,11 +157,11 @@ export function Hero() {
           unrelated to the header, so it keeps its own independent rhythm. */}
       <div className="container relative mx-auto max-w-7xl px-4 sm:px-6 pt-[calc(var(--sp-header-height,5rem)+2.5rem)] lg:pt-[calc(var(--sp-header-height,5rem)+4rem)] pb-20 lg:pb-28">
         <div className="text-center max-w-3xl mx-auto mb-14 lg:mb-16">
-          <FadeInUp delayMs={0} variant="fade">
+          <FadeInUp delayMs={0} variant="fade" critical>
             <MarketingEyebrow className="mb-6">The modern way to learn poker</MarketingEyebrow>
           </FadeInUp>
 
-          <FadeInUp delayMs={120}>
+          <FadeInUp delayMs={120} critical>
             <h1 className="font-black tracking-tight text-foreground leading-[1.05] text-[clamp(2.4rem,6vw,4.5rem)]">
               Think in ranges.
               <br />
@@ -171,14 +171,14 @@ export function Hero() {
             </h1>
           </FadeInUp>
 
-          <FadeInUp delayMs={240}>
+          <FadeInUp delayMs={240} critical>
             <p className="mt-6 text-lg sm:text-xl text-muted-foreground/75 leading-relaxed max-w-2xl mx-auto">
               Master poker strategy through interactive lessons, real decision spots, range
               training and an AI coach that helps you understand <em className="not-italic text-foreground/80">why</em>.
             </p>
           </FadeInUp>
 
-          <FadeInUp delayMs={360}>
+          <FadeInUp delayMs={360} critical>
             <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
                 href="/learn"
@@ -196,7 +196,7 @@ export function Hero() {
             </div>
           </FadeInUp>
 
-          <FadeInUp delayMs={480}>
+          <FadeInUp delayMs={480} critical>
             <div className="mt-9 flex flex-wrap items-center justify-center gap-x-5 gap-y-2.5 text-[13px] text-muted-foreground/45">
               {[
                 { label: `${LESSONS.length} lessons live` },

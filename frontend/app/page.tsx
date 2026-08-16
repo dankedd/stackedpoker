@@ -16,7 +16,10 @@ export default function HomePage() {
     <>
       <Navbar variant="sticky" />
 
-      <main>
+      {/* `sp-landing-main` lets the browser skip layout/paint for the nine
+          below-the-fold sections until they scroll near — see globals.css.
+          Content stays fully in the DOM and in the accessibility tree. */}
+      <main className="sp-landing-main">
         {/* 1 · Hero — real decision spot, range, and AI coach composition */}
         <Hero />
 

@@ -248,6 +248,24 @@
   animation: reveal-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+/* Same entrance, but WITHOUT the opacity gate — for above-the-fold content on
+   the critical rendering path (see FadeInUp's `critical` prop).
+   `.animate-reveal-up` starts at `opacity: 0` and only becomes visible once its
+   (often delayed) animation runs. Largest Contentful Paint ignores anything
+   painted at zero opacity, so putting that class on the hero's <h1> made the
+   LCP timestamp wait for animation-delay + animation-duration on top of an
+   already-busy main thread — measured at ~1.4s of pure, self-inflicted LCP
+   delay on a throttled mobile profile. Animating transform alone keeps the
+   staggered rise exactly as designed while letting the text count as painted
+   the moment it hits the screen. */
+@keyframes reveal-up-critical {
+  from { transform: translateY(12px); }
+  to   { transform: translateY(0);    }
+}
+.animate-reveal-up-critical {
+  animation: reveal-up-critical 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 @keyframes blink-cursor {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0; }
@@ -703,6 +721,7 @@
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in,
   .animate-reveal-up,
+  .animate-reveal-up-critical,
   .animate-gradient,
   .animate-float,
   .animate-drift-glow,
@@ -717,6 +736,31 @@
     opacity: 1 !important;
     transform: none !important;
   }
+}
+
+/* ── Marketing homepage: skip layout for offscreen sections ──────────────
+   The landing page renders ~2,950 DOM nodes across ten sections, all of them
+   fully laid out before the first paint even though nine are far below the
+   fold. A single full-page layout pass measured ~1.2s on a 4x-throttled
+   mobile CPU, and the browser runs several of them before FCP (CSS arrival,
+   each font swap, hydration), which is where the bulk of the 5s LCP came
+   from.
+
+   `content-visibility: auto` lets the browser skip layout and paint for a
+   section until it approaches the viewport. This is NOT hiding content: the
+   markup stays in the DOM, in the accessibility tree, in the DOM order search
+   engines read, and find-in-page/anchor navigation still reaches it — the
+   browser simply defers the geometry work until it is actually needed.
+
+   `contain-intrinsic-size: auto 1200px` supplies a placeholder height so the
+   scrollbar and page height stay stable (no layout shift), and the `auto`
+   keyword makes the browser remember each section's real height once it has
+   been rendered once.
+
+   Scoped to the marketing homepage's own <main> so no app route is affected. */
+.sp-landing-main > *:not(:first-child) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 1200px;
 }
 
 /* ── Marketing homepage: midnight/frosted-glass system ───────────────────

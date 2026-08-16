@@ -16,6 +16,13 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
+// NOTE: do not set `preload: false` here to de-prioritise the mono face.
+// It was tried during the mobile LCP sprint and measured: Next.js stopped
+// emitting the `<link rel="preload" as="font">` for BOTH faces, not just this
+// one — including the sans face that actually renders the LCP text. Losing the
+// sans preload is the opposite of the intent, so both stay on the default.
+// The mono file is ~23KB and non-render-blocking, which is a far cheaper
+// trade than late-discovering the font the headline is set in.
 const geistMono = Geist_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
