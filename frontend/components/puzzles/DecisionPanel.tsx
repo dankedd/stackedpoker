@@ -77,41 +77,44 @@ function OptionButton({
       disabled={answered}
       onClick={() => onChoose(option.id)}
       className={cn(
-        'group flex w-full items-center gap-3 rounded-xl border px-4 py-3.5 text-left transition-all duration-150',
+        'group relative flex w-full flex-col items-center justify-center gap-1 rounded-xl border px-3 py-4 text-center transition-all duration-150',
+        'min-h-[76px]',
         !answered &&
-          'border-white/10 bg-white/[0.03] hover:border-violet-500/40 hover:bg-violet-500/[0.07] active:scale-[0.99]',
-        answered && !revealed && 'border-white/[0.07] bg-white/[0.015] opacity-55',
+          'border-white/12 bg-white/[0.04] hover:border-violet-500/50 hover:bg-violet-500/[0.10] active:scale-[0.98]',
+        answered && !revealed && 'border-white/[0.07] bg-white/[0.015] opacity-50',
         revealed && (isChosen ? style.ring : VERDICT_STYLE.best.ring)
       )}
     >
-      <span
-        className={cn(
-          'inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border text-[12px] font-bold',
-          revealed
-            ? isChosen
-              ? style.chip
-              : VERDICT_STYLE.best.chip
-            : 'border-white/10 bg-white/[0.05] text-slate-400 group-hover:border-violet-500/40 group-hover:text-violet-300'
-        )}
-      >
-        {revealed ? (
-          isChosen ? (
-            <style.icon className="h-3.5 w-3.5" aria-hidden />
+      {/* Grade marker sits in the corner so it never displaces the action label —
+          the buttons must not reflow when the answer is revealed. */}
+      {revealed && (
+        <span
+          className={cn(
+            'absolute left-2 top-2 inline-flex h-5 w-5 items-center justify-center rounded-md border',
+            isChosen ? style.chip : VERDICT_STYLE.best.chip
+          )}
+        >
+          {isChosen ? (
+            <style.icon className="h-3 w-3" aria-hidden />
           ) : (
-            <Check className="h-3.5 w-3.5" aria-hidden />
-          )
-        ) : (
-          String.fromCharCode(65 + index)
-        )}
-      </span>
+            <Check className="h-3 w-3" aria-hidden />
+          )}
+        </span>
+      )}
 
-      <span className="min-w-0 flex-1">
-        <span className="block text-[14px] font-semibold text-white">{option.label}</span>
-        {option.detail && <span className="mt-0.5 block text-[11px] text-slate-400">{option.detail}</span>}
-      </span>
+      {!answered && (
+        <span className="absolute left-2 top-2 text-[10px] font-bold text-slate-600 group-hover:text-violet-400">
+          {String.fromCharCode(65 + index)}
+        </span>
+      )}
+
+      <span className="text-[14px] font-bold uppercase tracking-wide text-white">{option.label}</span>
+      {option.detail && <span className="text-[11px] tabular-nums text-slate-400">{option.detail}</span>}
 
       {revealed && !isChosen && (
-        <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-emerald-400/80">Best</span>
+        <span className="absolute right-2 top-2 text-[9px] font-bold uppercase tracking-wider text-emerald-400/80">
+          Best
+        </span>
       )}
     </button>
   )
@@ -144,12 +147,21 @@ export function DecisionPanel({
 
   return (
     <div className="space-y-4">
-      <div>
-        <p className="text-[13px] leading-relaxed text-slate-400">{decision.situation}</p>
+      <div className="text-center">
+        <p className="mx-auto max-w-2xl text-[13px] leading-relaxed text-slate-400">{decision.situation}</p>
         <h2 className="mt-3 text-[17px] font-bold text-white sm:text-lg">{decision.question}</h2>
       </div>
 
-      <div className="space-y-2.5">
+      {/* An action bar, not a list of radio choices. Three or four abreast reads
+          as a poker client's button row; five would squeeze past legibility on a
+          phone, so that case wraps to two columns instead. */}
+      <div
+        className={cn(
+          'grid gap-2.5',
+          decision.options.length >= 5 ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-1 sm:grid-cols-3',
+          decision.options.length === 4 && 'sm:grid-cols-4'
+        )}
+      >
         {decision.options.map((option, i) => (
           <OptionButton
             key={option.id}

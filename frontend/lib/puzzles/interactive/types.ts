@@ -57,6 +57,12 @@ export interface PuzzleOption {
   verdict: OptionVerdict
   /** Compact post-answer feedback. Shown immediately; full theory stays folded. */
   shortWhy: string
+  /**
+   * How this action renders on the felt once chosen — the table updates to show
+   * what the learner actually did, not what they should have done.
+   * Maps onto `PreflopTableProps.heroAction`.
+   */
+  tableAction?: { label: string; betBb?: number }
   sources: SourceId[]
 }
 
@@ -166,9 +172,18 @@ export interface PuzzleDecision {
   effectiveStackBb: number
   /** What just happened, in the second person. */
   situation: string
-  /** Villain's last action, for the table seat readout. Authored per decision so
-   *  no puzzle-specific text has to live in the runner component. */
-  villainAction?: string
+  /**
+   * The preflop betting sequence, in the same prose format the Learn curriculum
+   * already uses for `LessonStep.action_before_hero` — e.g.
+   * `['CO folds', 'BTN raises to 2.5bb', 'SB folds']`. `PreflopTable` parses it
+   * to place chips, fold-out the seats that are gone, and derive the pot, so the
+   * table's numbers are computed from the same history the learner is shown
+   * rather than authored twice and left to drift.
+   */
+  actionBeforeHero?: string[]
+  /** Action on the CURRENT postflop street before hero acts. Empty array = hero
+   *  is first to act, which is a real state and different from "unknown". */
+  postflopAction?: string[]
   question: string
   /** >= 3, enforced by validate.ts. Order is authored, not sorted by quality. */
   options: PuzzleOption[]
@@ -189,11 +204,12 @@ export interface Takeaway {
 export interface PuzzleSetup {
   /** e.g. '30bb effective'. */
   format: string
+  /** Seats at the table, 2-9. Drives the same seat geometry the Learn tables use. */
+  tableSize: number
   heroSeat: string
   villainSeat: string
   heroCards: string[]
   effectiveStackBb: number
-  /** Seat order around the table for rendering, hero last. */
   gameNotes?: string
 }
 

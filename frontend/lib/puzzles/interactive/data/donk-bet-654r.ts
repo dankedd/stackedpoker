@@ -34,10 +34,17 @@ import type { InteractivePuzzle } from '../types'
  *
  * POT CONSTRUCTION: the book prints the flop pot for this exact spot as 5.6bb
  * (p.650) but never prints the preflop open size that produced it. The 2.5bb
- * open shown here is an implementation decision — the standard open closest to
- * reproducing that pot (2.5 + 2.5 + 0.5 = 5.5bb) — and is labelled as such in
- * the preflop step rather than presented as source data. Bet sizings are
- * computed off the book's own 5.6bb figure: 1/4-pot = 1.4bb, 2/3-pot = 3.7bb.
+ * open here is an implementation decision — the standard open closest to
+ * reproducing that pot — and the table therefore reads 5.5bb (2.5 + 2.5 + the
+ * folded SB's 0.5). The 0.1bb gap is stated in the preflop step rather than
+ * papered over: the alternative is either inventing a 2.55bb open to hit 5.6
+ * exactly, or printing a pot the chips on the felt visibly contradict. Sizings
+ * are quarter- and two-thirds-pot of the displayed number.
+ *
+ * TABLE SIZE: six-handed, not heads-up. The source's setup is a single raised
+ * pot that folds around to the button, and that folded small blind is exactly
+ * where the extra half-blind in the pot comes from. Rendering it heads-up would
+ * drop the dead 0.5 and make the arithmetic on screen wrong.
  */
 export const DONK_BET_654R: InteractivePuzzle = {
   id: 'donk-bet-654r',
@@ -51,8 +58,13 @@ export const DONK_BET_654R: InteractivePuzzle = {
 
   setup: {
     format: '30bb effective',
+    // Six-handed, not heads-up. The book's sim is a single raised pot that folds
+    // around to the button — which is where the dead small blind in the flop pot
+    // comes from. A heads-up table would quietly lose that half-blind and make
+    // the pot arithmetic on screen wrong.
+    tableSize: 6,
     heroSeat: 'BB',
-    villainSeat: 'BN',
+    villainSeat: 'BTN',
     heroCards: ['7s', '6s'],
     effectiveStackBb: 30,
     gameNotes: 'Single raised pot, no ante. Blinds 0.5 / 1.',
@@ -69,12 +81,13 @@ export const DONK_BET_654R: InteractivePuzzle = {
       effectiveStackBb: 30,
       situation:
         'It folds to the button, who opens to 2.5bb. The small blind folds. You are in the big blind with 30bb behind and 1.5bb more to call.',
-      villainAction: 'Opens to 2.5bb',
+      actionBeforeHero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.5bb', 'SB folds'],
       question: 'What do you do with 7♠6♠?',
       options: [
         {
           id: 'fold',
           label: 'Fold',
+          tableAction: { label: 'Folds' },
           verdict: 'mistake',
           shortWhy:
             'Far too tight. At this exact depth the book has the big blind continuing with a 64% range against the button — a suited connector sits comfortably inside a range that wide.',
@@ -84,6 +97,7 @@ export const DONK_BET_654R: InteractivePuzzle = {
           id: 'call',
           label: 'Call',
           detail: '1.5bb more into a 4bb pot',
+          tableAction: { label: 'Calls', betBb: 2.5 },
           verdict: 'best',
           shortWhy:
             'This is the book’s own reference spot: a 49% button open met by a 64% big blind calling range at 30bb, and suited connectors are named as part of what the big blind calls against a button.',
@@ -92,6 +106,7 @@ export const DONK_BET_654R: InteractivePuzzle = {
         {
           id: 'three-bet',
           label: '3-bet to 7.5bb',
+          tableAction: { label: 'Raises to', betBb: 7.5 },
           verdict: 'mistake',
           shortWhy:
             'The source gives this no support. Where it describes the big blind’s non-all-in 3-betting range it is polarized around JJ+, the strongest suited aces and the best premium suited connectors — 7♠6♠ is none of those, and it names connectors as calls instead.',
@@ -109,9 +124,9 @@ export const DONK_BET_654R: InteractivePuzzle = {
           nearestSources: ['preflop.bb-vs-bn-25bb-chart', 'preflop.bb-vs-bn-40bb-chart'],
         },
         {
-          question: 'Where does the 2.5bb open size come from?',
+          question: 'Where does the 2.5bb open size come from, and why does the pot read 5.5bb?',
           answer:
-            'From this implementation, not the book. The source states the flop pot for this exact spot is 5.6bb but never states the preflop open size behind it. A 2.5bb open is the standard size closest to reproducing that pot, and it is used here for display only — the bet sizings later in the hand are computed from the book’s own 5.6bb figure.',
+            'From this implementation, not the book. The source states the flop pot for this spot is 5.6bb but never states the preflop open size behind it. A 2.5bb open is the standard size closest to reproducing that pot: 2.5 from the button, 2.5 from you, plus the folded small blind’s 0.5 makes 5.5bb. The table shows 5.5 because that is what the action on screen actually adds up to — inventing an open size that hit 5.6 exactly, or printing a pot the visible chips contradict, would both be worse than a transparent 0.1bb gap. Bet sizings are quarter and two-thirds of the displayed pot.',
           nearestSources: ['value.table-104'],
         },
       ],
@@ -156,17 +171,19 @@ export const DONK_BET_654R: InteractivePuzzle = {
       id: 'flop',
       street: 'flop',
       board: ['6c', '5d', '4s'],
-      potBb: 5.6,
+      potBb: 5.5,
       effectiveStackBb: 27.5,
       situation:
-        'The flop comes 6♣ 5♦ 4♠ — rainbow. You have top pair with the best kicker and an open-ended straight draw: any 3 or 8 makes your straight. The pot is 5.6bb and you act first.',
-      villainAction: 'Waiting on you',
+        'The flop comes 6♣ 5♦ 4♠ — rainbow. You have top pair with the best kicker and an open-ended straight draw: any 3 or 8 makes your straight. You act first.',
+      actionBeforeHero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.5bb', 'SB folds', 'Hero calls'],
+      postflopAction: [],
       question: 'What is your preferred action?',
       options: [
         {
           id: 'donk-25',
-          label: 'Donk bet 25% pot',
-          detail: '1.4bb into 5.6bb',
+          label: 'Bet 25% pot',
+          detail: '1.4bb into 5.5bb',
+          tableAction: { label: 'Bets', betBb: 1.4 },
           verdict: 'best',
           shortWhy:
             'On high-donk boards at 30-40bb the book has the big blind betting good hands 64% of the time, and 1/4-pot is the most used size. Top pair with an open-ender is the part of that bucket that bets most often.',
@@ -174,8 +191,9 @@ export const DONK_BET_654R: InteractivePuzzle = {
         },
         {
           id: 'donk-67',
-          label: 'Donk bet 67% pot',
-          detail: '3.7bb into 5.6bb',
+          label: 'Bet 67% pot',
+          detail: '3.7bb into 5.5bb',
+          tableAction: { label: 'Bets', betBb: 3.7 },
           verdict: 'defensible',
           shortWhy:
             'A real part of the strategy, but the minority one: at 30-40bb the 2/3-pot lead is used about 5% of the time. It is the preferred size at 20bb, where the shorter stack wants folds and flop all-ins — not at 30bb.',
@@ -184,6 +202,7 @@ export const DONK_BET_654R: InteractivePuzzle = {
         {
           id: 'check',
           label: 'Check',
+          tableAction: { label: 'Checks' },
           verdict: 'defensible',
           shortWhy:
             'Not a blunder — good hands still check 36% of the time here, and the checking range needs strong and good hands to stay protected. But it is the minority branch, and it hands the button a free turn it is happy to take.',

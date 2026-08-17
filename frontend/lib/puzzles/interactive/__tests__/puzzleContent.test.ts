@@ -108,7 +108,9 @@ describe('654r puzzle — poker content', () => {
 
   it('is the BB vs BN 30bb spot the book states the 49%/64% ranges for', () => {
     expect(puzzle.setup.heroSeat).toBe('BB')
-    expect(puzzle.setup.villainSeat).toBe('BN')
+    // 'BTN' is the label lib/replay/positions.ts#normalizePosition understands,
+    // and what the Learn tables render. The book writes the seat as "BN".
+    expect(puzzle.setup.villainSeat).toBe('BTN')
     expect(puzzle.setup.effectiveStackBb).toBe(30)
     expect(SOURCES['preflop.bn-open-bb-call-30bb'].quote).toContain('49% opening range')
     expect(SOURCES['preflop.bn-open-bb-call-30bb'].quote).toContain('64% GTO range')
@@ -145,9 +147,28 @@ describe('654r puzzle — poker content', () => {
     expect(flop.bestOptionId).toBe('donk-25')
     const best = flop.options.find((o) => o.id === flop.bestOptionId)!
     expect(best.label).toMatch(/25% pot/)
-    // 1/4 of the book's own 5.6bb pot.
-    expect(flop.potBb).toBe(5.6)
+    // The displayed pot is what the action on the felt adds up to: 2.5 from the
+    // button, 2.5 called, plus the folded SB's 0.5. The book prints 5.6 for this
+    // spot without giving the open size behind it; the 0.1bb gap is disclosed in
+    // the preflop step rather than closed by inventing a 2.55bb open.
+    expect(flop.potBb).toBe(5.5)
     expect(best.detail).toContain('1.4bb')
+  })
+
+  it('renders on a six-handed table so the dead small blind is accounted for', () => {
+    // Heads-up would drop the folded SB's 0.5 and make the pot on screen wrong.
+    expect(puzzle.setup.tableSize).toBe(6)
+    const preflop = puzzle.decisions.find((d) => d.street === 'preflop')!
+    expect(preflop.actionBeforeHero).toContain('SB folds')
+    expect(preflop.actionBeforeHero).toContain('BTN raises to 2.5bb')
+    // Hero is first to act on the flop — an empty array, not an absent one.
+    expect(flop.postflopAction).toEqual([])
+  })
+
+  it('discloses the 5.5 vs 5.6 pot gap rather than hiding it', () => {
+    const preflop = puzzle.decisions.find((d) => d.street === 'preflop')!
+    const notes = preflop.unsourced ?? []
+    expect(notes.some((n) => /5\.5/.test(n.answer) && /5\.6/.test(n.answer))).toBe(true)
   })
 
   it('grades checking and the big lead as defensible rather than wrong', () => {

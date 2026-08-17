@@ -4,10 +4,9 @@ import { useCallback, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
+import { PreflopTable } from '@/components/learn/visuals/PreflopTable'
 import { CompletionCard } from './CompletionCard'
 import { DecisionPanel } from './DecisionPanel'
-import { PuzzleTable } from './PuzzleTable'
 import { RangeExplorer } from './RangeExplorer'
 import { StreetProgress } from './StreetProgress'
 import { DIFFICULTY_LABEL, puzzleStreets, type InteractivePuzzle } from '@/lib/puzzles/interactive/types'
@@ -66,10 +65,18 @@ export function PuzzleRunner({ puzzle }: { puzzle: InteractivePuzzle }) {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
 
-  // Villain's stack shrinks by what they've put in; hero's by what they've called.
-  // Read off the decision's own pot rather than simulated, so the numbers can
-  // never drift from the authored, source-anchored pot.
-  const heroStack = decision?.effectiveStackBb ?? puzzle.setup.effectiveStackBb
+  const chosenOption = decision?.options.find((o) => o.id === chosen)
+
+  // The table's correctness badge is deliberately only set for the two
+  // unambiguous grades. A 'defensible' answer is a real part of the strategy at
+  // lower frequency, and stamping it "incorrect" on the felt would contradict
+  // what the theory panel goes on to say two paragraphs later.
+  const tableResult =
+    chosenOption?.verdict === 'best'
+      ? ('correct' as const)
+      : chosenOption?.verdict === 'mistake'
+        ? ('incorrect' as const)
+        : undefined
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
@@ -120,30 +127,36 @@ export function PuzzleRunner({ puzzle }: { puzzle: InteractivePuzzle }) {
           />
         </div>
       ) : (
-        // The decision column carries the theory, which is much taller than the
-        // table beside it — so it gets the larger share rather than an even split.
-        <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)] lg:gap-8">
-          <div className="lg:sticky lg:top-6 lg:self-start">
-            <PuzzleTable
-              heroSeat={puzzle.setup.heroSeat}
-              villainSeat={puzzle.setup.villainSeat}
-              heroCards={puzzle.setup.heroCards}
-              heroStackBb={heroStack}
-              villainStackBb={heroStack}
-              board={decision.board}
+        /* Table on top, actions directly beneath it — the arrangement of a real
+           poker client, and the same one every Learn decision step uses. One
+           column at every width, so the phone layout is the desktop layout with
+           less around it rather than a different screen. */
+        <div className="mt-6 space-y-5">
+          <div className="mx-auto w-full max-w-2xl">
+            {/* The canonical Learn table — the same component ConceptReveal,
+                DecisionSpot and TableDecision render, driven by the same
+                action-prose format. Puzzles inherit the lesson table's felt,
+                rail, seats, dealer button, chips and pot rather than getting a
+                second near-identical implementation that would drift from it. */}
+            <PreflopTable
+              tableSize={puzzle.setup.tableSize}
+              heroPosition={puzzle.setup.heroSeat}
+              heroHand={puzzle.setup.heroCards}
+              effectiveStackBb={puzzle.setup.effectiveStackBb}
+              actionBeforeHero={decision.actionBeforeHero}
+              board={decision.board.length > 0 ? decision.board : undefined}
+              postflopAction={decision.postflopAction}
+              street={decision.street === 'preflop' ? undefined : decision.street}
               potBb={decision.potBb}
-              street={decision.street}
-              villainAction={decision.villainAction}
+              heroAction={chosenOption?.tableAction}
+              result={tableResult}
             />
-
-            <p className="mt-3 px-1 text-[11px] leading-relaxed text-slate-600">{puzzle.setup.gameNotes}</p>
-
-            <div className={cn('mt-4', 'hidden lg:block')}>
-              <RangeExplorer ranges={puzzle.ranges} />
-            </div>
+            <p className="mt-2 text-center text-[11px] leading-relaxed text-slate-600">
+              {puzzle.setup.gameNotes}
+            </p>
           </div>
 
-          <div>
+          <div className="mx-auto w-full max-w-3xl space-y-5">
             <DecisionPanel
               decision={decision}
               chosen={chosen}
@@ -154,9 +167,7 @@ export function PuzzleRunner({ puzzle }: { puzzle: InteractivePuzzle }) {
               nextLabel={index + 1 < puzzle.decisions.length ? 'Continue' : 'Finish hand'}
             />
 
-            <div className="mt-5 lg:hidden">
-              <RangeExplorer ranges={puzzle.ranges} />
-            </div>
+            <RangeExplorer ranges={puzzle.ranges} />
           </div>
         </div>
       )}

@@ -40,6 +40,7 @@ const valid = (over: Partial<InteractivePuzzle> = {}): InteractivePuzzle => ({
   description: 'desc',
   setup: {
     format: '30bb effective',
+    tableSize: 6,
     heroSeat: 'BB',
     villainSeat: 'BN',
     heroCards: ['7s', '6s'],
