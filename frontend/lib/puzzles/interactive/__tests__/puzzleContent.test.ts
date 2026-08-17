@@ -250,6 +250,67 @@ describe('654r puzzle — poker content', () => {
   })
 })
 
+describe('BB vs BN puzzle — one preflop idea, and no more evidence than exists', () => {
+  const puzzle = PUZZLES.find((p) => p.id === 'bb-defends-wide-vs-btn')!
+  const preflop = puzzle.decisions[0]
+
+  it('is preflop only, with the reason it stops there', () => {
+    expect(puzzle.decisions.map((d) => d.street)).toEqual(['preflop'])
+    expect(preflop.board).toEqual([])
+    expect(puzzle.endsEarlyBecause).toMatch(/preflop/i)
+  })
+
+  it('deals a hand from a class the source names as a call, and says which class', () => {
+    // The source names classes, never combos: "most suited hands, offsuit Ax,
+    // connectors and broadways". A♥7♣ is chosen because "offsuit Ax" is a class
+    // the book prints in words — the chart itself is an image.
+    expect(puzzle.setup.heroCards).toEqual(['Ah', '7c'])
+    expect(preflop.situation).toMatch(/offsuit ace/i)
+    expect(SOURCES['bb100.linear-3bet'].quote).toContain('offsuit Ax')
+    expect(SOURCES['bb100.linear-3bet'].quote).toContain('very linear')
+  })
+
+  it('answers Call, with folding and 3-betting both unsupported', () => {
+    expect(preflop.bestOptionId).toBe('call')
+    expect(preflop.options.find((o) => o.id === 'fold')!.verdict).toBe('mistake')
+    expect(preflop.options.find((o) => o.id === 'three-bet')!.verdict).toBe('mistake')
+    expect(SOURCES['bb100.hr82-aggregates'].quote).toContain('Call 43.4%')
+  })
+
+  it('states no frequency for the specific combo', () => {
+    // The one fabrication this puzzle is exposed to: turning "offsuit Ax calls"
+    // into a decimal for A7o. Only aggregates are printed; the chart is an image.
+    const notes = [...(preflop.unsourced ?? []), ...preflop.theory.flatMap((t) => t.unsourced ?? [])]
+    expect(notes.some((n) => /Exact combo frequency is not specified in the source/i.test(n.answer))).toBe(true)
+    expect(puzzle.ranges.every((r) => r.kind !== 'grid')).toBe(true)
+  })
+
+  it('charges 1.5bb to call a 2.5bb open, into a 4bb pot', () => {
+    expect(preflop.facingBetBb).toBe(2.5)
+    expect(preflop.heroInvestedBb).toBe(1)
+    expect(preflop.toCallBb).toBe(1.5)
+    expect(preflop.potBb).toBe(4) // 2.5 + 1 + the folded SB's 0.5
+  })
+
+  it('discloses that the bet-sizes come from the book’s game assumptions, not these pages', () => {
+    expect((preflop.unsourced ?? []).some((n) => /179-180/.test(n.answer))).toBe(true)
+  })
+
+  it('keeps the Ch.12 figures scoped to their own 20-40bb MTT-range simulations', () => {
+    // p.657's "the BN's ~44% range" is the likeliest fabrication in this spot:
+    // it reads exactly like the missing 100bb cash opening range and is not one.
+    // p.655 states the section's dataset, so every Ch.12 ref must carry it.
+    for (const id of ['position.ip-range-advantage', 'position.ip-over-realizes']) {
+      expect(SOURCES[id].scope, `${id} must name its stack depths`).toMatch(/20bb\/30bb\/40bb/)
+      expect(SOURCES[id].scope, `${id} must name MTT ranges`).toMatch(/MTT/)
+    }
+    expect(SOURCES['position.ch12-sim-scope'].quote).toContain('MTT starting ranges')
+    // And the puzzle must say so where a reader would otherwise reach for it.
+    const btnRange = puzzle.ranges.find((r) => r.seat === 'villain')!
+    expect((btnRange.unsourced ?? []).some((n) => /44%/.test(n.answer))).toBe(true)
+  })
+})
+
 describe('984 puzzle — a complete four-street hand', () => {
   const puzzle = PUZZLES.find((p) => p.id === 'turn-donk-984')!
 

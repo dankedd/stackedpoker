@@ -515,6 +515,83 @@ export const SOURCES: Record<string, SourceRef> = {
       'work 33% (Alpha) of the time to instantly profit. Your opponent must defend 67% (1-Alpha) of the time',
   }),
 
+  /* ── Puzzle 3: BB vs BN open at 100bb — why the BB defends widest ────── */
+
+  'bb100.hr82-aggregates': ref({
+    id: 'bb100.hr82-aggregates',
+    page: 244,
+    locator: 'Hand Range 82: BB vs BN Open',
+    derivation: 'exact_transcription',
+    scope:
+      'BB defending against a BN open, 6-max cash, 100bb effective. These are the whole-range percentages printed with the chart — NOT the frequency of any individual hand. The chart itself is a colour-coded image; no per-combo figure is printed in text.',
+    quote: 'BB vs BN Open — 3-bet 13.4% / Call 43.4% / Fold 43.2%',
+  }),
+
+  'bb100.why-bb-calls-wider': ref({
+    id: 'bb100.why-bb-calls-wider',
+    page: 243,
+    locator: 'Prose describing Hand Range 82: BB vs BN Open',
+    derivation: 'exact_transcription',
+    scope:
+      'BB vs BN at 100bb — the source’s own stated reason why the BB’s calling range against a button is wider than against any other position.',
+    quote:
+      'The BN range is wide enough that now the BB can call many more hands compared to all the other positions, as the BN’s ability to barrel and overbet very aggressively is downgraded due to the strong hands being diluted.',
+  }),
+
+  'bb100.linear-3bet': ref({
+    id: 'bb100.linear-3bet',
+    page: 243,
+    locator: 'Prose describing Hand Range 82: BB vs BN Open',
+    derivation: 'exact_transcription',
+    scope:
+      'BB vs BN at 100bb — which hand TYPES go into the 3-betting range and which into the calling range. A composition stated in words; it names classes, never individual combos or their frequencies.',
+    quote:
+      'Against the BN, the BB 3-bets a very linear range… The BB now 3-bets 13.4% hands while calling with most suited hands, offsuit Ax, connectors and broadways.',
+  }),
+
+  /*
+   * The three refs below are Chapter 12, and they are the reason `scope` exists.
+   * Their figures look like they belong next to Hand Range 82 — same book, same
+   * BB-vs-BN matchup — and they do not. p.655 states plainly that the whole
+   * section is aggregated from 20bb/30bb/40bb solutions using MTT starting
+   * ranges, so the "~44% BN range" printed on p.657 is NOT the 100bb 6-max cash
+   * opening range this puzzle's spot uses. Lifting it would be the single
+   * easiest fabrication available in this chapter.
+   */
+
+  'position.ch12-sim-scope': ref({
+    id: 'position.ch12-sim-scope',
+    page: 655,
+    locator: 'Ch. 12, opening of the flop c-bet section',
+    derivation: 'exact_transcription',
+    scope:
+      'The author’s own statement of what the whole Ch.12 flop c-bet dataset is — the boundary that keeps its numbers out of a 100bb cash spot.',
+    quote:
+      'for this section we will use the aggregated data from thousands of GTO solutions with stack depths 20bb, 30bb and 40bb with standard GTO MTT starting ranges.',
+  }),
+
+  'position.ip-over-realizes': ref({
+    id: 'position.ip-over-realizes',
+    page: 656,
+    locator: 'Table 110: IP vs BB Overall Metrics',
+    derivation: 'exact_transcription',
+    scope:
+      'Aggregated GTO solutions at 20bb/30bb/40bb with MTT starting ranges, IP vs BB on the flop after the BB checks — NOT the 100bb 6-max cash configuration of Hand Range 82. Cited for the direction position pushes equity realization, never as a figure for a 100bb cash spot.',
+    quote:
+      'Both the BN and UTG over-realize their equity by 15%, but since UTG’s range has higher equity, they are able to capture a bigger portion of the pot than the BN (Table 110).',
+  }),
+
+  'position.ip-range-advantage': ref({
+    id: 'position.ip-range-advantage',
+    page: 657,
+    locator: 'Diagram 38: BB vs IP Equity Buckets',
+    derivation: 'exact_transcription',
+    scope:
+      'Same 20bb/30bb/40bb MTT-range aggregate as Table 110. The "~44%" and "~15%" are the BN and UTG opening ranges IN THAT dataset — they are not the 100bb 6-max cash opening sizes, and must not be presented as the button’s open in a 100bb spot.',
+    quote:
+      'Clearly IP has the overall range advantage. As expected, UTG’s ~15% range is much stronger than the BN’s ~44% range (Diagram 38).',
+  }),
+
   'preflop.bb-3bet-value-40bb': ref({
     id: 'preflop.bb-3bet-value-40bb',
     page: 396,

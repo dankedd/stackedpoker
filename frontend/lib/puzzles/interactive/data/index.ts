@@ -1,5 +1,6 @@
 import type { InteractivePuzzle } from '../types'
 import { assertPublishable } from '../validate'
+import { BB_DEFENDS_WIDE_VS_BTN } from './bb-defends-wide-vs-btn'
 import { DONK_BET_654R } from './donk-bet-654r'
 import { TURN_DONK_984 } from './turn-donk-984'
 
@@ -12,7 +13,9 @@ import { TURN_DONK_984 } from './turn-donk-984'
  * teaching someone a number nobody could source. Adding a puzzle is: write the
  * data file, add any new citations to ../sources.ts, add one line here.
  */
-const ALL: InteractivePuzzle[] = [DONK_BET_654R, TURN_DONK_984].map(assertPublishable)
+const ALL: InteractivePuzzle[] = [DONK_BET_654R, TURN_DONK_984, BB_DEFENDS_WIDE_VS_BTN].map(
+  assertPublishable
+)
 
 export const PUZZLES: readonly InteractivePuzzle[] = ALL
 
