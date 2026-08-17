@@ -13,6 +13,7 @@ export const ROUTES = {
   pricing: "/pricing",
   courses: "/courses",
   wiki: "/wiki",
+  puzzles: "/puzzles",
   glossary: "/glossary",
   blog: "/blog",
   tools: "/tools",
@@ -27,6 +28,7 @@ export const wikiPath = (slug: string) => `/wiki/${slug}`;
 export const glossaryLetterPath = (letter: string) => `/glossary/${letter.toLowerCase()}`;
 export const blogPath = (slug: string) => `/blog/${slug}`;
 export const toolPath = (slug: string) => `/tools/${slug}`;
+export const puzzlePath = (slug: string) => `/puzzles/${slug}`;
 export const searchPath = (query: string) => `/search/${query}`;
 
 /** The authenticated lesson player — deliberately NOT indexable. */

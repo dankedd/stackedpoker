@@ -20,6 +20,9 @@ export interface NavLink {
 /** Header navigation (components/layout/Navbar.tsx). */
 export const PRIMARY_NAV: NavLink[] = [
   { label: "Learn", href: "/learn", primary: true },
+  // Playable training built on the same sourced theory as Learn. In the primary
+  // nav rather than the "in development" cluster because it ships working.
+  { label: "Puzzles", href: ROUTES.puzzles },
   // Public reference content — in the main nav so it is one click from every
   // page for readers, and one hop from every page for crawlers.
   { label: "Wiki", href: ROUTES.wiki },
