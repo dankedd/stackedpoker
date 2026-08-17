@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge'
 import { PreflopTable } from '@/components/learn/visuals/PreflopTable'
 import { CompletionCard } from './CompletionCard'
 import { DecisionPanel } from './DecisionPanel'
+import { HandHistory, type HistoryLine } from './HandHistory'
+import { HandInfo } from './HandInfo'
 import { RangeExplorer } from './RangeExplorer'
 import { StreetProgress } from './StreetProgress'
 import { DIFFICULTY_LABEL, puzzleStreets, type InteractivePuzzle } from '@/lib/puzzles/interactive/types'
@@ -67,6 +69,25 @@ export function PuzzleRunner({ puzzle }: { puzzle: InteractivePuzzle }) {
 
   const chosenOption = decision?.options.find((o) => o.id === chosen)
 
+  // The strip shows the authored history up to this decision, plus Hero's own
+  // choice once it exists. Built from the CURRENT decision only, so a street the
+  // learner hasn't reached can't leak into it.
+  const historyLines: HistoryLine[] = decision
+    ? [
+        ...(decision.history ?? []),
+        ...(chosenOption
+          ? [
+              {
+                street: decision.street,
+                actor: puzzle.setup.heroSeat,
+                text: chosenOption.historyText ?? chosenOption.label,
+                isHero: true,
+              },
+            ]
+          : []),
+      ]
+    : []
+
   // The table's correctness badge is deliberately only set for the two
   // unambiguous grades. A 'defensible' answer is a real part of the strategy at
   // lower frequency, and stamping it "incorrect" on the felt would contradict
@@ -123,6 +144,7 @@ export function PuzzleRunner({ puzzle }: { puzzle: InteractivePuzzle }) {
             puzzle={puzzle}
             correct={correct}
             total={puzzle.decisions.length}
+            answers={answers}
             onRestart={restart}
           />
         </div>
@@ -131,29 +153,49 @@ export function PuzzleRunner({ puzzle }: { puzzle: InteractivePuzzle }) {
            poker client, and the same one every Learn decision step uses. One
            column at every width, so the phone layout is the desktop layout with
            less around it rather than a different screen. */
-        <div className="mt-6 space-y-5">
-          <div className="mx-auto w-full max-w-2xl">
-            {/* The canonical Learn table — the same component ConceptReveal,
-                DecisionSpot and TableDecision render, driven by the same
-                action-prose format. Puzzles inherit the lesson table's felt,
-                rail, seats, dealer button, chips and pot rather than getting a
-                second near-identical implementation that would drift from it. */}
-            <PreflopTable
-              tableSize={puzzle.setup.tableSize}
-              heroPosition={puzzle.setup.heroSeat}
-              heroHand={puzzle.setup.heroCards}
-              effectiveStackBb={puzzle.setup.effectiveStackBb}
-              actionBeforeHero={decision.actionBeforeHero}
-              board={decision.board.length > 0 ? decision.board : undefined}
-              postflopAction={decision.postflopAction}
-              street={decision.street === 'preflop' ? undefined : decision.street}
-              potBb={decision.potBb}
-              heroAction={chosenOption?.tableAction}
-              result={tableResult}
-            />
-            <p className="mt-2 text-center text-[11px] leading-relaxed text-slate-600">
-              {puzzle.setup.gameNotes}
-            </p>
+        <div className="mt-5 space-y-5">
+          {/* Table centre, hand info left, action strip right. The side columns
+              are narrow and fixed so the felt keeps the width it needs — the
+              table is the point of the screen, not an illustration beside the
+              text. Below `xl` the sides drop under the table rather than
+              squeezing it. */}
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,15rem)_minmax(0,1fr)_minmax(0,15rem)] xl:items-start">
+            <div className="order-2 space-y-4 xl:order-1">
+              <HandInfo puzzle={puzzle} decision={decision} />
+            </div>
+
+            <div className="order-1 min-w-0 xl:order-2">
+              {/* The canonical Learn table — the same component ConceptReveal,
+                  DecisionSpot and TableDecision render, driven by the same
+                  action-prose format. Puzzles inherit the lesson table's felt,
+                  rail, seats, dealer button, chips and pot rather than getting a
+                  second near-identical implementation that would drift from it. */}
+              <PreflopTable
+                tableSize={puzzle.setup.tableSize}
+                heroPosition={puzzle.setup.heroSeat}
+                heroHand={puzzle.setup.heroCards}
+                // Per-DECISION, not per-puzzle: each street's figure is the stack
+                // at the start of that street, which is exactly what the table's
+                // "N bb behind" arithmetic subtracts this street's chips from.
+                effectiveStackBb={decision.effectiveStackBb}
+                actionBeforeHero={decision.actionBeforeHero}
+                board={decision.board.length > 0 ? decision.board : undefined}
+                postflopAction={decision.postflopAction}
+                street={decision.street === 'preflop' ? undefined : decision.street}
+                potBb={decision.potBb}
+                // Everything earlier streets built. The table derives this from
+                // the preflop line alone, which is right on a flop and wrong from
+                // the turn on — by then the flop's chips are dead money it never
+                // saw. potBb minus the bet currently faced is that number.
+                deadPotBb={decision.potBb - (decision.facingBetBb ?? 0)}
+                heroAction={chosenOption?.tableAction}
+                result={tableResult}
+              />
+            </div>
+
+            <div className="order-3 space-y-4">
+              <HandHistory lines={historyLines} />
+            </div>
           </div>
 
           <div className="mx-auto w-full max-w-3xl space-y-5">
@@ -167,7 +209,7 @@ export function PuzzleRunner({ puzzle }: { puzzle: InteractivePuzzle }) {
               nextLabel={index + 1 < puzzle.decisions.length ? 'Continue' : 'Finish hand'}
             />
 
-            <RangeExplorer ranges={puzzle.ranges} />
+            <RangeExplorer ranges={puzzle.ranges} heroHand={puzzle.setup.heroCards} />
           </div>
         </div>
       )}

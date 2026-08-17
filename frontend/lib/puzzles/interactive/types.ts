@@ -25,6 +25,16 @@ export type Difficulty = 'beginner' | 'intermediate' | 'advanced' | 'expert'
 /** Ordered for the progress rail. A puzzle uses a prefix of this, never a gap. */
 export const STREET_ORDER: Street[] = ['preflop', 'flop', 'turn', 'river']
 
+/** One line in the action strip. */
+export interface HistoryLine {
+  street: Street
+  /** Seat label — 'BTN', 'UTG', 'BB'. */
+  actor: string
+  /** What they did, amounts included: 'Raises to 2.5 bb'. */
+  text: string
+  isHero?: boolean
+}
+
 export const STREET_LABEL: Record<Street, string> = {
   preflop: 'Pre-flop',
   flop: 'Flop',
@@ -50,10 +60,17 @@ export type OptionVerdict = 'best' | 'defensible' | 'mistake'
 
 export interface PuzzleOption {
   id: string
-  /** Button text. Short — 'Donk bet 25% pot'. */
+  /**
+   * Button text, and nothing else. A poker action verb — 'Call', 'Bet 67% pot'.
+   *
+   * Amounts deliberately do NOT live here. A button reading "Call / 2.5bb" is
+   * actively wrong in the commonest spot in poker: when the button opens TO
+   * 2.5bb and the big blind has already posted 1, the call is 1.5. Putting a
+   * number under the verb invites exactly that confusion, so the money lives in
+   * the hand-info panel and on the felt, where "raise to" and "to call" can be
+   * named as the different quantities they are.
+   */
   label: string
-  /** Concrete consequence, e.g. '1.4bb into a 5.6bb pot'. Arithmetic, not a claim. */
-  detail?: string
   verdict: OptionVerdict
   /** Compact post-answer feedback. Shown immediately; full theory stays folded. */
   shortWhy: string
@@ -63,6 +80,8 @@ export interface PuzzleOption {
    * Maps onto `PreflopTableProps.heroAction`.
    */
   tableAction?: { label: string; betBb?: number }
+  /** How this choice reads in the action strip. Falls back to `label`. */
+  historyText?: string
   sources: SourceId[]
 }
 
@@ -166,10 +185,27 @@ export interface PuzzleDecision {
   street: Street
   /** Cumulative board at the moment of this decision. Empty for preflop. */
   board: string[]
-  /** Pot before Hero acts, in bb. */
+  /** Pot before Hero acts, in bb — INCLUDING any bet Hero is facing. */
   potBb: number
   /** Effective stack at this decision, in bb. */
   effectiveStackBb: number
+  /**
+   * Money Hero has ALREADY put in on this street (the posted blind preflop, a
+   * called bet postflop). Needed to compute a call correctly, and validated
+   * against `facingBetBb` so the arithmetic can't silently drift.
+   */
+  heroInvestedBb?: number
+  /**
+   * The TOTAL a villain has bet or raised TO on this street — not the increment.
+   * Preflop, a button opening to 2.5bb is `facingBetBb: 2.5`.
+   */
+  facingBetBb?: number
+  /**
+   * What Hero must actually add to continue: `facingBetBb - heroInvestedBb`.
+   * Authored rather than derived so `validate.ts` can check the author's
+   * arithmetic instead of blessing whatever it computes.
+   */
+  toCallBb?: number
   /** What just happened, in the second person. */
   situation: string
   /**
@@ -184,6 +220,12 @@ export interface PuzzleDecision {
   /** Action on the CURRENT postflop street before hero acts. Empty array = hero
    *  is first to act, which is a real state and different from "unknown". */
   postflopAction?: string[]
+  /**
+   * Everything played before Hero acts at this decision, cumulative from the
+   * start of the hand. Hero's own choice is appended by the runner once made,
+   * so the strip can never show a street the learner has not reached.
+   */
+  history?: HistoryLine[]
   question: string
   /** >= 3, enforced by validate.ts. Order is authored, not sorted by quality. */
   options: PuzzleOption[]

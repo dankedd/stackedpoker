@@ -502,6 +502,12 @@ export interface PreflopTableProps {
   /** Postflop only — pot carried in from earlier streets when the preflop
    *  history isn't authored (e.g. a river spot that starts mid-hand). */
   potBb?: number
+  /** Postflop only — the pot carried in from ALL earlier streets, stated
+   *  outright. Needed by callers that play a hand across three or four streets:
+   *  this component models "preflop history + one postflop street", so on a turn
+   *  or river it cannot derive what the flop betting added. No Learn caller
+   *  passes this, and omitting it keeps the derived behaviour exactly as before. */
+  deadPotBb?: number
   /** Hero's own action after answering (post-answer table state, spec item 22). */
   heroAction?: { label: string; betBb?: number }
   /** Post-answer correctness badge on Hero's seat. */
@@ -538,6 +544,7 @@ export function PreflopTable({
   postflopAction,
   street,
   potBb,
+  deadPotBb,
   heroAction,
   result,
   className,
@@ -601,9 +608,10 @@ export function PreflopTable({
             board,
             street,
             pot_bb: potBb,
+            dead_pot_bb_override: deadPotBb,
           })
         : undefined,
-    [isPostflop, heroPosition, tableSize, actionBeforeHero, postflopAction, effectiveStackBb, stackOverridesBb, anteBb, board, street, potBb],
+    [isPostflop, heroPosition, tableSize, actionBeforeHero, postflopAction, effectiveStackBb, stackOverridesBb, anteBb, board, street, potBb, deadPotBb],
   )
 
   // No reliable timeline (unparseable/absent action data) — render exactly

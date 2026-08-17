@@ -108,8 +108,8 @@ function OptionButton({
         </span>
       )}
 
-      <span className="text-[14px] font-bold uppercase tracking-wide text-white">{option.label}</span>
-      {option.detail && <span className="text-[11px] tabular-nums text-slate-400">{option.detail}</span>}
+      {/* The verb, alone. No amount, no subtitle — see PuzzleOption.label. */}
+      <span className="text-[15px] font-bold uppercase tracking-wide text-white">{option.label}</span>
 
       {revealed && !isChosen && (
         <span className="absolute right-2 top-2 text-[9px] font-bold uppercase tracking-wider text-emerald-400/80">

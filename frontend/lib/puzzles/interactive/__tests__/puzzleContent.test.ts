@@ -3,6 +3,7 @@ import { PUZZLES, getPuzzle } from '../data'
 import { DONK_BET_654R } from '../data/donk-bet-654r'
 import { SOURCES } from '../sources'
 import { validatePuzzle } from '../validate'
+import { STREET_ORDER } from '../types'
 import type { InteractivePuzzle, SourceId } from '../types'
 
 /**
@@ -152,7 +153,56 @@ describe('654r puzzle — poker content', () => {
     // spot without giving the open size behind it; the 0.1bb gap is disclosed in
     // the preflop step rather than closed by inventing a 2.55bb open.
     expect(flop.potBb).toBe(5.5)
-    expect(best.detail).toContain('1.4bb')
+  })
+
+  it('never prints a bb amount on an action button', () => {
+    // "CALL 2.5bb" is wrong whenever Hero has already posted: the button opens
+    // TO 2.5, the blind is in for 1, and the call is 1.5. The button carries the
+    // verb; the amounts live in the hand-info panel.
+    for (const p of PUZZLES) {
+      for (const d of p.decisions) {
+        for (const o of d.options) {
+          expect(o.label, `${p.id}/${d.id}: "${o.label}"`).not.toMatch(/\d\s*bb/i)
+        }
+      }
+    }
+  })
+
+  it('computes every call amount as bet-faced minus already-invested', () => {
+    for (const p of PUZZLES) {
+      for (const d of p.decisions) {
+        if (d.facingBetBb === undefined || d.heroInvestedBb === undefined) continue
+        const expected = Math.round((d.facingBetBb - d.heroInvestedBb) * 100) / 100
+        expect(d.toCallBb, `${p.id}/${d.id}`).toBe(expected)
+        // And the pot must contain the bet Hero is facing.
+        expect(d.potBb, `${p.id}/${d.id} pot`).toBeGreaterThanOrEqual(d.facingBetBb)
+      }
+    }
+  })
+
+  it('reveals the board one street at a time and never ahead of the learner', () => {
+    for (const p of PUZZLES) {
+      const expected = { preflop: 0, flop: 3, turn: 4, river: 5 }
+      p.decisions.forEach((d, i) => {
+        expect(d.board.length, `${p.id}/${d.id}`).toBe(expected[d.street])
+        // Each street's board must extend the previous one, never replace it.
+        if (i > 0) {
+          const prev = p.decisions[i - 1].board
+          expect(d.board.slice(0, prev.length), `${p.id}/${d.id} rewrites earlier cards`).toEqual(prev)
+        }
+      })
+    }
+  })
+
+  it('never shows a history line from a street the decision has not reached', () => {
+    for (const p of PUZZLES) {
+      for (const d of p.decisions) {
+        const reached = STREET_ORDER.slice(0, STREET_ORDER.indexOf(d.street) + 1)
+        for (const line of d.history ?? []) {
+          expect(reached, `${p.id}/${d.id} leaks ${line.street}`).toContain(line.street)
+        }
+      }
+    }
   })
 
   it('renders on a six-handed table so the dead small blind is accounted for', () => {
@@ -197,5 +247,54 @@ describe('654r puzzle — poker content', () => {
   it('ends on the flop and explains that the source stops there', () => {
     expect(puzzle.decisions.map((d) => d.street)).toEqual(['preflop', 'flop'])
     expect(puzzle.endsEarlyBecause).toMatch(/turn|river/i)
+  })
+})
+
+describe('984 puzzle — a complete four-street hand', () => {
+  const puzzle = PUZZLES.find((p) => p.id === 'turn-donk-984')!
+
+  it('plays all four streets', () => {
+    expect(puzzle.decisions.map((d) => d.street)).toEqual(['preflop', 'flop', 'turn', 'river'])
+    // A full hand needs no "why it stopped early" note.
+    expect(puzzle.endsEarlyBecause).toBeUndefined()
+  })
+
+  it('deals the turn and river as single additional cards', () => {
+    const [, flop, turn, river] = puzzle.decisions
+    expect(flop.board).toEqual(['9h', '8h', '4d'])
+    expect(turn.board).toEqual(['9h', '8h', '4d', '5c'])
+    expect(river.board).toEqual(['9h', '8h', '4d', '5c', '2c'])
+  })
+
+  it('picks the turn card the source names as the best in the deck', () => {
+    expect(SOURCES['ex3.turn-best-card-is-five'].quote).toMatch(/best cards are offsuit 5s/)
+    expect(SOURCES['ex3.turn-donk-best-cards'].quote).toMatch(/7, 6, 5 that complete straights/)
+  })
+
+  it('makes the straight on the turn, not the flop', () => {
+    // 7s6s on 9h8h4d is an open-ender; the 5c completes 9-8-7-6-5.
+    const flop = puzzle.decisions.find((d) => d.street === 'flop')!
+    expect(flop.situation).toMatch(/open-ended straight draw/i)
+    const turn = puzzle.decisions.find((d) => d.street === 'turn')!
+    expect(turn.situation).toMatch(/9-8-7-6-5/)
+  })
+
+  it('labels the turn sizing and the river node as not solved in the source', () => {
+    const turn = puzzle.decisions.find((d) => d.street === 'turn')!
+    const river = puzzle.decisions.find((d) => d.street === 'river')!
+    const text = (d: typeof turn) => (d.unsourced ?? []).map((n) => `${n.question} ${n.answer}`).join(' ')
+    expect(text(turn)).toMatch(/bet-size|sizing/i)
+    expect(text(river)).toMatch(/abstract model|model/i)
+  })
+
+  it('keeps the money consistent across streets', () => {
+    const [pf, flop, turn, river] = puzzle.decisions
+    expect(pf.potBb).toBe(4)       // 2.5 + 1 + 0.5
+    expect(flop.potBb).toBe(9.2)   // 5.5 + UTG's 3.7
+    expect(turn.potBb).toBe(12.9)  // 5.5 + 3.7 + 3.7
+    expect(river.potBb).toBe(30.1) // 12.9 + 8.6 + 8.6
+    // Stacks only ever shrink.
+    const stacks = puzzle.decisions.map((d) => d.effectiveStackBb)
+    expect(stacks).toEqual([...stacks].sort((a, b) => b - a))
   })
 })

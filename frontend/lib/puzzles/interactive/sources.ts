@@ -373,6 +373,148 @@ export const SOURCES: Record<string, SourceRef> = {
     quote: 'BB vs BN (40bb) • All-in 3% / • 3-bet 14.1% / • Call 58.6% / • Fold 24.2%',
   }),
 
+  /* ── Puzzle 2: BB vs UTG on 9♥8♥4♦ (40bb) — the book's own worked line ── */
+
+  'ex3.preflop-bb-vs-utg-40bb': ref({
+    id: 'ex3.preflop-bb-vs-utg-40bb',
+    page: 402,
+    locator: 'Hand Range 173: BB vs UTG (40bb)',
+    derivation: 'exact_transcription',
+    scope: 'BB defending against an UTG open at 40bb — the preflop setup for the book’s Flop Strategy Example 3.',
+    quote: 'BB vs UTG (40bb) • 3-bet 5.8% / • Call 49.1% / • Fold 45%',
+  }),
+
+  'ex3.utg-cbet-big': ref({
+    id: 'ex3.utg-cbet-big',
+    page: 687,
+    locator: 'Diagram 61 / Table 115: UTG C-betting Range Breakdown on 9♥8♥4♦',
+    derivation: 'exact_transcription',
+    scope: 'UTG’s flop c-betting strategy on 9♥8♥4♦ at 40bb — a mid c-bet frequency with a big bet-size.',
+    quote: 'Mid c-bet % and big bet-size: BB vs UTG on 9♥8♥4♦ (40bbs)',
+  }),
+
+  'ex3.bb-few-strong-hands': ref({
+    id: 'ex3.bb-few-strong-hands',
+    page: 742,
+    locator: 'Flop Strategy Example 3 — BB vs 2/3-pot c-bet on 9♥8♥4♦ (40bbs)',
+    derivation: 'exact_transcription',
+    scope: 'BB’s flop strategy facing a 2/3-pot c-bet from UTG on 9♥8♥4♦ at 40bb.',
+    quote:
+      'On 9♥8♥4♦, the BB’s range only has about 4% strong hands against UTG. This results in UTG using a large bet-size and the BB having a low x/r frequency of about 4%. The BB’s strategy consists of waiting until the turn to start splitting their range, depending on the runout. This avoids revealing information about their range on the flop.',
+  }),
+
+  'ex3.bb-compensates-on-turn': ref({
+    id: 'ex3.bb-compensates-on-turn',
+    page: 743,
+    locator: 'Table 124: BB Strategy Breakdown vs UTG 2/3-pot c-bet on 9♥8♥4♦',
+    derivation: 'exact_transcription',
+    scope: 'Why the BB plays the flop passively on this board — the plan is explicitly deferred to the turn.',
+    quote:
+      'In this situation, the BB compensates for the lack of flop aggression with an aggressive turn donking strategy on favorable runouts.',
+  }),
+
+  'ex3.oesd-nut-straight-only': ref({
+    id: 'ex3.oesd-nut-straight-only',
+    page: 741,
+    locator: 'Flop Strategy Example 3 — BB’s hand-class breakdown vs a 2/3-pot c-bet',
+    derivation: 'exact_transcription',
+    scope:
+      'BB vs UTG on 9♥8♥4♦ at 40bb, facing a 2/3-pot c-bet. The rule that decides which open-enders continue.',
+    quote: 'OESD will only continue if they are drawing to the nut straight.',
+  }),
+
+  'ex3.turn-donk-best-cards': ref({
+    id: 'ex3.turn-donk-best-cards',
+    page: 768,
+    locator: 'Diagrams 121-122 — Turn Play after Flop C-bet and Call (x/b/c)',
+    derivation: 'exact_transcription',
+    scope: 'BB vs UTG on 9♥8♥4♦ at 40bb, after the flop went check / c-bet / call. Which turn cards the BB leads.',
+    quote:
+      'The best cards for OOP to donk bet the turn are 9, 8 and 4 that pair the board, 7, 6, 5 that complete straights, and blank low offsuit cards. The worst cards to donk bet are the ones that connect well with IP’s range, which are aces, high cards, and diamonds that would give the IP player a BDFD.',
+  }),
+
+  'ex3.turn-best-card-is-five': ref({
+    id: 'ex3.turn-best-card-is-five',
+    page: 769,
+    locator: 'Tables 138-141: OOP/IP EQ and EV heatmaps by turn card on 9♥8♥4♦ (x/b/c)',
+    derivation: 'exact_transcription',
+    scope: 'BB vs UTG on 9♥8♥4♦ at 40bb after x/b/c — the single best and worst turn cards for the BB by EV.',
+    quote:
+      'The worst cards for OOP are offsuit kings, such as K♣/K♠, and the best cards are offsuit 5s, such as 5♣/5♠.',
+  }),
+
+  'ex3.turn-equity-runs-close': ref({
+    id: 'ex3.turn-equity-runs-close',
+    page: 766,
+    locator: 'Diagrams 119-120 — Turn Play after Flop C-bet and Call (x/b/c)',
+    derivation: 'exact_transcription',
+    scope: 'BB vs UTG on 9♥8♥4♦ at 40bb — average turn equity and equity realization after the flop went x/b/c.',
+    quote:
+      'After OOP x/b/c the flop, both players’ equities will run very close on the average turn card. In fact, OOP has higher EQ (51.65%), but under-realizes it, capturing only 48.6% of the pot, while IP, with 46.6% EQ, captures 51.4% of the pot. Similarly to the flop donk bet, on the turn OOP chooses to donk bet when IP does not have as many dominant strong hands in their range and, instead, has many weaker hands that will benefit from checking back the turn.',
+  }),
+
+  'ex3.ip-punishes-a-check': ref({
+    id: 'ex3.ip-punishes-a-check',
+    page: 771,
+    locator: 'Diagrams 124-125 — IP vs Check (x/b/c/x)',
+    derivation: 'exact_transcription',
+    scope: 'BB vs UTG on 9♥8♥4♦ at 40bb — what UTG does when the BB checks the turn as well as the flop.',
+    quote:
+      'Typically, the IP player will have a substantial polarization advantage after OOP has checked twice… IP will c-bet over 65% of the time and will mostly use a 2/3-pot bet-size.',
+  }),
+
+  'turn.categories': ref({
+    id: 'turn.categories',
+    page: 760,
+    locator: 'Section "Turn Categories"',
+    derivation: 'exact_transcription',
+    scope: 'The book’s general scheme for classifying any turn card, independent of board or matchup.',
+    quote:
+      'Paired Board: Turn cards that pair the board. Flush: Turn cards that complete a flush. Straight: Turn cards that complete an OESD. Ace: The ace is a special card and it often has a significant effect. Overcard: Turn cards higher than top pair. Brick/Blank: Turn card that doesn’t connect with the board in a meaningful way.',
+  }),
+
+  /* ── River principles (abstract models, not node solutions) ──────────── */
+
+  'river.polar-jams-nuts': ref({
+    id: 'river.polar-jams-nuts',
+    page: 782,
+    locator: 'Section "Setting up a River Abstract Model"',
+    derivation: 'exact_transcription',
+    scope:
+      'The polar-versus-bluff-catcher river model. A general model the book says applies whenever the range STRUCTURE matches — it is not a solved output for any particular board.',
+    quote:
+      'if you can recognize the river situation as being polar vs bluff-catcher, you will know that the GTO strategy for the polar player is to always go all-in with their nut hands and the Alpha % of their bluffs. and the bluff-catching player has to call with 1-Alpha of their range.',
+  }),
+
+  'river.defend-1-alpha': ref({
+    id: 'river.defend-1-alpha',
+    page: 809,
+    locator: 'Section "River Call Decision Points"',
+    derivation: 'exact_transcription',
+    scope: 'General river calling heuristics, applicable across spots rather than solved for one board.',
+    quote: 'Defending close to 1-Alpha is a good approximation in most river spots.',
+  }),
+
+  'river.blockers': ref({
+    id: 'river.blockers',
+    page: 808,
+    locator: 'Section "River Calling Strategies" — Blockers',
+    derivation: 'exact_transcription',
+    scope: 'General river blocker heuristics for choosing between bluff-catchers.',
+    quote:
+      'On the river, all bluff-catchers are equal except in how they block value hands and don’t block bluffs. When you block the opponent’s value range, call more often. When you block the opponent’s bluffing range, fold more often.',
+  }),
+
+  'theory.alpha-mdf': ref({
+    id: 'theory.alpha-mdf',
+    page: 108,
+    locator: 'Section "Minimum Defense Frequency (MDF)"',
+    derivation: 'exact_transcription',
+    scope: 'The definition of Alpha and MDF, from the Clairvoyance Toy Game. Pure arithmetic of bet size versus pot.',
+    quote:
+      'work 33% (Alpha) of the time to instantly profit. Your opponent must defend 67% (1-Alpha) of the time',
+  }),
+
   'preflop.bb-3bet-value-40bb': ref({
     id: 'preflop.bb-3bet-value-40bb',
     page: 396,

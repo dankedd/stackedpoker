@@ -79,6 +79,18 @@ export const DONK_BET_654R: InteractivePuzzle = {
       board: [],
       potBb: 4,
       effectiveStackBb: 30,
+      // 2.5 (button) + 1 (your posted blind) + 0.5 (folded SB) = 4bb in the middle.
+      // You are in for 1 and the bet is TO 2.5, so the call costs 1.5 — not 2.5.
+      facingBetBb: 2.5,
+      heroInvestedBb: 1,
+      toCallBb: 1.5,
+      history: [
+        { street: 'preflop', actor: 'UTG', text: 'Folds' },
+        { street: 'preflop', actor: 'HJ', text: 'Folds' },
+        { street: 'preflop', actor: 'CO', text: 'Folds' },
+        { street: 'preflop', actor: 'BTN', text: 'Raises to 2.5 bb' },
+        { street: 'preflop', actor: 'SB', text: 'Folds' },
+      ],
       situation:
         'It folds to the button, who opens to 2.5bb. The small blind folds. You are in the big blind with 30bb behind and 1.5bb more to call.',
       actionBeforeHero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.5bb', 'SB folds'],
@@ -87,6 +99,7 @@ export const DONK_BET_654R: InteractivePuzzle = {
         {
           id: 'fold',
           label: 'Fold',
+          historyText: 'Folds',
           tableAction: { label: 'Folds' },
           verdict: 'mistake',
           shortWhy:
@@ -96,7 +109,7 @@ export const DONK_BET_654R: InteractivePuzzle = {
         {
           id: 'call',
           label: 'Call',
-          detail: '1.5bb more into a 4bb pot',
+          historyText: 'Calls 1.5 bb',
           tableAction: { label: 'Calls', betBb: 2.5 },
           verdict: 'best',
           shortWhy:
@@ -105,7 +118,8 @@ export const DONK_BET_654R: InteractivePuzzle = {
         },
         {
           id: 'three-bet',
-          label: '3-bet to 7.5bb',
+          label: '3-bet',
+          historyText: 'Raises to 7.5 bb',
           tableAction: { label: 'Raises to', betBb: 7.5 },
           verdict: 'mistake',
           shortWhy:
@@ -173,6 +187,14 @@ export const DONK_BET_654R: InteractivePuzzle = {
       board: ['6c', '5d', '4s'],
       potBb: 5.5,
       effectiveStackBb: 27.5,
+      // First to act on a checked-to street: nothing to call.
+      toCallBb: 0,
+      history: [
+        { street: 'preflop', actor: 'BTN', text: 'Raises to 2.5 bb' },
+        { street: 'preflop', actor: 'SB', text: 'Folds' },
+        { street: 'preflop', actor: 'BB', text: 'Calls 1.5 bb', isHero: true },
+        { street: 'flop', actor: '', text: '6♣ 5♦ 4♠ — pot 5.5 bb' },
+      ],
       situation:
         'The flop comes 6♣ 5♦ 4♠ — rainbow. You have top pair with the best kicker and an open-ended straight draw: any 3 or 8 makes your straight. You act first.',
       actionBeforeHero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.5bb', 'SB folds', 'Hero calls'],
@@ -182,7 +204,7 @@ export const DONK_BET_654R: InteractivePuzzle = {
         {
           id: 'donk-25',
           label: 'Bet 25% pot',
-          detail: '1.4bb into 5.5bb',
+          historyText: 'Bets 1.4 bb',
           tableAction: { label: 'Bets', betBb: 1.4 },
           verdict: 'best',
           shortWhy:
@@ -192,7 +214,7 @@ export const DONK_BET_654R: InteractivePuzzle = {
         {
           id: 'donk-67',
           label: 'Bet 67% pot',
-          detail: '3.7bb into 5.5bb',
+          historyText: 'Bets 3.7 bb',
           tableAction: { label: 'Bets', betBb: 3.7 },
           verdict: 'defensible',
           shortWhy:
@@ -202,6 +224,7 @@ export const DONK_BET_654R: InteractivePuzzle = {
         {
           id: 'check',
           label: 'Check',
+          historyText: 'Checks',
           tableAction: { label: 'Checks' },
           verdict: 'defensible',
           shortWhy:

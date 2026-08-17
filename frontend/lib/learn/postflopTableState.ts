@@ -104,7 +104,7 @@ export function buildPostflopTableRenderState(
     LessonStep,
     | 'hero_position' | 'table_size' | 'action_before_hero' | 'postflop_action'
     | 'ante_bb' | 'effective_stack_bb' | 'stack_overrides_bb' | 'board' | 'street' | 'pot_bb'
-  >,
+  > & { dead_pot_bb_override?: number },
 ): PostflopTableRenderState | undefined {
   const heroPosition = step.hero_position
   if (!heroPosition) return undefined
@@ -122,7 +122,15 @@ export function buildPostflopTableRenderState(
   // parse (or wasn't authored), fall back to the step's own `pot_bb` — never a
   // fabricated number, and 0 if neither exists.
   const preflopParsed = preflop.actionsBeforeHero !== undefined && preflop.actionsBeforeHero.length > 0
-  const deadPotBb = preflopParsed ? preflop.potBb : (step.pot_bb ?? 0)
+  // `deadPotBbOverride` exists for hands played across MORE than two streets.
+  // This builder models "preflop history + one postflop street", so on a turn or
+  // river it has no way to know what the flop betting added — it would derive a
+  // dead pot of just the preflop total and print a figure the hand history on
+  // the same screen contradicts. A caller that IS tracking the whole hand can
+  // state the carried-in pot directly. Nothing in Learn passes it, so every
+  // existing caller keeps the derived behaviour unchanged.
+  const deadPotBb =
+    step.dead_pot_bb_override ?? (preflopParsed ? preflop.potBb : (step.pot_bb ?? 0))
 
   const streetActions = parseActionBeforeHero(step.postflop_action, heroPosition, tableSize)
   if (step.postflop_action !== undefined && streetActions === undefined && process.env.NODE_ENV !== 'production') {

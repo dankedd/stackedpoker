@@ -150,6 +150,56 @@ export function validatePuzzle(puzzle: InteractivePuzzle): string[] {
         `${at}: street "${decision.street}" needs ${expectedBoard} board card(s), found ${decision.board.length}.`
       )
     }
+
+    /* ── Money arithmetic ─────────────────────────────────────────────────
+     * The specific bug this exists to make unshippable: showing the button's
+     * "raise TO 2.5bb" as the big blind's call amount, when the blind is
+     * already in for 1 and owes 1.5. Whenever a decision states enough to
+     * check that subtraction, it gets checked. */
+    const { facingBetBb, heroInvestedBb, toCallBb } = decision
+    if (facingBetBb !== undefined && heroInvestedBb !== undefined) {
+      const expected = round2(facingBetBb - heroInvestedBb)
+      if (toCallBb === undefined) {
+        issues.push(`${at}: facingBetBb and heroInvestedBb are set but toCallBb is missing (should be ${expected}).`)
+      } else if (round2(toCallBb) !== expected) {
+        issues.push(
+          `${at}: toCallBb is ${toCallBb}, but ${facingBetBb} (bet TO) − ${heroInvestedBb} (already in) = ${expected}. ` +
+            `A "raise to" amount is not a call amount.`
+        )
+      }
+    }
+    if (toCallBb !== undefined && toCallBb < 0) {
+      issues.push(`${at}: toCallBb is negative (${toCallBb}).`)
+    }
+    if (facingBetBb !== undefined && facingBetBb > decision.potBb) {
+      issues.push(
+        `${at}: facingBetBb ${facingBetBb} exceeds potBb ${decision.potBb}. ` +
+          `potBb must include the bet Hero is facing.`
+      )
+    }
+    if (decision.potBb < 0) issues.push(`${at}: potBb is negative.`)
+    if (decision.effectiveStackBb < 0) issues.push(`${at}: effectiveStackBb is negative.`)
+    if (toCallBb !== undefined && toCallBb > decision.effectiveStackBb) {
+      issues.push(
+        `${at}: toCallBb ${toCallBb} exceeds Hero's ${decision.effectiveStackBb}bb stack — a call cannot cost more than the stack.`
+      )
+    }
+
+    // No option label may carry a money amount: the button is the verb, the
+    // hand-info panel carries the numbers. Catches "Call 2.5bb" regressions.
+    for (const o of decision.options) {
+      if (/\d\s*(bb|BB)\b/.test(o.label)) {
+        issues.push(
+          `${at} option "${o.label}": action buttons must not display bb amounts. ` +
+            `Put the number in the decision's money fields; the button shows the action.`
+        )
+      }
+    }
+  }
+
+  /** Money is authored in tenths of a blind; compare at that precision. */
+  function round2(n: number): number {
+    return Math.round(n * 100) / 100
   }
 
   const checkRange = (range: RangeExhibit, index: number) => {

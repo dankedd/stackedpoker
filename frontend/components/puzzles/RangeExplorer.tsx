@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Layers } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { HeroHandGrid } from './HeroHandGrid'
 import { SourceChips, UnsourcedPanel } from './SourceChip'
 import type { RangeExhibit, RangeExhibitKind } from '@/lib/puzzles/interactive/types'
 
@@ -43,7 +44,7 @@ const BAR_COLORS = [
   'bg-slate-500/60',
 ]
 
-function RangeCard({ range }: { range: RangeExhibit }) {
+function RangeCard({ range, heroHand }: { range: RangeExhibit; heroHand?: string[] }) {
   const total = range.bars?.reduce((sum, b) => sum + b.pct, 0) ?? 0
   // Bars that don't sum to 100 are a real signal, not a rendering bug — the
   // button's exhibit is two figures from two tables. Show them proportionally
@@ -118,6 +119,12 @@ function RangeCard({ range }: { range: RangeExhibit }) {
         </div>
       )}
 
+      {/* Hero's own hand located in the grid — shown only on the range Hero is
+          actually in, and only as a position, never as a frequency. */}
+      {range.seat === 'hero' && range.kind === 'aggregate' && heroHand && heroHand.length === 2 && (
+        <HeroHandGrid heroHand={heroHand} label="Where your hand sits" className="mt-4" />
+      )}
+
       {range.unsourced && <UnsourcedPanel notes={range.unsourced} className="mt-4" />}
 
       <SourceChips ids={range.sources} />
@@ -125,7 +132,7 @@ function RangeCard({ range }: { range: RangeExhibit }) {
   )
 }
 
-export function RangeExplorer({ ranges }: { ranges: RangeExhibit[] }) {
+export function RangeExplorer({ ranges, heroHand }: { ranges: RangeExhibit[]; heroHand?: string[] }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -148,7 +155,7 @@ export function RangeExplorer({ ranges }: { ranges: RangeExhibit[] }) {
       {open && (
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           {ranges.map((range) => (
-            <RangeCard key={range.id} range={range} />
+            <RangeCard key={range.id} range={range} heroHand={heroHand} />
           ))}
         </div>
       )}

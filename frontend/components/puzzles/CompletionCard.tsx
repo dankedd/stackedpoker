@@ -1,11 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { Flag, RotateCcw, Sparkles } from 'lucide-react'
+import { Check, Flag, RotateCcw, Sparkles, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { SourceChips } from './SourceChip'
 import { RangeExplorer } from './RangeExplorer'
-import type { InteractivePuzzle } from '@/lib/puzzles/interactive/types'
+import { STREET_LABEL, type InteractivePuzzle } from '@/lib/puzzles/interactive/types'
 
 /**
  * The end screen.
@@ -20,11 +21,14 @@ export function CompletionCard({
   puzzle,
   correct,
   total,
+  answers,
   onRestart,
 }: {
   puzzle: InteractivePuzzle
   correct: number
   total: number
+  /** decision id -> chosen option id, so the summary can name what was played. */
+  answers: Record<string, string>
   onRestart: () => void
 }) {
   const perfect = correct === total
@@ -56,6 +60,35 @@ export function CompletionCard({
             Worth replaying — the theory reads differently once you know where it lands.
           </p>
         )}
+      </div>
+
+      <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+        <h3 className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-300/80">Your decisions</h3>
+        <ul className="mt-3 space-y-1.5">
+          {puzzle.decisions.map((d) => {
+            const chosen = d.options.find((o) => o.id === answers[d.id])
+            const right = chosen?.id === d.bestOptionId
+            return (
+              <li key={d.id} className="flex items-center gap-2.5 text-[13px]">
+                <span
+                  className={cn(
+                    'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md',
+                    right ? 'bg-emerald-500/15 text-emerald-300' : 'bg-red-500/15 text-red-300'
+                  )}
+                >
+                  {right ? <Check className="h-3 w-3" aria-hidden /> : <X className="h-3 w-3" aria-hidden />}
+                </span>
+                <span className="w-16 shrink-0 font-semibold text-slate-300">{STREET_LABEL[d.street]}</span>
+                <span className="truncate text-slate-500">
+                  {chosen ? chosen.label : '—'}
+                  {!right && chosen && (
+                    <span className="text-slate-600"> · best was {d.options.find((o) => o.id === d.bestOptionId)?.label}</span>
+                  )}
+                </span>
+              </li>
+            )
+          })}
+        </ul>
       </div>
 
       <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
