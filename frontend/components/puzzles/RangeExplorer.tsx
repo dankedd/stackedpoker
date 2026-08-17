@@ -135,6 +135,12 @@ function RangeCard({ range, heroHand }: { range: RangeExhibit; heroHand?: string
 export function RangeExplorer({ ranges, heroHand }: { ranges: RangeExhibit[]; heroHand?: string[] }) {
   const [open, setOpen] = useState(false)
 
+  // A puzzle with nothing to show here is a legitimate outcome, not a bug: some
+  // claims the source states only in words have no percentage, breakdown or
+  // chart behind them. An empty disclosure ("0") would read as a missing
+  // exhibit rather than an absent one, so the control simply doesn't appear.
+  if (ranges.length === 0) return null
+
   return (
     <div>
       <button

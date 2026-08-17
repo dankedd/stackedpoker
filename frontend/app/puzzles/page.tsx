@@ -41,8 +41,14 @@ export default function PuzzlesPage() {
                   <span className="font-mono text-[11px] font-bold text-slate-600">
                     #{String(puzzle.number).padStart(2, '0')}
                   </span>
+                  {/* The hand, or — for a puzzle that deals none — the flop it
+                      reads instead. An empty slot would read as a missing image
+                      rather than as the deliberate absence of a hand. */}
                   <div className="flex gap-1.5">
-                    {puzzle.setup.heroCards.map((c) => (
+                    {(puzzle.setup.heroCards.length > 0
+                      ? puzzle.setup.heroCards
+                      : puzzle.decisions[0].board.slice(0, 3)
+                    ).map((c) => (
                       <PlayingCard key={c} card={c} size="sm" />
                     ))}
                   </div>

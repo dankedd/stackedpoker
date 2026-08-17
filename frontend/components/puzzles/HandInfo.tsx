@@ -54,7 +54,9 @@ export function HandInfo({
         <div className="flex items-baseline justify-between gap-3">
           <dt className="text-[12px] text-slate-400">Seats</dt>
           <dd className="font-mono text-[12px] font-bold text-white">
-            {puzzle.setup.heroSeat} vs {puzzle.setup.villainSeat}
+            {/* Per-decision villain wins over the setup's: a puzzle may vary the
+                opener between decisions while holding everything else fixed. */}
+            {puzzle.setup.heroSeat} vs {decision.villainSeat ?? puzzle.setup.villainSeat}
           </dd>
         </div>
         {rows.map((row) => (

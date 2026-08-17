@@ -183,6 +183,17 @@ export interface RangeExhibit {
 export interface PuzzleDecision {
   id: string
   street: Street
+  /**
+   * Overrides `PuzzleSetup.villainSeat` for this decision only.
+   *
+   * Exists because a puzzle can legitimately hold everything fixed and vary the
+   * OPPONENT — same hero, same stack, same price, different seat opening. Without
+   * this, the hand-info panel would keep announcing the setup's villain while the
+   * felt showed a different one, which is precisely the kind of quiet mismatch
+   * this schema exists to prevent. Omit it whenever one villain plays the whole
+   * puzzle, which is the normal case.
+   */
+  villainSeat?: string
   /** Cumulative board at the moment of this decision. Empty for preflop. */
   board: string[]
   /** Pot before Hero acts, in bb — INCLUDING any bet Hero is facing. */
@@ -250,8 +261,28 @@ export interface PuzzleSetup {
   tableSize: number
   heroSeat: string
   villainSeat: string
+  /**
+   * Hero's two hole cards — or an EMPTY array for a puzzle that asks about the
+   * board instead of about a hand, in which case `InteractivePuzzle.readsTheBoardOnly`
+   * must say so. `validate.ts` enforces that pairing in both directions: two
+   * cards, or a stated reason for none, but never zero cards and silence.
+   *
+   * The felt already falls back to two face-down placeholders, which is exactly
+   * what "you were dealt nothing that matters here" should look like.
+   */
   heroCards: string[]
   effectiveStackBb: number
+  /**
+   * Ante PER PLAYER, in bb. `PreflopTable` multiplies it by `tableSize` to get
+   * the dead money, so a 9-max MTT with the book's 12.5% ante is `0.125` here
+   * and 1.125bb in the pot.
+   *
+   * Omitted means no ante, which is right for a cash spot and wrong for a
+   * tournament one: leaving it off an MTT puzzle silently solves a different
+   * game than the source did, and dead money is precisely what decides how wide
+   * a big blind may defend.
+   */
+  anteBb?: number
   gameNotes?: string
 }
 
@@ -282,6 +313,44 @@ export interface InteractivePuzzle {
    * stopping point is always an authored, explained decision.
    */
   endsEarlyBecause?: string
+  /**
+   * Why two decisions sit on the same street with DIFFERENT boards.
+   *
+   * Almost every puzzle is one hand advancing, and the invariant that goes with
+   * that shape — a later board extends an earlier one, never rewrites it — is
+   * worth keeping enforced, because a silently rewritten flop card is a bug the
+   * learner would read as a dealing error. But a controlled comparison of two
+   * boards is a real teaching shape too, and it breaks that invariant by design.
+   * So it is authored rather than inferred: state it here, or `validate.ts`
+   * treats the second board as an accident.
+   */
+  comparesAlternativeBoards?: string
+  /**
+   * Why two decisions sit on the same street with the SAME board and a
+   * DIFFERENT opener.
+   *
+   * The sibling of `comparesAlternativeBoards`, for the other controlled
+   * comparison a puzzle can run: hold the board, the hand, the stack and the
+   * price fixed, and move the raiser's seat. It needs its own declaration for
+   * the same reason — a second decision that looks identical to the first is
+   * either a deliberate re-deal or a duplicated question, and the learner
+   * cannot tell which unless the puzzle says.
+   */
+  comparesAlternativeOpeners?: string
+  /**
+   * Why this puzzle deals Hero no cards.
+   *
+   * Reading a board is a skill that comes BEFORE choosing an action, and putting
+   * two cards in front of the learner teaches the wrong order: given a hand, you
+   * start working out what you want to do and stop looking at what the card did.
+   * A puzzle that only asks "what did this card change?" therefore deals nothing,
+   * and `setup.heroCards` is empty.
+   *
+   * Same contract as the two fields above: the unusual shape must be authored, so
+   * `validate.ts` accepts an empty `heroCards` only when this says why. Without
+   * it, a missing hand is a data error — which is the far commoner cause.
+   */
+  readsTheBoardOnly?: string
 }
 
 export const DIFFICULTY_LABEL: Record<Difficulty, string> = {

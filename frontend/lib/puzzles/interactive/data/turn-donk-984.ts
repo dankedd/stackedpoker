@@ -17,7 +17,8 @@ import type { InteractivePuzzle } from '../types'
  *   FLOP     9♥8♥4♦, UTG c-bets 2/3-pot. The book gives the BB's whole hand-class
  *            breakdown for this exact bet on this exact board, including the one
  *            rule that decides this hand: "OESD will only continue if they are
- *            drawing to the nut straight" (p.741).
+ *            "OESD are x/c every time" (p.744) — the book's own rule for this
+ *            board at this bet-size.
  *   TURN     5♣. Not chosen for drama — the book names offsuit 5s as literally
  *            the best turn card in the deck for the BB here (p.769), and lists
  *            "7, 6, 5 that complete straights" among the best cards to lead
@@ -105,7 +106,7 @@ export const TURN_DONK_984: InteractivePuzzle = {
           verdict: 'best',
           shortWhy:
             'The book calls 49.1% of hands here, and its own flop analysis of this spot goes on to discuss what the big blind does holding an open-ender — so hands of exactly this shape are in the calling range by the source’s own account.',
-          sources: ['ex3.preflop-bb-vs-utg-40bb', 'ex3.oesd-nut-straight-only'],
+          sources: ['ex3.preflop-bb-vs-utg-40bb', 'ex3.oesd-check-call'],
         },
         {
           id: 'three-bet',
@@ -126,7 +127,7 @@ export const TURN_DONK_984: InteractivePuzzle = {
           question: 'Is 7♠6♠ specifically in the 49.1%?',
           answer:
             'The chart is printed as a per-hand image the book states only in aggregate, so no per-combo confirmation exists in the text. What can be said is indirect but concrete: the flop breakdown for this exact matchup and board discusses the big blind’s open-enders as a live category, which requires hands like this to be in the preflop calling range.',
-          nearestSources: ['ex3.preflop-bb-vs-utg-40bb', 'ex3.oesd-nut-straight-only'],
+          nearestSources: ['ex3.preflop-bb-vs-utg-40bb', 'ex3.oesd-check-call'],
         },
       ],
       theory: [
@@ -186,8 +187,8 @@ export const TURN_DONK_984: InteractivePuzzle = {
           tableAction: { label: 'Folds' },
           verdict: 'mistake',
           shortWhy:
-            'The source’s rule for this exact bet on this exact board is that open-enders continue when they draw to the nut straight. Yours does — a 5 gives you 9-8-7-6-5, the best hand available.',
-          sources: ['ex3.oesd-nut-straight-only'],
+            'The source’s rule for this exact board and bet-size is unambiguous: open-enders check-call every time. They hold good equity against the c-betting range, which is precisely why folding them away is a leak.',
+          sources: ['ex3.oesd-check-call'],
         },
         {
           id: 'call',
@@ -197,7 +198,7 @@ export const TURN_DONK_984: InteractivePuzzle = {
           verdict: 'best',
           shortWhy:
             'Exactly the plan the book describes: the big blind has almost no strong hands here, raises only about 4%, and deliberately waits until the turn to split its range rather than give away information now.',
-          sources: ['ex3.oesd-nut-straight-only', 'ex3.bb-few-strong-hands', 'ex3.bb-compensates-on-turn'],
+          sources: ['ex3.oesd-check-call', 'ex3.bb-few-strong-hands', 'ex3.bb-compensates-on-turn'],
         },
         {
           id: 'raise',
@@ -212,7 +213,7 @@ export const TURN_DONK_984: InteractivePuzzle = {
       ],
       bestOptionId: 'call',
       explanation:
-        'Call. Two source rules meet on this hand. The first decides whether you continue at all: on this board, facing this bet, open-enders continue only when they draw to the nut straight — and a 5 gives you 9-8-7-6-5, which nothing beats. The second decides how: the big blind’s range holds only about 4% strong hands here, so it raises only about 4% and instead waits for the turn to split its range, keeping its information advantage intact. You are not calling and hoping. You are calling with a specific card in mind.',
+        'Call. The book answers this hand class directly for this board and this bet-size: open-enders are check-called every time. It also says why raising is wrong, and the reason is not timidity — your draw has good equity against the range that is c-betting, but it is too weak against the range that would three-bet the flop, where it runs into overpairs and flush draws. Calling is reinforced by the shape of your whole range: with only about 4% strong hands the big blind raises about 4% and waits for the turn to split, keeping its information advantage. You are not calling and hoping. You are calling with a specific card in mind.',
       theory: [
         {
           id: 'flop-passive-on-purpose',
@@ -243,7 +244,7 @@ export const TURN_DONK_984: InteractivePuzzle = {
               sources: ['ex3.bb-few-strong-hands'],
             },
           ],
-          sources: ['ex3.bb-few-strong-hands', 'ex3.oesd-nut-straight-only'],
+          sources: ['ex3.bb-few-strong-hands', 'ex3.oesd-check-call'],
         },
       ],
     },
@@ -471,7 +472,7 @@ export const TURN_DONK_984: InteractivePuzzle = {
           question: 'Can you show which hands make up the 49.1%?',
           answer:
             'Not from the text. The per-hand chart is an image; only the aggregate is stated. Your hand is marked on the grid below as a location, not as a claimed frequency — the book supports that 7♠6♠-shaped hands are in this range, because its own flop analysis of this spot discusses the big blind’s open-enders.',
-          nearestSources: ['ex3.preflop-bb-vs-utg-40bb', 'ex3.oesd-nut-straight-only'],
+          nearestSources: ['ex3.preflop-bb-vs-utg-40bb', 'ex3.oesd-check-call'],
         },
       ],
       sources: ['ex3.preflop-bb-vs-utg-40bb'],

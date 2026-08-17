@@ -72,10 +72,14 @@ export function PuzzleRunner({ puzzle }: { puzzle: InteractivePuzzle }) {
   // The strip shows the authored history up to this decision, plus Hero's own
   // choice once it exists. Built from the CURRENT decision only, so a street the
   // learner hasn't reached can't leak into it.
+  //
+  // A board-reading puzzle appends nothing: its answers are readings of the
+  // board, not actions taken, and writing "BB — pairs the board" into an action
+  // strip would put a play in the record that nobody made.
   const historyLines: HistoryLine[] = decision
     ? [
         ...(decision.history ?? []),
-        ...(chosenOption
+        ...(chosenOption && !puzzle.readsTheBoardOnly
           ? [
               {
                 street: decision.street,
@@ -178,6 +182,11 @@ export function PuzzleRunner({ puzzle }: { puzzle: InteractivePuzzle }) {
                 // at the start of that street, which is exactly what the table's
                 // "N bb behind" arithmetic subtracts this street's chips from.
                 effectiveStackBb={decision.effectiveStackBb}
+                // A tournament pot contains dead money before anyone acts, and
+                // the table derives the pot from the action rather than being
+                // told it. Without this the felt would show a 9-max MTT pot
+                // 1.125bb light and quietly misprice every defence in it.
+                anteBb={puzzle.setup.anteBb}
                 actionBeforeHero={decision.actionBeforeHero}
                 board={decision.board.length > 0 ? decision.board : undefined}
                 postflopAction={decision.postflopAction}

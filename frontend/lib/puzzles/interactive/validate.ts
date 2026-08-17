@@ -223,8 +223,28 @@ export function validatePuzzle(puzzle: InteractivePuzzle): string[] {
   if (!puzzle.slug.match(/^[a-z0-9]+(-[a-z0-9]+)*$/)) {
     issues.push(`slug "${puzzle.slug}" is not kebab-case.`)
   }
-  if (puzzle.setup.heroCards.length !== 2) {
+  /* Two cards, or none with a stated reason. A board-reading puzzle deliberately
+   * deals nothing (see `readsTheBoardOnly`); an empty hand with no such statement
+   * is the much commoner case of a puzzle authored half-way. */
+  if (puzzle.setup.heroCards.length === 0) {
+    if (!puzzle.readsTheBoardOnly?.trim()) {
+      issues.push(
+        `setup.heroCards is empty and readsTheBoardOnly is unset. Deal Hero two cards, or — if this ` +
+          `puzzle asks the learner to read the board rather than play a hand — say so in readsTheBoardOnly.`
+      )
+    }
+  } else if (puzzle.setup.heroCards.length !== 2) {
     issues.push(`setup.heroCards has ${puzzle.setup.heroCards.length} cards, expected 2.`)
+  }
+
+  /* And the converse: a puzzle that claims to read the board only must not then
+   * deal a hand, because the hand is exactly what pulls the learner into
+   * strategy before they have classified the card. */
+  if (puzzle.readsTheBoardOnly?.trim() && puzzle.setup.heroCards.length > 0) {
+    issues.push(
+      `readsTheBoardOnly is set but setup.heroCards deals ${puzzle.setup.heroCards.length} card(s). ` +
+        `A board-reading puzzle deals none — otherwise the learner reads their hand instead of the board.`
+    )
   }
 
   // Streets must run forward without gaps: a flop decision cannot precede preflop.
@@ -235,6 +255,62 @@ export function validatePuzzle(puzzle: InteractivePuzzle): string[] {
       issues.push(`decision "${decision.id}": street "${decision.street}" goes backwards.`)
     }
     lastStreetIndex = idx
+  }
+
+  /* A board is allowed to change under the learner only in a puzzle that says
+   * it compares boards. Otherwise two flop decisions showing different cards is
+   * a dealing error on screen, and the learner has no way to tell which reading
+   * was meant. Same rule as `endsEarlyBecause`: the unusual shape is authored. */
+  for (let i = 1; i < puzzle.decisions.length; i++) {
+    const prev = puzzle.decisions[i - 1]
+    const current = puzzle.decisions[i]
+    const rewrites = current.board.slice(0, prev.board.length).join(',') !== prev.board.join(',')
+    if (rewrites && !puzzle.comparesAlternativeBoards?.trim()) {
+      issues.push(
+        `decision "${current.id}": board [${current.board.join(' ')}] does not extend the previous ` +
+          `decision's [${prev.board.join(' ')}], and comparesAlternativeBoards is empty. A hand's board ` +
+          `only ever grows; if this puzzle deliberately shows two alternative boards, say so there.`
+      )
+    }
+  }
+
+  /* Two decisions on the SAME street are a re-deal rather than a hand
+   * advancing, and a controlled re-deal has to actually vary something. Three
+   * axes are legitimate and all are in use: the board ('cbet-by-top-card'), the
+   * opener's seat ('boundary-moves-by-opener'), and the stack depth
+   * ('jam-3bet-or-call-by-depth'). What must never ship is a second decision
+   * that varies none of them, which is the same question asked twice with no
+   * way for the learner to tell it apart from a rendering bug.
+   *
+   * The declaration requirement is narrower than the varies-at-all requirement,
+   * and deliberately so: it applies where the two decisions would otherwise look
+   * IDENTICAL on screen. A changed board or a changed stack is visible on the
+   * felt; a changed opener with the same board is visible only if the puzzle
+   * says so, which is what `comparesAlternativeOpeners` is for. */
+  for (let i = 1; i < puzzle.decisions.length; i++) {
+    const prev = puzzle.decisions[i - 1]
+    const current = puzzle.decisions[i]
+    if (prev.street !== current.street) continue
+
+    const boardChanged = current.board.join(',') !== prev.board.join(',')
+    const openerChanged =
+      (current.villainSeat ?? puzzle.setup.villainSeat) !== (prev.villainSeat ?? puzzle.setup.villainSeat)
+    const stackChanged = current.effectiveStackBb !== prev.effectiveStackBb
+
+    if (!boardChanged && !openerChanged && !stackChanged) {
+      issues.push(
+        `decision "${current.id}": sits on the same street as "${prev.id}" with the same board, the same opener ` +
+          `and the same stack, so nothing distinguishes the two questions. Vary one of them, or make this one ` +
+          `decision.`
+      )
+    } else if (openerChanged && !boardChanged && !puzzle.comparesAlternativeOpeners?.trim()) {
+      issues.push(
+        `decision "${current.id}": the opener changes from ${prev.villainSeat ?? puzzle.setup.villainSeat} to ` +
+          `${current.villainSeat ?? puzzle.setup.villainSeat} on the same street with no change of board, but ` +
+          `comparesAlternativeOpeners is empty. A re-deal that swaps the raiser is a deliberate teaching shape; ` +
+          `say so there.`
+      )
+    }
   }
 
   // A hand that stops before the river must say why — see `endsEarlyBecause`.
