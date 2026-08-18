@@ -57,7 +57,7 @@ const PAGES: SeoEntry[] = [
     kind: "page",
     slug: "glossary",
     path: ROUTES.glossary,
-    title: "Poker Glossary",
+    title: "Poker Glossary: Every Term, Defined",
     summary:
       "An A–Z of poker terminology, each term defined in one sentence and linked to the lesson that teaches it.",
     status: "published",
@@ -122,7 +122,7 @@ const PAGES: SeoEntry[] = [
     kind: "page",
     slug: "privacy",
     path: ROUTES.privacy,
-    title: "Privacy Policy",
+    title: "Privacy Policy: How We Handle Your Data",
     summary: "How StackedPoker handles your data.",
     status: "published",
     tags: [],

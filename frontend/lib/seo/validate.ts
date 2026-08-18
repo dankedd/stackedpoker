@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { Metadata } from "next";
-import { getSiteUrl } from "@/lib/site-url";
+import { CANONICAL_SITE_URL, getSiteUrl } from "@/lib/site-url";
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, SITE_DESCRIPTION } from "./config";
 import { allEntries, entryByPath } from "./content";
 import { searchTopicEntries } from "./content/search";
@@ -652,6 +652,166 @@ export function validateContentQuality(): SeoIssue[] {
 
 // ── Aggregate ────────────────────────────────────────────────────────────────
 
+
+// ── §7 Generated-output audit ────────────────────────────────────────────────
+
+/**
+ * Does the ROUTE actually consume its registry entry?
+ *
+ * Every validator above this one asks whether the SeoEntry is correct. None of
+ * them asked whether the page ever reads it — and that gap shipped three live
+ * bugs that an external crawler found before we did:
+ *
+ *   /pricing  exported no metadata at all, so it inherited the ROOT layout's
+ *             title, description AND canonical. The page was telling search
+ *             engines it was the homepage.
+ *   /privacy  hand-written metadata literal, no canonical, same inheritance.
+ *   /terms    the same.
+ *
+ * A registry is only a single source of truth if the routes read from it. This
+ * is a static check on the route file rather than a rendered crawl, because it
+ * has to run in the same build that would otherwise ship the mistake — but it
+ * catches the whole class: a page that hardcodes metadata, and a page that
+ * forgets it entirely.
+ */
+/**
+ * `/` is the one page whose metadata legitimately lives in the root layout:
+ * the layout's title, description and canonical ARE the homepage's, and every
+ * other route overrides them. Checking app/page.tsx would report a bug that
+ * does not exist, so the owner is named explicitly instead of guessed.
+ */
+const ROUTE_FILE_OVERRIDES: Record<string, string> = {
+  "/": "app/layout.tsx",
+};
+
+function routeFileFor(entry: SeoEntry): string | undefined {
+  if (ROUTE_FILE_OVERRIDES[entry.path]) return ROUTE_FILE_OVERRIDES[entry.path];
+  if (!/^\/[a-z0-9-]+$/.test(entry.path)) return undefined;
+  return `app${entry.path}/page.tsx`;
+}
+
+export function validateRouteMetadataWiring(): SeoIssue[] {
+  const issues: SeoIssue[] = [];
+
+  for (const entry of indexableEntries()) {
+    // Only statically-routed top-level pages. Everything else renders through
+    // a [slug] template that is already wired, and is covered by the canonical
+    // validator via its generated metadata.
+    if (entry.kind !== "page") continue;
+    const file = routeFileFor(entry);
+    if (!file) continue;
+
+    let source: string;
+    try {
+      source = readFileSync(path.resolve(process.cwd(), file), "utf8");
+    } catch {
+      issues.push(error("route-metadata", entry.path, `no route file at ${file}`));
+      continue;
+    }
+
+    const exportsMetadata = /export\s+(?:const\s+metadata|async\s+function\s+generateMetadata|function\s+generateMetadata)/.test(source);
+    if (!exportsMetadata) {
+      issues.push(
+        error(
+          "route-metadata",
+          entry.path,
+          `${file} exports no metadata, so it inherits the root layout's title, description and CANONICAL — the page will declare itself to be the homepage`,
+        ),
+      );
+      continue;
+    }
+
+    // Either registry builder is fine — `entryMetadata` for a content entry,
+    // `buildMetadata` for the root layout, which owns the homepage's tags and
+    // the defaults every other route overrides. What is NOT fine is a literal.
+    if (!/(entryMetadata|buildMetadata)\s*\(/.test(source)) {
+      issues.push(
+        error(
+          "route-metadata",
+          entry.path,
+          `${file} builds its own metadata literal instead of calling entryMetadata()/buildMetadata() — the registry entry for ${entry.path} is ignored and no canonical is emitted`,
+        ),
+      );
+    }
+  }
+
+  return issues;
+}
+
+/**
+ * Title length, measured on the tag that actually ships.
+ *
+ * Warnings, not errors: length is a heuristic and a good short title beats a
+ * padded long one. But an external crawler flags these, and a title under ~30
+ * characters is usually a label rather than a description of the page.
+ *
+ * Pages that declare `canonicalTo` are skipped — they are not competing for a
+ * query, so the length of their tag is not a ranking question. That exemption
+ * is the difference between a validator that agrees with the crawler and one
+ * that argues with it.
+ */
+const MIN_TITLE_CHARS = 30;
+const MAX_TITLE_CHARS = 65;
+
+export function validateRenderedTitles(): SeoIssue[] {
+  const issues: SeoIssue[] = [];
+
+  for (const entry of indexableEntries()) {
+    if (entry.canonicalTo) continue;
+    const title = String(entryMetadata(entry).title ?? "");
+
+    if (title.length < MIN_TITLE_CHARS) {
+      issues.push(
+        warning(
+          "short-title",
+          entry.path,
+          `rendered <title> is ${title.length} characters ("${title}") — under ${MIN_TITLE_CHARS}, an external crawler will flag it`,
+        ),
+      );
+    } else if (title.length > MAX_TITLE_CHARS) {
+      issues.push(
+        warning(
+          "long-title",
+          entry.path,
+          `rendered <title> is ${title.length} characters — over ${MAX_TITLE_CHARS} it is truncated in results`,
+        ),
+      );
+    }
+  }
+
+  return issues;
+}
+
+/**
+ * URLs long enough that a crawler calls them poorly formatted.
+ *
+ * The real failure this guards against is not aesthetic. A slug derived from a
+ * TITLE moves whenever the title is edited, which silently migrates a live URL
+ * with no redirect — see the comment in content/search.ts. Length is the
+ * symptom that made it visible.
+ */
+const MAX_URL_CHARS = 70;
+
+export function validateUrlShape(origin = CANONICAL_SITE_URL): SeoIssue[] {
+  const issues: SeoIssue[] = [];
+
+  for (const entry of indexableEntries()) {
+    const url = absoluteUrl(entry.path, origin);
+    if (url.length > MAX_URL_CHARS) {
+      issues.push(
+        warning("url-shape", entry.path, `URL is ${url.length} characters (over ${MAX_URL_CHARS})`),
+      );
+    }
+    if (/[A-Z]/.test(entry.path) || entry.path.includes("_") || entry.path.includes("//")) {
+      issues.push(
+        error("url-shape", entry.path, "URL contains uppercase, an underscore or a double slash"),
+      );
+    }
+  }
+
+  return issues;
+}
+
 export interface ValidationResult {
   issues: SeoIssue[];
   errors: SeoIssue[];
@@ -668,6 +828,9 @@ export function validateSeo(origin = getSiteUrl()): ValidationResult {
     ...validateInternalLinking(),
     ...validateTools(),
     ...validateContentQuality(),
+    ...validateRouteMetadataWiring(),
+    ...validateRenderedTitles(),
+    ...validateUrlShape(),
   ];
 
   const errors = issues.filter((i) => i.severity === "error");

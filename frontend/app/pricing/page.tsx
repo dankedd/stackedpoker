@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Check, Infinity, Zap, Sparkles, Crown } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -8,6 +9,17 @@ import { UpgradePricingCTA } from "./upgrade-cta";
 import { PricingFAQ } from "./faq";
 import { isPaidTier, canAccessElite } from "@/lib/entitlements";
 import { cn } from "@/lib/utils";
+import { staticPageEntry } from "@/lib/seo/content/pages";
+import { entryMetadata } from "@/lib/seo/metadata";
+
+/**
+ * Sourced from the SEO registry like every other content surface.
+ *
+ * This route previously exported NO metadata, so it silently inherited the
+ * root layout's — title, description and, most damagingly, the root
+ * canonical. /pricing was telling search engines it was the homepage.
+ */
+export const metadata: Metadata = entryMetadata(staticPageEntry("/pricing")!);
 
 // ── Configurable prices ───────────────────────────────────────────────────────
 // Internal tier keys ("pro"/"premium") stay as-is — they mirror Supabase's

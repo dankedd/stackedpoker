@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
+import { staticPageEntry } from "@/lib/seo/content/pages";
+import { entryMetadata } from "@/lib/seo/metadata";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import { Shield, Database, CreditCard, Lock, Cookie, Brain, Eye, Mail } from "lucide-react";
 
-export const metadata: Metadata = {
-  title: "Privacy Policy — Stacked Poker",
-  description:
-    "How Stacked Poker collects, uses, and protects your data. GDPR-friendly, transparent, and user-first.",
-};
+export const metadata: Metadata = entryMetadata(staticPageEntry("/privacy")!);
 
 const LAST_UPDATED = "May 14, 2026";
 

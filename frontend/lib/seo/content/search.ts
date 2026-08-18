@@ -57,6 +57,8 @@ export interface SearchTopic {
 interface TopicCandidate {
   slug: string;
   query: string;
+  /** Display name, when it differs from the search query. */
+  label?: string;
   clusterId?: string;
 }
 
@@ -76,10 +78,22 @@ function candidateTopics(): TopicCandidate[] {
       query: c.title.replace(/\s*&.*$/, "").trim(),
       clusterId: c.id,
     })),
-    ...publishedWikiEntries().map((e) => {
-      const query = e.title.replace(/\s*\(.*\)\s*$/, "");
-      return { slug: toSlug(query), query };
-    }),
+    // Pinned to the WIKI SLUG for the same reason clusters pin to their id,
+    // and learned the hard way: deriving this from the title means every
+    // editorial improvement to a title silently MOVES a live, indexable URL.
+    // Rewording five wiki titles once turned /search/capped-range into
+    // /search/capped-range-spotting-it-and-attacking-it, demoted the old URL
+    // to the noindex fallback, and shipped four 70-plus-character URLs — an
+    // unannounced migration with no redirects, caused by a copy edit.
+    // The slug is an identifier; the title is not.
+    ...publishedWikiEntries().map((e) => ({
+      slug: e.slug,
+      query: e.title.replace(/\s*\(.*\)\s*$/, ""),
+      // The full title, parenthetical included: "Continuation Bet (C-Bet)"
+      // names the page for a reader searching either form, where the stripped
+      // version shares no word with its own /search/cbet slug.
+      label: e.title,
+    })),
     ...HEAD_TERMS.map((query) => ({ slug: toSlug(query), query })),
   ];
 }
@@ -93,13 +107,13 @@ export function searchTopics(): SearchTopic[] {
   const bySlug = new Map<string, SearchTopic>();
 
   for (const candidate of candidateTopics()) {
-    const { slug, query, clusterId } = candidate;
+    const { slug, query, label: candidateLabel, clusterId } = candidate;
     if (!slug || bySlug.has(slug)) continue;
 
     const results = searchEntries(query, 100);
     if (results.length < MIN_RESULTS_TO_INDEX) continue;
 
-    const label = query.charAt(0).toUpperCase() + query.slice(1);
+    const label = candidateLabel ?? query.charAt(0).toUpperCase() + query.slice(1);
     bySlug.set(slug, {
       slug,
       query,

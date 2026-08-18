@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { staticPageEntry } from "@/lib/seo/content/pages";
+import { entryMetadata } from "@/lib/seo/metadata";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { LandingFooter } from "@/components/landing/LandingFooter";
@@ -7,11 +9,7 @@ import {
   ShieldAlert, Brain, Copyright, Scale, Mail,
 } from "lucide-react";
 
-export const metadata: Metadata = {
-  title: "Terms of Service — Stacked Poker",
-  description:
-    "Terms governing your use of Stacked Poker — an educational poker analysis and coaching platform.",
-};
+export const metadata: Metadata = entryMetadata(staticPageEntry("/terms")!);
 
 const LAST_UPDATED = "May 14, 2026";
 
