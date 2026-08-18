@@ -1,0 +1,649 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Geist";
+      src: url("capture/assets/fonts/22a5144ee8d83bca-s.p.woff2") format("woff2");
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: block;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      font-family: "Geist", sans-serif;
+      color: #E6EAF0;
+      -webkit-font-smoothing: antialiased;
+    }
+    #root * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ---------- track 0 · full-bleed ground ---------- */
+    #f03tl-ground {
+      position: absolute;
+      inset: 0;
+      background-color: #0C101D;
+    }
+    #f03tl-ground::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle at 50% 46%, rgba(139, 92, 246, 0.11), rgba(139, 92, 246, 0) 56%);
+    }
+
+    /* ---------- track 1 · the calm lesson surface carried in from the previous beat ---------- */
+    #f03tl-calm { position: absolute; inset: 0; }
+    #f03tl-calm-wrap {
+      position: absolute;
+      left: 400px; top: 244px; width: 1120px; height: 592px;
+      border-radius: 14px;
+      background-color: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      padding: 54px 64px;
+    }
+    #f03tl-calm-wrap .f03tl-rule { width: 60px; height: 4px; border-radius: 2px; background-color: #8B5CF6; opacity: .55; }
+    #f03tl-calm-wrap .f03tl-h { width: 480px; height: 26px; border-radius: 8px; background-color: rgba(230, 234, 240, 0.16); margin-top: 26px; }
+    #f03tl-calm-wrap .f03tl-p { height: 9px; border-radius: 5px; background-color: rgba(230, 234, 240, 0.09); margin-top: 22px; }
+    #f03tl-calm-wrap .f03tl-track { margin-top: 46px; height: 6px; border-radius: 6px; background-color: rgba(139, 92, 246, 0.15); }
+    #f03tl-calm-wrap .f03tl-track b { display: block; height: 100%; width: 34%; border-radius: 6px; background-color: #8B5CF6; opacity: .7; }
+
+    /* ---------- track 2 · the clutter stage ---------- */
+    #f03tl-stage {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      perspective: 1600px;
+    }
+    #f03tl-world { position: absolute; inset: 0; transform-style: preserve-3d; }
+    #f03tl-ring1 { position: absolute; inset: 0; transform-style: preserve-3d; transform-origin: 50% 50%; will-change: transform; }
+    #f03tl-defs { position: absolute; left: 0; top: 0; width: 0; height: 0; overflow: hidden; }
+
+    /* ---------- the card ---------- */
+    .f03tl-card {
+      position: absolute;
+      --dof: 0px;
+      background-color: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      border-radius: 12px;
+      transform-style: preserve-3d;
+      backface-visibility: hidden;
+      overflow: hidden;
+      will-change: transform, opacity;
+    }
+    .f03tl-in,
+    .f03tl-streak {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .f03tl-in { filter: blur(var(--dof)); will-change: filter; }
+
+    .f03tl-hd { display: flex; align-items: center; gap: 8px; margin: 13px 15px 0; flex: 0 0 auto; }
+    .f03tl-ic {
+      width: 17px; height: 17px; flex: 0 0 auto;
+      color: #8B5CF6; opacity: .82;
+      fill: none; stroke: currentColor; stroke-width: 2;
+      stroke-linecap: round; stroke-linejoin: round;
+    }
+    .f03tl-hd span {
+      font-size: 13px; font-weight: 500; letter-spacing: .07em; text-transform: uppercase;
+      color: #728297; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .f03tl-mute .f03tl-hd span { display: none; }
+
+    .f03tl-bd { position: relative; flex: 1 1 auto; margin: 11px 15px 15px; border-radius: 8px; overflow: hidden; }
+
+    /* video surface */
+    .f03tl-b-video { background-color: rgba(25, 31, 46, 0.9); border: 1px solid rgba(139, 92, 246, 0.12); }
+    .f03tl-b-video .f03tl-play {
+      position: absolute; left: 50%; top: 42%; width: 0; height: 0; margin: -12px 0 0 -8px;
+      border-left: 19px solid rgba(139, 92, 246, 0.55);
+      border-top: 12px solid transparent; border-bottom: 12px solid transparent;
+    }
+    .f03tl-b-video .f03tl-bar {
+      position: absolute; left: 12px; right: 12px; bottom: 11px; height: 4px;
+      border-radius: 6px; background-color: rgba(139, 92, 246, 0.15); display: block;
+    }
+    .f03tl-b-video .f03tl-bar b { display: block; height: 100%; border-radius: 6px; background-color: #8B5CF6; }
+
+    /* pdf surface */
+    .f03tl-b-pdf {
+      background-color: rgba(230, 234, 240, 0.025);
+      border: 1px solid rgba(139, 92, 246, 0.1);
+      padding: 13px; display: flex; flex-direction: column; gap: 9px;
+    }
+    .f03tl-b-pdf i { display: block; height: 4px; border-radius: 3px; background-color: rgba(230, 234, 240, 0.16); }
+    .f03tl-b-pdf i:nth-child(2) { width: 88%; }
+    .f03tl-b-pdf i:nth-child(3) { width: 95%; }
+    .f03tl-b-pdf i:nth-child(4) { width: 61%; }
+
+    /* chart / table surface */
+    .f03tl-b-chart {
+      background-color: rgba(139, 92, 246, 0.03);
+      border: 1px solid rgba(139, 92, 246, 0.12);
+      background-image:
+        linear-gradient(to right, rgba(139, 92, 246, 0.16) 1px, rgba(0, 0, 0, 0) 1px),
+        linear-gradient(to bottom, rgba(139, 92, 246, 0.16) 1px, rgba(0, 0, 0, 0) 1px);
+      background-size: 15px 13px;
+    }
+    .f03tl-b-chart i { position: absolute; background-color: rgba(139, 92, 246, 0.34); }
+
+    /* handwritten notes surface */
+    .f03tl-b-notes {
+      background-color: rgba(230, 234, 240, 0.02);
+      border: 1px solid rgba(139, 92, 246, 0.1);
+      padding: 14px 13px;
+    }
+    .f03tl-b-notes i { display: block; height: 3px; border-radius: 3px; background-color: rgba(230, 234, 240, 0.2); margin-bottom: 12px; }
+    .f03tl-b-notes i:nth-child(1) { transform: rotate(-0.7deg); }
+    .f03tl-b-notes i:nth-child(2) { transform: rotate(0.5deg); }
+    .f03tl-b-notes i:nth-child(3) { transform: rotate(-0.4deg); }
+
+    /* ---------- the last sliver of air, and what sits in it ---------- */
+    #f03tl-sliver {
+      position: absolute;
+      left: 620px; top: 452px; width: 680px; height: 196px;
+      border-radius: 14px;
+      background-image: radial-gradient(ellipse at 50% 50%, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0) 70%);
+      z-index: 5;
+      will-change: transform;
+    }
+    #f03tl-focus {
+      position: absolute;
+      left: 660px; top: 480px; width: 600px; height: 140px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center;
+      z-index: 6;
+      --dof: 0px;
+      filter: blur(var(--dof));
+      will-change: transform, filter;
+    }
+    #f03tl-focus .f03tl-accent { width: 60px; height: 3px; border-radius: 2px; background-color: #8B5CF6; margin-bottom: 13px; }
+    #f03tl-focus .f03tl-eyebrow {
+      font-size: 16px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+      color: #8B5CF6; margin-bottom: 12px;
+    }
+    #f03tl-focus .f03tl-hero {
+      font-size: 76px; font-weight: 700; letter-spacing: -0.02em; line-height: 1; color: #E6EAF0;
+    }
+  </style>
+
+  <div data-hf-id="hf-bqo2" id="root" data-composition-id="03-traditional-learning" data-start="0" data-duration="7" data-width="1920" data-height="1080">
+    <!-- ===== track 0 · full-bleed midnight ground ===== -->
+    <div data-hf-id="hf-sico" id="f03tl-ground" class="clip" data-start="0" data-duration="7" data-track-index="0"></div>
+
+    <!-- ===== track 1 · the calm lesson surface, about to be buried ===== -->
+    <div data-hf-id="hf-dwrp" id="f03tl-calm" class="clip" data-start="0" data-duration="7" data-track-index="1">
+      <div data-hf-id="hf-jm2v" id="f03tl-calm-wrap">
+        <div data-hf-id="hf-uxvk" class="f03tl-rule"></div>
+        <div data-hf-id="hf-rfou" class="f03tl-h"></div>
+        <div data-hf-id="hf-gnry" class="f03tl-p" style="width: 92%"></div>
+        <div data-hf-id="hf-4ak1" class="f03tl-p" style="width: 84%"></div>
+        <div data-hf-id="hf-8vtx" class="f03tl-p" style="width: 88%"></div>
+        <div data-hf-id="hf-g87i" class="f03tl-p" style="width: 56%"></div>
+        <div data-hf-id="hf-u0qn" class="f03tl-track"><b data-hf-id="hf-xujp"></b></div>
+      </div>
+    </div>
+
+    <!-- ===== track 2 · the clutter field ===== -->
+    <div data-hf-id="hf-a1rr" id="f03tl-stage" class="clip" data-start="0" data-duration="7" data-track-index="2">
+      <svg data-hf-id="hf-7auc" id="f03tl-defs" aria-hidden="true" width="0" height="0">
+        <defs data-hf-id="hf-mh0t">
+          <!-- book-open (assets/svg-773de514.svg) -->
+          <symbol data-hf-id="hf-gxu8" id="f03tl-i-book" viewBox="0 0 24 24">
+            <path data-hf-id="hf-up5m" d="M12 7v14" />
+            <path data-hf-id="hf-z01k" d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" />
+          </symbol>
+          <!-- graduation-cap (assets/svg-6145cd5f.svg) -->
+          <symbol data-hf-id="hf-cu7r" id="f03tl-i-cap" viewBox="0 0 24 24">
+            <path data-hf-id="hf-y4ds" d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
+            <path data-hf-id="hf-dt4i" d="M22 10v6" />
+            <path data-hf-id="hf-qvia" d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
+          </symbol>
+          <!-- grid3x3 (assets/svg-8b90c9e1.svg) -->
+          <symbol data-hf-id="hf-ienr" id="f03tl-i-grid" viewBox="0 0 24 24">
+            <rect data-hf-id="hf-m05h" width="18" height="18" x="3" y="3" rx="2" />
+            <path data-hf-id="hf-k5fi" d="M3 9h18" />
+            <path data-hf-id="hf-dz4f" d="M3 15h18" />
+            <path data-hf-id="hf-uwm4" d="M9 3v18" />
+            <path data-hf-id="hf-3847" d="M15 3v18" />
+          </symbol>
+
+          <!-- ring-4 directional velocity smears -->
+          <filter data-hf-id="hf-2cal" id="f03tl-streak-0" x="-50%" y="-50%" width="200%" height="200%"><fegaussianblur data-hf-id="hf-4xtz" id="f03tl-blur-0" in="SourceGraphic" stdDeviation="0 0" /></filter>
+          <filter data-hf-id="hf-09ae" id="f03tl-streak-1" x="-50%" y="-50%" width="200%" height="200%"><fegaussianblur data-hf-id="hf-w046" id="f03tl-blur-1" in="SourceGraphic" stdDeviation="0 0" /></filter>
+          <filter data-hf-id="hf-h9xn" id="f03tl-streak-2" x="-50%" y="-50%" width="200%" height="200%"><fegaussianblur data-hf-id="hf-jp01" id="f03tl-blur-2" in="SourceGraphic" stdDeviation="0 0" /></filter>
+          <filter data-hf-id="hf-sr7g" id="f03tl-streak-3" x="-50%" y="-50%" width="200%" height="200%"><fegaussianblur data-hf-id="hf-7aug" id="f03tl-blur-3" in="SourceGraphic" stdDeviation="0 0" /></filter>
+          <filter data-hf-id="hf-r821" id="f03tl-streak-4" x="-50%" y="-50%" width="200%" height="200%"><fegaussianblur data-hf-id="hf-7jjv" id="f03tl-blur-4" in="SourceGraphic" stdDeviation="0 0" /></filter>
+          <filter data-hf-id="hf-dauq" id="f03tl-streak-5" x="-50%" y="-50%" width="200%" height="200%"><fegaussianblur data-hf-id="hf-nn4q" id="f03tl-blur-5" in="SourceGraphic" stdDeviation="0 0" /></filter>
+          <filter data-hf-id="hf-c0yv" id="f03tl-streak-6" x="-50%" y="-50%" width="200%" height="200%"><fegaussianblur data-hf-id="hf-z1kl" id="f03tl-blur-6" in="SourceGraphic" stdDeviation="0 0" /></filter>
+          <filter data-hf-id="hf-royg" id="f03tl-streak-7" x="-50%" y="-50%" width="200%" height="200%"><fegaussianblur data-hf-id="hf-pvn0" id="f03tl-blur-7" in="SourceGraphic" stdDeviation="0 0" /></filter>
+          <filter data-hf-id="hf-ejg5" id="f03tl-streak-8" x="-50%" y="-50%" width="200%" height="200%"><fegaussianblur data-hf-id="hf-xkn3" id="f03tl-blur-8" in="SourceGraphic" stdDeviation="0 0" /></filter>
+          <filter data-hf-id="hf-2xq6" id="f03tl-streak-9" x="-50%" y="-50%" width="200%" height="200%"><fegaussianblur data-hf-id="hf-ca8e" id="f03tl-blur-9" in="SourceGraphic" stdDeviation="0 0" /></filter>
+          <filter data-hf-id="hf-2xck" id="f03tl-streak-10" x="-50%" y="-50%" width="200%" height="200%"><fegaussianblur data-hf-id="hf-443a" id="f03tl-blur-10" in="SourceGraphic" stdDeviation="0 0" /></filter>
+          <filter data-hf-id="hf-81kz" id="f03tl-streak-11" x="-50%" y="-50%" width="200%" height="200%"><fegaussianblur data-hf-id="hf-jg4n" id="f03tl-blur-11" in="SourceGraphic" stdDeviation="0 0" /></filter>
+        </defs>
+      </svg>
+
+      <div data-hf-id="hf-nb8l" id="f03tl-world">
+        <!-- ===== ring 1 — the first ring, tumbling in out of the depth cloud ===== -->
+        <div data-hf-id="hf-q31a" id="f03tl-ring1">
+          <div data-hf-id="hf-n9xg" class="f03tl-card" data-ring="1" data-depth="1" style="left:810px; top:100px; width:230px; height:150px;">
+            <div data-hf-id="hf-ox4b" class="f03tl-in">
+              <div data-hf-id="hf-p7u6" class="f03tl-hd"><svg data-hf-id="hf-oree" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-hy8w" href="#f03tl-i-grid" /></svg><span data-hf-id="hf-5hnv">Preflop Chart</span></div>
+              <div data-hf-id="hf-nb8v" class="f03tl-bd f03tl-b-chart"><i data-hf-id="hf-avwa" style="left:8%;top:11%;width:28%;height:30%"></i><i data-hf-id="hf-z8e4" style="left:41%;top:45%;width:19%;height:23%"></i></div>
+            </div>
+          </div>
+          <div data-hf-id="hf-mbqs" class="f03tl-card" data-ring="1" data-depth="1" style="left:650px; top:284px; width:230px; height:150px;">
+            <div data-hf-id="hf-f5vv" class="f03tl-in">
+              <div data-hf-id="hf-zgfm" class="f03tl-hd"><svg data-hf-id="hf-3ml6" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-6xzs" href="#f03tl-i-grid" /></svg><span data-hf-id="hf-ura8">ICM Table</span></div>
+              <div data-hf-id="hf-83wv" class="f03tl-bd f03tl-b-chart"><i data-hf-id="hf-sn97" style="left:12%;top:18%;width:22%;height:26%"></i><i data-hf-id="hf-wg5z" style="left:52%;top:38%;width:24%;height:22%"></i></div>
+            </div>
+          </div>
+          <div data-hf-id="hf-0jdh" class="f03tl-card" data-ring="1" data-depth="1" style="left:920px; top:300px; width:240px; height:156px;">
+            <div data-hf-id="hf-erku" class="f03tl-in">
+              <div data-hf-id="hf-zuqn" class="f03tl-hd"><svg data-hf-id="hf-40w7" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-l64n" href="#f03tl-i-book" /></svg><span data-hf-id="hf-nomb">PDF — ch. 21</span></div>
+              <div data-hf-id="hf-9xz5" class="f03tl-bd f03tl-b-pdf"><i data-hf-id="hf-wt6k"></i><i data-hf-id="hf-zeb8"></i><i data-hf-id="hf-y7e5"></i><i data-hf-id="hf-ylp6"></i></div>
+            </div>
+          </div>
+          <div data-hf-id="hf-b27s" class="f03tl-card" data-ring="1" data-depth="1" style="left:632px; top:656px; width:230px; height:140px;">
+            <div data-hf-id="hf-ed9t" class="f03tl-in">
+              <div data-hf-id="hf-091o" class="f03tl-hd"><svg data-hf-id="hf-4f78" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-h6s0" href="#f03tl-i-cap" /></svg><span data-hf-id="hf-sx9c">Video 12:38</span></div>
+              <div data-hf-id="hf-m2nu" class="f03tl-bd f03tl-b-video"><i data-hf-id="hf-sjbo" class="f03tl-play"></i><span data-hf-id="hf-stea" class="f03tl-bar"><b data-hf-id="hf-n8bg" style="width:12%"></b></span></div>
+            </div>
+          </div>
+          <div data-hf-id="hf-ytr2" class="f03tl-card" data-ring="1" data-depth="1" style="left:902px; top:640px; width:250px; height:150px;">
+            <div data-hf-id="hf-dyys" class="f03tl-in">
+              <div data-hf-id="hf-0ncp" class="f03tl-hd"><svg data-hf-id="hf-4ti9" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-5r2p" href="#f03tl-i-grid" /></svg><span data-hf-id="hf-at3a">Equity Table</span></div>
+              <div data-hf-id="hf-7plu" class="f03tl-bd f03tl-b-chart"><i data-hf-id="hf-uzsv" style="left:7%;top:14%;width:31%;height:28%"></i><i data-hf-id="hf-9j0k" style="left:47%;top:50%;width:17%;height:21%"></i></div>
+            </div>
+          </div>
+          <div data-hf-id="hf-oduq" class="f03tl-card" data-ring="1" data-depth="1" style="left:840px; top:838px; width:240px; height:152px;">
+            <div data-hf-id="hf-dknr" class="f03tl-in">
+              <div data-hf-id="hf-11nq" class="f03tl-hd"><svg data-hf-id="hf-57ta" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-f1bb" href="#f03tl-i-book" /></svg><span data-hf-id="hf-83kh">PDF — ch. 9</span></div>
+              <div data-hf-id="hf-xaad" class="f03tl-bd f03tl-b-pdf"><i data-hf-id="hf-0l8b"></i><i data-hf-id="hf-0zjc"></i><i data-hf-id="hf-zsm9"></i><i data-hf-id="hf-06xa"></i></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== ring 2 — closing in from every side ===== -->
+        <div data-hf-id="hf-bq7t" class="f03tl-card" data-ring="2" data-depth="2" style="left:1192px; top:652px; width:236px; height:144px;">
+          <div data-hf-id="hf-d6cq" class="f03tl-in">
+            <div data-hf-id="hf-1fyr" class="f03tl-hd"><svg data-hf-id="hf-5m4b" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-en0a" href="#f03tl-i-book" /></svg><span data-hf-id="hf-9osl">PDF — ch. 5</span></div>
+            <div data-hf-id="hf-yh7g" class="f03tl-bd f03tl-b-pdf"><i data-hf-id="hf-26gf"></i><i data-hf-id="hf-2krg"></i><i data-hf-id="hf-oz7w"></i><i data-hf-id="hf-okwv"></i></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-n9ee" class="f03tl-card" data-ring="2" data-depth="2" style="left:1200px; top:288px; width:240px; height:150px;">
+          <div data-hf-id="hf-cs1p" class="f03tl-in">
+            <div data-hf-id="hf-1u9s" class="f03tl-hd"><svg data-hf-id="hf-60fc" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-3tk8" href="#f03tl-i-cap" /></svg><span data-hf-id="hf-jjuz">Video 27:53</span></div>
+            <div data-hf-id="hf-kvxa" class="f03tl-bd f03tl-b-video"><i data-hf-id="hf-8zxo" class="f03tl-play"></i><span data-hf-id="hf-1nh2" class="f03tl-bar"><b data-hf-id="hf-1l3c" style="width:27%"></b></span></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-m8kn" class="f03tl-card" data-ring="2" data-depth="2" style="left:1070px; top:116px; width:210px; height:140px;">
+          <div data-hf-id="hf-iqn4" class="f03tl-in">
+            <div data-hf-id="hf-vvod" class="f03tl-hd"><svg data-hf-id="hf-6eqd" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-2mn5" href="#f03tl-i-cap" /></svg><span data-hf-id="hf-801l">Video 22:05</span></div>
+            <div data-hf-id="hf-la8b" class="f03tl-bd f03tl-b-video"><i data-hf-id="hf-7t0l" class="f03tl-play"></i><span data-hf-id="hf-21s3" class="f03tl-bar"><b data-hf-id="hf-cruk" style="width:41%"></b></span></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-qkih" class="f03tl-card" data-ring="2" data-depth="2" style="left:580px; top:118px; width:200px; height:140px;">
+          <div data-hf-id="hf-icc3" class="f03tl-in">
+            <div data-hf-id="hf-w9ze" class="f03tl-hd"><svg data-hf-id="hf-6t1e" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-e8p9" href="#f03tl-i-book" /></svg><span data-hf-id="hf-ahen">PDF — ch. 7</span></div>
+            <div data-hf-id="hf-y2wf" class="f03tl-bd f03tl-b-pdf"><i data-hf-id="hf-o6lu"></i><i data-hf-id="hf-jqbp"></i><i data-hf-id="hf-qkg0"></i><i data-hf-id="hf-q64z"></i></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-uzh2" class="f03tl-card" data-ring="2" data-depth="2" style="left:600px; top:856px; width:210px; height:140px;">
+          <div data-hf-id="hf-ok81" class="f03tl-in">
+            <div data-hf-id="hf-qz52" class="f03tl-hd"><svg data-hf-id="hf-tl3y" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-65dq" href="#f03tl-i-grid" /></svg><span data-hf-id="hf-sgid">Push/Fold Chart</span></div>
+            <div data-hf-id="hf-7bat" class="f03tl-bd f03tl-b-chart"><i data-hf-id="hf-oesv" style="left:10%;top:16%;width:25%;height:27%"></i><i data-hf-id="hf-lsmq" style="left:49%;top:47%;width:21%;height:20%"></i></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-fnjy" class="f03tl-card" data-ring="2" data-depth="2" style="left:1110px; top:854px; width:220px; height:140px;">
+          <div data-hf-id="hf-oyj2" class="f03tl-in">
+            <div data-hf-id="hf-qku1" class="f03tl-hd"><svg data-hf-id="hf-t6sx" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-30y6" href="#f03tl-i-cap" /></svg><span data-hf-id="hf-czml">Video 33:47</span></div>
+            <div data-hf-id="hf-lojc" class="f03tl-bd f03tl-b-video"><i data-hf-id="hf-87bm" class="f03tl-play"></i><span data-hf-id="hf-2g34" class="f03tl-bar"><b data-hf-id="hf-01d7" style="width:8%"></b></span></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-pt2r" class="f03tl-card" data-ring="2" data-depth="2" style="left:360px; top:300px; width:250px; height:158px;">
+          <div data-hf-id="hf-pcu3" class="f03tl-in">
+            <div data-hf-id="hf-rrr4" class="f03tl-hd"><svg data-hf-id="hf-udq0" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-1u13" href="#f03tl-i-cap" /></svg><span data-hf-id="hf-p7a6">Video 1:41:22</span></div>
+            <div data-hf-id="hf-iwe5" class="f03tl-bd f03tl-b-video"><i data-hf-id="hf-a6ur" class="f03tl-play"></i><span data-hf-id="hf-znxx" class="f03tl-bar"><b data-hf-id="hf-dd4w" style="width:63%"></b></span></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-gsxm" class="f03tl-card" data-ring="2" data-depth="2" style="left:352px; top:640px; width:240px; height:150px;">
+          <div data-hf-id="hf-pr54" class="f03tl-in">
+            <div data-hf-id="hf-rdg3" class="f03tl-hd"><svg data-hf-id="hf-tzez" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-h0ug" href="#f03tl-i-book" /></svg><span data-hf-id="hf-t7ds">Blocker Notes</span></div>
+            <div data-hf-id="hf-6s1k" class="f03tl-bd f03tl-b-notes"><i data-hf-id="hf-qmeh" style="width:83%"></i><i data-hf-id="hf-amuq" style="width:64%"></i><i data-hf-id="hf-eklv" style="width:74%"></i></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-w03u" class="f03tl-card" data-ring="2" data-depth="2" style="left:1310px; top:98px; width:240px; height:150px;">
+          <div data-hf-id="hf-ix0t" class="f03tl-in">
+            <div data-hf-id="hf-pdwy" class="f03tl-hd"><svg data-hf-id="hf-rzvu" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-gmjf" href="#f03tl-i-book" /></svg><span data-hf-id="hf-yzq6">Notes</span></div>
+            <div data-hf-id="hf-cuvk" class="f03tl-bd f03tl-b-notes"><i data-hf-id="hf-fjq6" style="width:77%"></i><i data-hf-id="hf-iy4w" style="width:88%"></i><i data-hf-id="hf-2ewu" style="width:59%"></i></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-7oyr" class="f03tl-card" data-ring="2" data-depth="2" style="left:340px; top:840px; width:230px; height:150px;">
+          <div data-hf-id="hf-nday" class="f03tl-in">
+            <div data-hf-id="hf-ozlx" class="f03tl-hd"><svg data-hf-id="hf-rlkt" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-28c4" href="#f03tl-i-cap" /></svg><span data-hf-id="hf-ne3b">Video 2:04:18</span></div>
+            <div data-hf-id="hf-jap6" class="f03tl-bd f03tl-b-video"><i data-hf-id="hf-al5s" class="f03tl-play"></i><span data-hf-id="hf-028y" class="f03tl-bar"><b data-hf-id="hf-p86t" style="width:19%"></b></span></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-byjf" class="f03tl-card" data-ring="2" data-depth="2" style="left:1360px; top:836px; width:220px; height:150px;">
+          <div data-hf-id="hf-nrlz" class="f03tl-in">
+            <div data-hf-id="hf-q6j0" class="f03tl-hd"><svg data-hf-id="hf-sshw" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-g88e" href="#f03tl-i-book" /></svg><span data-hf-id="hf-w6de">Notes</span></div>
+            <div data-hf-id="hf-bnyh" class="f03tl-bd f03tl-b-notes"><i data-hf-id="hf-6f8m" style="width:86%"></i><i data-hf-id="hf-y0z0" style="width:62%"></i><i data-hf-id="hf-zb6o" style="width:71%"></i></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-o9d3" class="f03tl-card" data-ring="2" data-depth="2" style="left:330px; top:96px; width:220px; height:150px;">
+          <div data-hf-id="hf-o5x0" class="f03tl-in">
+            <div data-hf-id="hf-ps7z" class="f03tl-hd"><svg data-hf-id="hf-se6v" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-11f1" href="#f03tl-i-cap" /></svg><span data-hf-id="hf-gqjy">Video 1:12:40</span></div>
+            <div data-hf-id="hf-jp07" class="f03tl-bd f03tl-b-video"><i data-hf-id="hf-9e8p" class="f03tl-play"></i><span data-hf-id="hf-0gjz" class="f03tl-bar"><b data-hf-id="hf-jmlb" style="width:35%"></b></span></div>
+          </div>
+        </div>
+
+        <!-- ===== ring 3 — the edges fill ===== -->
+        <div data-hf-id="hf-afjg" class="f03tl-card" data-ring="3" data-depth="3" style="left:1620px; top:462px; width:230px; height:150px;">
+          <div data-hf-id="hf-rqo9" class="f03tl-in">
+            <div data-hf-id="hf-nsou" class="f03tl-hd"><svg data-hf-id="hf-wrk6" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-1fq2" href="#f03tl-i-cap" /></svg><span data-hf-id="hf-o8k4">Video 41:09</span></div>
+            <div data-hf-id="hf-k3b8" class="f03tl-bd f03tl-b-video"><i data-hf-id="hf-9sjq" class="f03tl-play"></i><span data-hf-id="hf-0uv0" class="f03tl-bar"><b data-hf-id="hf-er2w" style="width:52%"></b></span></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-9zlr" class="f03tl-card" data-ring="3" data-depth="3" style="left:56px; top:460px; width:250px; height:150px;">
+          <div data-hf-id="hf-s4za" class="f03tl-in">
+            <div data-hf-id="hf-nedt" class="f03tl-hd"><svg data-hf-id="hf-wd95" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-6lpf" href="#f03tl-i-cap" /></svg><span data-hf-id="hf-9d4x">Video 58:31</span></div>
+            <div data-hf-id="hf-no2h" class="f03tl-bd f03tl-b-video"><i data-hf-id="hf-5f6f" class="f03tl-play"></i><span data-hf-id="hf-y2pt" class="f03tl-bar"><b data-hf-id="hf-7q76" style="width:14%"></b></span></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-bzge" class="f03tl-card" data-ring="3" data-depth="3" style="left:1596px; top:642px; width:254px; height:140px;">
+          <div data-hf-id="hf-l9wq" class="f03tl-in">
+            <div data-hf-id="hf-dhod" class="f03tl-hd"><svg data-hf-id="hf-stg5" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-ftxd" href="#f03tl-i-book" /></svg><span data-hf-id="hf-c2mr">PDF — ch. 3</span></div>
+            <div data-hf-id="hf-z9ti" class="f03tl-bd f03tl-b-pdf"><i data-hf-id="hf-prty"></i><i data-hf-id="hf-pdix"></i><i data-hf-id="hf-hqsk"></i><i data-hf-id="hf-hchj"></i></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-q5hp" class="f03tl-card" data-ring="3" data-depth="3" style="left:1600px; top:288px; width:250px; height:146px;">
+          <div data-hf-id="hf-kvlp" class="f03tl-in">
+            <div data-hf-id="hf-dvze" class="f03tl-hd"><svg data-hf-id="hf-t7r6" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-4ygn" href="#f03tl-i-grid" /></svg><span data-hf-id="hf-hbe6">Range Chart</span></div>
+            <div data-hf-id="hf-a3g0" class="f03tl-bd f03tl-b-chart"><i data-hf-id="hf-41dc" style="left:9%;top:13%;width:27%;height:29%"></i><i data-hf-id="hf-ntux" style="left:44%;top:46%;width:20%;height:22%"></i></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-9u6m" class="f03tl-card" data-ring="3" data-depth="3" style="left:74px; top:640px; width:220px; height:140px;">
+          <div data-hf-id="hf-m2is" class="f03tl-in">
+            <div data-hf-id="hf-eaaf" class="f03tl-hd"><svg data-hf-id="hf-tm27" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-im2k" href="#f03tl-i-book" /></svg><span data-hf-id="hf-wkof">Notes</span></div>
+            <div data-hf-id="hf-c29i" class="f03tl-bd f03tl-b-notes"><i data-hf-id="hf-seaw" style="width:80%"></i><i data-hf-id="hf-kiyf" style="width:67%"></i><i data-hf-id="hf-wi7c" style="width:88%"></i></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-tmje" class="f03tl-card" data-ring="3" data-depth="3" style="left:70px; top:290px; width:230px; height:140px;">
+          <div data-hf-id="hf-lo7r" class="f03tl-in">
+            <div data-hf-id="hf-eolg" class="f03tl-hd"><svg data-hf-id="hf-u0d8" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-5cro" href="#f03tl-i-grid" /></svg><span data-hf-id="hf-vopk">3-Bet Chart</span></div>
+            <div data-hf-id="hf-9p4z" class="f03tl-bd f03tl-b-chart"><i data-hf-id="hf-bm1k" style="left:11%;top:17%;width:24%;height:25%"></i><i data-hf-id="hf-qqvl" style="left:50%;top:41%;width:22%;height:24%"></i></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-2bit" class="f03tl-card" data-ring="3" data-depth="3" style="left:1580px; top:112px; width:260px; height:146px;">
+          <div data-hf-id="hf-qx3y" class="f03tl-in">
+            <div data-hf-id="hf-f2wh" class="f03tl-hd"><svg data-hf-id="hf-ueo9" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-i7rj" href="#f03tl-i-book" /></svg><span data-hf-id="hf-88y6">PDF — 214 pp</span></div>
+            <div data-hf-id="hf-yvih" class="f03tl-bd f03tl-b-pdf"><i data-hf-id="hf-8d0n"></i><i data-hf-id="hf-8rbo"></i><i data-hf-id="hf-7kel"></i><i data-hf-id="hf-7ypm"></i></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-magv" class="f03tl-card" data-ring="3" data-depth="3" style="left:1614px; top:812px; width:236px; height:148px;">
+          <div data-hf-id="hf-qisx" class="f03tl-in">
+            <div data-hf-id="hf-fh7i" class="f03tl-hd"><svg data-hf-id="hf-usza" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-jh11" href="#f03tl-i-book" /></svg><span data-hf-id="hf-wyzg">Notes</span></div>
+            <div data-hf-id="hf-avcf" class="f03tl-bd f03tl-b-notes"><i data-hf-id="hf-aw76" style="width:73%"></i><i data-hf-id="hf-qvqx" style="width:90%"></i><i data-hf-id="hf-ygod" style="width:61%"></i></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-u0us" class="f03tl-card" data-ring="3" data-depth="3" style="left:60px; top:810px; width:240px; height:150px;">
+          <div data-hf-id="hf-rpq0" class="f03tl-in">
+            <div data-hf-id="hf-fvij" class="f03tl-hd"><svg data-hf-id="hf-v7ab" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-jvc2" href="#f03tl-i-book" /></svg><span data-hf-id="hf-plap">PDF — ch. 12</span></div>
+            <div data-hf-id="hf-02fk" class="f03tl-bd f03tl-b-pdf"><i data-hf-id="hf-9y8r"></i><i data-hf-id="hf-acjs"></i><i data-hf-id="hf-95mp"></i><i data-hf-id="hf-9jxq"></i></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-xgh2" class="f03tl-card" data-ring="3" data-depth="3" style="left:60px; top:110px; width:240px; height:150px;">
+          <div data-hf-id="hf-rbez" class="f03tl-in">
+            <div data-hf-id="hf-g9tk" class="f03tl-hd"><svg data-hf-id="hf-vllc" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-700g" href="#f03tl-i-cap" /></svg><span data-hf-id="hf-yq1i">Video 47:12</span></div>
+            <div data-hf-id="hf-o2di" class="f03tl-bd f03tl-b-video"><i data-hf-id="hf-5thg" class="f03tl-play"></i><span data-hf-id="hf-yh0u" class="f03tl-bar"><b data-hf-id="hf-nx1j" style="width:44%"></b></span></div>
+          </div>
+        </div>
+
+        <!-- ===== ring 4 — the corners and the last of the margins, streaking in ===== -->
+        <div data-hf-id="hf-oa9m" class="f03tl-card" data-ring="4" data-depth="4" data-streak="0" style="left:-70px; top:-46px; width:260px; height:160px;">
+          <div data-hf-id="hf-sic2" class="f03tl-in"><div data-hf-id="hf-i2y0" class="f03tl-streak" style="filter:url(#f03tl-streak-0)">
+            <div data-hf-id="hf-go4l" class="f03tl-hd"><svg data-hf-id="hf-pmzx" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-wbk8" href="#f03tl-i-cap" /></svg><span data-hf-id="hf-xsuo">Video 1:08:52</span></div>
+            <div data-hf-id="hf-dnmy" class="f03tl-bd f03tl-b-video"><i data-hf-id="hf-te8k" class="f03tl-play"></i><span data-hf-id="hf-wk42" class="f03tl-bar"><b data-hf-id="hf-aalg" style="width:23%"></b></span></div>
+          </div></div>
+        </div>
+        <div data-hf-id="hf-bze5" class="f03tl-card" data-ring="4" data-depth="4" data-streak="1" style="left:1710px; top:-44px; width:260px; height:158px;">
+          <div data-hf-id="hf-s411" class="f03tl-in"><div data-hf-id="hf-td8n" class="f03tl-streak" style="filter:url(#f03tl-streak-1)">
+            <div data-hf-id="hf-h2fm" class="f03tl-hd"><svg data-hf-id="hf-q1ay" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-k9n3" href="#f03tl-i-book" /></svg><span data-hf-id="hf-tkcz">PDF — ch. 18</span></div>
+            <div data-hf-id="hf-zo4j" class="f03tl-bd f03tl-b-pdf"><i data-hf-id="hf-bjgv"></i><i data-hf-id="hf-bxrw"></i><i data-hf-id="hf-7lcu"></i><i data-hf-id="hf-771t"></i></div>
+          </div></div>
+        </div>
+        <div data-hf-id="hf-862l" class="f03tl-card f03tl-mute" data-ring="4" data-depth="4" data-streak="2" style="left:-74px; top:962px; width:254px; height:158px;">
+          <div data-hf-id="hf-2tcj" class="f03tl-in"><div data-hf-id="hf-gh5m" class="f03tl-streak" style="filter:url(#f03tl-streak-2)">
+            <div data-hf-id="hf-cq0k" class="f03tl-hd"><svg data-hf-id="hf-ayz0" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-kny4" href="#f03tl-i-book" /></svg><span data-hf-id="hf-uckh"></span></div>
+            <div data-hf-id="hf-b9ng" class="f03tl-bd f03tl-b-notes"><i data-hf-id="hf-13t0" style="width:84%"></i><i data-hf-id="hf-tdg0" style="width:66%"></i><i data-hf-id="hf-yq0t" style="width:76%"></i></div>
+          </div></div>
+        </div>
+        <div data-hf-id="hf-8lvz" class="f03tl-card f03tl-mute" data-ring="4" data-depth="4" data-streak="3" style="left:1716px; top:958px; width:254px; height:160px;">
+          <div data-hf-id="hf-37nk" class="f03tl-in"><div data-hf-id="hf-xfuh" class="f03tl-streak" style="filter:url(#f03tl-streak-3)">
+            <div data-hf-id="hf-cbpj" class="f03tl-hd"><svg data-hf-id="hf-aknz" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-45ul" href="#f03tl-i-grid" /></svg><span data-hf-id="hf-l73p"></span></div>
+            <div data-hf-id="hf-9aty" class="f03tl-bd f03tl-b-chart"><i data-hf-id="hf-64u3" style="left:10%;top:14%;width:26%;height:28%"></i><i data-hf-id="hf-yv1o" style="left:46%;top:48%;width:19%;height:21%"></i></div>
+          </div></div>
+        </div>
+        <div data-hf-id="hf-ff5p" class="f03tl-card" data-ring="4" data-depth="4" data-streak="4" style="left:300px; top:-56px; width:240px; height:150px;">
+          <div data-hf-id="hf-20qh" class="f03tl-in"><div data-hf-id="hf-t10k" class="f03tl-streak" style="filter:url(#f03tl-streak-4)">
+            <div data-hf-id="hf-bxei" class="f03tl-hd"><svg data-hf-id="hf-a6cy" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-l295" href="#f03tl-i-book" /></svg><span data-hf-id="hf-4s0c">PDF — 96 pp</span></div>
+            <div data-hf-id="hf-ui56" class="f03tl-bd f03tl-b-pdf"><i data-hf-id="hf-8dyw"></i><i data-hf-id="hf-7znv"></i><i data-hf-id="hf-604q"></i><i data-hf-id="hf-5ltp"></i></div>
+          </div></div>
+        </div>
+        <div data-hf-id="hf-57a7" class="f03tl-card" data-ring="4" data-depth="4" data-streak="5" style="left:1130px; top:-52px; width:250px; height:150px;">
+          <div data-hf-id="hf-2f1i" class="f03tl-in"><div data-hf-id="hf-r0j7" class="f03tl-streak" style="filter:url(#f03tl-streak-5)">
+            <div data-hf-id="hf-bj3h" class="f03tl-hd"><svg data-hf-id="hf-9s1x" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-vx97" href="#f03tl-i-cap" /></svg><span data-hf-id="hf-nybf">Video 51:30</span></div>
+            <div data-hf-id="hf-d9bx" class="f03tl-bd f03tl-b-video"><i data-hf-id="hf-szxj" class="f03tl-play"></i><span data-hf-id="hf-w5t1" class="f03tl-bar"><b data-hf-id="hf-75bf" style="width:31%"></b></span></div>
+          </div></div>
+        </div>
+        <div data-hf-id="hf-8vpn" class="f03tl-card f03tl-mute" data-ring="4" data-depth="4" data-streak="6" style="left:330px; top:990px; width:240px; height:152px;">
+          <div data-hf-id="hf-184f" class="f03tl-in"><div data-hf-id="hf-3986" class="f03tl-streak" style="filter:url(#f03tl-streak-6)">
+            <div data-hf-id="hf-eb8o" class="f03tl-hd"><svg data-hf-id="hf-ck74" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-4k5m" href="#f03tl-i-grid" /></svg><span data-hf-id="hf-me0s"></span></div>
+            <div data-hf-id="hf-8wix" class="f03tl-bd f03tl-b-chart"><i data-hf-id="hf-7ijo" style="left:8%;top:12%;width:29%;height:27%"></i><i data-hf-id="hf-cvx9" style="left:48%;top:44%;width:18%;height:23%"></i></div>
+          </div></div>
+        </div>
+        <div data-hf-id="hf-whs3" class="f03tl-card f03tl-mute" data-ring="4" data-depth="4" data-streak="7" style="left:1150px; top:994px; width:246px; height:150px;">
+          <div data-hf-id="hf-1mfg" class="f03tl-in"><div data-hf-id="hf-g5xx" class="f03tl-streak" style="filter:url(#f03tl-streak-7)">
+            <div data-hf-id="hf-dwxn" class="f03tl-hd"><svg data-hf-id="hf-c5w3" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-lgk6" href="#f03tl-i-book" /></svg><span data-hf-id="hf-lzpr"></span></div>
+            <div data-hf-id="hf-a2qd" class="f03tl-bd f03tl-b-notes"><i data-hf-id="hf-z8xk" style="width:79%"></i><i data-hf-id="hf-amtp" style="width:90%"></i><i data-hf-id="hf-eb9f" style="width:63%"></i></div>
+          </div></div>
+        </div>
+        <div data-hf-id="hf-wdb5" class="f03tl-card" data-ring="4" data-depth="4" data-streak="8" style="left:-86px; top:210px; width:250px; height:150px;">
+          <div data-hf-id="hf-0fid" class="f03tl-in"><div data-hf-id="hf-vfz4" class="f03tl-streak" style="filter:url(#f03tl-streak-8)">
+            <div data-hf-id="hf-dimm" class="f03tl-hd"><svg data-hf-id="hf-brl2" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-viy6" href="#f03tl-i-cap" /></svg><span data-hf-id="hf-san5">Video 18:44</span></div>
+            <div data-hf-id="hf-eg90" class="f03tl-bd f03tl-b-video"><i data-hf-id="hf-slmi" class="f03tl-play"></i><span data-hf-id="hf-xcq4" class="f03tl-bar"><b data-hf-id="hf-u0i3" style="width:57%"></b></span></div>
+          </div></div>
+        </div>
+        <div data-hf-id="hf-x18c" class="f03tl-card" data-ring="4" data-depth="4" data-streak="9" style="left:-90px; top:640px; width:250px; height:150px;">
+          <div data-hf-id="hf-0tte" class="f03tl-in"><div data-hf-id="hf-8cov" class="f03tl-streak" style="filter:url(#f03tl-streak-9)">
+            <div data-hf-id="hf-d4bl" class="f03tl-hd"><svg data-hf-id="hf-bda1" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-9q4z" href="#f03tl-i-grid" /></svg><span data-hf-id="hf-6vf4">SB Defence Chart</span></div>
+            <div data-hf-id="hf-5bro" class="f03tl-bd f03tl-b-chart"><i data-hf-id="hf-0hyv" style="left:12%;top:15%;width:23%;height:26%"></i><i data-hf-id="hf-2ohj" style="left:51%;top:43%;width:21%;height:22%"></i></div>
+          </div></div>
+        </div>
+        <div data-hf-id="hf-sagq" class="f03tl-card" data-ring="4" data-depth="4" data-streak="10" style="left:1722px; top:206px; width:254px; height:150px;">
+          <div data-hf-id="hf-zmwb" class="f03tl-in"><div data-hf-id="hf-nqyb" class="f03tl-streak" style="filter:url(#f03tl-streak-10)">
+            <div data-hf-id="hf-fwgs" class="f03tl-hd"><svg data-hf-id="hf-7sis" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-luv7" href="#f03tl-i-book" /></svg><span data-hf-id="hf-p8w6">PDF — ch. 31</span></div>
+            <div data-hf-id="hf-u3u5" class="f03tl-bd f03tl-b-pdf"><i data-hf-id="hf-6sqs"></i><i data-hf-id="hf-6efr"></i><i data-hf-id="hf-art2"></i><i data-hf-id="hf-adi1"></i></div>
+          </div></div>
+        </div>
+        <div data-hf-id="hf-dlu6" class="f03tl-card" data-ring="4" data-depth="4" data-streak="11" style="left:1726px; top:636px; width:250px; height:152px;">
+          <div data-hf-id="hf-017c" class="f03tl-in"><div data-hf-id="hf-prfo" class="f03tl-streak" style="filter:url(#f03tl-streak-11)">
+            <div data-hf-id="hf-fi5r" class="f03tl-hd"><svg data-hf-id="hf-7e7r" class="f03tl-ic" viewBox="0 0 24 24"><use data-hf-id="hf-v4n5" href="#f03tl-i-cap" /></svg><span data-hf-id="hf-3d62">Video 1:22:07</span></div>
+            <div data-hf-id="hf-e1xz" class="f03tl-bd f03tl-b-video"><i data-hf-id="hf-s7bh" class="f03tl-play"></i><span data-hf-id="hf-wyf3" class="f03tl-bar"><b data-hf-id="hf-1dg4" style="width:9%"></b></span></div>
+          </div></div>
+        </div>
+      </div>
+
+      <!-- the last sliver of air, and the read that sits in it -->
+      <div data-hf-id="hf-toge" id="f03tl-sliver"></div>
+      <div data-hf-id="hf-by16" id="f03tl-focus">
+        <div data-hf-id="hf-jd9s" class="f03tl-accent"></div>
+        <div data-hf-id="hf-egq3" class="f03tl-eyebrow">The usual way</div>
+        <div data-hf-id="hf-368b" class="f03tl-hero">BURIED</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      var FRAME = "03-traditional-learning";
+      var root = document.querySelector('[data-composition-id="' + FRAME + '"]');
+      var tl = gsap.timeline({ paused: true });
+      window.__timelines = window.__timelines || {};
+      window.__timelines[FRAME] = tl;
+      if (!root) return;
+
+      var q = function (sel) { return Array.prototype.slice.call(root.querySelectorAll(sel)); };
+
+      var CX = 960, CY = 540;
+      var cards = q(".f03tl-card");
+
+      /* deterministic geometry: every card's outward unit vector + radius from frame centre */
+      var geom = cards.map(function (el) {
+        var cx = parseFloat(el.style.left) + parseFloat(el.style.width) / 2;
+        var cy = parseFloat(el.style.top) + parseFloat(el.style.height) / 2;
+        var dx = cx - CX, dy = cy - CY;
+        var r = Math.sqrt(dx * dx + dy * dy) || 1;
+        return { el: el, ux: dx / r, uy: dy / r, r: r };
+      });
+      var G = function (el) {
+        for (var i = 0; i < geom.length; i++) { if (geom[i].el === el) return geom[i]; }
+        return { ux: 0, uy: 0, r: 1 };
+      };
+
+      /* ------------------------------------------------------------------
+         SCENE 1 (0.0–1.4s) — the calm lesson surface is still faintly there,
+         then the first ring of clutter assembles out of a 3D depth cloud.
+         rule: depth-scatter-assemble
+      ------------------------------------------------------------------ */
+      tl.fromTo("#f03tl-calm-wrap", { opacity: 0.6 }, { opacity: 0, duration: 1.2, ease: "power2.in" }, 0.3);
+
+      var ring1 = q('.f03tl-card[data-ring="1"]');
+      var n1 = ring1.length;
+      var GOLDEN = Math.PI * (3 - Math.sqrt(5));
+      var RADIUS = 420, Z_NEAR = 430, Z_FAR = -330, TUMBLE = 62;
+
+      /* park the cloud BEFORE any tween so frame 0 is the scatter, not the layout */
+      ring1.forEach(function (el, i) {
+        var a = i * GOLDEN;
+        var t = n1 > 1 ? i / (n1 - 1) : 0;
+        gsap.set(el, {
+          x: Math.cos(a) * RADIUS,
+          y: Math.sin(a) * RADIUS,
+          z: Z_NEAR - t * (Z_NEAR - Z_FAR),
+          rotationX: Math.sin(a) * TUMBLE,
+          rotationY: Math.cos(a) * TUMBLE,
+          opacity: 0
+        });
+      });
+
+      /* the cloud has life while it collapses, and resolves flat */
+      tl.fromTo("#f03tl-ring1", { rotationY: -18 }, { rotationY: 0, duration: 1.45, ease: "power1.out" }, 0);
+
+      ring1.forEach(function (el, i) {
+        tl.to(el, {
+          x: 0, y: 0, z: 0, rotationX: 0, rotationY: 0, opacity: 1,
+          duration: 0.95, ease: "power3.out"
+        }, 0.12 + i * 0.06);
+      });
+
+      /* the read living in the last pocket of air */
+      tl.fromTo("#f03tl-focus", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.7, ease: "power2.out" }, 0.3);
+      tl.fromTo("#f03tl-sliver", { opacity: 0 }, { opacity: 1, duration: 0.7, ease: "power2.out" }, 0.3);
+
+      /* ------------------------------------------------------------------
+         SCENE 2 (1.4–3.2s) — rings 2 and 3 arrive, staggered outward from
+         centre. Density climbs past ~60% of canvas.
+      ------------------------------------------------------------------ */
+      var R2_AT = 1.4, R2_STAG = 0.055, R2_DUR = 0.85, R2_DIST = 470;
+      q('.f03tl-card[data-ring="2"]').forEach(function (el, i) {
+        var g = G(el);
+        tl.fromTo(el,
+          { x: g.ux * R2_DIST, y: g.uy * R2_DIST, scale: 1.14, opacity: 0 },
+          { x: 0, y: 0, scale: 1, opacity: 1, duration: R2_DUR, ease: "power3.out" },
+          R2_AT + i * R2_STAG);
+      });
+
+      var R3_AT = 2.2, R3_STAG = 0.05, R3_DUR = 0.75, R3_DIST = 620;
+      q('.f03tl-card[data-ring="3"]').forEach(function (el, i) {
+        var g = G(el);
+        tl.fromTo(el,
+          { x: g.ux * R3_DIST, y: g.uy * R3_DIST, scale: 1.18, opacity: 0 },
+          { x: 0, y: 0, scale: 1, opacity: 1, duration: R3_DUR, ease: "power3.out" },
+          R3_AT + i * R3_STAG);
+      });
+
+      /* ------------------------------------------------------------------
+         SCENE 3 (3.2–5.0s) — the fourth ring fills the corners and the last
+         of the margins, riding a velocity smear so it reads as speed, not
+         placement.  rule: motion-blur-streak (path A, directional)
+      ------------------------------------------------------------------ */
+      var R4_AT = 3.35, R4_STAG = 0.075, R4_DUR = 0.46, R4_DIST = 760, PEAK_BLUR = 16;
+      q('.f03tl-card[data-ring="4"]').forEach(function (el, i) {
+        var g = G(el);
+        var node = root.querySelector("#f03tl-blur-" + el.getAttribute("data-streak"));
+        var axisX = Math.abs(g.ux) >= Math.abs(g.uy);
+        var proxy = { v: PEAK_BLUR };
+        var write = function () {
+          var v = proxy.v.toFixed(2);
+          if (node) node.setAttribute("stdDeviation", axisX ? v + " 0" : "0 " + v);
+        };
+        write(); /* seed frame 0 at the streaked start */
+
+        var at = R4_AT + i * R4_STAG;
+        tl.fromTo(el,
+          { x: g.ux * R4_DIST, y: g.uy * R4_DIST, opacity: 0 },
+          { x: 0, y: 0, opacity: 1, duration: R4_DUR, ease: "power4.out" },
+          at);
+        tl.to(proxy, { v: 0, duration: R4_DUR, ease: "power4.out", onUpdate: write }, at);
+      });
+
+      /* ------------------------------------------------------------------
+         SCENE 4 (5.0–6.2s) — the whole field closes INWARD from all four
+         edges at once. Nothing zooms; the frame is being crowded. Each card
+         translates along its own centre-vector by an amount proportional to
+         how far out it sits, so the outer edge eats the margins first and
+         the last sliver of air shrinks toward centre.
+      ------------------------------------------------------------------ */
+      var CLOSE_AT = 5.0, CLOSE_DUR = 1.2, CLOSE_K = 0.11;
+      geom.forEach(function (g) {
+        var d = g.r * CLOSE_K;
+        tl.to(g.el, { x: -g.ux * d, y: -g.uy * d, duration: CLOSE_DUR, ease: "power1.inOut" }, CLOSE_AT);
+      });
+      tl.to("#f03tl-sliver", { scale: 0.72, duration: CLOSE_DUR, ease: "power1.inOut" }, CLOSE_AT);
+      tl.to("#f03tl-focus", { scale: 0.94, duration: CLOSE_DUR, ease: "power1.inOut" }, CLOSE_AT);
+
+      /* ------------------------------------------------------------------
+         SCENE 5 (6.2–7.0s) — everything goes off-focus together as the VO's
+         ellipsis trails out, while the field keeps creeping inward.
+         rule: depth-of-field-blur (no dim — the handoff demands opacity 1)
+
+         HANDOFF OUT to frame 04, at t = 7.0 exactly:
+           · 40 cards, edge to edge, opacity 1
+           · centre of mass at frame centre (every move is radial)
+           · still drifting inward — the last leg is linear and covers
+             4.8px over 0.8s = 6px/s, so velocity at the boundary is 6px/s
+         Do NOT resolve this. Frame 04 owns the release.
+      ------------------------------------------------------------------ */
+      var DOF_AT = 6.2, DOF_DUR = 0.8;
+      var DEPTH_BLUR = { "1": 4, "2": 6, "3": 9, "4": 12 };
+      cards.forEach(function (el) {
+        var d = DEPTH_BLUR[el.getAttribute("data-depth")] || 6;
+        tl.to(el, { "--dof": d + "px", duration: DOF_DUR, ease: "power2.inOut" }, DOF_AT);
+      });
+      tl.to("#f03tl-focus", { "--dof": "8px", duration: DOF_DUR, ease: "power2.inOut" }, DOF_AT);
+
+      var DRIFT_PX = 4.8; /* 6px/s across the 0.8s tail — the handoff velocity */
+      geom.forEach(function (g) {
+        var d = g.r * CLOSE_K + DRIFT_PX;
+        tl.to(g.el, { x: -g.ux * d, y: -g.uy * d, duration: DOF_DUR, ease: "none" }, DOF_AT);
+      });
+    })();
+  </script>
+</template>

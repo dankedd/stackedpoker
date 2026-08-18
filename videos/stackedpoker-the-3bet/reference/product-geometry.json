@@ -1,0 +1,285 @@
+{
+ "box": {
+  "w": 672,
+  "h": 441,
+  "ratio": 1.5238
+ },
+ "seats": [
+  {
+   "seat": "BTN",
+   "label": {
+    "xPct": 50,
+    "yPct": 88.75,
+    "wPct": 9.64,
+    "hPct": 5.44,
+    "wPx": 64.8,
+    "hPx": 24,
+    "text": "HERO \u00b7BTN"
+   },
+   "meta": {
+    "xPct": 50,
+    "yPct": 95.32,
+    "wPct": 5,
+    "hPct": 5.44,
+    "wPx": 33.6,
+    "hPx": 24,
+    "text": "100 BB"
+   }
+  },
+  {
+   "seat": "SB",
+   "label": {
+    "xPct": 16.44,
+    "yPct": 69.38,
+    "wPct": 2.73,
+    "hPct": 5.44,
+    "wPx": 18.3,
+    "hPx": 24,
+    "text": "SB"
+   },
+   "meta": {
+    "xPct": 16.44,
+    "yPct": 75.95,
+    "wPct": 5,
+    "hPct": 5.44,
+    "wPx": 33.6,
+    "hPx": 24,
+    "text": "100 BB"
+   }
+  },
+  {
+   "seat": "BB",
+   "label": {
+    "xPct": 16.44,
+    "yPct": 30.63,
+    "wPct": 2.73,
+    "hPct": 5.44,
+    "wPx": 18.4,
+    "hPx": 24,
+    "text": "BB"
+   },
+   "meta": {
+    "xPct": 16.44,
+    "yPct": 37.21,
+    "wPct": 5,
+    "hPct": 5.44,
+    "wPx": 33.6,
+    "hPx": 24,
+    "text": "100 BB"
+   }
+  },
+  {
+   "seat": "UTG",
+   "label": {
+    "xPct": 50,
+    "yPct": 11.25,
+    "wPct": 3.94,
+    "hPct": 5.44,
+    "wPx": 26.5,
+    "hPx": 24,
+    "text": "UTG"
+   },
+   "meta": {
+    "xPct": 50,
+    "yPct": 16.8,
+    "wPct": 3.88,
+    "hPct": 3.4,
+    "wPx": 26.1,
+    "hPx": 15,
+    "text": "FOLD"
+   }
+  },
+  {
+   "seat": "HJ",
+   "label": {
+    "xPct": 83.56,
+    "yPct": 30.63,
+    "wPct": 2.61,
+    "hPct": 5.44,
+    "wPx": 17.5,
+    "hPx": 24,
+    "text": "HJ"
+   },
+   "meta": {
+    "xPct": 83.56,
+    "yPct": 36.19,
+    "wPct": 3.88,
+    "hPct": 3.4,
+    "wPx": 26.1,
+    "hPx": 15,
+    "text": "FOLD"
+   }
+  },
+  {
+   "seat": "CO",
+   "label": {
+    "xPct": 83.56,
+    "yPct": 69.38,
+    "wPct": 2.97,
+    "hPct": 5.44,
+    "wPx": 19.9,
+    "hPx": 24,
+    "text": "CO"
+   },
+   "meta": {
+    "xPct": 83.56,
+    "yPct": 77.37,
+    "wPct": 9.02,
+    "hPct": 8.28,
+    "wPx": 60.6,
+    "hPx": 36.5,
+    "text": "RAISE97.7 BB behind"
+   }
+  }
+ ],
+ "chips": [
+  {
+   "xPct": 27.91,
+   "yPct": 61.39,
+   "wPct": 3.57,
+   "hPct": 5.44,
+   "wPx": 24,
+   "hPx": 24,
+   "text": "",
+   "chipPx": "20.0"
+  },
+  {
+   "xPct": 27.91,
+   "yPct": 61.39,
+   "wPct": 3.57,
+   "hPct": 5.44,
+   "wPx": 24,
+   "hPx": 24,
+   "text": "",
+   "chipPx": "20.0"
+  },
+  {
+   "xPct": 27.91,
+   "yPct": 35.89,
+   "wPct": 3.57,
+   "hPct": 5.44,
+   "wPx": 24,
+   "hPx": 24,
+   "text": "",
+   "chipPx": "20.0"
+  },
+  {
+   "xPct": 27.91,
+   "yPct": 35.89,
+   "wPct": 3.57,
+   "hPct": 5.44,
+   "wPx": 24,
+   "hPx": 24,
+   "text": "",
+   "chipPx": "20.0"
+  },
+  {
+   "xPct": 72.08,
+   "yPct": 61.39,
+   "wPct": 3.57,
+   "hPct": 5.44,
+   "wPx": 24,
+   "hPx": 24,
+   "text": "",
+   "chipPx": "20.0"
+  },
+  {
+   "xPct": 72.08,
+   "yPct": 61.39,
+   "wPct": 3.57,
+   "hPct": 5.44,
+   "wPx": 24,
+   "hPx": 24,
+   "text": "",
+   "chipPx": "20.0"
+  }
+ ],
+ "pot": {
+  "xPct": 50,
+  "yPct": 36,
+  "wPct": 6.24,
+  "hPct": 7.6,
+  "wPx": 41.9,
+  "hPx": 33.5,
+  "text": "Pot3.8 BB"
+ },
+ "heroCards": {
+  "xPct": 50,
+  "yPct": 56.96,
+  "wPct": 16.96,
+  "hPct": 17.23,
+  "wPx": 114,
+  "hPx": 76,
+  "text": "A\u2660A\u26605\u26605\u2660"
+ },
+ "dealer": {
+  "xPct": 58.93,
+  "yPct": 88.75,
+  "wPct": 2.38,
+  "hPct": 3.63,
+  "wPx": 16,
+  "hPx": 16,
+  "text": "D"
+ },
+ "type": {
+  "heroPrefix": {
+   "fontSize": "9px",
+   "fontWeight": "900",
+   "letterSpacing": "0.9px",
+   "color": "rgba(196, 181, 253, 0.8)",
+   "fontFamily": "Geist",
+   "text": "HERO \u00b7"
+  },
+  "position": {
+   "fontSize": "13px",
+   "fontWeight": "800",
+   "letterSpacing": "normal",
+   "color": "rgb(221, 214, 254)",
+   "fontFamily": "Geist",
+   "text": "BTN"
+  },
+  "potLabel": {
+   "fontSize": "8px",
+   "fontWeight": "700",
+   "letterSpacing": "1.44px",
+   "color": "rgba(252, 211, 77, 0.5)",
+   "fontFamily": "Geist",
+   "text": "Pot"
+  },
+  "potValue": {
+   "fontSize": "13px",
+   "fontWeight": "900",
+   "letterSpacing": "normal",
+   "color": "rgb(253, 230, 138)",
+   "fontFamily": "Geist",
+   "text": "3.8 BB"
+  },
+  "metaRow": {
+   "fontSize": "16px",
+   "fontWeight": "400",
+   "color": "rgb(230, 234, 240)",
+   "text": "100 BB"
+  }
+ },
+ "statusBar": {
+  "background": "rgba(25, 31, 46, 0.1)",
+  "border": "1px solid rgba(36, 42, 56, 0.2)",
+  "borderRadius": "12px",
+  "lines": [
+   {
+    "text": "PREFLOP \u00b7 100BB EFFECTIVE",
+    "fontSize": "10px",
+    "fontWeight": "500",
+    "color": "rgba(255, 255, 255, 0.4)",
+    "letterSpacing": "0.6px"
+   },
+   {
+    "text": "CO OPEN",
+    "fontSize": "11px",
+    "fontWeight": "900",
+    "color": "rgb(196, 181, 253)",
+    "letterSpacing": "0.66px"
+   }
+  ]
+ }
+}

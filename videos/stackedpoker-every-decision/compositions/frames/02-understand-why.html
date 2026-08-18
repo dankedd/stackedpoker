@@ -1,0 +1,484 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Geist";
+      src: url("capture/assets/fonts/22a5144ee8d83bca-s.p.woff2") format("woff2");
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: block;
+    }
+    @font-face {
+      font-family: "Geist Mono";
+      src: url("capture/assets/fonts/7d4881bb7e1bf84d-s.p.woff2") format("woff2");
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: block;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      font-family: "Geist", sans-serif;
+      color: #E6EAF0;
+      -webkit-font-smoothing: antialiased;
+    }
+    #root * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ---- full-bleed ground: a clip layer, never #root ---- */
+    .f02-bg { position: absolute; inset: 0; background: #0C101D; }
+    .f02-stage { position: absolute; inset: 0; }
+
+    /* ---- brand atoms (frame.md) ---- */
+    .f02-card {
+      background: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      border-radius: 14px;
+    }
+    .f02-sub {
+      background: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      border-radius: 12px;
+    }
+    .f02-eyebrow {
+      font-size: 13px; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #a78bfa;
+    }
+    .f02-micro {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #728297;
+    }
+    .f02-pill {
+      background: rgba(139, 92, 246, 0.08); color: #a78bfa; border-radius: 100px;
+      font-size: 12px; font-weight: 500; letter-spacing: 0.04em; padding: 6px 14px;
+    }
+    .f02-dof { --dof: 0px; filter: blur(var(--dof)); will-change: filter; }
+
+    /* ================= LEFT: the decision card (+ the line beneath it) ========= */
+    .f02-left { position: absolute; left: 440px; top: 130px; width: 1040px; }
+
+    .f02-decision {
+      position: relative;
+      width: 1040px; height: 600px; padding: 30px;
+      display: flex; flex-direction: column;
+    }
+    .f02-head {
+      display: flex; align-items: center; justify-content: space-between; height: 30px;
+    }
+    .f02-main { display: flex; gap: 24px; margin-top: 24px; height: 336px; }
+
+    /* range grid — the coupled surface */
+    .f02-rangecard { width: 470px; height: 336px; padding: 14px; position: relative; z-index: 3; }
+    .f02-labelrow { display: flex; align-items: center; justify-content: space-between; height: 16px; }
+    .f02-grid {
+      margin-top: 10px; height: 282px;
+      display: grid; grid-template-columns: repeat(13, 1fr); grid-auto-rows: 1fr; gap: 2px;
+    }
+    .f02-cell {
+      border-radius: 3px;
+      background: rgba(139, 92, 246, 0.05);
+      color: #39415A;
+      font-family: "Geist Mono", monospace;
+      font-size: 8px; letter-spacing: -0.01em;
+      display: flex; align-items: center; justify-content: center;
+      transform-origin: 50% 50%;
+    }
+    .f02-cell.on { background: rgba(139, 92, 246, 0.07); color: rgba(230, 234, 240, 0.26); }
+    .f02-bloom { position: relative; z-index: 4; }
+
+    .f02-col { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+
+    .f02-handcard { height: 190px; padding: 14px; }
+    .f02-cards { margin-top: 12px; display: flex; gap: 16px; }
+    .f02-pcard {
+      width: 96px; height: 130px; border-radius: 8px;
+      background: #E6EAF0; color: #0C101D;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    }
+    .f02-rank { font-size: 36px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+    .f02-suit { width: 26px; height: 26px; display: block; fill: #0C101D; }
+    .f02-handnote {
+      margin-top: 14px; font-size: 13px; font-weight: 400; color: #64748B; letter-spacing: 0.01em;
+    }
+
+    .f02-potcard { height: 126px; padding: 14px; }
+    .f02-potrow { display: flex; align-items: center; gap: 16px; margin-top: 14px; }
+    .f02-potname { width: 92px; font-size: 12px; font-weight: 500; color: #728297; letter-spacing: 0.04em; }
+    .f02-track { flex: 1; height: 12px; border-radius: 6px; background: rgba(139, 92, 246, 0.08); }
+    .f02-fill { display: block; height: 12px; border-radius: 6px; background: #8B5CF6; }
+    .f02-val { width: 40px; text-align: right; font-family: "Geist Mono", monospace; font-size: 12px; color: #64748B; }
+
+    /* the committed answer — deliberately verdict-free */
+    .f02-answer { margin-top: 24px; height: 126px; padding: 16px; position: relative; }
+    .f02-actions { margin-top: 14px; display: flex; gap: 14px; height: 64px; }
+    .f02-btn {
+      flex: 1; height: 64px; border-radius: 100px;
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      background: rgba(139, 92, 246, 0.04);
+      color: #728297;
+      font-family: "Geist", sans-serif; font-size: 20px; font-weight: 500; letter-spacing: 0.01em;
+      display: flex; align-items: center; justify-content: center;
+      transform-origin: 50% 50%;
+    }
+
+    /* single ripple ring — lives in DOM from t=0 at the click point */
+    .f02-ripple {
+      position: absolute;
+      left: 520px; top: 522px;
+      width: 100px; height: 100px;
+      margin-left: -50px; margin-top: -50px;
+      border-radius: 50%;
+      border: 2px solid rgba(139, 92, 246, 0.5);
+      transform-origin: 50% 50%;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 6;
+    }
+
+    .f02-cursor {
+      position: absolute; left: 0; top: 0;
+      width: 30px; height: 30px;
+      transform-origin: 12% 12%;
+      pointer-events: none;
+      z-index: 8;
+    }
+    .f02-cursor svg { width: 30px; height: 30px; display: block; }
+
+    /* the line */
+    .f02-line {
+      margin-top: 32px;
+      font-size: 50px; font-weight: 500; line-height: 1.1; letter-spacing: -0.02em;
+      color: #93A0B6;
+      opacity: 0;
+    }
+
+    /* ================= RIGHT: the Coach drawer ================= */
+    .f02-drawer {
+      position: absolute; left: 1130px; top: 130px;
+      width: 710px; height: 600px; padding: 34px;
+      display: flex; flex-direction: column;
+      opacity: 0;
+    }
+    .f02-dhead { display: flex; align-items: center; gap: 14px; height: 44px; }
+    .f02-avatar {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: rgba(139, 92, 246, 0.15);
+      display: flex; align-items: center; justify-content: center; flex: none;
+    }
+    .f02-icon { width: 22px; height: 22px; display: block; stroke: #8B5CF6; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .f02-icon-sm { width: 16px; height: 16px; display: block; stroke: #8B5CF6; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+    .f02-dname { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; color: #E6EAF0; }
+    .f02-dsub { font-size: 13px; font-weight: 400; color: #728297; margin-top: 2px; }
+    .f02-rule { margin-top: 26px; height: 1px; background: rgba(139, 92, 246, 0.2); transform-origin: 0% 50%; }
+
+    .f02-why { margin-top: 46px; }
+    .f02-title {
+      margin-top: 18px;
+      font-size: 36px; font-weight: 500; line-height: 1.25; letter-spacing: -0.02em; color: #E6EAF0;
+    }
+    .f02-body {
+      margin-top: 22px;
+      font-size: 22px; font-weight: 400; line-height: 1.6; color: #728297;
+    }
+    .f02-highlight {
+      margin-top: 30px;
+      background: rgba(139, 92, 246, 0.08);
+      border-left: 4px solid #8B5CF6;
+      border-radius: 12px;
+      padding: 22px 24px;
+      font-size: 22px; font-weight: 500; line-height: 1.5; color: #E6EAF0;
+    }
+    .f02-key {
+      display: inline-block;
+      font-family: "Geist Mono", monospace;
+      font-weight: 500;
+      transform-origin: 50% 50%;
+      color: #E6EAF0;
+    }
+    .f02-foot {
+      margin-top: auto;
+      display: flex; align-items: center; gap: 10px;
+    }
+  </style>
+
+  <div id="root" data-composition-id="02-understand-why" data-start="0" data-duration="5.5" data-width="1920" data-height="1080">
+    <div class="clip f02-bg" data-start="0" data-duration="5.5" data-track-index="0"></div>
+
+    <div class="clip f02-stage" data-start="0" data-duration="5.5" data-track-index="1">
+
+      <!-- ============ LEFT: decision card + the line ============ -->
+      <div class="f02-left">
+        <div class="f02-card f02-decision">
+
+          <div class="f02-head f02-dof">
+            <div class="f02-eyebrow">Cutoff opens · you are in the big blind</div>
+            <div class="f02-pill">DECISION</div>
+          </div>
+
+          <div class="f02-main">
+            <!-- the coupled surface -->
+            <div class="f02-sub f02-rangecard">
+              <div class="f02-labelrow">
+                <div class="f02-micro">Opening range</div>
+                <div class="f02-micro" style="color:#3E4657;">13 × 13</div>
+              </div>
+              <div class="f02-grid"></div>
+            </div>
+
+            <div class="f02-col f02-dof">
+              <div class="f02-sub f02-handcard">
+                <div class="f02-labelrow">
+                  <div class="f02-micro">Your hand</div>
+                  <div class="f02-micro" style="color:#3E4657;">Preflop</div>
+                </div>
+                <div class="f02-cards">
+                  <div class="f02-pcard">
+                    <div class="f02-rank">A</div>
+                    <svg class="f02-suit" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C12 2 3.8 8.4 3.8 13.3a4.1 4.1 0 0 0 7.2 2.6c0 2-1 4-2.6 5.5h7.2c-1.6-1.5-2.6-3.5-2.6-5.5a4.1 4.1 0 0 0 7.2-2.6C20.2 8.4 12 2 12 2Z" /></svg>
+                  </div>
+                  <div class="f02-pcard">
+                    <div class="f02-rank">5</div>
+                    <svg class="f02-suit" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C12 2 3.8 8.4 3.8 13.3a4.1 4.1 0 0 0 7.2 2.6c0 2-1 4-2.6 5.5h7.2c-1.6-1.5-2.6-3.5-2.6-5.5a4.1 4.1 0 0 0 7.2-2.6C20.2 8.4 12 2 12 2Z" /></svg>
+                  </div>
+                  <div style="flex:1;display:flex;align-items:flex-end;">
+                    <div class="f02-handnote">suited</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="f02-sub f02-potcard">
+                <div class="f02-micro">Pot &amp; price</div>
+                <div class="f02-potrow">
+                  <div class="f02-potname">Pot</div>
+                  <div class="f02-track"><span class="f02-fill" style="width:58%;"></span></div>
+                  <div class="f02-val">—</div>
+                </div>
+                <div class="f02-potrow" style="margin-top:10px;">
+                  <div class="f02-potname">To call</div>
+                  <div class="f02-track"><span class="f02-fill" style="width:26%;"></span></div>
+                  <div class="f02-val">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- the committed answer: no verdict, no score, no marker -->
+          <div class="f02-sub f02-answer f02-dof">
+            <div class="f02-micro">Your answer</div>
+            <div class="f02-actions">
+              <div class="f02-btn">Fold</div>
+              <div class="f02-btn f02-call">Call</div>
+              <div class="f02-btn">3-Bet</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="f02-ripple"></div>
+
+        <div class="f02-cursor">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 2.5 19 12.2l-6.1 1.1L9.9 19 5 2.5Z" fill="#E6EAF0" stroke="#0C101D" stroke-width="1.2" stroke-linejoin="round" />
+          </svg>
+        </div>
+
+        <h2 class="f02-line">Let’s understand why.</h2>
+      </div>
+
+      <!-- ============ RIGHT: the Coach drawer ============ -->
+      <div class="f02-card f02-drawer">
+        <div class="f02-dhead">
+          <div class="f02-avatar">
+            <!-- assets/svg-a146683f.svg — bot (coach identity) -->
+            <svg class="f02-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" /></svg>
+          </div>
+          <div style="flex:1;">
+            <div class="f02-dname">AI Coach</div>
+            <div class="f02-dsub">the reasoning behind the spot</div>
+          </div>
+        </div>
+        <div class="f02-rule"></div>
+
+        <div class="f02-eyebrow f02-why">Why</div>
+        <div class="f02-title">Start with one hand.</div>
+        <div class="f02-body">The decision begins with what you actually hold — and with what that hand takes away from everything else.</div>
+
+        <div class="f02-highlight">In this range, that hand is <span class="f02-key" data-word="hand">A5s</span>.</div>
+
+        <div class="f02-foot">
+          <!-- assets/svg-055d040d.svg — sparkles (coach chrome) -->
+          <svg class="f02-icon-sm" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" /><path d="M20 3v4" /><path d="M22 5h-4" /><path d="M4 17v2" /><path d="M5 18H3" /></svg>
+          <div class="f02-micro">Coupled to your range</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      var DUR = 5;
+      var root = document.querySelector('[data-composition-id="02-understand-why"]');
+      var q = function (s) { return root.querySelector(s); };
+      var qa = function (s) { return Array.prototype.slice.call(root.querySelectorAll(s)); };
+
+      /* -----------------------------------------------------------------
+         BUILD — the 13x13 range grid. Exactly ONE cell is the bloom target.
+         The lit pattern is a pedagogical placeholder shape, not a solver
+         output; no frequencies or figures are asserted anywhere on frame.
+      ----------------------------------------------------------------- */
+      var RANKS = ["A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"];
+      function inRange(i, j) {
+        if (i === j) return true;                   // pairs
+        if (i < j) return (j - i) <= 4 || i <= 1;   // suited
+        return (i - j) <= 3 && j <= 3;              // offsuit
+      }
+      var BLOOM_R = 0, BLOOM_C = 9;                 // A5s — the one hand that lights up
+      var grid = q(".f02-grid");
+      for (var r = 0; r < 13; r++) {
+        for (var c = 0; c < 13; c++) {
+          var cell = document.createElement("div");
+          cell.className = "f02-cell";
+          cell.textContent = r < c ? RANKS[r] + RANKS[c] + "s"
+            : r > c ? RANKS[c] + RANKS[r] + "o"
+              : RANKS[r] + RANKS[r];
+          if (inRange(r, c)) cell.className += " on";
+          if (r === BLOOM_R && c === BLOOM_C) cell.className += " bloom f02-bloom";
+          grid.appendChild(cell);
+        }
+      }
+      var bloomCell = q(".f02-bloom");
+      var rangeCard = q(".f02-rangecard");
+      var keySpan = q(".f02-key");
+
+      /* -----------------------------------------------------------------
+         asr-keyword-glow — ONE keyword, ONE envelope, ONE driver.
+         Attack -> decay -> high rest, so the bloom is HELD to the end.
+      ----------------------------------------------------------------- */
+      var ATTACK = 0.20, RELEASE = 0.35, REST = 0.82;
+      var MAX_BLUR = 26, MAX_SCALE = 0.06;
+      var TIMINGS = { hand: { start: 3.90, end: 4.30 } };
+      function envelope(time, start, end) {
+        if (time < start) return 0;
+        if (time < end) return Math.min((time - start) / ATTACK, 1);
+        var rEnd = end + RELEASE;
+        if (time < rEnd) return 1 - ((time - end) / RELEASE) * (1 - REST);
+        return REST;
+      }
+      var REST_RGB = { r: 230, g: 234, b: 240 };
+      var ACT_RGB = { r: 196, g: 181, b: 253 };
+      function lerpCh(a, b, t) { return Math.round(a + (b - a) * t); }
+      function colorAt(e) {
+        return "rgb(" + lerpCh(REST_RGB.r, ACT_RGB.r, e) + "," +
+          lerpCh(REST_RGB.g, ACT_RGB.g, e) + "," +
+          lerpCh(REST_RGB.b, ACT_RGB.b, e) + ")";
+      }
+
+      /* -----------------------------------------------------------------
+         TIMELINE
+      ----------------------------------------------------------------- */
+      var tl = gsap.timeline({ paused: true });
+
+      var left = q(".f02-left");
+      var drawer = q(".f02-drawer");
+      var cursor = q(".f02-cursor");
+      var ripple = q(".f02-ripple");
+      var callBtn = q(".f02-call");
+
+      /* --- Scene 1 (0.00-0.70): the card is already there, in the position
+             Frame 1 left it. A cursor commits one button. Small and dry:
+             cursor-click-ripple (single-ring variation) into the SUBTLE form
+             of press-release-spring — no burst, no environmental glow. --- */
+      var CALL_X = 520, CALL_Y = 522;   // the Call button's visual centroid, group-local
+
+      // Phase 1 — move (eased, settles before the click)
+      tl.fromTo(cursor,
+        { x: CALL_X + 188, y: CALL_Y + 126, scale: 1 },
+        { x: CALL_X, y: CALL_Y, duration: 0.22, ease: "power3.out" }, 0);
+
+      // Phase 2 — press: cursor compresses more than the target; both linear in
+      tl.to(cursor, { scale: 0.85, duration: 0.07, ease: "power2.in" }, 0.26);
+      tl.to(callBtn, { scale: 0.955, duration: 0.07, ease: "power1.in" }, 0.26);
+
+      // Phase 2b — release: spring recovery, adjacency keeps state continuous.
+      // The committed button takes a QUIET selected ring. No fill, no colour
+      // of verdict, no marker, no check — it is only "this is what you chose".
+      tl.to(cursor, { scale: 1, duration: 0.30, ease: "back.out(1.6)" }, 0.33);
+      tl.to(callBtn, {
+        scale: 1,
+        borderColor: "rgba(139,92,246,0.45)",
+        color: "#E6EAF0",
+        duration: 0.38, ease: "back.out(1.4)"
+      }, 0.33);
+
+      // Phase 3 — one ring, from the click point
+      tl.fromTo(ripple,
+        { scale: 0, opacity: 0.5 },
+        { scale: 3.6, opacity: 0, duration: 0.50, ease: "power2.out", immediateRender: false }, 0.26);
+
+      /* --- Scene 2 (0.70-1.40): NOTHING HAPPENS. No tween exists in this
+             window on purpose. No verdict, no score, no colour, no toast.
+             The absence IS the shot. Do not fill this silence. --- */
+
+      /* --- Scene 3 (1.40-2.40): the line fades up on a long settle. Opacity
+             and a 10px drift only — it must never pop or scale in. --- */
+      tl.fromTo(q(".f02-line"),
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 1.00, ease: "power1.out" }, 1.40);
+
+      /* --- Scene 4 (2.40-3.80): panel-edit-live-sync. The Coach drawer slides
+             in from the right on a long-tail settle; the decision card EASES
+             LEFT to make room. It is never covered. --- */
+      tl.fromTo(drawer,
+        { x: 820, opacity: 0 },
+        { x: 0, opacity: 1, duration: 1.15, ease: "power3.out" }, 2.40);
+      tl.fromTo(left, { x: 0 }, { x: -350, duration: 1.15, ease: "power3.out" }, 2.40);
+
+      // the drawer's contents arrive on their own cues, never all at once
+      tl.fromTo(q(".f02-dhead"), { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.42, ease: "power2.out" }, 2.92);
+      tl.fromTo(q(".f02-rule"), { opacity: 0, scaleX: 0 }, { opacity: 1, scaleX: 1, duration: 0.55, ease: "power2.out" }, 3.04);
+      tl.fromTo(q(".f02-why"), { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.36, ease: "power2.out" }, 3.20);
+      tl.fromTo(q(".f02-title"), { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.44, ease: "power2.out" }, 3.28);
+      tl.fromTo(q(".f02-body"), { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.44, ease: "power2.out" }, 3.44);
+      tl.fromTo(q(".f02-highlight"), { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.44, ease: "power2.out" }, 3.62);
+      tl.fromTo(q(".f02-foot"), { opacity: 0 }, { opacity: 1, duration: 0.40, ease: "power2.out" }, 3.74);
+
+      /* --- Scene 5 (3.80-5.00): ONE range blooms, ONCE. A single cell, not a
+             sweep. One linear driver carries the whole envelope. --- */
+      var driver = { t: 0 };
+      tl.to(driver, {
+        t: DUR, duration: DUR, ease: "none",
+        onUpdate: function () {
+          var e = envelope(driver.t, TIMINGS.hand.start, TIMINGS.hand.end);
+
+          // the spoken clause — text-shadow hugs the glyph
+          keySpan.style.textShadow = "0 0 " + (MAX_BLUR * e).toFixed(2) +
+            "px rgba(167,139,250," + (0.9 * e).toFixed(3) + ")";
+          keySpan.style.transform = "scale(" + (1 + MAX_SCALE * e) + ")";
+          keySpan.style.color = colorAt(e);
+
+          // the coupled surface — exactly one cell answers
+          bloomCell.style.background = "rgba(139,92,246," + (0.07 + 0.78 * e).toFixed(3) + ")";
+          bloomCell.style.color = "rgba(230,234,240," + (0.26 + 0.72 * e).toFixed(3) + ")";
+          bloomCell.style.transform = "scale(" + (1 + 0.55 * e) + ")";
+          bloomCell.style.boxShadow = "0 0 " + (26 * e).toFixed(1) +
+            "px rgba(139,92,246," + (0.75 * e).toFixed(3) + ")";
+
+          // the card that holds it lifts a little, so the eye finds the cell
+          rangeCard.style.borderColor = "rgba(139,92,246," + (0.2 + 0.34 * e).toFixed(3) + ")";
+          rangeCard.style.background = "rgba(139,92,246," + (0.04 + 0.03 * e).toFixed(3) + ")";
+        }
+      }, 0);
+
+      /* --- depth-of-field-blur: everything but the lit range settles back.
+             Small / grouped layers blur; the focal card stays genuinely sharp
+             and sits above them (z-index 3). --- */
+      qa(".f02-dof").forEach(function (el, i) {
+        tl.to(el, { "--dof": (3 + i) + "px", opacity: 0.5, duration: 0.70, ease: "power2.inOut" }, 4.15);
+      });
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["02-understand-why"] = tl;
+    })();
+  </script>
+</template>

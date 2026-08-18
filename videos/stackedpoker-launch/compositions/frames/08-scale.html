@@ -1,0 +1,462 @@
+<template>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <style>
+    @font-face {
+      font-family: "Geist";
+      src: url("capture/assets/fonts/22a5144ee8d83bca-s.p.woff2") format("woff2"),
+           url("capture/assets/fonts/aa016aab0e6d1295-s.woff2") format("woff2"),
+           url("capture/assets/fonts/9766a7e9e2e0ad5a-s.woff2") format("woff2"),
+           url("capture/assets/fonts/b66cf8e69499582a-s.woff2") format("woff2"),
+           url("capture/assets/fonts/f639721981034f88-s.woff2") format("woff2");
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: block;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      font-family: "Geist", sans-serif;
+      color: #E6EAF0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---- full-bleed ground (never on #root) ---- */
+    .f08-ground {
+      position: absolute;
+      inset: 0;
+      background: #0C101D;
+    }
+
+    /* ---- camera stage ---- */
+    .f08-stage {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+    .f08-camera {
+      position: absolute;
+      inset: 0;
+      transform-origin: 50% 50%;
+      transform: scale(1.03) translate(0px, 205px);
+      will-change: transform;
+    }
+
+    /* ---- header ---- */
+    .f08-eyebrow {
+      position: absolute;
+      left: 0;
+      top: 46px;
+      width: 1920px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #8B5CF6;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .f08-eyebrow svg { width: 20px; height: 20px; display: block; }
+
+    .f08-headline {
+      position: absolute;
+      left: 0;
+      top: 92px;
+      width: 1920px;
+      text-align: center;
+      font-size: 50px;
+      font-weight: 600;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: #E6EAF0;
+      white-space: nowrap;
+    }
+    .f08-w { display: inline-block; }
+
+    .f08-sub {
+      position: absolute;
+      left: 0;
+      top: 158px;
+      width: 1920px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: 400;
+      line-height: 1.4;
+      color: #728297;
+    }
+
+    /* ---- cards ---- */
+    .f08-card {
+      position: relative;
+      overflow: hidden;
+      background: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      border-radius: 14px;
+    }
+    .f08-swipe {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        104deg,
+        rgba(139, 92, 246, 0) 30%,
+        rgba(139, 92, 246, 0.20) 50%,
+        rgba(139, 92, 246, 0) 70%
+      );
+    }
+
+    /* live row */
+    .f08-live-row {
+      position: absolute;
+      left: 80px;
+      top: 230px;
+      display: flex;
+      gap: 20px;
+    }
+    .f08-live {
+      width: 280px;
+      height: 210px;
+      padding: 22px;
+    }
+    .f08-chip {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #10B981;
+      height: 16px;
+    }
+    .f08-chip svg { width: 13px; height: 13px; display: block; }
+    .f08-mt {
+      margin-top: 14px;
+      min-height: 58px;
+      font-size: 23px;
+      font-weight: 600;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      color: #E6EAF0;
+    }
+    .f08-md {
+      margin-top: 10px;
+      min-height: 45px;
+      font-size: 15px;
+      font-weight: 400;
+      line-height: 1.5;
+      color: #728297;
+    }
+
+    /* the path rail */
+    .f08-rail {
+      position: absolute;
+      left: 80px;
+      top: 456px;
+      width: 1780px;
+      height: 2px;
+      border-radius: 6px;
+      transform-origin: 0% 50%;
+      background: linear-gradient(
+        90deg,
+        rgba(139, 92, 246, 0.55) 0%,
+        rgba(139, 92, 246, 0.28) 55%,
+        rgba(139, 92, 246, 0.08) 100%
+      );
+    }
+    .f08-arrow {
+      position: absolute;
+      left: 1866px;
+      top: 446px;
+      width: 22px;
+      height: 22px;
+      color: rgba(139, 92, 246, 0.45);
+    }
+    .f08-arrow svg { width: 22px; height: 22px; display: block; }
+
+    /* mapped row */
+    .f08-mapped-row {
+      position: absolute;
+      left: 150px;
+      top: 480px;
+      display: flex;
+      gap: 20px;
+    }
+    .f08-mapped {
+      width: 250px;
+      height: 150px;
+      padding: 20px;
+      opacity: 0;
+    }
+    .f08-chip-q {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #728297;
+      height: 15px;
+    }
+    .f08-chip-q svg { width: 12px; height: 12px; display: block; }
+    .f08-qt {
+      margin-top: 12px;
+      min-height: 46px;
+      font-size: 17px;
+      font-weight: 600;
+      line-height: 1.35;
+      color: #E6EAF0;
+    }
+    .f08-blank {
+      margin-top: 18px;
+      width: 96px;
+      height: 7px;
+      border-radius: 6px;
+      background: rgba(139, 92, 246, 0.22);
+    }
+    .f08-blank.f08-blank-short { margin-top: 10px; width: 62px; }
+
+    /* receding rows */
+    .f08-far-row {
+      position: absolute;
+      left: 280px;
+      top: 670px;
+      display: flex;
+      gap: 18px;
+    }
+    .f08-far {
+      width: 210px;
+      height: 110px;
+      opacity: 0;
+    }
+    .f08-horizon-row {
+      position: absolute;
+      left: 420px;
+      top: 810px;
+      display: flex;
+      gap: 16px;
+    }
+    .f08-horizon {
+      width: 180px;
+      height: 80px;
+      opacity: 0;
+    }
+  </style>
+
+  <div data-hf-id="hf-0mi4" id="root" data-composition-id="08-scale" data-start="0" data-duration="8.5" data-width="1920" data-height="1080">
+
+    <div data-hf-id="hf-v5dk" class="clip f08-ground" data-start="0" data-duration="8.5" data-track-index="0"></div>
+
+    <div data-hf-id="hf-dsks" class="clip f08-stage" data-start="0" data-duration="8.5" data-track-index="1">
+      <div data-hf-id="hf-609u" class="f08-camera" id="f08-camera">
+
+        <!-- header -->
+        <div data-hf-id="hf-tau6" class="f08-eyebrow" id="f08-eyebrow">
+          <svg data-hf-id="hf-i6u6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-y4ds" d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" /><path data-hf-id="hf-dt4i" d="M22 10v6" /><path data-hf-id="hf-qvia" d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" /></svg>
+          <span data-hf-id="hf-jm3t">The Poker Journey</span>
+        </div>
+
+        <div data-hf-id="hf-hmpv" class="f08-headline"><span data-hf-id="hf-smpm" class="f08-w">12</span> <span data-hf-id="hf-obug" class="f08-w">of</span> <span data-hf-id="hf-mqs4" class="f08-w">29</span> <span data-hf-id="hf-f4re" class="f08-w">modules</span> <span data-hf-id="hf-fdb3" class="f08-w">live</span> <span data-hf-id="hf-xb1q" class="f08-w">today</span></div>
+
+        <div data-hf-id="hf-363y" class="f08-sub" id="f08-sub">the full path already mapped</div>
+
+        <!-- the live stretch: real module names from the captured site -->
+        <div data-hf-id="hf-2s1a" class="f08-live-row">
+          <div data-hf-id="hf-nv96" class="f08-card f08-live">
+            <div data-hf-id="hf-bt3p" class="f08-chip"><svg data-hf-id="hf-1w5e" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle data-hf-id="hf-m1lh" cx="12" cy="12" r="10" /><path data-hf-id="hf-yfzu" d="m9 12 2 2 4-4" /></svg><span data-hf-id="hf-1y1o">Available now</span></div>
+            <div data-hf-id="hf-q376" class="f08-mt">Foundations</div>
+            <div data-hf-id="hf-ljhp" class="f08-md">Learn the language.</div>
+            <div data-hf-id="hf-5j6r" class="f08-swipe"></div>
+          </div>
+          <div data-hf-id="hf-rnoe" class="f08-card f08-live">
+            <div data-hf-id="hf-lgzt" class="f08-chip"><svg data-hf-id="hf-2agf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle data-hf-id="hf-jqh5" cx="12" cy="12" r="10" /><path data-hf-id="hf-b76m" d="m9 12 2 2 4-4" /></svg><span data-hf-id="hf-xcpg">Available now</span></div>
+            <div data-hf-id="hf-oze5" class="f08-mt">Preflop Strategy</div>
+            <div data-hf-id="hf-k8q7" class="f08-md">Learn how ranges begin.</div>
+            <div data-hf-id="hf-i7ab" class="f08-swipe"></div>
+          </div>
+          <div data-hf-id="hf-s1zf" class="f08-card f08-live">
+            <div data-hf-id="hf-mnww" class="f08-chip"><svg data-hf-id="hf-2org" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle data-hf-id="hf-ozdc" cx="12" cy="12" r="10" /><path data-hf-id="hf-blhn" d="m9 12 2 2 4-4" /></svg><span data-hf-id="hf-w5sd">Available now</span></div>
+            <div data-hf-id="hf-ybux" class="f08-mt">Postflop Foundations</div>
+            <div data-hf-id="hf-3721" class="f08-md">Learn how boards transform ranges.</div>
+            <div data-hf-id="hf-hsza" class="f08-swipe"></div>
+          </div>
+          <div data-hf-id="hf-sgag" class="f08-card f08-live">
+            <div data-hf-id="hf-m9lv" class="f08-chip"><svg data-hf-id="hf-332h" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle data-hf-id="hf-ol2b" cx="12" cy="12" r="10" /><path data-hf-id="hf-bzso" d="m9 12 2 2 4-4" /></svg><span data-hf-id="hf-wk3e">Available now</span></div>
+            <div data-hf-id="hf-n8bn" class="f08-mt">Range Thinking</div>
+            <div data-hf-id="hf-nx7v" class="f08-md">Learn to reason with complete strategies.</div>
+            <div data-hf-id="hf-heo9" class="f08-swipe"></div>
+          </div>
+          <div data-hf-id="hf-po59" class="f08-card f08-live">
+            <div data-hf-id="hf-ka2q" class="f08-chip"><svg data-hf-id="hf-3hdi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle data-hf-id="hf-ijk2" cx="12" cy="12" r="10" /><path data-hf-id="hf-97nh" d="m9 12 2 2 4-4" /></svg><span data-hf-id="hf-yjmj">Available now</span></div>
+            <div data-hf-id="hf-pi7v" class="f08-mt">Game Theory</div>
+            <div data-hf-id="hf-y1so" class="f08-md">Learn why balanced strategies work.</div>
+            <div data-hf-id="hf-h0d8" class="f08-swipe"></div>
+          </div>
+          <div data-hf-id="hf-q2ga" class="f08-card f08-live">
+            <div data-hf-id="hf-jvrp" class="f08-chip"><svg data-hf-id="hf-3voj" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle data-hf-id="hf-i591" cx="12" cy="12" r="10" /><path data-hf-id="hf-9lyi" d="m9 12 2 2 4-4" /></svg><span data-hf-id="hf-yxxk">Available now</span></div>
+            <div data-hf-id="hf-3csl" class="f08-mt">Bet Sizing &amp; Defense</div>
+            <div data-hf-id="hf-moqs" class="f08-md">Learn how range structure determines aggression.</div>
+            <div data-hf-id="hf-gm27" class="f08-swipe"></div>
+          </div>
+        </div>
+
+        <!-- the path itself -->
+        <div data-hf-id="hf-k1hu" class="f08-rail" id="f08-rail"></div>
+        <div data-hf-id="hf-qs4i" class="f08-arrow" id="f08-arrow">
+          <svg data-hf-id="hf-49zk" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path data-hf-id="hf-8gds" d="M5 12h14" /><path data-hf-id="hf-bnog" d="m12 5 7 7-7 7" /></svg>
+        </div>
+
+        <!-- the road continuing: mapped, not yet live -->
+        <div data-hf-id="hf-t1kp" class="f08-mapped-row">
+          <div data-hf-id="hf-u7ot" class="f08-card f08-mapped">
+            <div data-hf-id="hf-uif3" class="f08-chip-q"><svg data-hf-id="hf-ybe5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect data-hf-id="hf-md5i" x="2" y="6" width="20" height="8" rx="1" /><path data-hf-id="hf-ulwb" d="M17 14v7" /><path data-hf-id="hf-fzuo" d="M7 14v7" /><path data-hf-id="hf-6uv1" d="M17 3v3" /><path data-hf-id="hf-feag" d="M7 3v3" /><path data-hf-id="hf-3j8f" d="M10 14 2.3 6.3" /><path data-hf-id="hf-9tyq" d="m14 6 7.7 7.7" /><path data-hf-id="hf-921b" d="m8 6 8 8" /></svg><span data-hf-id="hf-fljq">Mapped</span></div>
+            <div data-hf-id="hf-pl5x" class="f08-qt">Blockers &amp; Card Removal</div>
+          </div>
+          <div data-hf-id="hf-t4wx" class="f08-card f08-mapped">
+            <div data-hf-id="hf-0xj3" class="f08-chip-q"><svg data-hf-id="hf-ypp6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect data-hf-id="hf-ny7u" x="2" y="6" width="20" height="8" rx="1" /><path data-hf-id="hf-80wr" d="M17 14v7" /><path data-hf-id="hf-cit4" d="M7 14v7" /><path data-hf-id="hf-ses1" d="M17 3v3" /><path data-hf-id="hf-buy8" d="M7 3v3" /><path data-hf-id="hf-vqu7" d="M10 14 2.3 6.3" /><path data-hf-id="hf-wbzq" d="m14 6 7.7 7.7" /><path data-hf-id="hf-pewf" d="m8 6 8 8" /></svg><span data-hf-id="hf-2mka">Mapped</span></div>
+            <div data-hf-id="hf-6efh" class="f08-qt">Game Theory Foundations</div>
+          </div>
+          <div data-hf-id="hf-ubu0" class="f08-card f08-mapped">
+            <div data-hf-id="hf-0j82" class="f08-chip-q"><svg data-hf-id="hf-7b92" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect data-hf-id="hf-ociv" x="2" y="6" width="20" height="8" rx="1" /><path data-hf-id="hf-7mlq" d="M17 14v7" /><path data-hf-id="hf-bbw1" d="M7 14v7" /><path data-hf-id="hf-tlp4" d="M17 3v3" /><path data-hf-id="hf-ao15" d="M7 3v3" /><path data-hf-id="hf-vcj6" d="M10 14 2.3 6.3" /><path data-hf-id="hf-wqar" d="m14 6 7.7 7.7" /><path data-hf-id="hf-p0le" d="m8 6 8 8" /></svg><span data-hf-id="hf-30vb">Mapped</span></div>
+            <div data-hf-id="hf-2x9v" class="f08-qt">Poker Fundamentals</div>
+          </div>
+          <div data-hf-id="hf-txiz" class="f08-card f08-mapped">
+            <div data-hf-id="hf-04x1" class="f08-chip-q"><svg data-hf-id="hf-6wy1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect data-hf-id="hf-oqtw" x="2" y="6" width="20" height="8" rx="1" /><path data-hf-id="hf-78ap" d="M17 14v7" /><path data-hf-id="hf-bq72" d="M7 14v7" /><path data-hf-id="hf-t7e3" d="M17 3v3" /><path data-hf-id="hf-b2c6" d="M7 3v3" /><path data-hf-id="hf-uy85" d="M10 14 2.3 6.3" /><path data-hf-id="hf-x4ls" d="m14 6 7.7 7.7" /><path data-hf-id="hf-omad" d="m8 6 8 8" /></svg><span data-hf-id="hf-3f6c">Mapped</span></div>
+            <div data-hf-id="hf-b97f" class="f08-blank"></div>
+            <div data-hf-id="hf-vnxt" class="f08-blank f08-blank-short"></div>
+          </div>
+          <div data-hf-id="hf-rxzu" class="f08-card f08-mapped">
+            <div data-hf-id="hf-2x28" class="f08-chip-q"><svg data-hf-id="hf-83v4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect data-hf-id="hf-p54x" x="2" y="6" width="20" height="8" rx="1" /><path data-hf-id="hf-6tzo" d="M17 14v7" /><path data-hf-id="hf-aj9z" d="M7 14v7" /><path data-hf-id="hf-r7uy" d="M17 3v3" /><path data-hf-id="hf-9vf3" d="M7 3v3" /><path data-hf-id="hf-xqdc" d="M10 14 2.3 6.3" /><path data-hf-id="hf-ucgl" d="m14 6 7.7 7.7" /><path data-hf-id="hf-refk" d="m8 6 8 8" /></svg><span data-hf-id="hf-3thd">Mapped</span></div>
+            <div data-hf-id="hf-xdaz" class="f08-blank"></div>
+            <div data-hf-id="hf-8lid" class="f08-blank f08-blank-short"></div>
+          </div>
+        </div>
+
+        <!-- receding toward the horizon -->
+        <div data-hf-id="hf-9r85" class="f08-far-row">
+          <div data-hf-id="hf-ky7b" class="f08-card f08-far"></div>
+          <div data-hf-id="hf-91af" class="f08-card f08-far"></div>
+          <div data-hf-id="hf-8mze" class="f08-card f08-far"></div>
+          <div data-hf-id="hf-88od" class="f08-card f08-far"></div>
+          <div data-hf-id="hf-b0tk" class="f08-card f08-far"></div>
+        </div>
+        <div data-hf-id="hf-4lxj" class="f08-horizon-row">
+          <div data-hf-id="hf-j1ml" class="f08-card f08-horizon"></div>
+          <div data-hf-id="hf-lclt" class="f08-card f08-horizon"></div>
+          <div data-hf-id="hf-mjiw" class="f08-card f08-horizon"></div>
+          <div data-hf-id="hf-m57v" class="f08-card f08-horizon"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+
+      var camera = document.getElementById("f08-camera");
+      var easeOut2 = gsap.parseEase("power2.out");
+      var easeOut3 = gsap.parseEase("power3.out");
+
+      /* ---------- camera: tight on the live row, then one decelerating pull-back ---------- */
+      var CAM = {
+        s1: 1.03, dy1: 205,          /* Scenes 1-2 — framed on the headline + live row */
+        s2: 0.95, dy2: 120,          /* Scene 3 — pull-back begins, mapped stretch resolves */
+        s3: 0.84, dy3: 46,           /* Scene 4 — widest; the whole path visible at once */
+        p2At: 3.6, p2Dur: 1.8,
+        p3At: 5.4, p3Dur: 1.5
+      };
+      var DRIFT_AMP_X = 5, DRIFT_AMP_Y = 3, DRIFT_FREQ_RATIO = 1.3, DRIFT_CYCLES = 1;
+
+      function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+      function lerp(a, b, t) { return a + (b - a) * t; }
+
+      /* single writer — phase scale + drift composed analytically, so it is seek-safe
+         and independent of child render order */
+      function writeCamera(t) {
+        var p2 = easeOut2(clamp01((t - CAM.p2At) / CAM.p2Dur));
+        var s = lerp(CAM.s1, CAM.s2, p2);
+        var dy = lerp(CAM.dy1, CAM.dy2, p2);
+
+        var p3 = easeOut3(clamp01((t - CAM.p3At) / CAM.p3Dur));
+        s = lerp(s, CAM.s3, p3);
+        dy = lerp(dy, CAM.dy3, p3);
+
+        var phase = (t / 8) * Math.PI * 2 * DRIFT_CYCLES;
+        var dx = Math.sin(phase) * DRIFT_AMP_X;
+        var jy = Math.sin(phase * DRIFT_FREQ_RATIO) * DRIFT_AMP_Y;
+
+        camera.style.transform = "scale(" + s + ") translate(" + dx + "px, " + (dy + jy) + "px)";
+      }
+
+      var driver = { t: 0 };
+      tl.to(driver, {
+        t: 8,
+        duration: 8,
+        ease: "none",
+        onUpdate: function () { writeCamera(driver.t); }
+      }, 0);
+      writeCamera(0);
+
+      /* ---------- Scene 1 (0.0-1.2s) — the headline, per-word ---------- */
+      tl.fromTo("#f08-eyebrow",
+        { opacity: 0, y: -12 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 0.05);
+
+      tl.fromTo(".f08-w",
+        { opacity: 0, y: 26 },
+        { opacity: 1, y: 0, duration: 0.55, ease: "power3.out", stagger: 0.07 }, 0.14);
+
+      tl.fromTo("#f08-sub",
+        { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, 0.92);
+
+      /* ---------- Scene 2 (1.2-3.6s) — the six live modules cascade along the path ------- */
+      tl.fromTo("#f08-rail",
+        { scaleX: 0, opacity: 0.5 },
+        { scaleX: 1, opacity: 1, duration: 2.0, ease: "power1.inOut" }, 1.2);
+
+      tl.fromTo(".f08-live",
+        { opacity: 0, x: -52, y: 22, scale: 0.94 },
+        { opacity: 1, x: 0, y: 0, scale: 1, duration: 0.78, ease: "power3.out", stagger: 0.17 }, 1.30);
+
+      tl.fromTo(".f08-live .f08-chip",
+        { opacity: 0, x: -12 },
+        { opacity: 1, x: 0, duration: 0.45, ease: "power2.out", stagger: 0.17 }, 1.52);
+
+      /* the soft swipe that lands with each card */
+      tl.fromTo(".f08-swipe",
+        { xPercent: -150, opacity: 0.9 },
+        { xPercent: 150, opacity: 0.9, duration: 0.62, ease: "power2.inOut", stagger: 0.17 }, 1.34);
+
+      tl.fromTo("#f08-arrow",
+        { opacity: 0, x: -18 },
+        { opacity: 1, x: 0, duration: 0.6, ease: "power2.out" }, 3.05);
+
+      /* ---------- Scene 3 (3.6-5.4s) — the mapped stretch resolves behind the live row --- */
+      tl.fromTo(".f08-mapped",
+        { opacity: 0, y: 30, scale: 0.95 },
+        { opacity: 0.55, y: 0, scale: 1, duration: 0.8, ease: "power3.out", stagger: 0.25 }, 3.70);
+
+      /* ---------- Scene 4 (5.4-6.8s) — the road keeps going, dimming toward the horizon -- */
+      tl.fromTo(".f08-far",
+        { opacity: 0, y: 26, scale: 0.96 },
+        { opacity: 0.30, y: 0, scale: 1, duration: 0.85, ease: "power3.out", stagger: 0.17 }, 4.95);
+
+      tl.fromTo(".f08-horizon",
+        { opacity: 0, y: 22, scale: 0.97 },
+        { opacity: 0.15, y: 0, scale: 1, duration: 0.85, ease: "power3.out", stagger: 0.18 }, 5.45);
+
+      /* ---------- Scene 5 (6.8-8.0s) — the camera has already decelerated to a stop;
+                    only the slow drift remains. No re-push, no exit. ---------- */
+
+      window.__timelines["08-scale"] = tl;
+    })();
+  </script>
+</template>

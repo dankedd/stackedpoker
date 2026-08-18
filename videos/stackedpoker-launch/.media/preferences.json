@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "preferences": {
+    "destination": {
+      "value": "website",
+      "confirmed_in": [
+        "stackedpoker-launch"
+      ],
+      "updated_at": "2026-08-11T09:57:28.158Z"
+    },
+    "aspect": {
+      "value": "1920x1080",
+      "confirmed_in": [
+        "stackedpoker-launch"
+      ],
+      "updated_at": "2026-08-11T09:57:28.254Z"
+    },
+    "language": {
+      "value": "en",
+      "confirmed_in": [
+        "stackedpoker-launch"
+      ],
+      "updated_at": "2026-08-11T09:57:28.351Z"
+    },
+    "flow": {
+      "value": "automation",
+      "confirmed_in": [
+        "stackedpoker-launch"
+      ],
+      "updated_at": "2026-08-11T09:57:28.449Z"
+    },
+    "storyboard": {
+      "value": "yes",
+      "confirmed_in": [
+        "stackedpoker-launch"
+      ],
+      "updated_at": "2026-08-11T09:57:28.551Z"
+    },
+    "style_preset.product-launch-video": {
+      "value": "blue-professional",
+      "confirmed_in": [
+        "stackedpoker-launch"
+      ],
+      "updated_at": "2026-08-11T10:05:37.684Z"
+    }
+  },
+  "sightings": {}
+}

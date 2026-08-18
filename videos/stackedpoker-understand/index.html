@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2" crossorigin="anonymous"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #000;
+      }
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #0D1526;
+      }
+      .scene {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="30"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div
+        id="el-01-the-question"
+        class="scene"
+        data-composition-id="01-the-question"
+        data-composition-src="compositions/frames/01-the-question.html"
+        data-start="0"
+        data-duration="6.5"
+        data-track-index="1"
+      ></div>
+      <audio
+        id="el-01-the-question-voice"
+        src="assets/voice/01.wav"
+        data-start="0"
+        data-duration="6.5"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <div
+        id="el-02-the-decision"
+        class="scene"
+        data-composition-id="02-the-decision"
+        data-composition-src="compositions/frames/02-the-decision.html"
+        data-start="6.5"
+        data-duration="5.5"
+        data-track-index="1"
+      ></div>
+      <audio
+        id="el-02-the-decision-voice"
+        src="assets/voice/02.wav"
+        data-start="6.5"
+        data-duration="5.5"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <div
+        id="el-03-start-with-why"
+        class="scene"
+        data-composition-id="03-start-with-why"
+        data-composition-src="compositions/frames/03-start-with-why.html"
+        data-start="12"
+        data-duration="4"
+        data-track-index="1"
+      ></div>
+      <audio
+        id="el-03-start-with-why-voice"
+        src="assets/voice/03.wav"
+        data-start="12"
+        data-duration="4"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <div
+        id="el-04-think-in-ranges"
+        class="scene"
+        data-composition-id="04-think-in-ranges"
+        data-composition-src="compositions/frames/04-think-in-ranges.html"
+        data-start="16"
+        data-duration="5"
+        data-track-index="1"
+      ></div>
+      <audio
+        id="el-04-think-in-ranges-voice"
+        src="assets/voice/04.wav"
+        data-start="16"
+        data-duration="5"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <div
+        id="el-05-the-coach"
+        class="scene"
+        data-composition-id="05-the-coach"
+        data-composition-src="compositions/frames/05-the-coach.html"
+        data-start="21"
+        data-duration="3.5"
+        data-track-index="1"
+      ></div>
+      <audio
+        id="el-05-the-coach-voice"
+        src="assets/voice/05.wav"
+        data-start="21"
+        data-duration="3.5"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <div
+        id="el-06-the-method"
+        class="scene"
+        data-composition-id="06-the-method"
+        data-composition-src="compositions/frames/06-the-method.html"
+        data-start="24.5"
+        data-duration="2"
+        data-track-index="1"
+      ></div>
+
+      <div
+        id="el-07-brand"
+        class="scene"
+        data-composition-id="07-brand"
+        data-composition-src="compositions/frames/07-brand.html"
+        data-start="26.5"
+        data-duration="3.5"
+        data-track-index="1"
+      ></div>
+      <audio
+        id="el-07-brand-voice"
+        src="assets/voice/07.wav"
+        data-start="26.5"
+        data-duration="3.5"
+        data-track-index="10"
+        data-volume="1"
+      ></audio>
+
+      <!-- BGM -->
+      <audio
+        id="el-bgm"
+        src="assets/bgm/track.mp3"
+        data-start="0"
+        data-duration="30"
+        data-track-index="11"
+        data-volume="0.5"
+      ></audio>
+
+      <!-- SFX -->
+      <audio
+        id="el-sfx-0"
+        src="assets/sfx/u-swell-long.mp3"
+        data-start="0"
+        data-duration="4"
+        data-track-index="20"
+        data-volume="0.16"
+      ></audio>
+      <audio
+        id="el-sfx-1"
+        src="assets/sfx/u-card.mp3"
+        data-start="1.32"
+        data-duration="0.26"
+        data-track-index="21"
+        data-volume="0.22"
+      ></audio>
+      <audio
+        id="el-sfx-2"
+        src="assets/sfx/u-card.mp3"
+        data-start="2.02"
+        data-duration="0.26"
+        data-track-index="22"
+        data-volume="0.2"
+      ></audio>
+      <audio
+        id="el-sfx-3"
+        src="assets/sfx/u-glass.mp3"
+        data-start="6.9"
+        data-duration="1.62"
+        data-track-index="23"
+        data-volume="0.15"
+      ></audio>
+      <audio
+        id="el-sfx-4"
+        src="assets/sfx/u-tick.mp3"
+        data-start="9.22"
+        data-duration="0.35"
+        data-track-index="24"
+        data-volume="0.11"
+      ></audio>
+      <audio
+        id="el-sfx-5"
+        src="assets/sfx/u-tick.mp3"
+        data-start="9.44"
+        data-duration="0.35"
+        data-track-index="25"
+        data-volume="0.11"
+      ></audio>
+      <audio
+        id="el-sfx-6"
+        src="assets/sfx/u-tick.mp3"
+        data-start="9.66"
+        data-duration="0.35"
+        data-track-index="26"
+        data-volume="0.11"
+      ></audio>
+      <audio
+        id="el-sfx-7"
+        src="assets/sfx/u-glass.mp3"
+        data-start="12.32"
+        data-duration="1.62"
+        data-track-index="27"
+        data-volume="0.13"
+      ></audio>
+      <audio
+        id="el-sfx-8"
+        src="assets/sfx/u-glass.mp3"
+        data-start="17.4"
+        data-duration="1.62"
+        data-track-index="28"
+        data-volume="0.13"
+      ></audio>
+      <audio
+        id="el-sfx-9"
+        src="assets/sfx/u-shimmer.mp3"
+        data-start="18.42"
+        data-duration="2.2"
+        data-track-index="29"
+        data-volume="0.17"
+      ></audio>
+      <audio
+        id="el-sfx-10"
+        src="assets/sfx/u-shimmer.mp3"
+        data-start="19.34"
+        data-duration="1.6"
+        data-track-index="30"
+        data-volume="0.1"
+      ></audio>
+      <audio
+        id="el-sfx-11"
+        src="assets/sfx/u-glass.mp3"
+        data-start="22.28"
+        data-duration="1.62"
+        data-track-index="31"
+        data-volume="0.15"
+      ></audio>
+      <audio
+        id="el-sfx-12"
+        src="assets/sfx/u-tick.mp3"
+        data-start="23.55"
+        data-duration="0.35"
+        data-track-index="32"
+        data-volume="0.09"
+      ></audio>
+      <audio
+        id="el-sfx-13"
+        src="assets/sfx/u-tick.mp3"
+        data-start="23.9"
+        data-duration="0.35"
+        data-track-index="33"
+        data-volume="0.09"
+      ></audio>
+      <audio
+        id="el-sfx-14"
+        src="assets/sfx/u-swell-short.mp3"
+        data-start="24.65"
+        data-duration="1.8"
+        data-track-index="34"
+        data-volume="0.14"
+      ></audio>
+      <audio
+        id="el-sfx-15"
+        src="assets/sfx/u-accent.mp3"
+        data-start="27.38"
+        data-duration="2.4"
+        data-track-index="35"
+        data-volume="0.16"
+      ></audio>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

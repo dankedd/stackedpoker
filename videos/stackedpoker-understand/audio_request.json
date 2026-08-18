@@ -1,0 +1,52 @@
+{
+  "lines": [
+    {
+      "id": "01",
+      "sfx": [
+        "one soft card movement per card",
+        "two total",
+        "very quiet; a low ambient swell under the spotlight. Nothing else."
+      ]
+    },
+    {
+      "id": "02",
+      "sfx": [
+        "soft glass movement as the surface builds; three near-inaudible tactile ticks as the actions settle. No click — nothing is pressed."
+      ]
+    },
+    {
+      "id": "03",
+      "sfx": [
+        "one soft glass movement as the surface reshapes. Nothing else — this is the quietest frame in the film."
+      ]
+    },
+    {
+      "id": "04",
+      "sfx": [
+        "soft glass movement as the grid resolves; one subtle shimmer when A5s lights; a second",
+        "quieter shimmer as the cluster joins."
+      ]
+    },
+    {
+      "id": "05",
+      "sfx": [
+        "one soft spatial slide as the panel opens; two faint ticks under the emphasised phrases."
+      ]
+    },
+    {
+      "id": "06",
+      "sfx": [
+        "one long soft ambient swell under the pull-back. Nothing percussive."
+      ]
+    },
+    {
+      "id": "07",
+      "sfx": [
+        "one very subtle tonal accent under the mark. Nothing on the CTA."
+      ]
+    }
+  ],
+  "bgm": {
+    "mode": "none"
+  }
+}

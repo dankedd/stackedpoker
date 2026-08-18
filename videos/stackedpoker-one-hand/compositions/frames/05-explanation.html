@@ -1,0 +1,589 @@
+<template>
+  <div
+    id="root"
+    data-composition-id="05-explanation"
+    data-start="0"
+    data-duration="5"
+    data-width="1920"
+    data-height="1080"
+  >
+    <style>
+      @font-face {
+        font-family: "Geist";
+        src: url("capture/assets/fonts/Geist-Regular.woff2") format("woff2");
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: block;
+      }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        font-family: "Geist", sans-serif;
+        background: transparent;
+      }
+
+      #root *,
+      #root *::before,
+      #root *::after {
+        box-sizing: border-box;
+      }
+
+      /* ---------- ground (full-bleed clip layer) ---------- */
+      .f05-ground {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1920px;
+        height: 1080px;
+        background-color: #0c101d;
+      }
+      .f05-blueprint {
+        position: absolute;
+        inset: 0;
+        background-image: linear-gradient(
+            to right,
+            rgba(139, 92, 246, 0.03) 0 1px,
+            transparent 1px 100%
+          ),
+          linear-gradient(
+            to bottom,
+            rgba(139, 92, 246, 0.03) 0 1px,
+            transparent 1px 100%
+          );
+        background-size: 48px 48px;
+      }
+      .f05-spot {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          760px 620px at 44% 44%,
+          rgba(139, 92, 246, 0.15) 0%,
+          rgba(139, 92, 246, 0.05) 46%,
+          rgba(139, 92, 246, 0) 70%
+        );
+      }
+      .f05-ambient {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          720px 560px at 80% 74%,
+          rgba(78, 116, 190, 0.09) 0%,
+          rgba(78, 116, 190, 0) 68%
+        );
+      }
+
+      /* ---------- the lesson surface (card + poker cards + grid) ---------- */
+      .f05-lesson {
+        position: absolute;
+        left: 530px;
+        top: 230px;
+        width: 860px;
+        height: 660px;
+        background: rgba(139, 92, 246, 0.04);
+        border: 1.5px solid rgba(139, 92, 246, 0.2);
+        border-radius: 14px;
+        box-shadow: none;
+      }
+
+      /* ---------- the spine: the canonical 132x186 card, worn at 2/3 ----------
+         The card is authored at its canonical size and reduced by a uniform
+         scale(2/3) from its own top-left, so rank and pip scale with it and
+         it stays the same object it was at 818,470 in Frames 1-3.
+         The wrapper carries a border, and an absolutely positioned child is
+         laid out against the PADDING box, so every offset below is
+         pre-compensated by the 1px the border contributes to layout:
+         44 - 1 = 43 -> 530 + 1 + 43 = 574. */
+      .f05-pcard {
+        position: absolute;
+        top: 79px;
+        width: 132px;
+        height: 186px;
+        border-radius: 10px;
+        background: linear-gradient(168deg, #f4f6fa 0%, #e3e7f0 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        color: #0c101d;
+        transform: scale(0.6666666666666666);
+        transform-origin: 0 0;
+      }
+      /* fanned at a 40px pitch, ace on top — the card the lesson is about */
+      .f05-pcard.a {
+        left: 43px;
+        z-index: 4;
+      }
+      .f05-pcard.b {
+        left: 83px;
+        z-index: 3;
+      }
+      .f05-prank {
+        font-size: 48px;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.02em;
+      }
+      /* the settled pip glow inherited from Frame 2's envelope rest (0.4),
+         authored in the card's own space so it scales with the card */
+      .f05-pip {
+        display: block;
+        width: 56px;
+        height: 56px;
+        color: rgb(35, 22, 74);
+        filter: drop-shadow(0 0 7.2px rgba(167, 139, 250, 0.348))
+          drop-shadow(0 0 15.84px rgba(139, 92, 246, 0.191));
+      }
+      .f05-pcard.a .f05-pip {
+        transform: scale(1.012);
+      }
+
+      /* ---------- inherited lesson chrome ----------
+         Frame 4 lands its eyebrow at 574,262 and its context line at
+         574,466. Both are reproduced here to the pixel (again with the
+         border compensation) and they travel with the surface, so the
+         22s seam shows no change. */
+      .f05-ctx-eyebrow {
+        position: absolute;
+        left: 43px;
+        top: 31px;
+        display: inline-block;
+        white-space: nowrap;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        line-height: 18px;
+        color: #a78bfa;
+      }
+      .f05-ctx-line {
+        position: absolute;
+        left: 43px;
+        top: 235px;
+        display: inline-block;
+        white-space: nowrap;
+        font-size: 20px;
+        font-weight: 400;
+        line-height: 32px;
+        color: #728297;
+      }
+
+      /* grid — wrapper-relative left 170 top 70, 556x556 */
+      .f05-grid {
+        position: absolute;
+        left: 170px;
+        top: 70px;
+        width: 556px;
+        height: 556px;
+      }
+      .f05-cell {
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        border-radius: 5px;
+      }
+      .f05-glow {
+        position: absolute;
+        width: 168px;
+        height: 168px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba(139, 92, 246, 0.3) 0%,
+          rgba(139, 92, 246, 0.09) 42%,
+          rgba(139, 92, 246, 0) 70%
+        );
+      }
+      .f05-lbl {
+        position: absolute;
+        font-size: 11px;
+        font-weight: 400;
+        line-height: 1;
+        color: #64748b;
+        text-align: center;
+        width: 40px;
+      }
+      .f05-lbl.row {
+        width: 16px;
+        text-align: left;
+      }
+
+      /* ---------- AI Coach panel ---------- */
+      .f05-coach {
+        position: absolute;
+        left: 1210px;
+        top: 330px;
+        width: 470px;
+        height: 460px;
+        padding: 34px;
+        background: rgba(139, 92, 246, 0.04);
+        border: 1.5px solid rgba(139, 92, 246, 0.2);
+        border-radius: 14px;
+        box-shadow: none;
+        display: flex;
+        flex-direction: column;
+      }
+      .f05-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .f05-botmark {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: rgba(139, 92, 246, 0.08);
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #a78bfa;
+      }
+      .f05-eyebrow {
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #a78bfa;
+        line-height: 1;
+      }
+      .f05-sep {
+        margin-top: 22px;
+        width: 100%;
+        height: 1px;
+        background: rgba(139, 92, 246, 0.18);
+      }
+      .f05-body {
+        flex: 1;
+        display: flex;
+        align-items: center;
+      }
+      .f05-sentence {
+        display: flex;
+        flex-wrap: wrap;
+        column-gap: 6px;
+        row-gap: 0;
+        width: 100%;
+        font-size: 20px;
+        font-weight: 400;
+        line-height: 1.6;
+        color: #728297;
+      }
+      .f05-word {
+        display: inline-block;
+      }
+      .f05-brk {
+        flex: 0 0 100%;
+        height: 0;
+      }
+      .f05-em {
+        position: relative;
+        display: inline-flex;
+        column-gap: 6px;
+      }
+      .f05-em .f05-word {
+        font-weight: 600;
+      }
+      .f05-ul {
+        position: absolute;
+        left: 0;
+        bottom: 5px;
+        width: 100%;
+        height: 1.5px;
+        border-radius: 1px;
+        background: rgba(139, 92, 246, 0.5);
+      }
+    
+    /* ===== CANONICAL GROUND — byte-identical in all six frames =====
+       Each frame originally authored its own lighting, so the blue glow,
+       the spotlight position and the blueprint pitch (48px vs 80px) all
+       changed at the seams. Values are forced here; animations are left
+       alone, so Frame 1 still blooms out of darkness and lands exactly
+       on this shared state at 5.0s. ===== */
+    .f05-ground { background: #0C101D !important; }
+    .f05-blueprint { background-image:
+    linear-gradient(rgba(139,92,246,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139,92,246,0.03) 1px, transparent 1px) !important;
+  background-size: 80px 80px !important;
+  opacity: 1 !important; }
+    .f05-spot { background: radial-gradient(1100px 760px at 960px 470px,
+    rgba(139,92,246,0.17) 0%, rgba(139,92,246,0.07) 38%, rgba(139,92,246,0) 66%) !important; }
+    .f05-ambient { background: radial-gradient(1400px 900px at 500px 950px,
+    rgba(96,132,200,0.07) 0%, rgba(96,132,200,0.03) 42%, rgba(96,132,200,0) 72%) !important; }
+  </style>
+
+    <!-- ground -->
+    <div
+      class="clip f05-ground"
+      data-start="0"
+      data-duration="5"
+      data-track-index="0"
+    >
+      <div class="f05-blueprint"></div>
+      <div class="f05-spot"></div>
+      <div class="f05-ambient"></div>
+    </div>
+
+    <!-- the lesson surface: inherited from Frame 4, slides left as one object -->
+    <div
+      id="f05-lesson"
+      class="clip f05-lesson"
+      data-start="0"
+      data-duration="5"
+      data-track-index="1"
+    >
+      <div id="f05-gridhost" class="f05-grid"></div>
+
+      <div id="f05-ctx-eyebrow" class="f05-ctx-eyebrow">Lesson</div>
+      <div id="f05-ctx-line" class="f05-ctx-line">BTN opens.</div>
+
+      <div id="f05-pcard-a" class="f05-pcard a">
+        <div class="f05-prank">A</div>
+        <svg class="f05-pip" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z" fill="currentColor" /><path d="M12 17.4v4.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" /></svg>
+      </div>
+      <div id="f05-pcard-b" class="f05-pcard b" data-layout-allow-occlusion>
+        <div class="f05-prank">5</div>
+        <svg class="f05-pip" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z" fill="currentColor" /><path d="M12 17.4v4.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" /></svg>
+      </div>
+    </div>
+
+    <!-- AI Coach panel — not a chat: header + one written explanation -->
+    <div
+      id="f05-coach"
+      class="clip f05-coach"
+      data-start="0"
+      data-duration="5"
+      data-track-index="2"
+    >
+      <div id="f05-head" class="f05-head">
+        <div class="f05-botmark">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M12 8V4H8"></path>
+            <rect width="16" height="12" x="4" y="8" rx="2"></rect>
+            <path d="M2 14h2"></path>
+            <path d="M20 14h2"></path>
+            <path d="M15 13v2"></path>
+            <path d="M9 13v2"></path>
+          </svg>
+        </div>
+        <div class="f05-eyebrow">AI Coach</div>
+      </div>
+      <div id="f05-sep" class="f05-sep"></div>
+
+      <div class="f05-body">
+        <div id="f05-sentence" class="f05-sentence">
+          <span class="f05-word">A5s</span>
+          <span class="f05-em" id="f05-em1"
+            ><span class="f05-word">blocks</span
+            ><span class="f05-ul"></span
+          ></span>
+          <span class="f05-em" id="f05-em2"
+            ><span class="f05-word">strong</span
+            ><span class="f05-word">Ax</span><span class="f05-ul"></span
+          ></span>
+          <span class="f05-word">combinations</span>
+          <span class="f05-brk"></span>
+          <span class="f05-word">while</span>
+          <span class="f05-word">maintaining</span>
+          <span class="f05-word">excellent</span>
+          <span class="f05-brk"></span>
+          <span class="f05-em" id="f05-em3"
+            ><span class="f05-word">playability</span
+            ><span class="f05-ul"></span
+          ></span>
+          <span class="f05-word">when</span>
+          <span class="f05-word">called.</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var root =
+          (document.currentScript &&
+            document.currentScript.closest(
+              '[data-composition-id="05-explanation"]'
+            )) ||
+          document.querySelector('[data-composition-id="05-explanation"]');
+
+        /* ---------- build the 13x13 range grid (inherited, lit as Frame 4 left it) ---------- */
+        var RANKS = ["A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"];
+        var STEP = 43;
+        var HERO_R = 0,
+          HERO_C = 9; /* A5s */
+        var CLUSTER = {
+          "0-7": 1,
+          "0-8": 1,
+          "0-10": 1,
+          "0-11": 1,
+          "0-12": 1,
+          "6-7": 1,
+          "7-8": 1,
+          "8-9": 1,
+          "9-10": 1
+        };
+
+        var host = root.querySelector("#f05-gridhost");
+        var frag = document.createDocumentFragment();
+
+        /* soft glow behind the hero cell */
+        var glow = document.createElement("div");
+        glow.className = "f05-glow";
+        glow.style.left = HERO_C * STEP + 20 - 84 + "px";
+        glow.style.top = HERO_R * STEP + 20 - 84 + "px";
+        frag.appendChild(glow);
+
+        for (var r = 0; r < 13; r++) {
+          for (var c = 0; c < 13; c++) {
+            var cell = document.createElement("div");
+            cell.className = "f05-cell";
+            cell.style.left = c * STEP + "px";
+            cell.style.top = r * STEP + "px";
+
+            var key = r + "-" + c;
+            if (r === HERO_R && c === HERO_C) {
+              cell.style.background = "rgba(139, 92, 246, 0.92)";
+              cell.style.border = "1px solid rgba(167, 139, 250, 0.85)";
+            } else if (CLUSTER[key]) {
+              cell.style.background = "rgba(139, 92, 246, 0.30)";
+              cell.style.border = "1px solid rgba(139, 92, 246, 0.38)";
+            } else if (r === c) {
+              cell.style.background = "rgba(139, 92, 246, 0.09)";
+            } else if (r < c) {
+              cell.style.background = "rgba(139, 92, 246, 0.055)";
+            } else {
+              cell.style.background = "rgba(139, 92, 246, 0.035)";
+            }
+            frag.appendChild(cell);
+          }
+        }
+
+        /* row / column labels, text-light, very small */
+        for (var i = 0; i < 13; i++) {
+          var col = document.createElement("div");
+          col.className = "f05-lbl";
+          col.textContent = RANKS[i];
+          col.style.left = i * STEP + "px";
+          col.style.top = "-18px";
+          frag.appendChild(col);
+
+          var row = document.createElement("div");
+          row.className = "f05-lbl row";
+          row.textContent = RANKS[i];
+          // Right of the grid (host-relative 564 -> absolute 1034), matching
+          // Frame 4, which places its row axis at absolute 1264 — 8px right of
+          // its grid edge. On the left these labels landed at absolute 450 and
+          // sat on top of the 5<spades> card (344-472), and they would also have
+          // jumped ~800px across the 22s seam, which this film cannot afford.
+          row.style.left = "564px";
+          row.style.top = i * STEP + 15 + "px";
+          frag.appendChild(row);
+        }
+        host.appendChild(frag);
+
+        /* ---------- hidden states (outside the timeline) ---------- */
+        var coach = root.querySelector("#f05-coach");
+        var head = root.querySelector("#f05-head");
+        var sep = root.querySelector("#f05-sep");
+        var words = root.querySelectorAll("#f05-sentence .f05-word");
+        var em1 = root.querySelector("#f05-em1");
+        var em2 = root.querySelector("#f05-em2");
+        var em3 = root.querySelector("#f05-em3");
+        var uls = root.querySelectorAll("#f05-sentence .f05-ul");
+
+        gsap.set(coach, { opacity: 0, transformOrigin: "50% 50%" });
+        gsap.set(head, { opacity: 0 });
+        gsap.set(sep, { scaleX: 0, transformOrigin: "0% 50%" });
+        gsap.set(words, { opacity: 0 });
+        gsap.set(uls, { scaleX: 0, transformOrigin: "0% 50%" });
+
+        /* ---------- timeline ---------- */
+        window.__timelines = window.__timelines || {};
+        var tl = gsap.timeline({ paused: true });
+
+        /* Scene 1 (0.0-0.3): inherited state, static. Nothing re-enters. */
+
+        /* Scene 2 (0.3-1.3): the whole lesson surface slides left, x530 -> x300.
+           Grid + poker cards travel with it as one object. */
+        tl.fromTo(
+          "#f05-lesson",
+          { x: 0 },
+          { x: -230, duration: 1.0, ease: "power3.inOut" },
+          0.3
+        );
+
+        /* Scene 3 (1.3-2.3): the AI Coach panel opens — soft horizontal
+           expansion, glass-slide. A small header identifies it. */
+        tl.fromTo(
+          "#f05-coach",
+          { opacity: 0, x: 26, scaleX: 0.9 },
+          { opacity: 1, x: 0, scaleX: 1, duration: 0.85, ease: "power3.out" },
+          1.3
+        );
+        tl.fromTo(
+          "#f05-head",
+          { opacity: 0, x: 12 },
+          { opacity: 1, x: 0, duration: 0.55, ease: "power3.out" },
+          1.62
+        );
+        tl.fromTo(
+          "#f05-sep",
+          { scaleX: 0 },
+          { scaleX: 1, duration: 0.7, ease: "power3.out" },
+          1.72
+        );
+
+        /* Scene 4 (2.3-3.6): one written explanation, per-word staggered. */
+        tl.fromTo(
+          words,
+          { opacity: 0, y: 10 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.5,
+            ease: "power3.out",
+            stagger: 0.055
+          },
+          2.3
+        );
+
+        /* Scene 5 (3.55-4.19): three phrases receive subtle emphasis,
+           one after another. Nothing else moves. */
+        var EM = [
+          { group: em1, at: 3.55 },
+          { group: em2, at: 3.72 },
+          { group: em3, at: 3.89 }
+        ];
+        for (var e = 0; e < EM.length; e++) {
+          tl.to(
+            EM[e].group.querySelectorAll(".f05-word"),
+            { color: "#E6EAF0", duration: 0.3, ease: "power3.out" },
+            EM[e].at
+          );
+          tl.fromTo(
+            EM[e].group.querySelector(".f05-ul"),
+            { scaleX: 0 },
+            { scaleX: 1, duration: 0.3, ease: "power3.out" },
+            EM[e].at
+          );
+        }
+
+        /* Scene 6 (4.19-5.0): held. */
+
+        window.__timelines["05-explanation"] = tl;
+      })();
+    </script>
+  </div>
+</template>

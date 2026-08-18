@@ -1,0 +1,354 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Geist";
+      font-style: normal;
+      font-weight: 100 900;
+      font-display: block;
+      src: url('capture/assets/fonts/22a5144ee8d83bca-s.p.woff2') format('woff2');
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      font-family: "Geist", sans-serif;
+      color: #E6EAF0;
+    }
+    #root * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ── ground ─────────────────────────────────────────────── */
+    .f04-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 1100px 700px at 50% 50%, rgba(139, 92, 246, 0.035) 0%, rgba(139, 92, 246, 0) 70%),
+        #0C101D;
+    }
+
+    /* ── inherited clutter field (handoff in) ───────────────── */
+    .f04-clutter {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+    .f04-chip {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      border-radius: 12px;
+      background: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 9px;
+      will-change: transform, opacity;
+    }
+    .f04-rule { height: 6px; border-radius: 3px; background: rgba(230, 234, 240, 0.16); }
+    .f04-rule.hd { background: rgba(139, 92, 246, 0.45); height: 7px; }
+    .f04-track { height: 6px; border-radius: 6px; background: rgba(139, 92, 246, 0.15); overflow: hidden; }
+    .f04-fill { height: 100%; background: #8B5CF6; border-radius: 6px; }
+    .f04-dots { display: grid; grid-template-columns: repeat(3, 7px); gap: 5px; }
+    .f04-dots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(139, 92, 246, 0.5); }
+    .f04-tag { width: 46px; height: 14px; border-radius: 100px; background: rgba(139, 92, 246, 0.15); }
+
+    /* ── stage: flash + the one surface ─────────────────────── */
+    .f04-stage { position: absolute; inset: 0; }
+
+    .f04-wash {
+      position: absolute;
+      left: 160px; top: -260px;
+      width: 1600px; height: 1600px;
+      opacity: 0;
+      transform-origin: 50% 50%;
+      background: radial-gradient(circle at 50% 50%,
+        rgba(167, 139, 250, 0.55) 0%,
+        rgba(139, 92, 246, 0.30) 24%,
+        rgba(124, 58, 237, 0.09) 46%,
+        rgba(124, 58, 237, 0) 66%);
+    }
+    .f04-core {
+      position: absolute;
+      left: 640px; top: 220px;
+      width: 640px; height: 640px;
+      opacity: 0;
+      transform-origin: 50% 50%;
+      background: radial-gradient(circle at 50% 50%,
+        #EDE9FE 0%,
+        #C4B5FD 13%,
+        rgba(139, 92, 246, 0.60) 30%,
+        rgba(124, 58, 237, 0.16) 50%,
+        rgba(124, 58, 237, 0) 70%);
+    }
+
+    .f04-glow {
+      position: absolute;
+      left: 420px; top: 120px;
+      width: 1080px; height: 840px;
+      opacity: 0;
+      transform-origin: 50% 50%;
+      background: radial-gradient(ellipse at 50% 50%,
+        rgba(124, 58, 237, 0.50) 0%,
+        rgba(124, 58, 237, 0.20) 38%,
+        rgba(124, 58, 237, 0) 68%);
+    }
+    .f04-surface {
+      position: absolute;
+      left: 660px; top: 360px;
+      width: 600px; height: 360px;
+      padding: 36px;
+      border-radius: 14px;
+      background: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      box-shadow: none;
+      transform-origin: 50% 50%;
+      opacity: 0;
+    }
+    .f04-eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #8B5CF6;
+      opacity: 0;
+    }
+    .f04-eyebrow svg { width: 17px; height: 17px; display: block; }
+    .f04-q {
+      margin-top: 30px;
+      font-size: 30px;
+      font-weight: 600;
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+      color: #E6EAF0;
+      opacity: 0;
+    }
+    .f04-pip { display: inline-block; width: 0.7em; height: 0.7em; color: #8B5CF6; }
+    .f04-pip svg { width: 100%; height: 100%; display: block; }
+    .f04-sub {
+      margin-top: 18px;
+      font-size: 17px;
+      font-weight: 400;
+      line-height: 1.6;
+      color: #728297;
+      opacity: 0;
+    }
+    .f04-pills { display: flex; gap: 14px; margin-top: 32px; }
+    .f04-pill {
+      width: 160px; height: 54px;
+      border-radius: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 500;
+      color: #E6EAF0;
+      background: rgba(139, 92, 246, 0.06);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      opacity: 0;
+    }
+  </style>
+
+  <div id="root" data-hf-id="hf-f04" data-composition-id="04-better-way" data-start="0" data-duration="4.5" data-width="1920" data-height="1080">
+
+    <div data-hf-id="hf-bzhs" class="clip f04-bg" data-start="0" data-duration="4.5" data-track-index="0"></div>
+
+    <!-- inherited from frame 03: already on screen at opacity 1, drifting inward -->
+    <div data-hf-id="hf-uoyb" class="clip f04-clutter" id="f04-clutter" data-start="0" data-duration="4.5" data-track-index="1"></div>
+
+    <div data-hf-id="hf-ansn" class="clip f04-stage" data-start="0" data-duration="4.5" data-track-index="2">
+      <div data-hf-id="hf-drb6" class="f04-wash" id="f04-wash"></div>
+      <div data-hf-id="hf-7g0a" class="f04-core" id="f04-core"></div>
+      <div data-hf-id="hf-pir2" class="f04-glow" id="f04-glow"></div>
+
+      <!-- one calm surface, deliberately small in a lot of empty midnight -->
+      <div class="f04-surface" id="f04-surface" data-hf-id="hf-7smt">
+        <div class="f04-eyebrow" id="f04-eyebrow" data-hf-id="hf-6z9c">
+          <svg data-hf-id="hf-5u77" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path data-hf-id="hf-ynq9" d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z" /><path data-hf-id="hf-5rib" d="M12 18v4" /></svg>
+          <span data-hf-id="hf-uwcz">Foundations · Lesson 1</span>
+        </div>
+        <div class="f04-q" id="f04-q" data-hf-id="hf-8nq6">You’re in the big blind with A<span data-hf-id="hf-zzih" class="f04-pip"><svg data-hf-id="hf-cku8" viewBox="0 0 24 24" aria-hidden="true"><path data-hf-id="hf-hhyb" d="M12 1.8 22.2 12 12 22.2 1.8 12Z" fill="currentColor" /></svg></span>5<span data-hf-id="hf-8epp" class="f04-pip"><svg data-hf-id="hf-0whk" viewBox="0 0 24 24" aria-hidden="true"><path data-hf-id="hf-5o9v" d="M12 1.8 22.2 12 12 22.2 1.8 12Z" fill="currentColor" /></svg></span>.</div>
+        <div class="f04-sub" id="f04-sub" data-hf-id="hf-9140">CO opens to 2.3&#160;BB. What’s your action?</div>
+        <div class="f04-pills" data-hf-id="hf-yho5">
+          <div class="f04-pill" data-hf-id="hf-ifbu">Fold</div>
+          <div class="f04-pill" data-hf-id="hf-vvuh">Call</div>
+          <div class="f04-pill" data-hf-id="hf-4cr7">Raise</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      var CX = 960, CY = 540;
+
+      var layer    = document.getElementById("f04-clutter");
+      var wash     = document.getElementById("f04-wash");
+      var core     = document.getElementById("f04-core");
+      var glowEl   = document.getElementById("f04-glow");
+      var surface  = document.getElementById("f04-surface");
+      var eyebrow  = document.getElementById("f04-eyebrow");
+      var question = document.getElementById("f04-q");
+      var subline  = document.getElementById("f04-sub");
+      var pills    = surface.querySelectorAll(".f04-pill");
+
+      /* ── the inherited clutter field ────────────────────────────
+         Handoff from frame 03: ~40 cards, opacity 1, centred,
+         drifting inward at ~6px/s. Built at load and seeded at t=0
+         so it never re-enters or re-fades — it is simply there.     */
+      function mulberry32(a) {
+        return function () {
+          a |= 0; a = a + 0x6D2B79F5 | 0;
+          var t = Math.imul(a ^ a >>> 15, 1 | a);
+          t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+          return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+      }
+
+      var rnd = mulberry32(40407);
+      var COLS = 8, ROWS = 5, cards = [];
+
+      for (var r = 0; r < ROWS; r++) {
+        for (var c = 0; c < COLS; c++) {
+          var w = 148 + Math.round(rnd() * 56);
+          var h = 92 + Math.round(rnd() * 36);
+          var px = 240 * (c + 0.5) + (rnd() - 0.5) * 92;
+          var py = 122 + 164 * r + (rnd() - 0.5) * 52;
+          var bx = px - CX, by = py - CY;
+          var len = Math.sqrt(bx * bx + by * by) || 1;
+
+          var el = document.createElement("div");
+          el.className = "f04-chip";
+          el.style.width = w + "px";
+          el.style.height = h + "px";
+          el.style.borderColor = "rgba(139, 92, 246, " + (0.16 + rnd() * 0.14).toFixed(3) + ")";
+
+          var variant = (r * COLS + c) % 4;
+          var inner = '<div class="f04-rule hd" style="width:' + (34 + Math.round(rnd() * 26)) + '%"></div>';
+          if (variant === 0) {
+            inner += '<div class="f04-rule" style="width:' + (72 + Math.round(rnd() * 24)) + '%"></div>'
+                  +  '<div class="f04-rule" style="width:' + (48 + Math.round(rnd() * 30)) + '%"></div>';
+          } else if (variant === 1) {
+            inner += '<div class="f04-track"><div class="f04-fill" style="width:' + (38 + Math.round(rnd() * 46)) + '%"></div></div>'
+                  +  '<div class="f04-rule" style="width:' + (54 + Math.round(rnd() * 26)) + '%"></div>';
+          } else if (variant === 2) {
+            inner += '<div class="f04-dots"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>';
+          } else {
+            inner += '<div class="f04-tag"></div>'
+                  +  '<div class="f04-rule" style="width:' + (62 + Math.round(rnd() * 30)) + '%"></div>';
+          }
+          el.innerHTML = inner;
+          layer.appendChild(el);
+
+          cards.push({
+            el: el,
+            bx: bx, by: by,
+            ux: -bx / len, uy: -by / len,
+            rot: (rnd() - 0.5) * 18
+          });
+        }
+      }
+
+      /* center-outward-expansion, run in reverse: ONE shared progress
+         value drives every card, so the field collapses in lockstep. */
+      var st = { t: 0, p: 1 };
+      function applyField() {
+        var p = st.p, drift = 6 * st.t;
+        var s = (0.26 + 0.74 * p).toFixed(4);
+        var o = Math.min(1, p * 2.4).toFixed(3);
+        for (var i = 0; i < cards.length; i++) {
+          var k = cards[i];
+          var x = (k.bx + k.ux * drift) * p;
+          var y = (k.by + k.uy * drift) * p;
+          k.el.style.transform =
+            "translate(-50%,-50%) translate(" + x.toFixed(2) + "px," + y.toFixed(2) + "px)" +
+            " rotate(" + (k.rot * p).toFixed(2) + "deg) scale(" + s + ")";
+          k.el.style.opacity = o;
+        }
+      }
+
+      /* motion-blur-streak — depth smear ("B B", the collapse is a
+         scale move), envelope locked to the collapse window AND ease
+         so peak blur lands on peak speed. Seeded at 0. */
+      var blur = { v: 0 };
+      function applyBlur() {
+        layer.style.filter = blur.v < 0.05 ? "none" : "blur(" + blur.v.toFixed(2) + "px)";
+      }
+
+      applyField();   // frame 0 = the inherited state, exactly
+      applyBlur();
+
+      var tl = gsap.timeline({ paused: true });
+
+      /* Scene 1 (0.0–0.5) — the inherited field, live, still drifting inward. */
+      tl.to(st, { t: 0.5, duration: 0.5, ease: "none", onUpdate: applyField }, 0);
+
+      /* Scene 2 (0.5–1.1) — every card pulled to a single centre point. */
+      tl.to(st, { p: 0, duration: 0.6, ease: "power3.in", onUpdate: applyField }, 0.5);
+      tl.to(blur, { v: 19, duration: 0.6, ease: "power3.in", onUpdate: applyBlur }, 0.5);
+
+      /* Scene 3 (1.1–1.4) — the point overshoots into a short violet flash. */
+      tl.fromTo(core,
+        { scale: 0.05, opacity: 0 },
+        { scale: 1.06, opacity: 0.95, duration: 0.14, ease: "power3.out" }, 1.04);
+      tl.fromTo(wash,
+        { scale: 0.16, opacity: 0 },
+        { scale: 1, opacity: 0.30, duration: 0.16, ease: "power2.out" }, 1.06);
+
+      /* Scene 4 (1.4–2.3) — scale-swap-transition out of the flash:
+         one centre, one transform-origin, so flash and surface read
+         as a single continuous object. */
+      tl.to(core, { scale: 0.74, opacity: 0, duration: 0.28, ease: "power2.in" }, 1.22);
+      tl.to(wash, { scale: 0.88, opacity: 0, duration: 0.30, ease: "power2.in" }, 1.22);
+
+      tl.fromTo(surface,
+        { scale: 0.74, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 0.58, ease: "back.out(1.4)" }, 1.34);
+
+      /* ambient-glow-bloom — bloom lands ON the surface's settle, one beat. */
+      tl.fromTo(glowEl,
+        { scale: 0.86, opacity: 0 },
+        { scale: 1, opacity: 0.30, duration: 0.58, ease: "power2.out" }, 1.34);
+
+      /* inner content once the container has settled */
+      tl.fromTo(eyebrow,
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.40, ease: "power3.out" }, 1.74);
+      tl.fromTo(question,
+        { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.40, ease: "power3.out" }, 1.86);
+      tl.fromTo(subline,
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.40, ease: "power3.out" }, 1.98);
+
+      /* Scene 5 (2.3–4.0) — held. The pills are the only reveal; then air. */
+      for (var q = 0; q < pills.length; q++) {
+        tl.fromTo(pills[q],
+          { opacity: 0, y: 14 },
+          { opacity: 1, y: 0, duration: 0.50, ease: "power3.out" }, 2.34 + q * 0.10);
+      }
+
+      /* bounded glow breathe — one slow half-cycle; sin(0) = 0 at both
+         ends, so the stillness is never broken by a jump. */
+      var phase = { p: 0 };
+      tl.to(phase, {
+        p: Math.PI,
+        duration: 2.08,
+        ease: "none",
+        onUpdate: function () {
+          var s = Math.sin(phase.p);
+          glowEl.style.opacity = (0.30 + s * 0.022).toFixed(4);
+        }
+      }, 1.92);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["04-better-way"] = tl;
+    })();
+  </script>
+</template>

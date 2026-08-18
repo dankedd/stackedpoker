@@ -1,0 +1,247 @@
+<template>
+  <style>
+    @font-face { font-family:"Geist"; src:url("capture/assets/fonts/Geist-Regular.woff2") format("woff2");
+                 font-weight:100 900; font-style:normal; font-display:block; }
+    @font-face { font-family:"Geist Mono"; src:url("capture/assets/fonts/GeistMono-Regular.woff2") format("woff2");
+                 font-weight:100 900; font-style:normal; font-display:block; }
+
+    #root { position:absolute; inset:0; width:1920px; height:1080px; overflow:hidden; }
+
+    /* ---- ground (identical to every frame in the film) ---- */
+    .swy-bg      { position:absolute; inset:0; background:#0D1526; }
+    .swy-deep    { position:absolute; inset:0;
+                   background: radial-gradient(1600px 900px at 50% 118%, #080D1A 0%, rgba(8,13,26,0) 70%); }
+    .swy-grid    { position:absolute; inset:0;
+                   background-image:
+                     linear-gradient(rgba(186,205,247,0.03) 1px, transparent 1px),
+                     linear-gradient(90deg, rgba(186,205,247,0.03) 1px, transparent 1px);
+                   background-size:80px 80px; }
+    .swy-spot    { position:absolute; inset:0;
+                   background: radial-gradient(1200px 820px at 50% 8%,
+                     rgba(124,92,255,0.20) 0%, rgba(94,168,255,0.09) 40%, rgba(94,168,255,0) 70%); }
+    .swy-ambient { position:absolute; inset:0;
+                   background: radial-gradient(1500px 700px at 50% 104%,
+                     rgba(94,168,255,0.10) 0%, rgba(94,168,255,0) 72%); }
+
+    /* ---- the glass surface: THE canonical single-element rule, byte-for-byte
+            the one frames 2 and 4 use. One element, one fill, one real border.
+            It is authored at the LANDED rect (560,300,800,460); the inherited
+            rect (460,250,1000,620) is reached with an x/y transform plus a
+            width/height tween, so the 1px hairline and the 20px radius are
+            never scaled and never distorted at any instant. ---- */
+    #swy-glass { position:absolute; left:560px; top:300px; width:800px; height:460px;
+                 background: rgba(14,24,44,0.62);
+                 border: 1px solid rgba(186,205,247,0.10);
+                 border-radius: 20px;
+                 box-shadow: inset 0 1px 0 rgba(186,205,247,0.14),
+                             0 40px 120px rgba(0,0,0,0.45);
+                 backdrop-filter: blur(18px); }
+
+    /* ---- the canonical poker card, 132x186; the pair is scaled uniformly ---- */
+    #swy-cards { position:absolute; left:816px; top:470px; width:288px; height:186px;
+                 display:flex; gap:24px; transform-origin:0 0; }
+    .swy-pcard { width:132px; height:186px; border-radius:12px;
+                 background: linear-gradient(168deg, #FFFFFF 0%, #E8EEFB 100%);
+                 display:flex; flex-direction:column; align-items:center; justify-content:center;
+                 gap:12px; color:#0D1526; }
+    .swy-prank { font-family:"Geist"; font-size:52px; font-weight:700; line-height:1; letter-spacing:-0.02em; }
+    .swy-ppip  { display:block; width:58px; height:58px; }
+
+    /* ---- type ---- */
+    .swy-headline { font-family:"Geist"; font-weight:800; letter-spacing:-0.025em; color:#FFFFFF; }
+    .swy-body     { font-family:"Geist"; font-weight:400; line-height:1.65; color:rgba(186,205,247,0.62); }
+    .swy-label    { font-family:"Geist Mono"; font-weight:500; letter-spacing:0.18em;
+                    text-transform:uppercase; color:rgba(186,205,247,0.38); font-size:12px;
+                    line-height:1.5; }
+
+    /* ---- inherited decision content — Frame 2's landed state, reproduced
+            metric-for-metric so t=0 here IS t=5.5 there. It fades out in
+            place: opacity only, nothing repositions. ---- */
+    #swy-decision { position:absolute; inset:0; }
+
+    /* context row */
+    #swy-ctx-left  { position:absolute; left:500px;  top:290px; text-align:left; }
+    #swy-ctx-right { position:absolute; left:1020px; top:290px; width:400px; text-align:right; }
+    #swy-rule      { position:absolute; left:500px;  top:326px; width:920px; height:1px;
+                     background: rgba(186,205,247,0.07); }
+
+    /* six-seat ellipse — the table as a diagram, at the lowest weight */
+    #swy-ring      { position:absolute; left:510px; top:350px; width:900px; height:360px; }
+    .swy-seat      { position:absolute; width:8px; height:8px; border-radius:50%;
+                     background: rgba(186,205,247,0.20); }
+    #swy-seat-hero { position:absolute; left:954px; top:674px; width:12px; height:12px;
+                     border-radius:50%; background: rgba(124,92,255,0.85);
+                     box-shadow:0 0 18px rgba(124,92,255,0.35); }
+
+    #swy-pot  { position:absolute; left:460px; top:408px; width:1000px; text-align:center;
+                font-size:13px; color:rgba(186,205,247,0.50); }
+    #swy-hero { position:absolute; left:460px; top:694px; width:1000px; text-align:center;
+                font-size:12px; color:rgba(186,205,247,0.50); }
+
+    /* the question and the three unpressed actions */
+    #swy-question { position:absolute; left:460px; top:730px; width:1000px; text-align:center;
+                    font-family:"Geist"; font-weight:700; font-size:30px; line-height:1.2;
+                    letter-spacing:-0.02em; color:#FFFFFF; }
+    .swy-pill { position:absolute; top:792px; width:196px; height:54px; box-sizing:border-box;
+                display:flex; align-items:center; justify-content:center;
+                background: rgba(14,24,44,0.62); border:1px solid rgba(186,205,247,0.10);
+                border-radius:100px;
+                box-shadow: inset 0 1px 0 rgba(186,205,247,0.14),
+                            0 40px 120px rgba(0,0,0,0.45);
+                backdrop-filter: blur(18px);
+                font-family:"Geist Mono"; font-weight:500; font-size:15px; letter-spacing:0.18em;
+                text-transform:uppercase; line-height:1; color:rgba(186,205,247,0.62); }
+    #swy-pill-1 { left:640px;  }
+    #swy-pill-2 { left:862px;  }
+    #swy-pill-3 { left:1084px; }
+
+    /* ---- the landed statement ---- */
+    #swy-headline { position:absolute; left:840px; top:374px; width:480px;
+                    font-size:48px; line-height:1.12; white-space:nowrap; }
+    .swy-hw  { display:inline-block; overflow:hidden; vertical-align:bottom; }
+    .swy-hwi { display:inline-block; }
+
+    #swy-sentence { position:absolute; left:840px; top:545px; width:480px; font-size:22px; }
+    .swy-w { display:inline-block; }
+  </style>
+
+  <div id="root" data-composition-id="03-start-with-why" data-width="1920" data-height="1080">
+
+    <div class="clip swy-bg" data-start="0" data-duration="4" data-track-index="0"></div>
+
+    <div class="clip" data-start="0" data-duration="4" data-track-index="1">
+      <div class="swy-deep"></div>
+      <div class="swy-grid"></div>
+      <div class="swy-spot"></div>
+      <div class="swy-ambient"></div>
+    </div>
+
+    <div class="clip" data-start="0" data-duration="4" data-track-index="2">
+      <div id="swy-glass"></div>
+    </div>
+
+    <div id="swy-decision" class="clip" data-start="0" data-duration="4" data-track-index="3">
+      <div id="swy-ctx-left"  class="swy-label">6-Max &middot; 100 BB Effective</div>
+      <div id="swy-ctx-right" class="swy-label">Preflop</div>
+      <div id="swy-rule"></div>
+
+      <svg id="swy-ring" viewBox="0 0 900 360" aria-hidden="true">
+        <ellipse cx="450" cy="180" rx="420" ry="150"
+                 fill="none" stroke="rgba(186,205,247,0.10)" stroke-width="1"/>
+      </svg>
+      <div class="swy-seat" style="left: 956px; top: 376px"></div>
+      <div class="swy-seat" style="left: 1320px; top: 451px"></div>
+      <div class="swy-seat" style="left: 1320px; top: 601px"></div>
+      <div class="swy-seat" style="left: 592px; top: 601px"></div>
+      <div class="swy-seat" style="left: 592px; top: 451px"></div>
+      <div id="swy-seat-hero"></div>
+
+      <div id="swy-pot"  class="swy-label">Pot 6.5 BB</div>
+      <div id="swy-hero" class="swy-label">Hero &middot; BB</div>
+
+      <div id="swy-question">What would you do?</div>
+
+      <div class="swy-pill" id="swy-pill-1">Fold</div>
+      <div class="swy-pill" id="swy-pill-2">Call</div>
+      <div class="swy-pill" id="swy-pill-3">Raise</div>
+    </div>
+
+    <div class="clip" data-start="0" data-duration="4" data-track-index="4">
+      <div id="swy-cards">
+        <div class="swy-pcard"><div class="swy-prank">A</div>
+          <svg class="swy-ppip" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z" fill="currentColor"/>
+            <path d="M12 17.4v4.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          </svg></div>
+        <div class="swy-pcard"><div class="swy-prank">5</div>
+          <svg class="swy-ppip" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z" fill="currentColor"/>
+            <path d="M12 17.4v4.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+          </svg></div>
+      </div>
+    </div>
+
+    <div class="clip" data-start="0" data-duration="4" data-track-index="5">
+      <div id="swy-headline" class="swy-headline"><span class="swy-hw"><span class="swy-hwi">START</span></span> <span class="swy-hw"><span class="swy-hwi">WITH</span></span> <span class="swy-hw"><span class="swy-hwi">WHY.</span></span></div>
+
+      <div id="swy-sentence" class="swy-body"><span class="swy-w">Suited</span>
+        <span class="swy-w">aces</span>
+        <span class="swy-w">block</span>
+        <span class="swy-w">the</span>
+        <span class="swy-w">strongest</span>
+        <span class="swy-w">hands</span>
+        <span class="swy-w">your</span>
+        <span class="swy-w">opponent</span>
+        <span class="swy-w">can</span>
+        <span class="swy-w">hold</span>
+        <span class="swy-w">&#8212;</span>
+        <span class="swy-w">and</span>
+        <span class="swy-w">they</span>
+        <span class="swy-w">still</span>
+        <span class="swy-w">play</span>
+        <span class="swy-w">well</span>
+        <span class="swy-w">when</span>
+        <span class="swy-w">called.</span></div>
+    </div>
+
+  </div>
+
+  <script>
+    window.__timelines = window.__timelines || {};
+
+    /* ------------------------------------------------------------------
+       t = 0 IS FRAME 2's END STATE. Everything inherited is already lit;
+       nothing re-enters. These sets live OUTSIDE the timeline.
+       inherited glass  460,250,1000,620   inherited cards 816-1104 x 470-656
+       landed   glass   560,300, 800,460   landed   cards 600- 792 x 340-464
+       ------------------------------------------------------------------ */
+    gsap.set("#swy-glass", { x: -100, y: -50, width: 1000, height: 620 });
+    gsap.set("#swy-cards", { x: 0, y: 0, scale: 1 });
+    gsap.set("#swy-decision", { opacity: 1 });
+
+    /* the landed statement is the only thing not yet present */
+    gsap.set(".swy-hwi", { yPercent: 105, opacity: 0 });
+    gsap.set(".swy-w", { y: 12, opacity: 0 });
+
+    var tl = gsap.timeline({ paused: true });
+
+    /* Scene 1 (0.0-0.3s) — the seam. The inherited state, static. */
+
+    /* Scene 2 (0.3-1.5s) — one continuous transform.
+       The decision content fades out IN PLACE: opacity only, no slide, no collapse. */
+    tl.fromTo("#swy-decision",
+      { opacity: 1 },
+      { opacity: 0, duration: 0.80, ease: "power3.inOut" }, 0.30);
+
+    /* the surface eases from 460,250,1000,620 to its authored 560,300,800,460:
+       position by transform, size by width/height. No scale ever touches the
+       glass, so the hairline stays exactly 1px and the corner exactly 20px. */
+    tl.fromTo("#swy-glass",
+      { x: -100, y: -50, width: 1000, height: 620 },
+      { x: 0, y: 0, width: 800, height: 460,
+        duration: 1.20, ease: "power3.inOut" }, 0.30);
+
+    /* the pair scales uniformly to 2/3 (132x186 -> 88x124) and travels to the
+       top-left of the surface: an anchor, no longer the subject */
+    tl.fromTo("#swy-cards",
+      { x: 0, y: 0, scale: 1 },
+      { x: -216, y: -130, scale: 0.666667, duration: 1.20, ease: "power3.inOut" }, 0.30);
+
+    /* Scene 3 (1.5-2.3s) — START WITH WHY. resolves beside the cards */
+    tl.fromTo(".swy-hwi",
+      { yPercent: 105, opacity: 0 },
+      { yPercent: 0, opacity: 1, duration: 0.68, ease: "power3.out",
+        stagger: 0.06 }, 1.52);
+
+    /* Scene 4 (2.3-3.4s) — the sentence, per word */
+    tl.fromTo(".swy-w",
+      { y: 12, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.50, ease: "power3.out",
+        stagger: 0.034 }, 2.32);
+
+    /* Scene 5 (3.4-4.0s) — held. Nothing moves. The viewer reads. */
+    tl.to({}, { duration: 0.05 }, 3.95);
+
+    window.__timelines["03-start-with-why"] = tl;
+  </script>
+</template>

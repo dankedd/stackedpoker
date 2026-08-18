@@ -1,0 +1,423 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Geist";
+      src: url("capture/assets/fonts/22a5144ee8d83bca-s.p.woff2") format("woff2");
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: block;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      font-family: "Geist", sans-serif;
+      color: #E6EAF0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── full-bleed ground (clip layer, never on #root) ───────────────── */
+    .f01q-ground {
+      position: absolute;
+      inset: 0;
+      background: #0C101D;
+    }
+
+    /* ── the violet spotlight pool ────────────────────────────────────── */
+    .f01q-glow-wrap {
+      position: absolute;
+      left: 180px;
+      top: -45px;
+      width: 1560px;
+      height: 1120px;
+      z-index: 1;
+      transform-origin: 50% 50%;
+      will-change: transform, opacity;
+      pointer-events: none;
+    }
+    .f01q-glow-core {
+      position: absolute;
+      inset: 0;
+      opacity: 0.3;
+      transform-origin: 50% 50%;
+      background: radial-gradient(
+        ellipse closest-side at 50% 50%,
+        rgba(139, 92, 246, 0.95) 0%,
+        rgba(139, 92, 246, 0.6) 28%,
+        rgba(139, 92, 246, 0.26) 52%,
+        rgba(124, 58, 237, 0.08) 76%,
+        rgba(124, 58, 237, 0) 100%
+      );
+    }
+
+    /* ── the decision card ────────────────────────────────────────────── */
+    .f01q-shell {
+      position: absolute;
+      left: 580px;
+      top: 290px;
+      width: 760px;
+      height: 500px;
+      z-index: 2;
+      transform-origin: 50% 100%;
+      will-change: transform, opacity;
+    }
+    .f01q-card {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      padding: 34px;
+      border-radius: 14px;
+      background: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+
+    /* depth-of-field layers — small / grouped, never the giant surface */
+    .f01q-dof {
+      --dof: 0px;
+      filter: blur(var(--dof));
+      will-change: filter, opacity;
+    }
+
+    .f01q-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 1;
+    }
+    .f01q-eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #8B5CF6;
+    }
+    .f01q-mark {
+      display: block;
+      width: 19px;
+      height: 19px;
+      color: #8B5CF6;
+    }
+    .f01q-pot {
+      padding: 7px 17px;
+      border-radius: 100px;
+      background: rgba(139, 92, 246, 0.08);
+      color: #8B5CF6;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── the board ────────────────────────────────────────────────────── */
+    .f01q-board {
+      display: flex;
+      gap: 18px;
+      margin-top: 78px;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+    }
+    .f01q-bcard {
+      width: 104px;
+      height: 146px;
+      border-radius: 10px;
+      background: linear-gradient(168deg, #F4F6FA 0%, #E3E7F0 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transform-origin: 50% 100%;
+      will-change: transform, opacity;
+    }
+    .f01q-rank {
+      font-size: 36px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    .f01q-pip {
+      display: block;
+      width: 42px;
+      height: 42px;
+    }
+    .f01q-ink {
+      color: #0C101D;
+    }
+    .f01q-red {
+      color: #B41C22;
+    }
+
+    .f01q-seat {
+      margin-top: 32px;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      color: #728297;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── the three unpressed buttons — the focal layer, stays sharp ───── */
+    .f01q-actions {
+      display: flex;
+      gap: 16px;
+      margin-top: 56px;
+      justify-content: center;
+      position: relative;
+      z-index: 3;
+    }
+    .f01q-btn {
+      width: 196px;
+      height: 60px;
+      border-radius: 100px;
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      background: rgba(139, 92, 246, 0.08);
+      color: #E6EAF0;
+      font-size: 19px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform-origin: 50% 50%;
+      will-change: transform, opacity;
+    }
+  </style>
+
+  <div data-hf-id="hf-f01" id="root" data-composition-id="01-the-question" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+    <!-- ground -->
+    <div data-hf-id="hf-eo1a" class="clip f01q-ground" data-start="0" data-duration="4" data-track-index="0"></div>
+
+    <!-- violet spotlight pool -->
+    <div data-hf-id="hf-odh2" id="f01q-glow-wrap" class="clip f01q-glow-wrap" data-start="0" data-duration="4" data-track-index="1">
+      <div data-hf-id="hf-b2ve" id="f01q-glow-core" class="f01q-glow-core"></div>
+    </div>
+
+    <!-- the decision card — the hero surface -->
+    <div data-hf-id="hf-1h3d" id="f01q-shell" class="clip f01q-shell" data-start="0" data-duration="4" data-track-index="2">
+      <div data-hf-id="hf-zews" id="f01q-card" class="f01q-card">
+        <div data-hf-id="hf-y2eg" id="f01q-head" class="f01q-head f01q-dof" data-depth="1">
+          <div data-hf-id="hf-dw58" id="f01q-eyebrow" class="f01q-eyebrow">
+            <svg data-hf-id="hf-hu6y" class="f01q-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path data-hf-id="hf-ynq9" d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z" />
+              <path data-hf-id="hf-5rib" d="M12 18v4" />
+            </svg>
+            <span data-hf-id="hf-iu51">Decision spot</span>
+          </div>
+          <div data-hf-id="hf-azyw" id="f01q-pot" class="f01q-pot">POT 3.8 BB</div>
+        </div>
+
+        <!-- board: the user's own flop -->
+        <div data-hf-id="hf-f8nr" id="f01q-board" class="f01q-board f01q-dof" data-depth="1">
+          <div data-hf-id="hf-1cgb" class="f01q-bcard f01q-board-card">
+            <div data-hf-id="hf-co1l" class="f01q-rank f01q-ink">Q</div>
+            <svg data-hf-id="hf-xgi4" class="f01q-pip f01q-ink" viewBox="0 0 24 24" aria-hidden="true">
+              <path data-hf-id="hf-5hsr" d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z" fill="currentColor" />
+              <path data-hf-id="hf-wg4p" d="M12 17.4v4.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" />
+            </svg>
+          </div>
+          <div data-hf-id="hf-gfnv" class="f01q-bcard f01q-board-card">
+            <div data-hf-id="hf-qld4" class="f01q-rank f01q-red">7</div>
+            <svg data-hf-id="hf-3vs9" class="f01q-pip f01q-red" viewBox="0 0 24 24" aria-hidden="true">
+              <path data-hf-id="hf-jc9p" d="M12 1.4 21.6 12 12 22.6 2.4 12Z" fill="currentColor" />
+            </svg>
+          </div>
+          <div data-hf-id="hf-u36x" class="f01q-bcard f01q-board-card">
+            <div data-hf-id="hf-bpk0" class="f01q-rank f01q-ink">2</div>
+            <svg data-hf-id="hf-fg7q" class="f01q-pip f01q-ink" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <circle data-hf-id="hf-twe9" cx="12" cy="6.9" r="4.5" />
+              <circle data-hf-id="hf-qwpn" cx="6.5" cy="14.2" r="4.5" />
+              <circle data-hf-id="hf-6zgp" cx="17.5" cy="14.2" r="4.5" />
+              <path data-hf-id="hf-pvw3" d="M10.3 13.4h3.4l1.7 8.6h-6.8z" />
+            </svg>
+          </div>
+        </div>
+
+        <div data-hf-id="hf-b3ow" id="f01q-seat" class="f01q-seat f01q-dof" data-depth="1">
+          HERO · BTN · 100 BB
+        </div>
+
+        <!-- the three buttons — none of them pressed -->
+        <div data-hf-id="hf-pl8t" class="f01q-actions">
+          <div data-hf-id="hf-yrqu" class="f01q-btn f01q-action">Fold</div>
+          <div data-hf-id="hf-awat" class="f01q-btn f01q-action">Call</div>
+          <div data-hf-id="hf-txgv" class="f01q-btn f01q-action">Raise</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+      window.__timelines["01-the-question"] = tl;
+
+      var glowWrap = document.getElementById("f01q-glow-wrap");
+      var glowCore = document.getElementById("f01q-glow-core");
+      var shell = document.getElementById("f01q-shell");
+      var card = document.getElementById("f01q-card");
+
+      /* ── tokens ─────────────────────────────────────────────────────── */
+      var GLOW_PEAK_OPACITY = 0.3; // core alpha; wrap opacity carries the bloom
+      var GLOW_START_SCALE = 0.84;
+      var BLOOM_START = 0.05;
+      var BLOOM_DUR = 1.0;
+      var OPACITY_AMP = 0.03;
+      var SCALE_AMP = 0.015;
+
+      var CARD_ENTRY = 0.95;
+      var CARD_DUR = 0.95;
+      var CARD_SETTLE = CARD_ENTRY + CARD_DUR; // 1.90
+
+      var DEAL_START = 2.0;
+      var DEAL_STEP = 0.22;
+      var DEAL_DUR = 0.44;
+
+      var BTN_START = 2.8;
+      var BTN_STAGGER = 0.07;
+      var BTN_DUR = 0.46;
+
+      var DOF_START = 3.02;
+      var DOF_DUR = 0.4;
+      var BLUR_PER_DEPTH = 2; // px
+      var DIM_LEVEL = 0.74;
+
+      var IDLE_START = 2.0;
+      var IDLE_DUR = 2.0;
+      var IDLE_CYCLES = 1; // whole cycle → sin ends at 0, the hold ends at rest
+      var Y_AMP_PX = 2;
+      var CARD_SCALE_AMP = 0.004;
+
+      /* ── Scene 1 (0.0–1.1s) — ambient glow bloom, from nothing ──────── */
+      tl.fromTo(
+        glowWrap,
+        { opacity: 0, scale: GLOW_START_SCALE },
+        { opacity: 0.72, scale: 0.97, duration: BLOOM_DUR, ease: "power2.out" },
+        BLOOM_START
+      );
+      // the pool finishes opening exactly as the card settles — one beat
+      tl.to(
+        glowWrap,
+        { opacity: 1, scale: 1, duration: CARD_SETTLE - (BLOOM_START + BLOOM_DUR), ease: "power2.out" },
+        BLOOM_START + BLOOM_DUR
+      );
+
+      /* ── Scene 2 (1.1–2.0s) — the card rises into the pool ──────────── */
+      tl.fromTo(
+        shell,
+        { opacity: 0, y: 72, scale: 0.94, rotation: -0.6 },
+        { opacity: 1, y: 0, scale: 1, rotation: 0, duration: CARD_DUR, ease: "power3.out" },
+        CARD_ENTRY
+      );
+      tl.fromTo(
+        "#f01q-eyebrow",
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" },
+        1.5
+      );
+
+      /* bounded glow breathe through the hold — finite phase, no yoyo */
+      var glowPhase = { p: 0 };
+      tl.to(
+        glowPhase,
+        {
+          p: Math.PI * 2 * 0.62,
+          duration: 4 - CARD_SETTLE,
+          ease: "none",
+          onUpdate: function () {
+            var s = Math.sin(glowPhase.p);
+            glowCore.style.opacity = String(GLOW_PEAK_OPACITY + s * OPACITY_AMP);
+            glowCore.style.transform = "scale(" + (1 + s * SCALE_AMP) + ")";
+          }
+        },
+        CARD_SETTLE
+      );
+
+      /* ── Scene 3 (2.0–2.8s) — the flop deals left→right on the VO ───── */
+      // start/end pre-computed once at build, never inside onUpdate
+      var BOARD = [];
+      var boardEls = gsap.utils.toArray(".f01q-board-card");
+      var cursor = DEAL_START;
+      for (var i = 0; i < boardEls.length; i++) {
+        BOARD.push({ el: boardEls[i], start: cursor, end: cursor + DEAL_DUR });
+        cursor += DEAL_STEP;
+      }
+      BOARD.forEach(function (entry) {
+        tl.fromTo(
+          entry.el,
+          { opacity: 0, x: -26, y: 14, scale: 0.9 },
+          { opacity: 1, x: 0, y: 0, scale: 1, duration: DEAL_DUR, ease: "power3.out" },
+          entry.start
+        );
+      });
+      // pot + hero readout fade up behind the board
+      tl.fromTo(
+        "#f01q-pot",
+        { opacity: 0, y: 8 },
+        { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
+        2.12
+      );
+      tl.fromTo(
+        "#f01q-seat",
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
+        2.5
+      );
+
+      /* ── Scene 4 (2.8–3.4s) — the three buttons arrive, then DoF ────── */
+      gsap.utils.toArray(".f01q-action").forEach(function (el, n) {
+        tl.fromTo(
+          el,
+          { opacity: 0, y: 20, scale: 0.9 },
+          { opacity: 1, y: 0, scale: 1, duration: BTN_DUR, ease: "power3.out" },
+          BTN_START + n * BTN_STAGGER
+        );
+      });
+
+      // focal pull: everything except the button row settles ~2px out of focus
+      gsap.utils.toArray(".f01q-dof").forEach(function (el) {
+        var depth = Number(el.getAttribute("data-depth")) || 1;
+        tl.to(
+          el,
+          {
+            "--dof": BLUR_PER_DEPTH * depth + "px",
+            opacity: DIM_LEVEL,
+            duration: DOF_DUR,
+            ease: "power2.inOut"
+          },
+          DOF_START
+        );
+      });
+      // the pool recedes with them (dim only — no blur on the giant surface)
+      tl.to(glowWrap, { opacity: 0.84, duration: DOF_DUR, ease: "power2.inOut" }, DOF_START);
+
+      /* ── Scene 5 (3.4–4.0s) — held. Only low-amplitude jitter. ──────── */
+      var cardPhase = { p: 0 };
+      tl.to(
+        cardPhase,
+        {
+          p: Math.PI * 2 * IDLE_CYCLES,
+          duration: IDLE_DUR,
+          ease: "none",
+          onUpdate: function () {
+            var s = Math.sin(cardPhase.p);
+            card.style.transform =
+              "translateY(" + s * Y_AMP_PX + "px) scale(" + (1 + s * CARD_SCALE_AMP) + ")";
+          }
+        },
+        IDLE_START
+      );
+    })();
+  </script>
+</template>

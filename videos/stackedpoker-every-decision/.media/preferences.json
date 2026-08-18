@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "preferences": {
+    "destination": {
+      "value": "website",
+      "confirmed_in": [
+        "stackedpoker-every-decision"
+      ],
+      "updated_at": "2026-08-11T11:26:05.083Z"
+    },
+    "aspect": {
+      "value": "1920x1080",
+      "confirmed_in": [
+        "stackedpoker-every-decision"
+      ],
+      "updated_at": "2026-08-11T11:26:05.180Z"
+    },
+    "language": {
+      "value": "en",
+      "confirmed_in": [
+        "stackedpoker-every-decision"
+      ],
+      "updated_at": "2026-08-11T11:26:05.273Z"
+    },
+    "flow": {
+      "value": "automation",
+      "confirmed_in": [
+        "stackedpoker-every-decision"
+      ],
+      "updated_at": "2026-08-11T11:26:05.369Z"
+    },
+    "storyboard": {
+      "value": "no",
+      "confirmed_in": [
+        "stackedpoker-every-decision"
+      ],
+      "updated_at": "2026-08-11T11:26:05.477Z"
+    },
+    "style_preset.product-launch-video": {
+      "value": "blue-professional",
+      "confirmed_in": [
+        "stackedpoker-every-decision"
+      ],
+      "updated_at": "2026-08-11T11:26:05.575Z"
+    },
+    "voice": {
+      "value": "06c816b952f14fa9b3a6c42aa151f731",
+      "confirmed_in": [
+        "stackedpoker-every-decision"
+      ],
+      "updated_at": "2026-08-11T11:26:05.669Z"
+    }
+  },
+  "sightings": {}
+}

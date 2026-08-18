@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2" crossorigin="anonymous"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: #000; }
+      #root { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #0D1526; }
+      .scene { position: absolute; inset: 0; width: 100%; height: 100%; }
+    </style>
+  </head>
+  <body>
+    <!--
+      stackedpoker-the-3bet — revision 2
+
+      Seven frames, one continuous world. There are NO injected transitions: every
+      boundary is a hard cut between two numerically identical frozen states, and
+      each was measured with a pixel diff before this file was written.
+
+        1 -> 2  0.0000%      4 -> 5  0.0082% (170px, max delta 3)
+        2 -> 3  0.0000%      5 -> 6  0.0000%
+        3 -> 4  0.0000%      6 -> 7  0.0000%
+
+      Voice files carry their own leading silence; the assembler mounts them at
+      frame start with no offset, so the pad is baked into the WAV. Frame 2 is
+      deliberately silent.
+    -->
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="30"
+      data-width="1920"
+      data-height="1080"
+    >
+      <!-- ── 1 · the hook — 0.0 → 4.5 ─────────────────────────────────── -->
+      <div id="el-01" class="scene"
+           data-composition-id="01-the-hook"
+           data-composition-src="compositions/frames/01-the-hook.html"
+           data-start="0" data-duration="4.5" data-track-index="1"></div>
+      <audio id="el-01-voice" src="assets/voice/01.wav"
+             data-start="0" data-duration="4.5" data-track-index="10" data-volume="1"></audio>
+
+      <!-- ── 2 · the spot — 4.5 → 9.5 · NO VOICE, the table is read ───── -->
+      <div id="el-02" class="scene"
+           data-composition-id="02-the-spot"
+           data-composition-src="compositions/frames/02-the-spot.html"
+           data-start="4.5" data-duration="5" data-track-index="1"></div>
+
+      <!-- ── 3 · the decision — 9.5 → 14.5 ────────────────────────────── -->
+      <div id="el-03" class="scene"
+           data-composition-id="03-the-decision"
+           data-composition-src="compositions/frames/03-the-decision.html"
+           data-start="9.5" data-duration="5" data-track-index="1"></div>
+      <audio id="el-03-voice" src="assets/voice/03.wav"
+             data-start="9.5" data-duration="5" data-track-index="10" data-volume="1"></audio>
+
+      <!-- ── 4 · the range — 14.5 → 20.5 ──────────────────────────────── -->
+      <div id="el-04" class="scene"
+           data-composition-id="04-the-range"
+           data-composition-src="compositions/frames/04-the-range.html"
+           data-start="14.5" data-duration="6" data-track-index="1"></div>
+      <audio id="el-04-voice" src="assets/voice/04.wav"
+             data-start="14.5" data-duration="6" data-track-index="10" data-volume="1"></audio>
+
+      <!-- ── 5 · the theory — 20.5 → 24.0 ─────────────────────────────── -->
+      <div id="el-05" class="scene"
+           data-composition-id="05-the-theory"
+           data-composition-src="compositions/frames/05-the-theory.html"
+           data-start="20.5" data-duration="3.5" data-track-index="1"></div>
+      <audio id="el-05-voice" src="assets/voice/05.wav"
+             data-start="20.5" data-duration="3.5" data-track-index="10" data-volume="1"></audio>
+
+      <!-- ── 6 · the coach — 24.0 → 27.0 ──────────────────────────────── -->
+      <div id="el-06" class="scene"
+           data-composition-id="06-the-coach"
+           data-composition-src="compositions/frames/06-the-coach.html"
+           data-start="24" data-duration="3" data-track-index="1"></div>
+      <audio id="el-06-voice" src="assets/voice/06.wav"
+             data-start="24" data-duration="3" data-track-index="10" data-volume="1"></audio>
+
+      <!-- ── 7 · the close — 27.0 → 30.0 ──────────────────────────────── -->
+      <div id="el-07" class="scene"
+           data-composition-id="07-brand"
+           data-composition-src="compositions/frames/07-brand.html"
+           data-start="27" data-duration="3" data-track-index="1"></div>
+      <audio id="el-07-voice" src="assets/voice/07.wav"
+             data-start="27" data-duration="3" data-track-index="10" data-volume="1"></audio>
+
+      <!-- ── music bed ────────────────────────────────────────────────── -->
+      <audio id="el-bgm" src="assets/bgm/track.mp3"
+             data-start="0" data-duration="30" data-track-index="11" data-volume="0.5"></audio>
+
+      <!-- ── SFX — every cue sits on a real animation beat, not on a grid.
+             Frame offsets: F1 0 · F2 4.5 · F3 9.5 · F4 14.5 · F5 20.5 · F6 24 · F7 27
+
+             NOTE ON THE SWELLS: u-accent and u-swell-long start near silence and
+             peak 1.15s / 2.10s in; u-shimmer peaks 0.70s in. Those three are
+             therefore mounted EARLY so their peak lands on the beat, not their
+             onset. u-glass, u-tick and u-card are transients and sit on the beat. -->
+
+      <!-- 1 · the hook: one opening swell, then the two cards land -->
+      <audio id="el-sfx-01-u-swell-long" src="assets/sfx/u-swell-long.mp3" data-start="0"     data-duration="4"    data-track-index="20" data-volume="0.30"></audio>
+      <audio id="el-sfx-02-u-card" src="assets/sfx/u-card.mp3"      data-start="1.62"  data-duration="0.26" data-track-index="21" data-volume="0.20"></audio>
+      <audio id="el-sfx-03-u-card" src="assets/sfx/u-card.mp3"      data-start="2.24"  data-duration="0.26" data-track-index="22" data-volume="0.18"></audio>
+      <audio id="el-sfx-04-u-tick" src="assets/sfx/u-tick.mp3"      data-start="2.25"  data-duration="0.35" data-track-index="23" data-volume="0.07"></audio>
+      <audio id="el-sfx-05-u-tick" src="assets/sfx/u-tick.mp3"      data-start="2.62"  data-duration="0.35" data-track-index="24" data-volume="0.07"></audio>
+
+      <!-- 2 · the spot: the table forms, two folds, the raise, the pot -->
+      <audio id="el-sfx-06-u-glass" src="assets/sfx/u-glass.mp3"     data-start="4.95"  data-duration="1.62" data-track-index="25" data-volume="0.26"></audio>
+      <audio id="el-sfx-07-u-tick" src="assets/sfx/u-tick.mp3"      data-start="6.80"  data-duration="0.35" data-track-index="26" data-volume="0.10"></audio>
+      <audio id="el-sfx-08-u-tick" src="assets/sfx/u-tick.mp3"      data-start="7.10"  data-duration="0.35" data-track-index="27" data-volume="0.10"></audio>
+      <audio id="el-sfx-09-u-accent" src="assets/sfx/u-accent.mp3"    data-start="6.27"  data-duration="2.40" data-track-index="28" data-volume="0.26"></audio>
+      <audio id="el-sfx-10-u-tick" src="assets/sfx/u-tick.mp3"      data-start="7.82"  data-duration="0.35" data-track-index="29" data-volume="0.07"></audio>
+
+      <!-- 3 · the decision: three pills settle, then 3-Bet resolves -->
+      <audio id="el-sfx-11-u-tick" src="assets/sfx/u-tick.mp3"      data-start="9.90"  data-duration="0.35" data-track-index="30" data-volume="0.10"></audio>
+      <audio id="el-sfx-12-u-tick" src="assets/sfx/u-tick.mp3"      data-start="10.12" data-duration="0.35" data-track-index="31" data-volume="0.10"></audio>
+      <audio id="el-sfx-13-u-tick" src="assets/sfx/u-tick.mp3"      data-start="10.34" data-duration="0.35" data-track-index="32" data-volume="0.10"></audio>
+      <audio id="el-sfx-14-u-shimmer" src="assets/sfx/u-shimmer.mp3"   data-start="11.95" data-duration="3.32" data-track-index="33" data-volume="0.15"></audio>
+      <audio id="el-sfx-15-u-tick" src="assets/sfx/u-tick.mp3"      data-start="12.60" data-duration="0.35" data-track-index="34" data-volume="0.07"></audio>
+
+      <!-- 4 · the range: the table becomes the range, A5s lights, the rest follows -->
+      <audio id="el-sfx-16-u-glass" src="assets/sfx/u-glass.mp3"     data-start="14.80" data-duration="1.62" data-track-index="35" data-volume="0.20"></audio>
+      <audio id="el-sfx-17-u-shimmer" src="assets/sfx/u-shimmer.mp3"   data-start="16.15" data-duration="3.32" data-track-index="36" data-volume="0.24"></audio>
+      <audio id="el-sfx-18-u-shimmer" src="assets/sfx/u-shimmer.mp3"   data-start="17.80" data-duration="2.60" data-track-index="37" data-volume="0.18"></audio>
+      <audio id="el-sfx-19-u-tick" src="assets/sfx/u-tick.mp3"      data-start="18.95" data-duration="0.35" data-track-index="38" data-volume="0.07"></audio>
+
+      <!-- 5 · the theory: the surface slides, the panel opens -->
+      <audio id="el-sfx-20-u-glass" src="assets/sfx/u-glass.mp3"     data-start="20.80" data-duration="1.62" data-track-index="39" data-volume="0.13"></audio>
+      <audio id="el-sfx-21-u-tick" src="assets/sfx/u-tick.mp3"      data-start="21.85" data-duration="0.35" data-track-index="40" data-volume="0.07"></audio>
+
+      <!-- 6 · the coach -->
+      <audio id="el-sfx-22-u-glass" src="assets/sfx/u-glass.mp3"     data-start="24.50" data-duration="1.62" data-track-index="41" data-volume="0.12"></audio>
+      <audio id="el-sfx-23-u-tick" src="assets/sfx/u-tick.mp3"      data-start="24.90" data-duration="0.35" data-track-index="42" data-volume="0.07"></audio>
+
+      <!-- 7 · the close -->
+      <audio id="el-sfx-24-u-accent" src="assets/sfx/u-accent.mp3"    data-start="27.55" data-duration="2.40" data-track-index="43" data-volume="0.26"></audio>
+      <audio id="el-sfx-25-u-tick" src="assets/sfx/u-tick.mp3"      data-start="29.20" data-duration="0.35" data-track-index="44" data-volume="0.07"></audio>
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

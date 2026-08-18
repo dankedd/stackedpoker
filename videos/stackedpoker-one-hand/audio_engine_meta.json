@@ -1,0 +1,366 @@
+{
+  "tts_provider": "heygen",
+  "voice_id": "06c816b952f14fa9b3a6c42aa151f731",
+  "bgm": {
+    "path": "assets/bgm/track.mp3",
+    "volume": 0.12,
+    "query": "minimal-piano-synth-pad-ambient-calm-no-drums",
+    "mode": "retrieve",
+    "duration_s": 53
+  },
+  "bgm_pending": false,
+  "bgm_provider": "heygen",
+  "bgm_pid": null,
+  "bgm_log": null,
+  "bgm_mode": "retrieve",
+  "bgm_target_duration_s": null,
+  "bgm_seed_duration_s": null,
+  "bgm_loop_count": null,
+  "voices": [
+    {
+      "id": "01",
+      "path": "assets/voice/01.wav",
+      "duration_s": 2.691,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Every",
+          "start": 0.179,
+          "end": 0.479
+        },
+        {
+          "id": "w1",
+          "text": "great",
+          "start": 0.5,
+          "end": 0.739
+        },
+        {
+          "id": "w2",
+          "text": "decision",
+          "start": 0.759,
+          "end": 1.299
+        },
+        {
+          "id": "w3",
+          "text": "starts",
+          "start": 1.319,
+          "end": 1.679
+        },
+        {
+          "id": "w4",
+          "text": "with",
+          "start": 1.699,
+          "end": 1.839
+        },
+        {
+          "id": "w5",
+          "text": "understanding.",
+          "start": 1.86,
+          "end": 2.5
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "path": "assets/voice/02.wav",
+      "duration_s": 2.456,
+      "words": [
+        {
+          "id": "w0",
+          "text": "First,",
+          "start": 0.119,
+          "end": 0.459
+        },
+        {
+          "id": "w1",
+          "text": "understand",
+          "start": 0.919,
+          "end": 1.439
+        },
+        {
+          "id": "w2",
+          "text": "the",
+          "start": 1.48,
+          "end": 1.559
+        },
+        {
+          "id": "w3",
+          "text": "concept.",
+          "start": 1.62,
+          "end": 2.18
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "path": "assets/voice/03.wav",
+      "duration_s": 1.515,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Then",
+          "start": 0.119,
+          "end": 0.319
+        },
+        {
+          "id": "w1",
+          "text": "make",
+          "start": 0.399,
+          "end": 0.539
+        },
+        {
+          "id": "w2",
+          "text": "the",
+          "start": 0.62,
+          "end": 0.66
+        },
+        {
+          "id": "w3",
+          "text": "decision.",
+          "start": 0.699,
+          "end": 1.199
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "path": "assets/voice/04.wav",
+      "duration_s": 2.482,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Learn",
+          "start": 0.159,
+          "end": 0.399
+        },
+        {
+          "id": "w1",
+          "text": "the",
+          "start": 0.439,
+          "end": 0.499
+        },
+        {
+          "id": "w2",
+          "text": "range,",
+          "start": 0.579,
+          "end": 0.959
+        },
+        {
+          "id": "w3",
+          "text": "not",
+          "start": 1.339,
+          "end": 1.439
+        },
+        {
+          "id": "w4",
+          "text": "just",
+          "start": 1.579,
+          "end": 1.759
+        },
+        {
+          "id": "w5",
+          "text": "the",
+          "start": 1.779,
+          "end": 1.819
+        },
+        {
+          "id": "w6",
+          "text": "hand.",
+          "start": 1.899,
+          "end": 2.22
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "path": "assets/voice/05.wav",
+      "duration_s": 2.064,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Finally,",
+          "start": 0.119,
+          "end": 0.56
+        },
+        {
+          "id": "w1",
+          "text": "understand",
+          "start": 0.959,
+          "end": 1.419
+        },
+        {
+          "id": "w2",
+          "text": "why.",
+          "start": 1.48,
+          "end": 1.799
+        }
+      ]
+    },
+    {
+      "id": "06",
+      "path": "assets/voice/06.wav",
+      "duration_s": 2.926,
+      "words": [
+        {
+          "id": "w0",
+          "text": "StackedPoker.",
+          "start": 0.159,
+          "end": 0.899
+        },
+        {
+          "id": "w1",
+          "text": "Learn",
+          "start": 1.419,
+          "end": 1.62
+        },
+        {
+          "id": "w2",
+          "text": "poker",
+          "start": 1.74,
+          "end": 2
+        },
+        {
+          "id": "w3",
+          "text": "by",
+          "start": 2.079,
+          "end": 2.159
+        },
+        {
+          "id": "w4",
+          "text": "playing.",
+          "start": 2.279,
+          "end": 2.639
+        }
+      ]
+    }
+  ],
+  "sfx": [
+    {
+      "id": "01",
+      "name": "one soft paper swipe as each card settles",
+      "file": "assets/sfx/one-soft-paper-swipe-as-each-card-settle.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 1.104,
+      "volume": 0.35
+    },
+    {
+      "id": "01",
+      "name": "two total",
+      "file": "assets/sfx/two-total.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 5.488,
+      "volume": 0.35
+    },
+    {
+      "id": "01",
+      "name": "very quiet; a low ambient pad swell under the spotlight. Nothing else.",
+      "file": "assets/sfx/very-quiet-a-low-ambient-pad-swell-under.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 0.816,
+      "volume": 0.35
+    },
+    {
+      "id": "02",
+      "name": "one gentle airy whoosh as the card grows",
+      "file": "assets/sfx/one-gentle-airy-whoosh-as-the-card-grows.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 1.423,
+      "volume": 0.35
+    },
+    {
+      "id": "02",
+      "name": "very soft; a faint shimmer as the pips glow. Nothing else.",
+      "file": "assets/sfx/very-soft-a-faint-shimmer-as-the-pips-gl.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 1.308,
+      "volume": 0.35
+    },
+    {
+      "id": "03",
+      "name": "a gentle airy whoosh as the theory collapses; one tiny synth tick as each button resolves",
+      "file": "assets/sfx/a-gentle-airy-whoosh-as-the-theory-colla.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 3.268,
+      "volume": 0.35
+    },
+    {
+      "id": "03",
+      "name": "three total",
+      "file": "assets/sfx/three-total.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 0.768,
+      "volume": 0.35
+    },
+    {
+      "id": "03",
+      "name": "barely audible. No click — nothing is selected.",
+      "file": "assets/sfx/barely-audible-no-click-nothing-is-selec.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 0.264,
+      "volume": 0.35
+    },
+    {
+      "id": "04",
+      "name": "a gentle airy whoosh as the grid resolves; one soft shimmer when A5s lights; a second",
+      "file": "assets/sfx/a-gentle-airy-whoosh-as-the-grid-resolve.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 3.825,
+      "volume": 0.35
+    },
+    {
+      "id": "04",
+      "name": "quieter shimmer as the bluff combinations illuminate.",
+      "file": "assets/sfx/quieter-shimmer-as-the-bluff-combination.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 3.329,
+      "volume": 0.35
+    },
+    {
+      "id": "05",
+      "name": "one glass slide as the panel opens; a faint synth tick under each emphasised phrase",
+      "file": "assets/sfx/one-glass-slide-as-the-panel-opens-a-fai.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 3.463,
+      "volume": 0.35
+    },
+    {
+      "id": "05",
+      "name": "three total",
+      "file": "assets/sfx/three-total.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 0.768,
+      "volume": 0.35
+    },
+    {
+      "id": "05",
+      "name": "almost inaudible.",
+      "file": "assets/sfx/almost-inaudible.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 1.283,
+      "volume": 0.35
+    },
+    {
+      "id": "06",
+      "name": "one long gentle airy whoosh as everything clears; a single warm low resolve under the lockup. Nothing on the CTA.",
+      "file": "assets/sfx/one-long-gentle-airy-whoosh-as-everythin.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 3.825,
+      "volume": 0.35
+    }
+  ],
+  "total_duration_s": 14.134
+}

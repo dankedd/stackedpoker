@@ -1,0 +1,427 @@
+{
+  "total_duration_s": 60,
+  "width": 1920,
+  "height": 1080,
+  "groups": [
+    {
+      "id": "caption-group-0",
+      "frame": 1,
+      "start": 0.899,
+      "end": 1.179,
+      "text": "What would",
+      "words": [
+        {
+          "id": "caption-word-0-0",
+          "text": "What",
+          "start": 0.899,
+          "end": 1.019
+        },
+        {
+          "id": "caption-word-0-1",
+          "text": "would",
+          "start": 1.039,
+          "end": 1.14
+        }
+      ]
+    },
+    {
+      "id": "caption-group-1",
+      "frame": 1,
+      "start": 1.179,
+      "end": 1.599,
+      "text": "you do?",
+      "words": [
+        {
+          "id": "caption-word-1-0",
+          "text": "you",
+          "start": 1.179,
+          "end": 1.279
+        },
+        {
+          "id": "caption-word-1-1",
+          "text": "do?",
+          "start": 1.319,
+          "end": 1.479
+        }
+      ]
+    },
+    {
+      "id": "caption-group-2",
+      "frame": 2,
+      "start": 4.549,
+      "end": 5.629,
+      "text": "Every poker session",
+      "words": [
+        {
+          "id": "caption-word-2-0",
+          "text": "Every",
+          "start": 4.549,
+          "end": 4.829
+        },
+        {
+          "id": "caption-word-2-1",
+          "text": "poker",
+          "start": 4.869,
+          "end": 5.109
+        },
+        {
+          "id": "caption-word-2-2",
+          "text": "session",
+          "start": 5.19,
+          "end": 5.589
+        }
+      ]
+    },
+    {
+      "id": "caption-group-3",
+      "frame": 2,
+      "start": 5.629,
+      "end": 5.93,
+      "text": "is a",
+      "words": [
+        {
+          "id": "caption-word-3-0",
+          "text": "is",
+          "start": 5.629,
+          "end": 5.729
+        },
+        {
+          "id": "caption-word-3-1",
+          "text": "a",
+          "start": 5.769,
+          "end": 5.889
+        }
+      ]
+    },
+    {
+      "id": "caption-group-4",
+      "frame": 2,
+      "start": 5.93,
+      "end": 7.109,
+      "text": "series of decisions.",
+      "words": [
+        {
+          "id": "caption-word-4-0",
+          "text": "series",
+          "start": 5.93,
+          "end": 6.269
+        },
+        {
+          "id": "caption-word-4-1",
+          "text": "of",
+          "start": 6.289,
+          "end": 6.389
+        },
+        {
+          "id": "caption-word-4-2",
+          "text": "decisions.",
+          "start": 6.409,
+          "end": 6.989
+        }
+      ]
+    },
+    {
+      "id": "caption-group-5",
+      "frame": 3,
+      "start": 9.669,
+      "end": 10.769,
+      "text": "Most players spend",
+      "words": [
+        {
+          "id": "caption-word-5-0",
+          "text": "Most",
+          "start": 9.669,
+          "end": 9.85
+        },
+        {
+          "id": "caption-word-5-1",
+          "text": "players",
+          "start": 9.909,
+          "end": 10.249
+        },
+        {
+          "id": "caption-word-5-2",
+          "text": "spend",
+          "start": 10.269,
+          "end": 10.67
+        }
+      ]
+    },
+    {
+      "id": "caption-group-6",
+      "frame": 3,
+      "start": 10.769,
+      "end": 11.749,
+      "text": "hours watching...",
+      "words": [
+        {
+          "id": "caption-word-6-0",
+          "text": "hours",
+          "start": 10.769,
+          "end": 11.169
+        },
+        {
+          "id": "caption-word-6-1",
+          "text": "watching...",
+          "start": 11.229,
+          "end": 11.629
+        }
+      ]
+    },
+    {
+      "id": "caption-group-7",
+      "frame": 4,
+      "start": 16.569,
+      "end": 17.109,
+      "text": "We believe",
+      "words": [
+        {
+          "id": "caption-word-7-0",
+          "text": "We",
+          "start": 16.569,
+          "end": 16.709
+        },
+        {
+          "id": "caption-word-7-1",
+          "text": "believe",
+          "start": 16.73,
+          "end": 17.089
+        }
+      ]
+    },
+    {
+      "id": "caption-group-8",
+      "frame": 4,
+      "start": 17.109,
+      "end": 17.409,
+      "text": "there's a",
+      "words": [
+        {
+          "id": "caption-word-8-0",
+          "text": "there's",
+          "start": 17.109,
+          "end": 17.289
+        },
+        {
+          "id": "caption-word-8-1",
+          "text": "a",
+          "start": 17.389,
+          "end": 17.409
+        }
+      ]
+    },
+    {
+      "id": "caption-group-9",
+      "frame": 4,
+      "start": 17.409,
+      "end": 18.07,
+      "text": "better way.",
+      "words": [
+        {
+          "id": "caption-word-9-0",
+          "text": "better",
+          "start": 17.409,
+          "end": 17.649
+        },
+        {
+          "id": "caption-word-9-1",
+          "text": "way.",
+          "start": 17.69,
+          "end": 17.95
+        }
+      ]
+    },
+    {
+      "id": "caption-group-10",
+      "frame": 5,
+      "start": 20.649,
+      "end": 21.089,
+      "text": "Learn by",
+      "words": [
+        {
+          "id": "caption-word-10-0",
+          "text": "Learn",
+          "start": 20.649,
+          "end": 20.829
+        },
+        {
+          "id": "caption-word-10-1",
+          "text": "by",
+          "start": 20.889,
+          "end": 20.989
+        }
+      ]
+    },
+    {
+      "id": "caption-group-11",
+      "frame": 5,
+      "start": 21.089,
+      "end": 22.449,
+      "text": "making real decisions.",
+      "words": [
+        {
+          "id": "caption-word-11-0",
+          "text": "making",
+          "start": 21.089,
+          "end": 21.45
+        },
+        {
+          "id": "caption-word-11-1",
+          "text": "real",
+          "start": 21.489,
+          "end": 21.649
+        },
+        {
+          "id": "caption-word-11-2",
+          "text": "decisions.",
+          "start": 21.729,
+          "end": 22.329
+        }
+      ]
+    },
+    {
+      "id": "caption-group-12",
+      "frame": 6,
+      "start": 32.59,
+      "end": 33.629,
+      "text": "Understand why.",
+      "words": [
+        {
+          "id": "caption-word-12-0",
+          "text": "Understand",
+          "start": 32.59,
+          "end": 33.089
+        },
+        {
+          "id": "caption-word-12-1",
+          "text": "why.",
+          "start": 33.209,
+          "end": 33.509
+        }
+      ]
+    },
+    {
+      "id": "caption-group-13",
+      "frame": 7,
+      "start": 39.569,
+      "end": 40.649,
+      "text": "Track every step",
+      "words": [
+        {
+          "id": "caption-word-13-0",
+          "text": "Track",
+          "start": 39.569,
+          "end": 39.849
+        },
+        {
+          "id": "caption-word-13-1",
+          "text": "every",
+          "start": 40.01,
+          "end": 40.229
+        },
+        {
+          "id": "caption-word-13-2",
+          "text": "step",
+          "start": 40.369,
+          "end": 40.609
+        }
+      ]
+    },
+    {
+      "id": "caption-group-14",
+      "frame": 7,
+      "start": 40.649,
+      "end": 41.369,
+      "text": "of your journey.",
+      "words": [
+        {
+          "id": "caption-word-14-0",
+          "text": "of",
+          "start": 40.649,
+          "end": 40.749
+        },
+        {
+          "id": "caption-word-14-1",
+          "text": "your",
+          "start": 40.769,
+          "end": 40.829
+        },
+        {
+          "id": "caption-word-14-2",
+          "text": "journey.",
+          "start": 40.95,
+          "end": 41.249
+        }
+      ]
+    },
+    {
+      "id": "caption-group-15",
+      "frame": 8,
+      "start": 47.609,
+      "end": 47.969,
+      "text": "From your",
+      "words": [
+        {
+          "id": "caption-word-15-0",
+          "text": "From",
+          "start": 47.609,
+          "end": 47.749
+        },
+        {
+          "id": "caption-word-15-1",
+          "text": "your",
+          "start": 47.809,
+          "end": 47.929
+        }
+      ]
+    },
+    {
+      "id": "caption-group-16",
+      "frame": 8,
+      "start": 47.969,
+      "end": 48.55,
+      "text": "first hand",
+      "words": [
+        {
+          "id": "caption-word-16-0",
+          "text": "first",
+          "start": 47.969,
+          "end": 48.19
+        },
+        {
+          "id": "caption-word-16-1",
+          "text": "hand",
+          "start": 48.249,
+          "end": 48.529
+        }
+      ]
+    },
+    {
+      "id": "caption-group-17",
+      "frame": 8,
+      "start": 48.55,
+      "end": 49.909,
+      "text": "to advanced strategy.",
+      "words": [
+        {
+          "id": "caption-word-17-0",
+          "text": "to",
+          "start": 48.55,
+          "end": 48.629
+        },
+        {
+          "id": "caption-word-17-1",
+          "text": "advanced",
+          "start": 48.69,
+          "end": 49.149
+        },
+        {
+          "id": "caption-word-17-2",
+          "text": "strategy.",
+          "start": 49.249,
+          "end": 49.789
+        }
+      ]
+    }
+  ]
+}

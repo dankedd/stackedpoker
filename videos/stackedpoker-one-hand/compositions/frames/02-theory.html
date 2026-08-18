@@ -1,0 +1,505 @@
+<template>
+  <style>
+    /* Geist — variable Latin subset shipped with the capture (100–900) */
+    @font-face {
+      font-family: "Geist";
+      font-style: normal;
+      font-weight: 100 900;
+      font-display: block;
+      src: url("capture/assets/fonts/Geist-Regular.woff2") format("woff2");
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      font-family: "Geist", sans-serif;
+      font-kerning: normal;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    #root .f02t-layer {
+      position: absolute;
+      inset: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+
+    /* ---------------- ground ---------------- */
+
+    #root .f02t-ground {
+      position: absolute;
+      inset: 0;
+      background: #0c101d;
+    }
+
+    /* blueprint grid ~3% */
+    #root .f02t-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          rgba(139, 92, 246, 0.03) 0px,
+          rgba(139, 92, 246, 0.03) 1px,
+          rgba(139, 92, 246, 0) 1px,
+          rgba(139, 92, 246, 0) 80px
+        ),
+        repeating-linear-gradient(
+          90deg,
+          rgba(139, 92, 246, 0.03) 0px,
+          rgba(139, 92, 246, 0.03) 1px,
+          rgba(139, 92, 246, 0) 1px,
+          rgba(139, 92, 246, 0) 80px
+        );
+    }
+
+    /* soft blue ambient glow — wide, cool, very low */
+    #root .f02t-ambient {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        1400px 900px at 26% 88%,
+        rgba(96, 132, 200, 0.07) 0%,
+        rgba(96, 132, 200, 0.03) 42%,
+        rgba(96, 132, 200, 0) 72%
+      );
+    }
+
+    /* the one violet spotlight — settled over the lesson card */
+    #root .f02t-spot {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        1100px 760px at 50% 34%,
+        rgba(139, 92, 246, 0.17) 0%,
+        rgba(139, 92, 246, 0.07) 38%,
+        rgba(139, 92, 246, 0) 66%
+      );
+    }
+
+    #root .f02t-vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        1500px 1000px at 50% 46%,
+        rgba(0, 0, 0, 0) 40%,
+        rgba(0, 0, 0, 0.34) 78%,
+        rgba(0, 0, 0, 0.5) 100%
+      );
+    }
+
+    /* ---------------- lesson card (tinted glass, no shadow) ---------------- */
+
+    /* Position is FINAL in CSS (x580 y280) and never animated as layout:
+       the left edge is driven by an `x` transform that tweens 80 -> 0, so the
+       only layout properties that move are width/height. The 1.5px hairline
+       and the 14px radius are therefore never scaled — they stay exact. */
+    #root .f02t-card {
+      position: absolute;
+      left: 580px;
+      top: 280px;
+      width: 760px;
+      height: 600px;
+      box-sizing: border-box;
+      background: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      border-radius: 14px;
+      box-shadow: none;
+    }
+
+    /* ---------------- header type ---------------- */
+
+    #root .f02t-eyebrow {
+      position: absolute;
+      left: 0;
+      top: 326px;
+      width: 1920px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #a78bfa;
+    }
+
+    #root .f02t-title {
+      position: absolute;
+      left: 0;
+      top: 358px;
+      width: 1920px;
+      text-align: center;
+      font-size: 56px;
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: #e6eaf0;
+    }
+
+    /* ---------------- the two poker cards (canvas-absolute, never moved) ----------------
+       The spine of the film. This is the canonical card, identical in every
+       frame: 132x186, one light glass face, one centred rank over one centred
+       spade. No corner indices, no multi-pip layout, no border, no shadow. */
+
+    #root .f02t-pcard {
+      position: absolute;
+      top: 470px;
+      width: 132px;
+      height: 186px;
+      border-radius: 10px;
+      background: linear-gradient(168deg, #f4f6fa 0%, #e3e7f0 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #0c101d;
+    }
+
+    #root .f02t-pcard-a {
+      left: 818px;
+    }
+
+    #root .f02t-pcard-5 {
+      left: 970px;
+    }
+
+    #root .f02t-rank {
+      font-size: 48px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    #root .f02t-pip {
+      display: block;
+      width: 56px;
+      height: 56px;
+      transform-origin: 50% 50%;
+    }
+
+    /* ---------------- divider + theory sentence ---------------- */
+
+    #root .f02t-divider {
+      position: absolute;
+      left: 720px;
+      top: 706px;
+      width: 480px;
+      height: 1px;
+      transform-origin: 50% 50%;
+      background: linear-gradient(
+        90deg,
+        rgba(139, 92, 246, 0) 0%,
+        rgba(139, 92, 246, 0.36) 50%,
+        rgba(139, 92, 246, 0) 100%
+      );
+    }
+
+    #root .f02t-theory {
+      position: absolute;
+      left: 630px;
+      top: 738px;
+      width: 660px;
+      min-height: 96px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 1.6;
+      /* #728297 measured 4.35:1 here, under the 4.5:1 floor. This sentence is the
+         one block in the film the viewer is asked to actually read, and it holds
+         for ~3s, so it gets the brand's lighter neutral (#94A3B8, from the site
+         capture) rather than the muted tone used for chrome. */
+      color: #94a3b8;
+    }
+
+    #root .f02t-w {
+      display: inline-block;
+    }
+  
+    /* ===== CANONICAL GROUND — byte-identical in all six frames =====
+       Each frame originally authored its own lighting, so the blue glow,
+       the spotlight position and the blueprint pitch (48px vs 80px) all
+       changed at the seams. Values are forced here; animations are left
+       alone, so Frame 1 still blooms out of darkness and lands exactly
+       on this shared state at 5.0s. ===== */
+    .f02t-ground { background: #0C101D !important; }
+    .f02t-grid { background-image:
+    linear-gradient(rgba(139,92,246,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139,92,246,0.03) 1px, transparent 1px) !important;
+  background-size: 80px 80px !important;
+  opacity: 1 !important; }
+    .f02t-spot { background: radial-gradient(1100px 760px at 960px 470px,
+    rgba(139,92,246,0.17) 0%, rgba(139,92,246,0.07) 38%, rgba(139,92,246,0) 66%) !important; }
+    .f02t-ambient { background: radial-gradient(1400px 900px at 500px 950px,
+    rgba(96,132,200,0.07) 0%, rgba(96,132,200,0.03) 42%, rgba(96,132,200,0) 72%) !important; }
+    .f02t-vignette { background: none !important; }
+  </style>
+
+  <div
+    id="root"
+    data-composition-id="02-theory"
+    data-start="0"
+    data-duration="5"
+    data-width="1920"
+    data-height="1080"
+  >
+    <!-- full-bleed ground -->
+    <div
+      class="clip f02t-layer"
+      data-start="0"
+      data-duration="5"
+      data-track-index="0"
+    >
+      <div class="f02t-ground"></div>
+      <div class="f02t-grid"></div>
+      <div class="f02t-ambient"></div>
+      <div class="f02t-spot"></div>
+      <div class="f02t-vignette"></div>
+    </div>
+
+    <!-- lesson surface -->
+    <div
+      class="clip f02t-layer"
+      data-start="0"
+      data-duration="5"
+      data-track-index="1"
+    >
+      <div class="f02t-card" id="f02t-card"></div>
+
+      <div class="f02t-eyebrow">Lesson</div>
+      <div class="f02t-title">Suited Aces</div>
+
+      <!-- A of spades -->
+      <div class="f02t-pcard f02t-pcard-a">
+        <div class="f02t-rank">A</div>
+        <svg
+          class="f02t-pip"
+          data-glow="ace"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z"
+            fill="currentColor"
+          />
+          <path
+            d="M12 17.4v4.6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.6"
+            stroke-linecap="round"
+          />
+        </svg>
+      </div>
+
+      <!-- 5 of spades -->
+      <div class="f02t-pcard f02t-pcard-5">
+        <div class="f02t-rank">5</div>
+        <svg
+          class="f02t-pip"
+          data-glow="five"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z"
+            fill="currentColor"
+          />
+          <path
+            d="M12 17.4v4.6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.6"
+            stroke-linecap="round"
+          />
+        </svg>
+      </div>
+
+      <div class="f02t-divider" id="f02t-divider"></div>
+
+      <div class="f02t-theory" id="f02t-theory">
+        <span class="f02t-w">Suited</span> <span class="f02t-w">aces</span>
+        <span class="f02t-w">are</span> <span class="f02t-w">powerful</span>
+        <span class="f02t-w">bluffing</span>
+        <span class="f02t-w">candidates</span>
+        <span class="f02t-w">because</span> <span class="f02t-w">they</span>
+        <span class="f02t-w">block</span> <span class="f02t-w">premium</span>
+        <span class="f02t-w">hands</span> <span class="f02t-w">while</span>
+        <span class="f02t-w">retaining</span>
+        <span class="f02t-w">excellent</span>
+        <span class="f02t-w">playability.</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+
+      var scope = document.querySelector('[data-composition-id="02-theory"]');
+      var card = scope.querySelector("#f02t-card");
+      var divider = scope.querySelector("#f02t-divider");
+      var words = scope.querySelectorAll(".f02t-w");
+      var pips = scope.querySelectorAll("[data-glow]");
+
+      /* ---- initial states, OUTSIDE the timeline ---- */
+      /* The card's CSS carries its FINAL box (left 580 / top 280 / 760x600).
+         Frame 1's inherited box (660,280,600x420) is restored here as an
+         x-offset of +80 plus the smaller width/height, so t=0 paints the
+         seam exactly and nothing has to "enter". */
+      gsap.set(card, { x: 80, y: 0, width: 600, height: 420 });
+      gsap.set(divider, { opacity: 0, scaleX: 0.5 });
+      gsap.set(words, { opacity: 0, y: 10 });
+
+      var tl = gsap.timeline({ paused: true });
+
+      /* ------------------------------------------------------------------
+         Scene 1 (0.0–0.4s) — the inherited state, completely static.
+         Nothing is authored here on purpose: the card sits at x660 y280
+         w600 h420 and the two poker cards at 818–1102 x 470–656 straight
+         out of CSS, exactly as Frame 1 left them. The seam is invisible.
+         ------------------------------------------------------------------ */
+
+      /* ---- Scene 2 (0.4–1.6s): the card grows around the cards ----
+         The left edge travels 660 -> 580 as a pure `x` TRANSFORM (80 -> 0)
+         against the card's static CSS left:580 — no layout property carries
+         the position, so the ease-out tail cannot snap to integer device
+         pixels under the seek-by-frame capture engine. Only the box size
+         (600->760 wide, 420->600 tall) is a layout tween, and because the
+         element is never scaled the 1.5px glass hairline stays 1.5px and the
+         14px radius stays 14px for the whole growth.
+         Top edge pinned at y=280 (y stays 0). The two poker cards are
+         canvas-absolute SIBLINGS of the card, not children, so neither the
+         transform nor the resize can move them: 818–1102 x 470–656 holds
+         from t=0 to t=5. One long-tail power3 ease. */
+      tl.fromTo(
+        card,
+        { x: 80, y: 0, width: 600, height: 420 },
+        {
+          x: 0,
+          y: 0,
+          width: 760,
+          height: 600,
+          duration: 1.2,
+          ease: "power3.out",
+        },
+        0.4,
+      );
+
+      /* ---- Scene 3 (1.6–3.0s): hairline divider, then the sentence ---- */
+      tl.fromTo(
+        divider,
+        { opacity: 0, scaleX: 0.5 },
+        { opacity: 1, scaleX: 1, duration: 0.5, ease: "power3.out" },
+        1.6,
+      );
+
+      tl.fromTo(
+        words,
+        { opacity: 0, y: 10 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.5,
+          ease: "power3.out",
+          stagger: 0.042,
+        },
+        1.95,
+      );
+
+      /* ---- Scene 4 (3.0–4.2s): asr-keyword-glow on the spade pips ----
+         One linear driver over the whole scene; the envelope is 0 before
+         start, linear attack to 1, sustain, then a release down to a rest
+         level it holds forever after. Both windows finish releasing at
+         t=4.20 exactly, so Scene 5 is numerically frozen. */
+      var ATTACK_DUR = 0.22;
+      var RELEASE = 0.35;
+      var REST_LEVEL = 0.4;
+      var MAX_BLUR = 18;
+      var MAX_SCALE_BOOST = 0.03;
+
+      /* monotonic, non-overlapping */
+      var TIMINGS = {
+        ace: { start: 3.0, end: 3.42 },
+        five: { start: 3.55, end: 3.85 },
+      };
+
+      /* The card face is light, so the pip's rest colour IS the canonical
+         card ink (#0C101D) — at env 0 the pip is exactly the Frame-1 pip.
+         The lift is a deep violet that still reads at 4.5:1 on the face. */
+      var REST_RGB = { r: 12, g: 16, b: 29 }; /* #0C101D — canonical ink */
+      var ACTIVE_RGB = { r: 109, g: 40, b: 217 }; /* #6D28D9 violet lift */
+
+      function envelope(time, start, end) {
+        if (time < start) return 0;
+        if (time < end) return Math.min((time - start) / ATTACK_DUR, 1);
+        var releaseEnd = end + RELEASE;
+        if (time < releaseEnd) {
+          return 1 - ((time - end) / RELEASE) * (1 - REST_LEVEL);
+        }
+        return REST_LEVEL;
+      }
+
+      function lerpChannel(a, b, t) {
+        return Math.round(a + (b - a) * t);
+      }
+
+      function colorAt(env) {
+        var t = env * 0.6;
+        return (
+          "rgb(" +
+          lerpChannel(REST_RGB.r, ACTIVE_RGB.r, t) +
+          ", " +
+          lerpChannel(REST_RGB.g, ACTIVE_RGB.g, t) +
+          ", " +
+          lerpChannel(REST_RGB.b, ACTIVE_RGB.b, t) +
+          ")"
+        );
+      }
+
+      var driver = { t: 0 };
+
+      tl.to(
+        driver,
+        {
+          t: 5,
+          duration: 5,
+          ease: "none",
+          onUpdate: function () {
+            for (var i = 0; i < pips.length; i++) {
+              var el = pips[i];
+              var timing = TIMINGS[el.getAttribute("data-glow")];
+              if (!timing) continue;
+              var env = envelope(driver.t, timing.start, timing.end);
+              var alpha = 0.1 + 0.62 * env;
+              var blur = (MAX_BLUR * env).toFixed(2);
+              var wide = (MAX_BLUR * 2.2 * env).toFixed(2);
+              el.style.filter =
+                "drop-shadow(0 0 " +
+                blur +
+                "px rgba(167, 139, 250, " +
+                alpha.toFixed(3) +
+                ")) drop-shadow(0 0 " +
+                wide +
+                "px rgba(139, 92, 246, " +
+                (alpha * 0.55).toFixed(3) +
+                "))";
+              el.style.color = colorAt(env);
+              if (el.getAttribute("data-glow") === "ace") {
+                el.style.transform =
+                  "scale(" + (1 + MAX_SCALE_BOOST * env).toFixed(4) + ")";
+              }
+            }
+          },
+        },
+        0,
+      );
+
+      /* ---- Scene 5 (4.2–5.0s): held. No tween lands in this window. ---- */
+
+      window.__timelines["02-theory"] = tl;
+    })();
+  </script>
+</template>

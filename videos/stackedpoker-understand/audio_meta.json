@@ -1,0 +1,376 @@
+{
+  "bgm": {
+    "path": "assets/bgm/track.mp3",
+    "volume": 0.5,
+    "query": "minimal-cinematic-ambient-pad-soft-piano-no-drums",
+    "duration_s": 30.0,
+    "note": "Cut 6-36s from a 53s retrieval, compressed (thr -26dB, 3:1) and loudness-normalised to -20 LUFS. Raw peak was -0.0dB against a -20.9dB mean; untreated, the quiet passages disappear under a film that is mostly silence. Volume 0.50, not the 0.12 default, for the same reason."
+  },
+  "bgm_pending": false,
+  "voices": [
+    {
+      "frame": 1,
+      "path": "assets/voice/01.wav",
+      "duration_s": 6.185,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Every",
+          "start": 1.479,
+          "end": 1.779
+        },
+        {
+          "id": "w1",
+          "text": "poker",
+          "start": 1.8,
+          "end": 2.059
+        },
+        {
+          "id": "w2",
+          "text": "decision",
+          "start": 2.139,
+          "end": 2.699
+        },
+        {
+          "id": "w3",
+          "text": "starts",
+          "start": 2.78,
+          "end": 3.059
+        },
+        {
+          "id": "w4",
+          "text": "with",
+          "start": 3.099,
+          "end": 3.199
+        },
+        {
+          "id": "w5",
+          "text": "a",
+          "start": 3.3,
+          "end": 3.319
+        },
+        {
+          "id": "w6",
+          "text": "question.",
+          "start": 3.339,
+          "end": 3.819
+        },
+        {
+          "id": "w7",
+          "text": "What",
+          "start": 5.159,
+          "end": 5.3
+        },
+        {
+          "id": "w8",
+          "text": "would",
+          "start": 5.319,
+          "end": 5.479
+        },
+        {
+          "id": "w9",
+          "text": "you",
+          "start": 5.499,
+          "end": 5.619
+        },
+        {
+          "id": "w10",
+          "text": "do?",
+          "start": 5.66,
+          "end": 5.959
+        }
+      ]
+    },
+    {
+      "frame": 2,
+      "path": "assets/voice/02.wav",
+      "duration_s": 2.043,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Don't",
+          "start": 0.569,
+          "end": 0.769
+        },
+        {
+          "id": "w1",
+          "text": "just",
+          "start": 0.79,
+          "end": 0.95
+        },
+        {
+          "id": "w2",
+          "text": "learn",
+          "start": 1.01,
+          "end": 1.19
+        },
+        {
+          "id": "w3",
+          "text": "the",
+          "start": 1.209,
+          "end": 1.289
+        },
+        {
+          "id": "w4",
+          "text": "answer.",
+          "start": 1.389,
+          "end": 1.729
+        }
+      ]
+    },
+    {
+      "frame": 3,
+      "path": "assets/voice/03.wav",
+      "duration_s": 1.834,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Understand",
+          "start": 0.59,
+          "end": 1.089
+        },
+        {
+          "id": "w1",
+          "text": "why.",
+          "start": 1.209,
+          "end": 1.509
+        }
+      ]
+    },
+    {
+      "frame": 4,
+      "path": "assets/voice/04.wav",
+      "duration_s": 1.652,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Think",
+          "start": 0.569,
+          "end": 0.749
+        },
+        {
+          "id": "w1",
+          "text": "in",
+          "start": 0.79,
+          "end": 0.849
+        },
+        {
+          "id": "w2",
+          "text": "ranges.",
+          "start": 0.929,
+          "end": 1.369
+        }
+      ]
+    },
+    {
+      "frame": 5,
+      "path": "assets/voice/05.wav",
+      "duration_s": 1.965,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Build",
+          "start": 0.569,
+          "end": 0.769
+        },
+        {
+          "id": "w1",
+          "text": "better",
+          "start": 0.829,
+          "end": 1.07
+        },
+        {
+          "id": "w2",
+          "text": "decisions.",
+          "start": 1.109,
+          "end": 1.67
+        }
+      ]
+    },
+    {
+      "frame": 7,
+      "path": "assets/voice/07.wav",
+      "duration_s": 3.346,
+      "words": [
+        {
+          "id": "w0",
+          "text": "StackedPoker.",
+          "start": 0.579,
+          "end": 1.319
+        },
+        {
+          "id": "w1",
+          "text": "Learn",
+          "start": 1.839,
+          "end": 2.04
+        },
+        {
+          "id": "w2",
+          "text": "poker",
+          "start": 2.16,
+          "end": 2.42
+        },
+        {
+          "id": "w3",
+          "text": "by",
+          "start": 2.499,
+          "end": 2.579
+        },
+        {
+          "id": "w4",
+          "text": "playing.",
+          "start": 2.699,
+          "end": 3.059
+        }
+      ]
+    }
+  ],
+  "sfx": [
+    {
+      "frame": 1,
+      "name": "u-swell-long",
+      "file": "assets/sfx/u-swell-long.mp3",
+      "source": "heygen (trimmed)",
+      "offset_s": 0.0,
+      "duration_s": 4.0,
+      "volume": 0.16
+    },
+    {
+      "frame": 1,
+      "name": "u-card",
+      "file": "assets/sfx/u-card.mp3",
+      "source": "heygen (trimmed)",
+      "offset_s": 1.32,
+      "duration_s": 0.26,
+      "volume": 0.22
+    },
+    {
+      "frame": 1,
+      "name": "u-card",
+      "file": "assets/sfx/u-card.mp3",
+      "source": "heygen (trimmed)",
+      "offset_s": 2.02,
+      "duration_s": 0.26,
+      "volume": 0.2
+    },
+    {
+      "frame": 2,
+      "name": "u-glass",
+      "file": "assets/sfx/u-glass.mp3",
+      "source": "heygen (trimmed)",
+      "offset_s": 0.4,
+      "duration_s": 1.62,
+      "volume": 0.15
+    },
+    {
+      "frame": 2,
+      "name": "u-tick",
+      "file": "assets/sfx/u-tick.mp3",
+      "source": "heygen (trimmed)",
+      "offset_s": 2.72,
+      "duration_s": 0.35,
+      "volume": 0.11
+    },
+    {
+      "frame": 2,
+      "name": "u-tick",
+      "file": "assets/sfx/u-tick.mp3",
+      "source": "heygen (trimmed)",
+      "offset_s": 2.94,
+      "duration_s": 0.35,
+      "volume": 0.11
+    },
+    {
+      "frame": 2,
+      "name": "u-tick",
+      "file": "assets/sfx/u-tick.mp3",
+      "source": "heygen (trimmed)",
+      "offset_s": 3.16,
+      "duration_s": 0.35,
+      "volume": 0.11
+    },
+    {
+      "frame": 3,
+      "name": "u-glass",
+      "file": "assets/sfx/u-glass.mp3",
+      "source": "heygen (trimmed)",
+      "offset_s": 0.32,
+      "duration_s": 1.62,
+      "volume": 0.13
+    },
+    {
+      "frame": 4,
+      "name": "u-glass",
+      "file": "assets/sfx/u-glass.mp3",
+      "source": "heygen (trimmed)",
+      "offset_s": 1.4,
+      "duration_s": 1.62,
+      "volume": 0.13
+    },
+    {
+      "frame": 4,
+      "name": "u-shimmer",
+      "file": "assets/sfx/u-shimmer.mp3",
+      "source": "heygen (trimmed)",
+      "offset_s": 2.42,
+      "duration_s": 2.2,
+      "volume": 0.17
+    },
+    {
+      "frame": 4,
+      "name": "u-shimmer",
+      "file": "assets/sfx/u-shimmer.mp3",
+      "source": "heygen (trimmed)",
+      "offset_s": 3.34,
+      "duration_s": 1.6,
+      "volume": 0.1
+    },
+    {
+      "frame": 5,
+      "name": "u-glass",
+      "file": "assets/sfx/u-glass.mp3",
+      "source": "heygen (trimmed)",
+      "offset_s": 1.28,
+      "duration_s": 1.62,
+      "volume": 0.15
+    },
+    {
+      "frame": 5,
+      "name": "u-tick",
+      "file": "assets/sfx/u-tick.mp3",
+      "source": "heygen (trimmed)",
+      "offset_s": 2.55,
+      "duration_s": 0.35,
+      "volume": 0.09
+    },
+    {
+      "frame": 5,
+      "name": "u-tick",
+      "file": "assets/sfx/u-tick.mp3",
+      "source": "heygen (trimmed)",
+      "offset_s": 2.9,
+      "duration_s": 0.35,
+      "volume": 0.09
+    },
+    {
+      "frame": 6,
+      "name": "u-swell-short",
+      "file": "assets/sfx/u-swell-short.mp3",
+      "source": "heygen (trimmed)",
+      "offset_s": 0.15,
+      "duration_s": 1.8,
+      "volume": 0.14
+    },
+    {
+      "frame": 7,
+      "name": "u-accent",
+      "file": "assets/sfx/u-accent.mp3",
+      "source": "heygen (trimmed)",
+      "offset_s": 0.88,
+      "duration_s": 2.4,
+      "volume": 0.16
+    }
+  ],
+  "sfx_note": "Hand-authored. fetch-sfx is not usable here: it splits the storyboard's prose 'sfx:' line on punctuation, retrieves each fragment as a sound, and mounts every one at offset 0. These 16 cues were placed on the beats they belong to, their envelopes checked against their roles, and their levels set well under the voice.",
+  "voice_note": "Each line carries leading silence because the assembler mounts voice at its frame's start with no offset support; without it every film opened with the narrator already speaking over the first black frame."
+}

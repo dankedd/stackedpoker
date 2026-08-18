@@ -1,0 +1,69 @@
+{
+  "lines": [
+    {
+      "id": "01",
+      "sfx": [
+        "soft card swipe on the card's arrival; one low sub-bass swell under the spotlight. No click — nothing is pressed."
+      ]
+    },
+    {
+      "id": "02",
+      "sfx": [
+        "one click tick per commit (three total)",
+        "each dry and small; a short muted thud on each red freeze. No casino sounds."
+      ]
+    },
+    {
+      "id": "03",
+      "sfx": [
+        "a slow riser building across the whole frame; layered paper/card shuffles thickening as density grows. Deliberately the noisiest 7 seconds in the film."
+      ]
+    },
+    {
+      "id": "04",
+      "sfx": [
+        "one deep implosion whoosh collapsing to silence",
+        "then a single soft chime on the reveal. The music drops out entirely for ~0.4s at the flash — the silence is the effect."
+      ]
+    },
+    {
+      "id": "05",
+      "sfx": [
+        "one continuous low airy bed under the whole move; a small hover synth as the camera centres each station — eight in total",
+        "each quieter than a click. Never a cut sound",
+        "because there are no cuts."
+      ]
+    },
+    {
+      "id": "06",
+      "sfx": [
+        "one click tick on the commit; a soft drawer slide; then three near-inaudible hover synths",
+        "one per highlight fire. The quietest frame in the film apart from Frame 1."
+      ]
+    },
+    {
+      "id": "07",
+      "sfx": [
+        "a rising airy swell under the pull-back; one subtle achievement shimmer on the badge flip — the only shimmer in the entire film",
+        "so it has to be earned; small ticks under the counter climb."
+      ]
+    },
+    {
+      "id": "08",
+      "sfx": [
+        "a soft card swipe per module card as it lands",
+        "staggered; one low swell under the pull-back. Nothing triumphant — the scale should read as calm",
+        "not as a boast."
+      ]
+    },
+    {
+      "id": "09",
+      "sfx": [
+        "a soft settle as the devices recede; one warm low resolve on the lockup; a single quiet tick as Start Free lands. Music resolves and ends clean — no fade-to-nothing."
+      ]
+    }
+  ],
+  "bgm": {
+    "mode": "none"
+  }
+}

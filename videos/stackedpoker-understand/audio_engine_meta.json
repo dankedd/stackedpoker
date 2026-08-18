@@ -1,0 +1,330 @@
+{
+  "tts_provider": "heygen",
+  "voice_id": "06c816b952f14fa9b3a6c42aa151f731",
+  "bgm": {
+    "path": "assets/bgm/track.mp3",
+    "volume": 0.12,
+    "query": "minimal-cinematic-ambient-pad-soft-piano-no-drums",
+    "mode": "retrieve",
+    "duration_s": 53
+  },
+  "bgm_pending": false,
+  "bgm_provider": "heygen",
+  "bgm_pid": null,
+  "bgm_log": null,
+  "bgm_mode": "retrieve",
+  "bgm_target_duration_s": null,
+  "bgm_seed_duration_s": null,
+  "bgm_loop_count": null,
+  "voices": [
+    {
+      "id": "01",
+      "path": "assets/voice/01.wav",
+      "duration_s": 4.885,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Every",
+          "start": 0.179,
+          "end": 0.479
+        },
+        {
+          "id": "w1",
+          "text": "poker",
+          "start": 0.5,
+          "end": 0.759
+        },
+        {
+          "id": "w2",
+          "text": "decision",
+          "start": 0.839,
+          "end": 1.399
+        },
+        {
+          "id": "w3",
+          "text": "starts",
+          "start": 1.48,
+          "end": 1.759
+        },
+        {
+          "id": "w4",
+          "text": "with",
+          "start": 1.799,
+          "end": 1.899
+        },
+        {
+          "id": "w5",
+          "text": "a",
+          "start": 2,
+          "end": 2.019
+        },
+        {
+          "id": "w6",
+          "text": "question.",
+          "start": 2.039,
+          "end": 2.519
+        },
+        {
+          "id": "w7",
+          "text": "What",
+          "start": 3.859,
+          "end": 4
+        },
+        {
+          "id": "w8",
+          "text": "would",
+          "start": 4.019,
+          "end": 4.179
+        },
+        {
+          "id": "w9",
+          "text": "you",
+          "start": 4.199,
+          "end": 4.319
+        },
+        {
+          "id": "w10",
+          "text": "do?",
+          "start": 4.36,
+          "end": 4.659
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "path": "assets/voice/02.wav",
+      "duration_s": 1.593,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Don't",
+          "start": 0.119,
+          "end": 0.319
+        },
+        {
+          "id": "w1",
+          "text": "just",
+          "start": 0.34,
+          "end": 0.5
+        },
+        {
+          "id": "w2",
+          "text": "learn",
+          "start": 0.56,
+          "end": 0.74
+        },
+        {
+          "id": "w3",
+          "text": "the",
+          "start": 0.759,
+          "end": 0.839
+        },
+        {
+          "id": "w4",
+          "text": "answer.",
+          "start": 0.939,
+          "end": 1.279
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "path": "assets/voice/03.wav",
+      "duration_s": 1.384,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Understand",
+          "start": 0.14,
+          "end": 0.639
+        },
+        {
+          "id": "w1",
+          "text": "why.",
+          "start": 0.759,
+          "end": 1.059
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "path": "assets/voice/04.wav",
+      "duration_s": 1.202,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Think",
+          "start": 0.119,
+          "end": 0.299
+        },
+        {
+          "id": "w1",
+          "text": "in",
+          "start": 0.34,
+          "end": 0.399
+        },
+        {
+          "id": "w2",
+          "text": "ranges.",
+          "start": 0.479,
+          "end": 0.919
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "path": "assets/voice/05.wav",
+      "duration_s": 1.515,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Build",
+          "start": 0.119,
+          "end": 0.319
+        },
+        {
+          "id": "w1",
+          "text": "better",
+          "start": 0.379,
+          "end": 0.62
+        },
+        {
+          "id": "w2",
+          "text": "decisions.",
+          "start": 0.659,
+          "end": 1.22
+        }
+      ]
+    },
+    {
+      "id": "07",
+      "path": "assets/voice/07.wav",
+      "duration_s": 2.926,
+      "words": [
+        {
+          "id": "w0",
+          "text": "StackedPoker.",
+          "start": 0.159,
+          "end": 0.899
+        },
+        {
+          "id": "w1",
+          "text": "Learn",
+          "start": 1.419,
+          "end": 1.62
+        },
+        {
+          "id": "w2",
+          "text": "poker",
+          "start": 1.74,
+          "end": 2
+        },
+        {
+          "id": "w3",
+          "text": "by",
+          "start": 2.079,
+          "end": 2.159
+        },
+        {
+          "id": "w4",
+          "text": "playing.",
+          "start": 2.279,
+          "end": 2.639
+        }
+      ]
+    }
+  ],
+  "sfx": [
+    {
+      "id": "01",
+      "name": "one soft card movement per card",
+      "file": "assets/sfx/one-soft-card-movement-per-card.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 1.104,
+      "volume": 0.35
+    },
+    {
+      "id": "01",
+      "name": "two total",
+      "file": "assets/sfx/two-total.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 5.488,
+      "volume": 0.35
+    },
+    {
+      "id": "01",
+      "name": "very quiet; a low ambient swell under the spotlight. Nothing else.",
+      "file": "assets/sfx/very-quiet-a-low-ambient-swell-under-the.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 9.286,
+      "volume": 0.35
+    },
+    {
+      "id": "02",
+      "name": "soft glass movement as the surface builds; three near-inaudible tactile ticks as the actions settle. No click — nothing is pressed.",
+      "file": "assets/sfx/soft-glass-movement-as-the-surface-build.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 1.672,
+      "volume": 0.35
+    },
+    {
+      "id": "03",
+      "name": "one soft glass movement as the surface reshapes. Nothing else — this is the quietest frame in the film.",
+      "file": "assets/sfx/one-soft-glass-movement-as-the-surface-r.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 5.387,
+      "volume": 0.35
+    },
+    {
+      "id": "04",
+      "name": "soft glass movement as the grid resolves; one subtle shimmer when A5s lights; a second",
+      "file": "assets/sfx/soft-glass-movement-as-the-grid-resolves.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 1.672,
+      "volume": 0.35
+    },
+    {
+      "id": "04",
+      "name": "quieter shimmer as the cluster joins.",
+      "file": "assets/sfx/quieter-shimmer-as-the-cluster-joins.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 3.329,
+      "volume": 0.35
+    },
+    {
+      "id": "05",
+      "name": "one soft spatial slide as the panel opens; two faint ticks under the emphasised phrases.",
+      "file": "assets/sfx/one-soft-spatial-slide-as-the-panel-open.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 1.008,
+      "volume": 0.35
+    },
+    {
+      "id": "06",
+      "name": "one long soft ambient swell under the pull-back. Nothing percussive.",
+      "file": "assets/sfx/one-long-soft-ambient-swell-under-the-pu.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 9.286,
+      "volume": 0.35
+    },
+    {
+      "id": "07",
+      "name": "one very subtle tonal accent under the mark. Nothing on the CTA.",
+      "file": "assets/sfx/one-very-subtle-tonal-accent-under-the-m.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 0.264,
+      "volume": 0.35
+    }
+  ],
+  "total_duration_s": 13.505
+}

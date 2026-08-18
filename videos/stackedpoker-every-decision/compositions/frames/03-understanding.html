@@ -1,0 +1,1164 @@
+<template>
+  <style>
+    /* ── Brand faces (shipped with the capture — latin subsets) ───────────── */
+    @font-face {
+      font-family: "Geist";
+      font-style: normal;
+      font-weight: 100 900;
+      font-display: block;
+      src: url("capture/assets/fonts/22a5144ee8d83bca-s.p.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Geist Mono";
+      font-style: normal;
+      font-weight: 100 900;
+      font-display: block;
+      src: url("capture/assets/fonts/7d4881bb7e1bf84d-s.p.woff2") format("woff2");
+    }
+
+    /* ── Root — styled by #root, never by a class ─────────────────────────── */
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      font-family: "Geist", sans-serif;
+      color: #e6eaf0;
+      -webkit-font-smoothing: antialiased;
+    }
+    #root * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ── track 0 · full-bleed ground (never on #root) ─────────────────────── */
+    .f03-ground {
+      position: absolute;
+      left: 0; top: 0;
+      width: 1920px; height: 1080px;
+      background:
+        radial-gradient(1240px 660px at 50% 44%, rgba(139, 92, 246, 0.10), rgba(139, 92, 246, 0) 72%),
+        #0c101d;
+    }
+
+    /* ── track 1 · the stage: the drawer ghost + the ONE held window ──────── */
+    .f03-stage {
+      position: absolute;
+      left: 0; top: 0;
+      width: 1920px; height: 1080px;
+      overflow: hidden;
+    }
+
+    /* the surface Frame 2 hands over — same centre as the window, so the
+       scale-swap reads as one object becoming another, not a cut. */
+    .f03-drawer {
+      position: absolute;
+      left: 700px; top: 320px;
+      width: 520px; height: 300px;
+      border-radius: 14px;
+      background: rgba(139, 92, 246, 0.05);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      transform-origin: 50% 50%;
+    }
+    .f03-drawer span {
+      position: absolute;
+      display: block;
+      border-radius: 8px;
+      background: rgba(139, 92, 246, 0.09);
+    }
+
+    /* the held window wrapper — the entry pop lives here so the morph writer
+       owns .f03-shell's transform exclusively (no two writers, ever). */
+    .f03-window {
+      position: absolute;
+      left: 0; top: 0;
+      width: 1920px; height: 1080px;
+      transform-origin: 960px 470px;
+    }
+
+    /* the glass shell. Base geometry = the LARGEST state; every other state is
+       reached by a non-layout scale. The 1.5px hairline is drawn as an SVG
+       stroke with vector-effect:non-scaling-stroke, so the border never
+       thickens or thins as the container changes proportion. */
+    .f03-shell {
+      position: absolute;
+      left: 180px; top: 140px;
+      width: 1560px; height: 660px;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    .f03-shell svg { display: block; width: 100%; height: 100%; overflow: visible; }
+    .f03-shell rect {
+      vector-effect: non-scaling-stroke;
+      stroke-width: 1.5;
+    }
+
+    /* the content plane. Clipped by the SAME rounded rect the shell paints —
+       both are written by one function from one clock, so they can never drift
+       apart, and content genuinely clips as the shape changes. */
+    .f03-clip {
+      position: absolute;
+      left: 0; top: 0;
+      width: 1920px; height: 1080px;
+    }
+    .f03-state {
+      position: absolute;
+      transform-origin: 50% 50%;
+    }
+    .f03-state-hidden { opacity: 0; }
+
+    /* ── shared surface atoms (frame.md) ──────────────────────────────────── */
+    .f03-hd {
+      position: absolute;
+      left: 34px; top: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .f03-eyebrow {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #a78bfa;
+      line-height: 1;
+    }
+    .f03-pill {
+      font-family: "Geist Mono", monospace;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      color: #a78bfa;
+      background: rgba(139, 92, 246, 0.08);
+      border-radius: 100px;
+      padding: 6px 14px;
+      line-height: 1;
+    }
+    .f03-legend {
+      position: absolute;
+      font-family: "Geist Mono", monospace;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      color: #728297;
+      line-height: 1;
+    }
+    .f03-accent {
+      position: absolute;
+      width: 60px; height: 4px;
+      border-radius: 2px;
+      background: #8b5cf6;
+      transform-origin: left center;
+    }
+    .f03-track {
+      position: absolute;
+      border-radius: 6px;
+      background: rgba(139, 92, 246, 0.1);
+      overflow: hidden;
+    }
+    .f03-fill {
+      display: block;
+      width: 100%; height: 100%;
+      border-radius: 6px;
+      background: #8b5cf6;
+      transform-origin: left center;
+    }
+    .f03-ico {
+      display: block;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .f03-inner {
+      position: absolute;
+      border-radius: 12px;
+      background: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+    }
+
+    /* ── 01 · range trainer ───────────────────────────────────────────────── */
+    .f03-grid { position: absolute; }
+    .f03-cell {
+      position: absolute;
+      width: 30px; height: 30px;
+      border-radius: 3px;
+      background: rgba(139, 92, 246, 0.05);
+      overflow: hidden;
+    }
+    .f03-cell i {
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      transform: scaleX(0);
+      transform-origin: left center;
+    }
+    .f03-cell b {
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Geist Mono", monospace;
+      font-size: 9px;
+      font-weight: 500;
+      color: rgba(230, 234, 240, 0.55);
+    }
+    .f03-key {
+      position: absolute;
+      display: flex;
+      align-items: center;
+    }
+    .f03-key i {
+      display: block;
+      width: 38px; height: 38px;
+      border-radius: 8px;
+      margin-right: 18px;
+    }
+    .f03-key em {
+      font-style: normal;
+      font-size: 18px;
+      font-weight: 500;
+      color: #e6eaf0;
+    }
+
+    /* ── 02 · board builder ───────────────────────────────────────────────── */
+    .f03-mini {
+      position: absolute;
+      background: #e6eaf0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .f03-mini span {
+      position: absolute;
+      left: 9px; top: 7px;
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1;
+      color: #121726;
+    }
+    .f03-mini svg {
+      position: absolute;
+      right: 8px; bottom: 8px;
+      width: 22px; height: 22px;
+      display: block;
+    }
+    .f03-slot {
+      position: absolute;
+      border: 1px dashed rgba(139, 92, 246, 0.32);
+      border-radius: 10px;
+    }
+    .f03-land {
+      position: absolute;
+      border-radius: 10px;
+      border: 1.5px solid rgba(139, 92, 246, 0.65);
+      opacity: 0;
+    }
+    .f03-swipe {
+      position: absolute;
+      width: 3px;
+      border-radius: 3px;
+      background: linear-gradient(to bottom, rgba(139, 92, 246, 0), rgba(139, 92, 246, 0.7));
+      transform-origin: top center;
+    }
+
+    /* ── 03 · decision spot ───────────────────────────────────────────────── */
+    .f03-seat circle {
+      fill: rgba(139, 92, 246, 0.07);
+      stroke: rgba(139, 92, 246, 0.35);
+      stroke-width: 1.5;
+    }
+    .f03-seat text {
+      fill: #e6eaf0;
+      font-family: "Geist Mono", monospace;
+      font-size: 15px;
+      font-weight: 500;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+    .f03-seat-hero circle { fill: #8b5cf6; stroke: #8b5cf6; }
+    .f03-seat-hero text { fill: #0c101d; font-weight: 700; }
+    .f03-act {
+      position: absolute;
+      width: 380px; height: 64px;
+      border-radius: 100px;
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      background: rgba(139, 92, 246, 0.04);
+      color: #e6eaf0;
+      font-size: 21px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .f03-act-pri {
+      background: #8b5cf6;
+      border-color: #8b5cf6;
+      color: #0c101d;
+      font-weight: 600;
+    }
+    .f03-ring {
+      position: absolute;
+      border-radius: 100px;
+      border: 1.5px solid rgba(139, 92, 246, 0.55);
+    }
+
+    /* ── 04 · lesson ──────────────────────────────────────────────────────── */
+    .f03-prompt {
+      position: absolute;
+      font-size: 26px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: #e6eaf0;
+      line-height: 1.3;
+    }
+    .f03-ans {
+      position: absolute;
+      left: 36px;
+      width: 928px; height: 78px;
+      border-radius: 12px;
+      background: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      display: flex;
+      align-items: center;
+      padding: 0 26px;
+      font-size: 20px;
+      color: #e6eaf0;
+    }
+    .f03-ans u {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px; height: 34px;
+      margin-right: 20px;
+      border-radius: 50%;
+      background: rgba(139, 92, 246, 0.1);
+      color: #a78bfa;
+      font-family: "Geist Mono", monospace;
+      font-size: 14px;
+      font-weight: 500;
+      text-decoration: none;
+      flex: 0 0 34px;
+    }
+    .f03-pick {
+      position: absolute;
+      left: 36px;
+      width: 928px; height: 78px;
+      border-radius: 12px;
+      background: rgba(139, 92, 246, 0.13);
+      border: 1.5px solid rgba(139, 92, 246, 0.6);
+    }
+
+    /* ── 05 · achievement (restrained — no shimmer, no burst, no green) ───── */
+    .f03-badge {
+      position: absolute;
+      left: 40px; top: 112px;
+      width: 96px; height: 96px;
+      border-radius: 20px;
+      background: rgba(139, 92, 246, 0.1);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #a78bfa;
+      transform-origin: 50% 50%;
+    }
+    .f03-badge svg { width: 44px; height: 44px; }
+    .f03-ach-title {
+      position: absolute;
+      left: 168px; top: 120px;
+      font-size: 26px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: #e6eaf0;
+      line-height: 1.25;
+    }
+    .f03-ach-sub {
+      position: absolute;
+      left: 168px; top: 164px;
+      font-size: 15px;
+      color: #728297;
+      line-height: 1.6;
+    }
+    .f03-rule {
+      position: absolute;
+      height: 1px;
+      background: rgba(139, 92, 246, 0.18);
+      transform-origin: left center;
+    }
+    .f03-tick {
+      position: absolute;
+      width: 6px; height: 22px;
+      border-radius: 3px;
+      background: #8b5cf6;
+      transform-origin: bottom center;
+    }
+
+    /* ── 06 · dashboard ───────────────────────────────────────────────────── */
+    .f03-nav {
+      position: absolute;
+      display: flex;
+      align-items: center;
+    }
+    .f03-nav-ico {
+      width: 40px; height: 40px;
+      flex: 0 0 40px;
+      border-radius: 10px;
+      background: rgba(139, 92, 246, 0.09);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #a78bfa;
+      margin-right: 18px;
+    }
+    .f03-nav-ico svg { width: 20px; height: 20px; }
+    .f03-nav-name {
+      display: block;
+      font-size: 17px;
+      font-weight: 500;
+      color: #e6eaf0;
+      line-height: 1.2;
+    }
+    .f03-nav-track {
+      margin-top: 9px;
+      width: 176px; height: 6px;
+      border-radius: 6px;
+      background: rgba(139, 92, 246, 0.1);
+      overflow: hidden;
+    }
+    .f03-curve {
+      fill: none;
+      stroke: #8b5cf6;
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .f03-curve-area { stroke: none; fill: url(#f03-grad); fill-opacity: 0; }
+    .f03-gridline { stroke: rgba(139, 92, 246, 0.1); stroke-width: 1; }
+    .f03-tile-cap {
+      position: absolute;
+      left: 22px; top: 24px;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #728297;
+      line-height: 1;
+    }
+    .f03-row {
+      position: absolute;
+      left: 22px;
+      width: 340px; height: 68px;
+      border-radius: 12px;
+      background: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+    }
+    .f03-row em {
+      position: absolute;
+      left: 20px; top: 16px;
+      font-style: normal;
+      font-size: 16px;
+      font-weight: 500;
+      color: #e6eaf0;
+    }
+
+    /* ── track 2 · fixed chrome (the camera holds; only content morphs) ───── */
+    .f03-chrome {
+      position: absolute;
+      left: 0; top: 0;
+      width: 1920px; height: 1080px;
+      pointer-events: none;
+    }
+    .f03-kicker {
+      position: absolute;
+      left: 96px; top: 66px;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #a78bfa;
+      line-height: 1;
+    }
+    .f03-tag {
+      position: absolute;
+      right: 96px; top: 58px;
+      font-family: "Geist Mono", monospace;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      color: #a78bfa;
+      background: rgba(139, 92, 246, 0.08);
+      border-radius: 100px;
+      padding: 8px 16px;
+      line-height: 1;
+    }
+    .f03-dot {
+      position: absolute;
+      top: 838px;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: rgba(139, 92, 246, 0.22);
+    }
+    .f03-trav {
+      position: absolute;
+      left: 839px; top: 838px;
+      width: 22px; height: 8px;
+      border-radius: 4px;
+      background: #8b5cf6;
+      will-change: transform;
+    }
+  </style>
+
+  <div id="root" data-composition-id="03-understanding" data-start="0" data-duration="6.5" data-width="1920" data-height="1080">
+    <!-- ══ track 0 · full-bleed ground ══ -->
+    <div class="clip f03-ground" data-start="0" data-duration="6.5" data-track-index="0"></div>
+
+    <!-- ══ track 1 · the one held window ══ -->
+    <div class="clip f03-stage" data-start="0" data-duration="6.5" data-track-index="1">
+      <!-- Frame 2's drawer, handed over on the same centre -->
+      <div class="f03-drawer" id="f03-drawer">
+        <span style="left:26px;top:26px;width:170px;height:12px;"></span>
+        <span style="left:26px;top:62px;width:468px;height:96px;"></span>
+        <span style="left:26px;top:178px;width:222px;height:96px;"></span>
+        <span style="left:272px;top:178px;width:222px;height:96px;"></span>
+      </div>
+
+      <div class="f03-window" id="f03-window">
+        <!-- the shell: one container, six shapes -->
+        <div class="f03-shell" id="f03-shell">
+          <svg viewBox="0 0 1560 660" preserveAspectRatio="none">
+            <rect id="f03-rect" x="1" y="1" width="1558" height="658" rx="14" ry="14"
+                  fill="rgba(139,92,246,0.04)" stroke="rgba(139,92,246,0.2)" />
+          </svg>
+        </div>
+
+        <!-- the contents: clipped by the identical morphing rounded rect -->
+        <div class="f03-clip" id="f03-clip">
+
+          <!-- ── 01 · RANGE TRAINER — 900 × 640 ───────────────────────────── -->
+          <div class="f03-state" id="f03-st1" style="left:510px;top:150px;width:900px;height:640px;">
+            <div class="f03-hd" style="width:832px;">
+              <span class="f03-eyebrow">Range Trainer</span>
+              <span class="f03-pill">13 &times; 13</span>
+            </div>
+            <div class="f03-grid" id="f03-grid" style="left:36px;top:100px;width:426px;height:426px;"></div>
+            <div class="f03-legend" id="f03-l1a" style="left:500px;top:104px;">OPENING RANGE</div>
+            <div class="f03-key" id="f03-k0" style="left:500px;top:150px;"><i style="background:rgba(139,92,246,0.85);"></i><em>Pairs</em></div>
+            <div class="f03-key" id="f03-k1" style="left:500px;top:220px;"><i style="background:rgba(139,92,246,0.62);"></i><em>Suited</em></div>
+            <div class="f03-key" id="f03-k2" style="left:500px;top:290px;"><i style="background:rgba(139,92,246,0.40);"></i><em>Offsuit</em></div>
+            <div class="f03-accent" id="f03-acc1" style="left:500px;top:372px;"></div>
+            <div class="f03-legend" style="left:500px;top:404px;">VISUAL MODEL</div>
+            <div class="f03-track" id="f03-tr1" style="left:500px;top:440px;width:320px;height:10px;"><span class="f03-fill" id="f03-tr1f"></span></div>
+          </div>
+
+          <!-- ── 02 · BOARD BUILDER — 1180 × 520 ──────────────────────────── -->
+          <div class="f03-state f03-state-hidden" id="f03-st2" style="left:370px;top:210px;width:1180px;height:520px;">
+            <div class="f03-hd" style="width:1112px;">
+              <span class="f03-eyebrow">Board Builder</span>
+              <span class="f03-pill">FLOP</span>
+            </div>
+            <div class="f03-legend" id="f03-l2a" style="left:40px;top:82px;">CARD TRAY</div>
+            <div id="f03-tray"></div>
+            <div class="f03-legend" id="f03-l2b" style="left:40px;top:254px;">FLOP SLOTS</div>
+            <div class="f03-slot" style="left:384px;top:282px;width:120px;height:168px;"></div>
+            <div class="f03-slot" style="left:530px;top:282px;width:120px;height:168px;"></div>
+            <div class="f03-slot" style="left:676px;top:282px;width:120px;height:168px;"></div>
+            <div class="f03-land" id="f03-land" style="left:676px;top:282px;width:120px;height:168px;"></div>
+            <div class="f03-swipe" id="f03-swipe" style="left:589px;top:238px;height:44px;"></div>
+            <div id="f03-flywrap"></div>
+          </div>
+
+          <!-- ── 03 · DECISION SPOT — 1320 × 640 ──────────────────────────── -->
+          <div class="f03-state f03-state-hidden" id="f03-st3" style="left:300px;top:150px;width:1320px;height:640px;">
+            <div class="f03-hd" style="width:1252px;">
+              <span class="f03-eyebrow">Decision Spot</span>
+              <span class="f03-pill">LIVE HAND</span>
+            </div>
+            <svg id="f03-table" viewBox="0 0 1248 352" style="position:absolute;left:36px;top:84px;width:1248px;height:352px;">
+              <ellipse cx="624" cy="176" rx="392" ry="150" fill="rgba(139,92,246,0.05)" stroke="rgba(139,92,246,0.25)" stroke-width="1.5" />
+              <ellipse cx="624" cy="176" rx="340" ry="118" fill="none" stroke="rgba(139,92,246,0.12)" stroke-width="1" />
+              <g id="f03-pot"></g>
+              <g id="f03-seats"></g>
+              <g id="f03-board"></g>
+            </svg>
+            <div class="f03-ring" id="f03-actring" style="left:876px;top:470px;width:400px;height:84px;"></div>
+            <div class="f03-act" id="f03-act0" style="left:54px;top:480px;">Fold</div>
+            <div class="f03-act" id="f03-act1" style="left:470px;top:480px;">Call</div>
+            <div class="f03-act f03-act-pri" id="f03-act2" style="left:886px;top:480px;">Raise</div>
+          </div>
+
+          <!-- ── 04 · LESSON — 1000 × 600 ─────────────────────────────────── -->
+          <div class="f03-state f03-state-hidden" id="f03-st4" style="left:460px;top:170px;width:1000px;height:600px;">
+            <div class="f03-hd" style="width:932px;">
+              <span class="f03-eyebrow">Lesson</span>
+              <span class="f03-pill">IN PROGRESS</span>
+            </div>
+            <div class="f03-prompt" id="f03-prompt" style="left:36px;top:92px;width:900px;">Villain checks the turn.</div>
+            <div class="f03-pick" id="f03-pick" style="top:250px;"></div>
+            <div class="f03-ans" id="f03-ans0" style="top:160px;"><u>A</u>Check back</div>
+            <div class="f03-ans" id="f03-ans1" style="top:250px;"><u>B</u>Small probe bet</div>
+            <div class="f03-ans" id="f03-ans2" style="top:340px;"><u>C</u>Bet for protection</div>
+            <div class="f03-legend" id="f03-l4a" style="left:36px;top:452px;">LESSON PROGRESS</div>
+            <div class="f03-track" id="f03-tr4" style="left:36px;top:482px;width:928px;height:10px;"><span class="f03-fill" id="f03-tr4f"></span></div>
+          </div>
+
+          <!-- ── 05 · ACHIEVEMENT — 700 × 400 · evidence, not a reward ────── -->
+          <div class="f03-state f03-state-hidden" id="f03-st5" style="left:610px;top:270px;width:700px;height:400px;">
+            <div class="f03-hd" style="width:632px;">
+              <span class="f03-eyebrow">Achievement</span>
+              <span class="f03-pill">RECORDED</span>
+            </div>
+            <div class="f03-badge" id="f03-badge">
+              <svg viewBox="0 0 24 24" class="f03-ico">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                <path d="M4 22h16" />
+                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+                <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+              </svg>
+            </div>
+            <div class="f03-ach-title" id="f03-acht">Module complete</div>
+            <div class="f03-ach-sub" id="f03-achs">Added to your record</div>
+            <div class="f03-rule" id="f03-achrule" style="left:40px;top:250px;width:620px;"></div>
+            <div class="f03-legend" id="f03-l5a" style="left:40px;top:274px;">PROGRESS RECORD</div>
+            <div id="f03-ticks"></div>
+          </div>
+
+          <!-- ── 06 · DASHBOARD — 1560 × 660 · the wider environment ──────── -->
+          <div class="f03-state f03-state-hidden" id="f03-st6" style="left:180px;top:140px;width:1560px;height:660px;">
+            <div class="f03-hd" id="f03-hd6" style="width:1492px;">
+              <span class="f03-eyebrow">Dashboard</span>
+              <span class="f03-pill">OVERVIEW</span>
+            </div>
+
+            <!-- sidebar: the four surfaces, now as an environment -->
+            <div class="f03-inner" style="left:34px;top:88px;width:296px;height:500px;">
+              <div class="f03-nav" id="f03-nav0" style="left:20px;top:26px;width:256px;">
+                <span class="f03-nav-ico">
+                  <svg viewBox="0 0 24 24" class="f03-ico"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M3 9h18"></path><path d="M3 15h18"></path><path d="M9 3v18"></path><path d="M15 3v18"></path></svg>
+                </span>
+                <span>
+                  <span class="f03-nav-name">Range Trainer</span>
+                  <span class="f03-nav-track" style="display:block;"><span class="f03-fill f03-navfill"></span></span>
+                </span>
+              </div>
+              <div class="f03-nav" id="f03-nav1" style="left:20px;top:138px;width:256px;">
+                <span class="f03-nav-ico">
+                  <svg viewBox="0 0 24 24" class="f03-ico"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"></path><path d="M22 10v6"></path><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"></path></svg>
+                </span>
+                <span>
+                  <span class="f03-nav-name">Modules</span>
+                  <span class="f03-nav-track" style="display:block;"><span class="f03-fill f03-navfill"></span></span>
+                </span>
+              </div>
+              <div class="f03-nav" id="f03-nav2" style="left:20px;top:250px;width:256px;">
+                <span class="f03-nav-ico">
+                  <svg viewBox="0 0 24 24" class="f03-ico"><path d="M12 7v14"></path><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"></path></svg>
+                </span>
+                <span>
+                  <span class="f03-nav-name">Lessons</span>
+                  <span class="f03-nav-track" style="display:block;"><span class="f03-fill f03-navfill"></span></span>
+                </span>
+              </div>
+              <div class="f03-nav" id="f03-nav3" style="left:20px;top:362px;width:256px;">
+                <span class="f03-nav-ico">
+                  <svg viewBox="0 0 24 24" class="f03-ico"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
+                </span>
+                <span>
+                  <span class="f03-nav-name">Achievements</span>
+                  <span class="f03-nav-track" style="display:block;"><span class="f03-fill f03-navfill"></span></span>
+                </span>
+              </div>
+            </div>
+
+            <!-- the curve -->
+            <div class="f03-inner" id="f03-curvecard" style="left:356px;top:88px;width:760px;height:300px;">
+              <span class="f03-eyebrow" style="position:absolute;left:24px;top:24px;">Progress</span>
+              <svg viewBox="0 0 712 192" preserveAspectRatio="none" style="position:absolute;left:24px;top:74px;width:712px;height:192px;">
+                <defs>
+                  <linearGradient id="f03-grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.30" />
+                    <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0" />
+                  </linearGradient>
+                </defs>
+                <line class="f03-gridline" x1="0" y1="48" x2="712" y2="48" />
+                <line class="f03-gridline" x1="0" y1="96" x2="712" y2="96" />
+                <line class="f03-gridline" x1="0" y1="144" x2="712" y2="144" />
+                <path class="f03-curve-area" id="f03-area" d="M 6 164 C 60 158, 96 128, 152 134 C 208 140, 244 96, 306 104 C 368 112, 396 132, 452 112 C 508 92, 540 54, 598 60 C 640 64, 672 34, 706 26 L 706 186 L 6 186 Z" />
+                <path class="f03-curve" id="f03-line" d="M 6 164 C 60 158, 96 128, 152 134 C 208 140, 244 96, 306 104 C 368 112, 396 132, 452 112 C 508 92, 540 54, 598 60 C 640 64, 672 34, 706 26" />
+              </svg>
+            </div>
+
+            <!-- three tiles, values carried by bars — no invented figures -->
+            <div class="f03-inner f03-tile" id="f03-tile0" style="left:356px;top:412px;width:240px;height:176px;">
+              <span class="f03-tile-cap">Streak</span>
+              <span class="f03-track" style="left:22px;top:62px;width:196px;height:8px;"><span class="f03-fill f03-tilefill"></span></span>
+              <span class="f03-accent" style="left:22px;top:110px;"></span>
+            </div>
+            <div class="f03-inner f03-tile" id="f03-tile1" style="left:616px;top:412px;width:240px;height:176px;">
+              <span class="f03-tile-cap">Accuracy</span>
+              <span class="f03-track" style="left:22px;top:62px;width:196px;height:8px;"><span class="f03-fill f03-tilefill"></span></span>
+              <span class="f03-accent" style="left:22px;top:110px;"></span>
+            </div>
+            <div class="f03-inner f03-tile" id="f03-tile2" style="left:876px;top:412px;width:240px;height:176px;">
+              <span class="f03-tile-cap">Volume</span>
+              <span class="f03-track" style="left:22px;top:62px;width:196px;height:8px;"><span class="f03-fill f03-tilefill"></span></span>
+              <span class="f03-accent" style="left:22px;top:110px;"></span>
+            </div>
+
+            <!-- recent -->
+            <div class="f03-inner" style="left:1142px;top:88px;width:384px;height:500px;">
+              <span class="f03-eyebrow" style="position:absolute;left:22px;top:24px;">Recent</span>
+              <div class="f03-row" id="f03-rec0" style="top:70px;"><em>Preflop opens</em><span class="f03-track" style="left:20px;top:42px;width:220px;height:6px;"><span class="f03-fill f03-recfill"></span></span></div>
+              <div class="f03-row" id="f03-rec1" style="top:158px;"><em>Flop texture</em><span class="f03-track" style="left:20px;top:42px;width:220px;height:6px;"><span class="f03-fill f03-recfill"></span></span></div>
+              <div class="f03-row" id="f03-rec2" style="top:246px;"><em>Turn probes</em><span class="f03-track" style="left:20px;top:42px;width:220px;height:6px;"><span class="f03-fill f03-recfill"></span></span></div>
+              <div class="f03-row" id="f03-rec3" style="top:334px;"><em>River blockers</em><span class="f03-track" style="left:20px;top:42px;width:220px;height:6px;"><span class="f03-fill f03-recfill"></span></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ track 2 · fixed chrome — the camera holds ══ -->
+    <div class="clip f03-chrome" data-start="0" data-duration="6.5" data-track-index="2">
+      <div class="f03-kicker" id="f03-kicker">Training Surfaces</div>
+      <div class="f03-tag" id="f03-tag">ONE FLOW</div>
+      <div class="f03-dot" id="f03-dot0" style="left:846px;"></div>
+      <div class="f03-dot" id="f03-dot1" style="left:890px;"></div>
+      <div class="f03-dot" id="f03-dot2" style="left:934px;"></div>
+      <div class="f03-dot" id="f03-dot3" style="left:978px;"></div>
+      <div class="f03-dot" id="f03-dot4" style="left:1022px;"></div>
+      <div class="f03-dot" id="f03-dot5" style="left:1066px;"></div>
+      <div class="f03-trav" id="f03-trav"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      var root = document.querySelector('[data-composition-id="03-understanding"]');
+      var $ = function (s) { return root.querySelector(s); };
+      var SVGNS = "http://www.w3.org/2000/svg";
+
+      /* ═══════════════════════════════════════════════════════════════════
+         THE MORPH ENGINE
+
+         One container is held as hero for the whole frame. It never cuts and
+         it never swaps: its proportions, radius and surface tint are written
+         every rendered frame from a single clock by a single writer.
+
+         Shape is carried on TWO surfaces that are mathematically locked to
+         the same rectangle:
+           · .f03-shell  — the glass + hairline, reached by a non-layout
+                           transform (no width/height tween anywhere).
+           · .f03-clip   — the content plane, clipped by the identical
+                           rounded rect, so contents genuinely clip as the
+                           shape changes instead of overflowing.
+         Because both are derived from ONE state object in ONE function, they
+         can never drift apart mid-morph.
+         ═══════════════════════════════════════════════════════════════════ */
+      var CX = 960, CY = 470;          // the held centre — constant, camera holds
+      var BASE_W = 1560, BASE_H = 660; // shell base = the largest state
+
+      /*  w      h     r    fill-alpha  stroke-alpha */
+      var STATES = [
+        { w: 900,  h: 640, r: 14, f: 0.040, s: 0.20 }, // 01 range trainer
+        { w: 1180, h: 520, r: 12, f: 0.050, s: 0.20 }, // 02 board builder
+        { w: 1320, h: 640, r: 14, f: 0.045, s: 0.22 }, // 03 decision spot
+        { w: 1000, h: 600, r: 12, f: 0.040, s: 0.20 }, // 04 lesson
+        { w: 700,  h: 400, r: 14, f: 0.060, s: 0.28 }, // 05 achievement
+        { w: 1560, h: 660, r: 14, f: 0.035, s: 0.20 }  // 06 dashboard
+      ];
+
+      /* five handoffs, each shorter than the last — the film's own pacing */
+      var MORPHS = [
+        { at: 0.95, dur: 0.72 },
+        { at: 1.96, dur: 0.68 },
+        { at: 2.96, dur: 0.64 },
+        { at: 3.94, dur: 0.60 },
+        { at: 4.92, dur: 0.56 }
+      ];
+
+      var shell = $("#f03-shell");
+      var rect = $("#f03-rect");
+      var clipper = $("#f03-clip");
+      var trav = $("#f03-trav");
+      var PIP_PITCH = 44;
+
+      function power2InOut(p) {
+        return p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+      }
+      function lerp(a, b, p) { return a + (b - a) * p; }
+
+      function write(w, h, r, f, s, idx) {
+        var sx = w / BASE_W, sy = h / BASE_H;
+        shell.style.transform = "scale(" + sx + "," + sy + ")";
+        /* radius is pre-scale on both axes, so the APPARENT corner stays
+           circular and lands exactly on r no matter the proportion */
+        rect.setAttribute("rx", r / sx);
+        rect.setAttribute("ry", r / sy);
+        rect.setAttribute("fill", "rgba(139,92,246," + f + ")");
+        rect.setAttribute("stroke", "rgba(139,92,246," + s + ")");
+
+        var top = CY - h / 2, left = CX - w / 2;
+        clipper.style.clipPath =
+          "inset(" + top + "px " + (1920 - CX - w / 2) + "px " +
+          (1080 - CY - h / 2) + "px " + left + "px round " + r + "px)";
+
+        trav.style.transform = "translateX(" + (idx * PIP_PITCH) + "px)";
+      }
+
+      /* the ONE clock. Derived state, so a seek to any time reproduces the
+         exact same rectangle — no stored progress, no randomness. */
+      var CLOCK = { t: 0 };
+      function tick() {
+        var t = CLOCK.t, i, m;
+        var a = STATES[0], idx = 0, p = 0, b = null;
+        for (i = 0; i < MORPHS.length; i++) {
+          m = MORPHS[i];
+          if (t >= m.at + m.dur) { idx = i + 1; a = STATES[i + 1]; }
+          else if (t > m.at) {
+            p = power2InOut((t - m.at) / m.dur);
+            a = STATES[i]; b = STATES[i + 1]; idx = i + p;
+            break;
+          } else break;
+        }
+        if (b) {
+          write(lerp(a.w, b.w, p), lerp(a.h, b.h, p), lerp(a.r, b.r, p),
+                lerp(a.f, b.f, p), lerp(a.s, b.s, p), idx);
+        } else {
+          write(a.w, a.h, a.r, a.f, a.s, idx);
+        }
+      }
+      tick(); // frame 0 is correct before the first seek
+
+      /* ═══════════════════════════════════════════════════════════════════
+         SURFACE CONTENT — built synchronously and deterministically.
+         Every grid, board and seat here is a VISUAL MODEL of a StackedPoker
+         surface. No frequency, EV or solver output is printed anywhere.
+         ═══════════════════════════════════════════════════════════════════ */
+      var RANKS = ["A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"];
+      function handLabel(r, c) {
+        if (r === c) return RANKS[r] + RANKS[r];
+        return c > r ? RANKS[r] + RANKS[c] + "s" : RANKS[c] + RANKS[r] + "o";
+      }
+      function inOpen(r, c) {
+        if (r === c) return r <= 9;
+        return c > r ? (r + c) <= 12 : (r + c) <= 8;
+      }
+
+      /* 01 — the 13×13 (cell 30 + gap 3 = 426) */
+      var gridHost = $("#f03-grid");
+      var cells = [];
+      for (var r = 0; r < 13; r++) {
+        for (var c = 0; c < 13; c++) {
+          var cell = document.createElement("div");
+          cell.className = "f03-cell";
+          cell.style.left = (c * 33) + "px";
+          cell.style.top = (r * 33) + "px";
+          var strength = r === c ? 0.85 : (c > r ? 0.62 : 0.4);
+          var fillEl = document.createElement("i");
+          fillEl.style.background = "rgba(139,92,246," + strength + ")";
+          cell.appendChild(fillEl);
+          var lab = document.createElement("b");
+          lab.textContent = handLabel(r, c);
+          cell.appendChild(lab);
+          gridHost.appendChild(cell);
+          if (inOpen(r, c)) cells.push({ fill: fillEl, dist: Math.max(r, c) });
+        }
+      }
+
+      /* suits are drawn — the shipped font carries no suit glyphs */
+      var SUITS = {
+        s: { d: "M12 2 C6 8 3 10 3 14 A4.6 4.6 0 0 0 11 17.2 L10 22 H14 L13 17.2 A4.6 4.6 0 0 0 21 14 C21 10 18 8 12 2 Z", fill: "#121726" },
+        h: { d: "M12 21.4 C6 16.2 2 12.4 2 8.4 A4.6 4.6 0 0 1 12 6.2 A4.6 4.6 0 0 1 22 8.4 C22 12.4 18 16.2 12 21.4 Z", fill: "#b41c22" },
+        d: { d: "M12 2 L21 12 L12 22 L3 12 Z", fill: "#b41c22" },
+        c: { d: "M12 2 A4.4 4.4 0 0 1 15.2 9.4 A4.4 4.4 0 1 1 16.4 17.6 A4.4 4.4 0 0 1 13 15.6 L14 22 H10 L11 15.6 A4.4 4.4 0 0 1 7.6 17.6 A4.4 4.4 0 1 1 8.8 9.4 A4.4 4.4 0 0 1 12 2 Z", fill: "#121726" }
+      };
+      function miniCard(rank, suit, w, h) {
+        var el = document.createElement("div");
+        el.className = "f03-mini";
+        el.style.width = w + "px";
+        el.style.height = h + "px";
+        el.innerHTML = "<span>" + rank + "</span>" +
+          '<svg viewBox="0 0 24 24"><path d="' + SUITS[suit].d + '" fill="' + SUITS[suit].fill + '"></path></svg>';
+        return el;
+      }
+
+      /* 02 — tray of seven, one of them flies into the third flop slot */
+      var TRAY = [["A", "s"], ["K", "h"], ["Q", "d"], ["J", "c"], ["T", "s"], ["9", "h"], ["8", "d"]];
+      var tray = $("#f03-tray");
+      var trayEls = [];
+      for (var t2 = 0; t2 < TRAY.length; t2++) {
+        var mc = miniCard(TRAY[t2][0], TRAY[t2][1], 96, 128);
+        mc.style.left = (188 + t2 * 118) + "px";
+        mc.style.top = "100px";
+        tray.appendChild(mc);
+        trayEls.push(mc);
+      }
+      trayEls[3].style.opacity = "0.18";
+      var fly = miniCard(TRAY[3][0], TRAY[3][1], 96, 128);
+      fly.id = "f03-fly";
+      fly.style.left = "542px";
+      fly.style.top = "100px";
+      fly.style.zIndex = "20";
+      $("#f03-flywrap").appendChild(fly);
+      var FLY_DX = 688 - 542, FLY_DY = 302 - 100;
+
+      /* 03 — six seats, a pot, a three-card board */
+      var seatsG = $("#f03-seats");
+      var POS = ["UTG", "HJ", "CO", "BTN", "SB", "BB"];
+      var seatEls = [];
+      for (var k = 0; k < 6; k++) {
+        var ang = (-90 + k * 60) * Math.PI / 180;
+        var sxp = 624 + 412 * Math.cos(ang);
+        var syp = 176 + 172 * Math.sin(ang);
+        var g = document.createElementNS(SVGNS, "g");
+        g.setAttribute("class", k === 3 ? "f03-seat f03-seat-hero" : "f03-seat");
+        g.style.transformOrigin = sxp + "px " + syp + "px";
+        var cc = document.createElementNS(SVGNS, "circle");
+        cc.setAttribute("cx", sxp); cc.setAttribute("cy", syp); cc.setAttribute("r", 34);
+        var tt = document.createElementNS(SVGNS, "text");
+        tt.setAttribute("x", sxp); tt.setAttribute("y", syp + 1);
+        tt.textContent = POS[k];
+        g.appendChild(cc); g.appendChild(tt);
+        seatsG.appendChild(g);
+        seatEls.push(g);
+      }
+      /* pot — a label and a chip stack, never a figure */
+      var potG = $("#f03-pot");
+      var potLbl = document.createElementNS(SVGNS, "text");
+      potLbl.setAttribute("x", 624); potLbl.setAttribute("y", 78);
+      potLbl.setAttribute("text-anchor", "middle");
+      potLbl.setAttribute("font-family", "Geist Mono, monospace");
+      potLbl.setAttribute("font-size", "13");
+      potLbl.setAttribute("letter-spacing", "0.06em");
+      potLbl.setAttribute("fill", "#728297");
+      potLbl.textContent = "POT";
+      potG.appendChild(potLbl);
+      for (var ch = 0; ch < 5; ch++) {
+        var chip = document.createElementNS(SVGNS, "circle");
+        chip.setAttribute("cx", 590 + ch * 17);
+        chip.setAttribute("cy", 104);
+        chip.setAttribute("r", 8);
+        chip.setAttribute("fill", "rgba(139,92,246," + (0.28 + ch * 0.11) + ")");
+        potG.appendChild(chip);
+      }
+      var boardG = $("#f03-board");
+      var BOARD = [["9", "s"], ["7", "h"], ["2", "d"]];
+      for (var bd = 0; bd < 3; bd++) {
+        var bx = 540 + bd * 58;
+        var br = document.createElementNS(SVGNS, "rect");
+        br.setAttribute("x", bx); br.setAttribute("y", 140);
+        br.setAttribute("width", 52); br.setAttribute("height", 74);
+        br.setAttribute("rx", 7); br.setAttribute("fill", "#e6eaf0");
+        boardG.appendChild(br);
+        var brt = document.createElementNS(SVGNS, "text");
+        brt.setAttribute("x", bx + 9); brt.setAttribute("y", 165);
+        brt.setAttribute("font-size", "22"); brt.setAttribute("font-weight", "700");
+        brt.setAttribute("fill", "#121726");
+        brt.setAttribute("font-family", "Geist, sans-serif");
+        brt.textContent = BOARD[bd][0];
+        boardG.appendChild(brt);
+        var bsp = document.createElementNS(SVGNS, "path");
+        bsp.setAttribute("d", SUITS[BOARD[bd][1]].d);
+        bsp.setAttribute("fill", SUITS[BOARD[bd][1]].fill);
+        bsp.setAttribute("transform", "translate(" + (bx + 26) + ",174) scale(0.88)");
+        boardG.appendChild(bsp);
+      }
+
+      /* 05 — twelve marks, the record. No shimmer, no burst, no green. */
+      var ticksHost = $("#f03-ticks");
+      for (var tk = 0; tk < 12; tk++) {
+        var tick2 = document.createElement("div");
+        tick2.className = "f03-tick";
+        tick2.style.left = (40 + tk * 14) + "px";
+        tick2.style.top = "300px";
+        ticksHost.appendChild(tick2);
+      }
+
+      /* 06 — the curve is drawn, never guessed */
+      var line = $("#f03-line");
+      var LINE_LEN = 900;
+      try { LINE_LEN = line.getTotalLength() || 900; } catch (e) { LINE_LEN = 900; }
+      line.style.strokeDasharray = LINE_LEN;
+      line.style.strokeDashoffset = LINE_LEN;
+
+      /* ═══════════════════════════════════════════════════════════════════
+         TIMELINE — one paused timeline. The camera never moves; the only
+         movement in this frame is the window's contents becoming each other.
+         ═══════════════════════════════════════════════════════════════════ */
+      var tl = gsap.timeline({ paused: true });
+
+      /* the morph clock, running the whole frame so no state ever stops */
+      tl.to(CLOCK, { t: 6, duration: 6, ease: "none", onUpdate: tick }, 0);
+
+      /* ── Scene 1 (0.0–1.0s) · the window resolves out of Frame 2's drawer ─
+         scale-swap-transition: outgoing shrinks away on power2.in, incoming
+         arrives with weight on back.out, overlapping by ~0.14s. Shared centre,
+         shared transform-origin — one object becoming another, not a cut. */
+      tl.fromTo("#f03-drawer",
+        { scale: 1, opacity: 1 },
+        { scale: 0.72, opacity: 0, duration: 0.34, ease: "power2.in" }, 0);
+      tl.fromTo("#f03-window",
+        { scale: 0.74, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 0.52, ease: "back.out(1.4)" }, 0.06);
+
+      /* chrome settles under it */
+      tl.fromTo("#f03-kicker", { opacity: 0, x: -14 },
+        { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" }, 0.18);
+      tl.fromTo("#f03-tag", { opacity: 0, x: 14 },
+        { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" }, 0.26);
+      tl.fromTo([".f03-dot", "#f03-trav"], { opacity: 0 },
+        { opacity: 1, duration: 0.4, ease: "power1.out", stagger: 0.05 }, 0.34);
+
+      /* range trainer — the grid fills by an index-derived sweep out of AA */
+      tl.fromTo("#f03-st1 .f03-hd", { opacity: 0, y: -10 },
+        { opacity: 1, y: 0, duration: 0.42, ease: "power2.out" }, 0.20);
+      tl.fromTo("#f03-l1a", { opacity: 0, y: 8 },
+        { opacity: 1, y: 0, duration: 0.38, ease: "power2.out" }, 0.30);
+      cells.forEach(function (cl) {
+        tl.fromTo(cl.fill, { scaleX: 0 },
+          { scaleX: 1, duration: 0.34, ease: "power2.out" }, 0.30 + cl.dist * 0.046);
+      });
+      ["#f03-k0", "#f03-k1", "#f03-k2"].forEach(function (sel, i) {
+        tl.fromTo(sel, { opacity: 0, x: -16 },
+          { opacity: 1, x: 0, duration: 0.40, ease: "power3.out" }, 0.50 + i * 0.11);
+      });
+      tl.fromTo("#f03-acc1", { opacity: 0, scaleX: 0 },
+        { opacity: 1, scaleX: 1, duration: 0.38, ease: "power2.out" }, 0.80);
+      tl.fromTo("#f03-tr1f", { scaleX: 0 },
+        { scaleX: 0.72, duration: 0.86, ease: "power2.out" }, 0.62);
+
+      /* ── the five handoffs ────────────────────────────────────────────────
+         Each is one crossfade INSIDE the held window: the outgoing surface
+         leaves across the first ~42% of the morph, the incoming arrives across
+         the last ~42%, and the shape-only gap between the two is the blink.
+         The container itself never blinks — it is the constant. */
+      var STATE_IDS = ["#f03-st1", "#f03-st2", "#f03-st3", "#f03-st4", "#f03-st5", "#f03-st6"];
+      var FADE = 0.42;
+      MORPHS.forEach(function (m, i) {
+        tl.fromTo(STATE_IDS[i],
+          { opacity: 1, scale: 1 },
+          { opacity: 0, scale: 1.02, duration: m.dur * FADE, ease: "power1.in", immediateRender: false },
+          m.at);
+        tl.fromTo(STATE_IDS[i + 1],
+          { opacity: 0, scale: 0.982 },
+          { opacity: 1, scale: 1, duration: m.dur * FADE, ease: "power1.out" },
+          m.at + m.dur * (1 - FADE));
+      });
+
+      /* ── Scene 2 (1.0–2.0s) · board builder — a card lands on the settle ── */
+      tl.fromTo("#f03-st2 .f03-hd", { opacity: 0, y: -8 },
+        { opacity: 1, y: 0, duration: 0.34, ease: "power2.out" }, 1.36);
+      tl.fromTo(["#f03-l2a", "#f03-l2b"], { opacity: 0 },
+        { opacity: 1, duration: 0.32, ease: "power1.out", stagger: 0.07 }, 1.36);
+      trayEls.forEach(function (el, i) {
+        tl.fromTo(el, { opacity: 0, y: -14 },
+          { opacity: i === 3 ? 0.18 : 1, y: 0, duration: 0.36, ease: "power3.out" }, 1.38 + i * 0.035);
+      });
+      tl.fromTo("#f03-swipe", { scaleY: 0, opacity: 0.7 },
+        { scaleY: 1, opacity: 0, duration: 0.44, ease: "power2.out" }, 1.42);
+      tl.fromTo("#f03-fly",
+        { x: 0, y: 0, rotation: -8, scale: 1.06 },
+        { x: FLY_DX, y: FLY_DY, rotation: 0, scale: 1, duration: 0.50, ease: "power4.out" }, 1.46);
+      tl.fromTo("#f03-land", { opacity: 0, scale: 1.07 },
+        { opacity: 1, scale: 1, duration: 0.34, ease: "power2.out" }, 1.92);
+
+      /* ── Scene 3 (2.0–3.0s) · decision spot — one action already committed ─ */
+      tl.fromTo("#f03-st3 .f03-hd", { opacity: 0, y: -8 },
+        { opacity: 1, y: 0, duration: 0.34, ease: "power2.out" }, 2.34);
+      seatEls.forEach(function (el, i) {
+        tl.fromTo(el, { opacity: 0, scale: 0.84 },
+          { opacity: 1, scale: 1, duration: 0.36, ease: "power3.out" }, 2.34 + i * 0.045);
+      });
+      tl.fromTo("#f03-board rect, #f03-board text, #f03-board path",
+        { opacity: 0, y: -8 },
+        { opacity: 1, y: 0, duration: 0.36, ease: "power2.out", stagger: 0.03 }, 2.46);
+      tl.fromTo("#f03-pot circle, #f03-pot text", { opacity: 0, scale: 0.8 },
+        { opacity: 1, scale: 1, duration: 0.32, ease: "power2.out", stagger: 0.035 }, 2.54);
+      tl.fromTo(["#f03-act0", "#f03-act1", "#f03-act2"],
+        { opacity: 0, y: 22 },
+        { opacity: 1, y: 0, duration: 0.42, ease: "power3.out", stagger: 0.08 }, 2.56);
+      tl.fromTo("#f03-actring", { opacity: 0, scale: 1.1 },
+        { opacity: 1, scale: 1, duration: 0.32, ease: "power2.out" }, 2.80);
+
+      /* ── Scene 4 (3.0–4.0s) · lesson, mid-flow ───────────────────────────── */
+      tl.fromTo("#f03-st4 .f03-hd", { opacity: 0, y: -8 },
+        { opacity: 1, y: 0, duration: 0.34, ease: "power2.out" }, 3.32);
+      tl.fromTo("#f03-prompt", { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.38, ease: "power2.out" }, 3.34);
+      ["#f03-ans0", "#f03-ans1", "#f03-ans2"].forEach(function (sel, i) {
+        tl.fromTo(sel, { opacity: 0, x: -22 },
+          { opacity: 1, x: 0, duration: 0.40, ease: "power3.out" }, 3.40 + i * 0.10);
+      });
+      tl.fromTo("#f03-pick", { opacity: 0, scaleX: 0.95 },
+        { opacity: 1, scaleX: 1, duration: 0.36, ease: "power2.out" }, 3.76);
+      tl.fromTo("#f03-l4a", { opacity: 0 },
+        { opacity: 1, duration: 0.3, ease: "power1.out" }, 3.66);
+      tl.fromTo("#f03-tr4f", { scaleX: 0 },
+        { scaleX: 0.58, duration: 0.56, ease: "power2.out" }, 3.68);
+
+      /* ── Scene 5 (4.0–5.0s) · achievement — evidence, not a reward ────────
+         Deliberately restrained: the badge resolves, the border settles, the
+         record marks tick in. No shimmer, no halo, no burst, no green. */
+      tl.fromTo("#f03-st5 .f03-hd", { opacity: 0, y: -8 },
+        { opacity: 1, y: 0, duration: 0.32, ease: "power2.out" }, 4.28);
+      tl.fromTo("#f03-badge", { opacity: 0, scale: 0.92 },
+        { opacity: 1, scale: 1, duration: 0.42, ease: "power2.out" }, 4.30);
+      tl.fromTo("#f03-badge",
+        { borderColor: "rgba(139,92,246,0.2)" },
+        { borderColor: "rgba(139,92,246,0.45)", duration: 0.44, ease: "power2.out" }, 4.40);
+      tl.fromTo(["#f03-acht", "#f03-achs"], { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.40, ease: "power2.out", stagger: 0.10 }, 4.42);
+      tl.fromTo("#f03-achrule", { opacity: 0, scaleX: 0 },
+        { opacity: 1, scaleX: 1, duration: 0.44, ease: "power2.out" }, 4.54);
+      tl.fromTo("#f03-l5a", { opacity: 0 },
+        { opacity: 1, duration: 0.3, ease: "power1.out" }, 4.58);
+      tl.fromTo(".f03-tick", { scaleY: 0, opacity: 0.35 },
+        { scaleY: 1, opacity: 1, duration: 0.26, ease: "power3.out", stagger: 0.022 }, 4.60);
+
+      /* ── Scene 6 (5.0–6.0s) · dashboard — already a wider environment ─────
+         The widest of the six. It settles and holds, so Frame 4 can open
+         straight out of it. */
+      tl.fromTo("#f03-hd6", { opacity: 0, y: -8 },
+        { opacity: 1, y: 0, duration: 0.34, ease: "power2.out" }, 5.24);
+      ["#f03-nav0", "#f03-nav1", "#f03-nav2", "#f03-nav3"].forEach(function (sel, i) {
+        tl.fromTo(sel, { opacity: 0, x: -18 },
+          { opacity: 1, x: 0, duration: 0.38, ease: "power3.out" }, 5.26 + i * 0.06);
+      });
+      var NAV_W = [0.82, 0.64, 0.47, 0.35];
+      root.querySelectorAll(".f03-navfill").forEach(function (el, i) {
+        tl.fromTo(el, { scaleX: 0 },
+          { scaleX: NAV_W[i], duration: 0.46, ease: "power2.out" }, 5.34 + i * 0.06);
+      });
+      tl.fromTo("#f03-curvecard", { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.40, ease: "power3.out" }, 5.28);
+      tl.to(line, { strokeDashoffset: 0, duration: 0.54, ease: "power2.out" }, 5.34);
+      tl.to("#f03-area", { fillOpacity: 1, duration: 0.36, ease: "power1.out" }, 5.72);
+      ["#f03-tile0", "#f03-tile1", "#f03-tile2"].forEach(function (sel, i) {
+        tl.fromTo(sel, { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.40, ease: "power3.out" }, 5.38 + i * 0.07);
+      });
+      var TILE_W = [0.74, 0.61, 0.88];
+      root.querySelectorAll(".f03-tilefill").forEach(function (el, i) {
+        tl.fromTo(el, { scaleX: 0 },
+          { scaleX: TILE_W[i], duration: 0.44, ease: "power2.out" }, 5.46 + i * 0.07);
+      });
+      ["#f03-rec0", "#f03-rec1", "#f03-rec2", "#f03-rec3"].forEach(function (sel, i) {
+        tl.fromTo(sel, { opacity: 0, y: 14 },
+          { opacity: 1, y: 0, duration: 0.36, ease: "power3.out" }, 5.44 + i * 0.06);
+      });
+      var REC_W = [0.9, 0.72, 0.55, 0.41];
+      root.querySelectorAll(".f03-recfill").forEach(function (el, i) {
+        tl.fromTo(el, { scaleX: 0 },
+          { scaleX: REC_W[i], duration: 0.40, ease: "power2.out" }, 5.52 + i * 0.06);
+      });
+
+      /* 5.95–6.0s — held. The window is at its widest and dead still: the
+         environment Frame 4 opens into. No exit; the root transition is it. */
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["03-understanding"] = tl;
+    })();
+  </script>
+</template>

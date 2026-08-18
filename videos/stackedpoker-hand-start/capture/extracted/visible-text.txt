@@ -1,0 +1,1344 @@
+[a] Bankroll
+[a] Leaderboard
+[button] In development
+[a] Get started free
+[span] The modern way to learn poker
+[h1] Think in ranges.
+[span] Play with purpose.
+[p] Master poker strategy through interactive lessons, real decision spots, range training and an AI coach that helps you understand
+[em] why
+[a] Start learning
+[a] Explore the curriculum
+[div] 100 lessons live
+[div] 12 modules available
+[div] Free to start
+[div] No credit card
+[span] Decision spot
+[span] stacked.poker/learn
+[span] Pot
+[span] 3.8
+[span] HERO ·
+[span] BTN
+[span] 100
+[span] 0.5
+[span] 100
+[span] 100
+[span] UTG
+[span] 100
+[span] 100
+[span] 2.3
+[span] RAISE
+[span] 97.7
+[span] BB behind
+[p] PREFLOP · 100BB EFFECTIVE
+[p] CO OPEN
+[p] -max table. Hero is
+[p] BTN
+[p] with 100 big blinds effective
+[p] CO OPEN.
+[p] Hero holds Ks and Qs.
+[p] CO opens to 2.3BB. You're on the button with K♠Q♠ — what's your action?
+[button] Fold
+[button] Call
+[button] Raise
+[div] Real decision, not a screenshot
+[p] BTN vs CO — full strategy
+[p] PURE 3-BET
+[p] 3-Bet 100%
+[span] AKs
+[p] AKs
+[p] PURE 3-BET
+[p] 3-Bet 100%
+[span] AQs
+[p] AQs
+[p] MOSTLY 3-BET
+[p] 3-Bet 95%, Call 5%
+[span] AJs
+[p] AJs
+[p] MIXED
+[p] 3-Bet 60%, Call 40%
+[span] ATs
+[p] ATs
+[p] MIXED
+[p] 3-Bet 40%, Call 60%
+[span] A9s
+[p] A9s
+[p] MOSTLY 3-BET
+[p] 3-Bet 65%, Call 35%
+[span] A8s
+[p] A8s
+[p] MOSTLY 3-BET
+[p] 3-Bet 70%, Call 30%
+[span] A7s
+[p] A7s
+[p] MOSTLY 3-BET
+[p] 3-Bet 75%, Call 25%
+[span] A6s
+[p] A6s
+[p] MIXED
+[p] 3-Bet 60%, Call 15%, Fold 25%
+[span] A5s
+[p] A5s
+[p] MIXED
+[p] 3-Bet 55%, Call 45%
+[span] A4s
+[p] A4s
+[p] MIXED
+[p] 3-Bet 60%, Call 40%
+[span] A3s
+[p] A3s
+[p] MOSTLY 3-BET
+[p] 3-Bet 65%, Call 35%
+[span] A2s
+[p] A2s
+[p] PURE FOLD
+[p] Fold 100%
+[span] AKo
+[p] AKo
+[p] PURE 3-BET
+[p] 3-Bet 100%
+[p] PURE 3-BET
+[p] 3-Bet 100%
+[span] KQs
+[p] KQs
+[p] MOSTLY 3-BET
+[p] 3-Bet 65%, Call 35%
+[span] KJs
+[p] KJs
+[p] MOSTLY 3-BET
+[p] 3-Bet 70%, Call 30%
+[span] KTs
+[p] KTs
+[p] MOSTLY 3-BET
+[p] 3-Bet 65%, Call 35%
+[span] K9s
+[p] K9s
+[p] MOSTLY 3-BET
+[p] 3-Bet 65%, Call 35%
+[span] K8s
+[p] K8s
+[p] MOSTLY FOLD
+[p] 3-Bet 15%, Call 10%, Fold 75%
+[span] K7s
+[p] K7s
+[p] MOSTLY FOLD
+[p] Call 5%, Fold 95%
+[span] K6s
+[p] K6s
+[p] MOSTLY FOLD
+[p] 3-Bet 15%, Call 10%, Fold 75%
+[span] K5s
+[p] K5s
+[p] PURE FOLD
+[p] Fold 100%
+[span] K4s
+[p] K4s
+[p] PURE FOLD
+[p] Fold 100%
+[span] K3s
+[p] K3s
+[p] PURE FOLD
+[p] Fold 100%
+[span] K2s
+[p] K2s
+[p] PURE FOLD
+[p] Fold 100%
+[span] AQo
+[p] AQo
+[p] MOSTLY 3-BET
+[p] 3-Bet 70%, Call 30%
+[span] KQo
+[p] KQo
+[p] MOSTLY 3-BET
+[p] 3-Bet 70%, Call 30%
+[p] PURE 3-BET
+[p] 3-Bet 100%
+[span] QJs
+[p] QJs
+[p] MIXED
+[p] 3-Bet 50%, Call 50%
+[span] QTs
+[p] QTs
+[p] MIXED
+[p] 3-Bet 45%, Call 55%
+[span] Q9s
+[p] Q9s
+[p] MOSTLY 3-BET
+[p] 3-Bet 90%, Call 10%
+[span] Q8s
+[p] Q8s
+[p] PURE FOLD
+[p] Fold 100%
+[span] Q7s
+[p] Q7s
+[p] PURE FOLD
+[p] Fold 100%
+[span] Q6s
+[p] Q6s
+[p] PURE FOLD
+[p] Fold 100%
+[span] Q5s
+[p] Q5s
+[p] PURE FOLD
+[p] Fold 100%
+[span] Q4s
+[p] Q4s
+[p] PURE FOLD
+[p] Fold 100%
+[span] Q3s
+[p] Q3s
+[p] PURE FOLD
+[p] Fold 100%
+[span] Q2s
+[p] Q2s
+[p] PURE FOLD
+[p] Fold 100%
+[span] AJo
+[p] AJo
+[p] MOSTLY 3-BET
+[p] 3-Bet 75%, Call 25%
+[span] KJo
+[p] KJo
+[p] MIXED
+[p] 3-Bet 60%, Call 20%, Fold 20%
+[span] QJo
+[p] QJo
+[p] MIXED
+[p] 3-Bet 45%, Fold 55%
+[p] MOSTLY 3-BET
+[p] 3-Bet 90%, Call 10%
+[span] JTs
+[p] JTs
+[p] MIXED
+[p] 3-Bet 60%, Call 40%
+[span] J9s
+[p] J9s
+[p] MIXED
+[p] 3-Bet 50%, Call 25%, Fold 25%
+[span] J8s
+[p] J8s
+[p] PURE FOLD
+[p] Fold 100%
+[span] J7s
+[p] J7s
+[p] PURE FOLD
+[p] Fold 100%
+[span] J6s
+[p] J6s
+[p] PURE FOLD
+[p] Fold 100%
+[span] J5s
+[p] J5s
+[p] PURE FOLD
+[p] Fold 100%
+[span] J4s
+[p] J4s
+[p] PURE FOLD
+[p] Fold 100%
+[span] J3s
+[p] J3s
+[p] PURE FOLD
+[p] Fold 100%
+[span] J2s
+[p] J2s
+[p] PURE FOLD
+[p] Fold 100%
+[span] ATo
+[p] ATo
+[p] MOSTLY 3-BET
+[p] 3-Bet 70%, Fold 30%
+[span] KTo
+[p] KTo
+[p] MOSTLY FOLD
+[p] 3-Bet 15%, Fold 85%
+[span] QTo
+[p] QTo
+[p] PURE FOLD
+[p] Fold 100%
+[span] JTo
+[p] JTo
+[p] PURE FOLD
+[p] Fold 100%
+[p] MOSTLY 3-BET
+[p] 3-Bet 65%, Call 35%
+[span] T9s
+[p] T9s
+[p] MIXED
+[p] 3-Bet 55%, Call 45%
+[span] T8s
+[p] T8s
+[p] MOSTLY FOLD
+[p] Call 5%, Fold 95%
+[span] T7s
+[p] T7s
+[p] PURE FOLD
+[p] Fold 100%
+[span] T6s
+[p] T6s
+[p] PURE FOLD
+[p] Fold 100%
+[span] T5s
+[p] T5s
+[p] PURE FOLD
+[p] Fold 100%
+[span] T4s
+[p] T4s
+[p] PURE FOLD
+[p] Fold 100%
+[span] T3s
+[p] T3s
+[p] PURE FOLD
+[p] Fold 100%
+[span] T2s
+[p] T2s
+[p] PURE FOLD
+[p] Fold 100%
+[span] A9o
+[p] A9o
+[p] PURE FOLD
+[p] Fold 100%
+[span] K9o
+[p] K9o
+[p] PURE FOLD
+[p] Fold 100%
+[span] Q9o
+[p] Q9o
+[p] PURE FOLD
+[p] Fold 100%
+[span] J9o
+[p] J9o
+[p] PURE FOLD
+[p] Fold 100%
+[span] T9o
+[p] T9o
+[p] PURE FOLD
+[p] Fold 100%
+[p] MIXED
+[p] 3-Bet 60%, Call 40%
+[span] 98s
+[p] 98s
+[p] MOSTLY FOLD
+[p] Call 25%, Fold 75%
+[span] 97s
+[p] 97s
+[p] PURE FOLD
+[p] Fold 100%
+[span] 96s
+[p] 96s
+[p] PURE FOLD
+[p] Fold 100%
+[span] 95s
+[p] 95s
+[p] PURE FOLD
+[p] Fold 100%
+[span] 94s
+[p] 94s
+[p] PURE FOLD
+[p] Fold 100%
+[span] 93s
+[p] 93s
+[p] PURE FOLD
+[p] Fold 100%
+[span] 92s
+[p] 92s
+[p] PURE FOLD
+[p] Fold 100%
+[span] A8o
+[p] A8o
+[p] PURE FOLD
+[p] Fold 100%
+[span] K8o
+[p] K8o
+[p] PURE FOLD
+[p] Fold 100%
+[span] Q8o
+[p] Q8o
+[p] PURE FOLD
+[p] Fold 100%
+[span] J8o
+[p] J8o
+[p] PURE FOLD
+[p] Fold 100%
+[span] T8o
+[p] T8o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 98o
+[p] 98o
+[p] PURE FOLD
+[p] Fold 100%
+[p] MIXED
+[p] 3-Bet 50%, Call 50%
+[span] 87s
+[p] 87s
+[p] MOSTLY FOLD
+[p] Call 20%, Fold 80%
+[span] 86s
+[p] 86s
+[p] PURE FOLD
+[p] Fold 100%
+[span] 85s
+[p] 85s
+[p] PURE FOLD
+[p] Fold 100%
+[span] 84s
+[p] 84s
+[p] PURE FOLD
+[p] Fold 100%
+[span] 83s
+[p] 83s
+[p] PURE FOLD
+[p] Fold 100%
+[span] 82s
+[p] 82s
+[p] PURE FOLD
+[p] Fold 100%
+[span] A7o
+[p] A7o
+[p] PURE FOLD
+[p] Fold 100%
+[span] K7o
+[p] K7o
+[p] PURE FOLD
+[p] Fold 100%
+[span] Q7o
+[p] Q7o
+[p] PURE FOLD
+[p] Fold 100%
+[span] J7o
+[p] J7o
+[p] PURE FOLD
+[p] Fold 100%
+[span] T7o
+[p] T7o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 97o
+[p] 97o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 87o
+[p] 87o
+[p] PURE FOLD
+[p] Fold 100%
+[p] MIXED
+[p] 3-Bet 50%, Call 50%
+[span] 76s
+[p] 76s
+[p] MOSTLY FOLD
+[p] Call 15%, Fold 85%
+[span] 75s
+[p] 75s
+[p] PURE FOLD
+[p] Fold 100%
+[span] 74s
+[p] 74s
+[p] PURE FOLD
+[p] Fold 100%
+[span] 73s
+[p] 73s
+[p] PURE FOLD
+[p] Fold 100%
+[span] 72s
+[p] 72s
+[p] PURE FOLD
+[p] Fold 100%
+[span] A6o
+[p] A6o
+[p] PURE FOLD
+[p] Fold 100%
+[span] K6o
+[p] K6o
+[p] PURE FOLD
+[p] Fold 100%
+[span] Q6o
+[p] Q6o
+[p] PURE FOLD
+[p] Fold 100%
+[span] J6o
+[p] J6o
+[p] PURE FOLD
+[p] Fold 100%
+[span] T6o
+[p] T6o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 96o
+[p] 96o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 86o
+[p] 86o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 76o
+[p] 76o
+[p] PURE FOLD
+[p] Fold 100%
+[p] MIXED
+[p] 3-Bet 50%, Call 50%
+[span] 65s
+[p] 65s
+[p] MOSTLY FOLD
+[p] Call 5%, Fold 95%
+[span] 64s
+[p] 64s
+[p] PURE FOLD
+[p] Fold 100%
+[span] 63s
+[p] 63s
+[p] PURE FOLD
+[p] Fold 100%
+[span] 62s
+[p] 62s
+[p] PURE FOLD
+[p] Fold 100%
+[span] A5o
+[p] A5o
+[p] PURE FOLD
+[p] Fold 100%
+[span] K5o
+[p] K5o
+[p] PURE FOLD
+[p] Fold 100%
+[span] Q5o
+[p] Q5o
+[p] PURE FOLD
+[p] Fold 100%
+[span] J5o
+[p] J5o
+[p] PURE FOLD
+[p] Fold 100%
+[span] T5o
+[p] T5o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 95o
+[p] 95o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 85o
+[p] 85o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 75o
+[p] 75o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 65o
+[p] 65o
+[p] PURE FOLD
+[p] Fold 100%
+[p] MIXED
+[p] 3-Bet 40%, Call 45%, Fold 15%
+[span] 54s
+[p] 54s
+[p] MOSTLY FOLD
+[p] Call 15%, Fold 85%
+[span] 53s
+[p] 53s
+[p] PURE FOLD
+[p] Fold 100%
+[span] 52s
+[p] 52s
+[p] PURE FOLD
+[p] Fold 100%
+[span] A4o
+[p] A4o
+[p] PURE FOLD
+[p] Fold 100%
+[span] K4o
+[p] K4o
+[p] PURE FOLD
+[p] Fold 100%
+[span] Q4o
+[p] Q4o
+[p] PURE FOLD
+[p] Fold 100%
+[span] J4o
+[p] J4o
+[p] PURE FOLD
+[p] Fold 100%
+[span] T4o
+[p] T4o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 94o
+[p] 94o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 84o
+[p] 84o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 74o
+[p] 74o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 64o
+[p] 64o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 54o
+[p] 54o
+[p] PURE FOLD
+[p] Fold 100%
+[p] MIXED
+[p] 3-Bet 20%, Call 30%, Fold 50%
+[span] 43s
+[p] 43s
+[p] PURE FOLD
+[p] Fold 100%
+[span] 42s
+[p] 42s
+[p] PURE FOLD
+[p] Fold 100%
+[span] A3o
+[p] A3o
+[p] PURE FOLD
+[p] Fold 100%
+[span] K3o
+[p] K3o
+[p] PURE FOLD
+[p] Fold 100%
+[span] Q3o
+[p] Q3o
+[p] PURE FOLD
+[p] Fold 100%
+[span] J3o
+[p] J3o
+[p] PURE FOLD
+[p] Fold 100%
+[span] T3o
+[p] T3o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 93o
+[p] 93o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 83o
+[p] 83o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 73o
+[p] 73o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 63o
+[p] 63o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 53o
+[p] 53o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 43o
+[p] 43o
+[p] PURE FOLD
+[p] Fold 100%
+[p] MIXED
+[p] 3-Bet 15%, Call 25%, Fold 60%
+[span] 32s
+[p] 32s
+[p] PURE FOLD
+[p] Fold 100%
+[span] A2o
+[p] A2o
+[p] PURE FOLD
+[p] Fold 100%
+[span] K2o
+[p] K2o
+[p] PURE FOLD
+[p] Fold 100%
+[span] Q2o
+[p] Q2o
+[p] PURE FOLD
+[p] Fold 100%
+[span] J2o
+[p] J2o
+[p] PURE FOLD
+[p] Fold 100%
+[span] T2o
+[p] T2o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 92o
+[p] 92o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 82o
+[p] 82o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 72o
+[p] 72o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 62o
+[p] 62o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 52o
+[p] 52o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 42o
+[p] 42o
+[p] PURE FOLD
+[p] Fold 100%
+[span] 32o
+[p] 32o
+[p] PURE FOLD
+[p] Fold 100%
+[p] MOSTLY FOLD
+[p] 3-Bet 10%, Call 25%, Fold 65%
+[span] 3-Bet
+[span] Call
+[span] Fold
+[p] Fold, call, or 3-bet by hand — not just membership. Same book chart used everywhere in Learn.
+[p] AI Coach
+[div] Why is KQs a raise here?
+[div] Think about what hands you block by holding K and Q — what does that do to CO's continuing range?
+[div] Structured Modules
+[div] Interactive Lessons
+[div] Range Training
+[div] AI Coach
+[div] XP & Levels
+[span] Available now
+[span] Learn · Ranges
+[span] In development
+[span] Practice · Analyze · Replay
+[span] Built for understanding
+[h2] Don't just memorize charts.
+[h2] Learn how poker decisions actually work.
+[span] 01 · Learn
+[h3] Learn
+[p] Structured interactive lessons introduce each concept progressively — never a wall of text.
+[p] You raised BTN, BB called. Range advantage is yours — what's your c-bet size?
+[button] Check
+[button] Bet 33%
+[button] Bet pot
+[span] 02 · Practice
+[h3] Practice
+[p] Make decisions, build ranges, compare strategies and work through real poker situations.
+[span] AKs
+[span] AQs
+[span] AJs
+[span] ATs
+[span] A9s
+[span] A8s
+[span] A7s
+[span] A6s
+[span] A5s
+[span] A4s
+[span] A3s
+[span] A2s
+[span] AKo
+[span] KQs
+[span] KJs
+[span] KTs
+[span] K9s
+[span] K8s
+[span] K7s
+[span] K6s
+[span] K5s
+[span] K4s
+[span] K3s
+[span] K2s
+[span] AQo
+[span] KQo
+[span] QJs
+[span] QTs
+[span] Q9s
+[span] Q8s
+[span] Q7s
+[span] Q6s
+[span] Q5s
+[span] Q4s
+[span] Q3s
+[span] Q2s
+[span] AJo
+[span] KJo
+[span] QJo
+[span] JTs
+[span] J9s
+[span] J8s
+[span] J7s
+[span] J6s
+[span] J5s
+[span] J4s
+[span] J3s
+[span] J2s
+[span] ATo
+[span] KTo
+[span] QTo
+[span] JTo
+[span] T9s
+[span] T8s
+[span] T7s
+[span] T6s
+[span] T5s
+[span] T4s
+[span] T3s
+[span] T2s
+[span] A9o
+[span] K9o
+[span] Q9o
+[span] J9o
+[span] T9o
+[span] 98s
+[span] 97s
+[span] 96s
+[span] 95s
+[span] 94s
+[span] 93s
+[span] 92s
+[span] A8o
+[span] K8o
+[span] Q8o
+[span] J8o
+[span] T8o
+[span] 98o
+[span] 87s
+[span] 86s
+[span] 85s
+[span] 84s
+[span] 83s
+[span] 82s
+[span] A7o
+[span] K7o
+[span] Q7o
+[span] J7o
+[span] T7o
+[span] 97o
+[span] 87o
+[span] 76s
+[span] 75s
+[span] 74s
+[span] 73s
+[span] 72s
+[span] A6o
+[span] K6o
+[span] Q6o
+[span] J6o
+[span] T6o
+[span] 96o
+[span] 86o
+[span] 76o
+[span] 65s
+[span] 64s
+[span] 63s
+[span] 62s
+[span] A5o
+[span] K5o
+[span] Q5o
+[span] J5o
+[span] T5o
+[span] 95o
+[span] 85o
+[span] 75o
+[span] 65o
+[span] 54s
+[span] 53s
+[span] 52s
+[span] A4o
+[span] K4o
+[span] Q4o
+[span] J4o
+[span] T4o
+[span] 94o
+[span] 84o
+[span] 74o
+[span] 64o
+[span] 54o
+[span] 43s
+[span] 42s
+[span] A3o
+[span] K3o
+[span] Q3o
+[span] J3o
+[span] T3o
+[span] 93o
+[span] 83o
+[span] 73o
+[span] 63o
+[span] 53o
+[span] 43o
+[span] 32s
+[span] A2o
+[span] K2o
+[span] Q2o
+[span] J2o
+[span] T2o
+[span] 92o
+[span] 82o
+[span] 72o
+[span] 62o
+[span] 52o
+[span] 42o
+[span] 32o
+[span] In range
+[span] 758
+[span] combos
+[span] 57.2
+[span] % of all hands)
+[p] Build and compare ranges yourself instead of memorizing someone else's chart.
+[span] 03 · Understand
+[h3] Understand
+[p] Get immediate explanation, and reach for the AI Coach whenever you need more depth.
+[div] Why does the small size work here?
+[div] What happens to a bluff-catcher's decision when the bet is small but the range behind it is wide?
+[span] Make the call
+[h2] StackedPoker teaches through decisions — not walls of text.
+[p] Every concept starts with a real spot. Predict the action, then see why it's right.
+[span] Defending the Open
+[span] stacked.poker/learn
+[span] Pot
+[span] 3.8
+[span] HERO ·
+[span] 100
+[span] UTG
+[span] 100
+[span] 100
+[span] 2.3
+[span] RAISE
+[span] 97.7
+[span] BB behind
+[span] BTN
+[span] 100
+[span] 0.5
+[span] 100
+[p] PREFLOP · 100BB EFFECTIVE
+[p] CO OPEN
+[p] -max table. Hero is
+[p] with 100 big blinds effective
+[p] CO OPEN.
+[p] Hero holds Ad and 5d.
+[p] CO opens to 2.3BB. You're in the big blind with A♦5♦ — what's your action?
+[button] Fold
+[button] Call
+[button] Raise
+[span] Think in ranges
+[h2] See the strategy behind the hand.
+[p] Every real decision is one hand pulled from a whole range. StackedPoker teaches you to see both sides at once — not just the cards in front of you.
+[p] CO opening range ·
+[p] 38.8
+[span] AKs
+[span] AQs
+[span] AJs
+[span] ATs
+[span] A9s
+[span] A8s
+[span] A7s
+[span] A6s
+[span] A5s
+[span] A4s
+[span] A3s
+[span] A2s
+[span] AKo
+[span] KQs
+[span] KJs
+[span] KTs
+[span] K9s
+[span] K8s
+[span] K7s
+[span] K6s
+[span] K5s
+[span] K4s
+[span] K3s
+[span] K2s
+[span] AQo
+[span] KQo
+[span] QJs
+[span] QTs
+[span] Q9s
+[span] Q8s
+[span] Q7s
+[span] Q6s
+[span] Q5s
+[span] Q4s
+[span] Q3s
+[span] Q2s
+[span] AJo
+[span] KJo
+[span] QJo
+[span] JTs
+[span] J9s
+[span] J8s
+[span] J7s
+[span] J6s
+[span] J5s
+[span] J4s
+[span] J3s
+[span] J2s
+[span] ATo
+[span] KTo
+[span] QTo
+[span] JTo
+[span] T9s
+[span] T8s
+[span] T7s
+[span] T6s
+[span] T5s
+[span] T4s
+[span] T3s
+[span] T2s
+[span] A9o
+[span] K9o
+[span] Q9o
+[span] J9o
+[span] T9o
+[span] 98s
+[span] 97s
+[span] 96s
+[span] 95s
+[span] 94s
+[span] 93s
+[span] 92s
+[span] A8o
+[span] K8o
+[span] Q8o
+[span] J8o
+[span] T8o
+[span] 98o
+[span] 87s
+[span] 86s
+[span] 85s
+[span] 84s
+[span] 83s
+[span] 82s
+[span] A7o
+[span] K7o
+[span] Q7o
+[span] J7o
+[span] T7o
+[span] 97o
+[span] 87o
+[span] 76s
+[span] 75s
+[span] 74s
+[span] 73s
+[span] 72s
+[span] A6o
+[span] K6o
+[span] Q6o
+[span] J6o
+[span] T6o
+[span] 96o
+[span] 86o
+[span] 76o
+[span] 65s
+[span] 64s
+[span] 63s
+[span] 62s
+[span] A5o
+[span] K5o
+[span] Q5o
+[span] J5o
+[span] T5o
+[span] 95o
+[span] 85o
+[span] 75o
+[span] 65o
+[span] 54s
+[span] 53s
+[span] 52s
+[span] A4o
+[span] K4o
+[span] Q4o
+[span] J4o
+[span] T4o
+[span] 94o
+[span] 84o
+[span] 74o
+[span] 64o
+[span] 54o
+[span] 43s
+[span] 42s
+[span] A3o
+[span] K3o
+[span] Q3o
+[span] J3o
+[span] T3o
+[span] 93o
+[span] 83o
+[span] 73o
+[span] 63o
+[span] 53o
+[span] 43o
+[span] 32s
+[span] A2o
+[span] K2o
+[span] Q2o
+[span] J2o
+[span] T2o
+[span] 92o
+[span] 82o
+[span] 72o
+[span] 62o
+[span] 52o
+[span] 42o
+[span] 32o
+[span] In range
+[span] 514
+[span] combos
+[span] 38.8
+[span] % of all hands)
+[p] BB calling range ·
+[p] 57.2
+[span] AKs
+[span] AQs
+[span] AJs
+[span] ATs
+[span] A9s
+[span] A8s
+[span] A7s
+[span] A6s
+[span] A5s
+[span] A4s
+[span] A3s
+[span] A2s
+[span] AKo
+[span] KQs
+[span] KJs
+[span] KTs
+[span] K9s
+[span] K8s
+[span] K7s
+[span] K6s
+[span] K5s
+[span] K4s
+[span] K3s
+[span] K2s
+[span] AQo
+[span] KQo
+[span] QJs
+[span] QTs
+[span] Q9s
+[span] Q8s
+[span] Q7s
+[span] Q6s
+[span] Q5s
+[span] Q4s
+[span] Q3s
+[span] Q2s
+[span] AJo
+[span] KJo
+[span] QJo
+[span] JTs
+[span] J9s
+[span] J8s
+[span] J7s
+[span] J6s
+[span] J5s
+[span] J4s
+[span] J3s
+[span] J2s
+[span] ATo
+[span] KTo
+[span] QTo
+[span] JTo
+[span] T9s
+[span] T8s
+[span] T7s
+[span] T6s
+[span] T5s
+[span] T4s
+[span] T3s
+[span] T2s
+[span] A9o
+[span] K9o
+[span] Q9o
+[span] J9o
+[span] T9o
+[span] 98s
+[span] 97s
+[span] 96s
+[span] 95s
+[span] 94s
+[span] 93s
+[span] 92s
+[span] A8o
+[span] K8o
+[span] Q8o
+[span] J8o
+[span] T8o
+[span] 98o
+[span] 87s
+[span] 86s
+[span] 85s
+[span] 84s
+[span] 83s
+[span] 82s
+[span] A7o
+[span] K7o
+[span] Q7o
+[span] J7o
+[span] T7o
+[span] 97o
+[span] 87o
+[span] 76s
+[span] 75s
+[span] 74s
+[span] 73s
+[span] 72s
+[span] A6o
+[span] K6o
+[span] Q6o
+[span] J6o
+[span] T6o
+[span] 96o
+[span] 86o
+[span] 76o
+[span] 65s
+[span] 64s
+[span] 63s
+[span] 62s
+[span] A5o
+[span] K5o
+[span] Q5o
+[span] J5o
+[span] T5o
+[span] 95o
+[span] 85o
+[span] 75o
+[span] 65o
+[span] 54s
+[span] 53s
+[span] 52s
+[span] A4o
+[span] K4o
+[span] Q4o
+[span] J4o
+[span] T4o
+[span] 94o
+[span] 84o
+[span] 74o
+[span] 64o
+[span] 54o
+[span] 43s
+[span] 42s
+[span] A3o
+[span] K3o
+[span] Q3o
+[span] J3o
+[span] T3o
+[span] 93o
+[span] 83o
+[span] 73o
+[span] 63o
+[span] 53o
+[span] 43o
+[span] 32s
+[span] A2o
+[span] K2o
+[span] Q2o
+[span] J2o
+[span] T2o
+[span] 92o
+[span] 82o
+[span] 72o
+[span] 62o
+[span] 52o
+[span] 42o
+[span] 32o
+[span] In range
+[span] 758
+[span] combos
+[span] 57.2
+[span] % of all hands)
+[p] Range vs Range — one of ten complete modules — is where StackedPoker moves past hand-vs-hand thinking and into how two ranges interact on a board.
+[span] A complete learning path
+[h2] From your first hand to game theory.
+[p] 12 of 29 Poker Journey modules are live today, with the full path already mapped out.
+[span] Available now
+[p] Foundations
+[p] Learn the language.
+[span] Available now
+[p] Preflop Strategy
+[p] Learn how ranges begin.
+[span] Available now
+[p] Postflop Foundations
+[p] Learn how boards transform ranges.
+[span] Available now
+[p] Range Thinking
+[p] Learn to reason with complete strategies.
+[span] Available now
+[p] Game Theory
+[p] Learn why balanced strategies work.
+[span] Available now
+[p] Bet Sizing & Defense
+[p] Learn how range structure determines aggression.
+[p] lessons
+[h3] Poker Fundamentals
+[p] A genuinely complete foundation for every module that follows.
+[a] Start module
+[p] lessons
+[h3] Blockers & Card Removal
+[p] See the hands that disappear.
+[a] Start module
+[p] lessons
+[h3] Game Theory Foundations
+[p] Understand what it means to build a strategy that cannot be easily exploited.
+[a] Start module
+[a] See the full roadmap
+[span] Help when you need it
+[h2] Your coach knows what you're learning.
+[p] No generic chatbot, no leaving the lesson — the AI Coach understands the exact concept and step you're on.
+[div] Why does this blocker matter?
+[div] Think about the hands your opponent needs to keep betting for value. If you're holding one of their key cards, how does that change how often they can actually have those hands?
+[span] Keep moving forward
+[h2] Progress you can see.
+[p] Every lesson earns XP, tracks concept mastery, and moves you toward the next level — illustrative example below.
+[span] Level
+[span] 8.420
+[p] 580
+[p] XP to Level
+[p] · demo values
+[p] day streak
+[p] badges
+[p] modules
+[span] Compete and climb
+[h2] See how you stack up.
+[p] Every lesson earns XP toward a shared leaderboard — a demo preview below.
+[button] All Time
+[button] 24 Hours
+[span] RangeReader
+[span] LVL
+[span] 58.420
+[span] BlockerBluff
+[span] LVL
+[span] 52.110
+[span] ThinValueTom
+[span] LVL
+[span] 47.960
+[span] PolarizedPat
+[span] LVL
+[span] 41.200
+[p] Demo preview · not live data
+[a] See the full leaderboard
+[h2] Your next decision can be
+[span] better than your last.
+[p] Start the Foundations path in seconds — no account, no credit card, no setup.
+[a] Start learning
+[a] Explore Foundations
+[div] Free to start
+[div] No credit card
+[div] Structured curriculum
+[div] Learn at your own pace
+[p] A structured, interactive platform for learning poker strategy.
+[a] Poker courses
+[a] Bankroll
+[a] Leaderboard
+[p] Resources
+[a] Poker wiki
+[a] Glossary
+[a] Free tools
+[a] Get started
+[a] Privacy Policy
+[a] Terms of Service
+[a] Educational use
+[p] Stacked Poker — Educational tool only. Not a gambling service.
+[a] Privacy Policy
+[a] Terms of Service

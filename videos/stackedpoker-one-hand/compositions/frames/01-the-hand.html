@@ -1,0 +1,325 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Geist";
+      src: url("capture/assets/fonts/22a5144ee8d83bca-s.p.woff2") format("woff2");
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: block;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      font-family: "Geist", sans-serif;
+      color: #E6EAF0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── full-bleed ground (clip layer, never on #root) ───────────────── */
+    .f01h-ground {
+      position: absolute;
+      inset: 0;
+      background: #0C101D;
+    }
+
+    /* ── blueprint grid — ~3% net (0.30 line alpha × 0.10 layer) ──────── */
+    .f01h-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(
+          to right,
+          rgba(139, 92, 246, 0.30) 0px,
+          rgba(139, 92, 246, 0.30) 1px,
+          rgba(139, 92, 246, 0) 1px,
+          rgba(139, 92, 246, 0) 80px
+        ),
+        repeating-linear-gradient(
+          to bottom,
+          rgba(139, 92, 246, 0.30) 0px,
+          rgba(139, 92, 246, 0.30) 1px,
+          rgba(139, 92, 246, 0) 1px,
+          rgba(139, 92, 246, 0) 80px
+        );
+      -webkit-mask-image: radial-gradient(
+        ellipse 62% 66% at 50% 46%,
+        rgba(0, 0, 0, 1) 0%,
+        rgba(0, 0, 0, 0.55) 58%,
+        rgba(0, 0, 0, 0) 100%
+      );
+      mask-image: radial-gradient(
+        ellipse 62% 66% at 50% 46%,
+        rgba(0, 0, 0, 1) 0%,
+        rgba(0, 0, 0, 0.55) 58%,
+        rgba(0, 0, 0, 0) 100%
+      );
+      will-change: opacity;
+      pointer-events: none;
+    }
+
+    /* ── soft blue ambient, low in the frame ──────────────────────────── */
+    .f01h-ambient {
+      position: absolute;
+      left: 160px;
+      top: 500px;
+      width: 1600px;
+      height: 760px;
+      background: radial-gradient(
+        ellipse closest-side at 50% 50%,
+        rgba(52, 88, 158, 0.34) 0%,
+        rgba(46, 78, 142, 0.18) 40%,
+        rgba(38, 64, 118, 0.06) 72%,
+        rgba(38, 64, 118, 0) 100%
+      );
+      will-change: opacity;
+      pointer-events: none;
+    }
+
+    /* ── the one violet spotlight, behind the card ────────────────────── */
+    .f01h-spot {
+      position: absolute;
+      left: 200px;
+      top: -50px;
+      width: 1520px;
+      height: 1120px;
+      transform-origin: 50% 48%;
+      will-change: transform, opacity;
+      pointer-events: none;
+    }
+    .f01h-spot-core {
+      position: absolute;
+      inset: 0;
+      opacity: 0.26;
+      background: radial-gradient(
+        ellipse closest-side at 50% 44%,
+        rgba(139, 92, 246, 0.92) 0%,
+        rgba(139, 92, 246, 0.52) 26%,
+        rgba(139, 92, 246, 0.22) 50%,
+        rgba(124, 58, 237, 0.07) 76%,
+        rgba(124, 58, 237, 0) 100%
+      );
+    }
+
+    /* ── the lesson card — S1 geometry: 660 / 280 / 600 × 420 ─────────── */
+    .f01h-shell {
+      position: absolute;
+      left: 660px;
+      top: 280px;
+      width: 600px;
+      height: 420px;
+      border-radius: 14px;
+      background: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      box-shadow: none;
+      transform-origin: 50% 50%;
+      will-change: transform, opacity;
+    }
+
+    .f01h-eyebrow {
+      position: absolute;
+      left: 0;
+      top: 60px;
+      width: 100%;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #A78BFA;
+      will-change: transform, opacity;
+    }
+
+    .f01h-title {
+      position: absolute;
+      left: 0;
+      top: 96px;
+      width: 100%;
+      text-align: center;
+      font-size: 56px;
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: #E6EAF0;
+      will-change: transform, opacity;
+    }
+
+    /* ── the two cards — 818–1102 × 470–656, gap 20 ───────────────────── */
+    .f01h-hand {
+      position: absolute;
+      left: 158px;
+      top: 190px;
+      width: 284px;
+      height: 186px;
+      display: flex;
+      gap: 20px;
+    }
+    .f01h-pcard {
+      width: 132px;
+      height: 186px;
+      border-radius: 10px;
+      background: linear-gradient(168deg, #F4F6FA 0%, #E3E7F0 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #0C101D;
+      transform-origin: 50% 100%;
+      will-change: transform, opacity;
+    }
+    .f01h-rank {
+      font-size: 48px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    .f01h-pip {
+      display: block;
+      width: 56px;
+      height: 56px;
+    }
+  
+    /* ===== CANONICAL GROUND — byte-identical in all six frames =====
+       Each frame originally authored its own lighting, so the blue glow,
+       the spotlight position and the blueprint pitch (48px vs 80px) all
+       changed at the seams. Values are forced here; animations are left
+       alone, so Frame 1 still blooms out of darkness and lands exactly
+       on this shared state at 5.0s. ===== */
+    .f01h-ground { background: #0C101D !important; }
+    .f01h-grid { background-image:
+    linear-gradient(rgba(139,92,246,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139,92,246,0.03) 1px, transparent 1px) !important;
+  background-size: 80px 80px !important;
+  opacity: 1 !important; }
+    .f01h-spot { background: radial-gradient(1100px 760px at 960px 470px,
+    rgba(139,92,246,0.17) 0%, rgba(139,92,246,0.07) 38%, rgba(139,92,246,0) 66%) !important; }
+    .f01h-ambient { background: radial-gradient(1400px 900px at 500px 950px,
+    rgba(96,132,200,0.07) 0%, rgba(96,132,200,0.03) 42%, rgba(96,132,200,0) 72%) !important; }
+    .f01h-spot-core { background: none !important; }
+  </style>
+
+  <div id="root" data-composition-id="01-the-hand" data-start="0" data-duration="5" data-width="1920" data-height="1080">
+    <!-- ground -->
+    <div class="clip f01h-ground" data-start="0" data-duration="5" data-track-index="0"></div>
+
+    <!-- blueprint grid -->
+    <div id="f01h-grid" class="clip f01h-grid" data-start="0" data-duration="5" data-track-index="1"></div>
+
+    <!-- soft blue ambient, low -->
+    <div id="f01h-ambient" class="clip f01h-ambient" data-start="0" data-duration="5" data-track-index="2"></div>
+
+    <!-- the single violet spotlight -->
+    <div id="f01h-spot" class="clip f01h-spot" data-start="0" data-duration="5" data-track-index="3">
+      <div class="f01h-spot-core"></div>
+    </div>
+
+    <!-- the lesson card -->
+    <div id="f01h-shell" class="clip f01h-shell" data-start="0" data-duration="5" data-track-index="4">
+      <div id="f01h-eyebrow" class="f01h-eyebrow">Lesson</div>
+      <div id="f01h-title" class="f01h-title">Suited Aces</div>
+
+      <div class="f01h-hand">
+        <!-- A♠ -->
+        <div id="f01h-card-a" class="f01h-pcard">
+          <div class="f01h-rank">A</div>
+          <svg class="f01h-pip" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z" fill="currentColor" />
+            <path d="M12 17.4v4.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" />
+          </svg>
+        </div>
+        <!-- 5♠ -->
+        <div id="f01h-card-b" class="f01h-pcard">
+          <div class="f01h-rank">5</div>
+          <svg class="f01h-pip" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z" fill="currentColor" />
+            <path d="M12 17.4v4.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+      window.__timelines["01-the-hand"] = tl;
+
+      var GRID_LEVEL = 0.10;   // × 0.30 line alpha ≈ 3% net
+
+      /* hidden initial states live outside the timeline */
+      gsap.set("#f01h-grid", { opacity: 0 });
+      gsap.set("#f01h-ambient", { opacity: 0 });
+      gsap.set("#f01h-spot", { opacity: 0 });
+      gsap.set("#f01h-shell", { opacity: 0 });
+      gsap.set(["#f01h-eyebrow", "#f01h-title"], { opacity: 0 });
+      gsap.set(["#f01h-card-a", "#f01h-card-b"], { opacity: 0 });
+
+      /* ── Scene 1 (0.0–1.0s) — darkness, then one slow violet bloom ──── */
+      tl.fromTo(
+        "#f01h-spot",
+        { opacity: 0, scale: 0.88 },
+        { opacity: 1, scale: 1, duration: 1.8, ease: "power3.inOut" },
+        0
+      );
+      tl.fromTo(
+        "#f01h-ambient",
+        { opacity: 0 },
+        { opacity: 1, duration: 1.9, ease: "power3.inOut" },
+        0
+      );
+      tl.fromTo(
+        "#f01h-grid",
+        { opacity: 0 },
+        { opacity: GRID_LEVEL, duration: 1.6, ease: "power3.inOut" },
+        0
+      );
+
+      /* ── Scene 2 (1.0–2.2s) — the card fades in: opacity + a 12px rise ─
+         no scale, no slide from an edge. Eyebrow then title, a beat apart. */
+      tl.fromTo(
+        "#f01h-shell",
+        { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.95, ease: "power3.out" },
+        1.0
+      );
+      tl.fromTo(
+        "#f01h-eyebrow",
+        { opacity: 0, y: 8 },
+        { opacity: 1, y: 0, duration: 0.75, ease: "power3.out" },
+        1.28
+      );
+      tl.fromTo(
+        "#f01h-title",
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.70, ease: "power3.out" },
+        1.50
+      );
+
+      /* ── Scene 3 (2.2–3.2s) — A♠ then 5♠ settle, barely rotating ────── */
+      tl.fromTo(
+        "#f01h-card-a",
+        { opacity: 0, y: 20, rotation: -1.1 },
+        { opacity: 1, y: 0, rotation: 0, duration: 0.74, ease: "power3.out" },
+        2.22
+      );
+      tl.fromTo(
+        "#f01h-card-b",
+        { opacity: 0, y: 20, rotation: 1.1 },
+        { opacity: 1, y: 0, rotation: 0, duration: 0.74, ease: "power3.out" },
+        2.46
+      );
+
+      /* ── Scene 4 (3.2–5.0s) — held. Nothing moves. Nothing drifts.
+         A single inert marker carries the timeline to the full 5s so the
+         renderer seeks a genuinely frozen frame across the whole hold. ── */
+      var hold = { p: 0 };
+      tl.set(hold, { p: 1 }, 5);
+    })();
+  </script>
+</template>

@@ -1,0 +1,380 @@
+{
+  "tts_provider": "heygen",
+  "voice_id": "06c816b952f14fa9b3a6c42aa151f731",
+  "bgm": {
+    "path": "assets/bgm/track.mp3",
+    "volume": 0.12,
+    "query": "minimal-piano-synth-pad-cinematic",
+    "mode": "retrieve",
+    "duration_s": 23
+  },
+  "bgm_pending": false,
+  "bgm_provider": "heygen",
+  "bgm_pid": null,
+  "bgm_log": null,
+  "bgm_mode": "retrieve",
+  "bgm_target_duration_s": null,
+  "bgm_seed_duration_s": null,
+  "bgm_loop_count": null,
+  "voices": [
+    {
+      "id": "01",
+      "path": "assets/voice/01.wav",
+      "duration_s": 3.892,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Every",
+          "start": 0.159,
+          "end": 0.419
+        },
+        {
+          "id": "w1",
+          "text": "poker",
+          "start": 0.439,
+          "end": 0.74
+        },
+        {
+          "id": "w2",
+          "text": "player",
+          "start": 0.799,
+          "end": 1.12
+        },
+        {
+          "id": "w3",
+          "text": "faces",
+          "start": 1.159,
+          "end": 1.539
+        },
+        {
+          "id": "w4",
+          "text": "the",
+          "start": 1.579,
+          "end": 1.679
+        },
+        {
+          "id": "w5",
+          "text": "same",
+          "start": 1.719,
+          "end": 1.979
+        },
+        {
+          "id": "w6",
+          "text": "question.",
+          "start": 2.059,
+          "end": 2.44
+        },
+        {
+          "id": "w7",
+          "text": "What",
+          "start": 2.939,
+          "end": 3.059
+        },
+        {
+          "id": "w8",
+          "text": "would",
+          "start": 3.059,
+          "end": 3.199
+        },
+        {
+          "id": "w9",
+          "text": "you",
+          "start": 3.24,
+          "end": 3.339
+        },
+        {
+          "id": "w10",
+          "text": "do?",
+          "start": 3.379,
+          "end": 3.619
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "path": "assets/voice/02.wav",
+      "duration_s": 1.907,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Because",
+          "start": 0.119,
+          "end": 0.379
+        },
+        {
+          "id": "w1",
+          "text": "the",
+          "start": 0.439,
+          "end": 0.5
+        },
+        {
+          "id": "w2",
+          "text": "answer",
+          "start": 0.599,
+          "end": 0.919
+        },
+        {
+          "id": "w3",
+          "text": "isn't",
+          "start": 0.979,
+          "end": 1.199
+        },
+        {
+          "id": "w4",
+          "text": "enough.",
+          "start": 1.259,
+          "end": 1.599
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "path": "assets/voice/03.wav",
+      "duration_s": 2.403,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Understanding",
+          "start": 0.159,
+          "end": 0.899
+        },
+        {
+          "id": "w1",
+          "text": "is",
+          "start": 1.039,
+          "end": 1.159
+        },
+        {
+          "id": "w2",
+          "text": "what",
+          "start": 1.22,
+          "end": 1.359
+        },
+        {
+          "id": "w3",
+          "text": "makes",
+          "start": 1.419,
+          "end": 1.639
+        },
+        {
+          "id": "w4",
+          "text": "you",
+          "start": 1.679,
+          "end": 1.799
+        },
+        {
+          "id": "w5",
+          "text": "better.",
+          "start": 1.819,
+          "end": 2.099
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "path": "assets/voice/04.wav",
+      "duration_s": 2.795,
+      "words": [
+        {
+          "id": "w0",
+          "text": "One",
+          "start": 0.14,
+          "end": 0.219
+        },
+        {
+          "id": "w1",
+          "text": "place",
+          "start": 0.319,
+          "end": 0.519
+        },
+        {
+          "id": "w2",
+          "text": "to",
+          "start": 0.56,
+          "end": 0.62
+        },
+        {
+          "id": "w3",
+          "text": "learn,",
+          "start": 0.699,
+          "end": 1
+        },
+        {
+          "id": "w4",
+          "text": "train",
+          "start": 1.379,
+          "end": 1.779
+        },
+        {
+          "id": "w5",
+          "text": "and",
+          "start": 1.899,
+          "end": 1.959
+        },
+        {
+          "id": "w6",
+          "text": "improve.",
+          "start": 2,
+          "end": 2.48
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "path": "assets/voice/05.wav",
+      "duration_s": 2.926,
+      "words": [
+        {
+          "id": "w0",
+          "text": "StackedPoker.",
+          "start": 0.159,
+          "end": 0.899
+        },
+        {
+          "id": "w1",
+          "text": "Learn",
+          "start": 1.419,
+          "end": 1.62
+        },
+        {
+          "id": "w2",
+          "text": "poker",
+          "start": 1.74,
+          "end": 2
+        },
+        {
+          "id": "w3",
+          "text": "by",
+          "start": 2.079,
+          "end": 2.159
+        },
+        {
+          "id": "w4",
+          "text": "playing.",
+          "start": 2.279,
+          "end": 2.639
+        }
+      ]
+    }
+  ],
+  "sfx": [
+    {
+      "id": "01",
+      "name": "one soft card swipe per card",
+      "file": "assets/sfx/one-soft-card-swipe-per-card.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 0.24,
+      "volume": 0.35
+    },
+    {
+      "id": "01",
+      "name": "three total",
+      "file": "assets/sfx/three-total.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 0.768,
+      "volume": 0.35
+    },
+    {
+      "id": "01",
+      "name": "each quieter than the last; a low sub-bass swell under the spotlight; nothing on the pull-back",
+      "file": "assets/sfx/each-quieter-than-the-last-a-low-sub-bas.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 2.524,
+      "volume": 0.35
+    },
+    {
+      "id": "02",
+      "name": "one dry click",
+      "file": "assets/sfx/one-dry-click.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 0.312,
+      "volume": 0.35
+    },
+    {
+      "id": "02",
+      "name": "small; a soft drawer slide; one near-inaudible synth as the range blooms. Nothing celebratory — no chime",
+      "file": "assets/sfx/small-a-soft-drawer-slide-one-near-inaud.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 4.362,
+      "volume": 0.35
+    },
+    {
+      "id": "02",
+      "name": "no shimmer.",
+      "file": "assets/sfx/no-shimmer.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 3.329,
+      "volume": 0.35
+    },
+    {
+      "id": "03",
+      "name": "one quiet morph swell per handoff",
+      "file": "assets/sfx/one-quiet-morph-swell-per-handoff.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 7.263,
+      "volume": 0.35
+    },
+    {
+      "id": "03",
+      "name": "five total",
+      "file": "assets/sfx/five-total.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 5.488,
+      "volume": 0.35
+    },
+    {
+      "id": "03",
+      "name": "each shorter than the last; no cut sounds",
+      "file": "assets/sfx/each-shorter-than-the-last-no-cut-sounds.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 1.508,
+      "volume": 0.35
+    },
+    {
+      "id": "03",
+      "name": "because there are no cuts",
+      "file": "assets/sfx/because-there-are-no-cuts.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 1.508,
+      "volume": 0.35
+    },
+    {
+      "id": "04",
+      "name": "one long airy swell under the pull-back",
+      "file": "assets/sfx/one-long-airy-swell-under-the-pull-back.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 3.405,
+      "volume": 0.35
+    },
+    {
+      "id": "04",
+      "name": "resolving as the composition settles; nothing percussive — the rhythm section has not entered yet",
+      "file": "assets/sfx/resolving-as-the-composition-settles-not.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 3.463,
+      "volume": 0.35
+    },
+    {
+      "id": "05",
+      "name": "a soft settle as the composition clears; one warm low resolve on the lockup; a single quiet tick as Start Free lands. The music's rhythm section is running underneath from 0:20 and resolves clean on the final frame.",
+      "file": "assets/sfx/a-soft-settle-as-the-composition-clears-.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 3.463,
+      "volume": 0.35
+    }
+  ],
+  "total_duration_s": 13.923
+}

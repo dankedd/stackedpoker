@@ -1,0 +1,778 @@
+<template>
+  <div id="root" data-composition-id="04-one-place" data-start="0" data-duration="6.5" data-width="1920" data-height="1080">
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+
+    <style>
+      @font-face {
+        font-family: "Geist";
+        font-style: normal;
+        font-weight: 100 900;
+        font-display: block;
+        src: url("capture/assets/fonts/22a5144ee8d83bca-s.p.woff2") format("woff2");
+        unicode-range: u+00??, u+0131, u+0152-0153, u+02bb-02bc, u+02c6, u+02da, u+02dc, u+0304,
+          u+0308, u+0329, u+2000-206f, u+20ac, u+2122, u+2191, u+2193, u+2212, u+2215, u+feff,
+          u+fffd;
+      }
+      @font-face {
+        font-family: "Geist";
+        font-style: normal;
+        font-weight: 100 900;
+        font-display: block;
+        src: url("capture/assets/fonts/aa016aab0e6d1295-s.woff2") format("woff2");
+        unicode-range: u+0100-02ba, u+02bd-02c5, u+02c7-02cc, u+02ce-02d7, u+02dd-02ff, u+0304,
+          u+0308, u+0329, u+1d00-1dbf, u+1e00-1e9f, u+1ef2-1eff, u+2020, u+20a0-20ab, u+20ad-20c0,
+          u+2113, u+2c60-2c7f, u+a720-a7ff;
+      }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+      }
+
+      /* ---- full-bleed ground lives on the clip layer, never on #root ---- */
+      .f04-stage {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: #0c101d;
+        container-type: size;
+        font-family: "Geist", sans-serif;
+        color: #e6eaf0;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* the camera wraps EVERYTHING; one writer, origin dead centre */
+      .f04-cam {
+        position: absolute;
+        inset: 0;
+        transform-origin: 50% 50%;
+      }
+      .f04-board {
+        position: absolute;
+        inset: 0;
+        width: 1920px;
+        height: 1080px;
+      }
+
+      /* three depth planes — the surfaces are ALREADY here; the pull-back
+         is what makes them legible. Each parallaxes at its own rate. */
+      .f04-plane {
+        --dof: 0px;
+        position: absolute;
+        inset: 0;
+        transform-origin: 50% 50%;
+        filter: blur(var(--dof));
+      }
+      .f04-plane-mid {
+        --dof: 3px;
+        will-change: filter;
+      }
+      .f04-plane-far {
+        --dof: 5px;
+        will-change: filter;
+      }
+      .f04-plane-near {
+        z-index: 3;
+      }
+      .f04-plane-mid {
+        z-index: 2;
+      }
+      .f04-plane-far {
+        z-index: 1;
+      }
+      .f04-jit {
+        position: absolute;
+        inset: 0;
+      }
+
+      /* ---------------- atoms ---------------- */
+      .f04-card {
+        position: absolute;
+        background: rgba(139, 92, 246, 0.04);
+        border: 1.5px solid rgba(139, 92, 246, 0.2);
+        border-radius: 14px;
+      }
+      .f04-eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #a78bfa;
+        line-height: 1;
+      }
+      .f04-eyebrow svg {
+        width: 15px;
+        height: 15px;
+        flex: 0 0 15px;
+      }
+      .f04-title {
+        font-size: 21px;
+        font-weight: 500;
+        letter-spacing: -0.02em;
+        color: #e6eaf0;
+        line-height: 1.25;
+      }
+      .f04-muted {
+        font-size: 14px;
+        font-weight: 400;
+        color: #728297;
+        line-height: 1.6;
+      }
+      .f04-ico {
+        display: block;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .f04-track {
+        height: 8px;
+        border-radius: 6px;
+        background: rgba(139, 92, 246, 0.1);
+        overflow: hidden;
+      }
+      .f04-fill {
+        display: block;
+        height: 100%;
+        border-radius: 6px;
+        background: #8b5cf6;
+        transform-origin: left center;
+      }
+
+      /* ============ NEAR PLANE — the surface frame 3 left us on ============ */
+      .f04-n1 {
+        left: 570px;
+        top: 335px;
+        width: 372px;
+        height: 226px;
+        padding: 24px 26px;
+      }
+      .f04-n1-title {
+        margin-top: 20px;
+      }
+      .f04-n1-sub {
+        margin-top: 6px;
+      }
+      .f04-n1-track {
+        margin-top: 30px;
+      }
+
+      .f04-n2 {
+        left: 978px;
+        top: 335px;
+        width: 372px;
+        height: 226px;
+        padding: 24px 26px;
+      }
+      .f04-xp-row {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        margin-top: 26px;
+      }
+      .f04-xp-num {
+        font-size: 40px;
+        font-weight: 700;
+        line-height: 1;
+        color: #8b5cf6;
+        font-variant-numeric: tabular-nums;
+      }
+      .f04-xp-suffix {
+        font-size: 17px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        color: #a78bfa;
+      }
+      .f04-n2-track {
+        margin-top: 26px;
+      }
+      .f04-n2-sub {
+        margin-top: 12px;
+      }
+
+      .f04-n3 {
+        left: 570px;
+        top: 585px;
+        width: 780px;
+        height: 160px;
+        padding: 26px 28px;
+        display: flex;
+        align-items: center;
+        gap: 24px;
+      }
+      .f04-avatar {
+        width: 56px;
+        height: 56px;
+        flex: 0 0 56px;
+        border-radius: 50%;
+        background: rgba(139, 92, 246, 0.15);
+        border: 1.5px solid rgba(139, 92, 246, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #a78bfa;
+      }
+      .f04-avatar svg {
+        width: 26px;
+        height: 26px;
+      }
+      .f04-coach-col {
+        flex: 1;
+        min-width: 0;
+      }
+      .f04-coach-line {
+        margin-top: 12px;
+        font-size: 21px;
+        font-weight: 500;
+        letter-spacing: -0.02em;
+        color: #e6eaf0;
+      }
+      .f04-dots {
+        display: flex;
+        gap: 7px;
+        align-self: flex-end;
+        margin-bottom: 8px;
+      }
+      .f04-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #8b5cf6;
+      }
+
+      /* ============ MID PLANE — the flanking surfaces ============ */
+      .f04-m {
+        top: 335px;
+        width: 424px;
+        height: 410px;
+        padding: 26px;
+        display: flex;
+        flex-direction: column;
+      }
+      .f04-m-left {
+        left: 96px;
+      }
+      .f04-m-right {
+        left: 1400px;
+        align-items: center;
+      }
+
+      .f04-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        width: 360px;
+        margin-top: auto;
+      }
+      .f04-cell {
+        width: 38px;
+        height: 24px;
+        border-radius: 6px;
+        background: rgba(139, 92, 246, 0.1);
+      }
+      .f04-cell.on {
+        background: rgba(139, 92, 246, 0.55);
+      }
+      .f04-cell.hot {
+        background: #8b5cf6;
+      }
+      .f04-train-title {
+        margin-top: 18px;
+      }
+      .f04-train-note {
+        margin-top: 24px;
+      }
+
+      .f04-ring-wrap {
+        position: relative;
+        width: 168px;
+        height: 168px;
+        margin: auto 0;
+      }
+      .f04-ring-wrap svg {
+        display: block;
+        width: 168px;
+        height: 168px;
+      }
+      .f04-ring-track {
+        fill: none;
+        stroke: rgba(139, 92, 246, 0.12);
+        stroke-width: 7;
+      }
+      .f04-ring {
+        fill: none;
+        stroke: #8b5cf6;
+        stroke-width: 7;
+        stroke-linecap: round;
+        transform-origin: 84px 84px;
+        transform: rotate(-90deg);
+      }
+      .f04-ring-core {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #a78bfa;
+      }
+      .f04-ring-core svg {
+        width: 42px;
+        height: 42px;
+      }
+      .f04-chips {
+        display: flex;
+        gap: 12px;
+        margin-top: auto;
+      }
+      .f04-chip {
+        padding: 11px 16px;
+        border-radius: 100px;
+        background: rgba(139, 92, 246, 0.08);
+        font-size: 15px;
+        font-weight: 500;
+        color: #a78bfa;
+        white-space: nowrap;
+      }
+      .f04-m-eyebrow-row {
+        width: 100%;
+      }
+
+      /* ============ FAR PLANE — the outer edges of the space ============ */
+      .f04-chip-card {
+        top: 116px;
+        width: 268px;
+        height: 132px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+      }
+      .f04-chip-ico {
+        color: rgba(139, 92, 246, 0.7);
+      }
+      .f04-chip-ico svg {
+        width: 18px;
+        height: 18px;
+      }
+      .f04-chip-name {
+        margin-top: 14px;
+        font-size: 16px;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        color: #e6eaf0;
+      }
+      .f04-chip-track {
+        margin-top: auto;
+      }
+
+      .f04-bank {
+        left: 96px;
+        top: 772px;
+        width: 1728px;
+        height: 100px;
+        padding: 0 28px;
+        display: flex;
+        align-items: center;
+        gap: 28px;
+      }
+      .f04-bank-lab {
+        flex: 0 0 150px;
+      }
+      .f04-bank-chart {
+        flex: 1;
+        height: 64px;
+      }
+      .f04-bank-chart svg {
+        display: block;
+        width: 1480px;
+        height: 64px;
+      }
+      .f04-grid-line {
+        stroke: rgba(139, 92, 246, 0.1);
+        stroke-width: 1;
+      }
+      .f04-curve {
+        fill: none;
+        stroke: #8b5cf6;
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .f04-curve-area {
+        stroke: none;
+        fill: url(#f04-bank-grad);
+        fill-opacity: 0;
+      }
+      .f04-curve-dot {
+        fill: #a78bfa;
+        opacity: 0;
+      }
+    </style>
+
+    <!-- ================= one full-bleed clip: ground + the whole space ================= -->
+    <div class="clip f04-stage" data-start="0" data-duration="6.5" data-track-index="0">
+      <div class="f04-cam" id="f04-cam">
+        <div class="f04-board">
+          <!-- ---------------- FAR PLANE (fastest parallax, softest) ---------------- -->
+          <div class="f04-plane f04-plane-far" id="f04-plane-far">
+            <!-- module rail across the top -->
+            <div class="f04-card f04-chip-card f04-mod" style="left: 96px">
+              <span class="f04-chip-ico"><svg viewBox="0 0 24 24" class="f04-ico"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg></span>
+              <div class="f04-chip-name">Preflop Ranges</div>
+              <div class="f04-track f04-chip-track"><span class="f04-fill f04-mod-fill" style="width: 100%"></span></div>
+            </div>
+            <div class="f04-card f04-chip-card f04-mod" style="left: 388px">
+              <span class="f04-chip-ico"><svg viewBox="0 0 24 24" class="f04-ico"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg></span>
+              <div class="f04-chip-name">Board Texture</div>
+              <div class="f04-track f04-chip-track"><span class="f04-fill f04-mod-fill" style="width: 100%"></span></div>
+            </div>
+            <div class="f04-card f04-chip-card f04-mod" style="left: 680px">
+              <span class="f04-chip-ico"><svg viewBox="0 0 24 24" class="f04-ico"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg></span>
+              <div class="f04-chip-name">Blockers</div>
+              <div class="f04-track f04-chip-track"><span class="f04-fill f04-mod-fill" style="width: 68%"></span></div>
+            </div>
+            <div class="f04-card f04-chip-card f04-mod" style="left: 972px">
+              <span class="f04-chip-ico"><svg viewBox="0 0 24 24" class="f04-ico"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg></span>
+              <div class="f04-chip-name">Bet Sizing</div>
+              <div class="f04-track f04-chip-track"><span class="f04-fill f04-mod-fill" style="width: 42%"></span></div>
+            </div>
+            <div class="f04-card f04-chip-card f04-mod" style="left: 1264px">
+              <span class="f04-chip-ico"><svg viewBox="0 0 24 24" class="f04-ico"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg></span>
+              <div class="f04-chip-name">Range vs Range</div>
+              <div class="f04-track f04-chip-track"><span class="f04-fill f04-mod-fill" style="width: 24%"></span></div>
+            </div>
+            <div class="f04-card f04-chip-card f04-mod" style="left: 1556px">
+              <span class="f04-chip-ico"><svg viewBox="0 0 24 24" class="f04-ico"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg></span>
+              <div class="f04-chip-name">ICM</div>
+              <div class="f04-track f04-chip-track"><span class="f04-fill f04-mod-fill" style="width: 8%"></span></div>
+            </div>
+
+            <!-- bankroll strip along the bottom edge of the space -->
+            <div class="f04-card f04-bank">
+              <div class="f04-bank-lab">
+                <div class="f04-eyebrow">Bankroll</div>
+              </div>
+              <div class="f04-bank-chart">
+                <svg viewBox="0 0 1480 64" preserveAspectRatio="none">
+                  <defs>
+                    <lineargradient id="f04-bank-grad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.3" />
+                      <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0" />
+                    </lineargradient>
+                  </defs>
+                  <line class="f04-grid-line" x1="0" y1="16" x2="1480" y2="16" />
+                  <line class="f04-grid-line" x1="0" y1="40" x2="1480" y2="40" />
+                  <path class="f04-curve-area" id="f04-curve-area" d="M 6 54 C 90 51, 150 43, 236 46 C 322 49, 372 33, 462 35 C 552 37, 600 46, 690 39 C 780 32, 828 20, 918 23 C 1008 26, 1054 34, 1144 27 C 1234 20, 1300 12, 1382 9 C 1420 8, 1450 7, 1474 6 L 1474 62 L 6 62 Z" />
+                  <path class="f04-curve" id="f04-curve" d="M 6 54 C 90 51, 150 43, 236 46 C 322 49, 372 33, 462 35 C 552 37, 600 46, 690 39 C 780 32, 828 20, 918 23 C 1008 26, 1054 34, 1144 27 C 1234 20, 1300 12, 1382 9 C 1420 8, 1450 7, 1474 6" />
+                  <circle class="f04-curve-dot" id="f04-curve-dot" cx="1474" cy="6" r="4.5" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- ---------------- MID PLANE ---------------- -->
+          <div class="f04-plane f04-plane-mid" id="f04-plane-mid">
+            <!-- training -->
+            <div class="f04-card f04-m f04-m-left">
+              <div class="f04-eyebrow f04-m-eyebrow-row">
+                <svg viewBox="0 0 24 24" class="f04-ico"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+                <span>Training</span>
+              </div>
+              <div class="f04-title f04-train-title">Spot drills</div>
+              <div class="f04-muted f04-train-note">Same spot. New decision.</div>
+              <div class="f04-grid" id="f04-grid">
+                <span class="f04-cell hot"></span><span class="f04-cell on"></span><span class="f04-cell on"></span><span class="f04-cell"></span><span class="f04-cell on"></span><span class="f04-cell"></span><span class="f04-cell hot"></span><span class="f04-cell"></span>
+                <span class="f04-cell on"></span><span class="f04-cell hot"></span><span class="f04-cell"></span><span class="f04-cell on"></span><span class="f04-cell"></span><span class="f04-cell on"></span><span class="f04-cell"></span><span class="f04-cell on"></span>
+                <span class="f04-cell"></span><span class="f04-cell on"></span><span class="f04-cell hot"></span><span class="f04-cell"></span><span class="f04-cell on"></span><span class="f04-cell"></span><span class="f04-cell on"></span><span class="f04-cell"></span>
+                <span class="f04-cell on"></span><span class="f04-cell"></span><span class="f04-cell on"></span><span class="f04-cell hot"></span><span class="f04-cell"></span><span class="f04-cell on"></span><span class="f04-cell"></span><span class="f04-cell on"></span>
+                <span class="f04-cell"></span><span class="f04-cell on"></span><span class="f04-cell"></span><span class="f04-cell on"></span><span class="f04-cell hot"></span><span class="f04-cell"></span><span class="f04-cell on"></span><span class="f04-cell"></span>
+              </div>
+            </div>
+
+            <!-- progress -->
+            <div class="f04-card f04-m f04-m-right">
+              <div class="f04-eyebrow f04-m-eyebrow-row">
+                <svg viewBox="0 0 24 24" class="f04-ico"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                <span>Progress</span>
+              </div>
+              <div class="f04-ring-wrap">
+                <svg viewBox="0 0 168 168">
+                  <circle class="f04-ring-track" cx="84" cy="84" r="76" />
+                  <circle class="f04-ring" id="f04-ring" cx="84" cy="84" r="76" />
+                </svg>
+                <div class="f04-ring-core">
+                  <svg viewBox="0 0 24 24" class="f04-ico"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                </div>
+              </div>
+              <div class="f04-chips">
+                <span class="f04-chip f04-pchip">14 day streak</span>
+                <span class="f04-chip f04-pchip">11 badges</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ---------------- NEAR PLANE — the surface we opened on ---------------- -->
+          <div class="f04-plane f04-plane-near" id="f04-plane-near">
+            <div class="f04-jit" id="f04-jit">
+              <!-- module in progress -->
+              <div class="f04-card f04-n1">
+                <div class="f04-eyebrow">
+                  <svg viewBox="0 0 24 24" class="f04-ico"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
+                  <span>Continue</span>
+                </div>
+                <div class="f04-title f04-n1-title">Blockers &amp; Combos</div>
+                <div class="f04-muted f04-n1-sub">Where you left off</div>
+                <div class="f04-track f04-n1-track"><span class="f04-fill" style="width: 68%"></span></div>
+              </div>
+
+              <!-- level + XP -->
+              <div class="f04-card f04-n2">
+                <div class="f04-eyebrow"><span>Level 12</span></div>
+                <div class="f04-xp-row">
+                  <span class="f04-xp-num">8.420</span>
+                  <span class="f04-xp-suffix">XP</span>
+                </div>
+                <div class="f04-track f04-n2-track"><span class="f04-fill" style="width: 86%"></span></div>
+                <div class="f04-muted f04-n2-sub">Next level</div>
+              </div>
+
+              <!-- coach -->
+              <div class="f04-card f04-n3">
+                <div class="f04-avatar">
+                  <svg viewBox="0 0 24 24" class="f04-ico"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+                </div>
+                <div class="f04-coach-col">
+                  <div class="f04-eyebrow"><span>Coach</span></div>
+                  <div class="f04-coach-line">Ask any hand.</div>
+                </div>
+                <div class="f04-dots" id="f04-dots">
+                  <span class="f04-dot"></span><span class="f04-dot"></span><span class="f04-dot"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        var tl = gsap.timeline({ paused: true });
+        window.__timelines = window.__timelines || {};
+        window.__timelines["04-one-place"] = tl;
+
+        var q = function (s) {
+          return document.querySelector(s);
+        };
+
+        var DURATION = 6;
+
+        /* =========================================================
+           THE CAMERA — ONE continuous decelerating pull-back.
+           Same ease family and the same unhurried rate as frame 01:
+           log-space scale eased with outCubic, no re-push, no second
+           tween. A single linear clock proxy drives one writer, so
+           every seek is order-independent and deterministic.
+           ========================================================= */
+        var cam = q("#f04-cam");
+        var midPlane = q("#f04-plane-mid");
+        var farPlane = q("#f04-plane-far");
+
+        var S0 = 2.42; // opening scale — the core dashboard fills the frame
+        var Z0 = Math.log(S0);
+
+        var SETTLE_DUR = 0.8, // Scene 1: frame 3's move still bleeding off
+          SETTLE_AMT = 0.012;
+        var PULL_AT = 0.8, // Scene 2: the widening
+          PULL_DUR = 3.9; // decelerates to a full stop at 4.7s (Scene 3)
+
+        // parallax depth: nearest = camera rate only, furthest = fastest
+        var K_MID = 0.1,
+          K_FAR = 0.24;
+
+        var DRIFT_AMP_X = 3,
+          DRIFT_AMP_Y = 2,
+          DRIFT_CYCLES = 1.15,
+          DRIFT_FREQ_RATIO = 1.3;
+        var DAMP_AT = 3.6,
+          DAMP_DUR = 1.1; // drift is exactly zero from 4.7s on
+
+        var CLOCK = { t: 0 };
+
+        function clamp01(v) {
+          return v < 0 ? 0 : v > 1 ? 1 : v;
+        }
+        function outCubic(p) {
+          var i = 1 - p;
+          return 1 - i * i * i;
+        }
+        function outQuart(p) {
+          var i = 1 - p;
+          return 1 - i * i * i * i;
+        }
+
+        function writeCamera() {
+          var t = CLOCK.t;
+
+          // the one pull-back, in log space so the widening reads evenly
+          var p = clamp01((t - PULL_AT) / PULL_DUR);
+          var s = Math.exp(Z0 * (1 - outCubic(p)));
+
+          // residual of the previous shot decaying to nothing by 0.8s —
+          // same direction as the pull, so it flows straight into it
+          var q0 = clamp01(t / SETTLE_DUR);
+          s *= 1 + SETTLE_AMT * (1 - outCubic(q0));
+
+          // organic drift, enveloped to zero when the camera lands
+          var env =
+            t <= DAMP_AT ? 1 : t >= DAMP_AT + DAMP_DUR ? 0 : 1 - outCubic((t - DAMP_AT) / DAMP_DUR);
+          var ph = (t / DURATION) * Math.PI * 2 * DRIFT_CYCLES;
+          var dx = Math.sin(ph) * DRIFT_AMP_X * env;
+          var dy = Math.sin(ph * DRIFT_FREQ_RATIO) * DRIFT_AMP_Y * env;
+
+          cam.style.transform = "scale(" + s + ") translate(" + dx + "px, " + dy + "px)";
+
+          // three planes, three rates — depth, not a wall
+          midPlane.style.transform = "scale(" + (1 + K_MID * (1 - outCubic(p))) + ")";
+          farPlane.style.transform = "scale(" + (1 + K_FAR * (1 - outQuart(p))) + ")";
+        }
+        writeCamera(); // t=0 state correct before the first seek
+
+        tl.fromTo(
+          CLOCK,
+          { t: 0 },
+          { t: DURATION, duration: DURATION, ease: "none", onUpdate: writeCamera },
+          0,
+        );
+
+        /* =========================================================
+           SCENE 3 (3.6–4.8s) — the planes settle apart on depth of
+           field: nearest crisp, furthest softened. The blur is a
+           resting state that eases DOWN as the camera stops; it is
+           not an entrance, the surfaces were always there.
+           ========================================================= */
+        tl.fromTo(
+          "#f04-plane-mid",
+          { "--dof": "3px" },
+          { "--dof": "1.2px", duration: 2.2, ease: "power2.inOut" },
+          2.4,
+        );
+        tl.fromTo(
+          "#f04-plane-far",
+          { "--dof": "5px" },
+          { "--dof": "3px", duration: 2.2, ease: "power2.inOut" },
+          2.4,
+        );
+
+        /* =========================================================
+           SCENE 2→3 — as each plane becomes legible its own detail
+           resolves. Index-derived stagger only; nothing arrives from
+           nothing, the contents simply come into focus.
+           ========================================================= */
+
+        // far plane: the module rail resolves first (it enters frame first)
+        tl.fromTo(
+          ".f04-mod",
+          { opacity: 0.42 },
+          { opacity: 1, duration: 0.6, ease: "power2.out", stagger: 0.085 },
+          2.15,
+        );
+        tl.fromTo(
+          ".f04-mod-fill",
+          { scaleX: 0.18 },
+          { scaleX: 1, duration: 0.75, ease: "power3.out", stagger: 0.085 },
+          2.3,
+        );
+
+        // mid plane: the drill grid lights up cell by cell
+        tl.fromTo(
+          ".f04-cell",
+          { opacity: 0.24 },
+          { opacity: 1, duration: 0.4, ease: "power2.out", stagger: 0.014 },
+          2.75,
+        );
+
+        // near plane: the coach is already talking
+        tl.fromTo(
+          ".f04-dot",
+          { opacity: 0.25, scale: 0.7 },
+          { opacity: 1, scale: 1, duration: 0.34, ease: "power2.out", stagger: 0.12 },
+          3.05,
+        );
+
+        // mid plane: the progress ring draws as the camera decelerates
+        var ring = q("#f04-ring");
+        var RING_LEN = ring.getTotalLength();
+        ring.style.strokeDasharray = RING_LEN;
+        ring.style.strokeDashoffset = RING_LEN;
+        tl.to(
+          ring,
+          { strokeDashoffset: RING_LEN * 0.28, duration: 0.95, ease: "power3.out" },
+          3.45,
+        );
+        tl.fromTo(
+          ".f04-pchip",
+          { opacity: 0.35 },
+          { opacity: 1, duration: 0.45, ease: "power2.out", stagger: 0.12 },
+          3.9,
+        );
+
+        /* =========================================================
+           SCENE 3 tail (4.1–5.1s) — the outermost surface, the
+           bankroll curve, is the last thing to resolve.
+           ========================================================= */
+        var curve = q("#f04-curve");
+        var CURVE_LEN = curve.getTotalLength() * 1.02;
+        curve.style.strokeDasharray = CURVE_LEN;
+        curve.style.strokeDashoffset = CURVE_LEN;
+        tl.to(curve, { strokeDashoffset: 0, duration: 0.85, ease: "power2.out" }, 4.05);
+        tl.to("#f04-curve-area", { fillOpacity: 1, duration: 0.42, ease: "power1.out" }, 4.62);
+        tl.fromTo(
+          "#f04-curve-dot",
+          { opacity: 0, scale: 0.4 },
+          { opacity: 1, scale: 1, duration: 0.3, ease: "power2.out" },
+          4.82,
+        );
+
+        /* =========================================================
+           SCENE 4 (4.8–6.0s) — held. The camera does not move again.
+           The only life left is a barely-there jitter on the NEAREST
+           plane, enveloped so it starts and ends at exactly zero.
+           Its own wrapper, so nothing else writes this transform.
+           ========================================================= */
+        var jit = q("#f04-jit");
+        var JIT = { p: 0 };
+        var JIT_CYCLES = 1.05,
+          JIT_AMP = 1.3,
+          JIT_END = Math.PI * 2 * JIT_CYCLES;
+        tl.fromTo(
+          JIT,
+          { p: 0 },
+          {
+            p: JIT_END,
+            duration: 1.2,
+            ease: "none",
+            onUpdate: function () {
+              var u = JIT.p / JIT_END;
+              var e = Math.sin(Math.PI * u); // 0 at both ends: no pop, dead still after
+              jit.style.transform =
+                "translate(" +
+                Math.sin(JIT.p) * JIT_AMP * e +
+                "px, " +
+                Math.sin(JIT.p * 1.3) * JIT_AMP * 0.6 * e +
+                "px)";
+            },
+          },
+          4.8,
+        );
+      })();
+    </script>
+  </div>
+</template>

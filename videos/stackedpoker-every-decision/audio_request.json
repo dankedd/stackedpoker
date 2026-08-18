@@ -1,0 +1,45 @@
+{
+  "lines": [
+    {
+      "id": "01",
+      "sfx": [
+        "one soft card swipe per card",
+        "three total",
+        "each quieter than the last; a low sub-bass swell under the spotlight; nothing on the pull-back"
+      ]
+    },
+    {
+      "id": "02",
+      "sfx": [
+        "one dry click",
+        "small; a soft drawer slide; one near-inaudible synth as the range blooms. Nothing celebratory — no chime",
+        "no shimmer."
+      ]
+    },
+    {
+      "id": "03",
+      "sfx": [
+        "one quiet morph swell per handoff",
+        "five total",
+        "each shorter than the last; no cut sounds",
+        "because there are no cuts"
+      ]
+    },
+    {
+      "id": "04",
+      "sfx": [
+        "one long airy swell under the pull-back",
+        "resolving as the composition settles; nothing percussive — the rhythm section has not entered yet"
+      ]
+    },
+    {
+      "id": "05",
+      "sfx": [
+        "a soft settle as the composition clears; one warm low resolve on the lockup; a single quiet tick as Start Free lands. The music's rhythm section is running underneath from 0:20 and resolves clean on the final frame."
+      ]
+    }
+  ],
+  "bgm": {
+    "mode": "none"
+  }
+}

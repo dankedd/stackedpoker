@@ -1,0 +1,255 @@
+{
+  "bgm": {
+    "path": "assets/bgm/track.mp3",
+    "volume": 0.3,
+    "query": "two-part arrangement: minimal piano + synth pad (0-20s) -> soft percussion build (20-30s)",
+    "duration_s": 30.0,
+    "note": "Hand-composed from two retrieved parts; probed from the file, not the retrieval record. fetch-sfx rewrites this block, so re-probe after any later audio step.",
+    "volume_note": "Raised from the 0.12 pipeline default. That default assumes a narration-dense film where music ducks under speech; this film is ~54% silence and the arrangement carries those gaps. At 0.12 the bed measured ~-34 dB in the render and the deliberate 4 dB lift at 0:20 was inaudible."
+  },
+  "bgm_pending": false,
+  "voices": [
+    {
+      "frame": 1,
+      "path": "assets/voice/01.wav",
+      "duration_s": 4.792,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Every",
+          "start": 1.059,
+          "end": 1.319
+        },
+        {
+          "id": "w1",
+          "text": "poker",
+          "start": 1.339,
+          "end": 1.64
+        },
+        {
+          "id": "w2",
+          "text": "player",
+          "start": 1.699,
+          "end": 2.02
+        },
+        {
+          "id": "w3",
+          "text": "faces",
+          "start": 2.059,
+          "end": 2.439
+        },
+        {
+          "id": "w4",
+          "text": "the",
+          "start": 2.479,
+          "end": 2.579
+        },
+        {
+          "id": "w5",
+          "text": "same",
+          "start": 2.619,
+          "end": 2.879
+        },
+        {
+          "id": "w6",
+          "text": "question.",
+          "start": 2.959,
+          "end": 3.34
+        },
+        {
+          "id": "w7",
+          "text": "What",
+          "start": 3.839,
+          "end": 3.959
+        },
+        {
+          "id": "w8",
+          "text": "would",
+          "start": 3.959,
+          "end": 4.099
+        },
+        {
+          "id": "w9",
+          "text": "you",
+          "start": 4.14,
+          "end": 4.239
+        },
+        {
+          "id": "w10",
+          "text": "do?",
+          "start": 4.279,
+          "end": 4.519
+        }
+      ]
+    },
+    {
+      "frame": 2,
+      "path": "assets/voice/02.wav",
+      "duration_s": 2.357,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Because",
+          "start": 0.569,
+          "end": 0.829
+        },
+        {
+          "id": "w1",
+          "text": "the",
+          "start": 0.889,
+          "end": 0.95
+        },
+        {
+          "id": "w2",
+          "text": "answer",
+          "start": 1.049,
+          "end": 1.369
+        },
+        {
+          "id": "w3",
+          "text": "isn't",
+          "start": 1.429,
+          "end": 1.649
+        },
+        {
+          "id": "w4",
+          "text": "enough.",
+          "start": 1.709,
+          "end": 2.049
+        }
+      ]
+    },
+    {
+      "frame": 3,
+      "path": "assets/voice/03.wav",
+      "duration_s": 2.853,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Understanding",
+          "start": 0.609,
+          "end": 1.349
+        },
+        {
+          "id": "w1",
+          "text": "is",
+          "start": 1.489,
+          "end": 1.609
+        },
+        {
+          "id": "w2",
+          "text": "what",
+          "start": 1.67,
+          "end": 1.809
+        },
+        {
+          "id": "w3",
+          "text": "makes",
+          "start": 1.869,
+          "end": 2.089
+        },
+        {
+          "id": "w4",
+          "text": "you",
+          "start": 2.129,
+          "end": 2.249
+        },
+        {
+          "id": "w5",
+          "text": "better.",
+          "start": 2.269,
+          "end": 2.549
+        }
+      ]
+    },
+    {
+      "frame": 4,
+      "path": "assets/voice/04.wav",
+      "duration_s": 3.245,
+      "words": [
+        {
+          "id": "w0",
+          "text": "One",
+          "start": 0.59,
+          "end": 0.669
+        },
+        {
+          "id": "w1",
+          "text": "place",
+          "start": 0.769,
+          "end": 0.969
+        },
+        {
+          "id": "w2",
+          "text": "to",
+          "start": 1.01,
+          "end": 1.07
+        },
+        {
+          "id": "w3",
+          "text": "learn,",
+          "start": 1.149,
+          "end": 1.45
+        },
+        {
+          "id": "w4",
+          "text": "train",
+          "start": 1.829,
+          "end": 2.229
+        },
+        {
+          "id": "w5",
+          "text": "and",
+          "start": 2.349,
+          "end": 2.409
+        },
+        {
+          "id": "w6",
+          "text": "improve.",
+          "start": 2.45,
+          "end": 2.93
+        }
+      ]
+    },
+    {
+      "frame": 5,
+      "path": "assets/voice/05.wav",
+      "duration_s": 3.376,
+      "words": [
+        {
+          "id": "w0",
+          "text": "StackedPoker.",
+          "start": 0.609,
+          "end": 1.349
+        },
+        {
+          "id": "w1",
+          "text": "Learn",
+          "start": 1.869,
+          "end": 2.07
+        },
+        {
+          "id": "w2",
+          "text": "poker",
+          "start": 2.19,
+          "end": 2.45
+        },
+        {
+          "id": "w3",
+          "text": "by",
+          "start": 2.529,
+          "end": 2.609
+        },
+        {
+          "id": "w4",
+          "text": "playing.",
+          "start": 2.729,
+          "end": 3.089
+        }
+      ]
+    }
+  ],
+  "sfx": [],
+  "sfx_note": "Removed. fetch-sfx split each storyboard 'sfx:' sentence on its punctuation and retrieved every fragment as a separate sound ('two total', 'very quiet'), then the assembler mounted all of them at offset 0.00s. The result was every cue in the film firing simultaneously in the first frame, which read as a burst of notifications. A real SFX layer needs per-cue offsets the pipeline does not derive.",
+  "voice_note": "Each line carries leading silence because the assembler mounts voice at its frame's start with no offset support; without it every film opened with the narrator already speaking over the first black frame."
+}

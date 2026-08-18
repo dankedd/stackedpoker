@@ -1,0 +1,328 @@
+{
+  "bgm": {
+    "path": "assets/bgm/track.mp3",
+    "volume": 0.12,
+    "query": "cinematic-ambient-electronic",
+    "duration_s": 10
+  },
+  "bgm_pending": false,
+  "voices": [
+    {
+      "frame": 1,
+      "path": "assets/voice/01.wav",
+      "duration_s": 1.793,
+      "words": [
+        {
+          "id": "w0",
+          "text": "What",
+          "start": 0.899,
+          "end": 1.019
+        },
+        {
+          "id": "w1",
+          "text": "would",
+          "start": 1.039,
+          "end": 1.14
+        },
+        {
+          "id": "w2",
+          "text": "you",
+          "start": 1.179,
+          "end": 1.279
+        },
+        {
+          "id": "w3",
+          "text": "do?",
+          "start": 1.319,
+          "end": 1.479
+        }
+      ]
+    },
+    {
+      "frame": 2,
+      "path": "assets/voice/02.wav",
+      "duration_s": 3.271,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Every",
+          "start": 0.549,
+          "end": 0.829
+        },
+        {
+          "id": "w1",
+          "text": "poker",
+          "start": 0.869,
+          "end": 1.109
+        },
+        {
+          "id": "w2",
+          "text": "session",
+          "start": 1.19,
+          "end": 1.589
+        },
+        {
+          "id": "w3",
+          "text": "is",
+          "start": 1.629,
+          "end": 1.729
+        },
+        {
+          "id": "w4",
+          "text": "a",
+          "start": 1.769,
+          "end": 1.889
+        },
+        {
+          "id": "w5",
+          "text": "series",
+          "start": 1.93,
+          "end": 2.269
+        },
+        {
+          "id": "w6",
+          "text": "of",
+          "start": 2.289,
+          "end": 2.389
+        },
+        {
+          "id": "w7",
+          "text": "decisions.",
+          "start": 2.409,
+          "end": 2.989
+        }
+      ]
+    },
+    {
+      "frame": 3,
+      "path": "assets/voice/03.wav",
+      "duration_s": 2.906,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Most",
+          "start": 0.669,
+          "end": 0.85
+        },
+        {
+          "id": "w1",
+          "text": "players",
+          "start": 0.909,
+          "end": 1.249
+        },
+        {
+          "id": "w2",
+          "text": "spend",
+          "start": 1.269,
+          "end": 1.67
+        },
+        {
+          "id": "w3",
+          "text": "hours",
+          "start": 1.769,
+          "end": 2.169
+        },
+        {
+          "id": "w4",
+          "text": "watching...",
+          "start": 2.229,
+          "end": 2.629
+        }
+      ]
+    },
+    {
+      "frame": 4,
+      "path": "assets/voice/04.wav",
+      "duration_s": 2.226,
+      "words": [
+        {
+          "id": "w0",
+          "text": "We",
+          "start": 0.569,
+          "end": 0.709
+        },
+        {
+          "id": "w1",
+          "text": "believe",
+          "start": 0.73,
+          "end": 1.089
+        },
+        {
+          "id": "w2",
+          "text": "there's",
+          "start": 1.109,
+          "end": 1.289
+        },
+        {
+          "id": "w3",
+          "text": "a",
+          "start": 1.389,
+          "end": 1.409
+        },
+        {
+          "id": "w4",
+          "text": "better",
+          "start": 1.409,
+          "end": 1.649
+        },
+        {
+          "id": "w5",
+          "text": "way.",
+          "start": 1.69,
+          "end": 1.95
+        }
+      ]
+    },
+    {
+      "frame": 5,
+      "path": "assets/voice/05.wav",
+      "duration_s": 2.592,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Learn",
+          "start": 0.649,
+          "end": 0.829
+        },
+        {
+          "id": "w1",
+          "text": "by",
+          "start": 0.889,
+          "end": 0.989
+        },
+        {
+          "id": "w2",
+          "text": "making",
+          "start": 1.089,
+          "end": 1.45
+        },
+        {
+          "id": "w3",
+          "text": "real",
+          "start": 1.489,
+          "end": 1.649
+        },
+        {
+          "id": "w4",
+          "text": "decisions.",
+          "start": 1.729,
+          "end": 2.329
+        }
+      ]
+    },
+    {
+      "frame": 6,
+      "path": "assets/voice/06.wav",
+      "duration_s": 1.834,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Understand",
+          "start": 0.59,
+          "end": 1.089
+        },
+        {
+          "id": "w1",
+          "text": "why.",
+          "start": 1.209,
+          "end": 1.509
+        }
+      ]
+    },
+    {
+      "frame": 7,
+      "path": "assets/voice/07.wav",
+      "duration_s": 2.566,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Track",
+          "start": 0.569,
+          "end": 0.849
+        },
+        {
+          "id": "w1",
+          "text": "every",
+          "start": 1.01,
+          "end": 1.229
+        },
+        {
+          "id": "w2",
+          "text": "step",
+          "start": 1.369,
+          "end": 1.609
+        },
+        {
+          "id": "w3",
+          "text": "of",
+          "start": 1.649,
+          "end": 1.749
+        },
+        {
+          "id": "w4",
+          "text": "your",
+          "start": 1.769,
+          "end": 1.829
+        },
+        {
+          "id": "w5",
+          "text": "journey.",
+          "start": 1.95,
+          "end": 2.249
+        }
+      ]
+    },
+    {
+      "frame": 8,
+      "path": "assets/voice/08.wav",
+      "duration_s": 3.062,
+      "words": [
+        {
+          "id": "w0",
+          "text": "From",
+          "start": 0.609,
+          "end": 0.749
+        },
+        {
+          "id": "w1",
+          "text": "your",
+          "start": 0.809,
+          "end": 0.929
+        },
+        {
+          "id": "w2",
+          "text": "first",
+          "start": 0.969,
+          "end": 1.19
+        },
+        {
+          "id": "w3",
+          "text": "hand",
+          "start": 1.249,
+          "end": 1.529
+        },
+        {
+          "id": "w4",
+          "text": "to",
+          "start": 1.55,
+          "end": 1.629
+        },
+        {
+          "id": "w5",
+          "text": "advanced",
+          "start": 1.69,
+          "end": 2.149
+        },
+        {
+          "id": "w6",
+          "text": "strategy.",
+          "start": 2.249,
+          "end": 2.789
+        }
+      ]
+    }
+  ],
+  "sfx": [],
+  "sfx_note": "Removed. fetch-sfx split each storyboard 'sfx:' sentence on its punctuation and retrieved every fragment as a separate sound ('two total', 'very quiet'), then the assembler mounted all of them at offset 0.00s. The result was every cue in the film firing simultaneously in the first frame, which read as a burst of notifications. A real SFX layer needs per-cue offsets the pipeline does not derive.",
+  "voice_note": "Each line carries leading silence because the assembler mounts voice at its frame's start with no offset support; without it every film opened with the narrator already speaking over the first black frame."
+}

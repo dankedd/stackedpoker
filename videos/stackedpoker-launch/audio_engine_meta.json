@@ -1,0 +1,491 @@
+{
+  "tts_provider": "heygen",
+  "voice_id": "06c816b952f14fa9b3a6c42aa151f731",
+  "bgm": {
+    "path": "assets/bgm/track.mp3",
+    "volume": 0.12,
+    "query": "cinematic-ambient-electronic",
+    "mode": "retrieve",
+    "duration_s": 10
+  },
+  "bgm_pending": false,
+  "bgm_provider": "heygen",
+  "bgm_pid": null,
+  "bgm_log": null,
+  "bgm_mode": "retrieve",
+  "bgm_target_duration_s": null,
+  "bgm_seed_duration_s": null,
+  "bgm_loop_count": null,
+  "voices": [
+    {
+      "id": "01",
+      "path": "assets/voice/01.wav",
+      "duration_s": 0.993,
+      "words": [
+        {
+          "id": "w0",
+          "text": "What",
+          "start": 0.099,
+          "end": 0.219
+        },
+        {
+          "id": "w1",
+          "text": "would",
+          "start": 0.239,
+          "end": 0.34
+        },
+        {
+          "id": "w2",
+          "text": "you",
+          "start": 0.379,
+          "end": 0.479
+        },
+        {
+          "id": "w3",
+          "text": "do?",
+          "start": 0.519,
+          "end": 0.679
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "path": "assets/voice/02.wav",
+      "duration_s": 2.821,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Every",
+          "start": 0.099,
+          "end": 0.379
+        },
+        {
+          "id": "w1",
+          "text": "poker",
+          "start": 0.419,
+          "end": 0.659
+        },
+        {
+          "id": "w2",
+          "text": "session",
+          "start": 0.74,
+          "end": 1.139
+        },
+        {
+          "id": "w3",
+          "text": "is",
+          "start": 1.179,
+          "end": 1.279
+        },
+        {
+          "id": "w4",
+          "text": "a",
+          "start": 1.319,
+          "end": 1.439
+        },
+        {
+          "id": "w5",
+          "text": "series",
+          "start": 1.48,
+          "end": 1.819
+        },
+        {
+          "id": "w6",
+          "text": "of",
+          "start": 1.839,
+          "end": 1.939
+        },
+        {
+          "id": "w7",
+          "text": "decisions.",
+          "start": 1.959,
+          "end": 2.539
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "path": "assets/voice/03.wav",
+      "duration_s": 2.456,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Most",
+          "start": 0.219,
+          "end": 0.4
+        },
+        {
+          "id": "w1",
+          "text": "players",
+          "start": 0.459,
+          "end": 0.799
+        },
+        {
+          "id": "w2",
+          "text": "spend",
+          "start": 0.819,
+          "end": 1.22
+        },
+        {
+          "id": "w3",
+          "text": "hours",
+          "start": 1.319,
+          "end": 1.719
+        },
+        {
+          "id": "w4",
+          "text": "watching...",
+          "start": 1.779,
+          "end": 2.179
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "path": "assets/voice/04.wav",
+      "duration_s": 1.776,
+      "words": [
+        {
+          "id": "w0",
+          "text": "We",
+          "start": 0.119,
+          "end": 0.259
+        },
+        {
+          "id": "w1",
+          "text": "believe",
+          "start": 0.28,
+          "end": 0.639
+        },
+        {
+          "id": "w2",
+          "text": "there's",
+          "start": 0.659,
+          "end": 0.839
+        },
+        {
+          "id": "w3",
+          "text": "a",
+          "start": 0.939,
+          "end": 0.959
+        },
+        {
+          "id": "w4",
+          "text": "better",
+          "start": 0.959,
+          "end": 1.199
+        },
+        {
+          "id": "w5",
+          "text": "way.",
+          "start": 1.24,
+          "end": 1.5
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "path": "assets/voice/05.wav",
+      "duration_s": 2.142,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Learn",
+          "start": 0.199,
+          "end": 0.379
+        },
+        {
+          "id": "w1",
+          "text": "by",
+          "start": 0.439,
+          "end": 0.539
+        },
+        {
+          "id": "w2",
+          "text": "making",
+          "start": 0.639,
+          "end": 1
+        },
+        {
+          "id": "w3",
+          "text": "real",
+          "start": 1.039,
+          "end": 1.199
+        },
+        {
+          "id": "w4",
+          "text": "decisions.",
+          "start": 1.279,
+          "end": 1.879
+        }
+      ]
+    },
+    {
+      "id": "06",
+      "path": "assets/voice/06.wav",
+      "duration_s": 1.384,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Understand",
+          "start": 0.14,
+          "end": 0.639
+        },
+        {
+          "id": "w1",
+          "text": "why.",
+          "start": 0.759,
+          "end": 1.059
+        }
+      ]
+    },
+    {
+      "id": "07",
+      "path": "assets/voice/07.wav",
+      "duration_s": 2.116,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Track",
+          "start": 0.119,
+          "end": 0.399
+        },
+        {
+          "id": "w1",
+          "text": "every",
+          "start": 0.56,
+          "end": 0.779
+        },
+        {
+          "id": "w2",
+          "text": "step",
+          "start": 0.919,
+          "end": 1.159
+        },
+        {
+          "id": "w3",
+          "text": "of",
+          "start": 1.199,
+          "end": 1.299
+        },
+        {
+          "id": "w4",
+          "text": "your",
+          "start": 1.319,
+          "end": 1.379
+        },
+        {
+          "id": "w5",
+          "text": "journey.",
+          "start": 1.5,
+          "end": 1.799
+        }
+      ]
+    },
+    {
+      "id": "08",
+      "path": "assets/voice/08.wav",
+      "duration_s": 2.612,
+      "words": [
+        {
+          "id": "w0",
+          "text": "From",
+          "start": 0.159,
+          "end": 0.299
+        },
+        {
+          "id": "w1",
+          "text": "your",
+          "start": 0.359,
+          "end": 0.479
+        },
+        {
+          "id": "w2",
+          "text": "first",
+          "start": 0.519,
+          "end": 0.74
+        },
+        {
+          "id": "w3",
+          "text": "hand",
+          "start": 0.799,
+          "end": 1.079
+        },
+        {
+          "id": "w4",
+          "text": "to",
+          "start": 1.1,
+          "end": 1.179
+        },
+        {
+          "id": "w5",
+          "text": "advanced",
+          "start": 1.24,
+          "end": 1.699
+        },
+        {
+          "id": "w6",
+          "text": "strategy.",
+          "start": 1.799,
+          "end": 2.339
+        }
+      ]
+    }
+  ],
+  "sfx": [
+    {
+      "id": "01",
+      "name": "soft card swipe on the card's arrival; one low sub-bass swell under the spotlight. No click — nothing is pressed.",
+      "file": "assets/sfx/soft-card-swipe-on-the-card-s-arrival-on.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 4.916,
+      "volume": 0.35
+    },
+    {
+      "id": "02",
+      "name": "one click tick per commit (three total)",
+      "file": "assets/sfx/one-click-tick-per-commit-three-total.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 0.768,
+      "volume": 0.35
+    },
+    {
+      "id": "02",
+      "name": "each dry and small; a short muted thud on each red freeze. No casino sounds.",
+      "file": "assets/sfx/each-dry-and-small-a-short-muted-thud-on.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 1.672,
+      "volume": 0.35
+    },
+    {
+      "id": "03",
+      "name": "a slow riser building across the whole frame; layered paper/card shuffles thickening as density grows. Deliberately the noisiest 7 seconds in the film.",
+      "file": "assets/sfx/a-slow-riser-building-across-the-whole-f.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 5.387,
+      "volume": 0.35
+    },
+    {
+      "id": "04",
+      "name": "one deep implosion whoosh collapsing to silence",
+      "file": "assets/sfx/one-deep-implosion-whoosh-collapsing-to-.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 3.454,
+      "volume": 0.35
+    },
+    {
+      "id": "04",
+      "name": "then a single soft chime on the reveal. The music drops out entirely for ~0.4s at the flash — the silence is the effect.",
+      "file": "assets/sfx/then-a-single-soft-chime-on-the-reveal-t.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 7.263,
+      "volume": 0.35
+    },
+    {
+      "id": "05",
+      "name": "one continuous low airy bed under the whole move; a small hover synth as the camera centres each station — eight in total",
+      "file": "assets/sfx/one-continuous-low-airy-bed-under-the-wh.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 5.708,
+      "volume": 0.35
+    },
+    {
+      "id": "05",
+      "name": "each quieter than a click. Never a cut sound",
+      "file": "assets/sfx/each-quieter-than-a-click-never-a-cut-so.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 0.192,
+      "volume": 0.35
+    },
+    {
+      "id": "05",
+      "name": "because there are no cuts.",
+      "file": "assets/sfx/because-there-are-no-cuts.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 1.508,
+      "volume": 0.35
+    },
+    {
+      "id": "06",
+      "name": "one click tick on the commit; a soft drawer slide; then three near-inaudible hover synths",
+      "file": "assets/sfx/one-click-tick-on-the-commit-a-soft-draw.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 5.708,
+      "volume": 0.35
+    },
+    {
+      "id": "06",
+      "name": "one per highlight fire. The quietest frame in the film apart from Frame 1.",
+      "file": "assets/sfx/one-per-highlight-fire-the-quietest-fram.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 5.387,
+      "volume": 0.35
+    },
+    {
+      "id": "07",
+      "name": "a rising airy swell under the pull-back; one subtle achievement shimmer on the badge flip — the only shimmer in the entire film",
+      "file": "assets/sfx/a-rising-airy-swell-under-the-pull-back-.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 3.329,
+      "volume": 0.35
+    },
+    {
+      "id": "07",
+      "name": "so it has to be earned; small ticks under the counter climb.",
+      "file": "assets/sfx/so-it-has-to-be-earned-small-ticks-under.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 1.238,
+      "volume": 0.35
+    },
+    {
+      "id": "08",
+      "name": "a soft card swipe per module card as it lands",
+      "file": "assets/sfx/a-soft-card-swipe-per-module-card-as-it-.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 1.104,
+      "volume": 0.35
+    },
+    {
+      "id": "08",
+      "name": "staggered; one low swell under the pull-back. Nothing triumphant — the scale should read as calm",
+      "file": "assets/sfx/staggered-one-low-swell-under-the-pull-b.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 2.979,
+      "volume": 0.35
+    },
+    {
+      "id": "08",
+      "name": "not as a boast.",
+      "file": "assets/sfx/not-as-a-boast.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 3.321,
+      "volume": 0.35
+    },
+    {
+      "id": "09",
+      "name": "a soft settle as the devices recede; one warm low resolve on the lockup; a single quiet tick as Start Free lands. Music resolves and ends clean — no fade-to-nothing.",
+      "file": "assets/sfx/a-soft-settle-as-the-devices-recede-one-.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 7.263,
+      "volume": 0.35
+    }
+  ],
+  "total_duration_s": 16.3
+}

@@ -1,0 +1,51 @@
+{
+  "lines": [
+    {
+      "id": "01",
+      "sfx": [
+        "one soft paper swipe as each card settles",
+        "two total",
+        "very quiet; a low ambient pad swell under the spotlight. Nothing else."
+      ]
+    },
+    {
+      "id": "02",
+      "sfx": [
+        "one gentle airy whoosh as the card grows",
+        "very soft; a faint shimmer as the pips glow. Nothing else."
+      ]
+    },
+    {
+      "id": "03",
+      "sfx": [
+        "a gentle airy whoosh as the theory collapses; one tiny synth tick as each button resolves",
+        "three total",
+        "barely audible. No click — nothing is selected."
+      ]
+    },
+    {
+      "id": "04",
+      "sfx": [
+        "a gentle airy whoosh as the grid resolves; one soft shimmer when A5s lights; a second",
+        "quieter shimmer as the bluff combinations illuminate."
+      ]
+    },
+    {
+      "id": "05",
+      "sfx": [
+        "one glass slide as the panel opens; a faint synth tick under each emphasised phrase",
+        "three total",
+        "almost inaudible."
+      ]
+    },
+    {
+      "id": "06",
+      "sfx": [
+        "one long gentle airy whoosh as everything clears; a single warm low resolve under the lockup. Nothing on the CTA."
+      ]
+    }
+  ],
+  "bgm": {
+    "mode": "none"
+  }
+}

@@ -1,0 +1,533 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Geist";
+      src: url("capture/assets/fonts/Geist-Regular.woff2") format("woff2");
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: block;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      container-type: size;
+      font-family: "Geist", sans-serif;
+      color: #E6EAF0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── ground ─────────────────────────────────────────────── */
+    .f05-hero-bg {
+      position: absolute;
+      inset: 0;
+      background: #0C101D;
+    }
+
+    /* generic absolute layer for the track wrappers */
+    .f05-hero-layer {
+      position: absolute;
+      inset: 0;
+    }
+
+    /* ── the violet spotlight (ambient-glow-bloom, Form A) ──── */
+    .f05-hero-glow {
+      position: absolute;
+      left: 50px;
+      top: 50px;
+      width: 1300px;
+      height: 900px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at 50% 50%,
+        rgba(139, 92, 246, 0.85) 0%,
+        rgba(139, 92, 246, 0.34) 38%,
+        rgba(139, 92, 246, 0.00) 70%);
+    }
+
+    /* ── atmosphere: concentric closing rings (closing frame only) ── */
+    .f05-hero-rings {
+      position: absolute;
+      inset: 0;
+      transform-origin: 960px 470px;
+    }
+    .f05-hero-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+    }
+    .f05-hero-ring-1 { left: 650px; top: 160px;  width: 620px;  height: 620px;  border-color: rgba(139, 92, 246, 0.14); }
+    .f05-hero-ring-2 { left: 490px; top: 0px;    width: 940px;  height: 940px;  border-color: rgba(139, 92, 246, 0.10); }
+    .f05-hero-ring-3 { left: 320px; top: -170px; width: 1280px; height: 1280px; border-color: rgba(139, 92, 246, 0.06); }
+
+    /* ── planes: the surviving MacBook + the composition that clears ── */
+    .f05-hero-plane {
+      position: absolute;
+      background: #121726;
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      filter: blur(0px);
+    }
+    .f05-hero-mac    { left: 300px;  top: 250px; width: 800px; height: 500px; border-radius: 16px; }
+    .f05-hero-tablet { left: 1310px; top: 290px; width: 320px; height: 415px; border-radius: 18px; opacity: 0.9; }
+    .f05-hero-phone  { left: 1670px; top: 600px; width: 138px; height: 272px; border-radius: 18px; opacity: 0.9; }
+    .f05-hero-chip   { left: 80px;   top: 120px; width: 240px; height: 138px; border-radius: 12px; opacity: 0.9; }
+
+    .f05-hero-chin {
+      position: absolute;
+      left: 240px;
+      top: 750px;
+      width: 920px;
+      height: 12px;
+      border-radius: 0 0 12px 12px;
+      background: rgba(139, 92, 246, 0.12);
+    }
+    .f05-hero-notch {
+      position: absolute;
+      left: 50%;
+      top: 7px;
+      width: 36px;
+      height: 5px;
+      margin-left: -18px;
+      border-radius: 100px;
+      background: rgba(139, 92, 246, 0.22);
+    }
+
+    /* the interface itself — em-scaled so every plane reads as one surface */
+    .f05-hero-scr {
+      position: absolute;
+      inset: 0;
+      padding: 0.7em;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55em;
+      border-radius: inherit;
+      overflow: hidden;
+    }
+    .f05-hero-mac    .f05-hero-scr { font-size: 34px; }
+    .f05-hero-tablet .f05-hero-scr { font-size: 16px; }
+    .f05-hero-phone  .f05-hero-scr { font-size: 7px; padding-top: 1.2em; }
+    .f05-hero-chip   .f05-hero-scr { font-size: 12px; }
+
+    .f05-hero-topbar { display: flex; align-items: center; gap: 0.4em; }
+    .f05-hero-dot { width: 0.45em; height: 0.45em; border-radius: 50%; background: #8B5CF6; }
+    .f05-hero-pill { height: 0.3em; border-radius: 100px; background: rgba(230, 234, 240, 0.18); }
+
+    .f05-hero-hand { display: flex; gap: 0.3em; }
+    .f05-hero-hcard {
+      width: 0.72em;
+      height: 1.02em;
+      border-radius: 0.14em;
+      background: rgba(139, 92, 246, 0.10);
+      border: 1px solid rgba(139, 92, 246, 0.28);
+    }
+
+    .f05-hero-cards { display: flex; gap: 0.5em; flex: 1; }
+    .f05-hero-card {
+      flex: 1;
+      background: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      border-radius: 10px;
+      padding: 0.5em;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      gap: 0.35em;
+    }
+    .f05-hero-phone .f05-hero-cards { flex-direction: column; }
+    .f05-hero-num { width: 55%; height: 0.62em; border-radius: 4px; background: #8B5CF6; opacity: 0.85; }
+    .f05-hero-lab { width: 78%; height: 0.24em; border-radius: 100px; background: rgba(230, 234, 240, 0.14); }
+    .f05-hero-track { height: 0.3em; border-radius: 6px; background: rgba(139, 92, 246, 0.08); overflow: hidden; }
+    .f05-hero-fill { display: block; width: 62%; height: 100%; border-radius: 6px; background: #8B5CF6; }
+
+    /* ── the lockup: lucide spade glyph + Geist wordmark ────── */
+    .f05-hero-lockwrap {
+      position: absolute;
+      left: 0;
+      top: 330px;
+      width: 1920px;
+      height: 76px;
+    }
+    .f05-hero-seed,
+    .f05-hero-lockup {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform-origin: 50% 50%;
+    }
+    .f05-hero-seed { z-index: 1; }
+    .f05-hero-lockup { z-index: 2; }
+
+    .f05-hero-seed-core {
+      width: 148px;
+      height: 148px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 50% 50%,
+        rgba(167, 139, 250, 0.55) 0%,
+        rgba(139, 92, 246, 0.22) 45%,
+        rgba(139, 92, 246, 0.00) 72%);
+    }
+
+    .f05-hero-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .f05-hero-spade {
+      width: 50px;
+      height: 50px;
+      display: block;
+      color: #E6EAF0;
+    }
+    .f05-hero-word {
+      font-size: 2.71cqw;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #E6EAF0;
+      line-height: 1;
+    }
+
+    /* ── headline, two beats ────────────────────────────────── */
+    .f05-hero-line {
+      position: absolute;
+      left: 0;
+      width: 1920px;
+      text-align: center;
+      font-size: 5cqw;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.05;
+      color: #E6EAF0;
+      white-space: nowrap;
+    }
+    .f05-hero-l1 { top: 470px; }
+    .f05-hero-l2 { top: 585px; }
+
+    /* ── the one solid element in the entire film ───────────── */
+    .f05-hero-ctawrap {
+      position: absolute;
+      left: 0;
+      top: 760px;
+      width: 1920px;
+      text-align: center;
+    }
+    .f05-hero-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 280px;
+      height: 72px;
+      background: #8B5CF6;
+      color: #0C101D;
+      border-radius: 100px;
+      font-size: 1.25cqw;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .f05-hero-note {
+      position: absolute;
+      left: 0;
+      top: 870px;
+      width: 1920px;
+      text-align: center;
+      font-size: 1.04cqw;
+      font-weight: 400;
+      line-height: 1.2;
+      color: #728297;
+    }
+  </style>
+
+  <div id="root" data-composition-id="05-hero" data-start="0" data-duration="6" data-width="1920" data-height="1080">
+    <!-- track 0 — full-bleed midnight ground -->
+    <div class="clip f05-hero-bg" data-start="0" data-duration="6" data-track-index="0"></div>
+
+    <!-- track 1 — the violet spotlight behind the surviving MacBook -->
+    <div class="clip f05-hero-glow" id="f05-hero-glow" data-start="0" data-duration="6" data-track-index="1"></div>
+
+    <!-- track 2 — atmosphere: concentric closing rings -->
+    <div class="clip f05-hero-rings" id="f05-hero-rings" data-start="0" data-duration="6" data-track-index="2">
+      <div class="f05-hero-ring f05-hero-ring-1"></div>
+      <div class="f05-hero-ring f05-hero-ring-2"></div>
+      <div class="f05-hero-ring f05-hero-ring-3"></div>
+    </div>
+
+    <!-- track 3 — the spatial composition clears; one MacBook holds -->
+    <div class="clip f05-hero-layer" data-start="0" data-duration="6" data-track-index="3">
+      <!-- the survivor: MacBook, centre-left, interface at rest -->
+      <div class="f05-hero-plane f05-hero-mac" id="f05-hero-mac">
+        <div class="f05-hero-scr">
+          <div class="f05-hero-topbar">
+            <span class="f05-hero-dot"></span>
+            <span class="f05-hero-pill" style="width: 3.6em"></span>
+            <span class="f05-hero-pill" style="width: 2.1em"></span>
+          </div>
+          <div class="f05-hero-hand">
+            <span class="f05-hero-hcard"></span>
+            <span class="f05-hero-hcard"></span>
+            <span class="f05-hero-hcard" style="opacity: 0.55"></span>
+            <span class="f05-hero-hcard" style="opacity: 0.55"></span>
+            <span class="f05-hero-hcard" style="opacity: 0.55"></span>
+          </div>
+          <div class="f05-hero-cards">
+            <div class="f05-hero-card"><span class="f05-hero-num"></span><span class="f05-hero-lab"></span></div>
+            <div class="f05-hero-card"><span class="f05-hero-num"></span><span class="f05-hero-lab"></span></div>
+          </div>
+          <div class="f05-hero-track"><span class="f05-hero-fill"></span></div>
+        </div>
+        <div class="f05-hero-chin"></div>
+      </div>
+
+      <!-- the planes that clear -->
+      <div class="f05-hero-plane f05-hero-tablet" id="f05-hero-p0">
+        <div class="f05-hero-scr">
+          <div class="f05-hero-topbar">
+            <span class="f05-hero-dot"></span>
+            <span class="f05-hero-pill" style="width: 3.6em"></span>
+            <span class="f05-hero-pill" style="width: 2.1em"></span>
+          </div>
+          <div class="f05-hero-cards">
+            <div class="f05-hero-card"><span class="f05-hero-num"></span><span class="f05-hero-lab"></span></div>
+            <div class="f05-hero-card"><span class="f05-hero-num"></span><span class="f05-hero-lab"></span></div>
+          </div>
+          <div class="f05-hero-track"><span class="f05-hero-fill"></span></div>
+        </div>
+      </div>
+
+      <div class="f05-hero-plane f05-hero-phone" id="f05-hero-p1">
+        <div class="f05-hero-notch"></div>
+        <div class="f05-hero-scr">
+          <div class="f05-hero-topbar">
+            <span class="f05-hero-dot"></span>
+            <span class="f05-hero-pill" style="width: 3.2em"></span>
+          </div>
+          <div class="f05-hero-cards">
+            <div class="f05-hero-card"><span class="f05-hero-num"></span><span class="f05-hero-lab"></span></div>
+            <div class="f05-hero-card"><span class="f05-hero-num"></span><span class="f05-hero-lab"></span></div>
+          </div>
+          <div class="f05-hero-track"><span class="f05-hero-fill"></span></div>
+        </div>
+      </div>
+
+      <div class="f05-hero-plane f05-hero-chip" id="f05-hero-p2">
+        <div class="f05-hero-scr">
+          <div class="f05-hero-topbar">
+            <span class="f05-hero-dot"></span>
+            <span class="f05-hero-pill" style="width: 3.2em"></span>
+          </div>
+          <div class="f05-hero-cards">
+            <div class="f05-hero-card"><span class="f05-hero-num"></span><span class="f05-hero-lab"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- track 4 — the lockup resolves out of the spotlight -->
+    <div class="clip f05-hero-lockwrap" data-start="0" data-duration="6" data-track-index="4">
+      <div class="f05-hero-seed" id="f05-hero-seed">
+        <div class="f05-hero-seed-core"></div>
+      </div>
+      <div class="f05-hero-lockup" id="f05-hero-lockup">
+        <div class="f05-hero-mark">
+          <svg class="f05-hero-spade" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z" />
+            <path d="M12 18v4" />
+          </svg>
+          <div class="f05-hero-word">StackedPoker</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- track 5 — the headline, in two beats with a hold between them -->
+    <div class="clip f05-hero-layer" data-start="0" data-duration="6" data-track-index="5">
+      <div class="f05-hero-line f05-hero-l1" id="f05-hero-l1"></div>
+      <div class="f05-hero-line f05-hero-l2" id="f05-hero-l2"></div>
+    </div>
+
+    <!-- track 6 — the ask -->
+    <div class="clip f05-hero-layer" data-start="0" data-duration="6" data-track-index="6">
+      <div class="f05-hero-ctawrap">
+        <div class="f05-hero-cta" id="f05-hero-cta">Start Free</div>
+      </div>
+      <div class="f05-hero-note" id="f05-hero-note">Free to start&#160;&#160;·&#160;&#160;No credit card</div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+      window.__timelines["05-hero"] = tl;
+
+      /* ── seek-safe starting states for everything that arrives late ──
+         These are immediate gsap.set calls OUTSIDE the timeline, never
+         zero-duration tl.set(...) at position 0: a set at 0 does not
+         render while the playhead sits exactly at 0, so the first frame
+         would flash the lockup, headline and CTA before hiding them. */
+      gsap.set("#f05-hero-glow", { opacity: 0, scale: 0.86, x: 0, y: 0 });
+      gsap.set("#f05-hero-rings", { opacity: 0, scale: 0.92 });
+      gsap.set("#f05-hero-seed", { opacity: 0, scale: 0.5 });
+      gsap.set("#f05-hero-lockup", { opacity: 0, scale: 0.72 });
+      gsap.set("#f05-hero-l1", { opacity: 0 });
+      gsap.set("#f05-hero-l2", { opacity: 0 });
+      gsap.set("#f05-hero-cta", { opacity: 0 });
+      gsap.set("#f05-hero-note", { opacity: 0 });
+
+      /* ══ Scene 1 (0.0–1.2s) ═══════════════════════════════════════
+         The spatial composition fades. Every plane but one MacBook
+         recedes and blurs out; the MacBook holds centre-left with the
+         interface at rest. Hero is visible at t = 0 — no entrance on it,
+         only a hair of settle so it reads as coming to rest.          */
+      tl.fromTo(
+        "#f05-hero-mac",
+        { scale: 1.025 },
+        { scale: 1, duration: 1.15, ease: "power2.out" },
+        0
+      );
+
+      /* index-derived stagger — deterministic, no Math.random */
+      var CLEARING = ["#f05-hero-p0", "#f05-hero-p1", "#f05-hero-p2"];
+      CLEARING.forEach(function (sel, i) {
+        tl.fromTo(
+          sel,
+          { opacity: 0.9, y: 0, scale: 1, filter: "blur(0px)" },
+          {
+            opacity: 0,
+            y: 26,
+            scale: 0.94,
+            filter: "blur(11px)",
+            duration: 0.72,
+            ease: "power2.in"
+          },
+          0.1 + i * 0.16
+        );
+      });
+
+      /* ── ambient-glow-bloom · Form A (bloom-and-hold, pulse-on-arrival)
+         The halo sits BEHIND the MacBook, blooms slightly past peak and
+         eases down to a steady hold. Peak 0.30, well under the 0.45
+         ceiling; no idle breathe, because the close must end still.   */
+      tl.fromTo(
+        "#f05-hero-glow",
+        { opacity: 0, scale: 0.86 },
+        { opacity: 0.32, scale: 1.05, duration: 0.98, ease: "power2.out" },
+        0.04
+      );
+      tl.to("#f05-hero-glow", { opacity: 0.27, scale: 1.0, duration: 0.55, ease: "power2.out" }, 1.02);
+
+      /* ══ Scene 2 (1.2–2.0s) ═══════════════════════════════════════
+         The MacBook eases back and dims; the halo drifts to centre and
+         the lockup resolves inside it.                                */
+      tl.to("#f05-hero-mac", { scale: 0.9, duration: 0.7, ease: "power2.inOut" }, 1.18);
+      tl.to("#f05-hero-mac", { opacity: 0, filter: "blur(11px)", duration: 0.62, ease: "power2.in" }, 1.24);
+
+      /* the spotlight re-centres from the MacBook to the lockup */
+      tl.to("#f05-hero-glow", { x: 260, y: -30, duration: 0.92, ease: "power2.inOut" }, 1.18);
+
+      /* closing atmosphere — rings, faint, arriving with the lockup */
+      tl.fromTo(
+        "#f05-hero-rings",
+        { opacity: 0, scale: 0.92 },
+        { opacity: 1, scale: 1, duration: 1.1, ease: "power2.out" },
+        1.3
+      );
+
+      /* ── scale-swap-transition ─────────────────────────────────────
+         Outgoing: the spotlight seed shrinks + fades away (power2.in).
+         Incoming: the lockup — spade glyph + StackedPoker as ONE object
+         — arrives with weight (back.out), z-index above the outgoing,
+         both absolute/inset-0 in one wrapper on transform-origin 50%. */
+      tl.fromTo(
+        "#f05-hero-seed",
+        { opacity: 0, scale: 0.5 },
+        /* 0.30, not 0.34: the exit below fires at 1.42, and a 0.34 in-tween ran to
+           1.46 — 40ms where both tweens wrote opacity and scale on the same element.
+           Shortened rather than using overwrite:"auto", which is less predictable
+           under a seeked paused timeline and this film must render identically. */
+        { opacity: 1, scale: 1, duration: 0.30, ease: "power2.out" },
+        1.12
+      );
+      /* TRIGGER = 1.42 · EXIT_DUR = 0.30 · OVERLAP = 0.14 */
+      tl.to("#f05-hero-seed", { scale: 0.72, opacity: 0, duration: 0.3, ease: "power2.in" }, 1.42);
+      tl.fromTo(
+        "#f05-hero-lockup",
+        { scale: 0.72, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(1.5)" },
+        1.58
+      );
+
+      /* ══ Scenes 3 + 4 (2.0–4.0s) — discrete-text-sequence ══════════
+         The headline lands in TWO beats, never one. Whole text states
+         are swapped instantly at their thresholds by a reverse search,
+         with a written 0.92s hold between "Learn Poker" and
+         "By Playing." — the pause is in the script; do not shorten.   */
+      var SEQUENCE = [
+        { t: 0.0, l1: "", l2: "" },
+        { t: 2.2, l1: "Learn Poker", l2: "" },
+        { t: 3.12, l1: "Learn Poker", l2: "By Playing." }
+      ];
+
+      function stateAt(time) {
+        for (var i = SEQUENCE.length - 1; i >= 0; i--) {
+          if (time >= SEQUENCE[i].t) return SEQUENCE[i];
+        }
+        return SEQUENCE[0];
+      }
+
+      var l1 = document.getElementById("f05-hero-l1");
+      var l2 = document.getElementById("f05-hero-l2");
+      var driver = { t: 0 };
+
+      tl.to(
+        driver,
+        {
+          t: 6,
+          duration: 6,
+          ease: "none",
+          onUpdate: function () {
+            var s = stateAt(driver.t);
+            if (l1.textContent !== s.l1) l1.textContent = s.l1;
+            if (l2.textContent !== s.l2) l2.textContent = s.l2;
+          }
+        },
+        0
+      );
+
+      /* long-tail settle on each beat as its state lands */
+      tl.fromTo(
+        "#f05-hero-l1",
+        { opacity: 0, y: 32 },
+        { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" },
+        2.2
+      );
+      tl.fromTo(
+        "#f05-hero-l2",
+        { opacity: 0, y: 32 },
+        { opacity: 1, y: 0, duration: 0.66, ease: "power3.out" },
+        3.12
+      );
+
+      /* ══ Scene 5 (4.0–4.8s) ═══════════════════════════════════════
+         Start Free — the only solid, non-glass element in the film —
+         then the reassurance line under it.                           */
+      tl.fromTo(
+        "#f05-hero-cta",
+        { opacity: 0, y: 26, scale: 0.94 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.46, ease: "back.out(1.6)" },
+        4.06
+      );
+      tl.fromTo(
+        "#f05-hero-note",
+        { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.34, ease: "power2.out" },
+        4.26
+      );
+
+      /* ══ Scene 6 (4.8–6.0s) ═══════════════════════════════════════
+         Held and completely still. Nothing is scheduled past 4.60 —
+         no breathe, no drift, no jitter. The film has stopped.        */
+    })();
+  </script>
+</template>

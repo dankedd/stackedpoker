@@ -1,0 +1,71 @@
+{
+  "tts_provider": null,
+  "voice_id": null,
+  "bgm": null,
+  "bgm_pending": false,
+  "bgm_provider": null,
+  "bgm_pid": null,
+  "bgm_log": null,
+  "bgm_mode": null,
+  "bgm_target_duration_s": null,
+  "bgm_seed_duration_s": null,
+  "bgm_loop_count": null,
+  "voices": [],
+  "sfx": [
+    {
+      "id": "p1",
+      "name": "soft card place on table",
+      "file": "assets/sfx/soft-card-place-on-table.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 0.264,
+      "volume": 0.35
+    },
+    {
+      "id": "p1",
+      "name": "glass panel slide",
+      "file": "assets/sfx/glass-panel-slide.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 1.616,
+      "volume": 0.35
+    },
+    {
+      "id": "p1",
+      "name": "quiet ui tick",
+      "file": "assets/sfx/quiet-ui-tick.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 1.273,
+      "volume": 0.35
+    },
+    {
+      "id": "p2",
+      "name": "subtle shimmer",
+      "file": "assets/sfx/subtle-shimmer.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 3.329,
+      "volume": 0.35
+    },
+    {
+      "id": "p2",
+      "name": "low ambient swell",
+      "file": "assets/sfx/low-ambient-swell.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 9.286,
+      "volume": 0.35
+    },
+    {
+      "id": "p2",
+      "name": "soft tonal accent",
+      "file": "assets/sfx/soft-tonal-accent.mp3",
+      "source": "heygen",
+      "offset_s": 0,
+      "duration_s": 6.196,
+      "volume": 0.35
+    }
+  ],
+  "total_duration_s": 0
+}

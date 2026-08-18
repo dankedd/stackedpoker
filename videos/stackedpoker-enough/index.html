@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2" crossorigin="anonymous"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+      #root { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #0D1526; }
+      .scene { position: absolute; inset: 0; width: 100%; height: 100%; }
+    </style>
+  </head>
+  <body>
+    <!--
+      StackedPoker - "ENOUGH." 1080x1920, 21.7s.
+
+      MORE -> ENOUGH -> one real decision -> what do you do -> the answer ->
+      you might know the answer, but do you know why -> the range -> four more
+      ranges -> why -> the coach -> understand why -> CTA.
+
+      Scene 2 carries almost no sound on purpose: the eight tactile ticks stop,
+      one low swell sits under ENOUGH, and the mix opens again on the table.
+      That silence is the pattern interrupt.
+
+      No injected transitions - every cut is a hard cut between two numerically
+      identical frozen states.
+    -->
+    <div id="root" data-composition-id="main" data-start="0" data-duration="21.7"
+         data-width="1080" data-height="1920">
+
+      <div id="el-01-more" class="scene" data-composition-id="01-more"
+           data-composition-src="compositions/frames/01-more.html"
+           data-start="0.0" data-duration="2.3" data-track-index="1"></div>
+      <div id="el-02-enough" class="scene" data-composition-id="02-enough"
+           data-composition-src="compositions/frames/02-enough.html"
+           data-start="2.3" data-duration="0.9" data-track-index="1"></div>
+      <div id="el-03-table" class="scene" data-composition-id="03-table"
+           data-composition-src="compositions/frames/03-table.html"
+           data-start="3.2" data-duration="2.0" data-track-index="1"></div>
+      <div id="el-04-decision" class="scene" data-composition-id="04-decision"
+           data-composition-src="compositions/frames/04-decision.html"
+           data-start="5.2" data-duration="2.0" data-track-index="1"></div>
+      <div id="el-05-answer" class="scene" data-composition-id="05-answer"
+           data-composition-src="compositions/frames/05-answer.html"
+           data-start="7.2" data-duration="1.1" data-track-index="1"></div>
+      <div id="el-06-pivot" class="scene" data-composition-id="06-pivot"
+           data-composition-src="compositions/frames/06-pivot.html"
+           data-start="8.3" data-duration="1.6" data-track-index="1"></div>
+      <div id="el-07-range" class="scene" data-composition-id="07-range"
+           data-composition-src="compositions/frames/07-range.html"
+           data-start="9.9" data-duration="1.8" data-track-index="1"></div>
+      <div id="el-08-depth" class="scene" data-composition-id="08-depth"
+           data-composition-src="compositions/frames/08-depth.html"
+           data-start="11.7" data-duration="1.8" data-track-index="1"></div>
+      <div id="el-09-why" class="scene" data-composition-id="09-why"
+           data-composition-src="compositions/frames/09-why.html"
+           data-start="13.5" data-duration="1.6" data-track-index="1"></div>
+      <div id="el-10-coach" class="scene" data-composition-id="10-coach"
+           data-composition-src="compositions/frames/10-coach.html"
+           data-start="15.1" data-duration="2.2" data-track-index="1"></div>
+      <div id="el-11-payoff" class="scene" data-composition-id="11-payoff"
+           data-composition-src="compositions/frames/11-payoff.html"
+           data-start="17.3" data-duration="2.0" data-track-index="1"></div>
+      <div id="el-12-cta" class="scene" data-composition-id="12-cta"
+           data-composition-src="compositions/frames/12-cta.html"
+           data-start="19.3" data-duration="2.4" data-track-index="1"></div>
+
+      <audio id="el-01-more-voice" src="assets/voice/enough/e1.wav"
+             data-start="0.0" data-duration="2.28" data-track-index="10" data-volume="1"></audio>
+      <audio id="el-03-table-voice" src="assets/voice/enough/e2.wav"
+             data-start="3.2" data-duration="2.65" data-track-index="10" data-volume="1"></audio>
+      <audio id="el-06-pivot-voice" src="assets/voice/enough/e3.wav"
+             data-start="8.3" data-duration="1.36" data-track-index="10" data-volume="1"></audio>
+      <audio id="el-11-payoff-voice" src="assets/voice/enough/e4.wav"
+             data-start="17.3" data-duration="1.37" data-track-index="10" data-volume="1"></audio>
+      <audio id="el-12-cta-voice" src="assets/voice/enough/e5.wav"
+             data-start="19.3" data-duration="1.37" data-track-index="10" data-volume="1"></audio>
+
+      <audio id="el-bgm" src="assets/bgm/track.mp3"
+             data-start="0" data-duration="21.7" data-track-index="11" data-volume="0.42"></audio>
+
+      <audio id="el-sfx-00-u-tick" src="assets/sfx/u-tick.mp3" data-start="0.06" data-duration="0.35" data-track-index="20" data-volume="0.13"></audio>  <!-- MORE -->
+      <audio id="el-sfx-01-u-tick" src="assets/sfx/u-tick.mp3" data-start="0.52" data-duration="0.35" data-track-index="21" data-volume="0.1"></audio>  <!-- term 1 -->
+      <audio id="el-sfx-02-u-tick" src="assets/sfx/u-tick.mp3" data-start="0.69" data-duration="0.35" data-track-index="22" data-volume="0.1"></audio>  <!-- term 2 -->
+      <audio id="el-sfx-03-u-tick" src="assets/sfx/u-tick.mp3" data-start="0.86" data-duration="0.35" data-track-index="23" data-volume="0.1"></audio>  <!-- term 3 -->
+      <audio id="el-sfx-04-u-tick" src="assets/sfx/u-tick.mp3" data-start="1.03" data-duration="0.35" data-track-index="24" data-volume="0.1"></audio>  <!-- term 4 -->
+      <audio id="el-sfx-05-u-tick" src="assets/sfx/u-tick.mp3" data-start="1.2" data-duration="0.35" data-track-index="25" data-volume="0.1"></audio>  <!-- term 5 -->
+      <audio id="el-sfx-06-u-tick" src="assets/sfx/u-tick.mp3" data-start="1.37" data-duration="0.35" data-track-index="26" data-volume="0.1"></audio>  <!-- term 6 -->
+      <audio id="el-sfx-07-u-tick" src="assets/sfx/u-tick.mp3" data-start="1.54" data-duration="0.35" data-track-index="27" data-volume="0.1"></audio>  <!-- term 7 -->
+      <audio id="el-sfx-08-u-tick" src="assets/sfx/u-tick.mp3" data-start="1.71" data-duration="0.35" data-track-index="28" data-volume="0.1"></audio>  <!-- term 8 -->
+      <audio id="el-sfx-09-u-swell-short" src="assets/sfx/u-swell-short.mp3" data-start="2.58" data-duration="1.8" data-track-index="29" data-volume="0.16"></audio>  <!-- one low swell under ENOUGH -->
+      <audio id="el-sfx-10-u-glass" src="assets/sfx/u-glass.mp3" data-start="3.42" data-duration="1.62" data-track-index="30" data-volume="0.26"></audio>  <!-- the table forms -->
+      <audio id="el-sfx-11-u-card" src="assets/sfx/u-card.mp3" data-start="3.75" data-duration="0.26" data-track-index="31" data-volume="0.34"></audio>  <!-- the ace -->
+      <audio id="el-sfx-12-u-card" src="assets/sfx/u-card.mp3" data-start="3.85" data-duration="0.26" data-track-index="32" data-volume="0.3"></audio>  <!-- the five -->
+      <audio id="el-sfx-13-u-accent" src="assets/sfx/u-accent.mp3" data-start="3.09" data-duration="2.4" data-track-index="33" data-volume="0.2"></audio>  <!-- peaks on CO's raise at 4.24 -->
+      <audio id="el-sfx-14-u-tick" src="assets/sfx/u-tick.mp3" data-start="5.76" data-duration="0.35" data-track-index="34" data-volume="0.12"></audio>  <!-- option 1 -->
+      <audio id="el-sfx-15-u-tick" src="assets/sfx/u-tick.mp3" data-start="5.86" data-duration="0.35" data-track-index="35" data-volume="0.12"></audio>  <!-- option 2 -->
+      <audio id="el-sfx-16-u-tick" src="assets/sfx/u-tick.mp3" data-start="5.96" data-duration="0.35" data-track-index="36" data-volume="0.12"></audio>  <!-- option 3 -->
+      <audio id="el-sfx-17-u-shimmer" src="assets/sfx/u-shimmer.mp3" data-start="6.62" data-duration="3.32" data-track-index="37" data-volume="0.17"></audio>  <!-- peaks as 3-Bet resolves at 7.32 -->
+      <audio id="el-sfx-18-u-tick" src="assets/sfx/u-tick.mp3" data-start="8.6" data-duration="0.35" data-track-index="38" data-volume="0.11"></audio>  <!-- the pivot line -->
+      <audio id="el-sfx-19-u-glass" src="assets/sfx/u-glass.mp3" data-start="10.15" data-duration="1.62" data-track-index="39" data-volume="0.22"></audio>  <!-- the grid arrives -->
+      <audio id="el-sfx-20-u-shimmer" src="assets/sfx/u-shimmer.mp3" data-start="9.84" data-duration="3.32" data-track-index="40" data-volume="0.2"></audio>  <!-- peaks as the strategy resolves at 10.54 -->
+      <audio id="el-sfx-21-u-tick" src="assets/sfx/u-tick.mp3" data-start="11.88" data-duration="0.35" data-track-index="41" data-volume="0.16"></audio>  <!-- range 2 -->
+      <audio id="el-sfx-22-u-tick" src="assets/sfx/u-tick.mp3" data-start="12.26" data-duration="0.35" data-track-index="42" data-volume="0.16"></audio>  <!-- range 3 -->
+      <audio id="el-sfx-23-u-tick" src="assets/sfx/u-tick.mp3" data-start="12.64" data-duration="0.35" data-track-index="43" data-volume="0.16"></audio>  <!-- range 4 -->
+      <audio id="el-sfx-24-u-tick" src="assets/sfx/u-tick.mp3" data-start="13.02" data-duration="0.35" data-track-index="44" data-volume="0.16"></audio>  <!-- range 5 -->
+      <audio id="el-sfx-25-u-glass" src="assets/sfx/u-glass.mp3" data-start="13.74" data-duration="1.62" data-track-index="45" data-volume="0.18"></audio>  <!-- the reason -->
+      <audio id="el-sfx-26-u-glass" src="assets/sfx/u-glass.mp3" data-start="15.34" data-duration="1.62" data-track-index="46" data-volume="0.17"></audio>  <!-- the coach -->
+      <audio id="el-sfx-27-u-accent" src="assets/sfx/u-accent.mp3" data-start="17.2" data-duration="2.4" data-track-index="47" data-volume="0.24"></audio>  <!-- peaks on UNDERSTAND WHY. at 18.35 -->
+      <audio id="el-sfx-28-u-tick" src="assets/sfx/u-tick.mp3" data-start="20.54" data-duration="0.35" data-track-index="48" data-volume="0.11"></audio>  <!-- the CTA -->
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

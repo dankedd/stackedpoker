@@ -1,0 +1,272 @@
+<template>
+  <style>
+    @font-face { font-family:"Geist"; src:url("capture/assets/fonts/Geist-Regular.woff2") format("woff2");
+                 font-weight:100 900; font-style:normal; font-display:block; }
+    @font-face { font-family:"Geist Mono"; src:url("capture/assets/fonts/GeistMono-Regular.woff2") format("woff2");
+                 font-weight:100 900; font-style:normal; font-display:block; }
+
+    #root { position:absolute; inset:0; width:1920px; height:1080px; overflow:hidden; }
+
+    /* ---- component contract (verbatim, b- prefix) ---- */
+    .b-bg      { position:absolute; inset:0; background:#0D1526; }
+    .b-deep    { position:absolute; inset:0;
+                 background: radial-gradient(1600px 900px at 50% 118%, #080D1A 0%, rgba(8,13,26,0) 70%); }
+    .b-grid    { position:absolute; inset:0;
+                 background-image:
+                   linear-gradient(rgba(186,205,247,0.03) 1px, transparent 1px),
+                   linear-gradient(90deg, rgba(186,205,247,0.03) 1px, transparent 1px);
+                 background-size:80px 80px; }
+    .b-spot    { position:absolute; inset:0;
+                 background: radial-gradient(1200px 820px at 50% 8%,
+                   rgba(124,92,255,0.20) 0%, rgba(94,168,255,0.09) 40%, rgba(94,168,255,0) 70%); }
+    .b-ambient { position:absolute; inset:0;
+                 background: radial-gradient(1500px 700px at 50% 104%,
+                   rgba(94,168,255,0.10) 0%, rgba(94,168,255,0) 72%); }
+
+    .b-glass { background: rgba(14,24,44,0.62);
+               border: 1px solid rgba(186,205,247,0.10);
+               border-radius: 20px;
+               box-shadow: inset 0 1px 0 rgba(186,205,247,0.14), 0 40px 120px rgba(0,0,0,0.45);
+               backdrop-filter: blur(18px); }
+
+    .b-pcard { width:132px; height:186px; border-radius:12px;
+               background: linear-gradient(168deg, #FFFFFF 0%, #E8EEFB 100%);
+               display:flex; flex-direction:column; align-items:center; justify-content:center;
+               gap:12px; color:#0D1526; }
+    .b-prank { /* Geist explicitly: no frame sets font-family on #root, so an unqualified
+       rank rule renders the card ranks in the UA default SERIF. */
+      font-family:"Geist"; font-size:52px; font-weight:700; line-height:1; letter-spacing:-0.02em; }
+    .b-ppip  { display:block; width:58px; height:58px; }
+
+    .b-display  { font-family:"Geist"; font-weight:900; letter-spacing:-0.03em; color:#FFFFFF; }
+    .b-headline { font-family:"Geist"; font-weight:800; letter-spacing:-0.025em; color:#FFFFFF; }
+    .b-body     { font-family:"Geist"; font-weight:400; line-height:1.65; color:rgba(186,205,247,0.62); }
+    .b-label    { font-family:"Geist Mono"; font-weight:500; letter-spacing:0.18em;
+                  text-transform:uppercase; color:rgba(186,205,247,0.38); font-size:12px; }
+    .b-grad     { background:linear-gradient(135deg,#7C5CFF 0%,#5EA8FF 100%);
+                  -webkit-background-clip:text; background-clip:text; color:transparent; }
+
+    /* ---- inherited state (Frame 6 end): the 0.82 composition + the four words ---- */
+    #b-clear { position:absolute; inset:0; }
+    #b-stage { position:absolute; inset:0; }
+
+    #b-surface { position:absolute; left:260px; top:230px; width:1000px; height:660px; }
+
+    .b-slot  { position:absolute; width:88px; height:124px;
+               filter: drop-shadow(0 12px 22px rgba(0,0,0,0.44)); }
+    #b-slot-a { left:300px; top:270px; }
+    #b-slot-5 { left:404px; top:270px; }
+    .b-slot .b-pcard { transform:scale(0.6666667); transform-origin:0 0; }
+
+    #b-lesson-headline { position:absolute; left:300px; top:452px; width:250px;
+                         font-size:48px; line-height:58px; white-space:nowrap; }
+
+    #b-range { position:absolute; left:560px; top:270px; width:556px; height:556px;
+               display:grid; grid-template-columns:repeat(13,40px); grid-auto-rows:40px; gap:3px; }
+    /* Aligned to Frame 5, which is the state this frame inherits. These files were
+   authored before 05-the-coach.html existed, so their grid was reconstructed from
+   the storyboard and drifted: base .05 vs .055, lit .30 vs .26, hero .78/.42 vs
+   .88/.45, one missing lit cell, and label anchors 4px/2px off. Any of that is
+   visible at the seam. */
+    .b-cell     { border-radius:5px; background:rgba(186,205,247,0.055); }
+    .b-cell-on  { background:rgba(124,92,255,0.26); }
+    #b-cell-hero{ background:rgba(124,92,255,0.88); box-shadow:0 0 26px rgba(124,92,255,0.45); }
+
+    #b-cols { position:absolute; left:560px; top:242px; width:556px;
+              display:grid; grid-template-columns:repeat(13,40px); gap:3px; }
+    #b-cols div { text-align:center; line-height:16px; }
+    #b-rows { position:absolute; left:1126px; top:270px;
+              display:grid; grid-auto-rows:40px; gap:3px; }
+    #b-rows div { line-height:40px; }
+
+    #b-coach { position:absolute; left:1320px; top:330px; width:400px; height:460px;
+               box-sizing:border-box; padding:30px; display:flex; flex-direction:column; }
+    .b-coach-head { display:flex; align-items:center; gap:12px; }
+    .b-botchip { width:30px; height:30px; border-radius:10px; background:rgba(124,92,255,0.16);
+                 border:1px solid rgba(186,205,247,0.10); display:flex; align-items:center;
+                 justify-content:center; color:rgba(186,205,247,0.72); }
+    .b-botchip svg { width:16px; height:16px; }
+    .b-rule { height:1px; background:rgba(186,205,247,0.10); margin-top:24px; }
+    #b-coach-text { flex:1; display:flex; align-items:center; font-size:20px; }
+    .b-lift { color:#FFFFFF; font-weight:600; }
+
+    #b-words { position:absolute; left:340px; top:844px; width:1240px; display:flex; }
+    .b-word  { flex:1; text-align:center; font-size:14px; line-height:20px; }
+
+    /* ---- the brand frame ---- */
+    #b-mark { position:absolute; left:916px; top:300px; width:88px; height:88px; border-radius:22px;
+              background:linear-gradient(135deg,#7C5CFF 0%,#5EA8FF 100%);
+              display:flex; align-items:center; justify-content:center; color:#FFFFFF;
+              box-shadow:0 26px 64px rgba(124,92,255,0.26); }
+    #b-mark svg { display:block; width:46px; height:46px; }
+
+    #b-wordmark { position:absolute; left:0; right:0; top:424px; text-align:center;
+                  font-size:48px; line-height:56px; white-space:nowrap; }
+
+    #b-line1 { position:absolute; left:0; right:0; top:536px; text-align:center;
+               font-size:72px; line-height:84px; white-space:nowrap; }
+    #b-line2 { position:absolute; left:0; right:0; top:620px; text-align:center;
+               font-size:72px; line-height:84px; white-space:nowrap; }
+
+    #b-cta { position:absolute; left:848px; top:762px; width:224px; height:60px; border-radius:100px;
+             background:linear-gradient(135deg,#7C5CFF 0%,#5EA8FF 100%);
+             display:flex; align-items:center; justify-content:center;
+             font-family:"Geist"; font-weight:600; font-size:17px; letter-spacing:-0.01em;
+             color:#FFFFFF; box-shadow:0 26px 64px rgba(124,92,255,0.28); }
+  </style>
+
+  <div id="root" data-composition-id="07-brand" data-width="1920" data-height="1080">
+
+    <div class="clip b-bg" data-start="0" data-duration="3.5" data-track-index="0"></div>
+
+    <div id="b-ground" class="clip" data-start="0" data-duration="3.5" data-track-index="1">
+      <div class="b-deep"></div>
+      <div class="b-grid"></div>
+      <div class="b-spot"></div>
+      <div class="b-ambient"></div>
+    </div>
+
+    <div id="b-clear" class="clip" data-start="0" data-duration="3.5" data-track-index="2">
+
+      <div id="b-stage">
+
+        <div id="b-surface" class="b-glass"></div>
+
+        <div class="b-slot" id="b-slot-a">
+          <div class="b-pcard"><div class="b-prank">A</div>
+            <svg class="b-ppip" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z" fill="currentColor"/>
+              <path d="M12 17.4v4.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+            </svg></div>
+        </div>
+
+        <div class="b-slot" id="b-slot-5">
+          <div class="b-pcard"><div class="b-prank">5</div>
+            <svg class="b-ppip" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z" fill="currentColor"/>
+              <path d="M12 17.4v4.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+            </svg></div>
+        </div>
+
+        <div id="b-lesson-headline" class="b-headline">
+          <div>THINK IN</div>
+          <div class="b-grad">RANGES.</div>
+        </div>
+
+        <div id="b-cols" class="b-label">
+          <div>A</div><div>K</div><div>Q</div><div>J</div><div>T</div><div>9</div><div>8</div><div>7</div><div>6</div><div>5</div><div>4</div><div>3</div><div>2</div>
+        </div>
+        <div id="b-rows" class="b-label">
+          <div>A</div><div>K</div><div>Q</div><div>J</div><div>T</div><div>9</div><div>8</div><div>7</div><div>6</div><div>5</div><div>4</div><div>3</div><div>2</div>
+        </div>
+
+        <div id="b-range">
+          <div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell b-cell-on"></div><div class="b-cell b-cell-on"></div><div class="b-cell" id="b-cell-hero"></div><div class="b-cell b-cell-on"></div><div class="b-cell b-cell-on"></div><div class="b-cell b-cell-on"></div>
+          <div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div>
+          <div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div>
+          <div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div>
+          <div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div>
+          <div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div>
+          <div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div>
+          <div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div>
+          <div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div>
+          <div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div>
+          <div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div>
+          <div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div>
+          <div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div><div class="b-cell"></div>
+        </div>
+
+        <div id="b-coach" class="b-glass">
+          <div class="b-coach-head">
+            <div class="b-botchip">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect>
+                <path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path>
+              </svg>
+            </div>
+            <div class="b-label">AI Coach</div>
+          </div>
+          <div class="b-rule"></div>
+          <div id="b-coach-text" class="b-body">
+            <div>It <span class="b-lift">blocks the aces</span> they need to continue &mdash; and it <span class="b-lift">keeps enough equity</span> to play on.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <div id="b-words" class="b-label">
+        <div class="b-word">LEARN.</div>
+        <div class="b-word">THINK.</div>
+        <div class="b-word">UNDERSTAND.</div>
+        <div class="b-word">IMPROVE.</div>
+      </div>
+
+    </div>
+
+    <div id="b-brand" class="clip" data-start="0" data-duration="3.5" data-track-index="3">
+
+      <div id="b-mark">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z" fill="currentColor"/>
+          <path d="M12 17.4v4.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <div id="b-wordmark" class="b-headline"><span>Stacked</span> <span class="b-grad">Poker</span></div>
+
+      <div id="b-line1" class="b-display">Learn Poker.</div>
+      <div id="b-line2" class="b-display b-grad">By Playing.</div>
+
+      <div id="b-cta">Start Free</div>
+
+    </div>
+
+  </div>
+
+  <script>
+    window.__timelines = window.__timelines || {};
+
+    /* inherited state — Frame 6 ended on the composition uniformly scaled 0.82
+       about the canvas centre, with the four words lit. Set outside the timeline. */
+    gsap.set("#b-stage", { transformOrigin: "50% 50%", scale: 0.82 });
+
+    /* hidden initial states — outside the timeline, never tl.set at 0 */
+    gsap.set("#b-mark, #b-wordmark, #b-line1, #b-line2, #b-cta", { opacity: 0 });
+
+    var tl = gsap.timeline({ paused: true });
+
+    /* Scene 1 (0.0-0.9s) — the stage clears. The ground and its one spotlight stay
+       exactly as they have been all film: they neither move nor brighten. */
+    tl.fromTo("#b-clear",
+      { opacity: 1 },
+      { opacity: 0, duration: 0.86, ease: "power3.inOut" }, 0);
+
+    /* Scene 2 (0.9-1.5s) — the spade mark resolves at centre. */
+    tl.fromTo("#b-mark",
+      { opacity: 0, y: 14, scale: 0.94 },
+      { opacity: 1, y: 0, scale: 1, duration: 0.60, ease: "power3.out" }, 0.9);
+
+    /* Scene 3 (1.5-1.9s) — the wordmark. */
+    tl.fromTo("#b-wordmark",
+      { opacity: 0, y: 10 },
+      { opacity: 1, y: 0, duration: 0.42, ease: "power3.out" }, 1.5);
+
+    /* Scene 4 (1.9-2.4s) — two lines, a beat apart. Opacity and a few pixels only. */
+    tl.fromTo("#b-line1",
+      { opacity: 0, y: 12 },
+      { opacity: 1, y: 0, duration: 0.40, ease: "power3.out" }, 1.90);
+    tl.fromTo("#b-line2",
+      { opacity: 0, y: 12 },
+      { opacity: 1, y: 0, duration: 0.40, ease: "power3.out" }, 2.06);
+
+    /* Scene 5 (2.4-2.9s) — the one solid element in the film. */
+    tl.fromTo("#b-cta",
+      { opacity: 0, y: 12 },
+      { opacity: 1, y: 0, duration: 0.42, ease: "power3.out" }, 2.44);
+
+    /* Scene 6 (2.9-3.5s) — completely still. No flourish, no drift. */
+    tl.to({}, { duration: 0.1 }, 3.4);
+
+    window.__timelines["07-brand"] = tl;
+  </script>
+</template>

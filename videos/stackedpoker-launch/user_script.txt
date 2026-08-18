@@ -1,0 +1,335 @@
+"Shit... wat zou ik hier doen?"
+
+De video moet voelen als een Apple-productvideo, gecombineerd met de spanning van een echte pokerbeslissing. Geen stockbeelden, geen pokertafel in een casino, geen mensen met zonnebrillen. Het product is de held.
+
+Concept: Learn Poker by Playing
+
+Duur: 45-60 seconden
+
+Doel: Website, Meta Ads, Instagram Reels, TikTok, YouTube.
+
+Stijl:
+
+Midnight blue
+Violet/blue gradients
+Glass UI
+Cinematische sound design
+Rustige voice-over
+Premium motion graphics
+
+Scene 1 — The Question (0-4 sec)
+
+Volledig zwart.
+
+Een zachte violet spotlight verschijnt.
+
+Langzaam komt een StackedPoker decision card uit de duisternis.
+
+Een echte situatie.
+
+Flop:
+
+Q♠ 7♦ 2♣
+
+Hero is aan de beurt.
+
+Drie knoppen verschijnen.
+
+Fold
+
+Call
+
+Raise
+
+Geen knop wordt aangeklikt.
+
+Alleen stilte.
+
+Voice-over:
+
+"What would you do?"
+
+Scene 2 — Everyone Knows This Feeling (4-9 sec)
+
+Snelle cuts.
+
+Een speler klikt Call.
+
+Scherm bevriest.
+
+Rode outline.
+
+Een tweede speler kiest Raise.
+
+Ook fout.
+
+Nog iemand kiest Fold.
+
+Twijfel.
+
+Voice-over:
+
+"Every poker session is a series of decisions."
+
+Scene 3 — Traditional Learning (9-16 sec)
+
+Een gigantische stapel video's.
+
+PDF's.
+
+Charts.
+
+Notities.
+
+Ze stapelen zich op.
+
+Het scherm raakt voller.
+
+Voice-over:
+
+"Most players spend hours watching..."
+
+Alles vervaagt.
+
+Scene 4 — Transition (16-20 sec)
+
+Alle video's imploderen.
+
+Een minimalistische StackedPoker-interface verschijnt.
+
+Rust.
+
+Veel witruimte.
+
+Voice-over:
+
+"We believe there's a better way."
+
+Scene 5 — Interactive Learning (20-32 sec)
+
+Muziek bouwt op.
+
+Nu volgen snelle premium shots.
+
+Decision spot.
+
+↓
+
+Range grid.
+
+↓
+
+Board Builder.
+
+↓
+
+Drag & drop.
+
+↓
+
+Multiple choice.
+
+↓
+
+Hand reading.
+
+↓
+
+EV tree.
+
+↓
+
+Position trainer.
+
+Alles vloeiend.
+
+Geen chaos.
+
+Voice-over:
+
+"Learn by making real decisions."
+
+Scene 6 — AI Coach (32-39 sec)
+
+De gebruiker kiest een antwoord.
+
+Analyse verschijnt.
+
+Daarna schuift AI Coach open.
+
+Niet als chatbot.
+
+Maar als coach.
+
+Er verschijnt:
+
+"Your reasoning wasn't wrong..."
+
+↓
+
+"But villain's range changes everything."
+
+De uitleg wordt geanimeerd.
+
+Ranges highlighten.
+
+Board highlight.
+
+Stack highlight.
+
+Voice-over:
+
+"Understand why."
+
+Scene 7 — Progress (39-47 sec)
+
+Camera zoomt uit.
+
+Dashboard.
+
+XP stijgt.
+
+Achievement unlocked.
+
+Nieuwe module.
+
+Streak.
+
+Leaderboard.
+
+Bankroll.
+
+Alles vloeit in elkaar over.
+
+Voice-over:
+
+"Track every step of your journey."
+
+Scene 8 — Scale (47-55 sec)
+
+Nu zie je pas hoeveel er in zit.
+
+De modules verschijnen.
+
+...
+
+Daarachter verschijnen nog meer.
+
+...
+
+Allemaal als roadmap.
+
+Voice-over:
+
+"From your first hand to advanced strategy."
+
+Scene 9 — Hero Shot (55-60 sec)
+
+Langzame camera.
+
+MacBook.
+
+iPad.
+
+Telefoon.
+
+Alle drie tonen dezelfde premium interface.
+
+Midnight blue achtergrond.
+
+Violet spotlight.
+
+Logo.
+
+Headline.
+
+Learn Poker
+
+Pauze.
+
+By Playing.
+
+CTA.
+
+Start Free
+
+Muziek
+
+Geen EDM.
+
+Geen rock.
+
+Denk:
+
+Apple WWDC
+
+Linear launch
+
+Arc Browser
+
+Langzame elektronische pulsen.
+
+Veel ruimte.
+
+Subtiele bass.
+
+Motion
+
+Alles beweegt alsof het zweeft.
+
+Geen harde animaties.
+
+Veel easing.
+
+Alles komt zacht omhoog.
+
+Cards draaien nauwelijks.
+
+Veel parallax.
+
+Kleuren
+
+95%
+
+Midnight blue
+
+5%
+
+Gradient
+
+Nooit druk.
+
+Sound Design
+
+Heel belangrijk.
+
+Iedere klik:
+
+tik.
+
+Iedere kaart:
+
+zachte swipe.
+
+Hover:
+
+kleine synth.
+
+Achievement:
+
+subtiele shimmer.
+
+Geen casino-geluiden.
+
+Waarom dit werkt
+
+De video verkoopt niet "12 modules", "68 interactieve oefeningen" of "AI Coach". Hij verkoopt een gevoel:
+
+"Dit is hoe poker leren eruit zou móéten zien."
+
+De kijker ziet direct het verschil met traditionele videolessen. In plaats van passief consumeren staat hij vanaf de eerste seconde zelf voor een beslissing. Dat sluit naadloos aan bij jullie kernbelofte: Learn Poker by Playing.
+
+---
+VO_MODE: verbatim
+Voice-over lines are used exactly as written above. The surrounding Dutch text is
+scene direction, not narration.

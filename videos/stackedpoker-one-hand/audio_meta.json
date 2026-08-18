@@ -1,0 +1,231 @@
+{
+  "bgm": {
+    "path": "assets/bgm/track.mp3",
+    "volume": 0.5,
+    "query": "minimal-piano-synth-pad-ambient-calm-no-drums",
+    "duration_s": 30.0,
+    "note": "Cut from a 53s retrieval at 16-46s, then compressed (thr -26dB, 3:1) and loudness-normalised to -20 LUFS. The raw piece peaked at -0.3dB with a -17.8dB mean: loud attacks, near-silent decays, so at volume 0.30 the quiet passages measured -37 to -42dB in the render and vanished under a film that is mostly silence. Controlled range (-24 to -30dB, peak -9.2) then allows volume 0.50 without the attacks fighting the voice."
+  },
+  "bgm_pending": false,
+  "voices": [
+    {
+      "frame": 1,
+      "path": "assets/voice/01.wav",
+      "duration_s": 3.891,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Every",
+          "start": 1.379,
+          "end": 1.679
+        },
+        {
+          "id": "w1",
+          "text": "great",
+          "start": 1.7,
+          "end": 1.939
+        },
+        {
+          "id": "w2",
+          "text": "decision",
+          "start": 1.959,
+          "end": 2.499
+        },
+        {
+          "id": "w3",
+          "text": "starts",
+          "start": 2.519,
+          "end": 2.879
+        },
+        {
+          "id": "w4",
+          "text": "with",
+          "start": 2.899,
+          "end": 3.039
+        },
+        {
+          "id": "w5",
+          "text": "understanding.",
+          "start": 3.06,
+          "end": 3.7
+        }
+      ]
+    },
+    {
+      "frame": 2,
+      "path": "assets/voice/02.wav",
+      "duration_s": 2.906,
+      "words": [
+        {
+          "id": "w0",
+          "text": "First,",
+          "start": 0.569,
+          "end": 0.909
+        },
+        {
+          "id": "w1",
+          "text": "understand",
+          "start": 1.369,
+          "end": 1.889
+        },
+        {
+          "id": "w2",
+          "text": "the",
+          "start": 1.93,
+          "end": 2.009
+        },
+        {
+          "id": "w3",
+          "text": "concept.",
+          "start": 2.07,
+          "end": 2.63
+        }
+      ]
+    },
+    {
+      "frame": 3,
+      "path": "assets/voice/03.wav",
+      "duration_s": 1.965,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Then",
+          "start": 0.569,
+          "end": 0.769
+        },
+        {
+          "id": "w1",
+          "text": "make",
+          "start": 0.849,
+          "end": 0.989
+        },
+        {
+          "id": "w2",
+          "text": "the",
+          "start": 1.07,
+          "end": 1.11
+        },
+        {
+          "id": "w3",
+          "text": "decision.",
+          "start": 1.149,
+          "end": 1.649
+        }
+      ]
+    },
+    {
+      "frame": 4,
+      "path": "assets/voice/04.wav",
+      "duration_s": 2.932,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Learn",
+          "start": 0.609,
+          "end": 0.849
+        },
+        {
+          "id": "w1",
+          "text": "the",
+          "start": 0.889,
+          "end": 0.949
+        },
+        {
+          "id": "w2",
+          "text": "range,",
+          "start": 1.029,
+          "end": 1.409
+        },
+        {
+          "id": "w3",
+          "text": "not",
+          "start": 1.789,
+          "end": 1.889
+        },
+        {
+          "id": "w4",
+          "text": "just",
+          "start": 2.029,
+          "end": 2.209
+        },
+        {
+          "id": "w5",
+          "text": "the",
+          "start": 2.229,
+          "end": 2.269
+        },
+        {
+          "id": "w6",
+          "text": "hand.",
+          "start": 2.349,
+          "end": 2.67
+        }
+      ]
+    },
+    {
+      "frame": 5,
+      "path": "assets/voice/05.wav",
+      "duration_s": 2.514,
+      "words": [
+        {
+          "id": "w0",
+          "text": "Finally,",
+          "start": 0.569,
+          "end": 1.01
+        },
+        {
+          "id": "w1",
+          "text": "understand",
+          "start": 1.409,
+          "end": 1.869
+        },
+        {
+          "id": "w2",
+          "text": "why.",
+          "start": 1.93,
+          "end": 2.249
+        }
+      ]
+    },
+    {
+      "frame": 6,
+      "path": "assets/voice/06.wav",
+      "duration_s": 2.926,
+      "words": [
+        {
+          "id": "w0",
+          "text": "StackedPoker.",
+          "start": 0.159,
+          "end": 0.899
+        },
+        {
+          "id": "w1",
+          "text": "Learn",
+          "start": 1.419,
+          "end": 1.62
+        },
+        {
+          "id": "w2",
+          "text": "poker",
+          "start": 1.74,
+          "end": 2
+        },
+        {
+          "id": "w3",
+          "text": "by",
+          "start": 2.079,
+          "end": 2.159
+        },
+        {
+          "id": "w4",
+          "text": "playing.",
+          "start": 2.279,
+          "end": 2.639
+        }
+      ]
+    }
+  ],
+  "sfx": [],
+  "sfx_note": "Removed. fetch-sfx split each storyboard 'sfx:' sentence on its punctuation and retrieved every fragment as a separate sound ('two total', 'very quiet'), then the assembler mounted all of them at offset 0.00s. The result was every cue in the film firing simultaneously in the first frame, which read as a burst of notifications. A real SFX layer needs per-cue offsets the pipeline does not derive.",
+  "voice_note": "Each line carries leading silence because the assembler mounts voice at its frame's start with no offset support; without it every film opened with the narrator already speaking over the first black frame."
+}

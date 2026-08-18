@@ -1,0 +1,441 @@
+<template>
+  <div
+    id="root"
+    data-composition-id="03-decision"
+    data-start="0"
+    data-duration="6"
+    data-width="1920"
+    data-height="1080"
+  >
+    <style>
+      @font-face {
+        font-family: "Geist";
+        src: url("capture/assets/fonts/Geist-Regular.woff2") format("woff2");
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: block;
+      }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        container-type: size;
+        font-family: "Geist", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      /* ---------- ground (full-bleed clip, track 0) ---------- */
+      .fr-03-decision-ground {
+        position: absolute;
+        inset: 0;
+        background-color: #0c101d;
+      }
+      .fr-03-decision-grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+          repeating-linear-gradient(
+            to right,
+            rgba(139, 92, 246, 0.03) 0px,
+            rgba(139, 92, 246, 0.03) 1px,
+            transparent 1px,
+            transparent 80px
+          ),
+          repeating-linear-gradient(
+            to bottom,
+            rgba(139, 92, 246, 0.03) 0px,
+            rgba(139, 92, 246, 0.03) 1px,
+            transparent 1px,
+            transparent 80px
+          );
+      }
+      .fr-03-decision-spot {
+        position: absolute;
+        left: 260px;
+        top: -220px;
+        width: 1400px;
+        height: 1400px;
+        background: radial-gradient(
+          circle at 50% 50%,
+          rgba(139, 92, 246, 0.15) 0%,
+          rgba(139, 92, 246, 0.07) 34%,
+          rgba(139, 92, 246, 0) 66%
+        );
+      }
+      .fr-03-decision-ambient {
+        position: absolute;
+        left: 360px;
+        top: 560px;
+        width: 1200px;
+        height: 760px;
+        background: radial-gradient(
+          ellipse at 50% 50%,
+          rgba(59, 130, 246, 0.07) 0%,
+          rgba(59, 130, 246, 0.03) 42%,
+          rgba(59, 130, 246, 0) 72%
+        );
+      }
+
+      /* ---------- stage (track 1) ---------- */
+      .fr-03-decision-stage {
+        position: absolute;
+        inset: 0;
+      }
+
+      /* the lesson card — glass */
+      #fr-03-decision-card {
+        position: absolute;
+        left: 580px;
+        top: 280px;
+        width: 760px;
+        height: 600px;
+        background-color: rgba(139, 92, 246, 0.04);
+        border: 1.5px solid rgba(139, 92, 246, 0.2);
+        border-radius: 14px;
+        box-shadow: none;
+      }
+
+      /* ---------- type ---------- */
+      #fr-03-decision-eyebrow {
+        position: absolute;
+        left: 580px;
+        top: 324px;
+        width: 760px;
+        text-align: center;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        line-height: 1.2;
+        color: #a78bfa;
+      }
+      #fr-03-decision-title {
+        position: absolute;
+        left: 580px;
+        top: 356px;
+        width: 760px;
+        text-align: center;
+        font-size: 32px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        color: #e6eaf0;
+      }
+      #fr-03-decision-context {
+        position: absolute;
+        left: 580px;
+        top: 396px;
+        width: 760px;
+        text-align: center;
+        font-size: 20px;
+        font-weight: 400;
+        line-height: 1.6;
+        color: #728297;
+      }
+      #fr-03-decision-divider {
+        position: absolute;
+        left: 700px;
+        top: 700px;
+        width: 520px;
+        height: 1.5px;
+        background: linear-gradient(
+          to right,
+          rgba(139, 92, 246, 0) 0%,
+          rgba(139, 92, 246, 0.2) 18%,
+          rgba(139, 92, 246, 0.2) 82%,
+          rgba(139, 92, 246, 0) 100%
+        );
+      }
+      #fr-03-decision-theory {
+        position: absolute;
+        left: 700px;
+        top: 732px;
+        width: 520px;
+        text-align: center;
+        font-size: 20px;
+        font-weight: 400;
+        line-height: 1.6;
+        color: #728297;
+      }
+      #fr-03-decision-question {
+        position: absolute;
+        left: 580px;
+        top: 688px;
+        width: 760px;
+        text-align: center;
+        font-size: 32px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        line-height: 1.25;
+        color: #e6eaf0;
+      }
+
+      /* ---------- buttons — glass pills, never solid, never violet ---------- */
+      #fr-03-decision-buttons {
+        position: absolute;
+        left: 580px;
+        top: 756px;
+        width: 760px;
+        height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+      }
+      .fr-03-decision-btn {
+        width: 168px;
+        height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(139, 92, 246, 0.04);
+        border: 1.5px solid rgba(139, 92, 246, 0.2);
+        border-radius: 100px;
+        box-shadow: none;
+        font-size: 20px;
+        font-weight: 500;
+        line-height: 1;
+        color: #728297;
+      }
+
+      /* ---------- the two poker cards — the spine, they never move ----------
+         The canonical card, identical in every frame: 132x186, one light
+         glass face, one centred rank over one centred spade. */
+      .fr-03-decision-pcard {
+        position: absolute;
+        top: 470px;
+        width: 132px;
+        height: 186px;
+        border-radius: 10px;
+        background: linear-gradient(168deg, #f4f6fa 0%, #e3e7f0 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        color: #0c101d;
+      }
+      #fr-03-decision-pcard-a {
+        left: 818px;
+      }
+      #fr-03-decision-pcard-5 {
+        left: 970px;
+      }
+      .fr-03-decision-rank {
+        font-size: 48px;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.02em;
+      }
+      /* Both pips sit at the settled glow the previous state leaves them at
+         (envelope rest = 0.4): the exact filter / colour Frame 2 paints from
+         4.20s onward, transcribed as static CSS so the 10s seam cannot move. */
+      .fr-03-decision-pip {
+        display: block;
+        width: 56px;
+        height: 56px;
+        color: rgb(35, 22, 74);
+        filter: drop-shadow(0 0 7.2px rgba(167, 139, 250, 0.348))
+          drop-shadow(0 0 15.84px rgba(139, 92, 246, 0.191));
+      }
+      /* the ace pip also carries the rest of its scale boost (1 + 0.03 * 0.4) */
+      #fr-03-decision-pcard-a .fr-03-decision-pip {
+        transform: scale(1.012);
+      }
+    
+    /* ===== CANONICAL GROUND — byte-identical in all six frames =====
+       Each frame originally authored its own lighting, so the blue glow,
+       the spotlight position and the blueprint pitch (48px vs 80px) all
+       changed at the seams. Values are forced here; animations are left
+       alone, so Frame 1 still blooms out of darkness and lands exactly
+       on this shared state at 5.0s. ===== */
+    .fr-03-decision-ground { background: #0C101D !important; }
+    .fr-03-decision-grid { background-image:
+    linear-gradient(rgba(139,92,246,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139,92,246,0.03) 1px, transparent 1px) !important;
+  background-size: 80px 80px !important;
+  opacity: 1 !important; }
+    .fr-03-decision-spot { background: radial-gradient(1100px 760px at 960px 470px,
+    rgba(139,92,246,0.17) 0%, rgba(139,92,246,0.07) 38%, rgba(139,92,246,0) 66%) !important; }
+    .fr-03-decision-ambient { background: radial-gradient(1400px 900px at 500px 950px,
+    rgba(96,132,200,0.07) 0%, rgba(96,132,200,0.03) 42%, rgba(96,132,200,0) 72%) !important; }
+  </style>
+
+    <!-- ground -->
+    <div
+      class="clip fr-03-decision-ground"
+      data-start="0"
+      data-duration="6"
+      data-track-index="0"
+    >
+      <div class="fr-03-decision-grid"></div>
+      <div class="fr-03-decision-spot"></div>
+      <div class="fr-03-decision-ambient"></div>
+    </div>
+
+    <!-- stage -->
+    <div
+      class="clip fr-03-decision-stage"
+      data-start="0"
+      data-duration="6"
+      data-track-index="1"
+    >
+      <div id="fr-03-decision-card"></div>
+
+      <div id="fr-03-decision-eyebrow">Lesson</div>
+      <div id="fr-03-decision-title">Suited Aces</div>
+
+      <div id="fr-03-decision-context">BTN opens.</div>
+
+      <!-- A&spades; -->
+      <div class="fr-03-decision-pcard" id="fr-03-decision-pcard-a">
+        <div class="fr-03-decision-rank">A</div>
+        <svg
+          class="fr-03-decision-pip"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z"
+            fill="currentColor"
+          />
+          <path
+            d="M12 17.4v4.6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.6"
+            stroke-linecap="round"
+          />
+        </svg>
+      </div>
+
+      <!-- 5&spades; -->
+      <div class="fr-03-decision-pcard" id="fr-03-decision-pcard-5">
+        <div class="fr-03-decision-rank">5</div>
+        <svg
+          class="fr-03-decision-pip"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z"
+            fill="currentColor"
+          />
+          <path
+            d="M12 17.4v4.6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.6"
+            stroke-linecap="round"
+          />
+        </svg>
+      </div>
+
+      <!-- inherited theory block — collapses upward -->
+      <div id="fr-03-decision-divider"></div>
+      <div id="fr-03-decision-theory">
+        Suited aces are powerful bluffing candidates because they block premium
+        hands while retaining excellent playability.
+      </div>
+
+      <!-- the decision -->
+      <div id="fr-03-decision-question">What would you do?</div>
+      <div id="fr-03-decision-buttons">
+        <div class="fr-03-decision-btn" id="fr-03-decision-btn-1">Fold</div>
+        <div class="fr-03-decision-btn" id="fr-03-decision-btn-2">Call</div>
+        <div class="fr-03-decision-btn" id="fr-03-decision-btn-3">3-Bet</div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+
+        var CARD = "#fr-03-decision-card";
+        var TITLE = "#fr-03-decision-title";
+        var THEORY = "#fr-03-decision-theory";
+        var DIVIDER = "#fr-03-decision-divider";
+        var CONTEXT = "#fr-03-decision-context";
+        var QUESTION = "#fr-03-decision-question";
+        var BTN1 = "#fr-03-decision-btn-1";
+        var BTN2 = "#fr-03-decision-btn-2";
+        var BTN3 = "#fr-03-decision-btn-3";
+
+        // Pre-timeline hidden states for everything that has not resolved yet.
+        // The inherited image (card 760x600, cards, theory, glowing ace pips)
+        // is authored in the DOM and is NOT touched at t = 0 — the seam is invisible.
+        gsap.set([CONTEXT, QUESTION, BTN1, BTN2, BTN3], { opacity: 0 });
+
+        var tl = gsap.timeline({ paused: true });
+
+        // Scene 1 (0.00-0.30) — the inherited state, completely static. No tween exists here.
+
+        // Scene 2 (0.30-1.20) — the theory collapses upward and the card height eases 600 -> 560.
+        tl.to(
+          THEORY,
+          { opacity: 0, y: -16, duration: 0.5, ease: "power3.out" },
+          0.3
+        );
+        tl.to(
+          DIVIDER,
+          { opacity: 0, y: -16, duration: 0.5, ease: "power3.out" },
+          0.3
+        );
+        tl.to(
+          TITLE,
+          { opacity: 0, y: -10, duration: 0.45, ease: "power3.out" },
+          0.32
+        );
+        tl.to(
+          CARD,
+          { height: 560, duration: 0.85, ease: "power3.out" },
+          0.35
+        );
+        // The two poker cards are absolutely positioned siblings of the lesson
+        // card, so the height ease cannot reflow them. They do not move.
+
+        // Scene 3 (1.20-2.00) — the decision resolves into the freed space.
+        tl.fromTo(
+          CONTEXT,
+          { opacity: 0, y: 10 },
+          { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" },
+          1.18
+        );
+        tl.fromTo(
+          QUESTION,
+          { opacity: 0, y: 10 },
+          { opacity: 1, y: 0, duration: 0.48, ease: "power3.out" },
+          1.28
+        );
+        // one pill per synth tick — three, then nothing
+        tl.fromTo(
+          BTN1,
+          { opacity: 0, y: 12 },
+          { opacity: 1, y: 0, duration: 0.36, ease: "power3.out" },
+          1.4
+        );
+        tl.fromTo(
+          BTN2,
+          { opacity: 0, y: 12 },
+          { opacity: 1, y: 0, duration: 0.36, ease: "power3.out" },
+          1.52
+        );
+        tl.fromTo(
+          BTN3,
+          { opacity: 0, y: 12 },
+          { opacity: 1, y: 0, duration: 0.36, ease: "power3.out" },
+          1.64
+        );
+
+        // Scene 4 (2.00-6.00) — held. Nothing is selected, nothing is highlighted,
+        // nothing moves. An inert driver only carries the timeline to full length.
+        tl.to({ hold: 0 }, { hold: 1, duration: 4, ease: "none" }, 2.0);
+
+        window.__timelines["03-decision"] = tl;
+      })();
+    </script>
+  </div>
+</template>

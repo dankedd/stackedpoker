@@ -1,0 +1,351 @@
+{
+  "typography": [
+    {
+      "role": "display",
+      "fontFamily": "Geist",
+      "fontSize": "72px",
+      "fontWeight": "900",
+      "lineHeight": "75.6px",
+      "letterSpacing": "-1.8px",
+      "color": "#E6EAF0",
+      "sampleText": "Think in ranges.Play with purpose."
+    },
+    {
+      "role": "heading",
+      "fontFamily": "Geist",
+      "fontSize": "44px",
+      "fontWeight": "900",
+      "lineHeight": "50.6px",
+      "letterSpacing": "-1.1px",
+      "color": "#E6EAF0",
+      "sampleText": "Don't just memorize charts.Learn how poker decisions actuall"
+    },
+    {
+      "role": "body",
+      "fontFamily": "Geist",
+      "fontSize": "20px",
+      "fontWeight": "400",
+      "lineHeight": "28px",
+      "letterSpacing": "normal",
+      "color": "#728297",
+      "sampleText": "Master poker strategy through interactive lessons, real deci"
+    },
+    {
+      "role": "heading-3",
+      "fontFamily": "Geist",
+      "fontSize": "18px",
+      "fontWeight": "700",
+      "lineHeight": "28px",
+      "letterSpacing": "-0.45px",
+      "color": "#E6EAF0",
+      "sampleText": "Learn"
+    },
+    {
+      "role": "heading-3",
+      "fontFamily": "Geist",
+      "fontSize": "14px",
+      "fontWeight": "700",
+      "lineHeight": "20px",
+      "letterSpacing": "-0.35px",
+      "color": "#E6EAF0",
+      "sampleText": "Poker Fundamentals"
+    },
+    {
+      "role": "link",
+      "fontFamily": "Geist",
+      "fontSize": "13px",
+      "fontWeight": "600",
+      "lineHeight": "19.5px",
+      "letterSpacing": "normal",
+      "color": "#CBD5E1",
+      "sampleText": "Learn"
+    },
+    {
+      "role": "code",
+      "fontFamily": "Geist Mono",
+      "fontSize": "12px",
+      "fontWeight": "400",
+      "lineHeight": "16px",
+      "letterSpacing": "normal",
+      "color": "#728297",
+      "sampleText": "You raised BTN, BB called. Range advantage is yours — what's"
+    }
+  ],
+  "spacing": {
+    "observed": [
+      1,
+      2,
+      4,
+      6,
+      8,
+      10,
+      12,
+      14,
+      16,
+      20,
+      24,
+      28
+    ],
+    "baseUnit": 4
+  },
+  "radius": [
+    "5.6px 16px 16px",
+    "9.6px",
+    "12px",
+    "16px",
+    "9999px"
+  ],
+  "shadows": [
+    {
+      "value": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.25) 0px 20px 25px -5px, rgba(0, 0, 0, 0.25) 0px 8px 10px -6px",
+      "count": 1
+    },
+    {
+      "value": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(139, 92, 246, 0.35) 0px 10px 15px -3px, rgba(139, 92, 246, 0.35) 0px 4px 6px -4px",
+      "count": 1
+    }
+  ],
+  "buttons": [
+    {
+      "label": "Start learning",
+      "background": "transparent",
+      "backgroundImage": "linear-gradient(to right, rgb(124, 58, 237), rgb(59, 130, 246))",
+      "backdropFilter": "",
+      "color": "#FFFFFF",
+      "padding": "14px 28px",
+      "borderRadius": "16px",
+      "border": "0px solid rgb(36, 42, 56)",
+      "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(139, 92, 246, 0.35) 0px 10px 15px -3px, rgba(139, 92, 246, 0.35) 0px 4px 6px -4px",
+      "fontSize": "15px",
+      "fontWeight": "600",
+      "height": "50.5px"
+    },
+    {
+      "label": "Fold",
+      "background": "#191F2E",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#E6EAF0",
+      "padding": "14px 16px",
+      "borderRadius": "12px",
+      "border": "1px solid rgba(36, 42, 56, 0.5)",
+      "boxShadow": "none",
+      "fontSize": "14px",
+      "fontWeight": "600",
+      "height": "50px"
+    },
+    {
+      "label": "Check",
+      "background": "#000000",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#728297",
+      "padding": "6px",
+      "borderRadius": "9.6px",
+      "border": "1px solid rgba(36, 42, 56, 0.4)",
+      "boxShadow": "none",
+      "fontSize": "11px",
+      "fontWeight": "400",
+      "height": "30.5px"
+    },
+    {
+      "label": "All Time",
+      "background": "#8B5CF6",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#C4B5FD",
+      "padding": "6px 14px",
+      "borderRadius": "9999px",
+      "border": "1px solid rgba(139, 92, 246, 0.3)",
+      "boxShadow": "none",
+      "fontSize": "12px",
+      "fontWeight": "600",
+      "height": "32px"
+    },
+    {
+      "label": "24 Hours",
+      "background": "transparent",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#728297",
+      "padding": "6px 14px",
+      "borderRadius": "9999px",
+      "border": "1px solid rgba(0, 0, 0, 0)",
+      "boxShadow": "none",
+      "fontSize": "12px",
+      "fontWeight": "600",
+      "height": "32px"
+    }
+  ],
+  "cards": [
+    {
+      "label": "card",
+      "background": "#121726",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#E6EAF0",
+      "padding": "0px",
+      "borderRadius": "0px",
+      "border": "",
+      "boxShadow": "none",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "height": "115px"
+    },
+    {
+      "label": "card",
+      "background": "#121726",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#E6EAF0",
+      "padding": "112px 0px",
+      "borderRadius": "0px",
+      "border": "0px solid rgb(36, 42, 56)",
+      "boxShadow": "none",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "height": "1157.62px"
+    },
+    {
+      "label": "card",
+      "background": "#121726",
+      "backgroundImage": "",
+      "backdropFilter": "blur(4px)",
+      "color": "#E6EAF0",
+      "padding": "64px 56px",
+      "borderRadius": "24px",
+      "border": "1px solid rgba(139, 92, 246, 0.2)",
+      "boxShadow": "none",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "height": "515px"
+    }
+  ],
+  "nav": {
+    "label": "navigation",
+    "background": "#0D1526",
+    "backgroundImage": "",
+    "backdropFilter": "blur(24px)",
+    "color": "#E6EAF0",
+    "padding": "14px 20px",
+    "borderRadius": "16px",
+    "border": "1px solid rgba(255, 255, 255, 0.07)",
+    "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.25) 0px 20px 25px -5px, rgba(0, 0, 0, 0.25) 0px 8px 10px -6px",
+    "fontSize": "16px",
+    "fontWeight": "400",
+    "height": "65.5px"
+  },
+  "chips": [
+    {
+      "label": "D",
+      "background": "#FFFFFF",
+      "color": "#262626",
+      "padding": "0px",
+      "borderRadius": "9999px",
+      "border": "1px solid rgba(0, 0, 0, 0.1)",
+      "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.05) 0px 1px 2px 0px",
+      "fontSize": "8px",
+      "fontWeight": "900",
+      "height": "16px"
+    },
+    {
+      "label": "AA",
+      "background": "#000000",
+      "color": "#FFFFFF",
+      "padding": "0px 2px",
+      "borderRadius": "5.6px",
+      "border": "0px solid rgb(36, 42, 56)",
+      "boxShadow": "none",
+      "fontSize": "10px",
+      "fontWeight": "700",
+      "height": "10px"
+    }
+  ],
+  "statCells": [],
+  "tabs": [
+    {
+      "label": "3.8 BB",
+      "background": "transparent",
+      "color": "#FDE68A",
+      "padding": "0px",
+      "borderRadius": "0px",
+      "border": "0px solid rgb(36, 42, 56)",
+      "boxShadow": "none",
+      "fontSize": "13px",
+      "fontWeight": "900",
+      "height": "19.5px"
+    },
+    {
+      "label": "0.5",
+      "background": "transparent",
+      "color": "#E2E8F0",
+      "padding": "0px",
+      "borderRadius": "0px",
+      "border": "0px solid rgb(36, 42, 56)",
+      "boxShadow": "none",
+      "fontSize": "10px",
+      "fontWeight": "700",
+      "height": "10px"
+    },
+    {
+      "label": "2.3",
+      "background": "transparent",
+      "color": "#E0F2FE",
+      "padding": "0px",
+      "borderRadius": "0px",
+      "border": "0px solid rgb(36, 42, 56)",
+      "boxShadow": "none",
+      "fontSize": "10px",
+      "fontWeight": "700",
+      "height": "10px"
+    },
+    {
+      "label": "PREFLOP · 100BB EFFECTIV",
+      "background": "transparent",
+      "color": "#FFFFFF",
+      "padding": "0px",
+      "borderRadius": "0px",
+      "border": "0px solid rgb(36, 42, 56)",
+      "boxShadow": "none",
+      "fontSize": "10px",
+      "fontWeight": "500",
+      "height": "15px"
+    }
+  ],
+  "backgrounds": [
+    {
+      "value": "radial-gradient(at 20% 0px, rgba(124, 92, 255, 0.06) 0px, rgba(0, 0, 0, 0) 50%), radial-gradient(at 80% 0px, rgba(56, 189, 248, 0.03) 0px, rgba(0, 0, 0, 0) 45%), radial-gradient(at 50% 0px, rgba(124, 92, 255, 0.07) 0px, rgba(0, 0, 0, 0) 60%)",
+      "area": 17708730
+    },
+    {
+      "value": "linear-gradient(rgba(186, 215, 247, 0.05) 1px, rgba(0, 0, 0, 0) 0px), linear-gradient(90deg, rgba(186, 215, 247, 0.05) 1px, rgba(0, 0, 0, 0) 0px)",
+      "area": 2842350
+    },
+    {
+      "value": "conic-gradient(from 180deg at 50% -5%, rgba(0, 0, 0, 0) 45%, rgba(124, 145, 182, 0.28) 49%, rgba(124, 145, 182, 0.4) 50%, rgba(124, 145, 182, 0.28) 51%, rgba(0, 0, 0, 0) 55%)",
+      "area": 998400
+    },
+    {
+      "value": "radial-gradient(at 50% 40%, rgba(21, 63, 46, 0.92) 0%, rgba(13, 44, 32, 0.95) 55%, rgba(7, 26, 20, 0.97) 100%)",
+      "area": 166698
+    },
+    {
+      "value": "linear-gradient(rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.016) 100%)",
+      "area": 189681
+    },
+    {
+      "value": "linear-gradient(to right, rgb(167, 139, 250), rgb(147, 197, 253), rgb(139, 92, 246))",
+      "area": 59870
+    }
+  ],
+  "glass": [
+    {
+      "backdropFilter": "blur(24px)",
+      "background": "rgba(13, 21, 38, 0.85)",
+      "border": "1px solid rgba(255, 255, 255, 0.07)",
+      "borderRadius": "16px",
+      "boxShadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.25) 0px 20px 25px -5px, rgba(0, 0, 0, 0.25) 0px 8px 10px -6px",
+      "area": 62880
+    }
+  ]
+}

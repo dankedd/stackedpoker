@@ -1,0 +1,37 @@
+{
+  "provider": "heygen",
+  "speed": 1,
+  "lines": [
+    {
+      "id": "01",
+      "text": "You have a decision to make."
+    },
+    {
+      "id": "03",
+      "text": "StackedPoker doesn't just show you the answer."
+    },
+    {
+      "id": "04",
+      "text": "It shows you the range."
+    },
+    {
+      "id": "05",
+      "text": "And why it works."
+    },
+    {
+      "id": "06",
+      "text": "Still wondering? Ask your coach."
+    },
+    {
+      "id": "07",
+      "text": "Learn poker by playing."
+    }
+  ],
+  "bgm": {
+    "mode": "retrieve",
+    "query": "minimal-cinematic-ambient-pad-soft-piano-no-drums",
+    "blob": "One real decision from a real lesson becomes a whole strategy",
+    "arc": "Spot → Decision → Range → Theory → Coach → Brand"
+  },
+  "voice": "06c816b952f14fa9b3a6c42aa151f731"
+}

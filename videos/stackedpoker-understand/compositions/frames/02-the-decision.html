@@ -1,0 +1,594 @@
+<template>
+  <div
+    id="root"
+    data-composition-id="02-the-decision"
+    data-start="0"
+    data-duration="5.5"
+    data-width="1920"
+    data-height="1080"
+  >
+    <style>
+      @font-face {
+        font-family: "Geist";
+        src: url("capture/assets/fonts/Geist-Regular.woff2") format("woff2");
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: block;
+      }
+      @font-face {
+        font-family: "Geist Mono";
+        src: url("capture/assets/fonts/GeistMono-Regular.woff2") format("woff2");
+        font-weight: 100 900;
+        font-style: normal;
+        font-display: block;
+      }
+
+      #root {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        font-family: "Geist", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      #root * {
+        box-sizing: border-box;
+      }
+
+      /* ---------- ground — canonical, identical in every frame ---------- */
+      .fr-02-the-decision-bg {
+        position: absolute;
+        inset: 0;
+        background: #0d1526;
+      }
+      .fr-02-the-decision-deep {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          1600px 900px at 50% 118%,
+          #080d1a 0%,
+          rgba(8, 13, 26, 0) 70%
+        );
+      }
+      .fr-02-the-decision-grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(186, 205, 247, 0.03) 1px, transparent 1px),
+          linear-gradient(
+            90deg,
+            rgba(186, 205, 247, 0.03) 1px,
+            transparent 1px
+          );
+        background-size: 80px 80px;
+      }
+      .fr-02-the-decision-spot {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          1200px 820px at 50% 8%,
+          rgba(124, 92, 255, 0.2) 0%,
+          rgba(94, 168, 255, 0.09) 40%,
+          rgba(94, 168, 255, 0) 70%
+        );
+      }
+      .fr-02-the-decision-ambient {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(
+          1500px 700px at 50% 104%,
+          rgba(94, 168, 255, 0.1) 0%,
+          rgba(94, 168, 255, 0) 72%
+        );
+      }
+
+      /* ---------- stage ---------- */
+      .fr-02-the-decision-stage {
+        position: absolute;
+        inset: 0;
+      }
+
+      /* ---------- the glass surface — 460,250,1000,620 ----------
+         It grows from 70% centred on the CARDS (origin 50% / 50.48%),
+         and the 1px hairline + 20px radius are counter-scaled every
+         frame of the tween so neither ever renders distorted. */
+      #fr-02-the-decision-surface {
+        position: absolute;
+        left: 460px;
+        top: 250px;
+        width: 1000px;
+        height: 620px;
+        background: rgba(14, 24, 44, 0.62);
+        border: 1px solid rgba(186, 205, 247, 0.1);
+        border-radius: 20px;
+        box-shadow:
+          inset 0 1px 0 rgba(186, 205, 247, 0.14),
+          0 40px 120px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(18px);
+        transform-origin: 50% 50.48%;
+      }
+
+      /* ---------- type ---------- */
+      .fr-02-the-decision-display {
+        font-family: "Geist";
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        color: #ffffff;
+      }
+      .fr-02-the-decision-label {
+        font-family: "Geist Mono";
+        font-weight: 500;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: rgba(186, 205, 247, 0.38);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      /* the inherited headline — the only thing that leaves */
+      #fr-02-the-decision-headline {
+        position: absolute;
+        left: 0;
+        top: 324px;
+        width: 1920px;
+        text-align: center;
+        font-size: 64px;
+        line-height: 1;
+        text-transform: uppercase;
+      }
+
+      /* context row */
+      #fr-02-the-decision-ctx-left {
+        position: absolute;
+        left: 500px;
+        top: 290px;
+        text-align: left;
+      }
+      #fr-02-the-decision-ctx-right {
+        position: absolute;
+        left: 1020px;
+        top: 290px;
+        width: 400px;
+        text-align: right;
+      }
+      #fr-02-the-decision-rule {
+        position: absolute;
+        left: 500px;
+        top: 326px;
+        width: 920px;
+        height: 1px;
+        background: rgba(186, 205, 247, 0.07);
+        transform-origin: 50% 50%;
+      }
+
+      /* six-seat ellipse — the table, as a diagram, at the lowest weight */
+      #fr-02-the-decision-ring {
+        position: absolute;
+        left: 510px;
+        top: 350px;
+        width: 900px;
+        height: 360px;
+      }
+      .fr-02-the-decision-seat {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(186, 205, 247, 0.2);
+      }
+      #fr-02-the-decision-seat-hero {
+        position: absolute;
+        left: 954px;
+        top: 674px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: rgba(124, 92, 255, 0.85);
+        box-shadow: 0 0 18px rgba(124, 92, 255, 0.35);
+      }
+
+      #fr-02-the-decision-pot {
+        position: absolute;
+        left: 460px;
+        top: 408px;
+        width: 1000px;
+        text-align: center;
+        font-size: 13px;
+        color: rgba(186, 205, 247, 0.5);
+      }
+      #fr-02-the-decision-hero {
+        position: absolute;
+        left: 460px;
+        top: 694px;
+        width: 1000px;
+        text-align: center;
+        font-size: 12px;
+        color: rgba(186, 205, 247, 0.5);
+      }
+
+      /* ---------- the two cards — the spine. They never move. ---------- */
+      .fr-02-the-decision-pcard {
+        position: absolute;
+        top: 470px;
+        width: 132px;
+        height: 186px;
+        border-radius: 12px;
+        background: linear-gradient(168deg, #ffffff 0%, #e8eefb 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        color: #0d1526;
+      }
+      #fr-02-the-decision-pcard-a {
+        left: 816px;
+      }
+      #fr-02-the-decision-pcard-5 {
+        left: 972px;
+      }
+      .fr-02-the-decision-prank {
+        font-family: "Geist";
+        font-size: 52px;
+        font-weight: 700;
+        line-height: 1;
+        letter-spacing: -0.02em;
+      }
+      .fr-02-the-decision-ppip {
+        display: block;
+        width: 58px;
+        height: 58px;
+      }
+
+      /* ---------- the question and the three unpressed actions ---------- */
+      #fr-02-the-decision-question {
+        position: absolute;
+        left: 460px;
+        top: 730px;
+        width: 1000px;
+        text-align: center;
+        font-family: "Geist";
+        font-weight: 700;
+        font-size: 30px;
+        line-height: 1.2;
+        letter-spacing: -0.02em;
+        color: #ffffff;
+      }
+      .fr-02-the-decision-pill {
+        position: absolute;
+        top: 792px;
+        width: 196px;
+        height: 54px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(14, 24, 44, 0.62);
+        border: 1px solid rgba(186, 205, 247, 0.1);
+        border-radius: 100px;
+        box-shadow:
+          inset 0 1px 0 rgba(186, 205, 247, 0.14),
+          0 40px 120px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(18px);
+        font-family: "Geist Mono";
+        font-weight: 500;
+        font-size: 15px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        line-height: 1;
+        color: rgba(186, 205, 247, 0.62);
+      }
+      #fr-02-the-decision-pill-1 {
+        left: 640px;
+      }
+      #fr-02-the-decision-pill-2 {
+        left: 862px;
+      }
+      #fr-02-the-decision-pill-3 {
+        left: 1084px;
+      }
+    </style>
+
+    <!-- ground — full-bleed clip, lowest track -->
+    <div
+      class="clip fr-02-the-decision-bg"
+      data-start="0"
+      data-duration="5.5"
+      data-track-index="0"
+    >
+      <div class="fr-02-the-decision-deep"></div>
+      <div class="fr-02-the-decision-grid"></div>
+      <div class="fr-02-the-decision-spot"></div>
+      <div class="fr-02-the-decision-ambient"></div>
+    </div>
+
+    <!-- stage -->
+    <div
+      class="clip fr-02-the-decision-stage"
+      data-start="0"
+      data-duration="5.5"
+      data-track-index="1"
+    >
+      <!-- the surface builds BEHIND the hand -->
+      <div id="fr-02-the-decision-surface"></div>
+
+      <!-- lesson context, all at low visual weight -->
+      <div
+        id="fr-02-the-decision-ctx-left"
+        class="fr-02-the-decision-label"
+      >
+        6-Max &middot; 100 BB Effective
+      </div>
+      <div
+        id="fr-02-the-decision-ctx-right"
+        class="fr-02-the-decision-label"
+      >
+        Preflop
+      </div>
+      <div id="fr-02-the-decision-rule"></div>
+
+      <svg
+        id="fr-02-the-decision-ring"
+        viewBox="0 0 900 360"
+        aria-hidden="true"
+      >
+        <ellipse
+          cx="450"
+          cy="180"
+          rx="420"
+          ry="150"
+          fill="none"
+          stroke="rgba(186,205,247,0.10)"
+          stroke-width="1"
+        />
+      </svg>
+      <div class="fr-02-the-decision-seat" style="left: 956px; top: 376px"></div>
+      <div class="fr-02-the-decision-seat" style="left: 1320px; top: 451px"></div>
+      <div class="fr-02-the-decision-seat" style="left: 1320px; top: 601px"></div>
+      <div class="fr-02-the-decision-seat" style="left: 592px; top: 601px"></div>
+      <div class="fr-02-the-decision-seat" style="left: 592px; top: 451px"></div>
+      <div id="fr-02-the-decision-seat-hero"></div>
+
+      <div
+        id="fr-02-the-decision-pot"
+        class="fr-02-the-decision-label"
+      >
+        Pot 6.5 BB
+      </div>
+
+      <!-- A&spades; -->
+      <div class="fr-02-the-decision-pcard" id="fr-02-the-decision-pcard-a">
+        <div class="fr-02-the-decision-prank">A</div>
+        <svg
+          class="fr-02-the-decision-ppip"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z"
+            fill="currentColor"
+          />
+          <path
+            d="M12 17.4v4.6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.6"
+            stroke-linecap="round"
+          />
+        </svg>
+      </div>
+
+      <!-- 5&spades; -->
+      <div class="fr-02-the-decision-pcard" id="fr-02-the-decision-pcard-5">
+        <div class="fr-02-the-decision-prank">5</div>
+        <svg
+          class="fr-02-the-decision-ppip"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z"
+            fill="currentColor"
+          />
+          <path
+            d="M12 17.4v4.6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.6"
+            stroke-linecap="round"
+          />
+        </svg>
+      </div>
+
+      <div
+        id="fr-02-the-decision-hero"
+        class="fr-02-the-decision-label"
+      >
+        Hero &middot; BB
+      </div>
+
+      <div id="fr-02-the-decision-question">What would you do?</div>
+
+      <div class="fr-02-the-decision-pill" id="fr-02-the-decision-pill-1">
+        Fold
+      </div>
+      <div class="fr-02-the-decision-pill" id="fr-02-the-decision-pill-2">
+        Call
+      </div>
+      <div class="fr-02-the-decision-pill" id="fr-02-the-decision-pill-3">
+        Raise
+      </div>
+
+      <!-- inherited headline — lit at t=0, the only element that leaves -->
+      <div
+        id="fr-02-the-decision-headline"
+        class="fr-02-the-decision-display"
+      >
+        What would you do?
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script>
+      (function () {
+        window.__timelines = window.__timelines || {};
+
+        var P = "#fr-02-the-decision-";
+        var HEADLINE = P + "headline";
+        var SURFACE = P + "surface";
+        var CTXL = P + "ctx-left";
+        var CTXR = P + "ctx-right";
+        var RULE = P + "rule";
+        var RING = P + "ring";
+        var SEATS = ".fr-02-the-decision-seat";
+        var SEATHERO = P + "seat-hero";
+        var POT = P + "pot";
+        var HERO = P + "hero";
+        var QUESTION = P + "question";
+        var PILL1 = P + "pill-1";
+        var PILL2 = P + "pill-2";
+        var PILL3 = P + "pill-3";
+
+        var surfaceEl = document.getElementById("fr-02-the-decision-surface");
+
+        // The glass grows from 0.70; a 1px hairline and a 20px radius would
+        // both render 1/s too large under that scale, so they are divided by
+        // the live scale on every rendered frame (seek included).
+        function compensate() {
+          if (!surfaceEl) return;
+          var s = Number(gsap.getProperty(surfaceEl, "scaleX")) || 1;
+          surfaceEl.style.borderWidth = 1 / s + "px";
+          surfaceEl.style.borderRadius = 20 / s + "px";
+        }
+
+        // Pre-timeline hidden states. The inherited image — ground, cards and
+        // the lit headline — is authored in the DOM and never touched at t=0,
+        // so the seam with Frame 1 is invisible.
+        gsap.set(SURFACE, { opacity: 0, scale: 0.7 });
+        gsap.set(
+          [CTXL, CTXR, RULE, RING, POT, HERO, QUESTION, PILL1, PILL2, PILL3],
+          { opacity: 0 }
+        );
+        gsap.set(SEATS, { opacity: 0, scale: 0.6 });
+        gsap.set(SEATHERO, { opacity: 0, scale: 0.4 });
+        compensate();
+
+        var tl = gsap.timeline({ paused: true });
+
+        /* Scene 1 (0.00-0.40) — the inherited state. No tween exists here. */
+
+        /* Scene 2 (0.40-1.60) — the headline releases and the surface expands
+           into existence behind the hand, centred on the cards, one long ease.
+           The cards are absolutely positioned siblings of the surface, so the
+           scale cannot reach them. They do not move. */
+        tl.to(
+          HEADLINE,
+          { opacity: 0, y: -12, duration: 0.55, ease: "power3.out" },
+          0.4
+        );
+        tl.fromTo(
+          SURFACE,
+          { opacity: 0, scale: 0.7 },
+          {
+            opacity: 1,
+            scale: 1,
+            duration: 1.15,
+            ease: "power3.out",
+            onUpdate: compensate,
+          },
+          0.42
+        );
+
+        /* Scene 3 (1.60-2.60) — the lesson context resolves around the hand,
+           every piece at the lowest weight the spec allows. */
+        tl.fromTo(
+          CTXL,
+          { opacity: 0, y: 6 },
+          { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" },
+          1.62
+        );
+        tl.fromTo(
+          RULE,
+          { opacity: 0, scaleX: 0.8 },
+          { opacity: 1, scaleX: 1, duration: 0.6, ease: "power3.out" },
+          1.66
+        );
+        tl.fromTo(
+          CTXR,
+          { opacity: 0, y: 6 },
+          { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" },
+          1.7
+        );
+        tl.fromTo(
+          RING,
+          { opacity: 0 },
+          { opacity: 1, duration: 0.7, ease: "power3.out" },
+          1.8
+        );
+        tl.fromTo(
+          SEATS,
+          { opacity: 0, scale: 0.6 },
+          {
+            opacity: 1,
+            scale: 1,
+            duration: 0.4,
+            ease: "power3.out",
+            stagger: 0.05,
+          },
+          1.92
+        );
+        tl.fromTo(
+          POT,
+          { opacity: 0, y: 6 },
+          { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" },
+          2.1
+        );
+        tl.fromTo(
+          SEATHERO,
+          { opacity: 0, scale: 0.4 },
+          { opacity: 1, scale: 1, duration: 0.45, ease: "power3.out" },
+          2.16
+        );
+        tl.fromTo(
+          HERO,
+          { opacity: 0, y: 6 },
+          { opacity: 1, y: 0, duration: 0.42, ease: "power3.out" },
+          2.28
+        );
+
+        /* Scene 4 (2.60-3.50) — the question resolves below the hand, then the
+           three actions settle as one staggered set. Nothing is pressed. */
+        tl.fromTo(
+          QUESTION,
+          { opacity: 0, y: 10 },
+          { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" },
+          2.62
+        );
+        tl.fromTo(
+          PILL1,
+          { opacity: 0, y: 14, scale: 0.985 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.34, ease: "power3.out" },
+          2.92
+        );
+        tl.fromTo(
+          PILL2,
+          { opacity: 0, y: 14, scale: 0.985 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.34, ease: "power3.out" },
+          3.04
+        );
+        tl.fromTo(
+          PILL3,
+          { opacity: 0, y: 14, scale: 0.985 },
+          { opacity: 1, y: 0, scale: 1, duration: 0.34, ease: "power3.out" },
+          3.16
+        );
+
+        /* Scene 5 (3.50-5.50) — held for two full seconds. Nothing selected,
+           nothing highlighted, nothing moving. An inert driver only carries
+           the timeline to its full length. */
+        tl.to({ hold: 0 }, { hold: 1, duration: 2.0, ease: "none" }, 3.5);
+
+        window.__timelines["02-the-decision"] = tl;
+      })();
+    </script>
+  </div>
+</template>

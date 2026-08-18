@@ -1,0 +1,74 @@
+{
+ "label": "BTN 3-BET RANGE vs CO OPEN",
+ "subtitle": "See where A5s sits in Hero's 3-betting frequency — calls and true folds aren't broken out separately here.",
+ "highlightHand": "A5s",
+ "range": [
+  "AA",
+  "KK",
+  "QQ",
+  "JJ",
+  "TT",
+  "AKs",
+  "AKo",
+  "AQs",
+  "AQo",
+  "KQs",
+  "A5s",
+  "A4s",
+  "65s",
+  "54s"
+ ],
+ "strategies": {
+  "AA": {
+   "3bet": 1
+  },
+  "KK": {
+   "3bet": 1
+  },
+  "QQ": {
+   "3bet": 1
+  },
+  "JJ": {
+   "3bet": 1
+  },
+  "TT": {
+   "3bet": 0.4,
+   "other": 0.6
+  },
+  "AKs": {
+   "3bet": 1
+  },
+  "AKo": {
+   "3bet": 1
+  },
+  "AQs": {
+   "3bet": 1
+  },
+  "AQo": {
+   "3bet": 0.5,
+   "other": 0.5
+  },
+  "KQs": {
+   "3bet": 0.5,
+   "other": 0.5
+  },
+  "A5s": {
+   "3bet": 1
+  },
+  "A4s": {
+   "3bet": 1
+  },
+  "65s": {
+   "3bet": 0.4,
+   "other": 0.6
+  },
+  "54s": {
+   "3bet": 0.3,
+   "other": 0.7
+  }
+ },
+ "semantics": {
+  "kind": "action_slice",
+  "action": "3bet"
+ }
+}

@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "preferences": {
+    "destination": {
+      "value": "website",
+      "confirmed_in": [
+        "stackedpoker-understand"
+      ],
+      "updated_at": "2026-08-12T10:19:39.746Z"
+    },
+    "aspect": {
+      "value": "1920x1080",
+      "confirmed_in": [
+        "stackedpoker-understand"
+      ],
+      "updated_at": "2026-08-12T10:19:39.879Z"
+    },
+    "language": {
+      "value": "en",
+      "confirmed_in": [
+        "stackedpoker-understand"
+      ],
+      "updated_at": "2026-08-12T10:19:39.998Z"
+    },
+    "flow": {
+      "value": "automation",
+      "confirmed_in": [
+        "stackedpoker-understand"
+      ],
+      "updated_at": "2026-08-12T10:19:40.110Z"
+    },
+    "storyboard": {
+      "value": "no",
+      "confirmed_in": [
+        "stackedpoker-understand"
+      ],
+      "updated_at": "2026-08-12T10:19:40.222Z"
+    },
+    "voice": {
+      "value": "06c816b952f14fa9b3a6c42aa151f731",
+      "confirmed_in": [
+        "stackedpoker-understand"
+      ],
+      "updated_at": "2026-08-12T10:19:40.333Z"
+    }
+  },
+  "sightings": {}
+}

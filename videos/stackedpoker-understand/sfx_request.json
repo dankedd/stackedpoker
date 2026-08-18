@@ -1,0 +1,9 @@
+{
+  "provider": "auto",
+  "lang": "en",
+  "lines": [
+    { "id": "p1", "text": "", "sfx": ["soft card place on table", "glass panel slide", "quiet ui tick"] },
+    { "id": "p2", "text": "", "sfx": ["subtle shimmer", "low ambient swell", "soft tonal accent"] }
+  ],
+  "bgm": { "mode": "none" }
+}

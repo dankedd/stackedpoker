@@ -1,0 +1,708 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Geist";
+      src: url("capture/assets/fonts/22a5144ee8d83bca-s.p.woff2") format("woff2");
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: block;
+    }
+    @font-face {
+      font-family: "Geist Mono";
+      src: url("capture/assets/fonts/7d4881bb7e1bf84d-s.p.woff2") format("woff2");
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: block;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      font-family: "Geist", sans-serif;
+      color: #E6EAF0;
+      -webkit-font-smoothing: antialiased;
+    }
+    #root * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ---- full-bleed ground (clip layer, never on #root) ---- */
+    .f06-bg {
+      position: absolute;
+      inset: 0;
+      background: #0C101D;
+    }
+    .f06-stage { position: absolute; inset: 0; }
+
+    /* ---- shared brand atoms ---- */
+    .f06-card {
+      background: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      border-radius: 14px;
+    }
+    .f06-sub {
+      background: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      border-radius: 12px;
+    }
+    .f06-eyebrow {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #8B5CF6;
+    }
+    .f06-micro {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #728297;
+    }
+    .f06-pill {
+      background: rgba(139, 92, 246, 0.08);
+      color: #8B5CF6;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      padding: 6px 14px;
+    }
+    .f06-dof {
+      --dof: 0px;
+      filter: blur(var(--dof));
+      will-change: filter;
+    }
+
+    /* ---- LEFT: the lesson surface ---- */
+    .f06-surface {
+      position: absolute;
+      left: 80px;
+      top: 140px;
+      width: 1000px;
+      height: 740px;
+      padding: 30px;
+      transform-origin: 50% 50%;
+      display: flex;
+      flex-direction: column;
+    }
+    .f06-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 28px;
+    }
+    .f06-main {
+      display: flex;
+      gap: 22px;
+      margin-top: 30px;
+      height: 320px;
+    }
+
+    /* range grid */
+    .f06-rangecard { width: 440px; height: 320px; padding: 14px; }
+    .f06-labelrow { display: flex; align-items: center; justify-content: space-between; height: 16px; }
+    .f06-grid {
+      margin-top: 10px;
+      height: 266px;
+      display: grid;
+      grid-template-columns: repeat(13, 1fr);
+      grid-auto-rows: 1fr;
+      gap: 2px;
+    }
+    .f06-cell {
+      border-radius: 3px;
+      background: rgba(139, 92, 246, 0.05);
+      color: #39415A;
+      font-family: "Geist Mono", monospace;
+      font-size: 8px;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform-origin: 50% 50%;
+    }
+    .f06-cell.on { background: rgba(139, 92, 246, 0.06); color: rgba(230, 234, 240, 0.25); }
+
+    /* right column of the surface */
+    .f06-col { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+    .f06-boardcard { height: 168px; padding: 14px; }
+    .f06-cards { margin-top: 10px; display: flex; gap: 14px; }
+    .f06-pcard {
+      width: 88px;
+      height: 108px;
+      border-radius: 8px;
+      background: #E6EAF0;
+      color: #0C101D;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      transform-origin: 50% 100%;
+    }
+    .f06-rank { font-size: 30px; font-weight: 700; line-height: 1; letter-spacing: -0.02em; }
+    .f06-suit { width: 24px; height: 24px; display: block; fill: #0C101D; }
+
+    .f06-stackcard { height: 132px; padding: 14px; }
+    .f06-stacks { margin-top: 10px; display: flex; align-items: flex-end; gap: 40px; height: 78px; }
+    .f06-stackcol { display: flex; flex-direction: column; justify-content: flex-end; gap: 3px; width: 68px; }
+    .f06-chip {
+      height: 8px;
+      border-radius: 100px;
+      background: rgba(139, 92, 246, 0.18);
+      transform-origin: 50% 100%;
+    }
+
+    /* committed answer */
+    .f06-answer { margin-top: 30px; height: 132px; padding: 16px; position: relative; }
+    .f06-bgglow {
+      position: absolute;
+      inset: -140px;
+      border-radius: 50%;
+      background: radial-gradient(closest-side, rgba(139, 92, 246, 0.55), rgba(139, 92, 246, 0));
+      opacity: 0;
+      pointer-events: none;
+    }
+    .f06-actions { position: relative; z-index: 2; margin-top: 12px; display: flex; gap: 14px; }
+    .f06-btn {
+      flex: 1;
+      height: 62px;
+      border-radius: 100px;
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      background: rgba(139, 92, 246, 0.04);
+      color: #728297;
+      font-family: "Geist", sans-serif;
+      font-size: 20px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform-origin: 50% 50%;
+      position: relative;
+      z-index: 2;
+    }
+    .f06-burstwrap {
+      position: absolute;
+      left: 0; top: 0; right: 0; bottom: 0;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .f06-burst {
+      width: 160px;
+      height: 62px;
+      border-radius: 100px;
+      background: radial-gradient(closest-side, rgba(124, 58, 237, 0.9), rgba(124, 58, 237, 0));
+      filter: blur(46px);
+      opacity: 0;
+      transform-origin: 50% 50%;
+    }
+    .f06-committed {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(139, 92, 246, 0.08);
+      color: #8B5CF6;
+      border-radius: 100px;
+      padding: 5px 13px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      transform-origin: 50% 50%;
+      opacity: 0;
+    }
+
+    /* EV comparison */
+    .f06-ev { margin-top: 22px; height: 100px; padding: 14px; }
+    .f06-evrow { display: flex; align-items: center; gap: 16px; margin-top: 10px; }
+    .f06-evname { width: 84px; font-size: 12px; font-weight: 500; color: #728297; letter-spacing: 0.04em; }
+    .f06-track { flex: 1; height: 12px; border-radius: 6px; background: rgba(139, 92, 246, 0.08); }
+    .f06-fill { display: block; height: 12px; border-radius: 6px; background: #8B5CF6; }
+    .f06-evval { width: 46px; text-align: right; font-family: "Geist Mono", monospace; font-size: 12px; color: #64748B; }
+
+    /* ---- RIGHT: the coach drawer ---- */
+    .f06-drawer {
+      position: absolute;
+      left: 1130px;
+      top: 140px;
+      width: 710px;
+      height: 740px;
+      padding: 34px;
+      transform-origin: 50% 50%;
+      display: flex;
+      flex-direction: column;
+    }
+    .f06-dhead { display: flex; align-items: center; gap: 14px; height: 44px; }
+    .f06-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(139, 92, 246, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+    }
+    .f06-icon { width: 22px; height: 22px; display: block; stroke: #8B5CF6; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .f06-icon-sm { width: 18px; height: 18px; display: block; stroke: #8B5CF6; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .f06-dname { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; color: #E6EAF0; }
+    .f06-dsub { font-size: 13px; font-weight: 400; color: #728297; margin-top: 2px; }
+    .f06-rule { margin-top: 24px; height: 1px; background: rgba(139, 92, 246, 0.2); }
+
+    .f06-quote { padding: 30px; border-radius: 12px; }
+    .f06-qtext {
+      font-size: 26px;
+      font-weight: 500;
+      line-height: 1.45;
+      color: #E6EAF0;
+      min-height: 38px;
+      white-space: pre-wrap;
+    }
+    .f06-key {
+      display: inline-block;
+      white-space: nowrap;
+      transform-origin: 0% 50%;
+      color: #E6EAF0;
+    }
+    .f06-caret {
+      display: inline-block;
+      width: 10px;
+      height: 24px;
+      vertical-align: -3px;
+      margin-left: 3px;
+      background: #E6EAF0;
+      opacity: 0;
+    }
+
+    .f06-why { margin-top: 52px; }
+    .f06-clause {
+      margin-top: 26px;
+      background: rgba(139, 92, 246, 0.08);
+      border-left: 4px solid #8B5CF6;
+      border-radius: 12px;
+      padding: 22px 24px;
+    }
+    .f06-ctext {
+      font-size: 22px;
+      font-weight: 500;
+      line-height: 1.45;
+      color: #E6EAF0;
+      min-height: 32px;
+      white-space: pre-wrap;
+    }
+    .f06-clause .f06-caret { height: 20px; width: 8px; vertical-align: -2px; }
+    .f06-clause + .f06-clause { margin-top: 24px; }
+  </style>
+
+  <div data-hf-id="hf-224t" id="root" data-composition-id="06-ai-coach" data-start="0" data-duration="7.5" data-width="1920" data-height="1080">
+    <div data-hf-id="hf-h3kp" class="clip f06-bg" data-start="0" data-duration="7.5" data-track-index="0"></div>
+
+    <div data-hf-id="hf-sl49" class="clip f06-stage" data-start="0" data-duration="7.5" data-track-index="1">
+      <!-- ============ LEFT: lesson surface ============ -->
+      <div data-hf-id="hf-d379" class="f06-card f06-surface">
+        <div data-hf-id="hf-lnev" class="f06-head f06-dof">
+          <div data-hf-id="hf-29lz" class="f06-eyebrow">Defending the open</div>
+          <div data-hf-id="hf-emdp" class="f06-pill">RESULT</div>
+        </div>
+
+        <div data-hf-id="hf-k6lu" class="f06-main">
+          <!-- range grid — highlight target 1 -->
+          <div data-hf-id="hf-qfa3" class="f06-sub f06-rangecard">
+            <div data-hf-id="hf-sdlr" class="f06-labelrow">
+              <div data-hf-id="hf-n82f" class="f06-micro">Villain range</div>
+              <div data-hf-id="hf-v8mn" class="f06-micro" style="color:#3E4657;">13 × 13</div>
+            </div>
+            <div data-hf-id="hf-l74p" class="f06-grid"></div>
+          </div>
+
+          <div data-hf-id="hf-wlth" class="f06-col">
+            <!-- board — highlight target 2 -->
+            <div data-hf-id="hf-6cxc" class="f06-sub f06-boardcard">
+              <div data-hf-id="hf-7yan" class="f06-labelrow">
+                <div data-hf-id="hf-nr7h" class="f06-micro">Board</div>
+                <div data-hf-id="hf-9mu1" class="f06-micro" style="color:#3E4657;">Flop</div>
+              </div>
+              <div data-hf-id="hf-x2mq" class="f06-cards">
+                <div data-hf-id="hf-710d" class="f06-pcard">
+                  <div data-hf-id="hf-dqxw" class="f06-rank">K</div>
+                  <svg data-hf-id="hf-116h" class="f06-suit" viewBox="0 0 24 24" aria-hidden="true"><path data-hf-id="hf-h8oy" d="M12 2C12 2 3.8 8.4 3.8 13.3a4.1 4.1 0 0 0 7.2 2.6c0 2-1 4-2.6 5.5h7.2c-1.6-1.5-2.6-3.5-2.6-5.5a4.1 4.1 0 0 0 7.2-2.6C20.2 8.4 12 2 12 2Z" /></svg>
+                </div>
+                <div data-hf-id="hf-oe7l" class="f06-pcard">
+                  <div data-hf-id="hf-nd7e" class="f06-rank">9</div>
+                  <svg data-hf-id="hf-pzpp" class="f06-suit" viewBox="0 0 24 24" aria-hidden="true"><circle data-hf-id="hf-ci5i" cx="12" cy="6.6" r="4.1" /><circle data-hf-id="hf-2l1r" cx="6.6" cy="13.6" r="4.1" /><circle data-hf-id="hf-z65j" cx="17.4" cy="13.6" r="4.1" /><path data-hf-id="hf-3zh9" d="M10.5 14.4c0 3-.9 5.4-2.4 7h7.8c-1.5-1.6-2.4-4-2.4-7Z" /></svg>
+                </div>
+                <div data-hf-id="hf-pl4o" class="f06-pcard">
+                  <div data-hf-id="hf-rqkp" class="f06-rank">4</div>
+                  <svg data-hf-id="hf-r6ms" class="f06-suit" viewBox="0 0 24 24" aria-hidden="true"><path data-hf-id="hf-ggbq" d="M12 2C12 2 3.8 8.4 3.8 13.3a4.1 4.1 0 0 0 7.2 2.6c0 2-1 4-2.6 5.5h7.2c-1.6-1.5-2.6-3.5-2.6-5.5a4.1 4.1 0 0 0 7.2-2.6C20.2 8.4 12 2 12 2Z" /></svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- stack column — highlight target 3 -->
+            <div data-hf-id="hf-jdt4" class="f06-sub f06-stackcard">
+              <div data-hf-id="hf-7jzm" class="f06-labelrow">
+                <div data-hf-id="hf-1c5o" class="f06-micro">Stack depth</div>
+                <div data-hf-id="hf-4cw1" class="f06-micro" style="color:#3E4657;">Effective</div>
+              </div>
+              <div data-hf-id="hf-hvaq" class="f06-stacks">
+                <div data-hf-id="hf-398v" class="f06-stackcol"></div>
+                <div data-hf-id="hf-6c33" class="f06-stackcol"></div>
+                <div data-hf-id="hf-5xs2" class="f06-stackcol"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- committed answer + result readout -->
+        <div data-hf-id="hf-t9io" class="f06-sub f06-answer f06-dof">
+          <div data-hf-id="hf-7bmj" class="f06-bgglow"></div>
+          <div data-hf-id="hf-aywl" class="f06-labelrow" style="position:relative;z-index:2;">
+            <div data-hf-id="hf-mcza" class="f06-micro">Your answer</div>
+            <div data-hf-id="hf-e4vl" class="f06-committed">
+              <svg data-hf-id="hf-5xnd" class="f06-icon-sm" style="width:13px;height:13px;" viewBox="0 0 24 24" aria-hidden="true"><path data-hf-id="hf-2q26" d="M20 6 9 17l-5-5" /></svg>
+              COMMITTED
+            </div>
+          </div>
+          <div data-hf-id="hf-a9v5" class="f06-burstwrap"><div data-hf-id="hf-lc7d" class="f06-burst"></div></div>
+          <div data-hf-id="hf-e6ti" class="f06-actions">
+            <div data-hf-id="hf-4zik" class="f06-btn">Fold</div>
+            <div data-hf-id="hf-mbw0" class="f06-btn f06-call">Call</div>
+            <div data-hf-id="hf-tmju" class="f06-btn">3-Bet</div>
+          </div>
+        </div>
+
+        <!-- EV comparison -->
+        <div data-hf-id="hf-nhhv" class="f06-sub f06-ev f06-dof">
+          <div data-hf-id="hf-1lvt" class="f06-micro">EV comparison</div>
+          <div data-hf-id="hf-8zhw" class="f06-evrow">
+            <div data-hf-id="hf-v8f1" class="f06-evname">Call</div>
+            <div data-hf-id="hf-ogcy" class="f06-track"><span data-hf-id="hf-vyeh" class="f06-fill" style="width:64%;"></span></div>
+            <div data-hf-id="hf-nn5v" class="f06-evval">—</div>
+          </div>
+          <div data-hf-id="hf-7y6k" class="f06-evrow">
+            <div data-hf-id="hf-tss8" class="f06-evname">3-Bet</div>
+            <div data-hf-id="hf-sn4m" class="f06-track"><span data-hf-id="hf-c78m" class="f06-fill" style="width:41%;"></span></div>
+            <div data-hf-id="hf-fhc3" class="f06-evval">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ RIGHT: the coach drawer ============ -->
+      <div data-hf-id="hf-ivuz" class="f06-card f06-drawer">
+        <div data-hf-id="hf-9005" class="f06-dhead">
+          <div data-hf-id="hf-la0q" class="f06-avatar">
+            <svg data-hf-id="hf-srg9" class="f06-icon" viewBox="0 0 24 24" aria-hidden="true"><path data-hf-id="hf-l6xo" d="M12 8V4H8" /><rect data-hf-id="hf-7qxl" width="16" height="12" x="4" y="8" rx="2" /><path data-hf-id="hf-juv4" d="M2 14h2" /><path data-hf-id="hf-9n9i" d="M20 14h2" /><path data-hf-id="hf-r343" d="M15 13v2" /><path data-hf-id="hf-y8fs" d="M9 13v2" /></svg>
+          </div>
+          <div data-hf-id="hf-4qfq" style="flex:1;">
+            <div data-hf-id="hf-9yr2" class="f06-dname">AI Coach</div>
+            <div data-hf-id="hf-q4c9" class="f06-dsub">a coach, not a chatbot</div>
+          </div>
+          <svg data-hf-id="hf-4lt0" class="f06-icon-sm" viewBox="0 0 24 24" aria-hidden="true"><path data-hf-id="hf-hhq3" d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" /><path data-hf-id="hf-r3z8" d="M20 3v4" /><path data-hf-id="hf-6c9h" d="M22 5h-4" /><path data-hf-id="hf-viov" d="M4 17v2" /><path data-hf-id="hf-bkmk" d="M5 18H3" /></svg>
+        </div>
+        <div data-hf-id="hf-xkjf" class="f06-rule"></div>
+
+        <div data-hf-id="hf-kzbr" class="f06-sub f06-quote" style="margin-top:48px;">
+          <div data-hf-id="hf-6c4e" class="f06-qtext f06-line" data-line="0"></div>
+        </div>
+
+        <div data-hf-id="hf-wl4z" class="f06-sub f06-quote" style="margin-top:26px;">
+          <div data-hf-id="hf-aa8f" class="f06-qtext f06-line" data-line="1"></div>
+        </div>
+
+        <div data-hf-id="hf-514f" class="f06-eyebrow f06-why">Why</div>
+
+        <div data-hf-id="hf-gneu" class="f06-clause">
+          <div data-hf-id="hf-uxka" class="f06-ctext f06-line" data-line="2"></div>
+        </div>
+        <div data-hf-id="hf-u8ay" class="f06-clause">
+          <div data-hf-id="hf-yvob" class="f06-ctext f06-line" data-line="3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      var DUR = 7;
+      var root = document.querySelector('[data-composition-id="06-ai-coach"]');
+      var q = function (s) { return root.querySelector(s); };
+      var qa = function (s) { return Array.prototype.slice.call(root.querySelectorAll(s)); };
+
+      /* ---------------------------------------------------------------
+         BUILD: range grid (13x13) + chip stacks
+      --------------------------------------------------------------- */
+      var RANKS = ["A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"];
+      function inRange(i, j) {
+        if (i === j) return true;                       // pairs
+        if (i < j) return (j - i) <= 4 || i <= 1;       // suited: connected + A/K suited
+        return (i - j) <= 3 && j <= 3;                  // offsuit: near-broadway
+      }
+      var grid = q(".f06-grid");
+      var bloomCells = [];
+      for (var r = 0; r < 13; r++) {
+        for (var c = 0; c < 13; c++) {
+          var cell = document.createElement("div");
+          cell.className = "f06-cell";
+          cell.textContent = r < c ? RANKS[r] + RANKS[c] + "s"
+            : r > c ? RANKS[c] + RANKS[r] + "o"
+              : RANKS[r] + RANKS[r];
+          if (inRange(r, c)) {
+            cell.className += " on";
+            cell.dataset.delay = ((r + c) * 0.014).toFixed(3);
+            bloomCells.push(cell);
+          }
+          grid.appendChild(cell);
+        }
+      }
+      var COLHEIGHTS = [7, 5, 7];
+      var chips = [];
+      qa(".f06-stackcol").forEach(function (col, ci) {
+        for (var k = 0; k < COLHEIGHTS[ci]; k++) {
+          var chip = document.createElement("div");
+          chip.className = "f06-chip";
+          chip.dataset.idx = String(k);
+          col.appendChild(chip);
+          chips.push(chip);
+        }
+      });
+
+      /* ---------------------------------------------------------------
+         BUILD: typed lines (discrete-text-sequence + context-sensitive-cursor)
+         Each line is a set of inline spans so the KEY clause stays styleable.
+      --------------------------------------------------------------- */
+      var LINES = [
+        {
+          segs: [{ t: "“Your reasoning wasn’t wrong…”" }],
+          show: [1.82, 3.02],
+          seq: [
+            { t: 1.85, n: 0 }, { t: 1.94, n: 5 }, { t: 2.02, n: 10 }, { t: 2.10, n: 15 },
+            { t: 2.30, n: 16 }, { t: 2.38, n: 20 }, { t: 2.46, n: 22 }, { t: 2.60, n: 28 },
+            { t: 2.74, n: 29 }, { t: 2.86, n: 30 }
+          ]
+        },
+        {
+          // Leading/trailing spaces between inline segment nodes are collapsed by
+          // HTML whitespace handling, which rendered "rangechanges". Non-breaking
+          // spaces survive; the sentence itself is unchanged.
+          segs: [{ t: "“But " }, { t: "villain’s range ", key: "range" }, { t: "changes everything.”" }],
+          show: [3.02, 4.34],
+          seq: [
+            { t: 3.05, n: 0 }, { t: 3.13, n: 5 }, { t: 3.22, n: 10 }, { t: 3.30, n: 14 },
+            { t: 3.38, n: 15 }, { t: 3.46, n: 20 }, { t: 3.62, n: 21 }, { t: 3.70, n: 27 },
+            { t: 3.80, n: 33 }, { t: 3.92, n: 41 }
+          ]
+        },
+        {
+          segs: [{ t: "Look at what he keeps on " }, { t: "this board", key: "board" }, { t: "." }],
+          show: [4.36, 5.32],
+          seq: [
+            { t: 4.40, n: 0 }, { t: 4.48, n: 5 }, { t: 4.56, n: 12 }, { t: 4.66, n: 21 },
+            { t: 4.76, n: 25 }, { t: 4.88, n: 35 }, { t: 4.98, n: 36 }
+          ]
+        },
+        {
+          segs: [{ t: "Then price it " }, { t: "at this depth", key: "depth" }, { t: "." }],
+          show: [5.32, 7.0],
+          seq: [
+            { t: 5.36, n: 0 }, { t: 5.44, n: 4 }, { t: 5.52, n: 10 }, { t: 5.60, n: 14 },
+            { t: 5.68, n: 17 }, { t: 5.80, n: 27 }, { t: 5.90, n: 28 }
+          ]
+        }
+      ];
+
+      LINES.forEach(function (line, li) {
+        var host = q('.f06-line[data-line="' + li + '"]');
+        line.spans = line.segs.map(function (seg) {
+          var el = document.createElement("span");
+          if (seg.key) { el.className = "f06-key"; el.dataset.word = seg.key; }
+          host.appendChild(el);
+          return el;
+        });
+        var caret = document.createElement("span");
+        caret.className = "f06-caret";
+        host.appendChild(caret);
+        line.caret = caret;
+      });
+      var keySpans = qa(".f06-key");
+
+      function seqAt(seq, time) {
+        for (var i = seq.length - 1; i >= 0; i--) { if (time >= seq[i].t) return seq[i].n; }
+        return 0;
+      }
+      // Baked typing events (seek-safe: no mutable trackers)
+      var CHANGE_TIMES = [];
+      LINES.forEach(function (line) {
+        line.seq.forEach(function (e, i) { if (i > 0 && e.n !== line.seq[i - 1].n) CHANGE_TIMES.push(e.t); });
+      });
+      var TYPING_GRACE = 0.07;
+      var BLINK_CYCLES = 9; // whole number over DUR
+
+      /* ---------------------------------------------------------------
+         asr-keyword-glow — one envelope per keyed clause.
+         REST is pushed high on purpose: by the last window all three
+         couplings must read as lit AT ONCE.
+      --------------------------------------------------------------- */
+      var ATTACK = 0.18, RELEASE = 0.30, REST = 0.60;
+      var MAX_BLUR = 22, MAX_SCALE = 0.04;
+      var TIMINGS = {
+        range: { start: 3.50, end: 3.95 },
+        board: { start: 4.92, end: 5.30 },
+        depth: { start: 5.84, end: 6.15 }
+      };
+      function envelope(time, start, end) {
+        if (time < start) return 0;
+        if (time < end) return Math.min((time - start) / ATTACK, 1);
+        var rEnd = end + RELEASE;
+        if (time < rEnd) return 1 - ((time - end) / RELEASE) * (1 - REST);
+        return REST;
+      }
+      var REST_RGB = { r: 230, g: 234, b: 240 };
+      var ACT_RGB = { r: 196, g: 181, b: 253 };
+      function lerpCh(a, b, t) { return Math.round(a + (b - a) * t); }
+      function colorAt(e) {
+        return "rgb(" + lerpCh(REST_RGB.r, ACT_RGB.r, e) + "," + lerpCh(REST_RGB.g, ACT_RGB.g, e) + "," + lerpCh(REST_RGB.b, ACT_RGB.b, e) + ")";
+      }
+
+      var rangeCard = q(".f06-rangecard");
+      var boardCard = q(".f06-boardcard");
+      var stackCard = q(".f06-stackcard");
+      var pcards = qa(".f06-pcard");
+
+      function litCard(el, e) {
+        el.style.borderColor = "rgba(139,92,246," + (0.2 + 0.6 * e).toFixed(3) + ")";
+        el.style.background = "rgba(139,92,246," + (0.04 + 0.05 * e).toFixed(3) + ")";
+        el.style.boxShadow = "0 0 " + (44 * e).toFixed(1) + "px rgba(139,92,246," + (0.28 * e).toFixed(3) + ")";
+      }
+
+      /* ---------------------------------------------------------------
+         TIMELINE
+      --------------------------------------------------------------- */
+      var tl = gsap.timeline({ paused: true });
+      var surface = q(".f06-surface");
+      var drawer = q(".f06-drawer");
+
+      // Scene 1 (0.0-0.8) — the lesson surface fills the frame, an answer is committed.
+      tl.fromTo(surface, { opacity: 0, x: 380, scale: 1.04 }, { opacity: 1, duration: 0.32, ease: "power2.out" }, 0);
+
+      var callBtn = q(".f06-call");
+      var burst = q(".f06-burst");
+      var bgGlow = q(".f06-bgglow");
+      var committed = q(".f06-committed");
+      // press-release-spring — linear compression, spring recovery, burst behind
+      tl.to(callBtn, { scale: 0.92, backgroundColor: "rgba(139,92,246,0.10)", duration: 0.13, ease: "power1.in" }, 0.34);
+      tl.to(callBtn, {
+        scale: 1, backgroundColor: "#8B5CF6", color: "#0C101D", borderColor: "#8B5CF6",
+        duration: 0.55, ease: "back.out(2)"
+      }, 0.47);
+      tl.fromTo(burst, { scale: 1, opacity: 0 }, { scale: 5.5, opacity: 0.55, duration: 0.40, ease: "power2.out" }, 0.47);
+      tl.to(burst, { opacity: 0, duration: 0.45, ease: "power2.in" }, 0.87);
+      tl.fromTo(bgGlow, { opacity: 0 }, { opacity: 0.16, duration: 0.80, ease: "power2.out" }, 0.47);
+      tl.fromTo(committed, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.42, ease: "back.out(1.7)" }, 0.47);
+
+      // Scene 2 (0.8-1.8) — drawer slides in from the right on a long-tail settle;
+      // the surface EASES LEFT to make room rather than being covered.
+      tl.fromTo(drawer, { opacity: 0, x: 780 }, { opacity: 1, x: 0, duration: 0.95, ease: "power3.out" }, 0.80);
+      tl.to(surface, { x: 0, scale: 1, duration: 0.95, ease: "power3.out" }, 0.80);
+
+      // drawer contents arrive on their own cues (never all at t=0)
+      tl.fromTo(q(".f06-dhead"), { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, 1.20);
+      tl.fromTo(q(".f06-rule"), { opacity: 0, scaleX: 0 }, { opacity: 1, scaleX: 1, duration: 0.55, ease: "power2.out" }, 1.34);
+      var quotes = qa(".f06-quote");
+      tl.fromTo(quotes[0], { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.42, ease: "power2.out" }, 1.62);
+      tl.fromTo(quotes[1], { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.42, ease: "power2.out" }, 2.86);
+      tl.fromTo(q(".f06-why"), { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.38, ease: "power2.out" }, 4.18);
+      var clauses = qa(".f06-clause");
+      tl.fromTo(clauses[0], { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.38, ease: "power2.out" }, 4.28);
+      tl.fromTo(clauses[1], { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.38, ease: "power2.out" }, 5.24);
+
+      // Scenes 3-6 — ONE linear driver: typing, caret, and every coupling envelope.
+      var driver = { t: 0 };
+      tl.to(driver, {
+        t: DUR, duration: DUR, ease: "none",
+        onUpdate: function () {
+          var time = driver.t;
+
+          // ---- typed lines + context-sensitive caret ----
+          var isTyping = false;
+          for (var ct = 0; ct < CHANGE_TIMES.length; ct++) {
+            if (CHANGE_TIMES[ct] <= time && time - CHANGE_TIMES[ct] < TYPING_GRACE) { isTyping = true; break; }
+          }
+          var blinkOn = Math.sin((time / DUR) * Math.PI * 2 * BLINK_CYCLES) > 0;
+
+          for (var li = 0; li < LINES.length; li++) {
+            var line = LINES[li];
+            var n = seqAt(line.seq, time);
+            var off = 0, caretColor = "#E6EAF0";
+            for (var si = 0; si < line.segs.length; si++) {
+              var full = line.segs[si].t;
+              var take = Math.max(0, Math.min(n - off, full.length));
+              line.spans[si].textContent = full.slice(0, take);
+              if (n > off && n <= off + full.length) caretColor = line.segs[si].key ? "#8B5CF6" : "#E6EAF0";
+              off += full.length;
+            }
+            var visible = time >= line.show[0] && time <= line.show[1];
+            line.caret.style.background = caretColor;
+            line.caret.style.opacity = !visible ? "0" : (isTyping ? "1" : (blinkOn ? "1" : "0"));
+          }
+
+          // ---- envelopes ----
+          var eRange = envelope(time, TIMINGS.range.start, TIMINGS.range.end);
+          var eBoard = envelope(time, TIMINGS.board.start, TIMINGS.board.end);
+          var eDepth = envelope(time, TIMINGS.depth.start, TIMINGS.depth.end);
+          var ENV = { range: eRange, board: eBoard, depth: eDepth };
+
+          // the spoken clause itself (text-shadow hugs the glyph)
+          for (var k = 0; k < keySpans.length; k++) {
+            var el = keySpans[k];
+            var e = ENV[el.dataset.word] || 0;
+            el.style.textShadow = "0 0 " + (MAX_BLUR * e).toFixed(2) + "px rgba(167,139,250," + (0.9 * e).toFixed(3) + ")";
+            el.style.transform = "scale(" + (1 + MAX_SCALE * e) + ")";
+            el.style.color = colorAt(e);
+          }
+
+          // COUPLING 1 — "villain's range" -> cells bloom across the grid
+          litCard(rangeCard, eRange);
+          for (var b = 0; b < bloomCells.length; b++) {
+            var bc = bloomCells[b];
+            var ce = envelope(time - parseFloat(bc.dataset.delay), TIMINGS.range.start, TIMINGS.range.end);
+            bc.style.background = "rgba(139,92,246," + (0.06 + 0.74 * ce).toFixed(3) + ")";
+            bc.style.color = "rgba(230,234,240," + (0.25 + 0.7 * ce).toFixed(3) + ")";
+            bc.style.transform = "scale(" + (1 + 0.10 * ce) + ")";
+          }
+
+          // COUPLING 2 — "this board" -> the flop lifts and rim-lights
+          litCard(boardCard, eBoard);
+          for (var p = 0; p < pcards.length; p++) {
+            var pe = envelope(time - p * 0.07, TIMINGS.board.start, TIMINGS.board.end);
+            pcards[p].style.transform = "translateY(" + (-13 * pe).toFixed(2) + "px) scale(" + (1 + 0.045 * pe) + ")";
+            pcards[p].style.boxShadow = "0 " + (12 * pe).toFixed(1) + "px " + (28 * pe).toFixed(1) + "px rgba(6,8,16," + (0.6 * pe).toFixed(3) +
+              "), 0 0 0 " + (2.5 * pe).toFixed(2) + "px rgba(139,92,246," + (0.9 * pe).toFixed(3) + ")";
+          }
+
+          // COUPLING 3 — "at this depth" -> the stack column pulses (multi-octave)
+          litCard(stackCard, eDepth);
+          var breathe = 1 + Math.sin(time * 7.5) * 0.20;
+          for (var s = 0; s < chips.length; s++) {
+            var idx = parseInt(chips[s].dataset.idx, 10);
+            var se = envelope(time - idx * 0.02, TIMINGS.depth.start, TIMINGS.depth.end) * breathe;
+            if (se < 0) se = 0;
+            chips[s].style.background = "rgba(139,92,246," + (0.18 + 0.72 * se).toFixed(3) + ")";
+            chips[s].style.transform = "translateY(" + (-idx * 1.1 * se).toFixed(2) + "px) scaleX(" + (1 + 0.04 * se) + ")";
+          }
+        }
+      }, 0);
+
+      // Scene 7 (6.3-7.0) — held. depth-of-field-blur settles everything
+      // except the three lit regions. No camera move.
+      qa(".f06-dof").forEach(function (el, i) {
+        tl.to(el, { "--dof": (4 + i) + "px", opacity: 0.5, duration: 0.55, ease: "power2.inOut" }, 6.30);
+      });
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["06-ai-coach"] = tl;
+    })();
+  </script>
+</template>

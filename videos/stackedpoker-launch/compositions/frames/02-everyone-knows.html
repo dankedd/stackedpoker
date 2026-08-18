@@ -1,0 +1,545 @@
+<template>
+  <style>
+    @font-face {
+      font-family: 'Geist';
+      src: url('capture/assets/fonts/22a5144ee8d83bca-s.p.woff2') format('woff2');
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: block;
+    }
+    @font-face {
+      font-family: 'Geist Mono';
+      src: url('capture/assets/fonts/7d4881bb7e1bf84d-s.p.woff2') format('woff2');
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: block;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      container-type: size;
+      font-family: 'Geist', sans-serif;
+      color: #E6EAF0;
+      -webkit-font-smoothing: antialiased;
+    }
+    #root * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ---------- full-bleed ground (clip layer, never on #root) ---------- */
+    .f02-bg {
+      position: absolute;
+      left: 0; top: 0;
+      width: 1920px; height: 1080px;
+      background: #0C101D;
+    }
+    .f02-stage {
+      position: absolute;
+      left: 0; top: 0;
+      width: 1920px; height: 1080px;
+    }
+
+    /* ---------- depth-of-field layers ---------- */
+    .f02-dof {
+      --dof: 0px;
+      filter: blur(var(--dof));
+      will-change: filter;
+    }
+
+    /* ---------- top band ---------- */
+    .f02-accent-line {
+      position: absolute;
+      left: 930px; top: 48px;
+      width: 60px; height: 4px;
+      border-radius: 2px;
+      background: #8B5CF6;
+    }
+    .f02-eyebrow {
+      position: absolute;
+      left: 0; top: 74px;
+      width: 1920px;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #8B5CF6;
+    }
+
+    /* ---------- the pinned decision card ---------- */
+    .f02-card {
+      position: absolute;
+      left: 580px; top: 250px;
+      width: 760px; height: 500px;
+      background: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      border-radius: 14px;
+    }
+    .f02-freeze-ring {
+      position: absolute;
+      left: 0; top: 0;
+      width: 760px; height: 500px;
+      border: 1.5px solid #B41C22;
+      border-radius: 14px;
+      pointer-events: none;
+      z-index: 50;
+    }
+    .f02-freeze-ring-outer {
+      position: absolute;
+      left: -10px; top: -10px;
+      width: 780px; height: 520px;
+      border: 1.5px solid rgba(180, 28, 34, 0.45);
+      border-radius: 20px;
+      pointer-events: none;
+      z-index: 49;
+    }
+
+    .f02-card-header {
+      position: absolute;
+      left: 34px; top: 34px;
+      width: 692px; height: 18px;
+    }
+    .f02-hdr-left, .f02-hdr-right {
+      position: absolute;
+      top: 0;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      line-height: 18px;
+    }
+    .f02-hdr-left { left: 0; color: #8B5CF6; }
+    .f02-hdr-right {
+      right: 0;
+      font-family: 'Geist Mono', monospace;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      color: #728297;
+    }
+
+    /* board */
+    .f02-board {
+      position: absolute;
+      left: 210px; top: 100px;
+      width: 340px; height: 146px;
+    }
+    .f02-pcard {
+      position: absolute;
+      top: 0;
+      width: 104px; height: 146px;
+      background: #191F2E;
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      border-radius: 10px;
+    }
+    .f02-pcard-rank {
+      position: absolute;
+      left: 12px; top: 10px;
+      font-size: 26px;
+      font-weight: 600;
+      line-height: 1;
+      color: #E6EAF0;
+    }
+    .f02-pip {
+      position: absolute;
+      left: 34px; top: 62px;
+      width: 36px; height: 36px;
+      color: rgba(230, 234, 240, 0.82);
+    }
+
+    /* player identity chips */
+    .f02-player-row {
+      position: absolute;
+      left: 0; top: 272px;
+      width: 760px; height: 22px;
+    }
+    .f02-player {
+      position: absolute;
+      left: 0; top: 0;
+      width: 760px; height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      color: #728297;
+    }
+    .f02-player svg { width: 16px; height: 16px; display: block; }
+    .f02-player-num { font-family: 'Geist Mono', monospace; }
+
+    /* button row — the cycling region */
+    .f02-btn-row {
+      position: absolute;
+      left: 70px; top: 344px;
+      width: 620px; height: 60px;
+      z-index: 10;
+    }
+    .f02-btn {
+      position: absolute;
+      top: 0;
+      width: 196px; height: 60px;
+      border-radius: 100px;
+      background: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      color: #E6EAF0;
+      font-size: 17px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform-origin: 50% 50%;
+      z-index: 10;
+    }
+    .f02-btn-fold  { left: 0; }
+    .f02-btn-call  { left: 212px; }
+    .f02-btn-raise { left: 424px; }
+
+    /* ripples — live in DOM from t=0 at each button centre */
+    .f02-ripple {
+      position: absolute;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      border: 2px solid #8B5CF6;
+      pointer-events: none;
+      z-index: 5;
+      transform-origin: 50% 50%;
+    }
+    .f02-ripple-fold  { left: 108px; top: 314px; }
+    .f02-ripple-call  { left: 320px; top: 314px; }
+    .f02-ripple-raise { left: 532px; top: 314px; }
+
+    /* cursor */
+    .f02-cursor {
+      position: absolute;
+      left: 380px; top: 374px;
+      width: 22px; height: 28px;
+      pointer-events: none;
+      z-index: 80;
+      transform-origin: 0% 0%;
+    }
+    .f02-cursor svg { width: 22px; height: 28px; display: block; }
+
+    /* ---------- the verdict slot (below the card) ---------- */
+    .f02-verdict-zone {
+      position: absolute;
+      left: 750px; top: 782px;
+      width: 420px; height: 92px;
+    }
+    .f02-verdict {
+      position: absolute;
+      left: 0; top: 6px;
+      width: 420px; height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      color: #B41C22;
+    }
+    .f02-verdict svg { width: 22px; height: 22px; display: block; }
+    .f02-slot-rule {
+      position: absolute;
+      left: 0; top: 64px;
+      width: 420px; height: 1px;
+      background: rgba(139, 92, 246, 0.16);
+    }
+    .f02-slot-label {
+      position: absolute;
+      left: 0; top: 76px;
+      width: 420px;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #64748B;
+    }
+  </style>
+
+  <div data-hf-id="hf-h6pt" id="root" data-composition-id="02-everyone-knows" data-start="0" data-duration="5" data-width="1920" data-height="1080">
+    <!-- ground -->
+    <div data-hf-id="hf-pw6b" class="clip f02-bg" data-start="0" data-duration="5" data-track-index="0"></div>
+
+    <!-- content -->
+    <div data-hf-id="hf-tqrn" class="clip f02-stage" data-start="0" data-duration="5" data-track-index="1">
+
+      <!-- top band -->
+      <div data-hf-id="hf-ny16" class="f02-dof" id="f02-top-band" data-depth="3">
+        <div data-hf-id="hf-r9ya" class="f02-accent-line"></div>
+        <div data-hf-id="hf-mrv3" class="f02-eyebrow">The same spot</div>
+      </div>
+
+      <!-- the pinned anchor: identical position to frame 01, never re-enters -->
+      <div data-hf-id="hf-f2sf" class="f02-card">
+
+        <div data-hf-id="hf-qs14" class="f02-card-header f02-dof" id="f02-card-header" data-depth="3">
+          <div data-hf-id="hf-zket" class="f02-hdr-left">Decision spot</div>
+          <div data-hf-id="hf-b19c" class="f02-hdr-right">POT 3.8 BB</div>
+        </div>
+
+        <div data-hf-id="hf-6lnb" class="f02-board f02-dof" id="f02-board" data-depth="2">
+          <div data-hf-id="hf-uryl" class="f02-pcard" style="left:0;">
+            <div data-hf-id="hf-suqf" class="f02-pcard-rank">Q</div>
+            <div data-hf-id="hf-hxgo" class="f02-pip">
+              <svg data-hf-id="hf-mkje" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path data-hf-id="hf-1inl" d="M12 2C12 2 4 9 4 13.5C4 16.5 6.2 18.5 8.6 18.5C9.8 18.5 10.8 18 11.4 17.2C11.2 19.4 10.4 21 9.2 22L14.8 22C13.6 21 12.8 19.4 12.6 17.2C13.2 18 14.2 18.5 15.4 18.5C17.8 18.5 20 16.5 20 13.5C20 9 12 2 12 2Z" /></svg>
+            </div>
+          </div>
+          <div data-hf-id="hf-we6z" class="f02-pcard" style="left:118px;">
+            <div data-hf-id="hf-zuq9" class="f02-pcard-rank">7</div>
+            <div data-hf-id="hf-7na8" class="f02-pip">
+              <svg data-hf-id="hf-m97i" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path data-hf-id="hf-brb9" d="M12 2L20 12L12 22L4 12Z" /></svg>
+            </div>
+          </div>
+          <div data-hf-id="hf-nj1a" class="f02-pcard" style="left:236px;">
+            <div data-hf-id="hf-ynt6" class="f02-pcard-rank">2</div>
+            <div data-hf-id="hf-6gd5" class="f02-pip">
+              <svg data-hf-id="hf-mnij" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle data-hf-id="hf-9hbs" cx="12" cy="7" r="4.2" /><circle data-hf-id="hf-ed5u" cx="7.2" cy="14" r="4.2" /><circle data-hf-id="hf-s77m" cx="16.8" cy="14" r="4.2" /><path data-hf-id="hf-tad7" d="M11 15C11 18.4 10.2 20.8 9 22L15 22C13.8 20.8 13 18.4 13 15Z" /></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- player identity chips — one per commit -->
+        <div data-hf-id="hf-c42c" class="f02-player-row f02-dof" id="f02-player-row" data-depth="1">
+          <div data-hf-id="hf-pw4g" class="f02-player" id="f02-player-1">
+            <svg data-hf-id="hf-5u77" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path data-hf-id="hf-6wfp" d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle data-hf-id="hf-ybtk" cx="12" cy="7" r="4" /></svg>
+            <span data-hf-id="hf-l9g3"><span data-hf-id="hf-ifxa" class="f02-player-num">PLAYER 1</span> · BTN · <span data-hf-id="hf-3myt" class="f02-player-num">100 BB</span></span>
+          </div>
+          <div data-hf-id="hf-0rm3" class="f02-player" id="f02-player-2">
+            <svg data-hf-id="hf-5b8j" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path data-hf-id="hf-l33d" d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle data-hf-id="hf-512o" cx="12" cy="7" r="4" /></svg>
+            <span data-hf-id="hf-wtbn"><span data-hf-id="hf-iu8b" class="f02-player-num">PLAYER 2</span> · BTN · <span data-hf-id="hf-i8gp" class="f02-player-num">100 BB</span></span>
+          </div>
+          <div data-hf-id="hf-wti2" class="f02-player" id="f02-player-3">
+            <svg data-hf-id="hf-4wxi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path data-hf-id="hf-ma0g" d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle data-hf-id="hf-3u5l" cx="12" cy="7" r="4" /></svg>
+            <span data-hf-id="hf-wf0m"><span data-hf-id="hf-j8jc" class="f02-player-num">PLAYER 3</span> · BTN · <span data-hf-id="hf-jfds" class="f02-player-num">100 BB</span></span>
+          </div>
+        </div>
+
+        <!-- ripples sit behind the buttons, at each button's visual centre -->
+        <div data-hf-id="hf-5tw5" class="f02-ripple f02-ripple-fold" id="f02-ripple-fold"></div>
+        <div data-hf-id="hf-bndb" class="f02-ripple f02-ripple-call" id="f02-ripple-call"></div>
+        <div data-hf-id="hf-yb0f" class="f02-ripple f02-ripple-raise" id="f02-ripple-raise"></div>
+
+        <!-- the cycling region: the button row -->
+        <div data-hf-id="hf-3cm8" class="f02-btn-row">
+          <div data-hf-id="hf-zy74" class="f02-btn f02-btn-fold" id="f02-btn-fold">Fold</div>
+          <div data-hf-id="hf-zsjj" class="f02-btn f02-btn-call" id="f02-btn-call">Call</div>
+          <div data-hf-id="hf-vj35" class="f02-btn f02-btn-raise" id="f02-btn-raise">Raise</div>
+        </div>
+
+        <div data-hf-id="hf-odnm" class="f02-cursor" id="f02-cursor">
+          <svg data-hf-id="hf-g8wm" viewBox="0 0 22 28" aria-hidden="true">
+            <path data-hf-id="hf-ra8q" d="M1 1L1 21.5L6.2 16.6L9.9 25.6L13.9 23.9L10.3 15.2L17.6 14.6Z" fill="#E6EAF0" stroke="#0C101D" stroke-width="1.6" stroke-linejoin="round" />
+          </svg>
+        </div>
+
+        <div data-hf-id="hf-ayfd" class="f02-freeze-ring-outer" id="f02-freeze-outer"></div>
+        <div data-hf-id="hf-0hvq" class="f02-freeze-ring" id="f02-freeze-inner"></div>
+      </div>
+
+      <!-- verdict slot: fills twice, stays empty the third time -->
+      <div data-hf-id="hf-mjpg" class="f02-verdict-zone f02-dof" id="f02-verdict-zone" data-depth="1">
+        <div data-hf-id="hf-5gsc" class="f02-verdict" id="f02-verdict-1">
+          <svg data-hf-id="hf-4imh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle data-hf-id="hf-m1lh" cx="12" cy="12" r="10" /><path data-hf-id="hf-yfzu" d="m9 12 2 2 4-4" /></svg>
+          <span data-hf-id="hf-b5yd">CALL</span>
+        </div>
+        <div data-hf-id="hf-e4o7" class="f02-verdict" id="f02-verdict-2">
+          <svg data-hf-id="hf-44bg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle data-hf-id="hf-jqh5" cx="12" cy="12" r="10" /><path data-hf-id="hf-b76m" d="m9 12 2 2 4-4" /></svg>
+          <span data-hf-id="hf-8tyn">RAISE</span>
+        </div>
+        <div data-hf-id="hf-x9g0" class="f02-slot-rule"></div>
+        <div data-hf-id="hf-ez5h" class="f02-slot-label">Verdict</div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      var q = function (sel) { return document.querySelector(sel); };
+
+      var CURSOR = "#f02-cursor";
+      var BTN = { fold: "#f02-btn-fold", call: "#f02-btn-call", raise: "#f02-btn-raise" };
+      var RIP = { fold: "#f02-ripple-fold", call: "#f02-ripple-call", raise: "#f02-ripple-raise" };
+      var RING_IN = "#f02-freeze-inner", RING_OUT = "#f02-freeze-outer";
+
+      // cursor rest offsets relative to the Call button centre (its CSS anchor)
+      var IDLE = { x: 96, y: 74 };
+      var AT = { call: 0, raise: 212, fold: -212 };
+
+      var NEUTRAL = {
+        borderColor: "rgba(139,92,246,0.2)",
+        backgroundColor: "rgba(139,92,246,0.04)",
+        color: "#E6EAF0"
+      };
+      var FROZEN = {
+        borderColor: "#B41C22",
+        backgroundColor: "rgba(180,28,34,0.10)",
+        color: "#B41C22"
+      };
+
+      // ---- deterministic rest state (t = 0) --------------------------------
+      gsap.set(CURSOR, { x: IDLE.x, y: IDLE.y, scale: 1 });
+      gsap.set([RIP.fold, RIP.call, RIP.raise], { scale: 0, opacity: 0 });
+      gsap.set([RING_IN, RING_OUT], { opacity: 0 });
+      gsap.set([BTN.fold, BTN.call, BTN.raise], Object.assign({ scale: 1 }, NEUTRAL));
+      gsap.set("#f02-verdict-1", { opacity: 0, x: 0, y: 10 });
+      gsap.set("#f02-verdict-2", { opacity: 0, x: 0, y: 10 });
+      gsap.set("#f02-player-1", { opacity: 1, x: 0 });
+      gsap.set("#f02-player-2", { opacity: 0, x: -230 });
+      gsap.set("#f02-player-3", { opacity: 0, x: 230 });
+      gsap.set(["#f02-top-band", "#f02-card-header", "#f02-board", "#f02-player-row", "#f02-verdict-zone"],
+        { "--dof": "0px", opacity: 1 });
+
+      var tl = gsap.timeline({ paused: true });
+
+      // ---- reusable pieces --------------------------------------------------
+      // cursor-click-ripple : press depression on cursor + target, then ring
+      function commit(opts) {
+        var t = opts.at, btn = opts.btn, rip = opts.ripple;
+
+        // cursor depresses more than the target — the cursor is the actor
+        tl.fromTo(CURSOR, { scale: 1 },
+          { scale: 0.85, duration: 0.07, ease: "power2.in", immediateRender: false }, t);
+        tl.fromTo(CURSOR, { scale: 0.85 },
+          { scale: 1, duration: 0.10, ease: "power2.out", immediateRender: false }, t + 0.07);
+
+        // press-release-spring on the button: linear compression, spring recovery
+        tl.fromTo(btn, { scale: 1 },
+          { scale: 0.92, duration: 0.10, ease: "power1.in", immediateRender: false }, t);
+        tl.fromTo(btn, { scale: 0.92 },
+          { scale: 1, duration: opts.releaseDur, ease: opts.releaseEase, immediateRender: false }, t + 0.10);
+
+        // single ring from the button's visual centre
+        tl.fromTo(rip, { scale: 0, opacity: opts.ripOpacity },
+          { scale: opts.ripScale, opacity: 0, duration: 0.45, ease: "power2.out", immediateRender: false },
+          t + 0.03);
+      }
+
+      function freezeOn(t, btn) {
+        tl.fromTo(btn, NEUTRAL,
+          Object.assign({ duration: 0.06, ease: "none", immediateRender: false }, FROZEN), t);
+        tl.fromTo([RING_IN, RING_OUT], { opacity: 0 },
+          { opacity: 1, duration: 0.05, ease: "none", immediateRender: false }, t);
+      }
+
+      function freezeOff(t, btn) {
+        tl.fromTo(btn, FROZEN,
+          Object.assign({ duration: 0.05, ease: "none", immediateRender: false }, NEUTRAL), t);
+        tl.fromTo([RING_IN, RING_OUT], { opacity: 1 },
+          { opacity: 0, duration: 0.03, ease: "none", immediateRender: false }, t);
+      }
+
+      // cut-the-curve : exit accelerates, entry continues in the SAME direction
+      function curveOut(t, sel, dir, dur) {
+        tl.fromTo(sel, { x: 0 },
+          { x: 230 * dir, duration: dur, ease: "power4.in", immediateRender: false }, t);
+        tl.fromTo(sel, { opacity: 1 },
+          { opacity: 0, duration: dur - 0.08, ease: "power1.in", immediateRender: false }, t);
+      }
+      function curveIn(t, sel, dir, dur) {
+        tl.fromTo(sel, { x: -230 * dir, opacity: 0.35 },
+          { x: 0, opacity: 1, duration: dur, ease: "power4.out", immediateRender: false }, t);
+      }
+
+      // ======================================================================
+      // Scene 1 (0.0–0.6) — hard cut in. The card is ALREADY here, in the exact
+      // position frame 01 left it. Nothing enters, nothing re-animates.
+      // ======================================================================
+
+      // ======================================================================
+      // Scene 2 (0.6–1.7) — the cursor arrives on Call and commits.
+      // ======================================================================
+      tl.fromTo(CURSOR, { x: IDLE.x, y: IDLE.y },
+        { x: AT.call, y: 0, duration: 0.42, ease: "back.out(1.3)" }, 0.55);
+
+      commit({ at: 1.05, btn: BTN.call, ripple: RIP.call,
+               releaseDur: 0.20, releaseEase: "back.out(2)",
+               ripScale: 3.2, ripOpacity: 0.85 });
+
+      freezeOn(1.13, BTN.call);
+
+      tl.fromTo("#f02-verdict-1", { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.22, ease: "power2.out", immediateRender: false }, 1.18);
+      // 1.53 – 1.70 : the freeze. Nothing moves.
+
+      // ======================================================================
+      // Scene 3 (1.7–2.8) — cut-the-curve seam (rightward, matched to the
+      // cursor's travel) into a new player who commits Raise. Same red freeze.
+      // ======================================================================
+      curveOut(1.70, "#f02-verdict-1", 1, 0.24);
+      curveOut(1.70, "#f02-player-1", 1, 0.24);
+      // the cursor crosses the cut at peak velocity — one continuous move
+      tl.fromTo(CURSOR, { x: AT.call },
+        { x: AT.raise, duration: 0.44, ease: "power2.inOut", immediateRender: false }, 1.72);
+
+      freezeOff(1.94, BTN.call);
+      curveIn(1.94, "#f02-player-2", 1, 0.26);
+
+      commit({ at: 2.24, btn: BTN.raise, ripple: RIP.raise,
+               releaseDur: 0.20, releaseEase: "back.out(2)",
+               ripScale: 3.2, ripOpacity: 0.85 });
+
+      freezeOn(2.32, BTN.raise);
+
+      tl.fromTo("#f02-verdict-2", { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.22, ease: "power2.out", immediateRender: false }, 2.37);
+      // 2.72 – 2.80 : the same freeze again. The repetition is the argument.
+
+      // ======================================================================
+      // Scene 4 (2.8–4.0) — the same seam (leftward) into Fold. The press
+      // lands and NO verdict arrives. The hairline stays neutral.
+      // ======================================================================
+      curveOut(2.80, "#f02-verdict-2", -1, 0.26);
+      curveOut(2.80, "#f02-player-2", -1, 0.26);
+      tl.fromTo(CURSOR, { x: AT.raise },
+        { x: AT.fold, duration: 0.50, ease: "power2.inOut", immediateRender: false }, 2.82);
+
+      freezeOff(3.06, BTN.raise);
+      curveIn(3.06, "#f02-player-3", -1, 0.28);
+
+      // decelerated cadence: a longer beat of hesitation before this one lands
+      commit({ at: 3.52, btn: BTN.fold, ripple: RIP.fold,
+               releaseDur: 0.24, releaseEase: "back.out(1.6)",
+               ripScale: 2.4, ripOpacity: 0.55 });
+      // no freezeOn, no verdict. The slot stays empty.
+
+      // ======================================================================
+      // Scene 5 (4.0–5.0) — depth-of-field creeps outward from the button row.
+      // The button row stays sharp; everything around it falls out of focus.
+      // ======================================================================
+      var BLUR_PER_DEPTH = 4;
+      var DIM = { 1: 0.7, 2: 0.55, 3: 0.45 };
+      ["#f02-player-row", "#f02-verdict-zone", "#f02-board", "#f02-card-header", "#f02-top-band"]
+        .forEach(function (sel) {
+          var depth = Number(q(sel).getAttribute("data-depth")) || 1;
+          tl.fromTo(sel, { "--dof": "0px", opacity: 1 },
+            {
+              "--dof": (BLUR_PER_DEPTH * depth) + "px",
+              opacity: DIM[depth],
+              duration: 0.80,
+              ease: "power2.inOut",
+              immediateRender: false
+            }, 4.05);
+        });
+
+      // subtle jitter only — the hesitation held a beat too long
+      tl.fromTo(CURSOR, { x: AT.fold, y: 0 },
+        { x: AT.fold + 1.6, y: 1.2, duration: 0.26, ease: "sine.inOut", immediateRender: false }, 4.02);
+      tl.fromTo(CURSOR, { x: AT.fold + 1.6, y: 1.2 },
+        { x: AT.fold - 1.4, y: -0.9, duration: 0.30, ease: "sine.inOut", immediateRender: false }, 4.28);
+      tl.fromTo(CURSOR, { x: AT.fold - 1.4, y: -0.9 },
+        { x: AT.fold + 1.1, y: 0.8, duration: 0.24, ease: "sine.inOut", immediateRender: false }, 4.58);
+      tl.fromTo(CURSOR, { x: AT.fold + 1.1, y: 0.8 },
+        { x: AT.fold, y: 0, duration: 0.18, ease: "sine.inOut", immediateRender: false }, 4.82);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["02-everyone-knows"] = tl;
+    })();
+  </script>
+</template>

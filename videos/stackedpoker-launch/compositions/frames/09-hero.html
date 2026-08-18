@@ -1,0 +1,457 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Geist";
+      src: url("capture/assets/fonts/22a5144ee8d83bca-s.p.woff2") format("woff2");
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: block;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      container-type: size;
+      font-family: "Geist", sans-serif;
+      color: #E6EAF0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── ground ─────────────────────────────────────────────── */
+    .f09-hero-bg {
+      position: absolute;
+      inset: 0;
+      background: #0C101D;
+    }
+
+    /* ── atmosphere: concentric closing rings (closing frame only) ── */
+    .f09-hero-rings {
+      position: absolute;
+      inset: 0;
+      transform-origin: 960px 560px;
+    }
+    .f09-hero-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+    }
+    .f09-hero-ring-1 { left: 660px; top: 260px;  width: 600px;  height: 600px;  border-color: rgba(139, 92, 246, 0.14); }
+    .f09-hero-ring-2 { left: 500px; top: 100px;  width: 920px;  height: 920px;  border-color: rgba(139, 92, 246, 0.10); }
+    .f09-hero-ring-3 { left: 330px; top: -70px;  width: 1260px; height: 1260px; border-color: rgba(139, 92, 246, 0.06); }
+
+    /* ── the violet spotlight ───────────────────────────────── */
+    .f09-hero-glow {
+      position: absolute;
+      left: 310px;
+      top: 110px;
+      width: 1300px;
+      height: 900px;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at 50% 50%,
+        rgba(139, 92, 246, 0.85) 0%,
+        rgba(139, 92, 246, 0.34) 38%,
+        rgba(139, 92, 246, 0.00) 70%);
+    }
+
+    /* ── the three devices, one surface at three scales ─────── */
+    .f09-hero-dev {
+      position: absolute;
+      background: #121726;
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      filter: blur(0px);
+    }
+    .f09-hero-mac   { left: 100px;  top: 330px; width: 420px; height: 270px; border-radius: 14px; }
+    .f09-hero-ipad  { left: 1420px; top: 300px; width: 300px; height: 390px; border-radius: 18px; }
+    .f09-hero-phone { left: 1600px; top: 640px; width: 128px; height: 252px; border-radius: 18px; }
+
+    .f09-hero-chin {
+      position: absolute;
+      left: 60px;
+      top: 274px;
+      width: 500px;
+      height: 10px;
+      border-radius: 0 0 10px 10px;
+      background: rgba(139, 92, 246, 0.12);
+    }
+    .f09-hero-notch {
+      position: absolute;
+      left: 50%;
+      top: 6px;
+      width: 34px;
+      height: 5px;
+      margin-left: -17px;
+      border-radius: 100px;
+      background: rgba(139, 92, 246, 0.22);
+    }
+
+    /* the interface itself — em-scaled so all three read as one surface */
+    .f09-hero-scr {
+      position: absolute;
+      inset: 0;
+      padding: 0.7em;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55em;
+      border-radius: inherit;
+      overflow: hidden;
+    }
+    .f09-hero-mac   .f09-hero-scr { font-size: 20px; }
+    .f09-hero-ipad  .f09-hero-scr { font-size: 15px; }
+    .f09-hero-phone .f09-hero-scr { font-size: 7px; padding-top: 1.2em; }
+
+    .f09-hero-topbar { display: flex; align-items: center; gap: 0.4em; }
+    .f09-hero-dot { width: 0.45em; height: 0.45em; border-radius: 50%; background: #8B5CF6; }
+    .f09-hero-pill { height: 0.3em; border-radius: 100px; background: rgba(230, 234, 240, 0.18); }
+    .f09-hero-cards { display: flex; gap: 0.5em; flex: 1; }
+    .f09-hero-card {
+      flex: 1;
+      background: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      border-radius: 10px;
+      padding: 0.5em;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      gap: 0.35em;
+    }
+    .f09-hero-phone .f09-hero-cards { flex-direction: column; }
+    .f09-hero-num { width: 55%; height: 0.62em; border-radius: 4px; background: #8B5CF6; opacity: 0.85; }
+    .f09-hero-lab { width: 78%; height: 0.24em; border-radius: 100px; background: rgba(230, 234, 240, 0.14); }
+    .f09-hero-track { height: 0.3em; border-radius: 6px; background: rgba(139, 92, 246, 0.08); overflow: hidden; }
+    .f09-hero-fill { display: block; width: 62%; height: 100%; border-radius: 6px; background: #8B5CF6; }
+
+    /* ── the lockup: spade glyph + Geist wordmark ───────────── */
+    .f09-hero-lockwrap {
+      position: absolute;
+      left: 0;
+      top: 330px;
+      width: 1920px;
+      height: 76px;
+    }
+    .f09-hero-seed,
+    .f09-hero-lockup {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform-origin: 50% 50%;
+    }
+    .f09-hero-seed { z-index: 1; }
+    .f09-hero-lockup { z-index: 2; }
+
+    .f09-hero-seed-core {
+      width: 132px;
+      height: 132px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 50% 50%,
+        rgba(167, 139, 250, 0.55) 0%,
+        rgba(139, 92, 246, 0.22) 45%,
+        rgba(139, 92, 246, 0.00) 72%);
+    }
+
+    .f09-hero-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: 18px;
+    }
+    .f09-hero-spade {
+      width: 48px;
+      height: 48px;
+      display: block;
+      color: #E6EAF0;
+    }
+    .f09-hero-word {
+      font-size: 2.71cqw;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #E6EAF0;
+      line-height: 1;
+    }
+
+    /* ── headline, two beats ────────────────────────────────── */
+    .f09-hero-line {
+      position: absolute;
+      left: 0;
+      width: 1920px;
+      text-align: center;
+      font-size: 5cqw;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.05;
+      color: #E6EAF0;
+      white-space: nowrap;
+    }
+    .f09-hero-l1 { top: 470px; }
+    .f09-hero-l2 { top: 585px; }
+
+    /* ── the one solid element in sixty seconds ─────────────── */
+    .f09-hero-ctawrap {
+      position: absolute;
+      left: 0;
+      top: 760px;
+      width: 1920px;
+      text-align: center;
+    }
+    .f09-hero-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 280px;
+      height: 72px;
+      background: #8B5CF6;
+      color: #0C101D;
+      border-radius: 100px;
+      font-size: 1.25cqw;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .f09-hero-note {
+      position: absolute;
+      left: 0;
+      top: 870px;
+      width: 1920px;
+      text-align: center;
+      font-size: 1.04cqw;
+      font-weight: 400;
+      line-height: 1.2;
+      color: #728297;
+    }
+  </style>
+
+  <div id="root" data-hf-id="hf-f09" data-composition-id="09-hero" data-start="0" data-duration="5" data-width="1920" data-height="1080">
+    <!-- track 0 — full-bleed ground -->
+    <div data-hf-id="hf-55hj" class="clip f09-hero-bg" data-start="0" data-duration="5" data-track-index="0"></div>
+
+    <!-- track 1 — atmosphere: concentric closing rings -->
+    <div data-hf-id="hf-0ues" class="clip f09-hero-rings" id="f09-hero-rings" data-start="0" data-duration="5" data-track-index="1">
+      <div data-hf-id="hf-gy8y" class="f09-hero-ring f09-hero-ring-1"></div>
+      <div data-hf-id="hf-d04x" class="f09-hero-ring f09-hero-ring-2"></div>
+      <div data-hf-id="hf-c8h4" class="f09-hero-ring f09-hero-ring-3"></div>
+    </div>
+
+    <!-- track 2 — the violet spotlight returns -->
+    <div class="clip f09-hero-glow" id="f09-hero-glow" data-hf-id="hf-fson" data-start="0" data-duration="5" data-track-index="2"></div>
+
+    <!-- track 3 — the three devices, receding -->
+    <div data-hf-id="hf-xb7k" class="clip" data-start="0" data-duration="5" data-track-index="3">
+      <div class="f09-hero-dev f09-hero-mac" id="f09-hero-mac" data-hf-id="hf-mh8f">
+        <div data-hf-id="hf-ulc7" class="f09-hero-scr">
+          <div data-hf-id="hf-s45h" class="f09-hero-topbar">
+            <span data-hf-id="hf-taaz" class="f09-hero-dot"></span>
+            <span data-hf-id="hf-9a1m" class="f09-hero-pill" style="width: 3.6em"></span>
+            <span data-hf-id="hf-fkkk" class="f09-hero-pill" style="width: 2.1em"></span>
+          </div>
+          <div data-hf-id="hf-kpey" class="f09-hero-cards">
+            <div data-hf-id="hf-as7f" class="f09-hero-card"><span data-hf-id="hf-j68e" class="f09-hero-num"></span><span data-hf-id="hf-dr5n" class="f09-hero-lab"></span></div>
+            <div data-hf-id="hf-fdm3" class="f09-hero-card"><span data-hf-id="hf-8382" class="f09-hero-num"></span><span data-hf-id="hf-fji3" class="f09-hero-lab"></span></div>
+          </div>
+          <div data-hf-id="hf-oeoq" class="f09-hero-track"><span data-hf-id="hf-3rjh" class="f09-hero-fill"></span></div>
+        </div>
+        <div data-hf-id="hf-3ppt" class="f09-hero-chin"></div>
+      </div>
+
+      <div class="f09-hero-dev f09-hero-ipad" id="f09-hero-ipad" data-hf-id="hf-9iwq">
+        <div data-hf-id="hf-i7jb" class="f09-hero-scr">
+          <div data-hf-id="hf-sd3t" class="f09-hero-topbar">
+            <span data-hf-id="hf-60jv" class="f09-hero-dot"></span>
+            <span data-hf-id="hf-q1xa" class="f09-hero-pill" style="width: 3.6em"></span>
+            <span data-hf-id="hf-3zbw" class="f09-hero-pill" style="width: 2.1em"></span>
+          </div>
+          <div data-hf-id="hf-ltgu" class="f09-hero-cards">
+            <div data-hf-id="hf-ezb2" class="f09-hero-card"><span data-hf-id="hf-8hj3" class="f09-hero-num"></span><span data-hf-id="hf-f572" class="f09-hero-lab"></span></div>
+            <div data-hf-id="hf-el01" class="f09-hero-card"><span data-hf-id="hf-8vu4" class="f09-hero-num"></span><span data-hf-id="hf-eqw1" class="f09-hero-lab"></span></div>
+          </div>
+          <div data-hf-id="hf-rtry" class="f09-hero-track"><span data-hf-id="hf-jeg1" class="f09-hero-fill"></span></div>
+        </div>
+      </div>
+
+      <div class="f09-hero-dev f09-hero-phone" id="f09-hero-phone" data-hf-id="hf-ajy8">
+        <div data-hf-id="hf-0kch" class="f09-hero-notch"></div>
+        <div data-hf-id="hf-ht8a" class="f09-hero-scr">
+          <div data-hf-id="hf-tk0w" class="f09-hero-topbar">
+            <span data-hf-id="hf-5m8u" class="f09-hero-dot"></span>
+            <span data-hf-id="hf-1972" class="f09-hero-pill" style="width: 3.2em"></span>
+          </div>
+          <div data-hf-id="hf-m7rv" class="f09-hero-cards">
+            <div data-hf-id="hf-e6p0" class="f09-hero-card"><span data-hf-id="hf-9a55" class="f09-hero-num"></span><span data-hf-id="hf-ecl0" class="f09-hero-lab"></span></div>
+            <div data-hf-id="hf-dsdz" class="f09-hero-card"><span data-hf-id="hf-9og6" class="f09-hero-num"></span><span data-hf-id="hf-dy9z" class="f09-hero-lab"></span></div>
+          </div>
+          <div data-hf-id="hf-s82z" class="f09-hero-track"><span data-hf-id="hf-kld4" class="f09-hero-fill"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- track 4 — the lockup resolves out of the spotlight -->
+    <div class="clip f09-hero-lockwrap" data-hf-id="hf-tr0m" data-start="0" data-duration="5" data-track-index="4">
+      <div data-hf-id="hf-mtei" class="f09-hero-seed" id="f09-hero-seed">
+        <div data-hf-id="hf-ddga" class="f09-hero-seed-core"></div>
+      </div>
+      <div data-hf-id="hf-a890" class="f09-hero-lockup" id="f09-hero-lockup">
+        <div class="f09-hero-mark" data-hf-id="hf-f5r1">
+          <svg data-hf-id="hf-mo98" class="f09-hero-spade" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path data-hf-id="hf-ynq9" d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z" />
+            <path data-hf-id="hf-5rib" d="M12 18v4" />
+          </svg>
+          <div class="f09-hero-word" data-hf-id="hf-eecp">StackedPoker</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- track 5 — the headline, in two beats -->
+    <div data-hf-id="hf-pezi" class="clip" data-start="0" data-duration="5" data-track-index="5">
+      <div class="f09-hero-line f09-hero-l1" id="f09-hero-l1" data-hf-id="hf-6l9k"></div>
+      <div class="f09-hero-line f09-hero-l2" id="f09-hero-l2" data-hf-id="hf-zl5t"></div>
+    </div>
+
+    <!-- track 6 — the one solid element in the entire film -->
+    <div data-hf-id="hf-lgvh" class="clip" data-start="0" data-duration="5" data-track-index="6">
+      <div class="f09-hero-ctawrap" data-hf-id="hf-38yl">
+        <div class="f09-hero-cta" id="f09-hero-cta" data-hf-id="hf-9707">Start Free</div>
+      </div>
+      <div class="f09-hero-note" id="f09-hero-note" data-hf-id="hf-6hiw">Free to start&#160;&#160;·&#160;&#160;No credit card</div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+      window.__timelines["09-hero"] = tl;
+
+      /* ── seek-safe starting states for everything that arrives late ── */
+      // Initial hidden states must be immediate, NOT zero-duration sets at
+      // position 0 inside the paused timeline: a set at 0 does not render while
+      // the playhead sits exactly at 0, so the first rendered frame of the hero
+      // shot would flash the lockup and CTA before hiding them.
+      gsap.set("#f09-hero-rings", { opacity: 0, scale: 0.9 });
+      gsap.set("#f09-hero-glow", { opacity: 0, scale: 0.86 });
+      gsap.set("#f09-hero-seed", { opacity: 0, scale: 0.55 });
+      gsap.set("#f09-hero-lockup", { opacity: 0, scale: 0.72 });
+      gsap.set("#f09-hero-cta", { opacity: 0 });
+      gsap.set("#f09-hero-note", { opacity: 0 });
+
+      /* ── Scene 1 (0.0–1.2s) — layered lateral drift, three rates ──
+         MacBook slowest + largest, phone fastest + smallest.          */
+      var DEVICES = [
+        { sel: "#f09-hero-mac", x0: 26, x1: -10, rest: 0.9 },
+        { sel: "#f09-hero-ipad", x0: 64, x1: -24, rest: 0.89 },
+        { sel: "#f09-hero-phone", x0: 104, x1: -38, rest: 0.88 }
+      ];
+
+      DEVICES.forEach(function (d) {
+        tl.fromTo(d.sel, { opacity: 0 }, { opacity: 1, duration: 0.32, ease: "power2.out" }, 0);
+        tl.fromTo(d.sel, { x: d.x0 }, { x: d.x1, duration: 1.45, ease: "none" }, 0);
+
+        /* ── Scene 2 (1.2–2.0s) — the devices ease back and dim out ── */
+        tl.to(d.sel, { scale: d.rest, duration: 0.74, ease: "power2.inOut" }, 1.22);
+        tl.to(d.sel, { opacity: 0, filter: "blur(9px)", duration: 0.64, ease: "power2.in" }, 1.34);
+      });
+
+      /* ── Scene 2 — ambient-glow-bloom: the violet spotlight reopens.
+         Pulse-on-arrival: bloom past peak, then ease down to a steady
+         hold. Peak 0.34 ≤ 0.45 ceiling. No breathe — the close is still. */
+      tl.fromTo(
+        "#f09-hero-glow",
+        { opacity: 0, scale: 0.86 },
+        { opacity: 0.34, scale: 1.05, duration: 1.15, ease: "power2.out" },
+        1.25
+      );
+      tl.to("#f09-hero-glow", { opacity: 0.28, scale: 1.0, duration: 0.6, ease: "power2.out" }, 2.4);
+
+      tl.fromTo(
+        "#f09-hero-rings",
+        { opacity: 0, scale: 0.9 },
+        { opacity: 1, scale: 1, duration: 1.15, ease: "power2.out" },
+        1.3
+      );
+
+      /* ── Scene 3 (2.0–2.6s) — scale-swap-transition.
+         Outgoing: the spotlight seed shrinks + fades (power2.in).
+         Incoming: the lockup pops in with weight (back.out), z-index
+         above the outgoing, both on transform-origin 50% 50%.         */
+      tl.fromTo(
+        "#f09-hero-seed",
+        { opacity: 0, scale: 0.55 },
+        { opacity: 1, scale: 1, duration: 0.5, ease: "power2.out" },
+        1.4
+      );
+      tl.to("#f09-hero-seed", { scale: 0.72, opacity: 0, duration: 0.35, ease: "power2.in" }, 1.95);
+      tl.fromTo(
+        "#f09-hero-lockup",
+        { scale: 0.72, opacity: 0 },
+        { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(1.5)" },
+        2.15
+      );
+
+      /* ── Scenes 4 + 5 — discrete-text-sequence.
+         Two states, replaced instantly at their thresholds, with a
+         written 0.72s hold between them. Two beats, never one.        */
+      var SEQUENCE = [
+        { t: 0.0, l1: "", l2: "" },
+        { t: 2.62, l1: "Learn Poker", l2: "" },
+        { t: 3.34, l1: "Learn Poker", l2: "By Playing." }
+      ];
+
+      function stateAt(time) {
+        for (var i = SEQUENCE.length - 1; i >= 0; i--) {
+          if (time >= SEQUENCE[i].t) return SEQUENCE[i];
+        }
+        return SEQUENCE[0];
+      }
+
+      var l1 = document.getElementById("f09-hero-l1");
+      var l2 = document.getElementById("f09-hero-l2");
+      var driver = { t: 0 };
+
+      tl.to(
+        driver,
+        {
+          t: 5,
+          duration: 5,
+          ease: "none",
+          onUpdate: function () {
+            var s = stateAt(driver.t);
+            if (l1.textContent !== s.l1) l1.textContent = s.l1;
+            if (l2.textContent !== s.l2) l2.textContent = s.l2;
+          }
+        },
+        0
+      );
+
+      /* long-tail settle on each beat as its state lands */
+      tl.fromTo(
+        "#f09-hero-l1",
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.66, ease: "power3.out" },
+        2.62
+      );
+      tl.fromTo(
+        "#f09-hero-l2",
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.62, ease: "power3.out" },
+        3.34
+      );
+
+      /* ── Scene 6 (3.9–4.4s) — Start Free lands, reassurance under it ── */
+      tl.fromTo(
+        "#f09-hero-cta",
+        { opacity: 0, y: 24, scale: 0.94 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.44, ease: "back.out(1.6)" },
+        3.92
+      );
+      tl.fromTo(
+        "#f09-hero-note",
+        { opacity: 0, y: 12 },
+        { opacity: 1, y: 0, duration: 0.32, ease: "power2.out" },
+        4.08
+      );
+
+      /* ── Scene 7 (4.4–5.0s) — held, completely still. The film has
+         stopped: nothing is scheduled past 4.40. ── */
+    })();
+  </script>
+</template>

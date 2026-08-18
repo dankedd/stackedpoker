@@ -1,0 +1,519 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Geist";
+      src: url("capture/assets/fonts/22a5144ee8d83bca-s.p.woff2") format("woff2");
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: block;
+    }
+
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      font-family: "Geist", sans-serif;
+      color: #E6EAF0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── full-bleed ground (clip layer, never on #root) ───────────────── */
+    .f01q-ground {
+      position: absolute;
+      inset: 0;
+      background: #0C101D;
+    }
+
+    /* ── the camera — wraps EVERYTHING in the scene. One writer, JS. ──── */
+    .f01q-camera {
+      position: absolute;
+      inset: 0;
+      transform-origin: 50% 50%;
+      /* frame-0 resting state; from here on the JS drift writer owns this
+         property outright — no GSAP tween ever touches the camera transform */
+      transform: scale(2.4) translate(0px, 0px);
+      will-change: transform;
+    }
+
+    /* three parallax planes: far (light) · mid (the card) · near (cards) */
+    .f01q-plane {
+      position: absolute;
+      inset: 0;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    .f01q-plane-far { z-index: 1; }
+    .f01q-plane-mid { z-index: 2; }
+    .f01q-plane-near { z-index: 3; }
+
+    /* ── the violet spotlight pool ────────────────────────────────────── */
+    .f01q-glow-wrap {
+      position: absolute;
+      left: 370px;
+      top: 130px;
+      width: 1180px;
+      height: 820px;
+      transform-origin: 50% 50%;
+      will-change: transform, opacity;
+      pointer-events: none;
+    }
+    .f01q-glow-core {
+      position: absolute;
+      inset: 0;
+      opacity: 0.32;
+      transform-origin: 50% 50%;
+      background: radial-gradient(
+        ellipse closest-side at 50% 50%,
+        rgba(139, 92, 246, 0.95) 0%,
+        rgba(139, 92, 246, 0.62) 30%,
+        rgba(139, 92, 246, 0.26) 56%,
+        rgba(124, 58, 237, 0.08) 80%,
+        rgba(124, 58, 237, 0) 100%
+      );
+    }
+
+    /* ── the decision card — assembled around the flop, never entering ── */
+    .f01q-card {
+      position: absolute;
+      left: 460px;
+      top: 168px;
+      width: 1000px;
+      height: 640px;
+      border-radius: 14px;
+      background: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      will-change: opacity;
+    }
+
+    /* depth-of-field layers — small / grouped, never the giant surface */
+    .f01q-dof {
+      --dof: 0px;
+      filter: blur(var(--dof));
+      will-change: filter, opacity;
+    }
+
+    .f01q-head {
+      position: absolute;
+      left: 40px;
+      right: 40px;
+      top: 38px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .f01q-eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #8B5CF6;
+    }
+    .f01q-mark {
+      display: block;
+      width: 21px;
+      height: 21px;
+      color: #8B5CF6;
+    }
+    .f01q-pot {
+      padding: 8px 19px;
+      border-radius: 100px;
+      background: rgba(139, 92, 246, 0.08);
+      color: #a78bfa;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+
+    .f01q-seat {
+      position: absolute;
+      left: 40px;
+      right: 40px;
+      top: 505px;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      color: #728297;
+    }
+
+    /* ── the three unpressed buttons — the focal layer, stays sharp ───── */
+    .f01q-actions {
+      position: absolute;
+      left: 90px;
+      top: 540px;
+      width: 820px;
+      height: 74px;
+      display: flex;
+      gap: 20px;
+      z-index: 4;
+    }
+    .f01q-btn {
+      width: 260px;
+      height: 74px;
+      border-radius: 100px;
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      background: rgba(139, 92, 246, 0.08);
+      color: #E6EAF0;
+      font-size: 27px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform-origin: 50% 50%;
+      will-change: transform, opacity;
+    }
+
+    /* ── the board — the frame opens in extreme close-up on this ──────── */
+    .f01q-board {
+      position: absolute;
+      left: 711px;
+      top: 435px;
+      width: 498px;
+      height: 210px;
+      display: flex;
+      gap: 24px;
+      will-change: transform, filter, opacity;
+    }
+    .f01q-bcard {
+      width: 150px;
+      height: 210px;
+      border-radius: 10px;
+      background: linear-gradient(168deg, #F4F6FA 0%, #E3E7F0 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transform-origin: 50% 100%;
+      will-change: transform, opacity;
+    }
+    .f01q-rank {
+      font-size: 54px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    .f01q-pip {
+      display: block;
+      width: 62px;
+      height: 62px;
+    }
+    .f01q-ink { color: #0C101D; }
+    .f01q-red { color: #B41C22; }
+
+    /* ── static cinematic falloff at the canvas edge ──────────────────── */
+    .f01q-vignette {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+      background: radial-gradient(
+        ellipse 78% 80% at 50% 50%,
+        rgba(6, 8, 14, 0) 52%,
+        rgba(6, 8, 14, 0.5) 100%
+      );
+    }
+  </style>
+
+  <div id="root" data-composition-id="01-the-question" data-start="0" data-duration="7" data-width="1920" data-height="1080">
+    <!-- ground -->
+    <div class="clip f01q-ground" data-start="0" data-duration="7" data-track-index="0"></div>
+
+    <!-- the camera: one wrapper, one continuous move, outward only -->
+    <div id="f01q-camera" class="clip f01q-camera" data-start="0" data-duration="7" data-track-index="1">
+
+      <!-- FAR PLANE — the spotlight pool on the table surface -->
+      <div id="f01q-plane-far" class="f01q-plane f01q-plane-far">
+        <div id="f01q-glow-wrap" class="f01q-glow-wrap">
+          <div id="f01q-glow-core" class="f01q-glow-core"></div>
+        </div>
+      </div>
+
+      <!-- MID PLANE — the decision card and its chrome, revealed by the pull-back -->
+      <div id="f01q-plane-mid" class="f01q-plane f01q-plane-mid">
+        <div id="f01q-card" class="f01q-card">
+          <div id="f01q-head" class="f01q-head f01q-dof" data-depth="1">
+            <div class="f01q-eyebrow">
+              <svg class="f01q-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z" />
+                <path d="M12 18v4" />
+              </svg>
+              <span>Decision spot</span>
+            </div>
+            <div id="f01q-pot" class="f01q-pot">POT 3.8 BB</div>
+          </div>
+
+          <div id="f01q-seat" class="f01q-seat f01q-dof" data-depth="1">HERO &middot; BTN &middot; 100 BB</div>
+
+          <!-- three buttons, none of them pressed -->
+          <div class="f01q-actions">
+            <div class="f01q-btn f01q-action">Fold</div>
+            <div class="f01q-btn f01q-action">Call</div>
+            <div class="f01q-btn f01q-action">Raise</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NEAR PLANE — the flop. Nothing else exists when these arrive. -->
+      <div id="f01q-plane-near" class="f01q-plane f01q-plane-near">
+        <div id="f01q-board" class="f01q-board f01q-dof" data-depth="1">
+          <div class="f01q-bcard f01q-board-card">
+            <div class="f01q-rank f01q-ink">Q</div>
+            <svg class="f01q-pip f01q-ink" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 9c-1.5 1.5-3 3.2-3 5.5A5.5 5.5 0 0 0 7.5 20c1.8 0 3-.5 4.5-2 1.5 1.5 2.7 2 4.5 2a5.5 5.5 0 0 0 5.5-5.5c0-2.3-1.5-4-3-5.5l-7-7-7 7Z" fill="currentColor" />
+              <path d="M12 17.4v4.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" />
+            </svg>
+          </div>
+          <div class="f01q-bcard f01q-board-card">
+            <div class="f01q-rank f01q-red">7</div>
+            <svg class="f01q-pip f01q-red" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 1.4 21.6 12 12 22.6 2.4 12Z" fill="currentColor" />
+            </svg>
+          </div>
+          <div class="f01q-bcard f01q-board-card">
+            <div class="f01q-rank f01q-ink">2</div>
+            <svg class="f01q-pip f01q-ink" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <circle cx="12" cy="6.9" r="4.5" />
+              <circle cx="6.5" cy="14.2" r="4.5" />
+              <circle cx="17.5" cy="14.2" r="4.5" />
+              <path d="M10.3 13.4h3.4l1.7 8.6h-6.8z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- static edge falloff -->
+    <div class="clip f01q-vignette" data-start="0" data-duration="7" data-track-index="2"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      window.__timelines = window.__timelines || {};
+      var tl = gsap.timeline({ paused: true });
+      window.__timelines["01-the-question"] = tl;
+
+      var TOTAL = 7;
+
+      var camera = document.getElementById("f01q-camera");
+      var glowWrap = document.getElementById("f01q-glow-wrap");
+      var glowCore = document.getElementById("f01q-glow-core");
+      var board = document.getElementById("f01q-board");
+
+      /* ── tokens ─────────────────────────────────────────────────────── */
+      // ambient-glow-bloom
+      var BLOOM_START = 0.05;
+      var BLOOM_DUR = 1.35;          // BLOOM_START + BLOOM_DUR ≈ card 1's settle
+      var BLOOM_PEAK = 0.86;
+      var GLOW_START_SCALE = 0.78;
+      var GLOW_PEAK_OPACITY = 0.32;  // core alpha; ×0.95 gradient stop → ≈0.30 effective
+      var OPACITY_AMP = 0.025;       // peak + amp = 0.345, well under the 0.45 ceiling
+      var SCALE_AMP = 0.014;
+
+      // the flop, one card at a time
+      var DEAL_1 = 0.8;
+      var DEAL_STEP = 0.62;
+      var DEAL_DUR = 0.66;
+      var DEAL_LAST_SETTLE = DEAL_1 + DEAL_STEP * 2 + DEAL_DUR; // 2.70
+
+      // multi-phase-camera — ONE move, outward only, decelerating
+      var CAM_START_SCALE = 2.4;     // extreme close-up: the flop fills ~65% of canvas
+      var CAM_END_SCALE = 1.0;
+      var PULLBACK_AT = 3.0;
+      var PULLBACK_DUR = 2.2;
+      var CAM_LOCK = PULLBACK_AT + PULLBACK_DUR; // 5.20
+      var DRIFT_CYCLES = 1;
+      var DRIFT_AMP_X = 3;
+      var DRIFT_AMP_Y = 2;
+      var DRIFT_FREQ_RATIO = 1.3;
+      var DRIFT_DECAY_END = 6.2;     // drift is fully dead once the frame is held
+
+      // parallax: near retreats faster than the camera, far slower
+      var PLANE_NEAR_FROM = 1.05;
+      var PLANE_MID_FROM = 1.03;
+      var PLANE_FAR_FROM = 0.95;
+      var PLANE_FAR_TO = 1.06;
+
+      // the buttons, after the lock
+      var BTN_START = 5.25;
+      var BTN_STAGGER = 0.1;
+      var BTN_DUR = 0.5;
+
+      // depth-of-field-blur
+      var DOF_START = 6.25;
+      var DOF_DUR = 0.5;
+      var BLUR_PER_DEPTH = 2.5;
+      var DIM_LEVEL = 0.76;
+
+      // sine-wave-loop — subtle jitter only, half a cycle, ends at rest
+      var IDLE_START = 6.2;
+      var IDLE_DUR = TOTAL - IDLE_START; // 0.8s → period 1.6s
+      var Y_AMP_PX = 1.5;
+
+      /* ═══ Scene 1 (0.0–0.9s) — a violet spotlight opens from zero ═════ */
+      tl.fromTo(
+        glowWrap,
+        { opacity: 0, scale: GLOW_START_SCALE },
+        { opacity: BLOOM_PEAK, scale: 0.98, duration: BLOOM_DUR, ease: "power2.out" },
+        BLOOM_START
+      );
+      // the pool finishes opening exactly as the third card lands — one beat
+      tl.to(
+        glowWrap,
+        {
+          opacity: 1,
+          scale: 1,
+          duration: DEAL_LAST_SETTLE - (BLOOM_START + BLOOM_DUR),
+          ease: "power2.out"
+        },
+        BLOOM_START + BLOOM_DUR
+      );
+
+      /* ═══ Scene 2 (0.9–3.0s) — Q♠, then 7♦, then 2♣. Nothing else. ═══ */
+      var boardEls = gsap.utils.toArray(".f01q-board-card");
+      for (var i = 0; i < boardEls.length; i++) {
+        tl.fromTo(
+          boardEls[i],
+          { opacity: 0, x: -46, y: 10, rotation: -2.2, scale: 0.94 },
+          {
+            opacity: 1,
+            x: 0,
+            y: 0,
+            rotation: 0,
+            scale: 1,
+            duration: DEAL_DUR,
+            ease: "power3.out"
+          },
+          DEAL_1 + i * DEAL_STEP
+        );
+      }
+
+      // bounded glow breathe through the rest of the shot — finite, no yoyo
+      var glowPhase = { p: 0 };
+      tl.to(
+        glowPhase,
+        {
+          p: Math.PI * 2,
+          duration: TOTAL - DEAL_LAST_SETTLE,
+          ease: "none",
+          onUpdate: function () {
+            var s = Math.sin(glowPhase.p);
+            glowCore.style.opacity = String(GLOW_PEAK_OPACITY + s * OPACITY_AMP);
+            glowCore.style.transform = "scale(" + (1 + s * SCALE_AMP) + ")";
+          }
+        },
+        DEAL_LAST_SETTLE
+      );
+
+      /* ═══ Scene 3 (3.0–5.2s) — THE pull-back. The only camera move. ══ */
+      var phase = { scale: CAM_START_SCALE }; // phase 1 is the initial value, no tween
+      tl.to(
+        phase,
+        { scale: CAM_END_SCALE, duration: PULLBACK_DUR, ease: "power2.out" },
+        PULLBACK_AT
+      );
+
+      // drift driver — the ONE writer of camera.style.transform
+      var drift = { p: 0 };
+      tl.to(
+        drift,
+        {
+          p: Math.PI * 2 * DRIFT_CYCLES,
+          duration: TOTAL,
+          ease: "none",
+          onUpdate: function () {
+            var t = (drift.p / (Math.PI * 2 * DRIFT_CYCLES)) * TOTAL;
+            // the camera locks at CAM_LOCK: drift decays to nothing by DRIFT_DECAY_END
+            var env =
+              t <= CAM_LOCK
+                ? 1
+                : t >= DRIFT_DECAY_END
+                ? 0
+                : 1 - (t - CAM_LOCK) / (DRIFT_DECAY_END - CAM_LOCK);
+            var dx = Math.sin(drift.p) * DRIFT_AMP_X * env;
+            var dy = Math.sin(drift.p * DRIFT_FREQ_RATIO) * DRIFT_AMP_Y * env;
+            camera.style.transform =
+              "scale(" + phase.scale + ") translate(" + dx + "px, " + dy + "px)";
+          }
+        },
+        0
+      );
+
+      // three parallax planes, same window as the camera — one retreat, three depths
+      tl.fromTo(
+        "#f01q-plane-near",
+        { scale: PLANE_NEAR_FROM },
+        { scale: 1, duration: PULLBACK_DUR, ease: "power2.out" },
+        PULLBACK_AT
+      );
+      tl.fromTo(
+        "#f01q-plane-mid",
+        { scale: PLANE_MID_FROM },
+        { scale: 1, duration: PULLBACK_DUR, ease: "power2.out" },
+        PULLBACK_AT
+      );
+      tl.fromTo(
+        "#f01q-plane-far",
+        { scale: PLANE_FAR_FROM },
+        { scale: PLANE_FAR_TO, duration: PULLBACK_DUR, ease: "power2.out" },
+        PULLBACK_AT
+      );
+
+      // the card assembles around the flop — pure fades, nothing enters
+      tl.fromTo("#f01q-card", { opacity: 0 }, { opacity: 1, duration: 0.9, ease: "power2.out" }, 3.05);
+      tl.fromTo("#f01q-head", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power2.out" }, 3.55);
+      tl.fromTo("#f01q-pot", { opacity: 0 }, { opacity: 1, duration: 0.6, ease: "power2.out" }, 3.85);
+      tl.fromTo("#f01q-seat", { opacity: 0 }, { opacity: 1, duration: 0.65, ease: "power2.out" }, 4.25);
+
+      /* ═══ Scene 4 (5.2–6.2s) — Fold / Call / Raise settle. Unpressed. ═ */
+      gsap.utils.toArray(".f01q-action").forEach(function (el, n) {
+        tl.fromTo(
+          el,
+          { opacity: 0, y: 14, scale: 0.94 },
+          { opacity: 1, y: 0, scale: 1, duration: BTN_DUR, ease: "power3.out" },
+          BTN_START + n * BTN_STAGGER
+        );
+      });
+
+      /* ═══ Scene 5 (6.2–7.0s) — held. Focus falls off the button row. ═ */
+      gsap.utils.toArray(".f01q-dof").forEach(function (el) {
+        var depth = Number(el.getAttribute("data-depth")) || 1;
+        tl.to(
+          el,
+          {
+            "--dof": BLUR_PER_DEPTH * depth + "px",
+            opacity: DIM_LEVEL,
+            duration: DOF_DUR,
+            ease: "power2.inOut"
+          },
+          DOF_START
+        );
+      });
+      // the card surface and the pool dim with them — no blur on big surfaces
+      tl.to("#f01q-card", { opacity: 0.84, duration: DOF_DUR, ease: "power2.inOut" }, DOF_START);
+      tl.to(glowWrap, { opacity: 0.88, duration: DOF_DUR, ease: "power2.inOut" }, DOF_START);
+
+      // subtle jitter on the flop only — half a sine, starts and ends at rest
+      var idle = { p: 0 };
+      tl.to(
+        idle,
+        {
+          p: Math.PI,
+          duration: IDLE_DUR,
+          ease: "none",
+          onUpdate: function () {
+            board.style.transform = "translateY(" + Math.sin(idle.p) * Y_AMP_PX + "px)";
+          }
+        },
+        IDLE_START
+      );
+    })();
+  </script>
+</template>

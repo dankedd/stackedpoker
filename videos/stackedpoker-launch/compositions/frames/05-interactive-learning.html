@@ -1,0 +1,1256 @@
+<template>
+  <style>
+    /* ── Brand faces (shipped with the capture — latin subsets) ───────────── */
+    @font-face {
+      font-family: "Geist";
+      font-style: normal;
+      font-weight: 100 900;
+      font-display: block;
+      src: url("capture/assets/fonts/22a5144ee8d83bca-s.p.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Geist Mono";
+      font-style: normal;
+      font-weight: 100 900;
+      font-display: block;
+      src: url("capture/assets/fonts/7d4881bb7e1bf84d-s.p.woff2") format("woff2");
+    }
+
+    /* ── Root (styled via #root, never a class) ───────────────────────────── */
+    #root {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      font-family: "Geist", sans-serif;
+      color: #E6EAF0;
+      -webkit-font-smoothing: antialiased;
+    }
+    #root * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ── Track 0 — full-bleed ground (never on #root) ─────────────────────── */
+    .f05-ground {
+      position: absolute;
+      left: 0; top: 0;
+      width: 1920px; height: 1080px;
+      background:
+        radial-gradient(1200px 620px at 50% 40%, rgba(139, 92, 246, 0.10), rgba(139, 92, 246, 0) 70%),
+        #0C101D;
+    }
+
+    /* ── Track 1 — the stage that holds the single virtual camera ─────────── */
+    .f05-stage {
+      position: absolute;
+      left: 0; top: 0;
+      width: 1920px; height: 1080px;
+      overflow: hidden;
+    }
+    /* ONE camera wrapper. Everything on the plane lives inside it. */
+    .f05-world {
+      position: absolute;
+      left: 0; top: 0;
+      width: 12600px; height: 1080px;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    .f05-layer {
+      position: absolute;
+      left: 0; top: 0;
+      width: 12600px; height: 1080px;
+      will-change: transform;
+    }
+    /* back plane — slowest */
+    .f05-back {
+      background-image: radial-gradient(rgba(139, 92, 246, 0.13) 1.5px, rgba(139, 92, 246, 0) 1.6px);
+      background-size: 72px 72px;
+      background-position: 0 118px;
+    }
+    .f05-ghost-num {
+      position: absolute;
+      top: 214px;
+      width: 700px;
+      margin-left: -350px;
+      text-align: center;
+      font-size: 268px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      color: rgba(139, 92, 246, 0.055);
+    }
+    .f05-back-rule {
+      position: absolute;
+      left: 0; top: 878px;
+      width: 12600px; height: 1px;
+      background: rgba(139, 92, 246, 0.10);
+    }
+
+    /* fore plane — fastest */
+    .f05-badge {
+      position: absolute;
+      top: 84px;
+      width: 56px; height: 56px;
+      margin-left: -28px;
+      border-radius: 50%;
+      background: rgba(139, 92, 246, 0.08);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #A78BFA;
+    }
+    .f05-badge svg { width: 24px; height: 24px; display: block; }
+    .f05-badge-dot { width: 9px; height: 9px; border-radius: 50%; background: #8B5CF6; }
+    .f05-stem {
+      position: absolute;
+      top: 142px;
+      width: 1px; height: 26px;
+      background: linear-gradient(to bottom, rgba(139, 92, 246, 0.45), rgba(139, 92, 246, 0));
+    }
+
+    /* ── Station cards (mid plane) ────────────────────────────────────────── */
+    .f05-card {
+      position: absolute;
+      top: 170px;
+      width: 980px; height: 650px;
+      padding: 34px 36px;
+      background: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      border-radius: 14px;
+    }
+    /* decorative plane continuation beyond the first / last station, so the
+       opening and the landing frame never show a bare gutter at the edge. */
+    .f05-edge {
+      position: absolute;
+      top: 170px;
+      width: 980px; height: 650px;
+      padding: 34px 36px;
+      background: rgba(139, 92, 246, 0.035);
+      border: 1.5px solid rgba(139, 92, 246, 0.16);
+      border-radius: 14px;
+      opacity: 0.8;
+    }
+    .f05-edge span {
+      position: absolute;
+      display: block;
+      border-radius: 8px;
+      background: rgba(139, 92, 246, 0.055);
+      border: 1px solid rgba(139, 92, 246, 0.10);
+    }
+    .f05-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 30px;
+    }
+    .f05-eyebrow {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #8B5CF6;
+    }
+    .f05-pill {
+      font-family: "Geist Mono", monospace;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      color: #8B5CF6;
+      background: rgba(139, 92, 246, 0.08);
+      border-radius: 100px;
+      padding: 6px 14px;
+    }
+    .f05-body {
+      position: relative;
+      margin-top: 18px;
+      width: 908px;
+      height: 534px;
+    }
+
+    /* generic sub-parts */
+    .f05-slot {
+      position: absolute;
+      border: 1px dashed rgba(139, 92, 246, 0.32);
+      border-radius: 10px;
+    }
+    .f05-mini {
+      position: absolute;
+      background: #E6EAF0;
+      border-radius: 7px;
+      color: #121726;
+      font-weight: 700;
+      overflow: hidden;
+    }
+    .f05-mini span {
+      position: absolute;
+      left: 9px; top: 7px;
+      font-size: 22px;
+      line-height: 1;
+    }
+    .f05-mini svg {
+      position: absolute;
+      right: 8px; bottom: 8px;
+      width: 22px; height: 22px;
+      display: block;
+    }
+    .f05-accent {
+      position: absolute;
+      width: 60px; height: 4px;
+      border-radius: 2px;
+      background: #8B5CF6;
+    }
+
+    /* 01 — decision spot */
+    .f05-act {
+      position: absolute;
+      top: 444px;
+      width: 288px; height: 62px;
+      border-radius: 100px;
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      background: rgba(139, 92, 246, 0.04);
+      color: #E6EAF0;
+      font-size: 21px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .f05-act-pri {
+      background: #8B5CF6;
+      border-color: #8B5CF6;
+      color: #0C101D;
+      font-weight: 600;
+    }
+    .f05-focus-ring {
+      position: absolute;
+      top: 434px;
+      left: 300px;
+      width: 308px; height: 82px;
+      border-radius: 100px;
+      border: 1.5px solid rgba(139, 92, 246, 0.55);
+      opacity: 0;
+    }
+
+    /* 02 / 06 — range grids (visual models only — no figures printed) */
+    .f05-grid { position: absolute; }
+    .f05-cell {
+      position: absolute;
+      border-radius: 3px;
+      background: rgba(139, 92, 246, 0.05);
+      overflow: hidden;
+    }
+    .f05-cell i {
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      transform: scaleX(0);
+      transform-origin: left center;
+    }
+    .f05-cell b {
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Geist Mono", monospace;
+      font-weight: 500;
+      color: rgba(230, 234, 240, 0.62);
+    }
+    .f05-key {
+      position: absolute;
+      display: flex;
+      align-items: center;
+    }
+    .f05-key i {
+      display: block;
+      width: 44px; height: 44px;
+      border-radius: 8px;
+      margin-right: 20px;
+    }
+    .f05-key em {
+      font-style: normal;
+      font-size: 20px;
+      font-weight: 500;
+      color: #E6EAF0;
+    }
+    .f05-track {
+      position: absolute;
+      height: 10px;
+      border-radius: 6px;
+      background: rgba(139, 92, 246, 0.08);
+      overflow: hidden;
+    }
+    .f05-fill {
+      display: block;
+      width: 100%; height: 100%;
+      background: #8B5CF6;
+      transform: scaleX(0);
+      transform-origin: left center;
+    }
+    .f05-legend {
+      position: absolute;
+      font-family: "Geist Mono", monospace;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      color: #728297;
+    }
+
+    /* 03 — board builder */
+    .f05-swipe {
+      position: absolute;
+      height: 3px;
+      border-radius: 3px;
+      background: linear-gradient(to right, rgba(139, 92, 246, 0), rgba(139, 92, 246, 0.75));
+      transform-origin: left center;
+      transform: scaleX(0);
+      opacity: 0;
+    }
+    .f05-land {
+      position: absolute;
+      border-radius: 10px;
+      border: 1.5px solid rgba(139, 92, 246, 0.65);
+      opacity: 0;
+    }
+
+    /* 04 — drag & drop */
+    .f05-chip {
+      position: absolute;
+      border-radius: 10px;
+      background: rgba(139, 92, 246, 0.06);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      font-family: "Geist Mono", monospace;
+      font-size: 18px;
+      font-weight: 500;
+      color: #E6EAF0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .f05-bucket {
+      position: absolute;
+      border-radius: 12px;
+      border: 1px dashed rgba(139, 92, 246, 0.32);
+      background: rgba(139, 92, 246, 0.03);
+    }
+    .f05-bucket em {
+      position: absolute;
+      left: 20px; top: 16px;
+      font-style: normal;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #728297;
+    }
+    .f05-cursor {
+      position: absolute;
+      left: 0; top: 0;
+      width: 28px; height: 28px;
+      pointer-events: none;
+      z-index: 40;
+    }
+    .f05-ripple {
+      position: absolute;
+      width: 120px; height: 120px;
+      margin-left: -60px;
+      margin-top: -60px;
+      border-radius: 50%;
+      border: 2px solid rgba(139, 92, 246, 0.75);
+      transform: scale(0);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* 05 — multiple choice */
+    .f05-prompt {
+      position: absolute;
+      left: 0; top: 2px;
+      font-size: 26px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: #E6EAF0;
+    }
+    .f05-answer {
+      position: absolute;
+      left: 0;
+      width: 908px; height: 84px;
+      border-radius: 12px;
+      background: rgba(139, 92, 246, 0.04);
+      border: 1.5px solid rgba(139, 92, 246, 0.2);
+      display: flex;
+      align-items: center;
+      padding: 0 28px;
+      font-size: 21px;
+      color: #E6EAF0;
+    }
+    .f05-answer u {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px; height: 36px;
+      margin-right: 22px;
+      border-radius: 50%;
+      background: rgba(139, 92, 246, 0.10);
+      color: #8B5CF6;
+      font-family: "Geist Mono", monospace;
+      font-size: 15px;
+      font-weight: 500;
+      text-decoration: none;
+    }
+    .f05-commit {
+      position: absolute;
+      left: 0;
+      width: 908px; height: 84px;
+      border-radius: 12px;
+      background: rgba(139, 92, 246, 0.14);
+      border: 1.5px solid rgba(139, 92, 246, 0.7);
+      opacity: 0;
+    }
+    .f05-pip {
+      position: absolute;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: rgba(139, 92, 246, 0.22);
+    }
+
+    /* 07 / 08 — vector stations */
+    .f05-svg { position: absolute; left: 0; top: 30px; width: 908px; height: 470px; }
+    .f05-draw { fill: none; stroke: #8B5CF6; stroke-width: 2.4; stroke-linecap: round; }
+    .f05-node rect {
+      fill: rgba(139, 92, 246, 0.08);
+      stroke: rgba(139, 92, 246, 0.45);
+      stroke-width: 1.5;
+      rx: 10;
+    }
+    .f05-node text {
+      fill: #E6EAF0;
+      font-family: "Geist", sans-serif;
+      font-size: 19px;
+      font-weight: 500;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+    .f05-seat circle {
+      fill: rgba(139, 92, 246, 0.07);
+      stroke: rgba(139, 92, 246, 0.35);
+      stroke-width: 1.5;
+    }
+    .f05-seat text {
+      fill: #E6EAF0;
+      font-family: "Geist Mono", monospace;
+      font-size: 16px;
+      font-weight: 500;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+    .f05-seat-hero circle { fill: #8B5CF6; stroke: #8B5CF6; }
+    .f05-seat-hero text { fill: #0C101D; font-weight: 700; }
+
+    /* ── Track 2 — fixed chrome (does NOT ride the camera) ────────────────── */
+    .f05-chrome {
+      position: absolute;
+      left: 0; top: 0;
+      width: 1920px; height: 1080px;
+      pointer-events: none;
+    }
+    .f05-kicker {
+      position: absolute;
+      left: 96px; top: 56px;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #8B5CF6;
+    }
+    .f05-tag {
+      position: absolute;
+      right: 96px; top: 48px;
+      font-family: "Geist Mono", monospace;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      color: #8B5CF6;
+      background: rgba(139, 92, 246, 0.08);
+      border-radius: 100px;
+      padding: 8px 16px;
+    }
+    .f05-rail {
+      position: absolute;
+      left: 640px; top: 856px;
+      width: 640px; height: 4px;
+      border-radius: 6px;
+      background: rgba(139, 92, 246, 0.10);
+      overflow: hidden;
+    }
+    .f05-rail i {
+      display: block;
+      width: 100%; height: 100%;
+      background: #8B5CF6;
+      transform: scaleX(0);
+      transform-origin: left center;
+    }
+    .f05-rail-cap {
+      position: absolute;
+      top: 826px;
+      font-family: "Geist Mono", monospace;
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      color: #728297;
+    }
+  </style>
+
+  <div data-hf-id="hf-0m5r" id="root" data-composition-id="05-interactive-learning" data-start="0" data-duration="12" data-width="1920" data-height="1080">
+    <!-- ══ track 0 · full-bleed ground ══ -->
+    <div data-hf-id="hf-junk" class="clip f05-ground" data-start="0" data-duration="12" data-track-index="0"></div>
+
+    <!-- ══ track 1 · the plane + the one camera ══ -->
+    <div data-hf-id="hf-8qr0" class="clip f05-stage" data-start="0" data-duration="12" data-track-index="1">
+      <div data-hf-id="hf-nqpu" class="f05-world" id="f05-world">
+        <div data-hf-id="hf-5jbn" class="f05-layer f05-back" id="f05-back">
+          <div data-hf-id="hf-kl60" class="f05-back-rule"></div>
+        </div>
+
+        <div data-hf-id="hf-3rud" class="f05-layer" id="f05-mid">
+          <!-- plane continues before 01 / after 08 (decorative, no copy) -->
+          <div data-hf-id="hf-c44p" class="f05-edge" id="f05-edge-lead">
+            <span data-hf-id="hf-zm5y" style="left:36px;top:34px;width:280px;height:16px;"></span>
+            <span data-hf-id="hf-1p4q" style="left:36px;top:88px;width:908px;height:300px;"></span>
+            <span data-hf-id="hf-24r3" style="left:36px;top:420px;width:430px;height:64px;"></span>
+            <span data-hf-id="hf-nbr2" style="left:514px;top:420px;width:430px;height:64px;"></span>
+          </div>
+          <div data-hf-id="hf-l5vx" class="f05-edge" id="f05-edge-tail">
+            <span data-hf-id="hf-h2e2" style="left:36px;top:34px;width:280px;height:16px;"></span>
+            <span data-hf-id="hf-vtnc" style="left:36px;top:88px;width:440px;height:396px;"></span>
+            <span data-hf-id="hf-6k9h" style="left:514px;top:88px;width:430px;height:180px;"></span>
+            <span data-hf-id="hf-s4pc" style="left:514px;top:296px;width:430px;height:188px;"></span>
+          </div>
+
+          <!-- 01 ─ decision spot -->
+          <div data-hf-id="hf-4xm1" class="f05-card" data-st="0">
+            <div data-hf-id="hf-6ti2" class="f05-head">
+              <span data-hf-id="hf-6xr6" class="f05-eyebrow">01 · Decision Spot</span>
+              <span data-hf-id="hf-ts1n" class="f05-pill">LIVE HAND</span>
+            </div>
+            <div data-hf-id="hf-nk8g" class="f05-body">
+              <svg data-hf-id="hf-838i" class="f05-svg" id="f05-table-svg" viewBox="0 0 908 410" style="top:0;height:410px;">
+                <ellipse data-hf-id="hf-9mbg" cx="454" cy="196" rx="300" ry="148" fill="rgba(139,92,246,0.05)" stroke="rgba(139,92,246,0.25)" stroke-width="1.5" />
+                <ellipse data-hf-id="hf-3wcq" cx="454" cy="196" rx="258" ry="118" fill="none" stroke="rgba(139,92,246,0.12)" stroke-width="1" />
+                <g data-hf-id="hf-d6oi" id="f05-spot-seats" />
+                <g data-hf-id="hf-46i0" id="f05-spot-board" />
+              </svg>
+              <div data-hf-id="hf-rmde" class="f05-focus-ring" id="f05-focus-ring"></div>
+              <div data-hf-id="hf-spq2" class="f05-act" id="f05-act-0" style="left:0;">Fold</div>
+              <div data-hf-id="hf-wi4c" class="f05-act f05-act-pri" id="f05-act-1" style="left:310px;">Call</div>
+              <div data-hf-id="hf-b4mx" class="f05-act" id="f05-act-2" style="left:620px;">Raise</div>
+            </div>
+          </div>
+
+          <!-- 02 ─ range grid (focal) -->
+          <div data-hf-id="hf-45y8" class="f05-card" data-st="1">
+            <div data-hf-id="hf-jfni" class="f05-head">
+              <span data-hf-id="hf-6nso" class="f05-eyebrow">02 · Range Grid</span>
+              <span data-hf-id="hf-d5sb" class="f05-pill">13 × 13</span>
+            </div>
+            <div data-hf-id="hf-ghe0" class="f05-body">
+              <div data-hf-id="hf-r9tg" class="f05-grid" id="f05-grid-open" style="left:0;top:2px;width:530px;height:530px;"></div>
+              <div data-hf-id="hf-y49b" class="f05-legend" id="f05-open-legend" style="left:566px;top:6px;">OPENING RANGE</div>
+              <div data-hf-id="hf-11jy" class="f05-key" id="f05-key-0" style="left:566px;top:64px;"><i data-hf-id="hf-dcne" style="background:rgba(139,92,246,0.85);"></i><em data-hf-id="hf-y4do">Pairs</em></div>
+              <div data-hf-id="hf-ipx0" class="f05-key" id="f05-key-1" style="left:566px;top:144px;"><i data-hf-id="hf-1jlb" style="background:rgba(139,92,246,0.62);"></i><em data-hf-id="hf-s4lj">Suited</em></div>
+              <div data-hf-id="hf-vsyc" class="f05-key" id="f05-key-2" style="left:566px;top:224px;"><i data-hf-id="hf-8gyf" style="background:rgba(139,92,246,0.40);"></i><em data-hf-id="hf-kf71">Offsuit</em></div>
+              <div data-hf-id="hf-risj" class="f05-accent" id="f05-open-accent" style="left:566px;top:322px;"></div>
+              <div data-hf-id="hf-3m65" class="f05-legend" style="left:566px;top:412px;">GRID SWEEP</div>
+              <div data-hf-id="hf-56qe" class="f05-track" id="f05-open-track" style="left:566px;top:444px;width:342px;opacity:0;"><i data-hf-id="hf-ktsb" class="f05-fill"></i></div>
+            </div>
+          </div>
+
+          <!-- 03 ─ board builder -->
+          <div data-hf-id="hf-ctu3" class="f05-card" data-st="2">
+            <div data-hf-id="hf-jtyj" class="f05-head">
+              <span data-hf-id="hf-x22h" class="f05-eyebrow">03 · Board Builder</span>
+              <span data-hf-id="hf-cg9p" class="f05-pill">FLOP</span>
+            </div>
+            <div data-hf-id="hf-fagx" class="f05-body">
+              <div data-hf-id="hf-xk3n" class="f05-legend" style="left:0;top:6px;">CARD TRAY</div>
+              <div data-hf-id="hf-vpy5" id="f05-tray"></div>
+              <div data-hf-id="hf-zj59" class="f05-legend" style="left:0;top:228px;">FLOP SLOTS</div>
+              <div data-hf-id="hf-1qi2" class="f05-slot" style="left:196px;top:262px;width:150px;height:212px;"></div>
+              <div data-hf-id="hf-6s1h" class="f05-slot" style="left:379px;top:262px;width:150px;height:212px;"></div>
+              <div data-hf-id="hf-5ljn" class="f05-slot" style="left:562px;top:262px;width:150px;height:212px;"></div>
+              <div data-hf-id="hf-p4gp" class="f05-land" id="f05-land" style="left:562px;top:262px;width:150px;height:212px;"></div>
+              <div data-hf-id="hf-wair" class="f05-swipe" id="f05-swipe" style="left:300px;top:206px;width:320px;"></div>
+              <div data-hf-id="hf-rbqt" id="f05-fly-wrap"></div>
+            </div>
+          </div>
+
+          <!-- 04 ─ drag & drop -->
+          <div data-hf-id="hf-8vq2" class="f05-card" data-st="3">
+            <div data-hf-id="hf-k89k" class="f05-head">
+              <span data-hf-id="hf-edxa" class="f05-eyebrow">04 · Drag &amp; Drop</span>
+              <span data-hf-id="hf-47rg" class="f05-pill">SORT</span>
+            </div>
+            <div data-hf-id="hf-fory" class="f05-body">
+              <div data-hf-id="hf-wbb4" class="f05-legend" style="left:0;top:6px;">SOURCE POOL</div>
+              <div data-hf-id="hf-69a3" id="f05-pool"></div>
+              <div data-hf-id="hf-s1mx" class="f05-legend" style="left:0;top:266px;">DROP ZONES</div>
+              <div data-hf-id="hf-vlhc" class="f05-bucket" id="f05-bucket-0" style="left:8px;top:300px;width:430px;height:200px;"><em data-hf-id="hf-hdkc">Value</em></div>
+              <div data-hf-id="hf-s8qm" class="f05-bucket" id="f05-bucket-1" style="left:470px;top:300px;width:430px;height:200px;"><em data-hf-id="hf-ug4g">Bluff</em></div>
+              <div data-hf-id="hf-58d6" class="f05-ripple" id="f05-ripple-0" style="left:223px;top:400px;"></div>
+              <div data-hf-id="hf-6vqn" class="f05-ripple" id="f05-ripple-1" style="left:685px;top:400px;"></div>
+              <svg data-hf-id="hf-5d1q" class="f05-cursor" id="f05-cursor" viewBox="0 0 24 24">
+                <path data-hf-id="hf-f2eu" d="M4 2 L4 19 L9 14.6 L12.2 21.6 L15.4 20.1 L12.2 13.4 L18.6 13.4 Z" fill="#E6EAF0" stroke="#0C101D" stroke-width="1.2" stroke-linejoin="round" />
+              </svg>
+            </div>
+          </div>
+
+          <!-- 05 ─ multiple choice -->
+          <div data-hf-id="hf-q40d" class="f05-card" data-st="4">
+            <div data-hf-id="hf-hg4d" class="f05-head">
+              <span data-hf-id="hf-pjvn" class="f05-eyebrow">05 · Multiple Choice</span>
+              <span data-hf-id="hf-839d" class="f05-pill">QUIZ</span>
+            </div>
+            <div data-hf-id="hf-ehuv" class="f05-body">
+              <div data-hf-id="hf-cxpy" class="f05-prompt">Villain checks the turn.</div>
+              <div data-hf-id="hf-83gt" class="f05-commit" id="f05-commit" style="top:270px;"></div>
+              <div data-hf-id="hf-f0q3" class="f05-answer" id="f05-ans-0" style="top:74px;"><u data-hf-id="hf-zj7v">A</u>Check back</div>
+              <div data-hf-id="hf-0xxs" class="f05-answer" id="f05-ans-1" style="top:172px;"><u data-hf-id="hf-z4wu">B</u>Small probe bet</div>
+              <div data-hf-id="hf-09lr" class="f05-answer" id="f05-ans-2" style="top:270px;"><u data-hf-id="hf-yqlt">C</u>Bet for protection</div>
+              <div data-hf-id="hf-jpvs" class="f05-answer" id="f05-ans-3" style="top:368px;"><u data-hf-id="hf-ycas">D</u>Overbet the turn</div>
+              <div data-hf-id="hf-100u" class="f05-legend" style="left:0;top:494px;">COMMIT TO ONE</div>
+              <div data-hf-id="hf-hvdz" class="f05-pip" id="f05-pip-0" style="left:812px;top:494px;"></div>
+              <div data-hf-id="hf-iztp" class="f05-pip" id="f05-pip-1" style="left:844px;top:494px;"></div>
+              <div data-hf-id="hf-7iin" class="f05-pip" id="f05-pip-2" style="left:876px;top:494px;"></div>
+            </div>
+          </div>
+
+          <!-- 06 ─ hand reading -->
+          <div data-hf-id="hf-pcck" class="f05-card" data-st="5">
+            <div data-hf-id="hf-hufe" class="f05-head">
+              <span data-hf-id="hf-t826" class="f05-eyebrow">06 · Hand Reading</span>
+              <span data-hf-id="hf-vifl" class="f05-pill">NARROWING</span>
+            </div>
+            <div data-hf-id="hf-ew5w" class="f05-body">
+              <div data-hf-id="hf-b50y" class="f05-legend" id="f05-vill-legend" style="left:0;top:6px;">VILLAIN RANGE</div>
+              <div data-hf-id="hf-3i5e" class="f05-grid" id="f05-grid-villain" style="left:0;top:36px;width:491px;height:491px;"></div>
+              <div data-hf-id="hf-diu7" id="f05-streets"></div>
+              <div data-hf-id="hf-zk6m" class="f05-accent" style="left:527px;top:378px;"></div>
+              <div data-hf-id="hf-ihlx" class="f05-legend" style="left:527px;top:412px;">STREET BY STREET</div>
+            </div>
+          </div>
+
+          <!-- 07 ─ EV tree -->
+          <div data-hf-id="hf-07u7" class="f05-card" data-st="6">
+            <div data-hf-id="hf-i8qf" class="f05-head">
+              <span data-hf-id="hf-j5uj" class="f05-eyebrow">07 · EV Tree</span>
+              <span data-hf-id="hf-s5lw" class="f05-pill">BRANCHES</span>
+            </div>
+            <div data-hf-id="hf-dp8t" class="f05-body">
+              <svg data-hf-id="hf-ldsa" class="f05-svg" id="f05-tree" viewBox="0 0 908 470">
+                <path data-hf-id="hf-m39p" class="f05-draw" id="f05-br-0" d="M 128 237 C 250 237 262 80 380 80" />
+                <path data-hf-id="hf-iage" class="f05-draw" id="f05-br-1" d="M 128 237 L 380 237" />
+                <path data-hf-id="hf-09zl" class="f05-draw" id="f05-br-2" d="M 128 237 C 250 237 262 394 380 394" />
+                <path data-hf-id="hf-8p5v" class="f05-draw" id="f05-br-3" d="M 500 237 C 620 237 642 167 760 167" />
+                <path data-hf-id="hf-5fbk" class="f05-draw" id="f05-br-4" d="M 500 237 C 620 237 642 307 760 307" />
+                <g data-hf-id="hf-emaf" class="f05-node" id="f05-nd-root">
+                  <rect data-hf-id="hf-fqqp" x="8" y="213" width="120" height="48" />
+                  <text data-hf-id="hf-vam5" x="68" y="238">Spot</text>
+                </g>
+                <g data-hf-id="hf-t85h" class="f05-node" id="f05-nd-0">
+                  <rect data-hf-id="hf-60z9" x="380" y="56" width="120" height="48" />
+                  <text data-hf-id="hf-jcya" x="440" y="81">Fold</text>
+                </g>
+                <g data-hf-id="hf-sgho" class="f05-node" id="f05-nd-1">
+                  <rect data-hf-id="hf-hilm" x="380" y="213" width="120" height="48" />
+                  <text data-hf-id="hf-7b4z" x="440" y="238">Call</text>
+                </g>
+                <g data-hf-id="hf-3bzb" class="f05-node" id="f05-nd-2">
+                  <rect data-hf-id="hf-8ro6" x="380" y="370" width="120" height="48" />
+                  <text data-hf-id="hf-y3r3" x="440" y="395">Raise</text>
+                </g>
+                <g data-hf-id="hf-zdva" class="f05-node" id="f05-nd-3">
+                  <rect data-hf-id="hf-10nk" x="760" y="143" width="120" height="48" />
+                  <text data-hf-id="hf-qzhf" x="820" y="168">Check</text>
+                </g>
+                <g data-hf-id="hf-81r5" class="f05-node" id="f05-nd-4">
+                  <rect data-hf-id="hf-n2mf" x="760" y="283" width="120" height="48" />
+                  <text data-hf-id="hf-x7fg" x="820" y="308">Bet</text>
+                </g>
+              </svg>
+            </div>
+          </div>
+
+          <!-- 08 ─ position trainer -->
+          <div data-hf-id="hf-u24e" class="f05-card" data-st="7">
+            <div data-hf-id="hf-in1g" class="f05-head">
+              <span data-hf-id="hf-0ozz" class="f05-eyebrow">08 · Position Trainer</span>
+              <span data-hf-id="hf-b1ch" class="f05-pill">6-MAX</span>
+            </div>
+            <div data-hf-id="hf-e3ju" class="f05-body">
+              <svg data-hf-id="hf-j2ds" class="f05-svg" id="f05-ring-svg" viewBox="0 0 908 490" style="top:26px;height:490px;">
+                <!-- static felt, so this card is never a blank box as it slides in.
+                     NOTE: no rotate() on the drawn ellipse — rotating a non-circular
+                     ellipse swaps its axes and the SVG viewport clips the result. -->
+                <ellipse data-hf-id="hf-c3tl" cx="454" cy="245" rx="340" ry="180" fill="rgba(139,92,246,0.05)" stroke="none" />
+                <ellipse data-hf-id="hf-qroe" cx="454" cy="245" rx="294" ry="144" fill="none" stroke="rgba(139,92,246,0.12)" stroke-width="1" />
+                <ellipse data-hf-id="hf-0dtr" class="f05-draw" id="f05-ring" cx="454" cy="245" rx="340" ry="180" />
+                <g data-hf-id="hf-uncr" id="f05-seats" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div data-hf-id="hf-d41f" class="f05-layer" id="f05-fore"></div>
+      </div>
+    </div>
+
+    <!-- ══ track 2 · fixed chrome ══ -->
+    <div data-hf-id="hf-221n" class="clip f05-chrome" data-start="0" data-duration="12" data-track-index="2">
+      <div data-hf-id="hf-dju8" class="f05-kicker" id="f05-kicker">Training Surfaces</div>
+      <div data-hf-id="hf-v5lq" class="f05-tag" id="f05-tag">8 SURFACES</div>
+      <div data-hf-id="hf-9sdi" class="f05-rail" id="f05-rail"><i data-hf-id="hf-1jf5" id="f05-rail-fill"></i></div>
+      <div data-hf-id="hf-o6iu" class="f05-rail-cap" style="left:640px;">01</div>
+      <div data-hf-id="hf-phyh" class="f05-rail-cap" style="left:1258px;">08</div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    (function () {
+      var root = document.querySelector('[data-composition-id="05-interactive-learning"]');
+      var $ = function (sel) { return root.querySelector(sel); };
+      var SVGNS = "http://www.w3.org/2000/svg";
+
+      /* ═══════════════════════════════════════════════════════════════════
+         CAMERA — exactly ONE move across the whole 12s.
+         viewport-change (virtual camera): camera pans right, world
+         translates left. Single .world wrapper, single `cam` object,
+         single applyCamera() writer.
+
+         The ease is one cubic ("power3") curve: a constant cruise that
+         hands off C1-continuously into a power3 deceleration to a full
+         stop on station 08. One tween, no cuts, no per-station hold.
+
+         GEOMETRY LAW (the thing that must never drift again):
+         station centres are laid out on a UNIFORM pitch, and the arrival
+         times are DERIVED by inverting the camera ease. Layout is the
+         source of truth; timing follows it. That guarantees the camera and
+         the plane can never disagree, and that consecutive cards always
+         overlap the viewport edges (pitch 1100 < card 980 + 1920 viewport),
+         so no moment of the shot can read as empty canvas.
+         ═══════════════════════════════════════════════════════════════════ */
+      var CENTER_X = 960;          // viewport centre
+      var CARD_W = 980;
+      var STEP = 1100;             // uniform station pitch (120px gutter)
+      var LEAD = STEP;             // plane runs one pitch before station 01
+      var PREROLL = 258;           // ≈0.34s of travel before 01 centres, so the
+                                   // frame opens with the camera already moving
+      var TRAVEL = PREROLL + STEP * 7;   // total world displacement
+      var CAM_START = 0.0;
+      var CAM_END = 11.2;
+      var CAM_DUR = CAM_END - CAM_START;
+      var K = 0.90;                // cruise fraction; decel owns the last 10%
+      var V = 3 / (1 + 2 * K);     // cruise velocity that matches the cubic tail
+      var A_CRUISE = V * K;        // ease value at the cruise/decel seam
+
+      function camEase(p) {
+        if (p <= 0) return 0;
+        if (p >= 1) return 1;
+        if (p <= K) return V * p;
+        var q = (p - K) / (1 - K);
+        return A_CRUISE + (1 - A_CRUISE) * (1 - Math.pow(1 - q, 3));
+      }
+      /* exact inverse of camEase — used to derive arrival times from layout */
+      function camEaseInv(u) {
+        if (u <= 0) return 0;
+        if (u >= 1) return 1;
+        if (u <= A_CRUISE) return u / V;
+        var rem = 1 - (u - A_CRUISE) / (1 - A_CRUISE);
+        var q = 1 - Math.pow(rem, 1 / 3);
+        return K + q * (1 - K);
+      }
+
+      /* Station world centres — uniform pitch, laid out first. */
+      var CENTERS = [];
+      for (var ci = 0; ci < 8; ci++) CENTERS.push(CENTER_X + LEAD + PREROLL + ci * STEP);
+
+      /* Arrival times DERIVED from the ease, so each station is dead-centre
+         at A[i] without the camera ever stopping or cutting. */
+      var A = CENTERS.map(function (c) {
+        return CAM_START + CAM_DUR * camEaseInv((c - CENTER_X - LEAD) / TRAVEL);
+      });
+      /* A ≈ [0.34, 1.78, 3.23, 4.67, 6.12, 7.56, 9.01, 11.20] */
+
+      /* three parallax planes */
+      var R_BACK = 0.62, R_MID = 1.0, R_FORE = 1.16;
+      function placeAt(center, rate) {
+        return CENTER_X * (1 - rate) + rate * center;
+      }
+
+      var world = $("#f05-world");
+      var backL = $("#f05-back");
+      var foreL = $("#f05-fore");
+      var railFill = $("#f05-rail-fill");
+
+      var cam = { x: -LEAD, jx: 0, jy: 0 };
+      function applyCamera() {
+        var x = cam.x + cam.jx;
+        world.style.transform = "translate3d(" + x + "px," + cam.jy + "px,0)";
+        backL.style.transform = "translate3d(" + ((R_BACK - 1) * cam.x) + "px,0,0)";
+        foreL.style.transform = "translate3d(" + ((R_FORE - 1) * cam.x) + "px,0,0)";
+        var prog = (-cam.x - LEAD) / TRAVEL;
+        railFill.style.transform = "scaleX(" + Math.min(1, Math.max(0, prog)) + ")";
+      }
+
+      /* ── lay the mid plane out along the real oversized canvas ─────────── */
+      var cards = root.querySelectorAll(".f05-card");
+      for (var i = 0; i < cards.length; i++) {
+        cards[i].style.left = (CENTERS[i] - CARD_W / 2) + "px";
+      }
+      /* decorative plane continuation, one pitch outside the run */
+      $("#f05-edge-lead").style.left = (CENTERS[0] - STEP - CARD_W / 2) + "px";
+      $("#f05-edge-tail").style.left = (CENTERS[7] + STEP - CARD_W / 2) + "px";
+
+      /* ── back plane: ghost station numerals ────────────────────────────── */
+      for (var b = 0; b < 8; b++) {
+        var g = document.createElement("div");
+        g.className = "f05-ghost-num";
+        g.style.left = placeAt(CENTERS[b], R_BACK) + "px";
+        g.textContent = "0" + (b + 1);
+        backL.appendChild(g);
+      }
+
+      /* ── fore plane: icon badges (the supplied lucide marks) + stems ───── */
+      var ICONS = {
+        1: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/>',
+        2: '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
+        3: '<line x1="6" x2="10" y1="11" y2="11"/><line x1="8" x2="8" y1="9" y2="13"/><line x1="15" x2="15.01" y1="12" y2="12"/><line x1="18" x2="18.01" y1="10" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.544-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.152A4 4 0 0 0 17.32 5z"/>',
+        5: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
+        7: '<path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>'
+      };
+      for (var f = 0; f < 8; f++) {
+        var fx = placeAt(CENTERS[f], R_FORE);
+        var badge = document.createElement("div");
+        badge.className = "f05-badge";
+        badge.style.left = fx + "px";
+        if (ICONS[f]) {
+          badge.innerHTML =
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+            'stroke-linecap="round" stroke-linejoin="round">' + ICONS[f] + "</svg>";
+        } else {
+          badge.innerHTML = '<span class="f05-badge-dot"></span>';
+        }
+        foreL.appendChild(badge);
+
+        var stem = document.createElement("div");
+        stem.className = "f05-stem";
+        stem.style.left = fx + "px";
+        foreL.appendChild(stem);
+      }
+
+      applyCamera(); // seed frame 0
+
+      /* ═══════════════════════════════════════════════════════════════════
+         STATION CONTENT — built synchronously, deterministically.
+         ═══════════════════════════════════════════════════════════════════ */
+      var RANKS = ["A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"];
+      function handLabel(r, c) {
+        if (r === c) return RANKS[r] + RANKS[r];
+        return c > r ? RANKS[r] + RANKS[c] + "s" : RANKS[c] + RANKS[r] + "o";
+      }
+      /* Visual model only — a plausible grid silhouette for a 12s pan.
+         No frequency, EV or solver figure is printed anywhere in this frame. */
+      function inOpen(r, c) {
+        if (r === c) return r <= 9;
+        return c > r ? (r + c) <= 12 : (r + c) <= 8;
+      }
+      function inNarrow(r, c) {
+        if (r === c) return r <= 5;
+        return c > r ? (r + c) <= 6 : (r + c) <= 4;
+      }
+
+      function buildGrid(host, cellSize, gap, fontSize, test, prelit) {
+        var out = [];
+        for (var r = 0; r < 13; r++) {
+          for (var c = 0; c < 13; c++) {
+            var cell = document.createElement("div");
+            cell.className = "f05-cell";
+            cell.style.width = cellSize + "px";
+            cell.style.height = cellSize + "px";
+            cell.style.left = (c * (cellSize + gap)) + "px";
+            cell.style.top = (r * (cellSize + gap)) + "px";
+
+            var lit = test(r, c);
+            var strength = r === c ? 0.85 : (c > r ? 0.62 : 0.4);
+            var fillEl = document.createElement("i");
+            fillEl.style.background = "rgba(139,92,246," + strength + ")";
+            if (prelit && lit) fillEl.style.transform = "scaleX(1)";
+            cell.appendChild(fillEl);
+
+            var lab = document.createElement("b");
+            lab.style.fontSize = fontSize + "px";
+            lab.textContent = handLabel(r, c);
+            if (fontSize < 9) lab.style.opacity = "0";
+            cell.appendChild(lab);
+
+            host.appendChild(cell);
+            out.push({ el: cell, fill: fillEl, r: r, c: c, lit: lit, dist: Math.max(r, c) });
+          }
+        }
+        return out;
+      }
+
+      /* 02 — the focal 13x13 (530px: cell 38 + gap 3) */
+      var openCells = buildGrid($("#f05-grid-open"), 38, 3, 11, inOpen, false);
+      /* 06 — villain range, starts wide then narrows (491px: cell 35 + gap 3) */
+      var villCells = buildGrid($("#f05-grid-villain"), 35, 3, 10, inOpen, true);
+
+      /* street chips beside the villain grid */
+      var streets = ["Flop", "Turn", "River"];
+      var streetEls = [];
+      var streetHost = $("#f05-streets");
+      for (var s = 0; s < streets.length; s++) {
+        var chip = document.createElement("div");
+        chip.className = "f05-chip";
+        chip.style.width = "381px";
+        chip.style.height = "66px";
+        chip.style.left = "527px";
+        chip.style.top = (66 + s * 88) + "px";
+        chip.style.fontFamily = '"Geist", sans-serif';
+        chip.style.fontSize = "22px";
+        chip.textContent = streets[s];
+        streetHost.appendChild(chip);
+        streetEls.push(chip);
+      }
+
+      /* suit marks — drawn, never glyphs (the shipped font has no suit range) */
+      var SUITS = {
+        s: { d: "M12 2 C6 8 3 10 3 14 A4.6 4.6 0 0 0 11 17.2 L10 22 H14 L13 17.2 A4.6 4.6 0 0 0 21 14 C21 10 18 8 12 2 Z", fill: "#121726" },
+        h: { d: "M12 21.4 C6 16.2 2 12.4 2 8.4 A4.6 4.6 0 0 1 12 6.2 A4.6 4.6 0 0 1 22 8.4 C22 12.4 18 16.2 12 21.4 Z", fill: "#B41C22" },
+        d: { d: "M12 2 L21 12 L12 22 L3 12 Z", fill: "#B41C22" },
+        c: { d: "M12 2 A4.4 4.4 0 0 1 15.2 9.4 A4.4 4.4 0 1 1 16.4 17.6 A4.4 4.4 0 0 1 13 15.6 L14 22 H10 L11 15.6 A4.4 4.4 0 0 1 7.6 17.6 A4.4 4.4 0 1 1 8.8 9.4 A4.4 4.4 0 0 1 12 2 Z", fill: "#121726" }
+      };
+      function miniCard(rank, suit, w, h) {
+        var el = document.createElement("div");
+        el.className = "f05-mini";
+        el.style.width = w + "px";
+        el.style.height = h + "px";
+        el.innerHTML =
+          "<span>" + rank + "</span>" +
+          '<svg viewBox="0 0 24 24"><path d="' + SUITS[suit].d + '" fill="' + SUITS[suit].fill + '"></path></svg>';
+        return el;
+      }
+
+      /* 01 — six seats + a three-card board, all vector */
+      var seatRing = $("#f05-spot-seats");
+      var SPOT_LABELS = ["UTG", "HJ", "CO", "BTN", "SB", "BB"];
+      for (var k = 0; k < 6; k++) {
+        var a = (-90 + k * 60) * Math.PI / 180;
+        var sx = 454 + 322 * Math.cos(a);
+        var sy = 196 + 158 * Math.sin(a);
+        var gg = document.createElementNS(SVGNS, "g");
+        gg.setAttribute("class", k === 3 ? "f05-seat f05-seat-hero" : "f05-seat");
+        var cc = document.createElementNS(SVGNS, "circle");
+        cc.setAttribute("cx", sx); cc.setAttribute("cy", sy); cc.setAttribute("r", 32);
+        var tt = document.createElementNS(SVGNS, "text");
+        tt.setAttribute("x", sx); tt.setAttribute("y", sy + 1);
+        tt.setAttribute("font-size", "14");
+        tt.textContent = SPOT_LABELS[k];
+        gg.appendChild(cc); gg.appendChild(tt);
+        seatRing.appendChild(gg);
+      }
+      var boardG = $("#f05-spot-board");
+      var BOARD = [["A", "s"], ["9", "h"], ["4", "d"]];
+      for (var bd = 0; bd < 3; bd++) {
+        var bx = 358 + bd * 68;
+        var rect = document.createElementNS(SVGNS, "rect");
+        rect.setAttribute("x", bx); rect.setAttribute("y", 156);
+        rect.setAttribute("width", 56); rect.setAttribute("height", 80);
+        rect.setAttribute("rx", 7); rect.setAttribute("fill", "#E6EAF0");
+        boardG.appendChild(rect);
+        var rt = document.createElementNS(SVGNS, "text");
+        rt.setAttribute("x", bx + 10); rt.setAttribute("y", 182);
+        rt.setAttribute("font-size", "24"); rt.setAttribute("font-weight", "700");
+        rt.setAttribute("fill", "#121726");
+        rt.setAttribute("font-family", "Geist, sans-serif");
+        rt.textContent = BOARD[bd][0];
+        boardG.appendChild(rt);
+        var sp = document.createElementNS(SVGNS, "path");
+        sp.setAttribute("d", SUITS[BOARD[bd][1]].d);
+        sp.setAttribute("fill", SUITS[BOARD[bd][1]].fill);
+        sp.setAttribute("transform", "translate(" + (bx + 28) + "," + 196 + ") scale(0.92)");
+        boardG.appendChild(sp);
+      }
+
+      /* 03 — tray + the card that flies into the third flop slot */
+      var tray = $("#f05-tray");
+      var TRAY = [["K", "c"], ["Q", "d"], ["7", "h"], ["J", "s"], ["T", "d"], ["5", "c"], ["8", "h"]];
+      var trayEls = [];
+      for (var t = 0; t < TRAY.length; t++) {
+        var mc = miniCard(TRAY[t][0], TRAY[t][1], 108, 152);
+        mc.style.left = (12 + t * 126) + "px";
+        mc.style.top = "36px";
+        tray.appendChild(mc);
+        trayEls.push(mc);
+      }
+      var FLY_FROM_X = 12 + 3 * 126, FLY_FROM_Y = 36;
+      var fly = miniCard(TRAY[3][0], TRAY[3][1], 108, 152);
+      fly.id = "f05-fly";
+      fly.style.left = FLY_FROM_X + "px";
+      fly.style.top = FLY_FROM_Y + "px";
+      fly.style.zIndex = "20";
+      $("#f05-fly-wrap").appendChild(fly);
+      trayEls[3].style.opacity = "0.18";
+      var FLY_DX = (562 + 21) - FLY_FROM_X;   /* slot 3 left + (150-108)/2 */
+      var FLY_DY = (262 + 30) - FLY_FROM_Y;   /* slot 3 top  + (212-152)/2 */
+
+      /* 04 — source pool of hands */
+      var pool = $("#f05-pool");
+      var POOL = ["AJs", "KQo", "T9s", "76s", "A5s", "QJo", "88", "K7s"];
+      var poolEls = [];
+      for (var p = 0; p < POOL.length; p++) {
+        var ch = document.createElement("div");
+        ch.className = "f05-chip";
+        ch.style.width = "128px";
+        ch.style.height = "56px";
+        ch.style.left = (63 + (p % 4) * 218) + "px";
+        ch.style.top = (40 + Math.floor(p / 4) * 66) + "px";
+        ch.textContent = POOL[p];
+        pool.appendChild(ch);
+        poolEls.push(ch);
+      }
+
+      /* 08 — the 6-max seat ring */
+      var seatsG = $("#f05-seats");
+      var POS = ["UTG", "HJ", "CO", "BTN", "SB", "BB"];
+      var seatEls = [];
+      for (var q = 0; q < 6; q++) {
+        var ang = (-90 + q * 60) * Math.PI / 180;
+        var px = 454 + 372 * Math.cos(ang);
+        var py = 245 + 200 * Math.sin(ang);
+        var sg = document.createElementNS(SVGNS, "g");
+        sg.setAttribute("class", q === 3 ? "f05-seat f05-seat-hero" : "f05-seat");
+        sg.style.transformOrigin = px + "px " + py + "px";
+        var sc = document.createElementNS(SVGNS, "circle");
+        sc.setAttribute("cx", px); sc.setAttribute("cy", py); sc.setAttribute("r", 40);
+        var st = document.createElementNS(SVGNS, "text");
+        st.setAttribute("x", px); st.setAttribute("y", py + 1);
+        st.textContent = POS[q];
+        sg.appendChild(sc); sg.appendChild(st);
+        seatsG.appendChild(sg);
+        seatEls.push(sg);
+      }
+
+      /* svg-path-draw setup — measured, never guessed */
+      function primeDraw(el) {
+        var len = 400;
+        try { len = el.getTotalLength() || 400; } catch (e) { len = 400; }
+        el.style.strokeDasharray = len;
+        el.style.strokeDashoffset = len;
+        return len;
+      }
+      for (var br = 0; br < 5; br++) primeDraw($("#f05-br-" + br));
+      primeDraw($("#f05-ring"));
+
+      /* ═══════════════════════════════════════════════════════════════════
+         TIMELINE — one paused timeline. ONE camera tween; everything else
+         is element motion firing as the camera arrives at its station.
+         Every payoff offset is expressed against A[i], the derived arrival,
+         so timing can never drift away from layout again.
+         ═══════════════════════════════════════════════════════════════════ */
+      var tl = gsap.timeline({ paused: true });
+
+      /* ── THE camera move: 0.0s → 11.2s, one tween, no cuts, no holds ──── */
+      tl.fromTo(cam,
+        { x: -LEAD },
+        { x: -(LEAD + TRAVEL), duration: CAM_DUR, ease: camEase, onUpdate: applyCamera },
+        CAM_START);
+
+      /* fixed chrome settles in under the moving plane */
+      tl.fromTo("#f05-kicker", { opacity: 0, x: -14 },
+        { opacity: 1, x: 0, duration: 0.55, ease: "power2.out" }, 0.15);
+      tl.fromTo("#f05-tag", { opacity: 0, x: 14 },
+        { opacity: 1, x: 0, duration: 0.55, ease: "power2.out" }, 0.25);
+      tl.fromTo("#f05-rail", { opacity: 0 },
+        { opacity: 1, duration: 0.5, ease: "power1.out" }, 0.3);
+      tl.fromTo(".f05-rail-cap", { opacity: 0 },
+        { opacity: 1, duration: 0.5, ease: "power1.out", stagger: 0.08 }, 0.35);
+
+      /* ── Scene 1 (A0 ≈ 0.34) · station 01 — the decision commits ──────── */
+      tl.fromTo("#f05-spot-board rect, #f05-spot-board text, #f05-spot-board path",
+        { opacity: 0, y: -10 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power2.out", stagger: 0.035 }, A[0] + 0.15);
+      tl.fromTo(["#f05-act-0", "#f05-act-1", "#f05-act-2"],
+        { opacity: 0, y: 26 },
+        { opacity: 1, y: 0, duration: 0.55, ease: "power3.out", stagger: 0.09 }, A[0] + 0.34);
+      tl.fromTo("#f05-focus-ring",
+        { opacity: 0, scale: 1.16 },
+        { opacity: 1, scale: 1, duration: 0.45, ease: "power2.out" }, A[0] + 0.66);
+
+      /* ── Scene 2 (A1 ≈ 1.78) · station 02 — the range grid fills ──────── */
+      /* stat-bars-and-fills: per-cell progress fills, scaleX from a left
+         origin, staggered by an index-derived sweep outward from AA. */
+      tl.fromTo("#f05-open-legend",
+        { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, A[1] - 0.50);
+      openCells.forEach(function (cell) {
+        if (!cell.lit) return;
+        tl.fromTo(cell.fill,
+          { scaleX: 0 },
+          { scaleX: 1, duration: 0.42, ease: "power2.out" },
+          A[1] - 0.44 + cell.dist * 0.05);
+      });
+      ["#f05-key-0", "#f05-key-1", "#f05-key-2"].forEach(function (sel, idx) {
+        tl.fromTo(sel,
+          { opacity: 0, x: -16 },
+          { opacity: 1, x: 0, duration: 0.42, ease: "power3.out" }, A[1] - 0.30 + idx * 0.13);
+      });
+      tl.fromTo("#f05-open-accent",
+        { opacity: 0, scaleX: 0 },
+        { opacity: 1, scaleX: 1, duration: 0.4, ease: "power2.out" }, A[1] + 0.12);
+      tl.fromTo("#f05-open-track",
+        { opacity: 0 }, { opacity: 1, duration: 0.3, ease: "power1.out" }, A[1] - 0.28);
+      tl.fromTo("#f05-open-track .f05-fill",
+        { scaleX: 0 }, { scaleX: 1, duration: 0.95, ease: "power2.out" }, A[1] - 0.22);
+
+      /* ── Scene 3 (A2 ≈ 3.23) · station 03 — a card lands, long-tail ───── */
+      tl.fromTo("#f05-swipe",
+        { scaleX: 0, opacity: 0.55 },
+        { scaleX: 1, opacity: 0, duration: 0.55, ease: "power2.out" }, A[2] - 0.34);
+      tl.fromTo("#f05-fly",
+        { x: 0, y: 0, rotation: -9 },
+        { x: FLY_DX, y: FLY_DY, rotation: 0, duration: 0.95, ease: "power4.out" }, A[2] - 0.32);
+      tl.fromTo("#f05-fly",
+        { scale: 1 }, { scale: 1.13, duration: 0.24, ease: "power2.out" }, A[2] - 0.32);
+      tl.to("#f05-fly", { scale: 1, duration: 0.70, ease: "power3.out" }, A[2] - 0.08);
+      tl.fromTo("#f05-land",
+        { opacity: 0, scale: 1.06 },
+        { opacity: 1, scale: 1, duration: 0.45, ease: "power2.out" }, A[2] + 0.32);
+
+      /* ── Scene 4 (A3 ≈ 4.67) · station 04 — two drags, cursor + ripple ── */
+      /* cursor-click-ripple: move → depression on cursor AND target →
+         expanding ring from the drop point. (Depression authored as two
+         explicit tweens; yoyo/repeat are banned in HF renders.) */
+      var cursor = $("#f05-cursor");
+      var chipA = poolEls[0], chipB = poolEls[5];
+      /* chip A: (63,40) 128x56 → bucket-0 centre (223,400) */
+      var A_TO_X = 223 - 64 - 63, A_TO_Y = 400 - 28 - 40;
+      /* chip B: (281,106) 128x56 → bucket-1 centre (685,400) */
+      var B_TO_X = 685 - 64 - 281, B_TO_Y = 400 - 28 - 106;
+
+      tl.fromTo(cursor, { opacity: 0 }, { opacity: 1, duration: 0.25, ease: "power1.out" }, A[3] - 0.80);
+      tl.fromTo(cursor, { x: 150, y: 12 },
+        { x: 219, y: 398, duration: 0.48, ease: "power2.inOut" }, A[3] - 0.68);
+      tl.fromTo(chipA, { x: 0, y: 0 },
+        { x: A_TO_X, y: A_TO_Y, duration: 0.48, ease: "power2.inOut" }, A[3] - 0.68);
+      tl.to(cursor, { scale: 0.84, duration: 0.08, ease: "power2.in" }, A[3] - 0.20);
+      tl.to(cursor, { scale: 1, duration: 0.08, ease: "power2.out" }, A[3] - 0.12);
+      tl.to("#f05-bucket-0", { scale: 0.95, duration: 0.08, ease: "power2.in" }, A[3] - 0.20);
+      tl.to("#f05-bucket-0", { scale: 1, duration: 0.08, ease: "power2.out" }, A[3] - 0.12);
+      tl.fromTo("#f05-ripple-0",
+        { scale: 0, opacity: 1 },
+        { scale: 4.2, opacity: 0, duration: 0.7, ease: "power2.out", immediateRender: false },
+        A[3] - 0.16);
+
+      tl.to(cursor, { x: 681, y: 398, duration: 0.46, ease: "power2.inOut" }, A[3] + 0.02);
+      tl.fromTo(chipB, { x: 0, y: 0 },
+        { x: B_TO_X, y: B_TO_Y, duration: 0.46, ease: "power2.inOut" }, A[3] + 0.02);
+      tl.to(cursor, { scale: 0.84, duration: 0.08, ease: "power2.in" }, A[3] + 0.48);
+      tl.to(cursor, { scale: 1, duration: 0.08, ease: "power2.out" }, A[3] + 0.56);
+      tl.to("#f05-bucket-1", { scale: 0.95, duration: 0.08, ease: "power2.in" }, A[3] + 0.48);
+      tl.to("#f05-bucket-1", { scale: 1, duration: 0.08, ease: "power2.out" }, A[3] + 0.56);
+      tl.fromTo("#f05-ripple-1",
+        { scale: 0, opacity: 1 },
+        { scale: 4.2, opacity: 0, duration: 0.7, ease: "power2.out", immediateRender: false },
+        A[3] + 0.52);
+
+      /* ── Scene 5 (A4 ≈ 6.12) · station 05 — answers reveal, one commits ─ */
+      /* dynamic-content-sequencing: per-row dwell derived ONCE from content
+         length (BASE + chars × SEC_PER_CHAR), reduced into absolute offsets. */
+      /* Pacing is compressed so all four rows have LANDED by the arrival beat —
+         the card must read full at the moment the camera centres it. */
+      var ANSWERS = ["Check back", "Small probe bet", "Bet for protection", "Overbet the turn"];
+      var BASE_DURATION = 0.10, SEC_PER_CHAR = 0.005;
+      var cum = 0;
+      var ANSWER_AT = ANSWERS.map(function (txt) {
+        var at = cum;
+        cum += BASE_DURATION + txt.length * SEC_PER_CHAR;
+        return at;
+      });
+      tl.fromTo(".f05-card[data-st='4'] .f05-prompt",
+        { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, A[4] - 1.00);
+      ANSWERS.forEach(function (txt, idx) {
+        tl.fromTo("#f05-ans-" + idx,
+          { opacity: 0, x: -26 },
+          { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" },
+          A[4] - 0.85 + ANSWER_AT[idx]);
+      });
+      tl.fromTo([".f05-card[data-st='4'] .f05-legend", "#f05-pip-0", "#f05-pip-1", "#f05-pip-2"],
+        { opacity: 0 }, { opacity: 1, duration: 0.36, ease: "power1.out", stagger: 0.07 }, A[4] - 0.20);
+      tl.fromTo("#f05-commit",
+        { opacity: 0, scaleX: 0.94 },
+        { opacity: 1, scaleX: 1, duration: 0.42, ease: "power2.out" }, A[4] + 0.42);
+
+      /* ── Scene 6 (A5 ≈ 7.56) · station 06 — the villain range narrows ─── */
+      tl.fromTo("#f05-vill-legend",
+        { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power1.out" }, A[5] - 0.52);
+      villCells.forEach(function (cell) {
+        if (!cell.lit) return;
+        if (inNarrow(cell.r, cell.c)) return;
+        tl.to(cell.fill,
+          { opacity: 0.06, duration: 0.36, ease: "power2.inOut" },
+          A[5] - 0.42 + cell.dist * 0.03);
+      });
+      streetEls.forEach(function (el, idx) {
+        tl.fromTo(el,
+          { opacity: 0.24, x: -14 },
+          { opacity: 1, x: 0, duration: 0.4, ease: "power2.out" }, A[5] - 0.36 + idx * 0.30);
+      });
+      tl.fromTo(".f05-card[data-st='5'] .f05-accent",
+        { opacity: 0, scaleX: 0 },
+        { opacity: 1, scaleX: 1, duration: 0.4, ease: "power2.out" }, A[5] + 0.34);
+
+      /* ── Scene 7 (A6 ≈ 9.01) · station 07 — the tree writes itself ────── */
+      /* svg-path-draw: measured dasharray, each segment starting at ~75%
+         of the previous one so it reads as one continuous hand. */
+      var SEG = 0.34, SEG_STEP = 0.24, segStart = A[6] - 0.95;   /* step ≈ 0.71 × SEG */
+      tl.fromTo("#f05-nd-root",
+        { opacity: 0, scale: 0.9 },
+        { opacity: 1, scale: 1, duration: 0.36, ease: "power2.out" }, segStart - 0.06);
+      for (var d = 0; d < 5; d++) {
+        tl.to("#f05-br-" + d,
+          { strokeDashoffset: 0, duration: SEG, ease: "power2.out" },
+          segStart + d * SEG_STEP);
+      }
+      for (var n = 0; n < 5; n++) {
+        tl.fromTo("#f05-nd-" + n,
+          { opacity: 0, scale: 0.88 },
+          { opacity: 1, scale: 1, duration: 0.38, ease: "power2.out" },
+          segStart + n * SEG_STEP + 0.28);
+      }
+
+      /* ── Scene 8 (A7 = 11.20) · station 08 — the ring closes, camera stops ─
+         The camera DECELERATES into 08, so this card owns the centre of frame
+         from ~t=9.5 — far earlier than the cruise stations do. The payoff has
+         to start there, not at the nominal scene edge, or the biggest element
+         on screen is an empty box. It completes exactly as the camera stops. */
+      tl.to("#f05-ring", { strokeDashoffset: 0, duration: 1.30, ease: "power2.out" }, A[7] - 1.80);
+      seatEls.forEach(function (el, idx) {
+        tl.fromTo(el,
+          { opacity: 0, scale: 0.82 },
+          { opacity: 1, scale: 1, duration: 0.50, ease: "power3.out" }, A[7] - 1.35 + idx * 0.16);
+      });
+
+      /* the held tail: subtle deterministic jitter only — never an exit */
+      var jit = { p: 0 };
+      tl.to(jit, {
+        p: 1, duration: 0.8, ease: "none",
+        onUpdate: function () {
+          cam.jx = Math.sin(jit.p * Math.PI * 4.0) * 1.7;
+          cam.jy = Math.sin(jit.p * Math.PI * 3.0) * 1.1;
+          applyCamera();
+        }
+      }, CAM_END);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["05-interactive-learning"] = tl;
+    })();
+  </script>
+</template>
