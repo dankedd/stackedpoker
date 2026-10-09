@@ -6,7 +6,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowUpRight } from "lucide-react";
 import { PokerRangeGrid } from "@/components/learn/visuals/PokerRangeGrid";
 import { DealerMarker } from "@/components/poker/DealerMarker";
-import { PlayingCard } from "@/components/poker/PlayingCard";
+import { CHIP_PALETTE, PokerChip, type ChipTone } from "@/components/poker/ChipStack";
+import { FourColorCard } from "@/components/poker/FourColorCard";
 import { Modal } from "@/components/ui/modal";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { SEO_EVENTS, trackEvent } from "@/lib/seo/analytics";
@@ -241,7 +242,7 @@ function Table({ deal }: { deal: Deal }) {
           boxShadow: "inset 0 0 46px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03)",
         }}
       >
-        <div className="absolute left-1/2 top-[44%] w-4/5 -translate-x-1/2 -translate-y-1/2 text-center">
+        <div className="absolute left-1/2 top-[44%] w-3/5 -translate-x-1/2 -translate-y-1/2 text-center sm:w-4/5">
           <p className="text-[10px] uppercase tracking-[0.12em] text-emerald-100/60 sm:text-[11px]">
             {fmtLabel}
             {deal.type === "def" ? " · defense" : ""}
@@ -258,41 +259,71 @@ function Table({ deal }: { deal: Deal }) {
         const y = 50 + ry * Math.sin(ang);
         const st = seatStatus(deal, pos);
         const bet = betFor(deal, pos);
-        // Hero's chips sit nearer the centre so they clear the hole cards.
-        const bx = 50 + rx * (k === 0 ? 0.36 : 0.58) * Math.cos(ang);
-        const by = 50 + ry * (k === 0 ? 0.36 : 0.55) * Math.sin(ang);
-        const da = ang + (k === 0 ? 0.42 : 0.3);
+        // Chips sit between seat and centre. Hero's go nearer the centre to clear the
+        // hole cards; on a phone the felt is narrow, so the others stay close to their
+        // seat instead of running into the text in the middle.
+        const pullX = k === 0 ? 0.3 : mobile ? 0.76 : 0.58;
+        const pullY = k === 0 ? 0.3 : mobile ? 0.74 : 0.55;
+        const bx = 50 + rx * pullX * Math.cos(ang);
+        const by = 50 + ry * pullY * Math.sin(ang);
+        const da = ang + (k === 0 ? 0.42 : mobile ? 0.22 : 0.3);
+        const dealerPull = mobile && k !== 0 ? 0.82 : 0.62;
+        // All-in red, a real bet or raise blue, a posted blind grey.
+        const tone: ChipTone =
+          bet === `${deal.stack}bb`
+            ? "allin"
+            : (deal.type === "def" && pos === deal.vil) || (pos === deal.hero && /bet|raise/.test(bet))
+              ? "bet"
+              : "blind";
+        const active = st.state === "hero" || st.state === "villain" || st.state === "waiting";
         return (
           <div key={pos}>
+            {/* Every seat — hero included — is centred on the rail, so the pods line up. */}
             <div
-              className="absolute z-[2] flex w-[72px] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1 sm:w-[92px]"
+              className={cn(
+                "absolute flex w-[72px] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1 sm:w-[92px]",
+                st.state === "hero" ? "z-[3]" : "z-[2]",
+              )}
               style={{ left: `${x}%`, top: `${y}%` }}
             >
-              {st.state === "hero" && (
-                <div className="mb-0.5 flex gap-1">
-                  {deal.cards.map((c) => (
-                    <PlayingCard key={c} card={c} size={mobile ? "sm" : "md"} />
-                  ))}
-                </div>
-              )}
-              <div
-                className={cn(
-                  "min-w-[60px] rounded-xl border px-2 py-1 text-center shadow-md shadow-black/30 sm:min-w-[76px]",
-                  st.state === "hero" && "border-violet-500/60 bg-[rgba(16,8,42,0.92)]",
-                  st.state === "villain" && "border-amber-400/50 bg-amber-400/10",
-                  st.state === "folded" && "border-border/40 bg-card/40 opacity-50 shadow-none",
-                  st.state === "waiting" && "border-border/60 bg-card/80",
+              <div className="relative">
+                {st.state === "hero" && (
+                  // Hole cards rise out of the seat; the name plate overlaps their lower edge.
+                  <div className="absolute bottom-[calc(100%-10px)] left-1/2 flex -translate-x-1/2">
+                    <FourColorCard card={deal.cards[0]} size={mobile ? "sm" : "md"} style={{ transform: "rotate(-4deg)" }} />
+                    <FourColorCard
+                      card={deal.cards[1]}
+                      size={mobile ? "sm" : "md"}
+                      style={{ marginLeft: mobile ? -16 : -20, transform: "rotate(4deg) translateY(-3px)" }}
+                    />
+                  </div>
                 )}
-              >
-                <p
+                <div
                   className={cn(
-                    "text-xs font-bold sm:text-[13px]",
-                    st.state === "hero" ? "text-violet-300" : st.state === "villain" ? "text-amber-300" : "text-foreground",
+                    "relative min-w-[64px] rounded-xl border px-2.5 py-1 text-center shadow-md shadow-black/40 sm:min-w-[84px]",
+                    st.state === "hero" && "border-violet-500/70 bg-[rgba(16,8,42,0.96)]",
+                    st.state === "villain" && "border-amber-400/50 bg-[rgba(40,30,8,0.92)]",
+                    st.state === "folded" && "border-border/40 bg-card/40 opacity-50 shadow-none",
+                    st.state === "waiting" && "border-border/60 bg-card/90",
                   )}
                 >
-                  {displayPos(pos)}
-                </p>
-                <p className="font-mono text-[10px] text-muted-foreground sm:text-[11px]">{deal.stack}bb</p>
+                  <p
+                    className={cn(
+                      "text-xs font-bold sm:text-[13px]",
+                      st.state === "hero" ? "text-violet-300" : st.state === "villain" ? "text-amber-300" : "text-foreground",
+                    )}
+                  >
+                    {displayPos(pos)}
+                  </p>
+                  <p
+                    className={cn(
+                      "font-mono text-[10px] font-semibold sm:text-[12px]",
+                      active ? "text-sky-300" : "text-muted-foreground",
+                    )}
+                  >
+                    {deal.stack} BB
+                  </p>
+                </div>
               </div>
               <p
                 className={cn(
@@ -303,22 +334,12 @@ function Table({ deal }: { deal: Deal }) {
                 {st.text}
               </p>
             </div>
-            {bet && (
-              <span
-                className={cn(
-                  "absolute z-[2] -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold sm:text-[11px]",
-                  deal.type === "def" && pos === deal.vil ? "bg-amber-400/90 text-black" : "bg-black/45 text-white",
-                )}
-                style={{ left: `${bx}%`, top: `${by}%` }}
-              >
-                {bet}
-              </span>
-            )}
+            {bet && <BetChips label={bet} tone={tone} left={bx} top={by} size={mobile ? 13 : 16} />}
             {pos === "BN" && (
               <DealerMarker
                 style={{
-                  left: `${50 + rx * 0.62 * Math.cos(da)}%`,
-                  top: `${50 + ry * 0.62 * Math.sin(da)}%`,
+                  left: `${50 + rx * dealerPull * Math.cos(da)}%`,
+                  top: `${50 + ry * dealerPull * Math.sin(da)}%`,
                   transform: "translate(-50%,-50%)",
                 }}
               />
@@ -326,6 +347,34 @@ function Table({ deal }: { deal: Deal }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/**
+ * A seat's committed chips: the same two-chip pile as ChipStack (PokerChip +
+ * CHIP_PALETTE, shared with PreflopTable), but with a free-text label because
+ * a 3-bet or 4-bet here has no size in the source data.
+ */
+function BetChips({ label, tone, left, top, size }: { label: string; tone: ChipTone; left: number; top: number; size: number }) {
+  const spread = Math.max(3, Math.round(size * 0.22));
+  return (
+    <div
+      className="absolute z-[2] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-[3px]"
+      style={{ left: `${left}%`, top: `${top}%` }}
+    >
+      <div className="relative" style={{ width: size + spread, height: size + spread }}>
+        <PokerChip tone={tone} sizePx={size} style={{ left: 0, top: spread, opacity: 0.7 }} />
+        <PokerChip tone={tone} sizePx={size} style={{ left: spread, top: 0 }} />
+      </div>
+      <span
+        className={cn(
+          "whitespace-nowrap rounded-full bg-black/40 px-1.5 py-px font-mono text-[10px] font-bold leading-tight sm:text-[11px]",
+          CHIP_PALETTE[tone].text,
+        )}
+      >
+        {label}
+      </span>
     </div>
   );
 }
