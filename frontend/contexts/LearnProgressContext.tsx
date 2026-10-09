@@ -116,6 +116,10 @@ interface LearnProgressContextType {
   resolveLeak: (leakId: string) => void
   /** Marks the currently pending level-up as delivered/acknowledged. */
   dismissLevelUp: () => void
+  /** Applies a CONFIRMED server total from an XP source outside Learn (the
+   *  Preflop Trainer), so the navbar level and the level-up flag stay in sync
+   *  without a full progress refetch. Never call it with optimistic numbers. */
+  applyServerXpTotal: (newTotalXp: number) => void
 }
 
 const EMPTY_STATE: LearnProgressState = {
@@ -143,6 +147,7 @@ const LearnProgressContext = createContext<LearnProgressContextType>({
   recordModuleComplete: async () => ({ bonusXp: 0, leveledUp: false, newLevel: 1 }),
   resolveLeak: () => {},
   dismissLevelUp: () => {},
+  applyServerXpTotal: () => {},
 })
 
 /**
@@ -686,11 +691,26 @@ export function LearnProgressProvider({ children }: { children: React.ReactNode 
     setProgress((prev) => (prev.pendingLevelUp ? { ...prev, pendingLevelUp: null } : prev))
   }, [])
 
+  const applyServerXpTotal = useCallback((newTotalXp: number) => {
+    setProgress((prev) =>
+      prev.isGuest || newTotalXp === prev.skill.total_xp
+        ? prev
+        : {
+            ...prev,
+            skill: { ...prev.skill, total_xp: newTotalXp, level: levelForXP(newTotalXp) },
+            pendingLevelUp: mergeLevelUpDetection(
+              prev.pendingLevelUp, prev.skill.level, prev.skill.total_xp, newTotalXp,
+            ),
+          },
+    )
+  }, [])
+
   const value = useMemo(
     () => ({
       progress, recordStepResult, recordLessonComplete, recordModuleComplete, resolveLeak, dismissLevelUp,
+      applyServerXpTotal,
     }),
-    [progress, recordStepResult, recordLessonComplete, recordModuleComplete, resolveLeak, dismissLevelUp],
+    [progress, recordStepResult, recordLessonComplete, recordModuleComplete, resolveLeak, dismissLevelUp, applyServerXpTotal],
   )
 
   return <LearnProgressContext.Provider value={value}>{children}</LearnProgressContext.Provider>

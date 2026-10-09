@@ -101,6 +101,15 @@ except Exception as e:
     print(f"[BOOT] Core routes FAILED: {e}")
     import traceback; traceback.print_exc()
 
+# Preflop Trainer XP — its own block so a problem here can never take the
+# core routes (Learn, leaderboard) down with it.
+try:
+    from app.api.routes import preflop_trainer
+    app.include_router(preflop_trainer.router, prefix="/api")
+    print("[BOOT] Preflop trainer routes registered OK")
+except Exception as e:
+    print(f"[BOOT] Preflop trainer routes failed: {e}")
+
 # ── Phase 2-8 routes (optional, non-fatal) ───────────────────────────────
 print("[BOOT] Importing Phase 2-8 routes...")
 try:

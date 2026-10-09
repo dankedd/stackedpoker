@@ -36,9 +36,13 @@ import {
 } from "@/lib/ranges/logic";
 import type { RangeActionKey } from "@/lib/ranges/types";
 import { chartHrefForDeal, parseTrainerQuery, trainerQuery } from "@/lib/ranges/urlState";
+import { submitTrainerHand, type HandXpResult } from "@/lib/ranges/api";
+import { useLearnProgress } from "@/contexts/LearnProgressContext";
+import { LevelUpModal } from "@/components/learn/LevelUpModal";
+import { XPGain } from "@/components/learn/XPGain";
 import { cn } from "@/lib/utils";
 import { ACTION_ORDER, HandBreakdown, Pills, SourceLegend, Swatch, TOOL_SLUG, sourceLabel, toStrategies } from "./shared";
-import { useHighscore } from "./useHighscore";
+import { useTrainerProgress } from "./useTrainerProgress";
 
 const HOTKEY: Record<RangeActionKey, string> = { fold: "F", limp: "L", call: "C", raise: "R", allin: "A" };
 
@@ -48,11 +52,21 @@ const VERDICT: Record<Grade["verdict"], { label: string; className: string }> = 
   wrong: { label: "Wrong", className: "border-red-500/40 bg-red-500/15 text-red-300" },
 };
 
+/** XP for one hand — always from the server, never computed in the browser. */
+type AnswerXp =
+  | { status: "guest" }
+  | { status: "pending" }
+  | { status: "done"; result: HandXpResult }
+  | { status: "error" };
+
 interface Answer {
+  /** Increments per hand, so a late server reply never lands on the next hand. */
+  id: number;
   key: RangeActionKey;
   grade: Grade;
   streakBefore: number;
   newRecord: boolean;
+  xp: AnswerXp;
 }
 
 export function Trainer() {
@@ -69,7 +83,15 @@ export function Trainer() {
   const [deal, setDeal] = useState<Deal | null>(null);
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [stats, setStats] = useState<TrainerStats>({ hands: 0, correct: 0, mixed: 0, streak: 0 });
-  const { high, submit, reset, signedIn } = useHighscore();
+  const { signedIn, token, high, xpState, recordLocalStreak, applyHandResult, resetLocal } = useTrainerProgress();
+  const { progress, applyServerXpTotal, dismissLevelUp } = useLearnProgress();
+  const answerId = useRef(0);
+
+  // Signed in, the streak lives on the server and carries over between sessions.
+  const serverStreak = xpState?.streak;
+  useEffect(() => {
+    if (serverStreak !== undefined) setStats((s) => (s.hands === 0 ? { ...s, streak: serverStreak } : s));
+  }, [serverStreak]);
 
   // Dealt client-side only: Math.random during render would differ between
   // the server HTML and hydration.
@@ -89,16 +111,31 @@ export function Trainer() {
   const choose = useCallback(
     (k: RangeActionKey) => {
       if (!deal || answer) return;
+      // Instant local verdict for the feedback; XP and the authoritative streak follow from the server.
       const g = grade(deal, deal.hand, k);
       const nextStats = applyVerdict(stats, g.verdict);
-      const newRecord = submit(nextStats.streak);
+      const id = ++answerId.current;
       setStats(nextStats);
-      setAnswer({ key: k, grade: g, streakBefore: stats.streak, newRecord });
+      if (!signedIn) {
+        const newRecord = recordLocalStreak(nextStats.streak);
+        setAnswer({ id, key: k, grade: g, streakBefore: stats.streak, newRecord, xp: { status: "guest" } });
+      } else {
+        setAnswer({ id, key: k, grade: g, streakBefore: stats.streak, newRecord: false, xp: { status: "pending" } });
+        submitTrainerHand(token, deal, k).then(
+          (result) => {
+            const newRecord = applyHandResult(result);
+            setStats((s) => ({ ...s, streak: result.streak }));
+            applyServerXpTotal(result.total_xp);
+            setAnswer((a) => (a && a.id === id ? { ...a, newRecord, xp: { status: "done", result } } : a));
+          },
+          () => setAnswer((a) => (a && a.id === id ? { ...a, xp: { status: "error" } } : a)),
+        );
+      }
       if (nextStats.hands % 25 === 0) {
         trackEvent(SEO_EVENTS.toolCalculate, { tool_slug: TOOL_SLUG, hands: nextStats.hands, score: scorePct(nextStats) });
       }
     },
-    [deal, answer, stats, submit],
+    [deal, answer, stats, signedIn, token, recordLocalStreak, applyHandResult, applyServerXpTotal],
   );
 
   // Keyboard: only the visible buttons, Enter/Space for the next hand.
@@ -182,6 +219,7 @@ export function Trainer() {
             ["Score", `${scorePct(stats)}%`],
             ["Streak", stats.streak],
             ["Record", high],
+            ...(xpState ? [["XP today", `${xpState.daily_xp}/${xpState.daily_cap}`]] : []),
           ].map(([k, v]) => (
             <div key={k} className="flex items-baseline gap-1.5">
               <dt>{k}</dt>
@@ -192,7 +230,7 @@ export function Trainer() {
             <button
               type="button"
               onClick={() => {
-                if (window.confirm("Reset your record to 0?")) reset();
+                if (window.confirm("Reset your record to 0?")) resetLocal();
               }}
               className="underline decoration-dotted underline-offset-2 hover:text-foreground"
             >
@@ -207,6 +245,11 @@ export function Trainer() {
       {deal && <ActionButtons deal={deal} onChoose={choose} disabled={Boolean(answer)} />}
 
       {deal && answer && <ResultModal deal={deal} answer={answer} stats={stats} high={high} onNext={() => next()} />}
+
+      {/* Same level-up celebration as Learn, once the result is closed. */}
+      {!answer && progress.pendingLevelUp && (
+        <LevelUpModal event={progress.pendingLevelUp} onContinue={dismissLevelUp} onDismiss={dismissLevelUp} token={token || undefined} />
+      )}
     </div>
   );
 }
@@ -489,6 +532,7 @@ function ResultModal({
         <p className="basis-full text-sm leading-relaxed text-muted-foreground">
           <b className="font-mono text-foreground">{deal.hand}</b> ({cardsText}) · {context}. {explanation}
         </p>
+        <XpLine xp={answer.xp} />
       </div>
 
       <div className="grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_250px]">
@@ -560,6 +604,50 @@ function ResultModal({
         Next hand (Enter)
       </button>
     </Modal>
+  );
+}
+
+/** What this hand earned, and how the streak bonus moves — straight from the server's reply. */
+function XpLine({ xp }: { xp: AnswerXp }) {
+  if (xp.status === "guest") {
+    return (
+      <p className="basis-full text-xs text-muted-foreground">
+        <Link href="/signup" className="font-semibold text-violet-300 underline-offset-4 hover:underline">
+          Sign up free
+        </Link>{" "}
+        to earn XP for every hand and climb the leaderboard.
+      </p>
+    );
+  }
+  if (xp.status === "pending") {
+    return <p className="basis-full h-9 animate-pulse text-xs text-muted-foreground">Saving XP…</p>;
+  }
+  if (xp.status === "error") {
+    return <p className="basis-full text-xs text-amber-300/90">This hand could not be saved, so it earned no XP.</p>;
+  }
+  const r = xp.result;
+  const capped = r.daily_xp >= r.daily_cap;
+  const tier =
+    r.streak === 0
+      ? "Build a streak: every 10 hands in a row add 1 XP per correct hand."
+      : r.next_tier_at
+        ? `${r.next_tier_at - r.streak} more in a row for ${r.xp_per_correct + 1} XP per correct hand.`
+        : `Top streak bonus: ${r.xp_per_correct} XP per correct hand.`;
+  return (
+    <div className="flex basis-full flex-wrap items-center gap-3">
+      {r.xp_awarded > 0 && <XPGain xp={r.xp_awarded} className="px-3 py-1" />}
+      <p className="text-xs leading-relaxed text-muted-foreground">
+        {r.too_fast
+          ? "Too quick after the last hand — no XP for this one."
+          : capped && r.xp_awarded === 0
+            ? "Today's trainer XP is maxed out — your streak and record still count."
+            : tier}{" "}
+        <span className="whitespace-nowrap">
+          Today <b className="font-mono text-foreground">{r.daily_xp}</b>/{r.daily_cap} XP
+        </span>
+        {r.leveled_up && <span className="ml-1 font-semibold text-amber-300">· Level {r.level}!</span>}
+      </p>
+    </div>
   );
 }
 
