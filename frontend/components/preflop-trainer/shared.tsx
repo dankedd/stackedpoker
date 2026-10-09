@@ -9,7 +9,8 @@ import { combos } from "@/lib/ranges/logic";
 import type { ChartAction, RangeActionKey } from "@/lib/ranges/types";
 import { cn } from "@/lib/utils";
 
-export const TOOL_SLUG = "preflop-ranges";
+/** Analytics dimension for this section (ChoiceGroup change events, trainer progress). */
+export const TOOL_SLUG = "preflop-trainer";
 
 /** Left-to-right segment order inside a mixed cell. */
 export const ACTION_ORDER: RangeActionKey[] = ["allin", "raise", "limp", "call", "fold"];

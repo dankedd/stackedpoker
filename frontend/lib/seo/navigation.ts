@@ -1,4 +1,4 @@
-import { PREFLOP_RANGES_ENABLED, PREFLOP_RANGES_SLUG } from "@/lib/ranges/feature";
+import { PREFLOP_RANGES_ENABLED, PREFLOP_TRAINER_PATH } from "@/lib/ranges/feature";
 import { ROUTES } from "./routes";
 
 /**
@@ -18,18 +18,29 @@ export interface NavLink {
   primary?: boolean;
 }
 
-/** Header navigation (components/layout/Navbar.tsx). */
-export const PRIMARY_NAV: NavLink[] = [
-  { label: "Learn", href: "/learn", primary: true },
-  // Playable training built on the same sourced theory as Learn. In the primary
-  // nav rather than the "in development" cluster because it ships working.
-  { label: "Puzzles", href: ROUTES.puzzles },
-  // Public reference content — in the main nav so it is one click from every
-  // page for readers, and one hop from every page for crawlers.
-  { label: "Wiki", href: ROUTES.wiki },
-  { label: "Bankroll", href: "/bankroll" },
-  { label: "Leaderboard", href: "/leaderboard" },
-];
+/**
+ * Header items for a given flag state. A function (rather than only the
+ * constant below) so tests can check both states of the Preflop Trainer flag.
+ *
+ * The Wiki is deliberately NOT a header item: it stays reachable from the
+ * footer ("Poker wiki" under Reference), the sitemap and every breadcrumb,
+ * which keeps it one hop from every page for crawlers.
+ */
+export function primaryNav({ preflopTrainer }: { preflopTrainer: boolean }): NavLink[] {
+  return [
+    { label: "Learn", href: "/learn", primary: true },
+    // Playable training built on the same sourced theory as Learn. In the primary
+    // nav rather than the "in development" cluster because it ships working.
+    { label: "Puzzles", href: ROUTES.puzzles },
+    // Behind NEXT_PUBLIC_FEATURE_PREFLOP_RANGES (lib/ranges/feature.ts).
+    ...(preflopTrainer ? [{ label: "Preflop Trainer", href: PREFLOP_TRAINER_PATH }] : []),
+    { label: "Bankroll", href: "/bankroll" },
+    { label: "Leaderboard", href: "/leaderboard" },
+  ];
+}
+
+/** Header navigation (components/layout/Navbar.tsx) — desktop and mobile menu. */
+export const PRIMARY_NAV: NavLink[] = primaryNav({ preflopTrainer: PREFLOP_RANGES_ENABLED });
 
 export interface NavGroup {
   group: string;
@@ -65,7 +76,6 @@ export const FOOTER_NAV: NavGroup[] = [
       { label: "Pot odds calculator", href: "/tools/pot-odds-calculator" },
       { label: "Outs calculator", href: "/tools/outs-calculator" },
       { label: "EV calculator", href: "/tools/ev-calculator" },
-      ...(PREFLOP_RANGES_ENABLED ? [{ label: "Preflop ranges & trainer", href: `/tools/${PREFLOP_RANGES_SLUG}` }] : []),
       { label: "All tools", href: ROUTES.tools },
     ],
   },

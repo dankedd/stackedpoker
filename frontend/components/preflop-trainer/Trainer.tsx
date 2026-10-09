@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ArrowUpRight } from "lucide-react";
 import { PokerRangeGrid } from "@/components/learn/visuals/PokerRangeGrid";
 import { DealerMarker } from "@/components/poker/DealerMarker";
 import { PlayingCard } from "@/components/poker/PlayingCard";
@@ -31,6 +34,7 @@ import {
   type TrainerType,
 } from "@/lib/ranges/logic";
 import type { RangeActionKey } from "@/lib/ranges/types";
+import { chartHrefForDeal, parseTrainerQuery, trainerQuery } from "@/lib/ranges/urlState";
 import { cn } from "@/lib/utils";
 import { ACTION_ORDER, HandBreakdown, Pills, SourceLegend, Swatch, TOOL_SLUG, sourceLabel, toStrategies } from "./shared";
 import { useHighscore } from "./useHighscore";
@@ -50,10 +54,17 @@ interface Answer {
   newRecord: boolean;
 }
 
-export function Trainer({ active }: { active: boolean }) {
-  const [type, setType] = useState<TrainerType>("mix");
-  const [mode, setMode] = useState<TrainerMode>("all");
-  const [fewerFolds, setFewerFolds] = useState(true);
+export function Trainer() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+  // Filters live in the query string so a shared link opens the same setup.
+  const { type, game: mode, fewerFolds } = parseTrainerQuery(params);
+  const setFilters = useCallback(
+    (t: TrainerType, m: TrainerMode, ff: boolean) =>
+      router.replace(`${pathname}${trainerQuery({ type: t, game: m, fewerFolds: ff })}`, { scroll: false }),
+    [router, pathname],
+  );
   const [deal, setDeal] = useState<Deal | null>(null);
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [stats, setStats] = useState<TrainerStats>({ hands: 0, correct: 0, mixed: 0, streak: 0 });
@@ -93,7 +104,6 @@ export function Trainer({ active }: { active: boolean }) {
   const keyState = useRef({ deal, answer, choose, next });
   keyState.current = { deal, answer, choose, next };
   useEffect(() => {
-    if (!active) return;
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
@@ -116,7 +126,7 @@ export function Trainer({ active }: { active: boolean }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [active]);
+  }, []);
 
   const modeOptions: TrainerMode[] = type === "open" ? ["all", "mtt", "pf", "cash"] : ["all", "mtt", "cash"];
 
@@ -131,8 +141,7 @@ export function Trainer({ active }: { active: boolean }) {
             onChange={(t) => {
               const nt = t as TrainerType;
               const nm = nt !== "open" && mode === "pf" ? "all" : mode;
-              setType(nt);
-              setMode(nm);
+              setFilters(nt, nm, fewerFolds);
               next(nt, nm);
             }}
             format={(t) => ({ open: "Open", def: "Defense", mix: "Mixed" })[t]}
@@ -143,7 +152,7 @@ export function Trainer({ active }: { active: boolean }) {
               value={mode}
               options={modeOptions}
               onChange={(m) => {
-                setMode(m as TrainerMode);
+                setFilters(type, m as TrainerMode, fewerFolds);
                 next(type, m as TrainerMode);
               }}
               format={(m) => ({ all: "All", mtt: "MTT", pf: "Push/fold ≤10bb", cash: "Cash 100bb" })[m]}
@@ -152,7 +161,7 @@ export function Trainer({ active }: { active: boolean }) {
               type="button"
               aria-pressed={fewerFolds}
               title="Hands that are always folded come up less often"
-              onClick={() => setFewerFolds((v) => !v)}
+              onClick={() => setFilters(type, mode, !fewerFolds)}
               className={cn(
                 "h-9 rounded-md border px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 fewerFolds
@@ -456,6 +465,16 @@ function ResultModal({
           />
         )}
         <aside className="space-y-4">
+          <Link
+            href={chartHrefForDeal(deal)}
+            target="_blank"
+            rel="noopener"
+            className="inline-flex items-center gap-1 text-xs font-medium text-violet-300 underline-offset-4 hover:text-violet-200 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            View full chart
+            <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5" />
+            <span className="sr-only">(opens in a new tab, so this session keeps its score)</span>
+          </Link>
           <p className="text-xs text-muted-foreground">
             {deal.type === "def"
               ? `${spotLabel(deal)} · Hand Range ${deal.chart.n} · p. ${deal.chart.page}`

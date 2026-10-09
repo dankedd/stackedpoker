@@ -73,22 +73,24 @@ function MiniStacks({
 export function OpenRangesView({
   charts,
   positions,
-  initialPos,
-  initialStack,
+  pos,
+  stack,
+  onChange,
   showStacks,
   note,
 }: {
   charts: OpenChart[];
   positions: string[];
-  initialPos: string;
-  initialStack: number;
+  pos: string;
+  stack: number;
+  onChange: (next: { pos: string; stack: number }) => void;
   showStacks: boolean;
   note: string;
 }) {
-  const [pos, setPos] = useState(initialPos);
-  const [stack, setStack] = useState(initialStack);
-
+  const setPos = (p: string) => onChange({ pos: p, stack });
+  const setStack = (s: number) => onChange({ pos, stack: s });
   const posCharts = charts.filter((c) => c.pos === pos).sort((a, b) => a.stack - b.stack);
+  if (!posCharts.length) return <Note>No chart for {displayPos(pos)}.</Note>;
   const chart =
     posCharts.find((c) => c.stack === stack) ??
     posCharts.reduce((b, c) => (Math.abs(c.stack - stack) < Math.abs(b.stack - stack) ? c : b));
@@ -96,7 +98,7 @@ export function OpenRangesView({
   return (
     <div>
       <div className="mb-5 space-y-3">
-        <Pills label="Position" value={pos} options={positions} onChange={setPos} format={displayPos} />
+        <Pills label="Position" value={chart.pos} options={positions} onChange={setPos} format={displayPos} />
         {showStacks && (
           <Pills
             label="Stack"
@@ -136,12 +138,21 @@ function asScenario(c: DefenseChart): DefenseScenario {
   return { type: "def", kind: "freq", chart: c, stack: c.stack, fmt: c.group, hero: c.hero, vil: c.vil, spot: c.spot };
 }
 
-export function DefenseView() {
-  const [fmt, setFmt] = useState<"mtt" | "cash">("mtt");
-  const [hero, setHero] = useState("BB");
-  const [vil, setVil] = useState("BN");
-  const [stack, setStack] = useState(25);
-  const [spot, setSpot] = useState<DefenseSpot>("open");
+export interface DefenseSelection {
+  game: "mtt" | "cash";
+  hero: string;
+  vil: string;
+  stack: number;
+  spot: DefenseSpot;
+}
+
+export function DefenseView({ value, onChange }: { value: DefenseSelection; onChange: (next: DefenseSelection) => void }) {
+  const { game: fmt, hero, vil, stack, spot } = value;
+  const set = (patch: Partial<DefenseSelection>) => onChange({ ...value, ...patch });
+  const setHero = (h: string) => set({ hero: h });
+  const setVil = (v: string) => set({ vil: v });
+  const setStack = (st: number) => set({ stack: st });
+  const setSpot = (sp: DefenseSpot) => set({ spot: sp });
 
   // Each selector narrows the next; an invalid earlier pick falls back to the nearest valid one.
   const sel = useMemo(() => {
@@ -172,10 +183,7 @@ export function DefenseView() {
           label="Game"
           value={fmt}
           options={["mtt", "cash"]}
-          onChange={(v) => {
-            setFmt(v as "mtt" | "cash");
-            setStack(v === "cash" ? 100 : 25);
-          }}
+          onChange={(v) => set({ game: v as "mtt" | "cash", stack: v === "cash" ? 100 : 25 })}
           format={(v) => (v === "mtt" ? "MTT · 15–60bb" : "Cash 6-max · 100bb")}
         />
         <Pills label="You" value={chart.hero} options={sel.heroes} onChange={setHero} format={displayPos} />
@@ -222,11 +230,19 @@ export function DefenseView() {
 
 const PF_POSITIONS = ["UTG", "UTG+1", "UTG+2", "LJ", "HJ", "CO", "BN", "SB"];
 
-export function PushFoldView() {
-  const [pos, setPos] = useState("BN");
-  const [bb, setBb] = useState(10);
+export function PushFoldView({
+  pos,
+  bb,
+  onChange,
+}: {
+  pos: string;
+  bb: number;
+  onChange: (next: { pos: string; stack: number }) => void;
+}) {
+  const setPos = (p: string) => onChange({ pos: p, stack: bb });
+  const setBb = (b: number) => onChange({ pos, stack: b });
   const [focus, setFocus] = useState<string | null>(null);
-  const chart = PUSH_FOLD_CHARTS.find((c) => c.pos === pos)!;
+  const chart = PUSH_FOLD_CHARTS.find((c) => c.pos === pos) ?? PUSH_FOLD_CHARTS.find((c) => c.pos === "BN")!;
   const values = useMemo(
     () => Object.fromEntries(Object.entries(chart.grid).map(([h, cell]) => [h, pushValue(cell)])),
     [chart],
@@ -237,7 +253,7 @@ export function PushFoldView() {
   return (
     <div>
       <div className="mb-5 space-y-3">
-        <Pills label="Position" value={pos} options={PF_POSITIONS} onChange={setPos} format={displayPos} />
+        <Pills label="Position" value={chart.pos} options={PF_POSITIONS} onChange={setPos} format={displayPos} />
         <div>
           <label htmlFor="pf-stack" className="block text-xs font-medium text-muted-foreground">
             Stack
