@@ -10,6 +10,8 @@ export interface ModalProps {
   title: string;
   children: React.ReactNode;
   maxWidthClassName?: string;
+  /** Padding of the body; defaults to the roomy desktop padding. */
+  bodyClassName?: string;
 }
 
 /**
@@ -23,7 +25,7 @@ export interface ModalProps {
  * conditionally inline) so `document` is never touched during SSR, matching
  * UserMenu's `{open && createPortal(...)}` pattern.
  */
-export function Modal({ open, onClose, title, children, maxWidthClassName = "max-w-lg" }: ModalProps) {
+export function Modal({ open, onClose, title, children, maxWidthClassName = "max-w-lg", bodyClassName = "px-6 py-5" }: ModalProps) {
   if (!open) return null;
 
   const modal = (
@@ -49,7 +51,7 @@ export function Modal({ open, onClose, title, children, maxWidthClassName = "max
           </button>
         </div>
 
-        <div className="px-6 py-5">{children}</div>
+        <div className={bodyClassName}>{children}</div>
       </div>
     </div>
   );

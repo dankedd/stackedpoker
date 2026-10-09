@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { PokerRangeGrid } from "@/components/learn/visuals/PokerRangeGrid";
 import { DealerMarker } from "@/components/poker/DealerMarker";
 import { CHIP_PALETTE, PokerChip, type ChipTone } from "@/components/poker/ChipStack";
@@ -43,6 +43,9 @@ import { XPGain } from "@/components/learn/XPGain";
 import { cn } from "@/lib/utils";
 import { ACTION_ORDER, HandBreakdown, Pills, SourceLegend, Swatch, TOOL_SLUG, sourceLabel, toStrategies } from "./shared";
 import { useTrainerProgress } from "./useTrainerProgress";
+
+const TYPE_LABEL: Record<TrainerType, string> = { open: "Open", def: "Defense", mix: "Mixed" };
+const MODE_LABEL: Record<TrainerMode, string> = { all: "All", mtt: "MTT", pf: "Push/fold ≤10bb", cash: "Cash 100bb" };
 
 const HOTKEY: Record<RangeActionKey, string> = { fold: "F", limp: "L", call: "C", raise: "R", allin: "A" };
 
@@ -86,6 +89,7 @@ export function Trainer() {
   const { signedIn, token, high, xpState, recordLocalStreak, applyHandResult, resetLocal } = useTrainerProgress();
   const { progress, applyServerXpTotal, dismissLevelUp } = useLearnProgress();
   const answerId = useRef(0);
+  const [showFilters, setShowFilters] = useState(false);
 
   // Signed in, the streak lives on the server and carries over between sessions.
   const serverStreak = xpState?.streak;
@@ -170,8 +174,27 @@ export function Trainer() {
 
   return (
     <div>
+      {/* Phone: the filters fold into one summary row so the table is on screen right away. */}
+      <button
+        type="button"
+        aria-expanded={showFilters}
+        aria-controls="trainer-filters"
+        onClick={() => setShowFilters((v) => !v)}
+        className="mb-3 flex w-full items-center gap-2 rounded-xl border border-border bg-card/40 px-3.5 py-2.5 text-left text-sm md:hidden"
+      >
+        <SlidersHorizontal aria-hidden="true" className="h-4 w-4 shrink-0 text-violet-300" />
+        <span className="min-w-0 flex-1 truncate font-medium text-foreground">
+          {TYPE_LABEL[type]} · {MODE_LABEL[mode]}
+          {fewerFolds && <span className="text-muted-foreground"> · fewer folds</span>}
+        </span>
+        <ChevronDown
+          aria-hidden="true"
+          className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", showFilters && "rotate-180")}
+        />
+      </button>
+
       <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
-        <div className="space-y-3">
+        <div id="trainer-filters" className={cn("space-y-3", showFilters ? "block" : "hidden md:block")}>
           <Pills
             label="Type"
             value={type}
@@ -182,7 +205,7 @@ export function Trainer() {
               setFilters(nt, nm, fewerFolds);
               next(nt, nm);
             }}
-            format={(t) => ({ open: "Open", def: "Defense", mix: "Mixed" })[t]}
+            format={(t) => TYPE_LABEL[t]}
           />
           <div className="flex flex-wrap items-end gap-3">
             <Pills
@@ -193,7 +216,7 @@ export function Trainer() {
                 setFilters(type, m as TrainerMode, fewerFolds);
                 next(type, m as TrainerMode);
               }}
-              format={(m) => ({ all: "All", mtt: "MTT", pf: "Push/fold ≤10bb", cash: "Cash 100bb" })[m]}
+              format={(m) => MODE_LABEL[m]}
             />
             <button
               type="button"
@@ -211,7 +234,25 @@ export function Trainer() {
             </button>
           </div>
         </div>
-        <dl className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground" aria-live="polite">
+        {/* Phone: four tiles instead of a line that wraps. */}
+        <dl className="grid w-full grid-cols-4 gap-1.5 md:hidden" aria-live="polite">
+          {[
+            ["Score", `${scorePct(stats)}%`, `${stats.correct + stats.mixed}/${stats.hands}`],
+            ["Streak", stats.streak, null],
+            ["Record", high, null],
+            xpState ? ["XP today", xpState.daily_xp, `/${xpState.daily_cap}`] : ["Hands", stats.hands, null],
+          ].map(([k, v, sub]) => (
+            <div key={String(k)} className="rounded-lg border border-border/60 bg-card/40 px-2 py-1.5 text-center">
+              <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">{k}</dt>
+              <dd className="font-mono text-base font-semibold tabular-nums text-foreground">
+                {v}
+                {sub && <span className="ml-0.5 text-[10px] font-normal text-muted-foreground">{sub}</span>}
+              </dd>
+            </div>
+          ))}
+        </dl>
+
+        <dl className="hidden flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground md:flex" aria-live="polite">
           {[
             ["Hands", stats.hands],
             ["Correct", stats.correct],
@@ -442,16 +483,15 @@ function ActionButtons({ deal, onChoose, disabled }: { deal: Deal; onChoose: (k:
     <>
       <div
         className={cn(
-          "mx-auto mt-7 grid gap-2.5",
+          "mx-auto mt-5 grid gap-2.5 md:mt-7",
           keys.length === 4 ? "max-w-[640px] grid-cols-2 sm:grid-cols-4" : keys.length === 3 ? "max-w-[540px] grid-cols-3" : "max-w-[360px] grid-cols-2",
         )}
         role="group"
         aria-label="Your action"
       >
         {keys.map((k) => {
-          let sub = HOTKEY[k];
-          if (k === "allin") sub = `${deal.stack}bb · A`;
-          if (k === "raise" && raiseLabel) sub = `${raiseLabel} · R`;
+          // The size stays on every screen; the hotkey letter only where there is a keyboard.
+          const size = k === "allin" ? `${deal.stack}bb` : k === "raise" ? raiseLabel : undefined;
           return (
             <button
               key={k}
@@ -459,17 +499,27 @@ function ActionButtons({ deal, onChoose, disabled }: { deal: Deal; onChoose: (k:
               disabled={disabled}
               onClick={() => onChoose(k)}
               className={cn(
-                "rounded-xl px-3 py-3 text-[15px] font-bold transition-transform active:scale-[0.97] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                "rounded-xl px-3 py-2.5 text-[15px] font-bold md:py-3 transition-transform active:scale-[0.97] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 BUTTON_CLASS[k],
               )}
             >
               {actionName(k, deal)}
-              <small className="mt-0.5 block text-[11px] font-medium opacity-80">{sub}</small>
+              <small className={cn("mt-0.5 text-[11px] font-medium opacity-80", size ? "block" : "hidden md:block")}>
+                {size}
+                <span className="hidden md:inline">
+                  {size && " · "}
+                  {HOTKEY[k]}
+                </span>
+              </small>
             </button>
           );
         })}
       </div>
-      <p className="mt-2.5 text-center text-xs text-muted-foreground">
+      {villainAllIn(deal) && (
+        <p className="mt-2.5 text-center text-xs text-muted-foreground md:hidden">Villain is all-in: fold or call</p>
+      )}
+      {/* Keyboard shortcuts mean nothing on a phone. */}
+      <p className="mt-2.5 hidden text-center text-xs text-muted-foreground md:block">
         {villainAllIn(deal) ? "Villain is all-in: fold or call · " : "Shortcuts: "}
         {keys.map((k) => HOTKEY[k]).join(" · ")}, Enter for the next hand
       </p>
@@ -493,7 +543,7 @@ function ResultModal({
   onNext: () => void;
 }) {
   const nextRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => nextRef.current?.focus(), []);
+  useEffect(() => nextRef.current?.focus({ preventScroll: true }), []);
   const { grade: g, key: k } = answer;
   const name = (x: RangeActionKey) => actionName(x, deal);
   const pct = (x: number) => Math.round(x * 100);
@@ -518,7 +568,13 @@ function ResultModal({
     .join(" ");
 
   return (
-    <Modal open onClose={onNext} title={scenarioTitle(deal)} maxWidthClassName="max-w-4xl">
+    <Modal
+      open
+      onClose={onNext}
+      title={scenarioTitle(deal)}
+      maxWidthClassName="max-w-4xl"
+      bodyClassName="px-4 pt-4 sm:px-6 sm:pt-5"
+    >
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <span className={cn("rounded-full border px-3 py-1 text-sm font-bold", VERDICT[g.verdict].className)}>
           {VERDICT[g.verdict].label}
@@ -526,7 +582,7 @@ function ResultModal({
         {answer.newRecord && (
           <span className="animate-fade-in rounded-full bg-amber-400 px-2.5 py-1 text-xs font-extrabold text-black">New record!</span>
         )}
-        <span className="ml-auto text-xs text-muted-foreground">
+        <span className="ml-auto text-right text-xs text-muted-foreground">
           {streakText} · Record <b className="font-mono text-foreground">{high}</b>
         </span>
         <p className="basis-full text-sm leading-relaxed text-muted-foreground">
@@ -535,7 +591,22 @@ function ResultModal({
         <XpLine xp={answer.xp} />
       </div>
 
-      <div className="grid items-start gap-6 md:grid-cols-[minmax(0,1fr)_250px]">
+      {/* Phone: what your hand does comes before the 169-cell grid, not after it. */}
+      <div className="mb-4 rounded-xl border border-border/60 bg-card/30 p-3 md:hidden">
+        {deal.kind === "pf" ? (
+          <PushFoldResult deal={deal} chosen={k} />
+        ) : (
+          <HandBreakdown
+            hand={deal.hand}
+            row={deal.chart.grid[deal.hand]}
+            actions={deal.chart.actions}
+            labelFor={(a) => name(a.key)}
+            chosen={k}
+          />
+        )}
+      </div>
+
+      <div className="grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_250px] md:gap-6">
         {deal.kind === "pf" ? (
           <PokerRangeGrid
             range={[]}
@@ -574,14 +645,16 @@ function ResultModal({
               : `${sourceLabel(deal.chart.hr)} · p. ${deal.chart.page}`}
           </p>
           {deal.kind === "pf" ? (
-            <PushFoldResult deal={deal} chosen={k} />
+            <div className="hidden md:block">
+              <PushFoldResult deal={deal} chosen={k} />
+            </div>
           ) : (
             <>
               <SourceLegend
                 actions={deal.chart.actions}
                 showAbsent={Object.values(deal.chart.grid).some((v) => v === null)}
               />
-              <div className="border-t border-border/50 pt-3">
+              <div className="hidden border-t border-border/50 pt-3 md:block">
                 <HandBreakdown
                   hand={deal.hand}
                   row={deal.chart.grid[deal.hand]}
@@ -595,14 +668,17 @@ function ResultModal({
         </aside>
       </div>
 
-      <button
-        ref={nextRef}
-        type="button"
-        onClick={onNext}
-        className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-md bg-gradient-to-r from-violet-600 to-blue-500 text-sm font-semibold text-white shadow-md shadow-violet-900/30 transition-all hover:from-violet-500 hover:to-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-      >
-        Next hand (Enter)
-      </button>
+      {/* Stays on screen while the chart scrolls underneath. */}
+      <div className="sticky bottom-0 -mx-4 mt-5 border-t border-white/[0.07] bg-[#0B1120] px-4 py-3 sm:-mx-6 sm:px-6 sm:py-5">
+        <button
+          ref={nextRef}
+          type="button"
+          onClick={onNext}
+          className="inline-flex h-11 w-full items-center justify-center rounded-md bg-gradient-to-r from-violet-600 to-blue-500 text-sm font-semibold text-white shadow-md shadow-violet-900/30 transition-all hover:from-violet-500 hover:to-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        >
+          Next hand<span className="hidden md:inline">&nbsp;(Enter)</span>
+        </button>
+      </div>
     </Modal>
   );
 }
