@@ -6,6 +6,8 @@ import {
   outsToEquityFlop,
   requiredEquityFromPot,
 } from "@/lib/theory/math";
+import { PREFLOP_RANGES_ENABLED, PREFLOP_RANGES_SLUG } from "@/lib/ranges/feature";
+import { preflopRangeExamples } from "@/lib/ranges/seoContent";
 import { AUTHORITY_TEAM, DEFAULT_CONTENT_DATE } from "../config";
 import { readingTimeMin } from "../reading";
 import { glossaryLetterPath, lessonPath, toolPath, wikiPath } from "../routes";
@@ -96,6 +98,84 @@ function outsRows() {
     description: `${pct(drawProbabilityNextCard(outs), 1)} to hit on the next card, ${pct(drawProbabilityByRiver(outs), 1)} by the river. The rule-of-4 shortcut estimates ${pct(outsToEquityFlop(outs))}.`,
   }));
 }
+
+/**
+ * Preflop ranges & trainer. Rendered by its own route
+ * (app/tools/preflop-ranges) rather than [slug], because the widget needs
+ * more width than the article column — so `widget` stays unset here.
+ */
+const PREFLOP_RANGES_TOOL: ToolSource = {
+  slug: PREFLOP_RANGES_SLUG,
+  title: "Preflop Range Charts & Trainer",
+  summary:
+    "MTT and cash preflop ranges by position and stack depth — opens, defenses and push/fold — with a trainer that grades every hand.",
+  status: "published",
+  clusters: ["preflop", "ranges"],
+  lessonKey: "preflop_hand_selection",
+  wikiSlugs: ["position", "range-advantage"],
+  examples: preflopRangeExamples,
+  sections: [
+    {
+      heading: "What the charts show",
+      paragraphs: [
+        "A preflop chart answers one question: with this hand, from this seat, at this stack depth, what do you do? Each cell of the 13×13 grid is one starting hand; a split cell means the strategy plays that hand more than one way.",
+        "The tool covers tournament opens from 12 to 60 big blinds, defending against opens, 4-bets and limps, push/fold below 10 big blinds, and 100bb six-max cash opens.",
+      ],
+    },
+    {
+      heading: "How the trainer works",
+      paragraphs: [
+        "The trainer deals a real hand in a real spot and asks for your action. Hands are dealt in proportion to how often they occur: each offsuit hand has 12 combinations, each pocket pair 6 and each suited hand 4, so you see an offsuit hand three times as often as its suited version.",
+        "An answer is correct when the chart plays it at least half the time, or when it is the chart's most frequent play. A play the chart uses at least 10% of the time counts as mixed — half a point, and your streak survives. Anything rarer is wrong.",
+      ],
+    },
+    {
+      heading: "Common mistakes",
+      definitions: [
+        {
+          term: "Using one range for every stack",
+          description:
+            "Opening ranges change a lot with stack depth: short stacks shove or limp hands that deeper stacks raise, and fold hands that deeper stacks can play.",
+        },
+        {
+          term: "Reading a mixed cell as a mistake in the chart",
+          description:
+            "A hand split between two actions is close to indifferent between them. Playing either one consistently costs very little; ignoring the hand entirely is what costs.",
+        },
+        {
+          term: "Defending as if the opener had any two cards",
+          description:
+            "An early-position open is much stronger than a button open, so the same hand can be a clear defend against one and a clear fold against the other.",
+        },
+      ],
+    },
+    {
+      heading: "Key takeaway",
+      paragraphs: [
+        "Learn your opens by seat and stack first, then your big-blind defense, then push/fold. The trainer's mixed verdict is there to teach you which hands genuinely have two good answers.",
+      ],
+    },
+  ],
+  faqs: [
+    {
+      question: "Where do these ranges come from?",
+      answer:
+        "From Modern Poker Theory by Michael Acevedo: chapter 7 for the tournament charts (9-handed with antes) and chapter 5 for the 100bb cash charts. Every chart on the page names its Hand Range number and page.",
+    },
+    {
+      question: "How exact are the percentages?",
+      answer:
+        "The totals for each chart are the book's own printed figures. Per-hand frequencies were read from the chart images and can be one or two points off.",
+    },
+    {
+      question: "Why does the trainer accept more than one answer?",
+      answer:
+        "Because the strategy itself mixes. If the chart plays a hand as a raise 60% of the time and a call 40%, calling is a real part of the strategy, so it scores as mixed rather than wrong.",
+    },
+  ],
+  sourceNote:
+    "Charts from Modern Poker Theory (Michael Acevedo, D&B Publishing, 2019), chapters 5 and 7, as data/ranges/*.json. Totals are the book's printed figures; per-hand frequencies were read from its chart images (±1–2 points).",
+};
 
 const TOOLS: ToolSource[] = [
   {
@@ -853,6 +933,9 @@ const TOOLS: ToolSource[] = [
     sourceNote:
       "Seat names and action order are the rules of the game. The value of position quotes the StackedPoker poker-theory concept registry's position entry; the trainer asserts nothing further.",
   },
+  // Behind NEXT_PUBLIC_FEATURE_PREFLOP_RANGES (lib/ranges/feature.ts): while
+  // the flag is off this entry does not exist, so nothing links to it.
+  ...(PREFLOP_RANGES_ENABLED ? [PREFLOP_RANGES_TOOL] : []),
 ];
 
 /**

@@ -43,9 +43,12 @@ export function ContentPage({
   eyebrow,
   ctaHeading,
   ctaBody,
+  wideIntro = false,
 }: {
   entry: SeoEntry;
   intro?: ReactNode;
+  /** Let `intro` use up to 72rem instead of the 3xl reading column. */
+  wideIntro?: boolean;
   children?: ReactNode;
   moduleTitle?: string;
   related?: SeoEntry[];
@@ -98,7 +101,14 @@ export function ContentPage({
 
         {isPlanned && <PlannedNotice entry={entry} />}
 
-        {intro}
+        {wideIntro ? (
+          // Breaks out of the 3xl reading column for widgets that need room
+          // (a 13×13 grid beside its legend, a poker table). Capped below the
+          // viewport width so it can never cause horizontal scroll.
+          <div className="relative left-1/2 w-[min(calc(100vw-2rem),72rem)] -translate-x-1/2">{intro}</div>
+        ) : (
+          intro
+        )}
 
         {entry.body && entry.body.length > 0 && (
           <div className="mt-10">

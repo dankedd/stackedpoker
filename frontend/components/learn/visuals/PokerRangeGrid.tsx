@@ -188,7 +188,7 @@ interface PokerRangeGridProps {
    *  'category' = colors each in-range hand by its live hand-vs-board classification (Module 8's
    *  Range Collision Viewer — see `categoryMap`/`handBoardInteraction.ts`). Never an equity gradient —
    *  a discrete category per cell, with both color AND ring-style distinguishing tiers. */
-  mode?: 'membership' | 'three_action' | 'diff' | 'action_diff' | 'strategy' | 'category'
+  mode?: 'membership' | 'three_action' | 'diff' | 'action_diff' | 'strategy' | 'category' | 'pushfold'
   /** 'category' mode: hand -> its live classification against the current board (see
    *  `classifyRangeVsBoard` in handBoardInteraction.ts). A hand absent from this map, or not in
    *  `range`, renders as plain out-of-range/'none' styling. */
@@ -234,12 +234,35 @@ interface PokerRangeGridProps {
    *  container's actual content width. Either way this is a MAX-width, not a fixed width:
    *  it only ever shrinks what an oversized parent offers, never forces overflow into a
    *  smaller one — see PokerRangeGrid's own outer wrapper below. */
-  size?: 'standard' | 'compact'
+  size?: 'standard' | 'compact' | 'mini'
+  /** 'strategy' mode: hands that never reach this spot (e.g. not in the 3-bet range that got
+   *  4-bet). Rendered as an empty dashed cell — deliberately NOT fold's color, because "you
+   *  would fold this" and "you are never here with this" are different claims. */
+  absentHands?: string[]
+  /** 'pushfold' mode: hand -> max stack (bb) it is shoved at; 0 = never. */
+  pushValues?: Record<string, number>
+  /** 'pushfold' mode: current stack. Hands with a lower push value are dimmed. */
+  pushThreshold?: number
+  /** Called when a cell is hovered, focused or tapped — lets a parent show a detail panel. */
+  onHandFocus?: (hand: string) => void
+  /** Hide the built-in legend when the parent renders its own (e.g. with source percentages). */
+  hideLegend?: boolean
 }
 
-const SIZE_MAX_WIDTH: Record<'standard' | 'compact', string> = {
+const SIZE_MAX_WIDTH: Record<'standard' | 'compact' | 'mini', string> = {
   standard: 'max-w-[520px]',
   compact: 'max-w-[480px]',
+  mini: 'max-w-[180px]',
+}
+
+/** Empty cell for a hand that never reaches the spot — dashed outline, no fill. */
+const ABSENT_CELL_STYLE = 'bg-transparent border border-dashed border-slate-500/40 text-muted-foreground/30'
+
+/** Push/fold shading: the larger the max shove stack, the stronger the all-in color. */
+function pushCellBackground(value: number): string | undefined {
+  if (value <= 0) return undefined
+  const strength = 0.3 + 0.6 * ((value - 1) / 9)
+  return `rgba(239,68,68,${strength.toFixed(2)})`
 }
 
 // ── Legend styling — ONE definition, reused by every mode's legend block
@@ -270,7 +293,18 @@ export function PokerRangeGrid({
   categoryLegend,
   frequencyMap,
   size = 'standard',
+  absentHands,
+  pushValues,
+  pushThreshold = 1,
+  onHandFocus,
+  hideLegend = false,
 }: PokerRangeGridProps) {
+  const mini = size === 'mini'
+  const absent = new Set(absentHands ?? [])
+  const focusHandlers = (hand: string) =>
+    onHandFocus
+      ? { onMouseEnter: () => onHandFocus(hand), onFocus: () => onHandFocus(hand), onClick: () => onHandFocus(hand) }
+      : {}
   const inRange = new Set(range)
   const inComparison = new Set(comparisonRange ?? [])
   const highlightedHands = new Set(
@@ -366,7 +400,7 @@ export function PokerRangeGrid({
         {/* Column headers. `gap-px` (not per-cell `m-px` margins) keeps the same hairline
          *  spacing while costing roughly half the horizontal space at the narrowest
          *  supported widths — 12 gaps of 1px instead of 13 cells x 2px of margin. */}
-        <div className="flex gap-px ml-5 mb-0.5">
+        <div className={cn('flex gap-px ml-5 mb-0.5', mini && 'hidden')}>
           {RANKS.map((r) => (
             <div
               key={r}
@@ -379,10 +413,12 @@ export function PokerRangeGrid({
 
         {/* Rows */}
         {HAND_GRID.map((row, rowIdx) => (
-          <div key={rowIdx} className="flex items-center gap-px">
-            <div className="w-5 text-[8px] sm:text-[10px] font-bold text-muted-foreground/40 text-center shrink-0">
-              {RANKS[rowIdx]}
-            </div>
+          <div key={rowIdx} className={cn('flex items-center gap-px', mini && 'mb-px')}>
+            {!mini && (
+              <div className="w-5 text-[8px] sm:text-[10px] font-bold text-muted-foreground/40 text-center shrink-0">
+                {RANKS[rowIdx]}
+              </div>
+            )}
             {row.map((hand, colIdx) => {
               const isPair = rowIdx === colIdx
               const isSuited = rowIdx < colIdx
@@ -452,6 +488,69 @@ export function PokerRangeGrid({
                 )
               }
 
+              if (mode === 'pushfold') {
+                const value = pushValues?.[hand] ?? 0
+                const pushed = value >= pushThreshold
+                const label =
+                  value <= 0 ? 'never shoved' : value >= 10 ? 'shoved at 10bb or less' : `shoved at ${value}bb or less`
+                return (
+                  <div
+                    key={colIdx}
+                    tabIndex={0}
+                    role="group"
+                    aria-label={`${hand}: ${label}`}
+                    title={`${hand}: ${label}`}
+                    {...focusHandlers(hand)}
+                    className={cn(
+                      'relative flex-1 min-w-0 aspect-square flex flex-col items-center justify-center',
+                      'rounded-[3px] select-none leading-none cursor-default transition-opacity',
+                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:z-20',
+                      value > 0 ? 'text-white' : 'bg-secondary/40 text-muted-foreground/40',
+                      value > 0 && !pushed && 'opacity-30',
+                      highlightedHands.has(hand) && 'ring-2 ring-white ring-offset-1 ring-offset-background z-10',
+                    )}
+                    style={value > 0 ? { background: pushCellBackground(value) } : undefined}
+                  >
+                    <span className="truncate text-[6px] sm:text-[8px] font-medium opacity-80">{hand}</span>
+                    <span className="text-[9px] sm:text-[12px] font-bold">{value > 0 ? value : '–'}</span>
+                  </div>
+                )
+              }
+
+              if (mode === 'strategy' && absent.has(hand)) {
+                return (
+                  <div
+                    key={colIdx}
+                    tabIndex={mini ? undefined : 0}
+                    role="group"
+                    aria-label={`${hand}: not in this spot`}
+                    title={mini ? undefined : `${hand}\nNever reaches this spot`}
+                    {...focusHandlers(hand)}
+                    className={cn(
+                      'relative flex-1 min-w-0 aspect-square flex items-center justify-center select-none leading-none cursor-default',
+                      mini ? 'rounded-[1px]' : 'rounded-[3px] text-[8px] sm:text-[10px] font-bold',
+                      'focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:z-20',
+                      ABSENT_CELL_STYLE,
+                      highlightedHands.has(hand) && 'ring-2 ring-white ring-offset-1 ring-offset-background z-10',
+                    )}
+                  >
+                    {!mini && <span className="truncate px-0.5">{hand}</span>}
+                  </div>
+                )
+              }
+
+              if (mode === 'strategy' && mini) {
+                const mix = strategies?.[hand] ?? strategyAbsentMix
+                return (
+                  <div
+                    key={colIdx}
+                    aria-hidden="true"
+                    className="flex-1 min-w-0 aspect-square rounded-[1px]"
+                    style={{ background: segmentedBackground(mix, strategyOrder) }}
+                  />
+                )
+              }
+
               if (mode === 'strategy') {
                 const mix = strategies?.[hand] ?? strategyAbsentMix
                 const breakdown = formatMixBreakdown(mix, strategyOrder)
@@ -464,6 +563,7 @@ export function PokerRangeGrid({
                     role="group"
                     aria-label={`${hand}: ${breakdown}`}
                     title={`${hand}\n${breakdown}`}
+                    {...focusHandlers(hand)}
                     className={cn(
                       'group relative flex-1 min-w-0 aspect-square flex items-center justify-center',
                       'rounded-[3px] select-none text-[8px] sm:text-[10px] font-bold leading-none cursor-default',
@@ -524,7 +624,7 @@ export function PokerRangeGrid({
 
       {/* Legend / stats — sizing/spacing centralized above (LEGEND_*); each
           mode below only ever supplies its own colors/labels/hatch patterns. */}
-      {mode === 'category' ? (
+      {hideLegend || mini || mode === 'pushfold' ? null : mode === 'category' ? (
         <div className={cn(LEGEND_CONTAINER, 'pt-1', LEGEND_TEXT)}>
           <div className={LEGEND_ITEM}>
             <div className={cn(LEGEND_SWATCH, OUT_OF_RANGE_STYLE)} />

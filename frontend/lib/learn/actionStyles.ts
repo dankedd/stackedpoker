@@ -37,6 +37,8 @@ export const ACTION_STYLES: Record<string, ActionStyle> = {
   raise:   { label: 'Raise',   bg: 'bg-violet-500',      text: 'text-white', swatch: 'bg-violet-500' },
   jam:     { label: 'Jam',     bg: 'bg-red-500/80',      text: 'text-white', swatch: 'bg-red-500/80' },
   shove:   { label: 'Shove',   bg: 'bg-red-500/80',      text: 'text-white', swatch: 'bg-red-500/80' },
+  // The preflop range tool's data says 'allin' for the same action — same color as jam/shove.
+  allin:   { label: 'All-in',  bg: 'bg-red-500/80',      text: 'text-white', swatch: 'bg-red-500/80' },
   limp:    { label: 'Limp',    bg: 'bg-sky-500/70',      text: 'text-white', swatch: 'bg-sky-500/70' },
   call:    { label: 'Call',    bg: 'bg-emerald-500',     text: 'text-white', swatch: 'bg-emerald-500' },
   '3bet':  { label: '3-Bet',   bg: 'bg-violet-500',      text: 'text-white', swatch: 'bg-violet-500' },
@@ -78,6 +80,7 @@ export const ACTION_CSS_COLOR: Record<string, string> = {
   raise: '#8b5cf6',
   jam: 'rgba(239,68,68,0.8)',
   shove: 'rgba(239,68,68,0.8)',
+  allin: 'rgba(239,68,68,0.8)',
   limp: 'rgba(14,165,233,0.7)',
   call: '#10b981',
   '3bet': '#8b5cf6',

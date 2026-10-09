@@ -11,6 +11,7 @@ import {
 } from "@/lib/tools/handAnalysis/recommendations";
 import { toolEntries, toolEntryBySlug, toolLivePath } from "@/lib/seo/content/tools";
 import { entryMetadata } from "@/lib/seo/metadata";
+import { PREFLOP_RANGES_SLUG } from "@/lib/ranges/feature";
 
 /**
  * A free-tool landing page (§9).
@@ -25,7 +26,10 @@ export const revalidate = 86400;
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return toolEntries().map((entry) => ({ slug: entry.slug }));
+  // preflop-ranges has its own wider route (app/tools/preflop-ranges).
+  return toolEntries()
+    .filter((entry) => entry.slug !== PREFLOP_RANGES_SLUG)
+    .map((entry) => ({ slug: entry.slug }));
 }
 
 export async function generateMetadata({

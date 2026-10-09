@@ -1,3 +1,4 @@
+import { PREFLOP_RANGES_ENABLED, PREFLOP_RANGES_SLUG } from "@/lib/ranges/feature";
 import { ROUTES } from "./routes";
 
 /**
@@ -64,6 +65,7 @@ export const FOOTER_NAV: NavGroup[] = [
       { label: "Pot odds calculator", href: "/tools/pot-odds-calculator" },
       { label: "Outs calculator", href: "/tools/outs-calculator" },
       { label: "EV calculator", href: "/tools/ev-calculator" },
+      ...(PREFLOP_RANGES_ENABLED ? [{ label: "Preflop ranges & trainer", href: `/tools/${PREFLOP_RANGES_SLUG}` }] : []),
       { label: "All tools", href: ROUTES.tools },
     ],
   },
