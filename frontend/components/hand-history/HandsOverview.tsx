@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Loader2, NotebookPen, Star, Upload } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, NotebookPen, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -19,26 +19,22 @@ import {
 } from "@/lib/handHistory/api";
 import {
   PAGE_SIZE,
-  SORT_LABELS,
   readQueryState,
   writeQueryState,
   type HandFilters,
   type HandQueryState,
-  type SortKey,
 } from "@/lib/handHistory/filters";
 import { HANDS_IMPORT_PATH, HANDS_PATH } from "@/lib/handHistory/feature";
-import { fmtBb, fmtNum, fmtPlayedAt, fmtPlayedDate, fmtSignedBb } from "@/lib/handHistory/format";
-import { PREFLOP_VERDICTS, VERDICT_LABEL, type PreflopVerdict } from "@/lib/handHistory/preflop";
+import { fmtBb, fmtNum, fmtPlayedAt, fmtSignedBb } from "@/lib/handHistory/format";
 import type { HandListRow } from "@/lib/handHistory/rows";
 import { t } from "@/lib/handHistory/strings";
 import { cn } from "@/lib/utils";
 import { FavoriteStar } from "./FavoriteStar";
+import { FiltersBar } from "./HandFilterBar";
 import { MiniCards } from "./MiniCards";
-import { PreflopBadge, VERDICT_STYLE } from "./PreflopBadge";
+import { PreflopBadge } from "./PreflopBadge";
 import { PreflopSummary } from "./PreflopSummary";
 import { PageHeader, SectionNav } from "./SectionNav";
-
-const POT_SLIDER_MAX = 200;
 
 export function HandsOverview() {
   const router = useRouter();
@@ -178,7 +174,14 @@ export function HandsOverview() {
       )}
       <PreflopSummary rows={summary} onPick={(preflop) => update({ filters: { preflop } })} />
 
-      <FiltersBar state={state} tournaments={tournaments} favCount={favCount} onChange={update} />
+      <FiltersBar
+        state={state}
+        tournaments={tournaments}
+        favCount={favCount}
+        onChange={update}
+        resultCount={rows ? count : null}
+        totalCount={total}
+      />
 
       {error && (
         <div role="alert" className="mt-4 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
@@ -189,18 +192,12 @@ export function HandsOverview() {
       {total === 0 && !error ? (
         <EmptyState />
       ) : (
-        <div className="relative mt-4">
-          {loading && rows && (
-            <div className="absolute right-2 top-2 z-10">
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            </div>
-          )}
+        // Previous results stay (dimmed) while the next query runs, so nothing jumps.
+        <div className={cn("relative mt-4 min-h-[360px] transition-opacity duration-200", loading && rows && "opacity-50")} aria-busy={loading}>
           {!rows ? (
-            <div className="flex items-center justify-center py-16 text-muted-foreground">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t.overview.loading}
-            </div>
+            <SkeletonRows />
           ) : rows.length === 0 ? (
-            <p className="rounded-xl border border-border/60 bg-card/40 px-4 py-10 text-center text-sm text-muted-foreground">
+            <p className="rounded-xl border border-border/60 bg-card/40 px-4 py-10 text-center text-sm text-muted-foreground animate-fade-in">
               {state.filters.favorites
                 ? favCount === 0
                   ? t.overview.noFavoritesYet
@@ -244,203 +241,8 @@ export function HandsOverview() {
 
 // ── Filters ──────────────────────────────────────────────────────────────────
 
-function FiltersBar({
-  state,
-  tournaments,
-  favCount,
-  onChange,
-}: {
-  state: HandQueryState;
-  tournaments: TournamentRow[];
-  favCount: number | null;
-  onChange: (patch: Partial<Omit<HandQueryState, "filters">> & { filters?: Partial<HandFilters> }) => void;
-}) {
-  // Local value so the slider moves smoothly; the URL (and the query) follows after a pause.
-  const [minPot, setMinPot] = useState(state.filters.minPotBb);
-  useEffect(() => setMinPot(state.filters.minPotBb), [state.filters.minPotBb]);
-  useEffect(() => {
-    if (minPot === state.filters.minPotBb) return;
-    const timer = setTimeout(() => onChange({ filters: { minPotBb: minPot } }), 350);
-    return () => clearTimeout(timer);
-  }, [minPot, state.filters.minPotBb, onChange]);
-
-  const pf = state.filters.preflop;
-  const pfActive = pf.length > 0;
-  const favActive = state.filters.favorites;
-  // Both filters step in front of "only involved" and the minimum pot.
-  const overridden = favActive || pfActive;
-  const togglePf = (v: PreflopVerdict) =>
-    onChange({ filters: { preflop: pf.includes(v) ? pf.filter((x) => x !== v) : PREFLOP_VERDICTS.filter((x) => x === v || pf.includes(x)) } });
-
-  return (
-    <div className="grid gap-4 rounded-2xl border border-border/60 bg-card/40 p-4 md:grid-cols-2 md:items-end xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto]">
-      <div className="md:col-span-2 xl:col-span-3">
-        <button
-          type="button"
-          aria-pressed={favActive}
-          onClick={() =>
-            onChange({
-              filters: { favorites: !favActive },
-              // The star-date sort only exists inside the favourites list.
-              ...(favActive && state.sort === "favorited" ? { sort: "pot" as const } : {}),
-            })
-          }
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold transition",
-            favActive ? "border-amber-400/60 bg-amber-400/15 text-amber-200" : "border-border/60 text-muted-foreground hover:text-foreground",
-          )}
-        >
-          <Star className={cn("h-4 w-4", favActive && "fill-amber-400 text-amber-400")} />
-          {t.filters.favoritesOnly}
-          {favCount != null && <span className="font-mono text-xs opacity-80">({favCount})</span>}
-        </button>
-        {favActive && (
-          <p className="mt-1.5 text-[11px] text-muted-foreground">
-            {t.filters.favoritesHint}
-          </p>
-        )}
-      </div>
-
-      <div className="md:col-span-2 xl:col-span-3">
-        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t.filters.preflopMistakes}</p>
-        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t.filters.preflopGroupLabel}>
-          {PREFLOP_VERDICTS.map((v) => {
-            const on = pf.includes(v);
-            return (
-              <button
-                key={v}
-                type="button"
-                aria-pressed={on}
-                onClick={() => togglePf(v)}
-                className={cn(
-                  "rounded-full border px-2.5 py-1 text-xs font-semibold transition",
-                  on ? VERDICT_STYLE[v] : "border-border/60 text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {VERDICT_LABEL[v]}
-              </button>
-            );
-          })}
-          {pfActive && (
-            <button type="button" onClick={() => onChange({ filters: { preflop: [] } })} className="px-2 text-xs text-muted-foreground underline hover:text-foreground">
-              {t.filters.clear}
-            </button>
-          )}
-        </div>
-        {pfActive && !favActive && (
-          <p className="mt-1.5 text-[11px] text-muted-foreground">
-            {t.filters.preflopHint}
-          </p>
-        )}
-      </div>
-
-      <div className={cn(overridden && "pointer-events-none opacity-40")} aria-disabled={overridden || undefined}>
-        <label htmlFor="minPot" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {t.filters.minPot}
-        </label>
-        <div className="flex items-center gap-3">
-          <input
-            id="minPot"
-            type="range"
-            min={0}
-            max={POT_SLIDER_MAX}
-            step={1}
-            value={Math.min(minPot, POT_SLIDER_MAX)}
-            onChange={(e) => setMinPot(Number(e.target.value))}
-            className="h-2 w-full cursor-pointer accent-violet-500"
-          />
-          <div className="flex items-center gap-1">
-            <input
-              type="number"
-              inputMode="decimal"
-              min={0}
-              step={1}
-              aria-label={t.filters.minPotAria}
-              value={minPot}
-              onChange={(e) => {
-                const n = Number(e.target.value);
-                setMinPot(Number.isFinite(n) && n >= 0 ? n : 0);
-              }}
-              className="w-20 rounded-lg border border-border/60 bg-background px-2 py-1.5 text-right font-mono text-sm"
-            />
-            <span className="text-sm text-muted-foreground">BB</span>
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="tournament" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          {t.filters.tournament}
-        </label>
-        <select
-          id="tournament"
-          value={state.filters.tournamentId ?? ""}
-          onChange={(e) => onChange({ filters: { tournamentId: e.target.value || null } })}
-          className="w-full rounded-lg border border-border/60 bg-background px-2 py-2 text-sm"
-        >
-          <option value="">{t.filters.allTournaments}</option>
-          {tournaments.map((tr) => (
-            <option key={`${tr.site}:${tr.tournament_id}`} value={tr.tournament_id}>
-              {(tr.name ?? `#${tr.tournament_id}`) + (tr.last_hand_at ? ` · ${fmtPlayedDate(tr.last_hand_at)}` : "")} ({fmtNum(tr.hand_count)})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 md:col-span-2 xl:col-span-1">
-        <label className={cn("inline-flex cursor-pointer items-center gap-2 text-sm", overridden && "opacity-40")}>
-          <input
-            type="checkbox"
-            disabled={overridden}
-            checked={state.filters.heroInvolved}
-            onChange={(e) => onChange({ filters: { heroInvolved: e.target.checked } })}
-            className="h-4 w-4 accent-violet-500"
-          />
-          {t.filters.onlyPlayed}
-        </label>
-        <label className="inline-flex cursor-pointer items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={state.filters.withNotes}
-            onChange={(e) => onChange({ filters: { withNotes: e.target.checked } })}
-            className="h-4 w-4 accent-violet-500"
-          />
-          {t.filters.onlyNotes}
-        </label>
-        <div className="flex items-center gap-1">
-          <label htmlFor="sort" className="sr-only">
-            {t.filters.sortBy}
-          </label>
-          <select
-            id="sort"
-            value={state.sort}
-            onChange={(e) => {
-              const sort = e.target.value as SortKey;
-              // Sorting by star date means looking at favourites.
-              onChange(sort === "favorited" ? { sort, filters: { favorites: true } } : { sort });
-            }}
-            className="rounded-lg border border-border/60 bg-background px-2 py-2 text-sm"
-          >
-            {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
-              <option key={k} value={k}>
-                {SORT_LABELS[k]}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            onClick={() => onChange({ dir: state.dir === "desc" ? "asc" : "desc" })}
-            aria-label={state.dir === "desc" ? t.filters.descendingAria : t.filters.ascendingAria}
-            title={state.dir === "desc" ? t.filters.descending : t.filters.ascending}
-            className="rounded-lg border border-border/60 p-2 text-muted-foreground hover:text-foreground"
-          >
-            {state.dir === "desc" ? <ArrowDown className="h-4 w-4" /> : <ArrowUp className="h-4 w-4" />}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+// The filter bar lives in HandFilterBar.tsx; re-exported here for existing importers.
+export { FiltersBar };
 
 // ── List ─────────────────────────────────────────────────────────────────────
 
@@ -457,7 +259,7 @@ function ResultBadge({ bb }: { bb: number }) {
   );
 }
 
-function HandList({
+export function HandList({
   rows,
   linkSuffix,
   pending,
@@ -568,6 +370,16 @@ function HandList({
         ))}
       </ul>
     </>
+  );
+}
+
+function SkeletonRows() {
+  return (
+    <div className="space-y-2" aria-label={t.overview.loading}>
+      {Array.from({ length: 8 }, (_, i) => (
+        <div key={i} className="h-12 animate-pulse rounded-xl bg-white/[0.04]" style={{ animationDelay: `${i * 60}ms` }} />
+      ))}
+    </div>
   );
 }
 

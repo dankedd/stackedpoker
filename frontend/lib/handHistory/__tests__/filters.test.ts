@@ -38,15 +38,12 @@ describe("hand filters", () => {
   it("round-trips through the query string and keeps defaults out of it", () => {
     expect(writeQueryState(DEFAULT_STATE)).toBe("");
     const s = readQueryState(new URLSearchParams("alle=1&minPot=35&t=316999261&notes=1&sort=invested&dir=asc&page=3"));
-    expect(s.filters).toEqual({ favorites: false, preflop: [], heroInvolved: false, minPotBb: 35, tournamentId: "316999261", withNotes: true });
+    expect(s.filters).toEqual({ cards: [], favorites: false, preflop: [], heroInvolved: false, minPotBb: 35, tournamentId: "316999261", withNotes: true });
     expect(s.sort).toBe("invested");
     expect(readQueryState(new URLSearchParams(writeQueryState(s).slice(1)))).toEqual(s);
     expect(writeQueryState(s, false)).not.toContain("page");
-    expect(applyFilters(new FakeQuery(), s.filters).calls).toEqual([
-      "gte pot_bb 35",
-      "eq tournament_id 316999261",
-      "eq has_note true",
-    ]);
+    // "Notes" is a targeted filter: the minimum pot steps aside (kept in the state).
+    expect(applyFilters(new FakeQuery(), s.filters).calls).toEqual(["eq tournament_id 316999261", "eq has_note true"]);
   });
 
   it("the preflop filter goes before 'involved' and the minimum pot", () => {
@@ -72,9 +69,10 @@ describe("hand filters", () => {
     expect(readQueryState(new URLSearchParams(writeQueryState(s).slice(1)))).toEqual(s);
   });
 
-  it("sorts by star date only together with the favourites filter", () => {
+  it("sorting by star date always comes with the favourites filter", () => {
     expect(readQueryState(new URLSearchParams("fav=1&sort=favorited")).sort).toBe("favorited");
-    expect(readQueryState(new URLSearchParams("sort=favorited")).sort).toBe("pot");
+    const s = readQueryState(new URLSearchParams("sort=favorited"));
+    expect([s.sort, s.filters.favorites]).toEqual(["favorited", true]);
     expect(sortColumns("favorited", "desc").map((c) => c.column)).toEqual(["favorited_at", "played_at", "id"]);
   });
 
