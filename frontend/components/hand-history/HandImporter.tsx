@@ -6,16 +6,13 @@ import { AlertTriangle, CheckCircle2, ChevronDown, FileArchive, Loader2, Upload 
 import { useAuth } from "@/contexts/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { HANDS_PATH } from "@/lib/handHistory/feature";
+import { fmtNum } from "@/lib/handHistory/format";
 import { parseTexts, readFiles, saveHands, type ImportProgress, type ImportSummary } from "@/lib/handHistory/importer";
+import { t } from "@/lib/handHistory/strings";
 import { cn } from "@/lib/utils";
 import { PageHeader, SectionNav } from "./SectionNav";
 
-const PHASE_LABEL: Record<ImportProgress["phase"], string> = {
-  reading: "Bestanden lezen",
-  parsing: "Handen verwerken",
-  saving: "Handen opslaan",
-  done: "Klaar",
-};
+const PHASE_LABEL: Record<ImportProgress["phase"], string> = t.import.phase;
 
 export function HandImporter() {
   const { user } = useAuth();
@@ -31,7 +28,7 @@ export function HandImporter() {
     async (files: File[]) => {
       if (!files.length || busy) return;
       if (!user) {
-        setError("Je bent niet ingelogd. Log in en probeer het opnieuw.");
+        setError(t.import.notSignedIn);
         return;
       }
       setError(null);
@@ -46,13 +43,13 @@ export function HandImporter() {
         if (!parsed.entries.length) {
           setProgress(null);
           setSummary({ tournaments: 0, imported: 0, skipped: parsed.duplicatesInUpload, failures: parsed.failures, fileErrors: parsed.fileErrors, importId: null });
-          if (!parsed.failures.length && !parsed.fileErrors.length) setError("Geen handen gevonden in deze bestanden.");
+          if (!parsed.failures.length && !parsed.fileErrors.length) setError(t.import.noHandsFound);
           return;
         }
         const result = await saveHands(supabase, user.id, files.map((f) => f.name), parsed, setProgress);
         setSummary(result);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Er ging iets mis tijdens het importeren. Probeer het opnieuw.");
+        setError(e instanceof Error ? e.message : t.import.failed);
       } finally {
         setProgress((p) => (p ? { ...p, phase: "done" } : p));
       }
@@ -68,8 +65,8 @@ export function HandImporter() {
         <SectionNav />
       </div>
       <PageHeader
-        title="Handen importeren"
-        subtitle="Upload je PokerCraft-export: het .zip-bestand of losse .txt-bestanden. Alles wordt in je browser verwerkt."
+        title={t.import.title}
+        subtitle={t.import.subtitle}
       />
 
       <div
@@ -90,15 +87,15 @@ export function HandImporter() {
         )}
       >
         <FileArchive className="mb-3 h-10 w-10 text-violet-300" />
-        <p className="font-semibold">Sleep je bestanden hierheen</p>
-        <p className="mt-1 text-sm text-muted-foreground">.zip of .txt, meerdere tegelijk</p>
+        <p className="font-semibold">{t.import.dropHere}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t.import.dropHint}</p>
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={busy}
           className="mt-5 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500 disabled:opacity-50"
         >
-          <Upload className="h-4 w-4" /> Bestanden kiezen
+          <Upload className="h-4 w-4" /> {t.import.chooseFiles}
         </button>
         <input
           ref={inputRef}
@@ -114,10 +111,10 @@ export function HandImporter() {
       </div>
 
       <details className="mt-4 rounded-xl border border-border/50 bg-card/20 px-4 py-3 text-sm text-muted-foreground">
-        <summary className="cursor-pointer font-medium text-foreground">Hoe exporteer ik mijn handen uit PokerCraft?</summary>
+        <summary className="cursor-pointer font-medium text-foreground">{t.import.howTo}</summary>
         <ol className="mt-2 list-decimal space-y-1 pl-5">
-          <li>Download in PokerCraft de hand histories van je toernooien. Je krijgt een .zip-bestand met één .txt-bestand per toernooi.</li>
-          <li>Upload het .zip-bestand hier. Dezelfde export nog eens uploaden kan geen kwaad: dubbele handen worden overgeslagen.</li>
+          <li>{t.import.howTo1}</li>
+          <li>{t.import.howTo2}</li>
         </ol>
       </details>
 
@@ -129,7 +126,7 @@ export function HandImporter() {
             </span>
             {progress.total > 0 && (
               <span className="font-mono text-muted-foreground">
-                {progress.done.toLocaleString("nl-NL")} / {progress.total.toLocaleString("nl-NL")}
+                {fmtNum(progress.done)} / {fmtNum(progress.total)}
               </span>
             )}
           </div>
@@ -156,24 +153,24 @@ function Summary({ summary }: { summary: ImportSummary }) {
     <div className="mt-6 space-y-4" aria-live="polite">
       <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.06] p-5">
         <p className="mb-4 inline-flex items-center gap-2 font-semibold text-emerald-300">
-          <CheckCircle2 className="h-5 w-5" /> Import afgerond
+          <CheckCircle2 className="h-5 w-5" /> {t.import.complete}
         </p>
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Stat label="Toernooien" value={summary.tournaments} />
-          <Stat label="Geïmporteerd" value={summary.imported} />
-          <Stat label="Overgeslagen (dubbel)" value={summary.skipped} />
-          <Stat label="Fouten" value={problems} tone={problems ? "bad" : undefined} />
+          <Stat label={t.import.tournaments} value={summary.tournaments} />
+          <Stat label={t.import.imported} value={summary.imported} />
+          <Stat label={t.import.skipped} value={summary.skipped} />
+          <Stat label={t.import.errors} value={problems} tone={problems ? "bad" : undefined} />
         </dl>
         {summary.imported > 0 && (
           <Link href={HANDS_PATH} className="mt-5 inline-flex rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500">
-            Bekijk je handen
+            {t.import.viewHands}
           </Link>
         )}
       </div>
 
       {summary.fileErrors.length > 0 && (
         <div className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.05] p-4">
-          <p className="mb-2 text-sm font-semibold text-amber-200">Bestanden die niet gelezen konden worden</p>
+          <p className="mb-2 text-sm font-semibold text-amber-200">{t.import.unreadableFiles}</p>
           <ul className="space-y-1 text-sm">
             {summary.fileErrors.map((f, i) => (
               <li key={i}>
@@ -187,7 +184,7 @@ function Summary({ summary }: { summary: ImportSummary }) {
       {summary.failures.length > 0 && (
         <div className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.05] p-4">
           <p className="mb-2 text-sm font-semibold text-amber-200">
-            {summary.failures.length} {summary.failures.length === 1 ? "hand kon" : "handen konden"} niet worden verwerkt
+            {t.import.failedHands(summary.failures.length)}
           </p>
           <ul className="space-y-2">
             {summary.failures.slice(0, 100).map((f, i) => (
@@ -195,7 +192,7 @@ function Summary({ summary }: { summary: ImportSummary }) {
                 <details>
                   <summary className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm">
                     <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                    <span className="font-mono text-xs">{f.handId ?? "onbekende hand"}</span>
+                    <span className="font-mono text-xs">{f.handId ?? t.import.unknownHand}</span>
                     <span className="text-muted-foreground">— {f.error}</span>
                   </summary>
                   <pre className="max-h-64 overflow-auto whitespace-pre-wrap border-t border-border/40 px-3 py-2 font-mono text-[11px] text-muted-foreground">
@@ -207,7 +204,7 @@ function Summary({ summary }: { summary: ImportSummary }) {
             ))}
           </ul>
           {summary.failures.length > 100 && (
-            <p className="mt-2 text-xs text-muted-foreground">En nog {summary.failures.length - 100} meer.</p>
+            <p className="mt-2 text-xs text-muted-foreground">{t.import.andMore(summary.failures.length - 100)}</p>
           )}
         </div>
       )}
@@ -220,7 +217,7 @@ function Stat({ label, value, tone }: { label: string; value: number; tone?: "ba
     <div className="rounded-xl bg-background/40 px-3 py-2">
       <dt className="text-xs text-muted-foreground">{label}</dt>
       <dd className={cn("font-mono text-xl font-bold", tone === "bad" ? "text-amber-300" : "text-foreground")}>
-        {value.toLocaleString("nl-NL")}
+        {fmtNum(value)}
       </dd>
     </div>
   );

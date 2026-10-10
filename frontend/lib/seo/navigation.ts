@@ -1,5 +1,6 @@
 import { PREFLOP_RANGES_ENABLED, PREFLOP_TRAINER_PATH } from "@/lib/ranges/feature";
 import { HAND_HISTORY_ENABLED, HANDS_PATH } from "@/lib/handHistory/feature";
+import { t as handHistoryStrings } from "@/lib/handHistory/strings";
 import { ROUTES } from "./routes";
 
 /**
@@ -42,7 +43,7 @@ export function primaryNav({
     // Behind NEXT_PUBLIC_FEATURE_PREFLOP_RANGES (lib/ranges/feature.ts).
     ...(preflopTrainer ? [{ label: "Preflop Trainer", href: PREFLOP_TRAINER_PATH }] : []),
     // Behind NEXT_PUBLIC_FEATURE_HAND_HISTORY (lib/handHistory/feature.ts).
-    ...(handHistory ? [{ label: "Handen", href: HANDS_PATH }] : []),
+    ...(handHistory ? [{ label: handHistoryStrings.section.navItem, href: HANDS_PATH }] : []),
     { label: "Bankroll", href: "/bankroll" },
     { label: "Leaderboard", href: "/leaderboard" },
   ];

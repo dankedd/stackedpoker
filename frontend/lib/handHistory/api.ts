@@ -72,6 +72,13 @@ export async function countAllHands(supabase: SupabaseClient): Promise<number> {
   return count ?? 0;
 }
 
+/** Number of starred hands (ignores filters). */
+export async function countFavorites(supabase: SupabaseClient): Promise<number> {
+  const { count, error } = await supabase.from("hh_hands").select("id", { count: "exact", head: true }).eq("is_favorite", true);
+  if (error) throw new Error(dbErrorMessage(error));
+  return count ?? 0;
+}
+
 export async function getHand(supabase: SupabaseClient, id: string): Promise<(HandDetailRow & { hero_net_chips: number; pot_chips: number }) | null> {
   const { data, error } = await supabase
     .from("hh_hands")
@@ -97,6 +104,15 @@ export async function neighbours(
   };
   const [nextId, prevId] = await Promise.all([one(cols), one(reverseOrder(cols))]);
   return { prevId, nextId };
+}
+
+// ── Favourites ──────────────────────────────────────────────────────────────
+
+/** Stars or unstars a hand; returns the new favorited_at (null when unstarred). */
+export async function setFavorite(supabase: SupabaseClient, handRef: string, favorite: boolean): Promise<string | null> {
+  const { data, error } = await supabase.rpc("hh_set_favorite", { p_id: handRef, p_favorite: favorite });
+  if (error) throw new Error(dbErrorMessage(error));
+  return (data as string | null) ?? null;
 }
 
 // ── Notes ───────────────────────────────────────────────────────────────────

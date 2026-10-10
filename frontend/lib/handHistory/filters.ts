@@ -8,11 +8,17 @@
  */
 
 import { PREFLOP_VERDICTS, type PreflopVerdict } from "./preflop/types";
+import { t } from "./strings";
 
 export const DEFAULT_MIN_POT_BB = 20;
 export const PAGE_SIZE = 50;
 
 export interface HandFilters {
+  /**
+   * Only starred hands. Like the preflop filter it goes before the involved
+   * and minimum-pot filters, so every favourite shows up.
+   */
+  favorites: boolean;
   /**
    * Preflop-check verdicts to show (preflop/). When set it goes before the
    * involved and minimum-pot filters, so folded hands ("te strak") show up.
@@ -25,7 +31,7 @@ export interface HandFilters {
   withNotes: boolean;
 }
 
-export type SortKey = "pot" | "invested" | "date" | "result";
+export type SortKey = "pot" | "invested" | "date" | "result" | "favorited";
 export type SortDir = "desc" | "asc";
 
 export interface HandQueryState {
@@ -36,7 +42,7 @@ export interface HandQueryState {
 }
 
 export const DEFAULT_STATE: HandQueryState = {
-  filters: { preflop: [], heroInvolved: true, minPotBb: DEFAULT_MIN_POT_BB, tournamentId: null, withNotes: false },
+  filters: { favorites: false, preflop: [], heroInvolved: true, minPotBb: DEFAULT_MIN_POT_BB, tournamentId: null, withNotes: false },
   sort: "pot",
   dir: "desc",
   page: 1,
@@ -62,14 +68,21 @@ interface FilterDef<K extends keyof HandFilters> {
   skipWhen?: (filters: HandFilters) => boolean;
 }
 
-/** The preflop-check filter overrides "only involved" and the minimum pot. */
-const preflopActive = (f: HandFilters) => f.preflop.length > 0;
+/** The favourites and preflop-check filters override "only involved" and the minimum pot. */
+const overridesDefaults = (f: HandFilters) => f.favorites || f.preflop.length > 0;
 
 function def<K extends keyof HandFilters>(d: FilterDef<K>): FilterDef<K> {
   return d;
 }
 
 export const FILTERS = [
+  def({
+    key: "favorites",
+    param: "fav",
+    read: (raw) => raw === "1",
+    write: (v) => (v ? "1" : null),
+    apply: (q, v) => (v ? q.eq("is_favorite", true) : q),
+  }),
   def({
     key: "preflop",
     param: "pf",
@@ -87,7 +100,7 @@ export const FILTERS = [
     read: (raw) => raw !== "1",
     write: (v) => (v ? null : "1"),
     apply: (q, v) => (v ? q.eq("hero_involved", true) : q),
-    skipWhen: preflopActive,
+    skipWhen: overridesDefaults,
   }),
   def({
     key: "minPotBb",
@@ -98,7 +111,7 @@ export const FILTERS = [
     },
     write: (v) => (v === DEFAULT_MIN_POT_BB ? null : String(v)),
     apply: (q, v) => (v > 0 ? q.gte("pot_bb", v) : q),
-    skipWhen: preflopActive,
+    skipWhen: overridesDefaults,
   }),
   def({
     key: "tournamentId",
@@ -127,10 +140,14 @@ export function applyFilters<Q extends FilterableQuery>(q: Q, filters: HandFilte
 
 // ── Sorting ─────────────────────────────────────────────────────────────────
 
-/** Column order per sort; the trailing tie-breakers match the DB indexes. */
+/**
+ * Column order per sort; the trailing tie-breakers match the DB indexes.
+ * "favorited" is only used together with the favourites filter (see
+ * readQueryState), so favorited_at is never NULL there.
+ */
 export function sortColumns(sort: SortKey, dir: SortDir): { column: string; ascending: boolean }[] {
   const ascending = dir === "asc";
-  const key = { pot: "pot_bb", invested: "hero_invested_bb", result: "hero_net_bb", date: null }[sort];
+  const key = { pot: "pot_bb", invested: "hero_invested_bb", result: "hero_net_bb", favorited: "favorited_at", date: null }[sort];
   return [
     ...(key ? [{ column: key, ascending }] : []),
     { column: "played_at", ascending },
@@ -138,12 +155,7 @@ export function sortColumns(sort: SortKey, dir: SortDir): { column: string; asce
   ];
 }
 
-export const SORT_LABELS: Record<SortKey, string> = {
-  pot: "Potgrootte",
-  invested: "Mijn inzet (BB)",
-  date: "Datum",
-  result: "Resultaat",
-};
+export const SORT_LABELS: Record<SortKey, string> = t.sort;
 
 /**
  * PostgREST `or` filter selecting the rows strictly after `row` in the given
@@ -173,9 +185,11 @@ export function readQueryState(params: URLSearchParams): HandQueryState {
   const sort = params.get("sort");
   const dir = params.get("dir");
   const page = Number(params.get("page"));
+  const f = filters as unknown as HandFilters;
   return {
-    filters: filters as unknown as HandFilters,
-    sort: sort === "date" || sort === "result" || sort === "invested" ? sort : "pot",
+    filters: f,
+    sort:
+      sort === "date" || sort === "result" || sort === "invested" || (sort === "favorited" && f.favorites) ? sort : "pot",
     dir: dir === "asc" ? "asc" : "desc",
     page: Number.isInteger(page) && page > 0 ? page : 1,
   };

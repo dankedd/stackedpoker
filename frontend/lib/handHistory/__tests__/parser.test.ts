@@ -77,7 +77,7 @@ describe("GG parser — top hand (reconstructed from the spec)", () => {
 
   it("derives pot in BB and Hero's loss, net of nothing returned to Hero", () => {
     expect(hand.totalPot).toBe(64676);
-    expect(d.potBb).toBe(21.56); // shown as 21,6 BB
+    expect(d.potBb).toBe(21.56); // shown as 21.6 BB
     expect(d.heroNetChips).toBe(-27538);
     expect(d.heroNetBb).toBe(-9.18);
     expect(d.heroWon).toBe(false);
@@ -94,7 +94,7 @@ describe("GG parser — top hand (reconstructed from the spec)", () => {
     expectChipsConserved(hand);
     const steps = buildTimeline(hand);
     const shove = steps.find((s) => s.player === "922e16a4" && s.kind === "action")!;
-    expect(describeStep(shove, fmtChips)).toBe("922e16a4 raises naar 47.892, all-in");
+    expect(describeStep(shove, fmtChips)).toBe("922e16a4 raises to 47,892, all-in");
     const afterReturn = steps.find((s) => s.kind === "uncalled")!;
     expect(afterReturn.stacks["922e16a4"]).toBe(48242 - 350 - 47892 + 20704);
     expect(totalOnTable(afterReturn)).toBe(64676);
@@ -184,9 +184,9 @@ describe("splitting and importing", () => {
     expect(out.failures[0].handId).toBe("TM6510945691");
   });
 
-  it("rejects unsupported file types with a Dutch message", async () => {
+  it("rejects unsupported file types with a readable message", async () => {
     const res = await readFiles([{ name: "x.pdf", arrayBuffer: async () => new ArrayBuffer(4) }]);
-    expect(res.fileErrors[0].error).toMatch(/niet ondersteund/);
+    expect(res.fileErrors[0].error).toMatch(/not supported/);
   });
 });
 

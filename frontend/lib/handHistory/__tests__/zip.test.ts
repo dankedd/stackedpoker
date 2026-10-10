@@ -73,9 +73,9 @@ describe("zip reader", () => {
     expect(res.texts).toEqual([{ fileName: "export.zip › a.txt", text: TOP_HAND }]);
   });
 
-  it("reports a damaged zip in Dutch instead of throwing", async () => {
+  it("reports a damaged zip as a file error instead of throwing", async () => {
     const zip = makeZip([{ name: "a.txt", text: TOP_HAND }]).slice(0, 40);
     const res = await readFiles([{ name: "kapot.zip", arrayBuffer: async () => zip.buffer }]);
-    expect(res.fileErrors[0].error).toMatch(/beschadigd/);
+    expect(res.fileErrors[0].error).toMatch(/damaged or incomplete/);
   });
 });

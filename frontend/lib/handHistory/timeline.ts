@@ -8,6 +8,7 @@
  * shown, or when the pot is paid out — the moment a real dealer would.
  */
 
+import { t } from "./strings";
 import type { HandEvent, ParsedHand, Street } from "./types";
 
 export type StepKind = "start" | "antes" | "post" | "action" | "uncalled" | "show" | "deal" | "collect";
@@ -38,17 +39,6 @@ export interface TimelineStep {
 export function totalOnTable(step: TimelineStep): number {
   return step.pot + Object.values(step.bets).reduce((a, b) => a + b, 0);
 }
-
-const LABEL: Record<string, string> = {
-  fold: "Fold",
-  check: "Check",
-  call: "Call",
-  bet: "Bet",
-  raise: "Raise",
-  small_blind: "SB",
-  big_blind: "BB",
-  straddle: "Straddle",
-};
 
 export function buildTimeline(hand: ParsedHand): TimelineStep[] {
   const stacks: Record<string, number> = {};
@@ -118,7 +108,7 @@ export function buildTimeline(hand: ParsedHand): TimelineStep[] {
         next("post", [e], e.player, (s) => {
           s.stacks[e.player] -= e.amount;
           s.bets[e.player] = (s.bets[e.player] ?? 0) + e.amount;
-          s.seatLabels[e.player] = LABEL[e.post];
+          s.seatLabels[e.player] = t.step.seat[e.post];
           markAllIn(s, e.player, e.allIn);
         });
         break;
@@ -128,7 +118,7 @@ export function buildTimeline(hand: ParsedHand): TimelineStep[] {
           if (e.action === "fold") s.folded.push(e.player);
           s.stacks[e.player] -= e.amount;
           if (e.amount) s.bets[e.player] = (s.bets[e.player] ?? 0) + e.amount;
-          s.seatLabels[e.player] = e.allIn ? "All-in" : LABEL[e.action];
+          s.seatLabels[e.player] = e.allIn ? t.step.seat.allIn : t.step.seat[e.action];
           markAllIn(s, e.player, e.allIn);
         });
         break;
@@ -160,7 +150,7 @@ export function buildTimeline(hand: ParsedHand): TimelineStep[] {
           s.pot -= e.amount;
           s.stacks[e.player] += e.amount;
           s.won[e.player] = (s.won[e.player] ?? 0) + e.amount;
-          s.seatLabels[e.player] = "Wint";
+          s.seatLabels[e.player] = t.step.seat.wins;
         });
         break;
     }
@@ -185,32 +175,29 @@ export function prevStreetIndex(steps: TimelineStep[], from: number): number {
 
 export type AmountFormatter = (chips: number) => string;
 
-const STREET_NL: Record<Street, string> = { preflop: "Preflop", flop: "Flop", turn: "Turn", river: "River" };
-
-/** One-line Dutch description of what happened in a step. */
+/** One-line description of what happened in a step. */
 export function describeStep(step: TimelineStep, fmt: AmountFormatter): string {
   const e = step.events[0];
-  if (step.kind === "start") return "Begin van de hand";
-  if (step.kind === "antes") return `Iedereen betaalt de ante (${fmt((e as { amount: number }).amount)})`;
+  if (step.kind === "start") return t.step.start;
+  if (step.kind === "antes") return t.step.antes(fmt((e as { amount: number }).amount));
   if (!e) return "";
   switch (e.kind) {
     case "post":
-      return `${e.player} post ${e.post === "small_blind" ? "small blind" : e.post === "big_blind" ? "big blind" : e.post} ${fmt(e.amount)}${e.allIn ? ", all-in" : ""}`;
+      return t.step.post(e.player, t.step.postName[e.post] ?? e.post, fmt(e.amount), e.allIn);
     case "action": {
-      const allIn = e.allIn ? ", all-in" : "";
-      if (e.action === "fold") return `${e.player} folds`;
-      if (e.action === "check") return `${e.player} checks`;
-      if (e.action === "call") return `${e.player} calls ${fmt(e.amount)}${allIn}`;
-      if (e.action === "bet") return `${e.player} bets ${fmt(e.amount)}${allIn}`;
-      return `${e.player} raises naar ${fmt(e.toAmount ?? e.amount)}${allIn}`;
+      if (e.action === "fold") return t.step.fold(e.player);
+      if (e.action === "check") return t.step.check(e.player);
+      if (e.action === "call") return t.step.call(e.player, fmt(e.amount), e.allIn);
+      if (e.action === "bet") return t.step.bet(e.player, fmt(e.amount), e.allIn);
+      return t.step.raise(e.player, fmt(e.toAmount ?? e.amount), e.allIn);
     }
     case "uncalled":
-      return `${fmt(e.amount)} niet gecallt, terug naar ${e.player}`;
+      return t.step.uncalled(fmt(e.amount), e.player);
     case "show":
-      return `${e.player} laat ${e.cards.join(" ")} zien`;
+      return t.step.show(e.player, e.cards.join(" "));
     case "deal":
-      return `${STREET_NL[e.street]}: ${e.cards.join(" ")}`;
+      return `${t.street[e.street]}: ${e.cards.join(" ")}`;
     case "collect":
-      return `${e.player} wint ${fmt(e.amount)}`;
+      return t.step.collect(e.player, fmt(e.amount));
   }
 }

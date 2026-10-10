@@ -12,18 +12,22 @@ import {
   ChevronsRight,
   Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { createClient } from "@/lib/supabase/client";
-import { getHand, neighbours } from "@/lib/handHistory/api";
+import { getHand, neighbours, setFavorite } from "@/lib/handHistory/api";
 import { readQueryState, writeQueryState } from "@/lib/handHistory/filters";
 import { HANDS_PATH } from "@/lib/handHistory/feature";
 import { amountFormatter, fmtBb, fmtChips, fmtPlayedAt, fmtSignedBb, fmtSignedChips, type AmountUnit } from "@/lib/handHistory/format";
 import { deriveHand } from "@/lib/handHistory/derive";
 import type { HandDetailRow } from "@/lib/handHistory/rows";
+import { t } from "@/lib/handHistory/strings";
 import { buildTimeline, describeStep, nextStreetIndex, prevStreetIndex } from "@/lib/handHistory/timeline";
 import type { Street } from "@/lib/handHistory/types";
 import { cn } from "@/lib/utils";
 import { checkPreflop } from "@/lib/handHistory/preflop";
+import { EquityPanel } from "./EquityPanel";
+import { FavoriteStar } from "./FavoriteStar";
 import { MiniCards } from "./MiniCards";
 import { PreflopBadge } from "./PreflopBadge";
 import { PreflopCheckPanel } from "./PreflopCheckPanel";
@@ -36,7 +40,6 @@ const STREET_COLOR: Record<Street, string> = {
   turn: "#FBBF24",
   river: "#F87171",
 };
-const STREET_NL: Record<Street, string> = { preflop: "Preflop", flop: "Flop", turn: "Turn", river: "River" };
 const UNIT_KEY = "hh-replayer-unit";
 
 export function HandReplayer({ id }: { id: string }) {
@@ -52,6 +55,8 @@ export function HandReplayer({ id }: { id: string }) {
   const [index, setIndex] = useState(0);
   const [unit, setUnit] = useState<AmountUnit>("chips");
   const [hasNote, setHasNote] = useState(false);
+  const [favoritedAt, setFavoritedAt] = useState<string | null>(null);
+  const [favPending, setFavPending] = useState(false);
 
   useEffect(() => {
     try {
@@ -79,11 +84,12 @@ export function HandReplayer({ id }: { id: string }) {
       .then((r) => {
         if (cancelled) return;
         if (!r) {
-          setError("Deze hand bestaat niet of is niet van jou.");
+          setError(t.replayer.notFound);
           return;
         }
         setRow(r);
         setHasNote(r.has_note);
+        setFavoritedAt(r.favorited_at);
         neighbours(supabase, r as unknown as Record<string, unknown>, query)
           .then((n) => !cancelled && setNav(n))
           .catch(() => {});
@@ -110,12 +116,31 @@ export function HandReplayer({ id }: { id: string }) {
   const step = steps[Math.min(index, last)];
   const fmt = useMemo(() => amountFormatter(unit, hand?.bigBlind ?? 1), [unit, hand]);
 
+  // Optimistic: the star changes at once and goes back if saving fails.
+  const toggleFavorite = useCallback(async () => {
+    if (!row || favPending) return;
+    const was = favoritedAt;
+    const want = was == null;
+    setFavoritedAt(want ? new Date().toISOString() : null);
+    setFavPending(true);
+    try {
+      setFavoritedAt(await setFavorite(supabase, row.id, want));
+    } catch (e) {
+      setFavoritedAt(was);
+      toast.error(want ? t.favorite.addFailed : t.favorite.removeFailed, {
+        description: e instanceof Error ? e.message : undefined,
+      });
+    } finally {
+      setFavPending(false);
+    }
+  }, [row, favPending, favoritedAt, supabase]);
+
   const go = useCallback((i: number) => setIndex(Math.max(0, Math.min(last, i))), [last]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement | null;
-      if (t && (t.tagName === "TEXTAREA" || t.tagName === "INPUT" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "TEXTAREA" || target.tagName === "INPUT" || target.tagName === "SELECT" || target.isContentEditable)) return;
       if (e.altKey || e.ctrlKey || e.metaKey) return;
       if (e.key === "ArrowRight") go(index + 1);
       else if (e.key === "ArrowLeft") go(index - 1);
@@ -123,12 +148,13 @@ export function HandReplayer({ id }: { id: string }) {
       else if (e.key === "ArrowUp") go(prevStreetIndex(steps, index));
       else if (e.key === "Home") go(0);
       else if (e.key === "End") go(last);
+      else if (e.key === "s" || e.key === "S") void toggleFavorite();
       else return;
       e.preventDefault();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [go, index, last, steps]);
+  }, [go, index, last, steps, toggleFavorite]);
 
   const onHasNoteChange = useCallback((v: boolean) => setHasNote(v), []);
 
@@ -145,7 +171,7 @@ export function HandReplayer({ id }: { id: string }) {
   if (!row || !hand || !step || !derived) {
     return (
       <div className="flex items-center justify-center py-24 text-muted-foreground">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Hand laden…
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t.replayer.loading}
       </div>
     );
   }
@@ -155,20 +181,23 @@ export function HandReplayer({ id }: { id: string }) {
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <BackLink suffix={suffix} />
         <div className="flex items-center gap-2">
-          <HandNavLink id={nav.prevId} suffix={suffix} label="Vorige hand" dir="prev" />
-          <HandNavLink id={nav.nextId} suffix={suffix} label="Volgende hand" dir="next" />
+          <HandNavLink id={nav.prevId} suffix={suffix} label={t.replayer.prevHand} dir="prev" />
+          <HandNavLink id={nav.nextId} suffix={suffix} label={t.replayer.nextHand} dir="next" />
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <div className="min-w-0">
-              <h1 className="truncate text-lg font-bold sm:text-xl">{row.hh_tournaments?.name ?? hand.tournamentName ?? `Toernooi #${hand.tournamentId}`}</h1>
+            <div className="flex min-w-0 items-start gap-1">
+              <FavoriteStar on={favoritedAt != null} pending={favPending} onToggle={toggleFavorite} shortcut="S" className="-ml-1.5 mt-0.5" />
+              <div className="min-w-0">
+              <h1 className="truncate text-lg font-bold sm:text-xl">{row.hh_tournaments?.name ?? hand.tournamentName ?? t.replayer.tournament(hand.tournamentId)}</h1>
               <p className="text-xs text-muted-foreground sm:text-sm">
                 {fmtPlayedAt(hand.playedAt)} · Level {hand.level} · {fmtChips(hand.smallBlind)}/{fmtChips(hand.bigBlind)}
-                {hand.ante ? ` (ante ${fmtChips(hand.ante)})` : ""}
+                {hand.ante ? t.replayer.ante(fmtChips(hand.ante)) : ""}
               </p>
+              </div>
             </div>
             <UnitToggle unit={unit} onChange={changeUnit} />
           </div>
@@ -180,7 +209,7 @@ export function HandReplayer({ id }: { id: string }) {
               className="shrink-0 rounded-md px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-black"
               style={{ background: STREET_COLOR[step.street] }}
             >
-              {STREET_NL[step.street]}
+              {t.street[step.street]}
             </span>
             <span className="text-sm font-medium">{describeStep(step, fmt)}</span>
             {preflop && index === preflopStep && <PreflopBadge verdict={preflop.verdict} showAll />}
@@ -190,26 +219,27 @@ export function HandReplayer({ id }: { id: string }) {
           </div>
 
           <div className="mt-3 flex items-center justify-center gap-1.5 sm:gap-2">
-            <CtrlButton label="Naar begin (Home)" onClick={() => go(0)} disabled={index === 0}>
+            <CtrlButton label={t.replayer.toStart} onClick={() => go(0)} disabled={index === 0}>
               <ChevronFirst className="h-5 w-5" />
             </CtrlButton>
-            <CtrlButton label="Vorige actie (←)" onClick={() => go(index - 1)} disabled={index === 0}>
+            <CtrlButton label={t.replayer.prevAction} onClick={() => go(index - 1)} disabled={index === 0}>
               <ChevronLeft className="h-5 w-5" />
             </CtrlButton>
-            <CtrlButton label="Volgende actie (→)" onClick={() => go(index + 1)} disabled={index >= last} primary>
+            <CtrlButton label={t.replayer.nextAction} onClick={() => go(index + 1)} disabled={index >= last} primary>
               <ChevronRight className="h-5 w-5" />
             </CtrlButton>
-            <CtrlButton label="Volgende straat (↓)" onClick={() => go(nextStreetIndex(steps, index))} disabled={index >= last}>
+            <CtrlButton label={t.replayer.nextStreet} onClick={() => go(nextStreetIndex(steps, index))} disabled={index >= last}>
               <ChevronsRight className="h-5 w-5" />
-              <span className="hidden text-xs font-semibold sm:inline">Straat</span>
+              <span className="hidden text-xs font-semibold sm:inline">{t.replayer.streetButton}</span>
             </CtrlButton>
-            <CtrlButton label="Naar einde (End)" onClick={() => go(last)} disabled={index >= last}>
+            <CtrlButton label={t.replayer.toEnd} onClick={() => go(last)} disabled={index >= last}>
               <ChevronLast className="h-5 w-5" />
             </CtrlButton>
           </div>
           <p className="mt-2 hidden text-center text-xs text-muted-foreground sm:block">
-            Toetsen: ← → actie · ↑ ↓ straat · Home/End begin/einde
+            {t.replayer.keys}
           </p>
+          <EquityPanel key={row.id} hand={hand} step={step} fmt={fmt} />
           {preflop && <PreflopCheckPanel check={preflop} active={index === preflopStep} />}
         </div>
 
@@ -237,38 +267,38 @@ function HandFacts({
   const net = derived.heroNetChips;
   return (
     <section className="rounded-2xl border border-border/60 bg-card/40 p-4 text-sm">
-      <h2 className="mb-3 text-sm font-semibold">Deze hand</h2>
+      <h2 className="mb-3 text-sm font-semibold">{t.facts.title}</h2>
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
-        <dt className="text-muted-foreground">Kaarten</dt>
+        <dt className="text-muted-foreground">{t.facts.cards}</dt>
         <dd>
           <MiniCards cards={hand.heroCards} /> <span className="ml-1 text-xs text-violet-300">{derived.heroPosition}</span>
         </dd>
-        <dt className="text-muted-foreground">Board</dt>
+        <dt className="text-muted-foreground">{t.facts.board}</dt>
         <dd>
           <MiniCards cards={row.board} />
         </dd>
-        <dt className="text-muted-foreground">Pot</dt>
+        <dt className="text-muted-foreground">{t.facts.pot}</dt>
         <dd className="font-mono">{unit === "bb" ? fmtBb(derived.potBb) : fmtChips(hand.totalPot)}</dd>
-        <dt className="text-muted-foreground">Mijn inzet</dt>
+        <dt className="text-muted-foreground">{t.facts.invested}</dt>
         <dd className="font-mono">{unit === "bb" ? fmtBb(derived.heroInvestedBb) : fmtChips(derived.heroInvested)}</dd>
-        <dt className="text-muted-foreground">Resultaat</dt>
+        <dt className="text-muted-foreground">{t.facts.result}</dt>
         <dd className={cn("font-mono font-semibold", net > 0 ? "text-emerald-400" : net < 0 ? "text-rose-400" : "")}>
           {unit === "bb" ? fmtSignedBb(derived.heroNetBb) : fmtSignedChips(net)}
-          {derived.heroWon && net <= 0 ? " (pot gedeeld)" : ""}
+          {derived.heroWon && net <= 0 ? t.facts.splitPot : ""}
         </dd>
-        <dt className="text-muted-foreground">Showdown</dt>
-        <dd>{derived.wentToShowdown ? "Ja" : "Nee"}</dd>
-        <dt className="text-muted-foreground">Notitie</dt>
-        <dd>{hasNote ? "Ja" : "Nee"}</dd>
-        <dt className="text-muted-foreground">Hand-ID</dt>
+        <dt className="text-muted-foreground">{t.facts.showdown}</dt>
+        <dd>{derived.wentToShowdown ? t.facts.yes : t.facts.no}</dd>
+        <dt className="text-muted-foreground">{t.facts.note}</dt>
+        <dd>{hasNote ? t.facts.yes : t.facts.no}</dd>
+        <dt className="text-muted-foreground">{t.facts.handId}</dt>
         <dd className="truncate font-mono text-xs">{hand.handId}</dd>
-        <dt className="text-muted-foreground">Tafel</dt>
+        <dt className="text-muted-foreground">{t.facts.table}</dt>
         <dd className="text-xs">
-          {hand.tableName} · {hand.maxSeats}-max
+          {t.facts.tableSize(hand.tableName, hand.maxSeats)}
         </dd>
       </dl>
       <details className="mt-3">
-        <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">Originele tekst</summary>
+        <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">{t.facts.rawText}</summary>
         <RawText id={row.id} />
       </details>
     </section>
@@ -289,14 +319,14 @@ function RawText({ id }: { id: string }) {
   }, [supabase, id]);
   return (
     <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap rounded-lg bg-background/60 p-2 font-mono text-[10px] leading-relaxed text-muted-foreground">
-      {text ?? "Laden…"}
+      {text ?? t.facts.rawLoading}
     </pre>
   );
 }
 
 function UnitToggle({ unit, onChange }: { unit: AmountUnit; onChange: (u: AmountUnit) => void }) {
   return (
-    <div role="group" aria-label="Bedragen tonen in" className="inline-flex rounded-lg border border-white/10 bg-white/[0.03] p-0.5 text-xs font-semibold">
+    <div role="group" aria-label={t.replayer.showAmountsIn} className="inline-flex rounded-lg border border-white/10 bg-white/[0.03] p-0.5 text-xs font-semibold">
       {(["chips", "bb"] as const).map((u) => (
         <button
           key={u}
@@ -305,7 +335,7 @@ function UnitToggle({ unit, onChange }: { unit: AmountUnit; onChange: (u: Amount
           onClick={() => onChange(u)}
           className={cn("rounded-md px-3 py-1 transition-colors", unit === u ? "bg-violet-500/25 text-violet-100" : "text-slate-400 hover:text-white")}
         >
-          {u === "chips" ? "Chips" : "BB"}
+          {u === "chips" ? t.replayer.chips : t.replayer.bb}
         </button>
       ))}
     </div>
@@ -345,7 +375,7 @@ function CtrlButton({
 function BackLink({ suffix }: { suffix: string }) {
   return (
     <Link href={`${HANDS_PATH}${suffix}`} className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-      <ArrowLeft className="h-4 w-4" /> Terug naar overzicht
+      <ArrowLeft className="h-4 w-4" /> {t.replayer.back}
     </Link>
   );
 }

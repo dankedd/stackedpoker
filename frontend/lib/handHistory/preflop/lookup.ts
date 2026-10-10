@@ -20,7 +20,7 @@
 import { MTT_OPEN_CHARTS, PUSH_FOLD_CHARTS } from "@/lib/ranges/data";
 import { frequencies, type Scenario } from "@/lib/ranges/logic";
 import type { RangeActionKey } from "@/lib/ranges/types";
-import type { PreflopSpot, RangeRef } from "./types";
+import type { NotEvaluatedReason, PreflopSpot, RangeRef } from "./types";
 
 export const MAX_GRADED_STACK_BB = 70;
 const PUSH_FOLD_STACKS = [2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -43,19 +43,15 @@ export function rangePosition(playersBehind: number): string | null {
 
 export type LookupResult =
   | { ok: true; ref: RangeRef; scenario: Scenario }
-  | { ok: false; reason: string; position: string | null };
+  | { ok: false; reason: NotEvaluatedReason; position: string | null };
 
 export function lookupRfi(spot: PreflopSpot): LookupResult {
   const position = rangePosition(spot.playersBehind);
   if (!position) {
-    return { ok: false, reason: `Geen range voor een spot met ${spot.playersBehind} spelers na je.`, position };
+    return { ok: false, reason: { code: "no_position", playersBehind: spot.playersBehind }, position };
   }
   if (spot.effStackBb > MAX_GRADED_STACK_BB) {
-    return {
-      ok: false,
-      reason: `Effectieve stack ${Math.round(spot.effStackBb)} BB is dieper dan de ranges van de trainer (max. 60 BB).`,
-      position,
-    };
+    return { ok: false, reason: { code: "too_deep", effStackBb: Math.round(spot.effStackBb) }, position };
   }
 
   const open = MTT_OPEN_CHARTS.filter((c) => c.pos === position);
@@ -64,7 +60,7 @@ export function lookupRfi(spot: PreflopSpot): LookupResult {
     ...(pf ? PUSH_FOLD_STACKS.map((stack) => ({ stack, kind: "pushfold" as const })) : []),
     ...open.map((c) => ({ stack: c.stack, kind: "open" as const })),
   ];
-  if (!buckets.length) return { ok: false, reason: `De trainer heeft geen range voor ${position}.`, position };
+  if (!buckets.length) return { ok: false, reason: { code: "no_chart", position }, position };
 
   const eff = spot.effStackBb;
   const best = buckets.reduce((b, c) => {

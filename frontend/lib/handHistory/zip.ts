@@ -4,8 +4,10 @@
  * Reads the central directory and inflates each entry with the platform's
  * DecompressionStream("deflate-raw") (all current browsers and Node 18+).
  * Supports the two methods real exports use: stored (0) and deflate (8).
- * ZIP64 and encrypted archives are rejected with a Dutch message.
+ * ZIP64 and encrypted archives are rejected with a readable message.
  */
+
+import { t } from "./strings";
 
 export interface ZipEntry {
   name: string;
@@ -34,17 +36,17 @@ export function readZip(bytes: Uint8Array): ZipEntry[] {
       break;
     }
   }
-  if (eocd < 0) throw new ZipError("Dit zip-bestand is beschadigd of onvolledig.");
+  if (eocd < 0) throw new ZipError(t.errors.zipCorrupt);
 
   const count = view.getUint16(eocd + 10, true);
   let p = view.getUint32(eocd + 16, true);
-  if (count === 0xffff || p === 0xffffffff) throw new ZipError("Dit zip-formaat (ZIP64) wordt niet ondersteund.");
+  if (count === 0xffff || p === 0xffffffff) throw new ZipError(t.errors.zip64);
 
   const decoder = new TextDecoder("utf-8");
   const entries: ZipEntry[] = [];
   for (let k = 0; k < count; k++) {
     if (p + 46 > bytes.length || view.getUint32(p, true) !== CEN_SIG) {
-      throw new ZipError("Dit zip-bestand is beschadigd of onvolledig.");
+      throw new ZipError(t.errors.zipCorrupt);
     }
     const flags = view.getUint16(p + 8, true);
     const method = view.getUint16(p + 10, true);
@@ -57,8 +59,8 @@ export function readZip(bytes: Uint8Array): ZipEntry[] {
     p += 46 + nameLen + extraLen + commentLen;
 
     if (name.endsWith("/")) continue; // directory
-    if (flags & 0x1) throw new ZipError("Versleutelde zip-bestanden worden niet ondersteund.");
-    if (view.getUint32(localOffset, true) !== LOC_SIG) throw new ZipError("Dit zip-bestand is beschadigd of onvolledig.");
+    if (flags & 0x1) throw new ZipError(t.errors.zipEncrypted);
+    if (view.getUint32(localOffset, true) !== LOC_SIG) throw new ZipError(t.errors.zipCorrupt);
 
     const dataStart = localOffset + 30 + view.getUint16(localOffset + 26, true) + view.getUint16(localOffset + 28, true);
     const data = bytes.subarray(dataStart, dataStart + compSize);
@@ -67,7 +69,7 @@ export function readZip(bytes: Uint8Array): ZipEntry[] {
       name,
       text: async () => {
         if (method === 0) return decoder.decode(data);
-        if (method !== 8) throw new ZipError(`Compressiemethode ${method} in '${name}' wordt niet ondersteund.`);
+        if (method !== 8) throw new ZipError(t.errors.zipMethod(method, name));
         return decoder.decode(await inflateRaw(data));
       },
     });

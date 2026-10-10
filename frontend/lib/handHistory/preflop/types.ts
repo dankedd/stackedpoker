@@ -6,17 +6,17 @@
 
 import type { RangeActionKey } from "@/lib/ranges/types";
 
-export type PreflopVerdict = "correct" | "te_los" | "te_strak" | "verkeerde_actie" | "gemengd" | "niet_beoordeeld";
+export type PreflopVerdict = "correct" | "too_loose" | "too_tight" | "wrong_action" | "mixed" | "not_evaluated";
 
 export const PREFLOP_VERDICTS: PreflopVerdict[] = [
-  "te_los",
-  "te_strak",
-  "verkeerde_actie",
-  "gemengd",
+  "too_loose",
+  "too_tight",
+  "wrong_action",
+  "mixed",
   "correct",
-  "niet_beoordeeld",
+  "not_evaluated",
 ];
-export const PREFLOP_ERRORS: PreflopVerdict[] = ["te_los", "te_strak", "verkeerde_actie"];
+export const PREFLOP_ERRORS: PreflopVerdict[] = ["too_loose", "too_tight", "wrong_action"];
 
 /** The kinds of spot the check knows. Add "vs_open", "3bet", "squeeze", … here. */
 export type PreflopSpotKind = "rfi";
@@ -57,9 +57,14 @@ export interface PreflopDetail {
   freqs: Partial<Record<RangeActionKey, number>> | null;
   /** The range's most frequent action — what Hero "should" have done. */
   expected: RangeActionKey | null;
-  /** Why the spot could not be graded (niet_beoordeeld). */
-  reason?: string;
+  /** Why the spot could not be graded (not_evaluated); worded by strings.ts. */
+  reason?: NotEvaluatedReason;
 }
+
+export type NotEvaluatedReason =
+  | { code: "no_position"; playersBehind: number }
+  | { code: "too_deep"; effStackBb: number }
+  | { code: "no_chart"; position: string };
 
 export interface PreflopCheck {
   verdict: PreflopVerdict;

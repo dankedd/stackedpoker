@@ -5,7 +5,9 @@ import { PokerRangeGrid } from "@/components/learn/visuals/PokerRangeGrid";
 import { ChartPanel, sourceLabel } from "@/components/preflop-trainer/shared";
 import { MTT_OPEN_CHARTS, PUSH_FOLD_CHARTS } from "@/lib/ranges/data";
 import { displayPos, pushValue } from "@/lib/ranges/logic";
+import { fmtNum } from "@/lib/handHistory/format";
 import { describeCheck, type PreflopCheck } from "@/lib/handHistory/preflop";
+import { t } from "@/lib/handHistory/strings";
 import { PreflopBadge } from "./PreflopBadge";
 
 /**
@@ -25,19 +27,19 @@ export function PreflopCheckPanel({ check, active }: { check: PreflopCheck; acti
     >
       <div className="mb-2 flex flex-wrap items-center gap-2">
         <h2 id="pf-check" className="text-sm font-semibold">
-          Preflop-controle
+          {t.preflop.title}
         </h2>
         <PreflopBadge verdict={check.verdict} showAll />
-        <span className="text-xs text-muted-foreground">raise first in</span>
+        <span className="text-xs text-muted-foreground">{t.preflop.spotKind}</span>
       </div>
       <p className="text-sm">
         {text.range} <span className="font-semibold">{text.hero}</span>
       </p>
-      {text.mix && <p className="mt-1 text-xs text-muted-foreground">Range voor {spot.hand}: {text.mix}</p>}
+      {text.mix && <p className="mt-1 text-xs text-muted-foreground">{t.preflop.rangeFor(spot.hand, text.mix)}</p>}
       <p className="mt-1 text-xs text-muted-foreground">
-        Effectieve stack {spot.effStackBb.toLocaleString("nl-NL", { maximumFractionDigits: 1 })} BB
-        {range ? ` → bucket ${range.bucket} BB` : ""}
-        {mapped ? ` · ${spot.tablePosition} met ${spot.playersBehind} spelers na je speelt de 9-max ${displayPos(range!.position)}-range` : ""}
+        {t.preflop.effStack(fmtNum(spot.effStackBb, 1))}
+        {range ? t.preflop.bucket(range.bucket) : ""}
+        {mapped ? t.preflop.mapped(spot.tablePosition, spot.playersBehind, displayPos(range!.position)) : ""}
       </p>
 
       {range && (
@@ -83,7 +85,7 @@ function PushFoldChart({ position, bucket, hand }: { position: string; bucket: n
           {chart.hr} · p. {chart.page}
         </p>
         <p>
-          Elk getal is de grootste stack (in BB) waarop de hand nog all-in gaat. {hand}: {values[hand] ?? 0} BB.
+          {t.preflop.pushFoldNote(hand, values[hand] ?? 0)}
         </p>
       </aside>
     </div>

@@ -105,7 +105,7 @@ export function preflopColumns(hand: ParsedHand) {
 
 /** Columns the overview list needs — never `data` or `raw_text`. */
 export const LIST_COLUMNS =
-  "id, hand_id, tournament_id, played_at, level, big_blind, hero_position, hero_cards, board, pot_bb, hero_net_bb, hero_invested_bb, hero_involved, preflop_check, preflop_position, hero_won, hero_all_in, went_to_showdown, has_note, hh_tournaments(name)";
+  "id, hand_id, tournament_id, played_at, level, big_blind, hero_position, hero_cards, board, pot_bb, hero_net_bb, hero_invested_bb, hero_involved, preflop_check, preflop_position, hero_won, hero_all_in, went_to_showdown, has_note, favorited_at, hh_tournaments(name)";
 
 export interface HandListRow {
   id: string;
@@ -127,6 +127,8 @@ export interface HandListRow {
   hero_all_in: boolean;
   went_to_showdown: boolean;
   has_note: boolean;
+  /** When the hand was starred; null = not a favourite. */
+  favorited_at: string | null;
   hh_tournaments: { name: string | null } | null;
 }
 

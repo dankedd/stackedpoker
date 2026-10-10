@@ -2,7 +2,7 @@
  * GGPoker tournament hand history parser (PokerCraft export).
  *
  * Pure and synchronous: text in, ParseResult out. Never throws — anything it
- * cannot make sense of becomes a ParseFailure with a Dutch message, so one bad
+ * cannot make sense of becomes a ParseFailure with a readable message, so one bad
  * hand never stops an import.
  *
  * Format notes (PokerCraft export):
@@ -17,6 +17,7 @@
 
 import { POSITIONS_BY_SIZE } from "@/lib/replay/positions";
 import type { HandEvent, HandPlayer, ParseResult, ParsedHand, Street } from "../types";
+import { t } from "../strings";
 
 export const GG_PARSER_ID = "ggpoker";
 
@@ -63,22 +64,22 @@ export function parseGGHand(rawText: string): ParseResult {
       rawText,
       idOnly?.[1] ?? null,
       idOnly
-        ? "Kopregel niet herkend. Alleen toernooihanden van GGPoker (PokerCraft) worden ondersteund."
-        : "Geen GGPoker-hand: de eerste regel begint niet met 'Poker Hand #'.",
+        ? t.errors.headerUnknown
+        : t.errors.notGgHand,
     );
   }
 
   const [, handId, rest, level, sb, bb, ante, y, mo, d, h, mi, s] = header;
   const tournament = TOURNAMENT_RE.exec(rest);
   if (!tournament) {
-    return fail(rawText, handId, "Dit is geen toernooihand. Alleen toernooihanden worden ondersteund.");
+    return fail(rawText, handId, t.errors.notTournament);
   }
   const nameAndGame = GAME_SPLIT_RE.exec(tournament[2]);
   const tournamentName = (nameAndGame ? nameAndGame[1] : tournament[2]).trim();
   const game = nameAndGame ? nameAndGame[2].trim() : "Hold'em No Limit";
 
   const table = lines.length > 1 ? TABLE_RE.exec(lines[1]) : null;
-  if (!table) return fail(rawText, handId, "Tafelregel ('Table … Seat #… is the button') ontbreekt.");
+  if (!table) return fail(rawText, handId, t.errors.noTableLine);
 
   const hand: ParsedHand = {
     site: "ggpoker",
@@ -105,7 +106,7 @@ export function parseGGHand(rawText: string): ParseResult {
     rake: 0,
     warnings: [],
   };
-  if (!(hand.bigBlind > 0)) return fail(rawText, handId, "Big blind ontbreekt of is 0.");
+  if (!(hand.bigBlind > 0)) return fail(rawText, handId, t.errors.noBigBlind);
 
   // Seats come right after the table line, before any post.
   let i = 2;
@@ -114,7 +115,7 @@ export function parseGGHand(rawText: string): ParseResult {
     if (!m) break;
     hand.players.push({ seat: Number(m[1]), name: m[2], stack: parseChips(m[3]), isHero: false, position: "" });
   }
-  if (hand.players.length < 2) return fail(rawText, handId, "Minder dan twee spelers gevonden.");
+  if (hand.players.length < 2) return fail(rawText, handId, t.errors.tooFewPlayers);
 
   // Longest names first so a name that prefixes another never steals its line.
   const names = hand.players.map((p) => p.name).sort((a, b) => b.length - a.length);
@@ -224,16 +225,16 @@ export function parseGGHand(rawText: string): ParseResult {
       } else if (/^(mucks|doesn't show|sits out|is sitting out|has timed out|is disconnected|is connected|has returned)/.test(body)) {
         // Status lines without chips — nothing to replay.
       } else {
-        hand.warnings.push(`Onbekende regel genegeerd: ${line}`);
+        hand.warnings.push(t.errors.unknownLine(line));
       }
       continue;
     }
 
-    hand.warnings.push(`Onbekende regel genegeerd: ${line}`);
+    hand.warnings.push(t.errors.unknownLine(line));
   }
 
-  if (!inSummary) return fail(rawText, handId, "Hand is onvolledig: '*** SUMMARY ***' ontbreekt.");
-  if (!hand.heroName) return fail(rawText, handId, "Hero's kaarten ('Dealt to Hero [..]') ontbreken.");
+  if (!inSummary) return fail(rawText, handId, t.errors.noSummary);
+  if (!hand.heroName) return fail(rawText, handId, t.errors.noHeroCards);
 
   for (const p of hand.players) p.isHero = p.name === hand.heroName;
   assignPositions(hand.players, hand.buttonSeat);
@@ -247,11 +248,11 @@ export function parseGGHand(rawText: string): ParseResult {
   }
   const putIn = [...invested.values()].reduce((a, b) => a + b, 0);
   if (hand.totalPot > 0 && Math.abs(putIn - hand.totalPot) > 0.001) {
-    hand.warnings.push(`Pot klopt niet: ingelegd ${putIn}, 'Total pot' ${hand.totalPot}.`);
+    hand.warnings.push(t.errors.potMismatch(putIn, hand.totalPot));
   }
   const collected = hand.winners.reduce((a, w) => a + w.amount, 0);
   if (hand.totalPot > 0 && Math.abs(collected + hand.rake - hand.totalPot) > 0.001) {
-    hand.warnings.push(`Uitbetaling klopt niet: uitgekeerd ${collected}, 'Total pot' ${hand.totalPot}.`);
+    hand.warnings.push(t.errors.payoutMismatch(collected, hand.totalPot));
   }
 
   return { ok: true, hand, rawText: text };

@@ -135,38 +135,38 @@ describe("preflop check — every verdict (constructed hands, cards chosen from 
     expect(verdictOf(cardsOf(pick((x) => (x.fold ?? 0) === 1)), "fold")).toBe("correct");
   });
 
-  it("te_los: a pure fold, opened", () => {
-    expect(verdictOf(cardsOf(pick((x) => (x.fold ?? 0) === 1)), "raise")).toBe("te_los");
+  it("too_loose: a pure fold, opened", () => {
+    expect(verdictOf(cardsOf(pick((x) => (x.fold ?? 0) === 1)), "raise")).toBe("too_loose");
   });
 
-  it("te_strak: a pure raise, folded", () => {
-    expect(verdictOf(cardsOf(pick((x) => (x.raise ?? 0) === 1)), "fold")).toBe("te_strak");
+  it("too_tight: a pure raise, folded", () => {
+    expect(verdictOf(cardsOf(pick((x) => (x.raise ?? 0) === 1)), "fold")).toBe("too_tight");
   });
 
-  it("verkeerde_actie: a pure raise, limped (the chart has no limp)", () => {
+  it("wrong_action: a pure raise, limped (the chart has no limp)", () => {
     expect(CHART.actions.some((a) => a.key === "limp")).toBe(false);
-    expect(verdictOf(cardsOf(pick((x) => (x.raise ?? 0) === 1)), "limp")).toBe("verkeerde_actie");
+    expect(verdictOf(cardsOf(pick((x) => (x.raise ?? 0) === 1)), "limp")).toBe("wrong_action");
   });
 
-  it("gemengd: the less frequent side of a mixed hand", () => {
+  it("mixed: the less frequent side of a mixed hand", () => {
     const h = pick((x) => (x.raise ?? 0) >= 0.1 && (x.raise ?? 0) < 0.5 && (x.fold ?? 0) > (x.raise ?? 0));
-    expect(verdictOf(cardsOf(h), "raise")).toBe("gemengd");
+    expect(verdictOf(cardsOf(h), "raise")).toBe("mixed");
   });
 
-  it("niet_beoordeeld: effective stack deeper than the trainer's charts", () => {
+  it("not_evaluated: effective stack deeper than the trainer's charts", () => {
     // 100bb against 30bb stacks is a 30bb effective stack — still graded.
-    expect(checkPreflop(rfiHand({ cards: ["As", "Ah"], move: "raise", heroStack: 100_000 }))!.verdict).not.toBe("niet_beoordeeld");
+    expect(checkPreflop(rfiHand({ cards: ["As", "Ah"], move: "raise", heroStack: 100_000 }))!.verdict).not.toBe("not_evaluated");
     const c = checkPreflop(rfiHand({ cards: ["As", "Ah"], move: "raise", heroStack: 100_000, otherStack: 120_000 }))!;
-    expect(c.verdict).toBe("niet_beoordeeld");
-    expect(describeCheck(c).range).toMatch(/^Niet beoordeeld: /);
+    expect(c.verdict).toBe("not_evaluated");
+    expect(describeCheck(c).range).toMatch(/^Not evaluated: /);
   });
 
-  it("describes the spot in Dutch", () => {
+  it("describes the spot in plain English", () => {
     const h = pick((x) => (x.fold ?? 0) === 1);
     const c = checkPreflop(rfiHand({ cards: cardsOf(h), move: "raise" }))!;
     expect(describeCheck(c)).toMatchObject({
-      range: `Volgens je range: UTG+1, 25 BB, ${h} → fold.`,
-      hero: "Jij: open-raise 2 BB.",
+      range: `Your range: UTG+1, 25 BB, ${h} → fold.`,
+      hero: "You: open-raise 2 BB.",
     });
   });
 });
@@ -189,13 +189,13 @@ describe.skipIf(!hasFixture)("preflop check on the real export", () => {
     expect(actions.filter((a) => a === "raise")).toHaveLength(5);
     expect(actions.filter((a) => a === "allin")).toHaveLength(3);
     expect(checks.find((x) => x.id === "TM6510945652")!.c!.detail.spot.action).toBe("allin");
-    expect(checks.every((x) => x.c!.verdict !== "niet_beoordeeld")).toBe(true);
+    expect(checks.every((x) => x.c!.verdict !== "not_evaluated")).toBe(true);
   });
 
   it("finds the spots that deviate from the ranges", () => {
     const by = (id: string) => checks.find((x) => x.id === id)!.c!;
-    expect(by("TM6510603760").verdict).toBe("te_los"); // Q8s shove, 12.5bb UTG+1 (8-handed)
-    expect(by("TM6510944780").verdict).toBe("te_strak"); // 55 fold, 11.4bb LJ
-    expect(by("TM6510605843").verdict).toBe("gemengd"); // 55 fold, 21.7bb UTG+1 (8-handed)
+    expect(by("TM6510603760").verdict).toBe("too_loose"); // Q8s shove, 12.5bb UTG+1 (8-handed)
+    expect(by("TM6510944780").verdict).toBe("too_tight"); // 55 fold, 11.4bb LJ
+    expect(by("TM6510605843").verdict).toBe("mixed"); // 55 fold, 21.7bb UTG+1 (8-handed)
   });
 });

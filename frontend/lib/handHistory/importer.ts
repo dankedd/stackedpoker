@@ -10,6 +10,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { parserFor, type HandParser } from "./parsers";
 import { toInsertRow } from "./rows";
 import { splitHands } from "./split";
+import { t } from "./strings";
 import type { ParseFailure, ParsedHand } from "./types";
 import { ZipError, isZip, readZip } from "./zip";
 
@@ -78,21 +79,21 @@ export async function readFiles(
       const bytes = new Uint8Array(await f.arrayBuffer());
       if (lower.endsWith(".zip") || isZip(bytes)) {
         const entries = readZip(bytes).filter((e) => e.name.toLowerCase().endsWith(".txt") && !e.name.startsWith("__MACOSX/"));
-        if (!entries.length) fileErrors.push({ fileName: f.name, error: "Dit zip-bestand bevat geen .txt-bestanden." });
+        if (!entries.length) fileErrors.push({ fileName: f.name, error: t.errors.zipNoTxt });
         for (const e of entries) {
           try {
             texts.push({ fileName: `${f.name} › ${e.name.split("/").pop()}`, text: await e.text() });
           } catch (err) {
-            fileErrors.push({ fileName: `${f.name} › ${e.name}`, error: messageOf(err, "Kon dit bestand in de zip niet uitpakken.") });
+            fileErrors.push({ fileName: `${f.name} › ${e.name}`, error: messageOf(err, t.errors.zipEntryUnreadable) });
           }
         }
       } else if (lower.endsWith(".txt")) {
         texts.push({ fileName: f.name, text: decoder.decode(bytes) });
       } else {
-        fileErrors.push({ fileName: f.name, error: "Bestandstype niet ondersteund. Upload .txt- of .zip-bestanden uit PokerCraft." });
+        fileErrors.push({ fileName: f.name, error: t.errors.unsupportedType });
       }
     } catch (err) {
-      fileErrors.push({ fileName: f.name, error: messageOf(err, "Kon dit bestand niet lezen.") });
+      fileErrors.push({ fileName: f.name, error: messageOf(err, t.errors.fileUnreadable) });
     }
   }
   onProgress?.({ phase: "reading", done: files.length, total: files.length });
@@ -108,12 +109,12 @@ export function parseTexts(texts: SourceText[]): ParseOutcome {
   for (const { fileName, text } of texts) {
     const parser = parserFor(text);
     if (!parser) {
-      out.fileErrors.push({ fileName, error: "Geen GGPoker-handen gevonden in dit bestand." });
+      out.fileErrors.push({ fileName, error: t.errors.noGgHands });
       continue;
     }
     const { hands, leftover } = splitHands(text);
     if (leftover) {
-      out.failures.push({ handId: null, error: "Tekst vóór de eerste hand is overgeslagen.", rawText: leftover, fileName });
+      out.failures.push({ handId: null, error: t.errors.textBeforeFirstHand, rawText: leftover, fileName });
     }
     for (const raw of hands) {
       let result;
@@ -121,7 +122,7 @@ export function parseTexts(texts: SourceText[]): ParseOutcome {
         result = parser.parseHand(raw);
       } catch (err) {
         // Parsers should never throw; if one does, the import still goes on.
-        result = { ok: false as const, failure: { handId: null, error: messageOf(err, "Onverwachte fout tijdens het parsen."), rawText: raw } };
+        result = { ok: false as const, failure: { handId: null, error: messageOf(err, t.errors.unexpectedParse), rawText: raw } };
       }
       if (!result.ok) {
         out.failures.push({ ...result.failure, fileName });
@@ -187,7 +188,7 @@ export async function saveHands(
     let result = await insertBatch(supabase, rows);
     if (result.error) result = await insertBatch(supabase, rows); // one retry for a network blip
     if (result.error) {
-      const msg = `Opslaan mislukt: ${dbErrorMessage(result.error)}`;
+      const msg = t.errors.saveFailed(dbErrorMessage(result.error));
       for (const e of batch) failures.push({ handId: e.hand.handId, error: msg, rawText: e.rawText, fileName: e.fileName });
     } else {
       imported += result.inserted;
@@ -225,16 +226,16 @@ async function insertBatch(supabase: SupabaseClient, rows: unknown[]) {
 // ── Errors ──────────────────────────────────────────────────────────────────
 
 export function dbErrorMessage(err: { code?: string; message?: string } | null | undefined): string {
-  if (!err) return "Onbekende fout.";
-  if (err.code === "42P01" || err.code === "PGRST205" || err.code === "PGRST200") {
-    return "De database is nog niet ingericht voor handgeschiedenis (supabase_hand_history.sql is niet uitgevoerd).";
+  const m = t.errors.db;
+  if (!err) return m.unknown;
+  if (err.code === "42P01" || err.code === "PGRST205" || err.code === "PGRST200") return m.notSetUp;
+  // 23514: a CHECK constraint, e.g. English preflop_check values before supabase_hand_history_english.sql ran.
+  if (err.code === "42703" || err.code === "PGRST204" || err.code === "PGRST202" || err.code === "42883" || err.code === "23514") {
+    return m.missingUpdate;
   }
-  if (err.code === "42703" || err.code === "PGRST204" || err.code === "PGRST202" || err.code === "42883") {
-    return "De database mist een update voor handgeschiedenis (voer supabase_hand_history_involved.sql en supabase_hand_history_preflop.sql uit).";
-  }
-  if (err.code === "42501") return "Geen toestemming. Log opnieuw in en probeer het nog eens.";
-  if (/fetch|network|Failed to fetch/i.test(err.message ?? "")) return "Geen verbinding met de server. Controleer je internet en probeer het opnieuw.";
-  return err.message ? `Databasefout: ${err.message}` : "Onbekende databasefout.";
+  if (err.code === "42501") return m.noPermission;
+  if (/fetch|network|Failed to fetch/i.test(err.message ?? "")) return m.offline;
+  return err.message ? m.generic(err.message) : m.unknownDb;
 }
 
 function messageOf(err: unknown, fallback: string): string {

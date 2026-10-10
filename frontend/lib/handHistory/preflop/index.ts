@@ -13,19 +13,24 @@
 import { MTT_OPEN_CHARTS, PUSH_FOLD_CHARTS } from "@/lib/ranges/data";
 import { displayPos } from "@/lib/ranges/logic";
 import type { RangeActionKey } from "@/lib/ranges/types";
+import { fmtNum } from "../format";
+import { t } from "../strings";
 import type { ParsedHand } from "../types";
 import { gradeAction } from "./grade";
 import { lookupRfi, rangeFrequencies } from "./lookup";
 import { findRfiSpot } from "./spots";
-import type { PreflopCheck, PreflopDetail, PreflopVerdict } from "./types";
+import type { NotEvaluatedReason, PreflopCheck, PreflopDetail, PreflopVerdict } from "./types";
 
 export * from "./types";
 export { findRfiSpot, handClass } from "./spots";
 export { lookupRfi, rangePosition } from "./lookup";
 export { gradeAction } from "./grade";
 
-/** Bump when the check's own logic changes; range edits are picked up by the hash. */
-const CHECK_LOGIC_VERSION = 1;
+/**
+ * Bump when the check's own logic changes; range edits are picked up by the hash.
+ * 2: English verdict values and a reason code instead of Dutch text in preflop_detail.
+ */
+const CHECK_LOGIC_VERSION = 2;
 
 /**
  * Stored with every result. When the trainer's range JSON or this logic
@@ -41,7 +46,7 @@ export function checkPreflop(hand: ParsedHand): PreflopCheck | null {
   const found = lookupRfi(spot);
   if (!found.ok) {
     const detail: PreflopDetail = { spot, range: null, freqs: null, expected: null, reason: found.reason };
-    return { verdict: "niet_beoordeeld", detail };
+    return { verdict: "not_evaluated", detail };
   }
   const freqs = rangeFrequencies(found.scenario, spot.hand);
   const { verdict, expected } = gradeAction(freqs, spot.action);
@@ -50,45 +55,35 @@ export function checkPreflop(hand: ParsedHand): PreflopCheck | null {
 
 // ── Labels ───────────────────────────────────────────────────────────────────
 
-export const VERDICT_LABEL: Record<PreflopVerdict, string> = {
-  correct: "Correct",
-  te_los: "Te los",
-  te_strak: "Te strak",
-  verkeerde_actie: "Verkeerde actie",
-  gemengd: "Gemengd",
-  niet_beoordeeld: "Niet beoordeeld",
-};
+export const VERDICT_LABEL: Record<PreflopVerdict, string> = t.verdict;
 
-export const ACTION_LABEL: Record<RangeActionKey, string> = {
-  fold: "fold",
-  limp: "limp",
-  raise: "open-raise",
-  allin: "all-in",
-  call: "call",
-};
-
-function fmtBbNl(n: number): string {
-  return `${(Math.round(n * 10) / 10).toLocaleString("nl-NL")} BB`;
-}
+export const ACTION_LABEL = t.preflop.action as Record<RangeActionKey, string>;
 
 function pct(x: number): string {
   return `${Math.round(x * 100)}%`;
 }
 
-/** "Volgens je range: BTN, 15 BB, A5o → fold. Jij: open-raise 2 BB." */
+export function reasonText(r: NotEvaluatedReason | undefined): string {
+  if (!r) return t.preflop.noMatchingRange;
+  if (r.code === "no_position") return t.preflop.reason.no_position(r.playersBehind);
+  if (r.code === "too_deep") return t.preflop.reason.too_deep(r.effStackBb);
+  return t.preflop.reason.no_chart(displayPos(r.position));
+}
+
+/** "Your range: BTN, 15 BB, A5o → fold. You: open-raise 2 BB." */
 export function describeCheck(c: PreflopCheck): { range: string; hero: string; mix: string | null } {
   const { spot, range, freqs, expected, reason } = c.detail;
-  const heroSize = spot.sizeBb && spot.action !== "fold" && spot.action !== "limp" ? ` ${fmtBbNl(spot.sizeBb)}` : "";
-  const hero = `Jij: ${ACTION_LABEL[spot.action]}${spot.action === "raise" ? heroSize : ""}.`;
+  const heroSize = spot.sizeBb && spot.action !== "fold" && spot.action !== "limp" ? ` ${fmtNum(spot.sizeBb, 1)} BB` : "";
+  const hero = t.preflop.you(`${ACTION_LABEL[spot.action]}${spot.action === "raise" ? heroSize : ""}`);
   if (!range || !freqs || !expected) {
-    return { range: `Niet beoordeeld: ${reason ?? "geen passende range."}`, hero, mix: null };
+    return { range: t.preflop.notEvaluated(reasonText(reason)), hero, mix: null };
   }
   const played = (Object.entries(freqs) as [RangeActionKey, number][])
     .filter(([, v]) => v > 0)
     .sort((a, b) => b[1] - a[1]);
   const mix = played.length > 1 ? played.map(([k, v]) => `${ACTION_LABEL[k]} ${pct(v)}`).join(" · ") : null;
   return {
-    range: `Volgens je range: ${displayPos(range.position)}, ${range.bucket} BB, ${spot.hand} → ${ACTION_LABEL[expected]}.`,
+    range: t.preflop.yourRange(displayPos(range.position), range.bucket, spot.hand, ACTION_LABEL[expected]),
     hero,
     mix,
   };

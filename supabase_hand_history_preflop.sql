@@ -3,8 +3,8 @@
 -- Run this in the Supabase SQL Editor AFTER supabase_hand_history.sql and
 -- supabase_hand_history_involved.sql. Idempotent: safe to re-run.
 --
--- preflop_check     correct | te_los | te_strak | verkeerde_actie | gemengd |
---                   niet_beoordeeld; NULL when Hero's spot is not one the
+-- preflop_check     correct | too_loose | too_tight | wrong_action | mixed |
+--                   not_evaluated; NULL when Hero's spot is not one the
 --                   trainer has ranges for (now: only raise first in).
 -- preflop_position  the trainer's chart position ("UTG+1", "BN", …)
 -- preflop_detail    spot, chart reference, frequencies and expected action
@@ -26,9 +26,18 @@ ALTER TABLE public.hh_hands
   ADD COLUMN IF NOT EXISTS preflop_version  text;
 
 ALTER TABLE public.hh_hands DROP CONSTRAINT IF EXISTS hh_hands_preflop_check_valid;
+-- The values were Dutch until 2026-10-10; convert any left over (same as
+-- supabase_hand_history_english.sql) so re-running this file never fails.
+UPDATE public.hh_hands
+   SET preflop_check = CASE preflop_check
+         WHEN 'te_los' THEN 'too_loose' WHEN 'te_strak' THEN 'too_tight'
+         WHEN 'verkeerde_actie' THEN 'wrong_action' WHEN 'gemengd' THEN 'mixed'
+         WHEN 'niet_beoordeeld' THEN 'not_evaluated'
+       END
+ WHERE preflop_check IN ('te_los', 'te_strak', 'verkeerde_actie', 'gemengd', 'niet_beoordeeld');
 ALTER TABLE public.hh_hands ADD CONSTRAINT hh_hands_preflop_check_valid CHECK (
   preflop_check IS NULL
-  OR preflop_check IN ('correct', 'te_los', 'te_strak', 'verkeerde_actie', 'gemengd', 'niet_beoordeeld')
+  OR preflop_check IN ('correct', 'too_loose', 'too_tight', 'wrong_action', 'mixed', 'not_evaluated')
 );
 
 CREATE INDEX IF NOT EXISTS hh_hands_user_preflop_idx

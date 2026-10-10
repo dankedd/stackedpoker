@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Loader2, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { deleteNote, getNote, saveNote } from "@/lib/handHistory/api";
+import { fmtShortDate } from "@/lib/handHistory/format";
+import { t } from "@/lib/handHistory/strings";
 import { cn } from "@/lib/utils";
 
 type Status = "idle" | "loading" | "dirty" | "saving" | "saved" | "error";
@@ -63,7 +65,7 @@ export function NotesPanel({ handRef, userId, onHasNoteChange }: { handRef: stri
       onHasNoteChange?.(!!note);
     } catch (e) {
       pending.current = pending.current ?? text; // retry with the next save
-      setError(e instanceof Error ? e.message : "Opslaan mislukt.");
+      setError(e instanceof Error ? e.message : t.notes.saveFailed);
       setStatus("error");
     }
   }, [supabase, userId, handRef, onHasNoteChange]);
@@ -91,7 +93,7 @@ export function NotesPanel({ handRef, userId, onHasNoteChange }: { handRef: stri
 
   const onDelete = async () => {
     if (!body.trim() && !saved.current) return;
-    if (!window.confirm("Notitie bij deze hand verwijderen?")) return;
+    if (!window.confirm(t.notes.confirmDelete)) return;
     if (timer.current) clearTimeout(timer.current);
     pending.current = null;
     setStatus("saving");
@@ -103,7 +105,7 @@ export function NotesPanel({ handRef, userId, onHasNoteChange }: { handRef: stri
       setStatus("idle");
       onHasNoteChange?.(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Verwijderen mislukt.");
+      setError(e instanceof Error ? e.message : t.notes.deleteFailed);
       setStatus("error");
     }
   };
@@ -112,7 +114,7 @@ export function NotesPanel({ handRef, userId, onHasNoteChange }: { handRef: stri
     <section className="rounded-2xl border border-border/60 bg-card/40 p-4" aria-labelledby="note-title">
       <div className="mb-2 flex items-center justify-between">
         <h2 id="note-title" className="text-sm font-semibold">
-          Notitie
+          {t.notes.title}
         </h2>
         <StatusLabel status={status} savedAt={savedAt} />
       </div>
@@ -123,7 +125,7 @@ export function NotesPanel({ handRef, userId, onHasNoteChange }: { handRef: stri
         disabled={status === "loading"}
         rows={8}
         maxLength={20000}
-        placeholder="Wat ging er goed of fout in deze hand? Wat zou je de volgende keer anders doen?"
+        placeholder={t.notes.placeholder}
         className="w-full resize-y rounded-xl border border-border/60 bg-background/60 px-3 py-2 text-sm leading-relaxed placeholder:text-muted-foreground/60 focus:border-violet-500/60 focus:outline-none focus:ring-2 focus:ring-violet-500/20 disabled:opacity-50"
       />
       {error && (
@@ -138,7 +140,7 @@ export function NotesPanel({ handRef, userId, onHasNoteChange }: { handRef: stri
           disabled={!body && !saved.current}
           className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-muted-foreground hover:text-rose-300 disabled:opacity-30"
         >
-          <Trash2 className="h-3.5 w-3.5" /> Verwijderen
+          <Trash2 className="h-3.5 w-3.5" /> {t.notes.delete}
         </button>
       </div>
     </section>
@@ -147,14 +149,11 @@ export function NotesPanel({ handRef, userId, onHasNoteChange }: { handRef: stri
 
 function StatusLabel({ status, savedAt }: { status: Status; savedAt: string | null }) {
   const base = "inline-flex items-center gap-1 text-xs";
-  if (status === "loading") return <span className={cn(base, "text-muted-foreground")}><Loader2 className="h-3 w-3 animate-spin" /> Laden…</span>;
-  if (status === "saving") return <span className={cn(base, "text-muted-foreground")}><Loader2 className="h-3 w-3 animate-spin" /> Opslaan…</span>;
-  if (status === "dirty") return <span className={cn(base, "text-muted-foreground")}>Niet opgeslagen</span>;
-  if (status === "saved") return <span className={cn(base, "text-emerald-300")}><Check className="h-3 w-3" /> Opgeslagen</span>;
-  if (status === "error") return <span className={cn(base, "text-rose-300")}>Niet opgeslagen</span>;
-  if (savedAt) {
-    const d = new Date(savedAt);
-    return <span className={cn(base, "text-muted-foreground")}>Bewaard {d.toLocaleDateString("nl-NL", { day: "numeric", month: "short" })}</span>;
-  }
+  if (status === "loading") return <span className={cn(base, "text-muted-foreground")}><Loader2 className="h-3 w-3 animate-spin" /> {t.notes.loading}</span>;
+  if (status === "saving") return <span className={cn(base, "text-muted-foreground")}><Loader2 className="h-3 w-3 animate-spin" /> {t.notes.saving}</span>;
+  if (status === "dirty") return <span className={cn(base, "text-muted-foreground")}>{t.notes.unsaved}</span>;
+  if (status === "saved") return <span className={cn(base, "text-emerald-300")}><Check className="h-3 w-3" /> {t.notes.saved}</span>;
+  if (status === "error") return <span className={cn(base, "text-rose-300")}>{t.notes.unsaved}</span>;
+  if (savedAt) return <span className={cn(base, "text-muted-foreground")}>{t.notes.savedOn(fmtShortDate(savedAt))}</span>;
   return null;
 }

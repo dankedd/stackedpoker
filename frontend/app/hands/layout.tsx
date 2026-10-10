@@ -3,9 +3,10 @@ import { notFound } from "next/navigation";
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
 import { HAND_HISTORY_ENABLED } from "@/lib/handHistory/feature";
+import { t } from "@/lib/handHistory/strings";
 
 export const metadata: Metadata = {
-  title: "Mijn handen",
+  title: t.section.title,
   robots: { index: false, follow: false },
 };
 
@@ -19,7 +20,7 @@ export default function HandsLayout({ children }: { children: React.ReactNode })
   if (!HAND_HISTORY_ENABLED) notFound();
 
   return (
-    <div className="min-h-screen bg-background" lang="nl">
+    <div className="min-h-screen bg-background">
       <Navbar variant="static" />
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">{children}</main>
       <Footer />

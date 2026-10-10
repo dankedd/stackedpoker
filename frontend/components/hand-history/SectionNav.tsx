@@ -3,18 +3,19 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HANDS_IMPORT_PATH, HANDS_PATH } from "@/lib/handHistory/feature";
+import { t } from "@/lib/handHistory/strings";
 import { cn } from "@/lib/utils";
 
 const ITEMS = [
-  { label: "Overzicht", href: HANDS_PATH },
-  { label: "Importeren", href: HANDS_IMPORT_PATH },
+  { label: t.section.overview, href: HANDS_PATH },
+  { label: t.section.import, href: HANDS_IMPORT_PATH },
 ];
 
-/** Overzicht | Importeren — same pill tabs as the Preflop Trainer section. */
+/** Overview | Import — same pill tabs as the Preflop Trainer section. */
 export function SectionNav() {
   const pathname = usePathname();
   return (
-    <nav aria-label="Mijn handen" className="inline-flex gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1">
+    <nav aria-label={t.section.navLabel} className="inline-flex gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1">
       {ITEMS.map((item) => {
         const active = pathname === item.href;
         return (

@@ -13,6 +13,7 @@ import { FourColorCard } from "@/components/poker/FourColorCard";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import type { AmountFormatter, TimelineStep } from "@/lib/handHistory/timeline";
 import type { ParsedHand } from "@/lib/handHistory/types";
+import { t } from "@/lib/handHistory/strings";
 import { cn } from "@/lib/utils";
 
 export function ReplayTable({ hand, step, fmt }: { hand: ParsedHand; step: TimelineStep; fmt: AmountFormatter }) {
@@ -51,7 +52,7 @@ export function ReplayTable({ hand, step, fmt }: { hand: ParsedHand; step: Timel
             ))}
           </div>
           <p className="rounded-full bg-black/35 px-3 py-0.5 font-mono text-xs font-bold text-emerald-50 sm:text-sm">
-            Pot {fmt(step.pot)}
+            {t.step.pot(fmt(step.pot))}
             {totalBets > 0 && <span className="font-normal text-emerald-100/70"> · totaal {fmt(step.pot + totalBets)}</span>}
           </p>
         </div>

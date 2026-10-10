@@ -30,15 +30,15 @@ describe("header navigation", () => {
     expect(labels(primaryNav({ preflopTrainer: false }))).toEqual(["Learn", "Puzzles", "Bankroll", "Leaderboard"]);
   });
 
-  it("adds Handen before Bankroll only when the hand history flag is on", () => {
+  it("adds Hands before Bankroll only when the hand history flag is on", () => {
     expect(labels(primaryNav({ preflopTrainer: false, handHistory: true }))).toEqual([
       "Learn",
       "Puzzles",
-      "Handen",
+      "Hands",
       "Bankroll",
       "Leaderboard",
     ]);
-    expect(labels(primaryNav({ preflopTrainer: false }))).not.toContain("Handen");
+    expect(labels(primaryNav({ preflopTrainer: false }))).not.toContain("Hands");
   });
 
   it("keeps the Wiki reachable from the footer and the global link graph", () => {
