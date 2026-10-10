@@ -11,12 +11,14 @@ export const DEFAULT_MIN_POT_BB = 20;
 export const PAGE_SIZE = 50;
 
 export interface HandFilters {
+  /** Only hands where Hero called, bet, raised or showed down (derive.ts). */
+  heroInvolved: boolean;
   minPotBb: number;
   tournamentId: string | null;
   withNotes: boolean;
 }
 
-export type SortKey = "pot" | "date" | "result";
+export type SortKey = "pot" | "invested" | "date" | "result";
 export type SortDir = "desc" | "asc";
 
 export interface HandQueryState {
@@ -27,7 +29,7 @@ export interface HandQueryState {
 }
 
 export const DEFAULT_STATE: HandQueryState = {
-  filters: { minPotBb: DEFAULT_MIN_POT_BB, tournamentId: null, withNotes: false },
+  filters: { heroInvolved: true, minPotBb: DEFAULT_MIN_POT_BB, tournamentId: null, withNotes: false },
   sort: "pot",
   dir: "desc",
   page: 1,
@@ -55,6 +57,14 @@ function def<K extends keyof HandFilters>(d: FilterDef<K>): FilterDef<K> {
 }
 
 export const FILTERS = [
+  def({
+    key: "heroInvolved",
+    param: "alle",
+    // On by default; `?alle=1` shows every hand, including ante-and-fold ones.
+    read: (raw) => raw !== "1",
+    write: (v) => (v ? null : "1"),
+    apply: (q, v) => (v ? q.eq("hero_involved", true) : q),
+  }),
   def({
     key: "minPotBb",
     param: "minPot",
@@ -92,7 +102,7 @@ export function applyFilters<Q extends FilterableQuery>(q: Q, filters: HandFilte
 /** Column order per sort; the trailing tie-breakers match the DB indexes. */
 export function sortColumns(sort: SortKey, dir: SortDir): { column: string; ascending: boolean }[] {
   const ascending = dir === "asc";
-  const key = sort === "pot" ? "pot_bb" : sort === "result" ? "hero_net_bb" : null;
+  const key = { pot: "pot_bb", invested: "hero_invested_bb", result: "hero_net_bb", date: null }[sort];
   return [
     ...(key ? [{ column: key, ascending }] : []),
     { column: "played_at", ascending },
@@ -100,7 +110,12 @@ export function sortColumns(sort: SortKey, dir: SortDir): { column: string; asce
   ];
 }
 
-export const SORT_LABELS: Record<SortKey, string> = { pot: "Potgrootte", date: "Datum", result: "Resultaat" };
+export const SORT_LABELS: Record<SortKey, string> = {
+  pot: "Potgrootte",
+  invested: "Mijn inzet (BB)",
+  date: "Datum",
+  result: "Resultaat",
+};
 
 /**
  * PostgREST `or` filter selecting the rows strictly after `row` in the given
@@ -132,7 +147,7 @@ export function readQueryState(params: URLSearchParams): HandQueryState {
   const page = Number(params.get("page"));
   return {
     filters: filters as unknown as HandFilters,
-    sort: sort === "date" || sort === "result" ? sort : "pot",
+    sort: sort === "date" || sort === "result" || sort === "invested" ? sort : "pot",
     dir: dir === "asc" ? "asc" : "desc",
     page: Number.isInteger(page) && page > 0 ? page : 1,
   };

@@ -1,6 +1,7 @@
 -- ============================================================
 -- Hand history — imported tournament hands, notes, import log
 -- Run this in the Supabase SQL Editor. Depends only on auth.users.
+-- Then run supabase_hand_history_involved.sql (hero_involved, hero_invested_bb).
 --
 -- Idempotent: IF NOT EXISTS / CREATE OR REPLACE / DROP ... IF EXISTS,
 -- so this file is safe to re-run.

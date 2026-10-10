@@ -121,7 +121,8 @@ export function HandsOverview() {
             </div>
           ) : rows.length === 0 ? (
             <p className="rounded-xl border border-border/60 bg-card/40 px-4 py-10 text-center text-sm text-muted-foreground">
-              Geen handen gevonden met deze filters. Verlaag de minimale potgrootte of kies een ander toernooi.
+              Geen handen gevonden met deze filters. Verlaag de minimale potgrootte, kies een ander toernooi of zet
+              &lsquo;Alleen handen waarin ik speel&rsquo; uit.
             </p>
           ) : (
             <HandList rows={rows} linkSuffix={linkSuffix} />
@@ -177,7 +178,7 @@ function FiltersBar({
   }, [minPot, state.filters.minPotBb, onChange]);
 
   return (
-    <div className="grid gap-4 rounded-2xl border border-border/60 bg-card/40 p-4 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto] md:items-end">
+    <div className="grid gap-4 rounded-2xl border border-border/60 bg-card/40 p-4 md:grid-cols-2 md:items-end xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto]">
       <div>
         <label htmlFor="minPot" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Minimale pot
@@ -231,7 +232,16 @@ function FiltersBar({
         </select>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 md:col-span-2 xl:col-span-1">
+        <label className="inline-flex cursor-pointer items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={state.filters.heroInvolved}
+            onChange={(e) => onChange({ filters: { heroInvolved: e.target.checked } })}
+            className="h-4 w-4 accent-violet-500"
+          />
+          Alleen handen waarin ik speel
+        </label>
         <label className="inline-flex cursor-pointer items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -301,6 +311,7 @@ function HandList({ rows, linkSuffix }: { rows: HandListRow[]; linkSuffix: strin
               <th className="px-4 py-3 font-semibold">Kaarten</th>
               <th className="px-4 py-3 font-semibold">Board</th>
               <th className="px-4 py-3 text-right font-semibold">Pot</th>
+              <th className="px-4 py-3 text-right font-semibold">Inzet</th>
               <th className="px-4 py-3 text-right font-semibold">Resultaat</th>
               <th className="px-2 py-3" aria-label="Notitie" />
             </tr>
@@ -325,6 +336,7 @@ function HandList({ rows, linkSuffix }: { rows: HandListRow[]; linkSuffix: strin
                   <MiniCards cards={r.board} />
                 </td>
                 <td className="whitespace-nowrap px-4 py-2.5 text-right font-mono font-semibold">{fmtBb(r.pot_bb)}</td>
+                <td className="whitespace-nowrap px-4 py-2.5 text-right font-mono text-muted-foreground">{fmtBb(r.hero_invested_bb)}</td>
                 <td className="whitespace-nowrap px-4 py-2.5 text-right">
                   <ResultBadge bb={r.hero_net_bb} />
                 </td>
@@ -352,6 +364,7 @@ function HandList({ rows, linkSuffix }: { rows: HandListRow[]; linkSuffix: strin
                 </div>
                 <div className="text-right">
                   <p className="font-mono text-sm font-semibold">{fmtBb(r.pot_bb)}</p>
+                  <p className="font-mono text-[11px] text-muted-foreground">inzet {fmtBb(r.hero_invested_bb)}</p>
                   <ResultBadge bb={r.hero_net_bb} />
                 </div>
               </div>

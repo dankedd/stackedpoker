@@ -237,6 +237,8 @@ function HandFacts({
         </dd>
         <dt className="text-muted-foreground">Pot</dt>
         <dd className="font-mono">{unit === "bb" ? fmtBb(derived.potBb) : fmtChips(hand.totalPot)}</dd>
+        <dt className="text-muted-foreground">Mijn inzet</dt>
+        <dd className="font-mono">{unit === "bb" ? fmtBb(derived.heroInvestedBb) : fmtChips(derived.heroInvested)}</dd>
         <dt className="text-muted-foreground">Resultaat</dt>
         <dd className={cn("font-mono font-semibold", net > 0 ? "text-emerald-400" : net < 0 ? "text-rose-400" : "")}>
           {unit === "bb" ? fmtSignedBb(derived.heroNetBb) : fmtSignedChips(net)}

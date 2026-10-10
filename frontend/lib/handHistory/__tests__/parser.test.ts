@@ -84,6 +84,8 @@ describe("GG parser — top hand (reconstructed from the spec)", () => {
     expect(d.heroAllIn).toBe(true);
     expect(d.wentToShowdown).toBe(true);
     expect(d.heroPosition).toBe("BB");
+    expect(d.heroInvolved).toBe(true);
+    expect(d.heroInvestedBb).toBe(9.18);
     expect(hand.winners).toEqual([{ player: "922e16a4", amount: 64676 }]);
     expect(hand.warnings).toEqual([]);
   });
@@ -115,6 +117,8 @@ describe("GG parser — edge cases (constructed hands)", () => {
     expect(d.heroNetChips).toBe(950 - 340);
     expect(d.heroWon).toBe(true);
     expect(d.heroPosition).toBe("BTN");
+    expect(d.heroInvolved).toBe(true); // the steal is a raise
+    expect(d.heroInvestedBb).toBe(1.13); // 40 ante + 300 after the uncalled 360 came back
     expect(hand.warnings).toEqual([]);
     expectChipsConserved(hand);
   });
@@ -203,6 +207,24 @@ describe.skipIf(!hasFixture)("real export: GG20261008-1802 - Daily Special 10.tx
     for (const e of out.entries) expect(e.hand.warnings, e.hand.handId).toEqual([]);
   });
 
+  it("Hero is involved in 15 hands, 5 of them with a pot of 20 BB or more", () => {
+    const derived = out.entries.map((e) => deriveHand(e.hand));
+    const involved = derived.filter((d) => d.heroInvolved);
+    expect(involved).toHaveLength(15);
+    expect(involved.filter((d) => d.potBb >= 20)).toHaveLength(5);
+  });
+
+  it("ante-and-fold, BB check-then-fold and walks are not involved", () => {
+    for (const e of out.entries) {
+      const h = e.hand;
+      const d = deriveHand(h);
+      const heroActions = h.events.filter((x) => x.kind === "action" && x.player === "Hero").map((x) => (x as { action: string }).action);
+      const voluntary = heroActions.some((a) => a === "call" || a === "bet" || a === "raise");
+      expect(d.heroInvolved, h.handId).toBe(voluntary || "Hero" in h.shown);
+      if (!d.heroInvolved) expect(heroActions.every((a) => a === "fold" || a === "check"), h.handId).toBe(true);
+    }
+  });
+
   it("the top hand matches the spec exactly", () => {
     const top = splitHands(text).hands[0];
     const hand = parse(top);
@@ -213,6 +235,7 @@ describe.skipIf(!hasFixture)("real export: GG20261008-1802 - Daily Special 10.tx
     expect(hand.totalPot).toBe(64676);
     expect(d.potBb).toBe(21.56);
     expect(d.heroWon).toBe(false);
+    expect(d.heroInvolved).toBe(true);
   });
 
   it("is sorted oldest first", () => {

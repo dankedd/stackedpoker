@@ -103,8 +103,12 @@ export interface HandDerived {
   heroNetBb: number;
   /** Hero collected chips from the pot (also true for a split pot). */
   heroWon: boolean;
-  /** At least two players' cards were shown. */
+  /** Two or more players were still in at the end. */
   wentToShowdown: boolean;
+  /** Hero called, bet or raised on some street, or showed down (derive.ts). */
+  heroInvolved: boolean;
+  /** heroInvested in big blinds: antes and blinds included, uncalled bets returned. */
+  heroInvestedBb: number;
   heroAllIn: boolean;
   /** Last street that was dealt. */
   lastStreet: Street;

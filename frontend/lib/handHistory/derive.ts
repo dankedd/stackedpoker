@@ -44,11 +44,28 @@ export function deriveHand(hand: ParsedHand): HandDerived {
     // `*** SHOWDOWN ***` is printed in every GG hand, so the only reliable
     // signal is two or more players still in at the end.
     wentToShowdown: playersAtEnd(hand).length >= 2,
+    heroInvolved: isHeroInvolved(hand),
+    heroInvestedBb: round2(heroInvested / bb),
     heroAllIn: hand.events.some(
       (e) => (e.kind === "action" || e.kind === "post") && e.player === hero && e.allIn,
     ),
     lastStreet,
   };
+}
+
+/**
+ * Hero really played the hand: put chips in voluntarily (a call, bet or raise
+ * on any street, all-ins included) or reached showdown. Posting the ante or a
+ * blind and then folding — or checking the big blind and folding the flop, or
+ * getting a walk — is not involved.
+ */
+export function isHeroInvolved(hand: ParsedHand): boolean {
+  const hero = hand.heroName;
+  if (!hero) return false;
+  const voluntary = hand.events.some(
+    (e) => e.kind === "action" && e.player === hero && (e.action === "call" || e.action === "bet" || e.action === "raise"),
+  );
+  return voluntary || hero in hand.shown;
 }
 
 function round2(n: number): number {

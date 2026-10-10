@@ -33,6 +33,8 @@ export interface HandInsertRow {
   hero_won: boolean;
   went_to_showdown: boolean;
   hero_all_in: boolean;
+  hero_involved: boolean;
+  hero_invested_bb: number;
   data: ParsedHand;
   raw_text: string;
   parser: string;
@@ -75,6 +77,8 @@ export function toInsertRow(
     hero_won: d.heroWon,
     went_to_showdown: d.wentToShowdown,
     hero_all_in: d.heroAllIn,
+    hero_involved: d.heroInvolved,
+    hero_invested_bb: d.heroInvestedBb,
     data: hand,
     raw_text: rawText,
     parser: ctx.parser.id,
@@ -84,7 +88,7 @@ export function toInsertRow(
 
 /** Columns the overview list needs — never `data` or `raw_text`. */
 export const LIST_COLUMNS =
-  "id, hand_id, tournament_id, played_at, level, big_blind, hero_position, hero_cards, board, pot_bb, hero_net_bb, hero_won, hero_all_in, went_to_showdown, has_note, hh_tournaments(name)";
+  "id, hand_id, tournament_id, played_at, level, big_blind, hero_position, hero_cards, board, pot_bb, hero_net_bb, hero_invested_bb, hero_involved, hero_won, hero_all_in, went_to_showdown, has_note, hh_tournaments(name)";
 
 export interface HandListRow {
   id: string;
@@ -98,6 +102,8 @@ export interface HandListRow {
   board: string[];
   pot_bb: number;
   hero_net_bb: number;
+  hero_invested_bb: number;
+  hero_involved: boolean;
   hero_won: boolean;
   hero_all_in: boolean;
   went_to_showdown: boolean;

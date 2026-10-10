@@ -24,17 +24,18 @@ class FakeQuery implements FilterableQuery {
 }
 
 describe("hand filters", () => {
-  it("defaults to pots of at least 20 BB, biggest first", () => {
+  it("defaults to involved hands with pots of at least 20 BB, biggest first", () => {
     const s = readQueryState(new URLSearchParams());
     expect(s).toEqual(DEFAULT_STATE);
     expect(DEFAULT_MIN_POT_BB).toBe(20);
-    expect(applyFilters(new FakeQuery(), s.filters).calls).toEqual(["gte pot_bb 20"]);
+    expect(applyFilters(new FakeQuery(), s.filters).calls).toEqual(["eq hero_involved true", "gte pot_bb 20"]);
   });
 
   it("round-trips through the query string and keeps defaults out of it", () => {
     expect(writeQueryState(DEFAULT_STATE)).toBe("");
-    const s = readQueryState(new URLSearchParams("minPot=35&t=316999261&notes=1&sort=result&dir=asc&page=3"));
-    expect(s.filters).toEqual({ minPotBb: 35, tournamentId: "316999261", withNotes: true });
+    const s = readQueryState(new URLSearchParams("alle=1&minPot=35&t=316999261&notes=1&sort=invested&dir=asc&page=3"));
+    expect(s.filters).toEqual({ heroInvolved: false, minPotBb: 35, tournamentId: "316999261", withNotes: true });
+    expect(s.sort).toBe("invested");
     expect(readQueryState(new URLSearchParams(writeQueryState(s).slice(1)))).toEqual(s);
     expect(writeQueryState(s, false)).not.toContain("page");
     expect(applyFilters(new FakeQuery(), s.filters).calls).toEqual([
@@ -49,13 +50,14 @@ describe("hand filters", () => {
     expect(s).toEqual(DEFAULT_STATE);
   });
 
-  it("minimum pot 0 means no pot filter", () => {
-    expect(applyFilters(new FakeQuery(), { ...DEFAULT_STATE.filters, minPotBb: 0 }).calls).toEqual([]);
+  it("minimum pot 0 and 'all hands' mean no filter at all", () => {
+    expect(applyFilters(new FakeQuery(), { ...DEFAULT_STATE.filters, heroInvolved: false, minPotBb: 0 }).calls).toEqual([]);
   });
 
   it("orders with stable tie-breakers matching the indexes", () => {
     expect(sortColumns("pot", "desc").map((c) => `${c.column}:${c.ascending}`)).toEqual(["pot_bb:false", "played_at:false", "id:false"]);
     expect(sortColumns("date", "asc").map((c) => c.column)).toEqual(["played_at", "id"]);
+    expect(sortColumns("invested", "desc").map((c) => c.column)).toEqual(["hero_invested_bb", "played_at", "id"]);
   });
 
   it("builds keyset filters for the next and previous hand", () => {
