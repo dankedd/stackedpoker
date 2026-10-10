@@ -173,6 +173,8 @@ const en = {
     show: (player: string, cards: string) => `${player} shows ${cards}`,
     collect: (player: string, amount: string) => `${player} wins ${amount}`,
     pot: (amount: string) => `Pot ${amount}`,
+    /** Pot plus the bets still in front of the players. */
+    total: (amount: string) => ` · total ${amount}`,
   },
 
   // ── Notes ─────────────────────────────────────────────────────────────────
@@ -240,6 +242,29 @@ const en = {
     had: (pct: string) => `You had ${pct}.`,
     stillToAct: (n: number, villain: string) =>
       `${n} ${plural(n, "player", "players")} still to act behind you; the pot odds assume heads-up against ${villain}.`,
+  },
+
+  coach: {
+    title: "Ask the coach",
+    intro: "Ask anything about this hand. The coach sees the whole hand, your preflop check, the equity and pot odds, and your notes.",
+    quickQuestions: [
+      "Was my preflop play right?",
+      "How should I play this spot?",
+      "Was this call/shove correct?",
+      "What would you do differently?",
+    ],
+    placeholder: "Ask about this hand…",
+    newConversation: "New conversation",
+    confirmNew: "Start a new conversation? The current one is closed.",
+    saveToNotes: "Save to notes",
+    savedToNotes: "Saved to notes",
+    saveFailed: "Couldn't save to notes.",
+    loadFailed: "Couldn't load the conversation. You can still ask a question.",
+    signIn: "Sign in to ask the coach.",
+    notePrefix: "Coach:",
+    chipEv: "Equity numbers are chip EV; ICM is not included.",
+    tabNotes: "Notes",
+    tabCoach: "Coach",
   },
 
   range: {

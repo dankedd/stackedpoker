@@ -8,6 +8,7 @@
 
 import type { RangeEquity, WeightedRange } from "./rangeEquity";
 import type { EquityRequest, EquityResponse } from "./protocol";
+import { t } from "@/lib/handHistory/strings";
 
 type Pending = { resolve: (r: EquityResponse) => void; reject: (e: Error) => void };
 
@@ -26,7 +27,7 @@ function getWorker(): Worker {
     else p.resolve(e.data);
   };
   worker.onerror = (e) => {
-    for (const p of pending.values()) p.reject(new Error(e.message || "Equity-berekening mislukt."));
+    for (const p of pending.values()) p.reject(new Error(e.message || t.equity.failed));
     pending.clear();
     worker?.terminate();
     worker = null;

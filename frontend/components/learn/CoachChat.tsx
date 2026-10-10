@@ -36,6 +36,19 @@ interface CoachChatProps {
    *  waiting on the mount-time fetch — avoids a flash-of-no-indicator each
    *  time this component remounts (e.g. a fresh thread per lesson step). */
   initialUsage?: CoachUsage
+  /** Replaces the default /api/coach/message call (e.g. the hand replayer's
+   *  coach, which sends a hand id instead of a client context). Must throw
+   *  errors shaped like lib/learn/api.ts (status + detail). */
+  sendFn?: (sessionId: string | null, message: string, action?: CoachAction) => Promise<{ session_id: string; reply: CoachMessage; usage: CoachUsage }>
+  /** A stored conversation to show on mount. */
+  initialMessages?: CoachMessage[]
+  /** Extra controls under each coach answer (e.g. "Save to notes"). */
+  renderMessageActions?: (msg: CoachMessage) => ReactNode
+  /** Rendered directly above the input (e.g. quick-question chips). */
+  aboveInput?: ReactNode
+  /** Replaces the generic "ask anything" empty state. */
+  emptyState?: ReactNode
+  placeholder?: string
 }
 
 export interface CoachChatHandle {
@@ -98,7 +111,7 @@ function TypingIndicator() {
 
 // ── Message bubble ────────────────────────────────────────────────────────────
 
-function MessageBubble({ msg }: { msg: CoachMessage }) {
+function MessageBubble({ msg, actions }: { msg: CoachMessage; actions?: ReactNode }) {
   const isCoach = msg.role === 'coach'
   const [tick, setTick] = useState(0)
 
@@ -157,6 +170,7 @@ function MessageBubble({ msg }: { msg: CoachMessage }) {
         <span className="text-[10px] text-muted-foreground/30 px-1">
           {relativeTime(msg.timestamp)}
         </span>
+        {actions}
       </div>
     </div>
   )
@@ -175,8 +189,14 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
   onQuickAction,
   onLimitReachedContinue,
   initialUsage,
+  sendFn,
+  initialMessages,
+  renderMessageActions,
+  aboveInput,
+  emptyState,
+  placeholder,
 }, ref) {
-  const [messages, setMessages] = useState<CoachMessage[]>([])
+  const [messages, setMessages] = useState<CoachMessage[]>(initialMessages ?? [])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(initSessionId)
@@ -249,7 +269,9 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
     setLoading(true)
 
     try {
-      const { session_id, reply, usage: newUsage } = await sendCoachMessage(currentSessionId, msg, context, token, action)
+      const { session_id, reply, usage: newUsage } = sendFn
+        ? await sendFn(currentSessionId, msg, action)
+        : await sendCoachMessage(currentSessionId, msg, context, token, action)
       if (!mountedRef.current) return
       setCurrentSessionId(session_id)
       setUsage(newUsage)
@@ -342,7 +364,9 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
           </div>
         )}
 
-        {noMessages && !initialMessage && !limitReached && !quickActions && (
+        {noMessages && !initialMessage && !limitReached && emptyState}
+
+        {noMessages && !initialMessage && !limitReached && !quickActions && !emptyState && (
           <div className="space-y-3 py-4">
             <p className="text-center text-xs text-muted-foreground/50">
               Ask your AI coach anything about poker strategy
@@ -368,7 +392,7 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
         )}
 
         {messages.map((msg, i) => (
-          <MessageBubble key={i} msg={msg} />
+          <MessageBubble key={i} msg={msg} actions={msg.role === 'coach' ? renderMessageActions?.(msg) : undefined} />
         ))}
 
         {loading && <TypingIndicator />}
@@ -407,6 +431,7 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
           </div>
         ) : (
           <>
+            {aboveInput}
             <div className="flex gap-2 items-end">
               <textarea
                 ref={textareaRef}
@@ -414,7 +439,7 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
                 value={input}
                 onChange={e => handleInputChange(e.target.value)}
                 onKeyDown={onKey}
-                placeholder="Ask your coach anything..."
+                placeholder={placeholder ?? "Ask your coach anything..."}
                 disabled={loading}
                 className={cn(
                   'flex-1 resize-none rounded-xl px-3.5 py-2.5 text-sm text-foreground',

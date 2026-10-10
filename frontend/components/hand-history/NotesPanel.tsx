@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import { Check, Loader2, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { deleteNote, getNote, saveNote } from "@/lib/handHistory/api";
@@ -17,7 +17,15 @@ const AUTOSAVE_MS = 800;
  * typing stops, on blur, and when leaving the hand. Per-street notes and tags
  * already have columns; they would be extra panels using the same api calls.
  */
-export function NotesPanel({ handRef, userId, onHasNoteChange }: { handRef: string; userId: string; onHasNoteChange?: (has: boolean) => void }) {
+export interface NotesPanelHandle {
+  /** Appends text to the note (after what is on screen, typed or not) and saves at once. */
+  append: (text: string) => Promise<boolean>;
+}
+
+export const NotesPanel = forwardRef<NotesPanelHandle, { handRef: string; userId: string; onHasNoteChange?: (has: boolean) => void }>(function NotesPanel(
+  { handRef, userId, onHasNoteChange },
+  ref,
+) {
   const supabase = useMemo(() => createClient(), []);
   const [body, setBody] = useState("");
   const [status, setStatus] = useState<Status>("loading");
@@ -69,6 +77,23 @@ export function NotesPanel({ handRef, userId, onHasNoteChange }: { handRef: stri
       setStatus("error");
     }
   }, [supabase, userId, handRef, onHasNoteChange]);
+
+  // Mirror of what is on screen, for append() — state may not have flushed yet.
+  const bodyRef = useRef("");
+  bodyRef.current = body;
+  useImperativeHandle(ref, () => ({
+    append: async (text: string) => {
+      const current = bodyRef.current.trimEnd();
+      const next = current ? `${current}
+
+${text}` : text;
+      setBody(next);
+      bodyRef.current = next;
+      pending.current = next;
+      await flush();
+      return saved.current === next;
+    },
+  }));
 
   // Save whatever is pending when leaving this hand (next/previous hand, back to the list).
   useEffect(() => () => void flush(), [flush]);
@@ -145,7 +170,7 @@ export function NotesPanel({ handRef, userId, onHasNoteChange }: { handRef: stri
       </div>
     </section>
   );
-}
+});
 
 function StatusLabel({ status, savedAt }: { status: Status; savedAt: string | null }) {
   const base = "inline-flex items-center gap-1 text-xs";

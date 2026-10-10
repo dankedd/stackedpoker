@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -27,11 +27,12 @@ import type { Street } from "@/lib/handHistory/types";
 import { cn } from "@/lib/utils";
 import { checkPreflop } from "@/lib/handHistory/preflop";
 import { EquityPanel } from "./EquityPanel";
+import { HandCoachPanel } from "./HandCoachPanel";
 import { FavoriteStar } from "./FavoriteStar";
 import { MiniCards } from "./MiniCards";
 import { PreflopBadge } from "./PreflopBadge";
 import { PreflopCheckPanel } from "./PreflopCheckPanel";
-import { NotesPanel } from "./NotesPanel";
+import { NotesPanel, type NotesPanelHandle } from "./NotesPanel";
 import { ReplayTable } from "./ReplayTable";
 
 const STREET_COLOR: Record<Street, string> = {
@@ -48,6 +49,8 @@ export function HandReplayer({ id }: { id: string }) {
   const suffix = writeQueryState(query, false);
   const supabase = useMemo(() => createClient(), []);
   const { user } = useAuth();
+  const notesRef = useRef<NotesPanelHandle>(null);
+  const [sideTab, setSideTab] = useState<"notes" | "coach">("notes");
 
   const [row, setRow] = useState<HandDetailRow | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -240,11 +243,44 @@ export function HandReplayer({ id }: { id: string }) {
             {t.replayer.keys}
           </p>
           {preflop && <PreflopCheckPanel check={preflop} active={index === preflopStep} />}
-          <EquityPanel key={row.id} hand={hand} step={step} fmt={fmt} />
+          <EquityPanel key={row.id} hand={hand} step={step} fmt={fmt} handRef={row.id} />
         </div>
 
         <aside className="space-y-4">
-          {user && <NotesPanel key={row.id} handRef={row.id} userId={user.id} onHasNoteChange={onHasNoteChange} />}
+          {user && (
+            <>
+              {/* Phones: Notes and Coach share the space as tabs; from lg both are shown. */}
+              <div role="tablist" aria-label={t.coach.title} className="flex gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1 lg:hidden">
+                {(["notes", "coach"] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    role="tab"
+                    aria-selected={sideTab === tab}
+                    onClick={() => setSideTab(tab)}
+                    className={cn(
+                      "flex-1 rounded-lg px-3 py-1.5 text-[13px] font-semibold transition-colors",
+                      sideTab === tab ? "bg-violet-500/20 text-violet-100" : "text-slate-400 hover:text-white",
+                    )}
+                  >
+                    {tab === "notes" ? t.coach.tabNotes : t.coach.tabCoach}
+                  </button>
+                ))}
+              </div>
+              <div className={cn(sideTab === "notes" ? "block" : "hidden", "lg:block")}>
+                <NotesPanel ref={notesRef} key={row.id} handRef={row.id} userId={user.id} onHasNoteChange={onHasNoteChange} />
+              </div>
+              <div className={cn(sideTab === "coach" ? "block" : "hidden", "lg:block")}>
+                <HandCoachPanel
+                  key={row.id}
+                  handRef={row.id}
+                  stepIndex={index}
+                  className="h-[min(640px,75vh)]"
+                  onSaveToNotes={async (text) => (await notesRef.current?.append(text)) ?? false}
+                />
+              </div>
+            </>
+          )}
           <HandFacts row={row} derived={derived} unit={unit} hasNote={hasNote} />
         </aside>
       </div>

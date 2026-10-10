@@ -53,7 +53,7 @@ export function ReplayTable({ hand, step, fmt }: { hand: ParsedHand; step: Timel
           </div>
           <p className="rounded-full bg-black/35 px-3 py-0.5 font-mono text-xs font-bold text-emerald-50 sm:text-sm">
             {t.step.pot(fmt(step.pot))}
-            {totalBets > 0 && <span className="font-normal text-emerald-100/70"> · totaal {fmt(step.pot + totalBets)}</span>}
+            {totalBets > 0 && <span className="font-normal text-emerald-100/70">{t.step.total(fmt(step.pot + totalBets))}</span>}
           </p>
         </div>
       </div>

@@ -110,6 +110,14 @@ try:
 except Exception as e:
     print(f"[BOOT] Preflop trainer routes failed: {e}")
 
+# Hand review coach — own block for the same reason.
+try:
+    from app.api.routes import hand_coach
+    app.include_router(hand_coach.router, prefix="/api")
+    print("[BOOT] Hand coach routes registered OK")
+except Exception as e:
+    print(f"[BOOT] Hand coach routes failed: {e}")
+
 # ── Phase 2-8 routes (optional, non-fatal) ───────────────────────────────
 print("[BOOT] Importing Phase 2-8 routes...")
 try:

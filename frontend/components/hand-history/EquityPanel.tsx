@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, Info, Loader2, SlidersHorizontal } from "lucide-react";
 import { equityOnBoards } from "@/lib/equity/client";
 import type { RangeEquity, WeightedRange } from "@/lib/equity/rangeEquity";
+import { analysisVersion, buildAnalysis, saveAnalysis } from "@/lib/handHistory/analysis";
 import { fmtNum, fmtPct } from "@/lib/handHistory/format";
+import { createClient } from "@/lib/supabase/client";
 import { potOddsDecisions } from "@/lib/handHistory/potOdds";
 import { t } from "@/lib/handHistory/strings";
 import type { AmountFormatter, TimelineStep } from "@/lib/handHistory/timeline";
@@ -20,7 +22,20 @@ const pct = fmtPct;
  * at each decision where Hero faced a bet. Equity runs in a Web Worker
  * (lib/equity); the range comes from the Preflop Trainer (lib/handHistory/villain).
  */
-export function EquityPanel({ hand, step, fmt }: { hand: ParsedHand; step: TimelineStep; fmt: AmountFormatter }) {
+export function EquityPanel({
+  hand,
+  step,
+  fmt,
+  handRef,
+  storedVersion,
+}: {
+  hand: ParsedHand;
+  step: TimelineStep;
+  fmt: AmountFormatter;
+  /** When set, the default-range analysis is stored on the hand for the AI coach (lib/handHistory/analysis.ts). */
+  handRef?: string;
+  storedVersion?: string | null;
+}) {
   const villain = useMemo(() => findVillain(hand), [hand]);
   const initial = useMemo(() => (villain ? villainRange(hand, villain) : null), [hand, villain]);
   const [range, setRange] = useState<WeightedRange | null>(initial?.range ?? null);
@@ -60,6 +75,15 @@ export function EquityPanel({ hand, step, fmt }: { hand: ParsedHand; step: Timel
   }, [range, hand, streets]);
 
   const decisions = useMemo(() => potOddsDecisions(hand), [hand]);
+
+  // Store the default-range numbers once, so the coach quotes what is shown here.
+  const saved = useRef(false);
+  useEffect(() => {
+    if (!handRef || !initial || !results || saved.current) return;
+    if (range !== initial.range || storedVersion === analysisVersion()) return;
+    saved.current = true;
+    void saveAnalysis(createClient(), handRef, buildAnalysis(hand, initial, rangePct(initial.range), streets, results, decisions));
+  }, [handRef, storedVersion, initial, results, range, hand, streets, decisions]);
   if (!villain || !initial || !range || !hand.heroCards) return null;
 
   const eqOn = (s: Street) => results?.[streets.findIndex((x) => x.street === s)] ?? null;

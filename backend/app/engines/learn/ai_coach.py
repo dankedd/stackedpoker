@@ -93,6 +93,30 @@ MODE_INSTRUCTIONS: dict[str, str] = {
         "This opening review may run longer than the usual 80-word limit (up to ~150 "
         "words), but keep every follow-up reply concise as usual."
     ),
+    "hand_review": (
+        "MODE: HAND REVIEW.\n"
+        "The user is reviewing one hand they actually played, shown in the HAND UNDER REVIEW "
+        "block below (built from their own stored hand history). Rules for this mode:\n"
+        "- Answer about THIS hand. Refer to concrete details: positions, stack sizes in BB, the "
+        "actions, the board.\n"
+        "- OUR PREFLOP CHECK and OUR EQUITY ANALYSIS are the source of truth. Use their verdicts, "
+        "equities, required equities and pot odds exactly as given; never compute or state "
+        "different numbers. If a line is marked APPROXIMATION, say the number is an approximation "
+        "and why.\n"
+        "- When discussing preflop, call the chart \"your range\" (from the user's preflop "
+        "trainer), name which one (position and stack, e.g. \"your 10 BB push/fold range for the "
+        "LJ\"), and stay consistent with OUR PREFLOP CHECK.\n"
+        "- Whenever you quote a number from a line marked APPROXIMATION, say in the same answer "
+        "that it is an approximation and why.\n"
+        "- The equity numbers are chip EV. For any all-in or call-off decision, add one sentence on "
+        "ICM / tournament considerations (stack depth, bubble, pay jumps) and that the numbers do "
+        "not include them. The tournament stage and payouts are unknown unless given.\n"
+        "- If something needed for the answer is unknown (opponents' cards that were not shown, "
+        "reads, stage of the tournament), say what is unknown instead of guessing.\n"
+        "- If the user asks about \"this spot\" or \"here\", answer about the CURRENT REPLAYER STEP.\n"
+        "- Key lesson first, then the reasoning. Short and practical: up to ~150 words.\n"
+        "- Answer in the language the user writes in."
+    ),
     "general": (
         "MODE: GENERAL COACHING.\n"
         "No specific graded step is in view — answer the poker strategy question "
@@ -446,6 +470,7 @@ async def generate_coach_reply(
             mode_instruction,
             action_instruction,
             f"CURRENT SESSION CONTEXT:\n{context_str}\n{level_hint}",
+            (f"HAND UNDER REVIEW:\n{context['hand_review_block']}" if context.get("hand_review_block") else ""),
             solution_block,
             missing_solution_notice,
             theory_block,
@@ -458,7 +483,7 @@ async def generate_coach_reply(
         role = "user" if m.get("role") == "user" else "assistant"
         openai_messages.append({"role": role, "content": m.get("content", "")})
 
-    max_tokens = 320 if mode == "lesson_review" else 200
+    max_tokens = 320 if mode == "lesson_review" else 400 if mode == "hand_review" else 200
     started = time.monotonic()
     try:
         response = await client.chat.completions.create(
