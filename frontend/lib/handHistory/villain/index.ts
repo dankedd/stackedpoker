@@ -95,7 +95,8 @@ function stackOf(hand: ParsedHand, name: string): number {
 
 /** "allin" for an all-in or a raise of 90%+ of the stack (same rule as the preflop check). */
 function actionKey(hand: ParsedHand, a: Action): RangeActionKey {
-  if (a.action === "call") return a.allIn ? "allin" : "call";
+  // Calling all-in is still a call: the decision is call or fold, so it reads the call column.
+  if (a.action === "call") return "call";
   const stack = stackOf(hand, a.player) - hand.ante;
   if (a.allIn || (stack > 0 && (a.toAmount ?? a.amount) >= NEAR_ALL_IN * stack)) return "allin";
   return "raise";

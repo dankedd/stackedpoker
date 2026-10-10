@@ -239,8 +239,8 @@ export function HandReplayer({ id }: { id: string }) {
           <p className="mt-2 hidden text-center text-xs text-muted-foreground sm:block">
             {t.replayer.keys}
           </p>
-          <EquityPanel key={row.id} hand={hand} step={step} fmt={fmt} />
           {preflop && <PreflopCheckPanel check={preflop} active={index === preflopStep} />}
+          <EquityPanel key={row.id} hand={hand} step={step} fmt={fmt} />
         </div>
 
         <aside className="space-y-4">

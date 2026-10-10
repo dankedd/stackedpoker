@@ -44,6 +44,44 @@ describe("villain", () => {
   });
 });
 
+describe("villain's range", () => {
+  // SB shoves, a shorter BB calls all-in: still the BB's call range vs an SB shove.
+  const SB_SHOVE = (bbStack: string, bbCall: string) => `Poker Hand #TM1: Tournament #1, Test $1 Hold'em No Limit - Level10(500/1,000(125)) - 2026/10/08 19:00:00
+Table '1' 8-max Seat #1 is the button
+Seat 1: aaaaaaaa (30,000 in chips)
+Seat 2: Hero (14,600 in chips)
+Seat 3: 515c421f (${bbStack} in chips)
+Seat 4: bbbbbbbb (30,000 in chips)
+aaaaaaaa: posts the ante 125
+Hero: posts the ante 125
+515c421f: posts the ante 125
+bbbbbbbb: posts the ante 125
+Hero: posts small blind 500
+515c421f: posts big blind 1,000
+*** HOLE CARDS ***
+Dealt to Hero [Ah Jc]
+bbbbbbbb: folds
+aaaaaaaa: folds
+Hero: raises 13,475 to 14,475 and is all-in
+515c421f: ${bbCall}
+*** SHOWDOWN ***
+Hero collected 1 from pot
+*** SUMMARY ***
+Total pot 1 | Rake 0`;
+
+  it("BB calling an SB shove uses the trainer's BB-vs-SB-shove call range", () => {
+    const vr = villainRange(parse(SB_SHOVE("30,000", "calls 13,475")), "515c421f")!;
+    expect(vr.label).toBe("BB call vs SB-shove · 15 BB");
+    expect(vr.approximation).toBeNull();
+  });
+
+  it("also when the BB is shorter and calls all-in", () => {
+    const vr = villainRange(parse(SB_SHOVE("9,000", "calls 7,875 and is all-in")), "515c421f")!;
+    expect(vr.label).toMatch(/^BB call vs SB-shove · \d+ BB$/);
+    expect(vr.approximation).toBeNull();
+  });
+});
+
 describe("pot odds", () => {
   it("top hand: 24,188 to call into 40,488 → 37.4% needed (villain's extra 20,704 is not in play)", () => {
     const d = potOddsDecisions(parse(TOP_HAND));
