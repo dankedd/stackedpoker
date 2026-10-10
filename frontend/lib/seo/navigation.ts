@@ -1,4 +1,5 @@
 import { PREFLOP_RANGES_ENABLED, PREFLOP_TRAINER_PATH } from "@/lib/ranges/feature";
+import { HAND_HISTORY_ENABLED, HANDS_PATH } from "@/lib/handHistory/feature";
 import { ROUTES } from "./routes";
 
 /**
@@ -26,7 +27,13 @@ export interface NavLink {
  * footer ("Poker wiki" under Reference), the sitemap and every breadcrumb,
  * which keeps it one hop from every page for crawlers.
  */
-export function primaryNav({ preflopTrainer }: { preflopTrainer: boolean }): NavLink[] {
+export function primaryNav({
+  preflopTrainer,
+  handHistory = false,
+}: {
+  preflopTrainer: boolean;
+  handHistory?: boolean;
+}): NavLink[] {
   return [
     { label: "Learn", href: "/learn", primary: true },
     // Playable training built on the same sourced theory as Learn. In the primary
@@ -34,13 +41,18 @@ export function primaryNav({ preflopTrainer }: { preflopTrainer: boolean }): Nav
     { label: "Puzzles", href: ROUTES.puzzles },
     // Behind NEXT_PUBLIC_FEATURE_PREFLOP_RANGES (lib/ranges/feature.ts).
     ...(preflopTrainer ? [{ label: "Preflop Trainer", href: PREFLOP_TRAINER_PATH }] : []),
+    // Behind NEXT_PUBLIC_FEATURE_HAND_HISTORY (lib/handHistory/feature.ts).
+    ...(handHistory ? [{ label: "Handen", href: HANDS_PATH }] : []),
     { label: "Bankroll", href: "/bankroll" },
     { label: "Leaderboard", href: "/leaderboard" },
   ];
 }
 
 /** Header navigation (components/layout/Navbar.tsx) — desktop and mobile menu. */
-export const PRIMARY_NAV: NavLink[] = primaryNav({ preflopTrainer: PREFLOP_RANGES_ENABLED });
+export const PRIMARY_NAV: NavLink[] = primaryNav({
+  preflopTrainer: PREFLOP_RANGES_ENABLED,
+  handHistory: HAND_HISTORY_ENABLED,
+});
 
 export interface NavGroup {
   group: string;

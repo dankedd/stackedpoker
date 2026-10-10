@@ -56,6 +56,7 @@ export const PRIVATE_PATH_PREFIXES = [
   "/progress",
   "/history",
   "/bankroll",
+  "/hands",
   "/coach",
   "/coaching",
   "/community",

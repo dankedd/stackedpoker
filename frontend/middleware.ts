@@ -14,7 +14,7 @@ import { isPublicSeoPath } from '@/lib/seo/routes'
 // robots.txt can never advertise a URL this file redirects.
 const PROTECTED_PATHS = [
   '/dashboard', '/history', '/settings', '/onboarding',
-  '/learn', '/bankroll', '/coach', '/coaching', '/community', '/challenges', '/solver',
+  '/learn', '/bankroll', '/hands', '/coach', '/coaching', '/community', '/challenges', '/solver',
 ]
 const AUTH_PATHS = ['/login', '/signup']
 

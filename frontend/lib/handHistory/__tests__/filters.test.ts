@@ -1,0 +1,69 @@
+import { describe, expect, it } from "vitest";
+import {
+  DEFAULT_MIN_POT_BB,
+  DEFAULT_STATE,
+  applyFilters,
+  keysetAfter,
+  readQueryState,
+  reverseOrder,
+  sortColumns,
+  writeQueryState,
+  type FilterableQuery,
+} from "../filters";
+
+class FakeQuery implements FilterableQuery {
+  calls: string[] = [];
+  gte(c: string, v: unknown) {
+    this.calls.push(`gte ${c} ${v}`);
+    return this;
+  }
+  eq(c: string, v: unknown) {
+    this.calls.push(`eq ${c} ${v}`);
+    return this;
+  }
+}
+
+describe("hand filters", () => {
+  it("defaults to pots of at least 20 BB, biggest first", () => {
+    const s = readQueryState(new URLSearchParams());
+    expect(s).toEqual(DEFAULT_STATE);
+    expect(DEFAULT_MIN_POT_BB).toBe(20);
+    expect(applyFilters(new FakeQuery(), s.filters).calls).toEqual(["gte pot_bb 20"]);
+  });
+
+  it("round-trips through the query string and keeps defaults out of it", () => {
+    expect(writeQueryState(DEFAULT_STATE)).toBe("");
+    const s = readQueryState(new URLSearchParams("minPot=35&t=316999261&notes=1&sort=result&dir=asc&page=3"));
+    expect(s.filters).toEqual({ minPotBb: 35, tournamentId: "316999261", withNotes: true });
+    expect(readQueryState(new URLSearchParams(writeQueryState(s).slice(1)))).toEqual(s);
+    expect(writeQueryState(s, false)).not.toContain("page");
+    expect(applyFilters(new FakeQuery(), s.filters).calls).toEqual([
+      "gte pot_bb 35",
+      "eq tournament_id 316999261",
+      "eq has_note true",
+    ]);
+  });
+
+  it("rejects junk in the URL", () => {
+    const s = readQueryState(new URLSearchParams("minPot=-4&t=x'),or(&sort=evil&page=0"));
+    expect(s).toEqual(DEFAULT_STATE);
+  });
+
+  it("minimum pot 0 means no pot filter", () => {
+    expect(applyFilters(new FakeQuery(), { ...DEFAULT_STATE.filters, minPotBb: 0 }).calls).toEqual([]);
+  });
+
+  it("orders with stable tie-breakers matching the indexes", () => {
+    expect(sortColumns("pot", "desc").map((c) => `${c.column}:${c.ascending}`)).toEqual(["pot_bb:false", "played_at:false", "id:false"]);
+    expect(sortColumns("date", "asc").map((c) => c.column)).toEqual(["played_at", "id"]);
+  });
+
+  it("builds keyset filters for the next and previous hand", () => {
+    const cols = sortColumns("pot", "desc");
+    const row = { pot_bb: 21.56, played_at: "2026-10-08T21:40:24", id: "abc" };
+    expect(keysetAfter(cols, row)).toBe(
+      'pot_bb.lt."21.56",and(pot_bb.eq."21.56",played_at.lt."2026-10-08T21:40:24"),and(pot_bb.eq."21.56",played_at.eq."2026-10-08T21:40:24",id.lt."abc")',
+    );
+    expect(keysetAfter(reverseOrder(cols), row)).toMatch(/^pot_bb\.gt\."21\.56"/);
+  });
+});
