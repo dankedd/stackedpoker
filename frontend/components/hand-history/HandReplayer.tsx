@@ -23,7 +23,10 @@ import type { HandDetailRow } from "@/lib/handHistory/rows";
 import { buildTimeline, describeStep, nextStreetIndex, prevStreetIndex } from "@/lib/handHistory/timeline";
 import type { Street } from "@/lib/handHistory/types";
 import { cn } from "@/lib/utils";
+import { checkPreflop } from "@/lib/handHistory/preflop";
 import { MiniCards } from "./MiniCards";
+import { PreflopBadge } from "./PreflopBadge";
+import { PreflopCheckPanel } from "./PreflopCheckPanel";
 import { NotesPanel } from "./NotesPanel";
 import { ReplayTable } from "./ReplayTable";
 
@@ -96,6 +99,13 @@ export function HandReplayer({ id }: { id: string }) {
   const hand = row?.data ?? null;
   const steps = useMemo(() => (hand ? buildTimeline(hand) : []), [hand]);
   const derived = useMemo(() => (hand ? deriveHand(hand) : null), [hand]);
+  // Computed live from the trainer's current ranges (the stored copy is for filtering).
+  const preflop = useMemo(() => (hand ? checkPreflop(hand) : null), [hand]);
+  // The step where Hero makes the decision the check is about.
+  const preflopStep = useMemo(
+    () => steps.findIndex((s) => s.kind === "action" && s.street === "preflop" && s.player === hand?.heroName),
+    [steps, hand],
+  );
   const last = Math.max(0, steps.length - 1);
   const step = steps[Math.min(index, last)];
   const fmt = useMemo(() => amountFormatter(unit, hand?.bigBlind ?? 1), [unit, hand]);
@@ -173,6 +183,7 @@ export function HandReplayer({ id }: { id: string }) {
               {STREET_NL[step.street]}
             </span>
             <span className="text-sm font-medium">{describeStep(step, fmt)}</span>
+            {preflop && index === preflopStep && <PreflopBadge verdict={preflop.verdict} showAll />}
             <span className="ml-auto shrink-0 font-mono text-xs text-muted-foreground">
               {index}/{last}
             </span>
@@ -199,6 +210,7 @@ export function HandReplayer({ id }: { id: string }) {
           <p className="mt-2 hidden text-center text-xs text-muted-foreground sm:block">
             Toetsen: ← → actie · ↑ ↓ straat · Home/End begin/einde
           </p>
+          {preflop && <PreflopCheckPanel check={preflop} active={index === preflopStep} />}
         </div>
 
         <aside className="space-y-4">

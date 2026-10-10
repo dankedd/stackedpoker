@@ -229,8 +229,8 @@ export function dbErrorMessage(err: { code?: string; message?: string } | null |
   if (err.code === "42P01" || err.code === "PGRST205" || err.code === "PGRST200") {
     return "De database is nog niet ingericht voor handgeschiedenis (supabase_hand_history.sql is niet uitgevoerd).";
   }
-  if (err.code === "42703" || err.code === "PGRST204") {
-    return "De database mist een update voor handgeschiedenis (voer supabase_hand_history_involved.sql uit).";
+  if (err.code === "42703" || err.code === "PGRST204" || err.code === "PGRST202" || err.code === "42883") {
+    return "De database mist een update voor handgeschiedenis (voer supabase_hand_history_involved.sql en supabase_hand_history_preflop.sql uit).";
   }
   if (err.code === "42501") return "Geen toestemming. Log opnieuw in en probeer het nog eens.";
   if (/fetch|network|Failed to fetch/i.test(err.message ?? "")) return "Geen verbinding met de server. Controleer je internet en probeer het opnieuw.";

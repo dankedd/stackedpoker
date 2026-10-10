@@ -5,7 +5,15 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Loader2, NotebookPen, Upload } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { countAllHands, listHands, listTournaments, type TournamentRow } from "@/lib/handHistory/api";
+import {
+  countAllHands,
+  listHands,
+  listTournaments,
+  preflopSummary,
+  refreshPreflopChecks,
+  type PreflopSummaryRow,
+  type TournamentRow,
+} from "@/lib/handHistory/api";
 import {
   PAGE_SIZE,
   SORT_LABELS,
@@ -17,9 +25,12 @@ import {
 } from "@/lib/handHistory/filters";
 import { HANDS_IMPORT_PATH, HANDS_PATH } from "@/lib/handHistory/feature";
 import { fmtBb, fmtPlayedAt, fmtSignedBb } from "@/lib/handHistory/format";
+import { PREFLOP_VERDICTS, VERDICT_LABEL, type PreflopVerdict } from "@/lib/handHistory/preflop";
 import type { HandListRow } from "@/lib/handHistory/rows";
 import { cn } from "@/lib/utils";
 import { MiniCards } from "./MiniCards";
+import { PreflopBadge, VERDICT_STYLE } from "./PreflopBadge";
+import { PreflopSummary } from "./PreflopSummary";
 import { PageHeader, SectionNav } from "./SectionNav";
 
 const POT_SLIDER_MAX = 200;
@@ -37,6 +48,10 @@ export function HandsOverview() {
   const [tournaments, setTournaments] = useState<TournamentRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState<PreflopSummaryRow[]>([]);
+  const [rechecking, setRechecking] = useState<number | null>(null);
+  // Bumped after a preflop re-check so the list reloads with the new labels.
+  const [reloadKey, setReloadKey] = useState(0);
 
   const update = useCallback(
     (patch: Partial<Omit<HandQueryState, "filters">> & { filters?: Partial<HandFilters> }) => {
@@ -57,6 +72,28 @@ export function HandsOverview() {
     countAllHands(supabase).then(setTotal).catch((e: Error) => setError(e.message));
   }, [supabase]);
 
+  // Bring every hand's preflop check up to date with the trainer's current ranges.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const changed = await refreshPreflopChecks(supabase, (n) => !cancelled && setRechecking(n));
+        if (cancelled) return;
+        setRechecking(null);
+        if (changed) setReloadKey((k) => k + 1);
+        setSummary(await preflopSummary(supabase));
+      } catch (e) {
+        if (!cancelled) {
+          setRechecking(null);
+          setError(e instanceof Error ? e.message : "Preflop-controle bijwerken mislukt.");
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase]);
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -72,7 +109,7 @@ export function HandsOverview() {
     return () => {
       cancelled = true;
     };
-  }, [supabase, state]);
+  }, [supabase, state, reloadKey]);
 
   const pages = Math.max(1, Math.ceil(count / PAGE_SIZE));
   const linkSuffix = writeQueryState(state, false);
@@ -98,6 +135,13 @@ export function HandsOverview() {
         </Link>
       </PageHeader>
 
+      {rechecking != null && (
+        <p className="mb-3 inline-flex items-center gap-2 text-xs text-muted-foreground" aria-live="polite">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Preflop-controle bijwerken… {rechecking} handen
+        </p>
+      )}
+      <PreflopSummary rows={summary} onPick={(preflop) => update({ filters: { preflop } })} />
+
       <FiltersBar state={state} tournaments={tournaments} onChange={update} />
 
       {error && (
@@ -121,8 +165,9 @@ export function HandsOverview() {
             </div>
           ) : rows.length === 0 ? (
             <p className="rounded-xl border border-border/60 bg-card/40 px-4 py-10 text-center text-sm text-muted-foreground">
-              Geen handen gevonden met deze filters. Verlaag de minimale potgrootte, kies een ander toernooi of zet
-              &lsquo;Alleen handen waarin ik speel&rsquo; uit.
+              {state.filters.preflop.length
+                ? "Geen handen met dit preflop-label."
+                : "Geen handen gevonden met deze filters. Verlaag de minimale potgrootte, kies een ander toernooi of zet ‘Alleen handen waarin ik speel’ uit."}
             </p>
           ) : (
             <HandList rows={rows} linkSuffix={linkSuffix} />
@@ -177,9 +222,47 @@ function FiltersBar({
     return () => clearTimeout(t);
   }, [minPot, state.filters.minPotBb, onChange]);
 
+  const pf = state.filters.preflop;
+  const pfActive = pf.length > 0;
+  const togglePf = (v: PreflopVerdict) =>
+    onChange({ filters: { preflop: pf.includes(v) ? pf.filter((x) => x !== v) : PREFLOP_VERDICTS.filter((x) => x === v || pf.includes(x)) } });
+
   return (
     <div className="grid gap-4 rounded-2xl border border-border/60 bg-card/40 p-4 md:grid-cols-2 md:items-end xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto]">
-      <div>
+      <div className="md:col-span-2 xl:col-span-3">
+        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Preflop-fouten</p>
+        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter op preflop-controle">
+          {PREFLOP_VERDICTS.map((v) => {
+            const on = pf.includes(v);
+            return (
+              <button
+                key={v}
+                type="button"
+                aria-pressed={on}
+                onClick={() => togglePf(v)}
+                className={cn(
+                  "rounded-full border px-2.5 py-1 text-xs font-semibold transition",
+                  on ? VERDICT_STYLE[v] : "border-border/60 text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {VERDICT_LABEL[v]}
+              </button>
+            );
+          })}
+          {pfActive && (
+            <button type="button" onClick={() => onChange({ filters: { preflop: [] } })} className="px-2 text-xs text-muted-foreground underline hover:text-foreground">
+              Wissen
+            </button>
+          )}
+        </div>
+        {pfActive && (
+          <p className="mt-1.5 text-[11px] text-muted-foreground">
+            Dit filter gaat vóór &lsquo;Alleen handen waarin ik speel&rsquo; en de minimale pot, zodat ook gefolde handen zichtbaar zijn.
+          </p>
+        )}
+      </div>
+
+      <div className={cn(pfActive && "pointer-events-none opacity-40")} aria-disabled={pfActive || undefined}>
         <label htmlFor="minPot" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Minimale pot
         </label>
@@ -233,9 +316,10 @@ function FiltersBar({
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 md:col-span-2 xl:col-span-1">
-        <label className="inline-flex cursor-pointer items-center gap-2 text-sm">
+        <label className={cn("inline-flex cursor-pointer items-center gap-2 text-sm", pfActive && "opacity-40")}>
           <input
             type="checkbox"
+            disabled={pfActive}
             checked={state.filters.heroInvolved}
             onChange={(e) => onChange({ filters: { heroInvolved: e.target.checked } })}
             className="h-4 w-4 accent-violet-500"
@@ -328,7 +412,10 @@ function HandList({ rows, linkSuffix }: { rows: HandListRow[]; linkSuffix: strin
                   <p className="truncate">{r.hh_tournaments?.name ?? `#${r.tournament_id}`}</p>
                   <p className="text-xs text-muted-foreground">Level {r.level ?? "?"}</p>
                 </td>
-                <td className="px-4 py-2.5 font-semibold text-violet-300">{r.hero_position ?? "—"}</td>
+                <td className="px-4 py-2.5">
+                  <span className="font-semibold text-violet-300">{r.hero_position ?? "—"}</span>
+                  <PreflopBadge verdict={r.preflop_check} className="ml-1.5" />
+                </td>
                 <td className="px-4 py-2.5">
                   <MiniCards cards={r.hero_cards} />
                 </td>
@@ -372,6 +459,7 @@ function HandList({ rows, linkSuffix }: { rows: HandListRow[]; linkSuffix: strin
                 <span className="w-9 text-xs font-semibold text-violet-300">{r.hero_position ?? "—"}</span>
                 <MiniCards cards={r.hero_cards} />
                 <MiniCards cards={r.board} className="ml-1" />
+                <PreflopBadge verdict={r.preflop_check} />
                 {r.has_note && <NotebookPen aria-label="Heeft notitie" className="ml-auto h-4 w-4 text-amber-300" />}
               </div>
             </Link>

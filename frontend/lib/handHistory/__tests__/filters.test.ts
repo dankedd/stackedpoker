@@ -21,6 +21,10 @@ class FakeQuery implements FilterableQuery {
     this.calls.push(`eq ${c} ${v}`);
     return this;
   }
+  in(c: string, v: readonly unknown[]) {
+    this.calls.push(`in ${c} ${v.join("|")}`);
+    return this;
+  }
 }
 
 describe("hand filters", () => {
@@ -34,7 +38,7 @@ describe("hand filters", () => {
   it("round-trips through the query string and keeps defaults out of it", () => {
     expect(writeQueryState(DEFAULT_STATE)).toBe("");
     const s = readQueryState(new URLSearchParams("alle=1&minPot=35&t=316999261&notes=1&sort=invested&dir=asc&page=3"));
-    expect(s.filters).toEqual({ heroInvolved: false, minPotBb: 35, tournamentId: "316999261", withNotes: true });
+    expect(s.filters).toEqual({ preflop: [], heroInvolved: false, minPotBb: 35, tournamentId: "316999261", withNotes: true });
     expect(s.sort).toBe("invested");
     expect(readQueryState(new URLSearchParams(writeQueryState(s).slice(1)))).toEqual(s);
     expect(writeQueryState(s, false)).not.toContain("page");
@@ -43,6 +47,17 @@ describe("hand filters", () => {
       "eq tournament_id 316999261",
       "eq has_note true",
     ]);
+  });
+
+  it("the preflop filter goes before 'involved' and the minimum pot", () => {
+    const s = readQueryState(new URLSearchParams("pf=te_strak,bogus,te_los&t=316999261"));
+    expect(s.filters.preflop).toEqual(["te_los", "te_strak"]);
+    expect(applyFilters(new FakeQuery(), s.filters).calls).toEqual([
+      "in preflop_check te_los|te_strak",
+      "eq tournament_id 316999261",
+    ]);
+    expect(writeQueryState(s)).toBe("?pf=te_los%2Cte_strak&t=316999261");
+    expect(readQueryState(new URLSearchParams(writeQueryState(s).slice(1))).filters.preflop).toEqual(["te_los", "te_strak"]);
   });
 
   it("rejects junk in the URL", () => {

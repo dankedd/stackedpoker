@@ -4,6 +4,7 @@
  */
 
 import { deriveHand } from "./derive";
+import { PREFLOP_CHECK_VERSION, checkPreflop, type PreflopDetail, type PreflopVerdict } from "./preflop";
 import type { HandParser } from "./parsers";
 import type { ParsedHand } from "./types";
 
@@ -35,6 +36,10 @@ export interface HandInsertRow {
   hero_all_in: boolean;
   hero_involved: boolean;
   hero_invested_bb: number;
+  preflop_check: PreflopVerdict | null;
+  preflop_position: string | null;
+  preflop_detail: PreflopDetail | null;
+  preflop_version: string;
   data: ParsedHand;
   raw_text: string;
   parser: string;
@@ -79,6 +84,7 @@ export function toInsertRow(
     hero_all_in: d.heroAllIn,
     hero_involved: d.heroInvolved,
     hero_invested_bb: d.heroInvestedBb,
+    ...preflopColumns(hand),
     data: hand,
     raw_text: rawText,
     parser: ctx.parser.id,
@@ -86,9 +92,20 @@ export function toInsertRow(
   };
 }
 
+/** The preflop-check columns for a hand (also used to re-check stored hands). */
+export function preflopColumns(hand: ParsedHand) {
+  const c = checkPreflop(hand);
+  return {
+    preflop_check: c?.verdict ?? null,
+    preflop_position: c ? (c.detail.range?.position ?? c.detail.spot.tablePosition) : null,
+    preflop_detail: c?.detail ?? null,
+    preflop_version: PREFLOP_CHECK_VERSION,
+  };
+}
+
 /** Columns the overview list needs — never `data` or `raw_text`. */
 export const LIST_COLUMNS =
-  "id, hand_id, tournament_id, played_at, level, big_blind, hero_position, hero_cards, board, pot_bb, hero_net_bb, hero_invested_bb, hero_involved, hero_won, hero_all_in, went_to_showdown, has_note, hh_tournaments(name)";
+  "id, hand_id, tournament_id, played_at, level, big_blind, hero_position, hero_cards, board, pot_bb, hero_net_bb, hero_invested_bb, hero_involved, preflop_check, preflop_position, hero_won, hero_all_in, went_to_showdown, has_note, hh_tournaments(name)";
 
 export interface HandListRow {
   id: string;
@@ -104,6 +121,8 @@ export interface HandListRow {
   hero_net_bb: number;
   hero_invested_bb: number;
   hero_involved: boolean;
+  preflop_check: PreflopVerdict | null;
+  preflop_position: string | null;
   hero_won: boolean;
   hero_all_in: boolean;
   went_to_showdown: boolean;

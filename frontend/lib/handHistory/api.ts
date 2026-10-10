@@ -5,7 +5,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { PAGE_SIZE, applyFilters, keysetAfter, reverseOrder, sortColumns, type HandQueryState } from "./filters";
 import { dbErrorMessage } from "./importer";
-import { LIST_COLUMNS, type HandDetailRow, type HandListRow } from "./rows";
+import { parserFor } from "./parsers";
+import { PREFLOP_CHECK_VERSION, type PreflopVerdict } from "./preflop";
+import { LIST_COLUMNS, preflopColumns, type HandDetailRow, type HandListRow } from "./rows";
 
 export interface TournamentRow {
   site: string;
@@ -30,6 +32,7 @@ export interface HandNote {
 interface HandQuery extends PromiseLike<{ data: unknown[] | null; error: { code?: string; message?: string } | null; count: number | null }> {
   gte(column: string, value: unknown): HandQuery;
   eq(column: string, value: unknown): HandQuery;
+  in(column: string, values: readonly unknown[]): HandQuery;
   or(filter: string): HandQuery;
   order(column: string, opts: { ascending: boolean }): HandQuery;
   range(from: number, to: number): HandQuery;
@@ -127,4 +130,57 @@ export async function saveNote(supabase: SupabaseClient, userId: string, handRef
 export async function deleteNote(supabase: SupabaseClient, handRef: string): Promise<void> {
   const { error } = await supabase.from("hh_hand_notes").delete().eq("hand_ref", handRef).eq("street", "hand");
   if (error) throw new Error(dbErrorMessage(error));
+}
+
+// ── Preflop check ───────────────────────────────────────────────────────────
+
+const RECHECK_BATCH = 100;
+
+/**
+ * Re-checks every hand whose stored preflop_version differs from the app's —
+ * hands imported before the check existed, and all hands after the trainer's
+ * ranges change. Re-parses the stored raw text, so a parser fix is picked up
+ * too. Returns the number of hands updated.
+ */
+export async function refreshPreflopChecks(
+  supabase: SupabaseClient,
+  onProgress?: (done: number) => void,
+): Promise<number> {
+  let done = 0;
+  for (;;) {
+    const { data, error } = await supabase
+      .from("hh_hands")
+      .select("id, raw_text")
+      .or(`preflop_version.is.null,preflop_version.neq.${PREFLOP_CHECK_VERSION}`)
+      .limit(RECHECK_BATCH);
+    if (error) throw new Error(dbErrorMessage(error));
+    const rows = (data ?? []) as { id: string; raw_text: string }[];
+    if (!rows.length) return done;
+
+    const updates = rows.map((r) => {
+      const parser = parserFor(r.raw_text);
+      const parsed = parser?.parseHand(r.raw_text);
+      // A hand that no longer parses still gets the version, or it would be retried forever.
+      const cols = parsed?.ok
+        ? preflopColumns(parsed.hand)
+        : { preflop_check: null, preflop_position: null, preflop_detail: null, preflop_version: PREFLOP_CHECK_VERSION };
+      return { id: r.id, ...cols };
+    });
+    const { error: rpcError } = await supabase.rpc("hh_set_preflop_checks", { p_rows: updates });
+    if (rpcError) throw new Error(dbErrorMessage(rpcError));
+    done += rows.length;
+    onProgress?.(done);
+  }
+}
+
+export interface PreflopSummaryRow {
+  preflop_check: PreflopVerdict;
+  preflop_position: string | null;
+  n: number;
+}
+
+export async function preflopSummary(supabase: SupabaseClient): Promise<PreflopSummaryRow[]> {
+  const { data, error } = await supabase.rpc("hh_preflop_summary");
+  if (error) throw new Error(dbErrorMessage(error));
+  return ((data ?? []) as PreflopSummaryRow[]).map((r) => ({ ...r, n: Number(r.n) }));
 }

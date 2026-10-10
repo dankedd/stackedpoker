@@ -7,10 +7,17 @@
  * the list, the counts and replayer prev/next all pick it up automatically.
  */
 
+import { PREFLOP_VERDICTS, type PreflopVerdict } from "./preflop/types";
+
 export const DEFAULT_MIN_POT_BB = 20;
 export const PAGE_SIZE = 50;
 
 export interface HandFilters {
+  /**
+   * Preflop-check verdicts to show (preflop/). When set it goes before the
+   * involved and minimum-pot filters, so folded hands ("te strak") show up.
+   */
+  preflop: PreflopVerdict[];
   /** Only hands where Hero called, bet, raised or showed down (derive.ts). */
   heroInvolved: boolean;
   minPotBb: number;
@@ -29,7 +36,7 @@ export interface HandQueryState {
 }
 
 export const DEFAULT_STATE: HandQueryState = {
-  filters: { heroInvolved: true, minPotBb: DEFAULT_MIN_POT_BB, tournamentId: null, withNotes: false },
+  filters: { preflop: [], heroInvolved: true, minPotBb: DEFAULT_MIN_POT_BB, tournamentId: null, withNotes: false },
   sort: "pot",
   dir: "desc",
   page: 1,
@@ -42,6 +49,7 @@ export const DEFAULT_STATE: HandQueryState = {
 export interface FilterableQuery {
   gte(column: string, value: unknown): this;
   eq(column: string, value: unknown): this;
+  in(column: string, values: readonly unknown[]): this;
 }
 
 interface FilterDef<K extends keyof HandFilters> {
@@ -50,7 +58,12 @@ interface FilterDef<K extends keyof HandFilters> {
   read(raw: string | null): HandFilters[K];
   write(value: HandFilters[K]): string | null;
   apply<Q extends FilterableQuery>(q: Q, value: HandFilters[K]): Q;
+  /** This filter steps aside while another one is active. */
+  skipWhen?: (filters: HandFilters) => boolean;
 }
+
+/** The preflop-check filter overrides "only involved" and the minimum pot. */
+const preflopActive = (f: HandFilters) => f.preflop.length > 0;
 
 function def<K extends keyof HandFilters>(d: FilterDef<K>): FilterDef<K> {
   return d;
@@ -58,12 +71,23 @@ function def<K extends keyof HandFilters>(d: FilterDef<K>): FilterDef<K> {
 
 export const FILTERS = [
   def({
+    key: "preflop",
+    param: "pf",
+    read: (raw) => {
+      const wanted = new Set((raw ?? "").split(","));
+      return PREFLOP_VERDICTS.filter((v) => wanted.has(v));
+    },
+    write: (v) => (v.length ? v.join(",") : null),
+    apply: (q, v) => (v.length ? q.in("preflop_check", v) : q),
+  }),
+  def({
     key: "heroInvolved",
     param: "alle",
     // On by default; `?alle=1` shows every hand, including ante-and-fold ones.
     read: (raw) => raw !== "1",
     write: (v) => (v ? null : "1"),
     apply: (q, v) => (v ? q.eq("hero_involved", true) : q),
+    skipWhen: preflopActive,
   }),
   def({
     key: "minPotBb",
@@ -74,6 +98,7 @@ export const FILTERS = [
     },
     write: (v) => (v === DEFAULT_MIN_POT_BB ? null : String(v)),
     apply: (q, v) => (v > 0 ? q.gte("pot_bb", v) : q),
+    skipWhen: preflopActive,
   }),
   def({
     key: "tournamentId",
@@ -93,7 +118,10 @@ export const FILTERS = [
 
 export function applyFilters<Q extends FilterableQuery>(q: Q, filters: HandFilters): Q {
   let out = q;
-  for (const f of FILTERS) out = (f.apply as (q: Q, v: unknown) => Q)(out, filters[f.key]);
+  for (const f of FILTERS) {
+    if (f.skipWhen?.(filters)) continue;
+    out = (f.apply as (q: Q, v: unknown) => Q)(out, filters[f.key]);
+  }
   return out;
 }
 
