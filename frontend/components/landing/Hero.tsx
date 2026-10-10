@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import { getJourneyOverview } from "@/lib/learn/journey";
+import { LEARN_CTA, SECONDARY_CTA, isFeaturePublic } from "@/lib/features";
 // Metadata only — never '@/lib/learn/curriculum', whose Lesson objects embed
 // full interactive step content. See scripts/generateCurriculumPublic.ts.
 import { PUBLIC_LESSONS as LESSONS } from "@/lib/learn/curriculumPublic.generated";
@@ -181,17 +182,17 @@ export function Hero() {
           <FadeInUp delayMs={360} critical>
             <div className="mt-9 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
-                href="/learn"
+                href={LEARN_CTA.href}
                 className="group inline-flex items-center gap-2.5 px-7 py-3.5 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-[15px] font-semibold shadow-lg shadow-violet-500/35 hover:shadow-violet-500/55 hover:-translate-y-0.5 active:translate-y-px active:scale-[0.97] transition-all duration-200 btn-poker-hover will-change-transform"
               >
-                Start learning
+                {LEARN_CTA.label}
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
               </Link>
               <Link
-                href="#curriculum"
+                href={isFeaturePublic("learn") ? "#curriculum" : SECONDARY_CTA.href}
                 className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl border border-border/60 bg-card/40 text-[15px] font-medium text-muted-foreground hover:text-foreground hover:bg-card/80 hover:border-border/80 hover:-translate-y-0.5 active:translate-y-px active:scale-[0.97] transition-all duration-200 will-change-transform"
               >
-                Explore the curriculum
+                {isFeaturePublic("learn") ? "Explore the curriculum" : SECONDARY_CTA.label}
               </Link>
             </div>
           </FadeInUp>

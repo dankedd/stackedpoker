@@ -18,6 +18,7 @@ import { PersonalizedActionsWidget } from "@/components/dashboard/PersonalizedAc
 import { MODULES_BY_SLUG } from "@/lib/learn/curriculumPublic.generated";
 import { isPaidTier, canAccessElite, getSubscription } from "@/lib/entitlements";
 import { cn } from "@/lib/utils";
+import { LEARN_CTA, SECONDARY_CTA, canUseFeature } from "@/lib/features";
 
 // Client component just for the upgrade CTA (needs onClick)
 import { UpgradeCTA } from "./upgrade-cta";
@@ -53,6 +54,8 @@ export default async function DashboardPage() {
   const displayName = profile?.username ?? user.email?.split("@")[0] ?? "Player";
   const handsAnalyzed = profile?.hands_analyzed_count ?? 0;
   const tier = profile?.subscription_tier ?? "free";
+  // Learn is dev-only for now (lib/features.ts): everyone else gets the trainer and hand history.
+  const learnOn = canUseFeature("learn", tier);
   const subStatus = profile?.subscription_status ?? null;
   const hasStripeCustomer = !!profile?.stripe_customer_id;
   const limit = profile?.analyses_limit ?? 3;
@@ -89,12 +92,12 @@ export default async function DashboardPage() {
               </p>
             </div>
             <Link
-              href="/learn"
+              href={learnOn ? "/learn" : LEARN_CTA.href}
               className="group relative overflow-hidden shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-sm font-semibold shadow-lg shadow-violet-500/25 hover:shadow-violet-500/45 hover:-translate-y-0.5 transition-all duration-200"
             >
               <div aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
               <BookOpen className="h-4 w-4" />
-              Continue Learning
+              {learnOn ? "Continue Learning" : LEARN_CTA.label}
             </Link>
           </div>
         </div>
@@ -165,6 +168,25 @@ export default async function DashboardPage() {
           </div>
         )}
 
+        {!learnOn && (
+          <div className="mb-10 grid gap-3 sm:grid-cols-2">
+            {[
+              { ...LEARN_CTA, text: "Drill opens, defenses and push/fold against the trainer's ranges." },
+              { ...SECONDARY_CTA, text: "Replay your tournament hands, check your preflop and see your equity." },
+            ].map((c) => (
+              <Link
+                key={c.href}
+                href={c.href}
+                className="group rounded-2xl border border-violet-500/25 bg-violet-500/[0.06] p-5 transition-colors hover:border-violet-500/50"
+              >
+                <p className="font-semibold text-foreground">{c.label}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{c.text}</p>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {learnOn && (<>
         {/* Continue Learning — primary CTA */}
         <div className="mb-6">
           <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-3">
@@ -195,6 +217,7 @@ export default async function DashboardPage() {
         <div className="mb-10">
           <LearningPathSummary />
         </div>
+        </>)}
 
         {/* Next for Stacked — muted, clearly secondary */}
         <div className="mb-10">

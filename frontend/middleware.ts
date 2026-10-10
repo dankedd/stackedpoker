@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { canAccessPremium, canAccessElite } from '@/lib/entitlements'
 import { isPublicSeoPath } from '@/lib/seo/routes'
+import { canUseFeature, gatedFeatureForPath } from '@/lib/features'
 
 // Guest -> /login. Per the membership-system plan, this is now every /learn
 // route too (no more anonymous trial) — see that plan for why.
@@ -73,6 +74,25 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   const { pathname } = request.nextUrl
+
+  // Features still in development (lib/features.ts): only users with dev
+  // access may open them; everyone else — signed out or not — goes home.
+  const gatedFeature = gatedFeatureForPath(pathname)
+  if (gatedFeature) {
+    let tier: string | null = null
+    if (user) {
+      const { data } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single()
+      tier = data?.subscription_tier ?? null
+    }
+    if (!canUseFeature(gatedFeature, tier)) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/'
+      url.search = ''
+      return NextResponse.redirect(url)
+    }
+    // Dev users get the page, search engines never should.
+    supabaseResponse.headers.set('X-Robots-Tag', 'noindex, nofollow')
+  }
 
   const isProtected =
     PROTECTED_PATHS.some((p) => pathname.startsWith(p)) && !isPublicSeoPath(pathname)

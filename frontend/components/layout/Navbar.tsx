@@ -15,7 +15,9 @@ import {
   useRecomputeOnScrollResize,
 } from "@/hooks/useAnchoredMenu";
 import { useMeasuredHeightVar } from "@/hooks/useMeasuredHeightVar";
-import { PRIMARY_NAV } from "@/lib/seo/navigation";
+import { PRIMARY_NAV, devNav } from "@/lib/seo/navigation";
+import { hasDevAccess } from "@/lib/features";
+import { useSubscription } from "@/hooks/useSubscription";
 import { cn } from "@/lib/utils";
 
 const DEV_MENU_W = 256; // w-64 = 16rem
@@ -44,7 +46,10 @@ interface DevNavItem {
 // orphan check reads the same source (see lib/seo/graph.ts).
 const NAV_ITEMS: NavItem[] = PRIMARY_NAV;
 
+// Only users with development access see this menu (lib/features.ts).
+// Learn and Puzzles join it while they are not public.
 const DEV_ITEMS: DevNavItem[] = [
+  ...devNav().map((item) => ({ ...item, status: "development" as ProductStatus })),
   { label: "Practice", href: "/practice", status: "next" },
   { label: "Analyze",  href: "/analyze",  status: "development" },
   { label: "Replay",   href: "/replay",   status: "development" },
@@ -80,6 +85,8 @@ interface NavbarProps {
 
 export function Navbar({ variant = "sticky" }: NavbarProps) {
   const { user, loading } = useAuth();
+  const { subscription } = useSubscription();
+  const devAccess = hasDevAccess(subscription?.tier);
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -168,7 +175,8 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
           </Link>
         ))}
 
-        {/* ── In development cluster (desktop dropdown) ── */}
+        {/* ── In development cluster (desktop dropdown) — dev access only ── */}
+        {devAccess && (
         <div className="ml-1">
           <button
             ref={devTriggerRef}
@@ -216,6 +224,7 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
             document.body
           )}
         </div>
+        )}
       </div>
 
       {/* ── Right side ── */}
@@ -292,7 +301,8 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
             </Link>
           ))}
 
-          {/* ── In development section ── */}
+          {/* ── In development section — dev access only ── */}
+          {devAccess && (
           <div className="mt-2 pt-2 border-t border-white/[0.06]">
             <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-600">
               In development
@@ -308,6 +318,7 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
               </Link>
             ))}
           </div>
+          )}
         </nav>
 
         {!loading && !user && (

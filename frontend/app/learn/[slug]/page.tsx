@@ -11,6 +11,7 @@ import {
 } from "@/lib/seo/content/lessons";
 import { entryMetadata } from "@/lib/seo/metadata";
 import { lessonPlayerPath } from "@/lib/seo/routes";
+import { LEARN_CTA, isFeaturePublic } from "@/lib/features";
 
 /**
  * The public, crawlable page for one lesson (§4).
@@ -77,25 +78,45 @@ export default async function PublicLessonPage({
         </div>
       }
     >
-      <div className="mt-10 rounded-xl border border-border/60 bg-card/40 p-5">
-        <h2 className="text-lg font-semibold tracking-tight text-foreground">
-          Start the interactive lesson
-        </h2>
-        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          The full {lesson.step_count}-step version is free to start with a StackedPoker account.
-          Your progress, XP and concept mastery are saved as you go.
-        </p>
-        <TrackedLink
-          href={lessonPlayerPath(lesson.slug)}
-          context={context}
-          label="lesson-player"
-          event="cta"
-          className="mt-4 inline-flex h-10 items-center gap-2 rounded-md bg-gradient-to-r from-violet-600 to-blue-500 px-5 text-sm font-semibold text-white shadow-md shadow-violet-900/30 transition-all hover:from-violet-500 hover:to-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-        >
-          Open the lesson
-          <ArrowRight aria-hidden="true" className="h-4 w-4" />
-        </TrackedLink>
-      </div>
+      {isFeaturePublic("learn") ? (
+        <div className="mt-10 rounded-xl border border-border/60 bg-card/40 p-5">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">
+            Start the interactive lesson
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            The full {lesson.step_count}-step version is free to start with a StackedPoker account.
+            Your progress, XP and concept mastery are saved as you go.
+          </p>
+          <TrackedLink
+            href={lessonPlayerPath(lesson.slug)}
+            context={context}
+            label="lesson-player"
+            event="cta"
+            className="mt-4 inline-flex h-10 items-center gap-2 rounded-md bg-gradient-to-r from-violet-600 to-blue-500 px-5 text-sm font-semibold text-white shadow-md shadow-violet-900/30 transition-all hover:from-violet-500 hover:to-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            Open the lesson
+            <ArrowRight aria-hidden="true" className="h-4 w-4" />
+          </TrackedLink>
+        </div>
+      ) : (
+        // The lesson player is dev-only for now (lib/features.ts); point at what is open.
+        <div className="mt-10 rounded-xl border border-border/60 bg-card/40 p-5">
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">Keep training</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            Drill preflop decisions in the Preflop Trainer — free, no account needed.
+          </p>
+          <TrackedLink
+            href={LEARN_CTA.href}
+            context={context}
+            label="preflop-trainer"
+            event="cta"
+            className="mt-4 inline-flex h-10 items-center gap-2 rounded-md bg-gradient-to-r from-violet-600 to-blue-500 px-5 text-sm font-semibold text-white shadow-md shadow-violet-900/30 transition-all hover:from-violet-500 hover:to-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            {LEARN_CTA.label}
+            <ArrowRight aria-hidden="true" className="h-4 w-4" />
+          </TrackedLink>
+        </div>
+      )}
     </ContentPage>
   );
 }

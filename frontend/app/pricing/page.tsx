@@ -1,3 +1,4 @@
+import { LEARN_CTA, isFeaturePublic } from "@/lib/features";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Check, Infinity, Zap, Sparkles, Crown } from "lucide-react";
@@ -509,10 +510,10 @@ export default async function PricingPage() {
             {isAnyPaid ? (
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link
-                  href="/learn"
+                  href={LEARN_CTA.href}
                   className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 hover:-translate-y-0.5 transition-all duration-200"
                 >
-                  Continue learning
+                  {isFeaturePublic("learn") ? "Continue learning" : LEARN_CTA.label}
                 </Link>
                 {hasStripeCustomer && (
                   <ManageSubscriptionButton

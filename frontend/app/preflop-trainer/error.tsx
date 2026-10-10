@@ -1,5 +1,6 @@
 "use client";
 
+import { isFeaturePublic } from "@/lib/features";
 import Link from "next/link";
 
 /** Section-level error state — keeps the header and footer in place. */
@@ -16,8 +17,8 @@ export default function PreflopTrainerError({ reset }: { error: Error; reset: ()
         >
           Try again
         </button>
-        <Link href="/learn" className="inline-flex h-10 items-center rounded-md border border-border px-5 text-sm font-medium text-foreground hover:bg-accent">
-          Back to Learn
+        <Link href={isFeaturePublic("learn") ? "/learn" : "/"} className="inline-flex h-10 items-center rounded-md border border-border px-5 text-sm font-medium text-foreground hover:bg-accent">
+          {isFeaturePublic("learn") ? "Back to Learn" : "Back to home"}
         </Link>
       </div>
     </div>

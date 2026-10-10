@@ -1,5 +1,6 @@
 "use client";
 
+import { LEARN_CTA, SECONDARY_CTA, isFeaturePublic } from "@/lib/features";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Zap } from "lucide-react";
 import { RevealOnScroll } from "@/components/landing/shared/RevealOnScroll";
@@ -47,22 +48,24 @@ export function CtaSection() {
             </h2>
 
             <p className="mx-auto mb-9 max-w-lg text-lg text-muted-foreground/70 leading-relaxed">
-              Start the Foundations path in seconds — no account, no credit card, no setup.
+              {isFeaturePublic("learn")
+                ? "Start the Foundations path in seconds — no account, no credit card, no setup."
+                : "Drill preflop ranges in seconds — no account, no credit card, no setup."}
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8">
               <Link
-                href="/learn"
+                href={LEARN_CTA.href}
                 className="group inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-[15px] font-semibold shadow-xl shadow-violet-500/40 hover:shadow-violet-500/60 hover:-translate-y-0.5 active:translate-y-px active:scale-[0.97] transition-all duration-200 btn-poker-hover will-change-transform"
               >
-                Start learning
+                {LEARN_CTA.label}
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
               </Link>
               <Link
-                href="/learn/module/poker-fundamentals-module"
+                href={isFeaturePublic("learn") ? "/learn/module/poker-fundamentals-module" : SECONDARY_CTA.href}
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl border border-border/60 bg-card/40 text-[15px] font-medium text-muted-foreground hover:text-foreground hover:bg-card/80 hover:border-border hover:-translate-y-0.5 active:translate-y-px active:scale-[0.97] transition-all duration-200 will-change-transform"
               >
-                Explore Foundations
+                {isFeaturePublic("learn") ? "Explore Foundations" : SECONDARY_CTA.label}
               </Link>
             </div>
 

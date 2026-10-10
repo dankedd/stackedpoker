@@ -1,5 +1,6 @@
 "use client";
 
+import { isFeaturePublic } from "@/lib/features";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -366,12 +367,14 @@ function CoachPageContent() {
                     {user ? "No active leaks detected — nice work." : "Sign in to see your active leaks."}
                   </p>
                 )}
+                {isFeaturePublic("learn") && (
                 <Link
                   href="/learn"
                   className="flex items-center gap-1 text-xs text-violet-400/70 hover:text-violet-300 transition-colors mt-3.5 font-medium"
                 >
                   View all leaks <ChevronRight className="h-3 w-3" />
                 </Link>
+                )}
               </div>
 
               {/* Concepts to review */}
@@ -400,19 +403,21 @@ function CoachPageContent() {
                     {user ? "No weak concepts flagged yet — keep learning." : "Sign in to see concepts to review."}
                   </p>
                 )}
+                {isFeaturePublic("learn") && (
                 <Link
                   href="/learn"
                   className="flex items-center gap-1 text-xs text-violet-400/70 hover:text-violet-300 transition-colors mt-3.5 font-medium"
                 >
                   Learning hub <ChevronRight className="h-3 w-3" />
                 </Link>
+                )}
               </div>
 
               {/* Quick links */}
               <div className="rounded-2xl border border-border/40 bg-card/60 p-4 space-y-1.5">
                 <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/50 mb-3">Quick links</p>
                 {[
-                  { label: "Learning Hub", href: "/learn" },
+                  ...(isFeaturePublic("learn") ? [{ label: "Learning Hub", href: "/learn" }] : []),
                   { label: "Range Trainer", href: "/train/ranges" },
                 ].map(({ label, href }) => (
                   <Link

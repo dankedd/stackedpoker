@@ -40,6 +40,7 @@ from app.engines.learn.srs_engine import compute_next_review
 from app.engines.learn.leak_detector import detect_leaks_from_step
 from app.engines.learn.curriculum_access import can_access_lesson
 from app.services.entitlements import get_subscription_tier
+from app.services.features import require_feature
 from app.engines.learn.achievements import check_and_award_achievements
 
 logger = logging.getLogger(__name__)
@@ -507,7 +508,7 @@ async def get_full_progress(current_user: dict = Depends(get_current_user)) -> d
 
 # ── POST /learn/steps/{lesson_id}/{step_id} ───────────────────────────────────
 
-@router.post("/learn/steps/{lesson_id}/{step_id}")
+@router.post("/learn/steps/{lesson_id}/{step_id}", dependencies=[Depends(require_feature("learn"))])
 async def submit_step_result(
     lesson_id: str,
     step_id: str,
@@ -709,7 +710,7 @@ async def submit_step_result(
 
 # ── POST /learn/lessons/{lesson_id}/complete ──────────────────────────────────
 
-@router.post("/learn/lessons/{lesson_id}/complete")
+@router.post("/learn/lessons/{lesson_id}/complete", dependencies=[Depends(require_feature("learn"))])
 async def complete_lesson(
     lesson_id: str,
     body: LessonCompleteBody,
@@ -848,7 +849,7 @@ async def complete_lesson(
 
 # ── POST /learn/modules/{module_id}/complete ──────────────────────────────────
 
-@router.post("/learn/modules/{module_id}/complete")
+@router.post("/learn/modules/{module_id}/complete", dependencies=[Depends(require_feature("learn"))])
 async def complete_module(
     module_id: str,
     body: ModuleCompleteBody,
@@ -936,7 +937,7 @@ async def complete_module(
 
 # ── POST /learn/leaks/{leak_id}/resolve ───────────────────────────────────────
 
-@router.post("/learn/leaks/{leak_id}/resolve")
+@router.post("/learn/leaks/{leak_id}/resolve", dependencies=[Depends(require_feature("learn"))])
 async def resolve_leak(
     leak_id: str,
     current_user: dict = Depends(get_current_user),
@@ -977,7 +978,7 @@ async def resolve_leak(
 
 # ── POST /learn/merge-guest-progress ──────────────────────────────────────────
 
-@router.post("/learn/merge-guest-progress")
+@router.post("/learn/merge-guest-progress", dependencies=[Depends(require_feature("learn"))])
 async def merge_guest_progress(
     body: MergeGuestProgressBody,
     current_user: dict = Depends(get_current_user),

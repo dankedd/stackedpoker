@@ -1,6 +1,7 @@
 import { PREFLOP_RANGES_ENABLED, PREFLOP_TRAINER_PATH } from "@/lib/ranges/feature";
 import { HAND_HISTORY_ENABLED, HANDS_PATH } from "@/lib/handHistory/feature";
 import { t as handHistoryStrings } from "@/lib/handHistory/strings";
+import { isFeaturePublic } from "@/lib/features";
 import { ROUTES } from "./routes";
 
 /**
@@ -31,21 +32,36 @@ export interface NavLink {
 export function primaryNav({
   preflopTrainer,
   handHistory = false,
+  learn = isFeaturePublic("learn"),
+  puzzles = isFeaturePublic("puzzles"),
 }: {
   preflopTrainer: boolean;
   handHistory?: boolean;
+  /** Learn and Puzzles are header items only once public (lib/features.ts);
+   *  until then they live in the dev-only "In development" menu (devNav). */
+  learn?: boolean;
+  puzzles?: boolean;
 }): NavLink[] {
   return [
-    { label: "Learn", href: "/learn", primary: true },
-    // Playable training built on the same sourced theory as Learn. In the primary
-    // nav rather than the "in development" cluster because it ships working.
-    { label: "Puzzles", href: ROUTES.puzzles },
+    ...(learn ? [{ label: "Learn", href: "/learn", primary: true }] : []),
+    ...(puzzles ? [{ label: "Puzzles", href: ROUTES.puzzles }] : []),
     // Behind NEXT_PUBLIC_FEATURE_PREFLOP_RANGES (lib/ranges/feature.ts).
     ...(preflopTrainer ? [{ label: "Preflop Trainer", href: PREFLOP_TRAINER_PATH }] : []),
     // Behind NEXT_PUBLIC_FEATURE_HAND_HISTORY (lib/handHistory/feature.ts).
     ...(handHistory ? [{ label: handHistoryStrings.section.navItem, href: HANDS_PATH }] : []),
     { label: "Bankroll", href: "/bankroll" },
     { label: "Leaderboard", href: "/leaderboard" },
+  ];
+}
+
+/**
+ * Features in development (lib/features.ts), for the "In development" menu —
+ * which only users with dev access see.
+ */
+export function devNav(): NavLink[] {
+  return [
+    ...(isFeaturePublic("learn") ? [] : [{ label: "Learn", href: "/learn" }]),
+    ...(isFeaturePublic("puzzles") ? [] : [{ label: "Puzzles", href: ROUTES.puzzles }]),
   ];
 }
 
@@ -69,7 +85,7 @@ export const FOOTER_NAV: NavGroup[] = [
       { label: "Free poker training", href: "/free-poker-training" },
       { label: "Texas Hold'em strategy", href: "/texas-holdem-strategy" },
       { label: "Poker courses", href: ROUTES.courses },
-      { label: "Learning hub", href: "/learn" },
+      ...(isFeaturePublic("learn") ? [{ label: "Learning hub", href: "/learn" }] : []),
       { label: "Pricing", href: ROUTES.pricing },
     ],
   },
@@ -99,7 +115,7 @@ export const LANDING_FOOTER_NAV: NavGroup[] = [
   {
     group: "Product",
     items: [
-      { label: "Learn", href: "/learn" },
+      ...(isFeaturePublic("learn") ? [{ label: "Learn", href: "/learn" }] : []),
       { label: "Poker training", href: "/poker-training" },
       { label: "Poker courses", href: ROUTES.courses },
       { label: "Bankroll", href: "/bankroll" },

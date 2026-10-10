@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { LEARNING_MODULES } from "@/lib/learn/curriculumPublic.generated";
 import { JOURNEY_STAGES } from "@/lib/learn/curriculumRoadmap";
 import { getJourneyOverview } from "@/lib/learn/journey";
+import { isFeaturePublic } from "@/lib/features";
 import { StatusBadge } from "@/components/layout/StatusBadge";
 import { MarketingSectionHeader } from "@/components/landing/shared/MarketingSectionHeader";
 import { MarketingGlassCard } from "@/components/landing/shared/MarketingGlassCard";
@@ -27,6 +28,8 @@ export const FEATURED_MODULE_IDS = ["poker-fundamentals-module", "blockers-modul
 // (which jumps to #curriculum) clears the fixed nav exactly, not a
 // hardcoded guess.
 export function LearningPath() {
+  // The roadmap only links into Learn; hide it while Learn is not public (lib/features.ts).
+  if (!isFeaturePublic("learn")) return null;
   return (
     <section id="curriculum" className="relative py-20 md:py-28 bg-card/10 scroll-mt-[var(--sp-header-height,6rem)]">
       <div className="container mx-auto max-w-5xl px-4 sm:px-6">

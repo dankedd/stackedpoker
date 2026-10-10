@@ -23,7 +23,7 @@ const PLAN_LABEL: Record<Tier, Subscription["label"]> = {
   admin: "Elite",
 };
 
-function normalizeTier(tier: Tier | string | null | undefined): Tier {
+export function normalizeTier(tier: Tier | string | null | undefined): Tier {
   return tier === "pro" || tier === "premium" || tier === "admin" ? tier : "free";
 }
 

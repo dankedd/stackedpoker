@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getSiteUrl } from "@/lib/site-url";
+import { FEATURE_ROUTES, isFeaturePublic } from "@/lib/features";
 import { PRIVATE_LEARN_SEGMENTS, PRIVATE_PATH_PREFIXES, absoluteUrl } from "@/lib/seo/routes";
 
 /**
@@ -45,6 +46,8 @@ export default function robots(): MetadataRoute.Robots {
     // this does not also block the public /learn/<lesson-slug> pages.
     "/learn$",
     ...[...PRIVATE_LEARN_SEGMENTS].map((segment) => `/learn/${segment}`),
+    // Features still in development (lib/features.ts) — only for dev users.
+    ...(isFeaturePublic("puzzles") ? [] : FEATURE_ROUTES.puzzles),
     // Tracking-parameter variants are duplicates of a canonical URL.
     "/*?*utm_",
     "/*?*ref=",
