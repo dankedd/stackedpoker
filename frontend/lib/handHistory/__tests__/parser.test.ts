@@ -236,6 +236,37 @@ describe.skipIf(!hasFixture)("real export: GG20261008-1802 - Daily Special 10.tx
     expect(hands.some((h) => h.events.some((e) => e.kind === "uncalled"))).toBe(true);
   });
 
+  it("side pots: two collected lines for one player are summed (TM6510606538)", () => {
+    const h = byId.get("TM6510606538")!;
+    expect(h.events.filter((e) => e.kind === "collect").map((e) => (e as { amount: number }).amount)).toEqual([37430, 27490]);
+    expect(h.winners).toEqual([{ player: "2e454936", amount: 64920 }]);
+    expect(h.totalPot).toBe(64920);
+    const d = deriveHand(h);
+    expect(d.potBb).toBe(32.46);
+    expect(d.heroNetChips).toBe(-250); // Hero folded preflop after the ante
+    expect(d.wentToShowdown).toBe(true);
+  });
+
+  it("split pot: two winners with 10,300 each (TM6510603048)", () => {
+    const h = byId.get("TM6510603048")!;
+    expect(h.winners).toEqual([
+      { player: "f2474a80", amount: 10300 },
+      { player: "eff73720", amount: 10300 },
+    ]);
+    expect(deriveHand(h).heroNetChips).toBe(-375); // ante + small blind, then fold
+  });
+
+  it("the real PokerCraft zip imports the same 107 hands", async () => {
+    const zipPath = join(__dirname, "fixtures", "000001a1-25c6-0eec-0000-00000c69c8e0.zip");
+    if (!existsSync(zipPath)) return;
+    const bytes = readFileSync(zipPath);
+    const { texts, fileErrors } = await readFiles([{ name: "export.zip", arrayBuffer: async () => new Uint8Array(bytes).buffer }]);
+    expect(fileErrors).toEqual([]);
+    expect(texts).toHaveLength(1);
+    expect(texts[0].fileName).toBe("export.zip › GG20261008-1802 - Daily Special 10.txt");
+    expect(parseTexts(texts).entries).toHaveLength(107);
+  });
+
   it("collected amounts always add up to the total pot", () => {
     for (const h of byId.values()) {
       expect(h.winners.reduce((a, w) => a + w.amount, 0) + h.rake, h.handId).toBe(h.totalPot);

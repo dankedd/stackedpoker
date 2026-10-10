@@ -8,8 +8,12 @@
  * 8×350 antes + 1,500 SB + 6,000 open + 2×27,188 = 64,676. Seat names and
  * stacks not quoted in the spec are filled in.
  *
- * The others are small constructed hands for side/split pots. Replace or
- * complement them with real hands once the fixture file is in the repo.
+ * The others are small constructed hands for side/split pots — including the
+ * Hero-wins-a-split and Hero-wins-only-the-main-pot cases, which the real
+ * export does not contain. The real export (fixtures/, when present) is
+ * covered by the "real export" block in parser.test.ts; there the top hand
+ * has the same amounts but different seats (the opener is 6888443a, and
+ * 922e16a4 sits in seat 8).
  */
 
 export const TOP_HAND = `Poker Hand #TM6510945691: Tournament #316999261, Daily Special $10 Hold'em No Limit - Level19(1,500/3,000(350)) - 2026/10/08 21:40:24
