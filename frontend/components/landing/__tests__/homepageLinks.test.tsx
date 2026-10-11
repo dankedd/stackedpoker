@@ -3,63 +3,55 @@ import fs from 'fs'
 import path from 'path'
 
 /**
- * Guards against dead `<Link href="...">`s on the redesigned homepage.
- * Parses the section source files directly (rather than rendering them)
- * because `Navbar`/`Footer` require `AuthContext`, which none of these
- * landing sections should need to import just to be link-checked.
+ * Guards against dead links on the homepage. Reads the section sources
+ * (components/home + the footer) and checks every internal href against the
+ * real app/ routes, so a renamed or gated page shows up here.
  */
 
-const LANDING_DIR = path.resolve(__dirname, '..')
-
-const SECTION_FILES = [
-  'Hero.tsx',
-  'ProofStrip.tsx',
-  'HowDecisionsWork.tsx',
-  'DecisionShowcase.tsx',
-  'RangeThinking.tsx',
-  'LearningPath.tsx',
-  'CoachSection.tsx',
-  'ProgressionSection.tsx',
-  'LeaderboardPreview.tsx',
-  'CtaSection.tsx',
-  'LandingFooter.tsx',
+const FRONTEND = path.resolve(__dirname, '../../..')
+const HOME_DIR = path.join(FRONTEND, 'components/home')
+const FILES = [
+  ...fs.readdirSync(HOME_DIR).filter((f) => f.endsWith('.tsx')).map((f) => path.join(HOME_DIR, f)),
+  path.join(FRONTEND, 'components/landing/LandingFooter.tsx'),
 ]
 
-// Every real route confirmed to exist under app/ at the time this test was
-// written, plus in-page anchors the homepage itself defines.
-const KNOWN_ROUTES = new Set([
-  '/',
-  '/learn',
-  '/train/ranges',
-  '/bankroll',
-  '/leaderboard',
-  '/pricing',
-  '/login',
-  '/signup',
-  '/privacy',
-  '/terms',
-  '/terms#disclaimer',
-  '#curriculum',
-  '#how-it-works',
-  '/learn/module/poker-fundamentals-module',
-])
-
-function isKnownRoute(href: string): boolean {
-  if (KNOWN_ROUTES.has(href)) return true
-  // Dynamic module route — app/learn/module/[slug]/page.tsx is a real,
-  // generic route, so any slug-shaped path under it is valid.
-  if (/^\/learn\/module\/[a-z0-9-]+$/.test(href)) return true
-  return false
+/** True when app/ has a page for this path (static or dynamic segments). */
+function routeExists(href: string): boolean {
+  const clean = href.split(/[?#]/)[0]
+  if (clean === '/' || clean === '') return true
+  const parts = clean.replace(/^\//, '').split('/')
+  const walk = (dir: string, i: number): boolean => {
+    if (i === parts.length) return fs.existsSync(path.join(dir, 'page.tsx')) || fs.existsSync(path.join(dir, 'route.ts'))
+    const exact = path.join(dir, parts[i])
+    if (fs.existsSync(exact) && walk(exact, i + 1)) return true
+    return fs
+      .readdirSync(dir, { withFileTypes: true })
+      .filter((d) => d.isDirectory() && /^\[.+\]$/.test(d.name))
+      .some((d) => walk(path.join(dir, d.name), i + 1))
+  }
+  return walk(path.join(FRONTEND, 'app'), 0)
 }
 
-describe('Homepage sections — no dead links', () => {
-  for (const file of SECTION_FILES) {
-    it(`${file} only links to known routes`, () => {
-      const source = fs.readFileSync(path.join(LANDING_DIR, file), 'utf-8')
-      const hrefMatches = [...source.matchAll(/href="([^"{]+)"/g)].map((m) => m[1])
-      for (const href of hrefMatches) {
-        expect(isKnownRoute(href), `${file} links to unknown route "${href}"`).toBe(true)
+function internalHrefs(source: string): string[] {
+  const attr = [...source.matchAll(/href="(\/[^"]*)"/g)].map((m) => m[1])
+  const objects = [...source.matchAll(/href:\s*"(\/[^"]*)"/g)].map((m) => m[1])
+  const consts = [...source.matchAll(/_PATH\s*=\s*"(\/[^"]*)"/g)].map((m) => m[1])
+  return [...attr, ...objects, ...consts]
+}
+
+describe('Homepage — no dead links', () => {
+  for (const file of FILES) {
+    it(`${path.basename(file)} only links to existing routes`, () => {
+      for (const href of internalHrefs(fs.readFileSync(file, 'utf-8'))) {
+        expect(routeExists(href), `${path.basename(file)} links to ${href}, which has no page in app/`).toBe(true)
       }
     })
   }
+
+  it('never links into Learn or Puzzles while they are dev-only', () => {
+    for (const file of FILES.filter((f) => !f.endsWith('LandingFooter.tsx'))) {
+      const src = fs.readFileSync(file, 'utf-8')
+      expect(src, path.basename(file)).not.toMatch(/href[=:]\s*["'`]\/(learn|puzzles)\b/)
+    }
+  })
 })

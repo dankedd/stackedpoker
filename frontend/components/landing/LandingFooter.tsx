@@ -18,7 +18,7 @@ export function LandingFooter() {
                 Stacked<span className="text-violet-400"> Poker</span>
               </span>
             </Link>
-            <p className="text-[13px] text-slate-500 leading-relaxed max-w-[200px]">
+            <p className="text-[13px] text-slate-400 leading-relaxed max-w-[200px]">
               A structured, interactive platform for learning poker strategy.
             </p>
           </div>
@@ -26,7 +26,7 @@ export function LandingFooter() {
           {/* Link columns */}
           {LANDING_FOOTER_NAV.map(({ group, items }) => (
             <div key={group}>
-              <p className="mb-4 text-[12px] font-semibold uppercase tracking-widest text-slate-500">
+              <p className="mb-4 text-[12px] font-semibold uppercase tracking-widest text-slate-400">
                 {group}
               </p>
               <ul className="space-y-2.5">
@@ -34,7 +34,7 @@ export function LandingFooter() {
                   <li key={item.label}>
                     <Link
                       href={item.href}
-                      className="text-[13px] text-slate-500 hover:text-slate-300 transition-colors duration-150"
+                      className="text-[13px] text-slate-400 hover:text-slate-300 transition-colors duration-150"
                     >
                       {item.label}
                     </Link>
@@ -46,7 +46,7 @@ export function LandingFooter() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-12 pt-6 border-t border-white/[0.04] flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-slate-600">
+        <div className="mt-12 pt-6 border-t border-white/[0.04] flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-slate-400">
           <p>© {new Date().getFullYear()} Stacked Poker — Educational tool only. Not a gambling service.</p>
           <div className="flex items-center gap-4">
             <Link href="/privacy" className="hover:text-slate-400 transition-colors">

@@ -79,6 +79,14 @@ export const SEO_EVENTS = {
   onboardingCompleted: "onboarding_completed",
   /** "Start Learning" was clicked on the onboarding recommendation screen. */
   onboardingStartLearningClicked: "onboarding_start_learning_clicked",
+
+  // ── Homepage (components/home) ──────────────────────────────────────────
+  /** The hero mini-trainer was answered (params: spot, answer, verdict). */
+  heroDemoAnswered: "hero_demo_answered",
+  /** A homepage CTA was clicked (params: location = header|hero|demo|bento|showcase|pricing|final, cta). */
+  ctaClick: "cta_click",
+  /** A homepage FAQ item was opened (params: question). */
+  faqOpen: "faq_open",
 } as const;
 
 export type SeoEventName = (typeof SEO_EVENTS)[keyof typeof SEO_EVENTS];

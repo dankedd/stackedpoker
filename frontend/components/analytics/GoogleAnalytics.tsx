@@ -25,7 +25,11 @@ export function GoogleAnalytics() {
     <>
       <Script
         src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-        strategy="afterInteractive"
+        // The library itself waits for the page to finish loading so it never
+        // competes with the LCP render (it cost ~0.8s of main thread on mobile).
+        // The tiny stub below still runs early: pageviews and events queue in
+        // dataLayer and are sent as soon as the library arrives.
+        strategy="lazyOnload"
       />
       <Script id="google-analytics" strategy="afterInteractive">
         {`

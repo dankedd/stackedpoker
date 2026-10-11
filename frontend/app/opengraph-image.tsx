@@ -1,4 +1,3 @@
-import { SITE_TAGLINE } from "@/lib/seo/config";
 import { OG_CONTENT_TYPE, OG_SIZE, ogImageResponse } from "@/lib/seo/og";
 
 /**
@@ -10,12 +9,12 @@ import { OG_CONTENT_TYPE, OG_SIZE, ogImageResponse } from "@/lib/seo/og";
  */
 export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
-export const alt = "StackedPoker — learn poker strategy the right way";
+export const alt = "StackedPoker — poker training, preflop trainer, hand history review and an AI poker coach";
 
 export default function Image() {
   return ogImageResponse({
-    eyebrow: "Poker strategy, properly taught",
-    title: SITE_TAGLINE,
-    subtitle: "Interactive lessons, a poker concept wiki and free tools.",
+    eyebrow: "Poker training · Hand review · AI coach",
+    title: "Stop guessing. Know the right play.",
+    subtitle: "Preflop trainer, hand history review with an AI poker coach, and a bankroll tracker.",
   });
 }

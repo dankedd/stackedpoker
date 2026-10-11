@@ -1,57 +1,64 @@
-import { Navbar } from "@/components/layout/Navbar";
+import type { Metadata } from "next";
+import { Bento } from "@/components/home/Bento";
+import { FaqSection, FinalCta, LeaderboardSection, PricingTeaser, ProgressSection } from "@/components/home/Closing";
+import { Hero } from "@/components/home/Hero";
+import { HomeHeader } from "@/components/home/HomeHeader";
+import { Loop } from "@/components/home/Loop";
+import { ReviewShowcase } from "@/components/home/ReviewShowcase";
+import { TrainerShowcase } from "@/components/home/TrainerShowcase";
+import type { TrustItem } from "@/components/home/TrustStrip";
 import { LandingFooter } from "@/components/landing/LandingFooter";
-import { Hero } from "@/components/landing/Hero";
-import { ProofStrip } from "@/components/landing/ProofStrip";
-import { HowDecisionsWork } from "@/components/landing/HowDecisionsWork";
-import { DecisionShowcase } from "@/components/landing/DecisionShowcase";
-import { RangeThinking } from "@/components/landing/RangeThinking";
-import { LearningPath } from "@/components/landing/LearningPath";
-import { CoachSection } from "@/components/landing/CoachSection";
-import { ProgressionSection } from "@/components/landing/ProgressionSection";
-import { LeaderboardPreview } from "@/components/landing/LeaderboardPreview";
-import { CtaSection } from "@/components/landing/CtaSection";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { bbVsCoChart, btnOpenChart, coOpenChart, trainerChartCount } from "@/lib/home/charts";
+import { demoSpots } from "@/lib/home/demoSpots";
+import { FAQ } from "@/lib/home/faq";
+import { getSiteStats } from "@/lib/home/stats";
+import { faqPage } from "@/lib/seo/jsonld";
+import { buildMetadata } from "@/lib/seo/metadata";
 
-export default function HomePage() {
+export const metadata: Metadata = buildMetadata({
+  title: "Poker Training, Preflop Trainer & AI Hand Review",
+  description:
+    "Poker training that shows you the right play: a preflop trainer graded on real ranges, hand history review with an AI poker coach, and a bankroll tracker. Free to start.",
+  path: "/",
+  keywords: ["poker training", "preflop trainer", "hand history review", "AI poker coach", "poker hand replayer", "poker bankroll tracker", "StackedPoker"],
+});
+
+// Live numbers (players, hands, top 5) are fetched with a one-hour cache.
+export const revalidate = 3600;
+
+export default async function HomePage() {
+  const stats = await getSiteStats();
+  const trust: TrustItem[] = [
+    { value: trainerChartCount(), label: "preflop charts in the trainer" },
+    { label: "Ranges from Modern Poker Theory" },
+    { label: "GGPoker hand import" },
+    ...(stats?.hands != null ? [{ value: stats.hands, label: "hands reviewed" }] : []),
+    ...(stats?.players != null ? [{ value: stats.players, label: "players" }] : []),
+  ];
+
   return (
-    <>
-      <Navbar variant="sticky" />
+    <div className="bg-[#070A12] text-white">
+      <JsonLd data={faqPage(FAQ.map((f) => ({ question: f.q, answer: f.a })), undefined, "/")} />
+      <HomeHeader />
 
-      {/* `sp-landing-main` lets the browser skip layout/paint for the nine
-          below-the-fold sections until they scroll near — see globals.css.
-          Content stays fully in the DOM and in the accessibility tree. */}
+      {/* `sp-landing-main` lets the browser skip layout/paint for the sections
+          below the fold until they scroll near (globals.css). The hero is the
+          first child and is never deferred — it holds the LCP element. */}
       <main className="sp-landing-main">
-        {/* 1 · Hero — real decision spot, range, and AI coach composition */}
-        <Hero />
-
-        {/* 2 · Proof strip — real capabilities, bridges hero into the deeper story */}
-        <ProofStrip />
-
-        {/* 3 · How decisions work — Learn / Practice / Understand */}
-        <HowDecisionsWork />
-
-        {/* 4 · Interactive decision showcase — a full real decision spot */}
-        <DecisionShowcase />
-
-        {/* 5 · Range thinking — real range vs range data */}
-        <RangeThinking />
-
-        {/* 6 · Learning path — real curriculum/journey data */}
-        <LearningPath />
-
-        {/* 7 · AI Coach — lesson-aware, not a generic chatbot */}
-        <CoachSection />
-
-        {/* 8 · Progression — XP, levels, streaks (demo values) */}
-        <ProgressionSection />
-
-        {/* 9 · Leaderboard — demo preview, real CTA */}
-        <LeaderboardPreview />
-
-        {/* 10 · Final CTA */}
-        <CtaSection />
+        <Hero spots={demoSpots()} trust={trust} />
+        <Loop />
+        <Bento btnOpen={btnOpenChart()} />
+        <ReviewShowcase />
+        <TrainerShowcase open={coOpenChart()} defend={bbVsCoChart()} />
+        <ProgressSection />
+        <LeaderboardSection rows={stats?.top ?? []} />
+        <PricingTeaser />
+        <FaqSection />
+        <FinalCta />
       </main>
 
       <LandingFooter />
-    </>
+    </div>
   );
 }
