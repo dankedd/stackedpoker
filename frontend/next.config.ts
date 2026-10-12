@@ -37,6 +37,7 @@ const securityHeaders = [
   //   - Images:  same origin + data URIs (base64 screenshots) + Supabase storage
   //   - Fonts:   same origin
   //   - Connect: same origin + Supabase + backend API (localhost in dev) + GA4's collect beacon
+  //   - Meta Pixel: script from connect.facebook.net, beacons to www.facebook.com (after consent only)
   //   - Frames:  none (DENY)
   //   - Objects: none (no Flash/plugins)
   {
@@ -52,18 +53,20 @@ const securityHeaders = [
       // <script> tag still renders in the HTML, so this looked "installed"
       // from a plain curl/view-source check, but nothing ever actually loads
       // or reports data).
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com",
+      // connect.facebook.net is the Meta Pixel (fbevents.js and its signals
+      // config), loaded only after cookie consent (components/analytics/MetaPixel.tsx).
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://connect.facebook.net",
       "style-src 'self' 'unsafe-inline'",
       // data: for base64 screenshots; blob: for canvas exports; GA4's
       // fallback beacon can fire as an image pixel on very old browsers.
-      `img-src 'self' data: blob: https://www.googletagmanager.com https://www.google-analytics.com ${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}`,
+      `img-src 'self' data: blob: https://www.googletagmanager.com https://www.google-analytics.com https://www.facebook.com ${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}`,
       "font-src 'self'",
       // Backend API (dev: localhost, prod: same origin via rewrite) + Supabase
       // + GA4's own collect endpoints (www.google-analytics.com and its
       // regional subdomains, e.g. region1.google-analytics.com — gtag.js
       // picks one at runtime, so the wildcard covers all of them) + gtag.js's
       // own config fetches back to googletagmanager.com.
-      `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""} ${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"} https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com`,
+      `connect-src 'self' ${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""} ${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"} https://www.googletagmanager.com https://www.google-analytics.com https://*.google-analytics.com https://www.facebook.com https://connect.facebook.net`,
       "frame-src 'none'",
       "object-src 'none'",
       "base-uri 'self'",

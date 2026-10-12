@@ -11,6 +11,7 @@ import { FourColorCard } from "@/components/poker/FourColorCard";
 import { Modal } from "@/components/ui/modal";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { SEO_EVENTS, trackEvent } from "@/lib/seo/analytics";
+import { track } from "@/lib/metaPixel";
 import { actionStyle } from "@/lib/learn/actionStyles";
 import {
   actionName,
@@ -135,6 +136,8 @@ export function Trainer() {
           () => setAnswer((a) => (a && a.id === id ? { ...a, xp: { status: "error" } } : a)),
         );
       }
+      // First answered hand of the visit: the drill has started.
+      if (nextStats.hands === 1) track("ViewContent", { content_name: "Preflop Trainer drill" });
       if (nextStats.hands % 25 === 0) {
         trackEvent(SEO_EVENTS.toolCalculate, { tool_slug: TOOL_SLUG, hands: nextStats.hands, score: scorePct(nextStats) });
       }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { CheckCircle2, Sparkles, X } from "lucide-react";
+import { trackSubscribe } from "@/lib/metaPixel";
 
 /**
  * Shows a dismissible success banner when the URL contains ?upgraded=1.
@@ -13,6 +14,7 @@ export function UpgradeBanner() {
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("upgraded") === "1") {
       setVisible(true);
+      trackSubscribe();
       // Clean the URL without reloading
       const url = new URL(window.location.href);
       url.searchParams.delete("upgraded");

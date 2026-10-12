@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Eye, EyeOff, AlertCircle, CheckCircle2, Loader2, Spade } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getSiteUrl } from '@/lib/site-url'
+import { readUtm, track } from '@/lib/metaPixel'
 import { Button } from '@/components/ui/button'
 import {
   SEO_EVENTS,
@@ -85,11 +86,14 @@ export default function SignupPage() {
 
     setLoading(true)
     const supabase = createClient()
-    const { error } = await supabase.auth.signUp({
+    // The session's first utm_* set rides along into user_metadata, so a
+    // signup can later be traced back to the ad that brought it in.
+    const utm = readUtm()
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { username: username.trim() },
+        data: { username: username.trim(), ...(utm ? { signup_utm: utm } : {}) },
         emailRedirectTo: `${getSiteUrl(window.location.origin)}/auth/callback`,
       },
     })
@@ -99,6 +103,9 @@ export default function SignupPage() {
       setLoading(false)
       return
     }
+    // With email confirmation on, an already-registered address comes back
+    // without an error but with no identities: that is not a new account.
+    if (data.user?.identities?.length) track('CompleteRegistration', { registration_method: 'email' })
     // Credit the signup to a free tool when one was used earlier this
     // session (§ "account created after using tool"). The attribution is a
     // slug in sessionStorage, set by ToolPanel — no identifiers, no inputs.

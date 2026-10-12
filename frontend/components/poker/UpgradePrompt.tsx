@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { rememberCheckoutPlan } from "@/lib/metaPixel";
 
 // ── Shared checkout helper ─────────────────────────────────────────────────
 
@@ -41,6 +42,7 @@ export async function startCheckout(plan: "pro" | "premium" = "pro"): Promise<vo
       throw new Error("Checkout failed — invalid redirect URL.");
     }
 
+    rememberCheckoutPlan(plan);
     if (tab && !tab.closed) {
       // Navigate the pre-opened tab — original tab stays put
       tab.location.href = url;

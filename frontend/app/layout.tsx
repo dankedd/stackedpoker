@@ -6,6 +6,8 @@ import { LearnProgressProvider } from "@/contexts/LearnProgressContext";
 import { Toaster } from "sonner";
 import { getSiteUrl } from "@/lib/site-url";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
+import { MetaPixel } from "@/components/analytics/MetaPixel";
+import { ConsentBanner } from "@/components/analytics/ConsentBanner";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from "@/lib/seo/config";
@@ -89,6 +91,9 @@ export default function RootLayout({
               },
             }}
           />
+          {/* Loads nothing until the visitor accepts in the ConsentBanner. */}
+          <MetaPixel />
+          <ConsentBanner />
         </AuthProvider>
         <GoogleAnalytics />
       </body>

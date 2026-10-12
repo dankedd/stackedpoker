@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CookieSettingsLink } from "@/components/analytics/ConsentBanner";
 import { Spade } from "lucide-react";
 import { LANDING_FOOTER_NAV } from "@/lib/seo/navigation";
 
@@ -55,6 +56,7 @@ export function LandingFooter() {
             <Link href="/terms" className="hover:text-slate-400 transition-colors">
               Terms of Service
             </Link>
+            <CookieSettingsLink className="hover:text-slate-300 transition-colors" />
           </div>
         </div>
       </div>

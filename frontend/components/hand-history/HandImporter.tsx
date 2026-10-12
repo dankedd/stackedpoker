@@ -9,6 +9,7 @@ import { HANDS_PATH } from "@/lib/handHistory/feature";
 import { fmtNum } from "@/lib/handHistory/format";
 import { parseTexts, readFiles, saveHands, type ImportProgress, type ImportSummary } from "@/lib/handHistory/importer";
 import { t } from "@/lib/handHistory/strings";
+import { track } from "@/lib/metaPixel";
 import { cn } from "@/lib/utils";
 import { PageHeader, SectionNav } from "./SectionNav";
 
@@ -48,6 +49,7 @@ export function HandImporter() {
         }
         const result = await saveHands(supabase, user.id, files.map((f) => f.name), parsed, setProgress);
         setSummary(result);
+        if (result.imported > 0) track("ViewContent", { content_name: "Hand history upload", num_items: result.tournaments });
       } catch (e) {
         setError(e instanceof Error ? e.message : t.import.failed);
       } finally {

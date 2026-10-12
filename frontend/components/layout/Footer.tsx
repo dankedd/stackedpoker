@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Spade } from "lucide-react";
 import { FOOTER_NAV } from "@/lib/seo/navigation";
+import { CookieSettingsLink } from "@/components/analytics/ConsentBanner";
 
 /**
  * The shared app/content footer.
@@ -62,9 +63,10 @@ export function Footer() {
             Educational tool only. Not a replacement for a real GTO solver. For training purposes
             only.
           </p>
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Stacked Poker
-          </p>
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <CookieSettingsLink className="transition-colors hover:text-foreground" />
+            <p>© {new Date().getFullYear()} Stacked Poker</p>
+          </div>
         </div>
       </div>
     </footer>
