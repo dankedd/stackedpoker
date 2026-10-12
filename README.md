@@ -110,6 +110,27 @@ Frontend available at `http://localhost:3000`
 
 ---
 
+## Ad Attribution (sign-ups per ad)
+
+Every new account stores the first `utm_*` set of the visit in `auth.users.raw_user_meta_data -> 'signup_utm'`
+(email sign-ups at signup, Google sign-ups on their first page). Meta ads put the ad name in `utm_content`.
+Run this in the Supabase SQL editor to see sign-ups per ad since the campaign start (12 October 2026):
+
+```sql
+SELECT
+  COALESCE(raw_user_meta_data -> 'signup_utm' ->> 'utm_content', '(no utm)') AS ad,
+  raw_user_meta_data -> 'signup_utm' ->> 'utm_campaign'                       AS campaign,
+  COUNT(*)                                                                    AS signups,
+  COUNT(*) FILTER (WHERE email_confirmed_at IS NOT NULL)                      AS confirmed
+FROM auth.users
+WHERE created_at >= TIMESTAMPTZ '2026-10-12 00:00:00 Europe/Amsterdam'
+GROUP BY 1, 2
+ORDER BY signups DESC;
+```
+
+`confirmed` counts accounts whose email is verified (Google accounts are verified at once).
+Visitors who declined cookies are still counted here: the UTM data is first-party and does not depend on the Meta Pixel.
+
 ## Environment Variables
 
 ### Frontend — `frontend/.env.local`

@@ -4,11 +4,12 @@ import { entryMetadata } from "@/lib/seo/metadata";
 import Link from "next/link";
 import { Navbar } from "@/components/layout/Navbar";
 import { LandingFooter } from "@/components/landing/LandingFooter";
-import { Shield, Database, CreditCard, Lock, Cookie, Brain, Eye, Mail } from "lucide-react";
+import { Shield, Database, CreditCard, Lock, Cookie, Brain, Eye, Mail, BarChart3 } from "lucide-react";
+import { CookieSettingsLink } from "@/components/analytics/ConsentBanner";
 
 export const metadata: Metadata = entryMetadata(staticPageEntry("/privacy")!);
 
-const LAST_UPDATED = "May 14, 2026";
+const LAST_UPDATED = "October 12, 2026";
 
 const SECTIONS = [
   { id: "introduction",      num: "01", title: "Introduction" },
@@ -19,11 +20,12 @@ const SECTIONS = [
   { id: "payments",          num: "06", title: "Payment Processing" },
   { id: "authentication",    num: "07", title: "Authentication & Security" },
   { id: "cookies",           num: "08", title: "Cookies & Local Storage" },
-  { id: "retention",         num: "09", title: "Data Retention" },
-  { id: "gdpr",              num: "10", title: "Your Rights (GDPR)" },
-  { id: "third-parties",     num: "11", title: "Third-Party Services" },
-  { id: "changes",           num: "12", title: "Changes to This Policy" },
-  { id: "contact",           num: "13", title: "Contact Us" },
+  { id: "ads-analytics",     num: "09", title: "Advertising & Analytics" },
+  { id: "retention",         num: "10", title: "Data Retention" },
+  { id: "gdpr",              num: "11", title: "Your Rights (GDPR)" },
+  { id: "third-parties",     num: "12", title: "Third-Party Services" },
+  { id: "changes",           num: "13", title: "Changes to This Policy" },
+  { id: "contact",           num: "14", title: "Contact Us" },
 ];
 
 function SectionHeader({
@@ -143,7 +145,7 @@ export default function PrivacyPage() {
                 {[
                   { icon: Database, text: "You own your poker data. We use it only to power your analysis." },
                   { icon: CreditCard, text: "Payments processed securely by Stripe. We never see your card." },
-                  { icon: Eye, text: "No advertising. No selling your data. No third-party tracking." },
+                  { icon: Eye, text: "No selling your data. Ad and analytics cookies only after you accept." },
                 ].map(({ icon: Icon, text }, i) => (
                   <div key={i} className="flex items-start gap-3">
                     <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-secondary/80 border border-border/50 mt-0.5">
@@ -190,6 +192,7 @@ export default function PrivacyPage() {
                       "Hashed password (we never store plain-text passwords)",
                       "Google account details if you use Google Sign-In",
                       "Subscription tier and billing status",
+                      "The ad campaign (UTM parameters) that brought you to the site, if any",
                     ]} />
                   </div>
                   <div className="rounded-xl border border-border/40 bg-card/40 p-4 space-y-1.5">
@@ -228,8 +231,9 @@ export default function PrivacyPage() {
                   "Comply with legal obligations",
                 ]} />
                 <p className="mt-4">
-                  We do <strong className="text-foreground/80">not</strong> use your data for advertising,
-                  sell it to third parties, or use it to profile you for non-platform purposes.
+                  We do <strong className="text-foreground/80">not</strong> sell your data to third parties or
+                  use it to profile you for non-platform purposes. Ad measurement with Meta and Google happens
+                  only with your consent (see Advertising &amp; Analytics).
                 </p>
               </Prose>
             </section>
@@ -357,17 +361,67 @@ export default function PrivacyPage() {
                       Layout preferences and UI state stored in localStorage for a consistent experience.
                     </p>
                   </div>
+                  <div className="rounded-xl border border-border/40 bg-card/40 p-4 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-mono text-violet-400/70 bg-violet-500/10 px-2 py-0.5 rounded">Only with consent</span>
+                      <p className="text-[13px] font-semibold text-foreground">Advertising & Analytics</p>
+                    </div>
+                    <p className="text-[13px] text-muted-foreground/65 leading-relaxed">
+                      Meta Pixel and Google Analytics cookies. These load only after you click
+                      &ldquo;Accept&rdquo; in the cookie banner. See the next section.
+                    </p>
+                  </div>
                 </div>
-                <p className="mt-4">
-                  We do <strong className="text-foreground/80">not</strong> use advertising cookies, cross-site
-                  tracking, or any third-party analytics cookies.
+              </Prose>
+            </section>
+
+            {/* 09 Advertising & Analytics */}
+            <section>
+              <SectionHeader id="ads-analytics" num="09" title="Advertising & Analytics" icon={BarChart3} />
+              <Prose>
+                <p>
+                  We use <strong className="text-foreground/80">Meta Pixel</strong> (Meta Platforms Ireland Ltd.)
+                  and <strong className="text-foreground/80">Google Analytics</strong> (Google Ireland Ltd.) only
+                  after you accept cookies. If you decline, neither is loaded.
+                </p>
+                <BulletList items={[
+                  "Purpose: to measure which ads bring visitors and sign-ups, and to improve the site",
+                  "Data: page views, device and browser information, and events such as signing up, starting a drill, uploading a tournament and subscribing",
+                  "No hand histories or account content are ever sent to Meta or Google",
+                  "Retention: Meta and Google keep this data under their own policies; your consent choice is stored only in your browser",
+                ]} />
+                <p className="mt-2">
+                  We also store the ad campaign that brought you to the site (the UTM parameters in the link
+                  you clicked) with your account when you sign up, so we can see which ads work.
+                </p>
+                <p>
+                  You can change your mind at any time with the{" "}
+                  <CookieSettingsLink className="text-violet-400 hover:text-violet-300 transition-colors" />{" "}
+                  link in the footer. Meta and Google describe their own practices in the{" "}
+                  <a
+                    href="https://www.facebook.com/privacy/policy/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-violet-400 hover:text-violet-300 transition-colors"
+                  >
+                    Meta Privacy Policy
+                  </a>{" "}
+                  and the{" "}
+                  <a
+                    href="https://policies.google.com/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-violet-400 hover:text-violet-300 transition-colors"
+                  >
+                    Google Privacy Policy
+                  </a>.
                 </p>
               </Prose>
             </section>
 
-            {/* 09 Data Retention */}
+            {/* 10 Data Retention */}
             <section>
-              <SectionHeader id="retention" num="09" title="Data Retention" />
+              <SectionHeader id="retention" num="10" title="Data Retention" />
               <Prose>
                 <BulletList items={[
                   "Account data is retained for as long as your account is active",
@@ -386,9 +440,9 @@ export default function PrivacyPage() {
               </Prose>
             </section>
 
-            {/* 10 GDPR */}
+            {/* 11 GDPR */}
             <section>
-              <SectionHeader id="gdpr" num="10" title="Your Rights (GDPR)" icon={Eye} />
+              <SectionHeader id="gdpr" num="11" title="Your Rights (GDPR)" icon={Eye} />
               <Prose>
                 <p>
                   If you are located in the European Economic Area (EEA) or United Kingdom, you have the
@@ -423,9 +477,9 @@ export default function PrivacyPage() {
               </Prose>
             </section>
 
-            {/* 11 Third-Party Services */}
+            {/* 12 Third-Party Services */}
             <section>
-              <SectionHeader id="third-parties" num="11" title="Third-Party Services" />
+              <SectionHeader id="third-parties" num="12" title="Third-Party Services" />
               <Prose>
                 <p>We use the following trusted third-party services to operate the platform:</p>
                 <div className="space-y-2.5 mt-1">
@@ -434,6 +488,8 @@ export default function PrivacyPage() {
                     { name: "Stripe", role: "Payment processing and subscription management", link: "https://stripe.com/privacy" },
                     { name: "Anthropic", role: "AI coaching insights via Claude API", link: "https://www.anthropic.com/privacy" },
                     { name: "Vercel", role: "Hosting, CDN, and edge network", link: "https://vercel.com/legal/privacy-policy" },
+                    { name: "Meta Platforms Ireland Ltd.", role: "Ad measurement (Meta Pixel), only with your consent", link: "https://www.facebook.com/privacy/policy/" },
+                    { name: "Google Ireland Ltd.", role: "Site analytics (Google Analytics), only with your consent", link: "https://policies.google.com/privacy" },
                   ].map(({ name, role, link }) => (
                     <div key={name} className="flex items-center justify-between rounded-xl border border-border/40 bg-card/40 px-4 py-3">
                       <div>
@@ -454,9 +510,9 @@ export default function PrivacyPage() {
               </Prose>
             </section>
 
-            {/* 12 Changes */}
+            {/* 13 Changes */}
             <section>
-              <SectionHeader id="changes" num="12" title="Changes to This Policy" />
+              <SectionHeader id="changes" num="13" title="Changes to This Policy" />
               <Prose>
                 <p>
                   We may update this Privacy Policy from time to time. When we make significant changes,
@@ -470,9 +526,9 @@ export default function PrivacyPage() {
               </Prose>
             </section>
 
-            {/* 13 Contact */}
+            {/* 14 Contact */}
             <section>
-              <SectionHeader id="contact" num="13" title="Contact Us" icon={Mail} />
+              <SectionHeader id="contact" num="14" title="Contact Us" icon={Mail} />
               <div className="rounded-2xl border border-border/50 bg-card/50 p-6">
                 <p className="text-[14px] text-muted-foreground/75 leading-relaxed mb-5">
                   For any privacy-related questions, data requests, or concerns, contact us at:
