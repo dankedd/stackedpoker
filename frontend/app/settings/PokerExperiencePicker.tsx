@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -20,18 +20,29 @@ export function PokerExperiencePicker({ currentLevel }: { currentLevel: Experien
   const [level, setLevel] = useState<ExperienceLevel | null>(currentLevel);
   const [saving, setSaving] = useState<ExperienceLevel | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  // "Saved" is a short confirmation, not a permanent label.
+  useEffect(() => {
+    if (!saved) return;
+    const t = setTimeout(() => setSaved(false), 2500);
+    return () => clearTimeout(t);
+  }, [saved]);
 
   async function handlePick(next: ExperienceLevel) {
     if (next === level || saving) return;
     setSaving(next);
     setError(null);
+    setSaved(false);
     try {
       const rec = computeRecommendation(next, subscription?.tier);
       await submitAssessment(session?.access_token ?? "", {
         experience_level: next,
         recommended_module_id: rec.startModuleId,
       });
+      // The checkmark moves only once the server confirmed the save.
       setLevel(next);
+      setSaved(true);
       router.refresh();
     } catch (err) {
       setError(describeAssessmentError(err));
@@ -65,7 +76,16 @@ export function PokerExperiencePicker({ currentLevel }: { currentLevel: Experien
           );
         })}
       </div>
-      {error && <p className="mt-2 text-xs text-red-300/90">{error}</p>}
+      <p aria-live="polite" className="mt-2 min-h-4 text-xs">
+        {error ? (
+          <span className="text-red-300/90">{error}</span>
+        ) : saved ? (
+          <span className="inline-flex items-center gap-1 text-emerald-300">
+            <Check aria-hidden="true" className="h-3 w-3" />
+            Saved
+          </span>
+        ) : null}
+      </p>
     </div>
   );
 }

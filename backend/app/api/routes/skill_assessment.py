@@ -52,11 +52,14 @@ async def _supabase_patch(table: str, query: str, data: dict, settings) -> list[
 
 
 async def _supabase_upsert(table: str, data: dict, settings, on_conflict: str = "") -> dict:
+    # on_conflict is a PostgREST *query parameter*. It used to be appended to
+    # the Prefer header, which PostgREST ignored — every upsert became a plain
+    # INSERT and failed with 409 (23505 duplicate key) once the row existed,
+    # so changing the level in Settings never saved.
     url = f"{settings.supabase_url}/rest/v1/{table}"
-    prefer = "return=representation,resolution=merge-duplicates"
     if on_conflict:
-        prefer += f"&on_conflict={on_conflict}"
-    headers = {**_sb_headers(settings), "Prefer": prefer}
+        url += f"?on_conflict={on_conflict}"
+    headers = {**_sb_headers(settings), "Prefer": "return=representation,resolution=merge-duplicates"}
     async with httpx.AsyncClient(timeout=10.0) as client:
         r = await client.post(url, headers=headers, json=data)
         r.raise_for_status()
@@ -72,6 +75,21 @@ async def _supabase_post(table: str, data: dict, settings) -> dict:
         r.raise_for_status()
         result = r.json()
         return result[0] if isinstance(result, list) and result else result
+
+
+def _describe_http_error(e: httpx.HTTPError) -> str:
+    """Status, table and the Postgres error code/message from PostgREST — enough
+    to find the cause in the logs, without ids or row values (PostgREST's
+    `details` field echoes key values, so it is left out)."""
+    if isinstance(e, httpx.HTTPStatusError):
+        r = e.response
+        try:
+            body = r.json()
+        except ValueError:
+            body = {}
+        table = r.request.url.path.rsplit("/", 1)[-1]
+        return f"{r.request.method} {table} -> {r.status_code} {body.get('code', '')} {body.get('message', '')}".strip()
+    return f"{type(e).__name__}: {e}"
 
 
 # ── Request/response models ───────────────────────────────────────────────────
@@ -118,24 +136,29 @@ async def submit_assessment(
         )
 
         # Stub table for the deferred reassessment phase — one row per
-        # completion/change, never read elsewhere in this delivery.
-        await _supabase_post(
-            "skill_check_history",
-            {
-                "user_id": user_id,
-                "check_type": "initial_onboarding" if is_first_completion else "periodic_recheck",
-                "league_before": level_before,
-                "league_after": body.experience_level,
-            },
-            settings,
-        )
+        # completion/change, never read elsewhere in this delivery. Best
+        # effort: the level is already saved, so a failure here must not
+        # tell the user it wasn't.
+        try:
+            await _supabase_post(
+                "skill_check_history",
+                {
+                    "user_id": user_id,
+                    "check_type": "initial_onboarding" if is_first_completion else "periodic_recheck",
+                    "league_before": level_before,
+                    "league_after": body.experience_level,
+                },
+                settings,
+            )
+        except httpx.HTTPError as e:
+            logger.warning("Skill check history not written: %s", _describe_http_error(e))
 
         return {"ok": True}
 
     except HTTPException:
         raise
     except httpx.HTTPError as e:
-        logger.error("Submit assessment DB error user=%s: %s", user_id, e)
+        logger.error("Submit assessment DB error: %s", _describe_http_error(e))
         raise HTTPException(status_code=502, detail="Could not save assessment.")
     except Exception:
         logger.exception("Submit assessment error user=%s", user_id)
