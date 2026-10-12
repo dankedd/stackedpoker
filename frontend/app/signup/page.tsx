@@ -6,6 +6,7 @@ import { Eye, EyeOff, AlertCircle, CheckCircle2, Loader2, Spade } from 'lucide-r
 import { createClient } from '@/lib/supabase/client'
 import { getSiteUrl } from '@/lib/site-url'
 import { readUtm, track } from '@/lib/metaPixel'
+import { readSignupIntent } from '@/lib/ranges/guestProgress'
 import { Button } from '@/components/ui/button'
 import {
   SEO_EVENTS,
@@ -64,7 +65,9 @@ export default function SignupPage() {
     setError(null)
     setOauthLoading(provider)
     const supabase = createClient()
-    const callbackUrl = `${getSiteUrl(window.location.origin)}/auth/callback?next=${encodeURIComponent('/dashboard')}`
+    // From the trainer's save-progress prompt: come back to the trainer, not the dashboard.
+    const next = readSignupIntent()?.return_to ?? '/dashboard'
+    const callbackUrl = `${getSiteUrl(window.location.origin)}/auth/callback?next=${encodeURIComponent(next)}`
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: { redirectTo: callbackUrl },
@@ -89,12 +92,19 @@ export default function SignupPage() {
     // The session's first utm_* set rides along into user_metadata, so a
     // signup can later be traced back to the ad that brought it in.
     const utm = readUtm()
+    // Signed up from the trainer's save-progress prompt or banner: credit the
+    // prompt, and let the confirmation link lead back to the trainer.
+    const intent = readSignupIntent()
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { username: username.trim(), ...(utm ? { signup_utm: utm } : {}) },
-        emailRedirectTo: `${getSiteUrl(window.location.origin)}/auth/callback`,
+        data: {
+          username: username.trim(),
+          ...(utm ? { signup_utm: utm } : {}),
+          ...(intent ? { signup_source: intent.source } : {}),
+        },
+        emailRedirectTo: `${getSiteUrl(window.location.origin)}/auth/callback${intent ? `?next=${encodeURIComponent(intent.return_to)}` : ''}`,
       },
     })
 
@@ -105,7 +115,9 @@ export default function SignupPage() {
     }
     // With email confirmation on, an already-registered address comes back
     // without an error but with no identities: that is not a new account.
-    if (data.user?.identities?.length) track('CompleteRegistration', { registration_method: 'email' })
+    if (data.user?.identities?.length) {
+      track('CompleteRegistration', { registration_method: 'email', ...(intent ? { source: intent.source } : {}) })
+    }
     // Credit the signup to a free tool when one was used earlier this
     // session (§ "account created after using tool"). The attribution is a
     // slug in sessionStorage, set by ToolPanel — no identifiers, no inputs.

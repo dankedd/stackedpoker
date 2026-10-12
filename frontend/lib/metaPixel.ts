@@ -53,17 +53,27 @@ declare global {
 
 // Events fired during hydration can land before the pixel's inline script has
 // run. They wait here and MetaPixel flushes them once window.fbq exists.
-const pending: [string, Params | undefined][] = [];
+const pending: ["track" | "trackCustom", string, Params | undefined][] = [];
 
-export function track(event: string, params?: Params) {
+function send(method: "track" | "trackCustom", event: string, params?: Params) {
   if (typeof window === "undefined" || readConsent() !== "granted") return;
-  if (window.fbq) window.fbq("track", event, params);
-  else pending.push([event, params]);
+  if (window.fbq) window.fbq(method, event, params);
+  else pending.push([method, event, params]);
+}
+
+/** A Meta standard event (PageView, CompleteRegistration, ViewContent, Subscribe…). */
+export function track(event: string, params?: Params) {
+  send("track", event, params);
+}
+
+/** One of our own event names, e.g. SignupPromptShown. */
+export function trackCustom(event: string, params?: Params) {
+  send("trackCustom", event, params);
 }
 
 export function flushPending() {
   if (!window.fbq) return;
-  for (const [event, params] of pending.splice(0)) window.fbq("track", event, params);
+  for (const [method, event, params] of pending.splice(0)) window.fbq(method, event, params);
 }
 
 /** Monthly prices in EUR, as listed on /pricing (PLUS_PRICE / ELITE_PRICE). */

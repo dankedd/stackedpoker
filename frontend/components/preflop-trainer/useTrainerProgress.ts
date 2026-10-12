@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchTrainerState, type HandXpResult, type TrainerXpState } from "@/lib/ranges/api";
+import { GUEST_MERGED_EVENT } from "./GuestProgressSync";
 
 const STORAGE_KEY = "mpt-trainer-highscore";
 
@@ -51,22 +52,26 @@ export function useTrainerProgress() {
     }
   }, [signedIn, setRecord]);
 
-  // Signed in: server state.
+  // Signed in: server state. Loaded again once guest hands were merged in.
   useEffect(() => {
     if (!signedIn) return;
     let cancelled = false;
-    fetchTrainerState(token)
-      .then((s) => {
-        if (cancelled) return;
-        setXpState(s);
-        setRecord(s.best_streak);
-      })
-      .catch(() => {
-        // No XP state (offline, backend down): the trainer still works, it just
-        // shows no XP numbers until the next successful hand.
-      });
+    const load = () =>
+      fetchTrainerState(token)
+        .then((s) => {
+          if (cancelled) return;
+          setXpState(s);
+          setRecord(s.best_streak);
+        })
+        .catch(() => {
+          // No XP state (offline, backend down): the trainer still works, it just
+          // shows no XP numbers until the next successful hand.
+        });
+    void load();
+    window.addEventListener(GUEST_MERGED_EVENT, load);
     return () => {
       cancelled = true;
+      window.removeEventListener(GUEST_MERGED_EVENT, load);
     };
     // Re-run on a new user only, not on every token refresh.
     // eslint-disable-next-line react-hooks/exhaustive-deps

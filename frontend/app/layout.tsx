@@ -8,6 +8,7 @@ import { getSiteUrl } from "@/lib/site-url";
 import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
 import { MetaPixel } from "@/components/analytics/MetaPixel";
 import { ConsentBanner } from "@/components/analytics/ConsentBanner";
+import { GuestProgressSync } from "@/components/preflop-trainer/GuestProgressSync";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from "@/lib/seo/config";
@@ -94,6 +95,8 @@ export default function RootLayout({
           {/* Loads nothing until the visitor accepts in the ConsentBanner. */}
           <MetaPixel />
           <ConsentBanner />
+          {/* Trainer hands played while signed out move into the account on sign-in. */}
+          <GuestProgressSync />
         </AuthProvider>
         <GoogleAnalytics />
       </body>

@@ -44,6 +44,7 @@ import { XPGain } from "@/components/learn/XPGain";
 import { cn } from "@/lib/utils";
 import { ACTION_ORDER, HandBreakdown, Pills, SourceLegend, Swatch, TOOL_SLUG, sourceLabel, toStrategies } from "./shared";
 import { useTrainerProgress } from "./useTrainerProgress";
+import { GuestSignup, useGuestSignup } from "./GuestSignup";
 
 const TYPE_LABEL: Record<TrainerType, string> = { open: "Open", def: "Defense", mix: "Mixed" };
 const MODE_LABEL: Record<TrainerMode, string> = { all: "All", mtt: "MTT", pf: "Push/fold ≤10bb", cash: "Cash 100bb" };
@@ -90,6 +91,9 @@ export function Trainer() {
   const { signedIn, token, high, xpState, recordLocalStreak, applyHandResult, resetLocal } = useTrainerProgress();
   const { progress, applyServerXpTotal, dismissLevelUp } = useLearnProgress();
   const answerId = useRef(0);
+  // Signed out: count hands locally and offer to save them after hand 5 and 20.
+  const guest = useGuestSignup();
+  const recordGuestHand = guest.recordHand;
   const [showFilters, setShowFilters] = useState(false);
 
   // Signed in, the streak lives on the server and carries over between sessions.
@@ -122,6 +126,7 @@ export function Trainer() {
       const id = ++answerId.current;
       setStats(nextStats);
       if (!signedIn) {
+        recordGuestHand(deal, g.verdict);
         const newRecord = recordLocalStreak(nextStats.streak);
         setAnswer({ id, key: k, grade: g, streakBefore: stats.streak, newRecord, xp: { status: "guest" } });
       } else {
@@ -142,7 +147,7 @@ export function Trainer() {
         trackEvent(SEO_EVENTS.toolCalculate, { tool_slug: TOOL_SLUG, hands: nextStats.hands, score: scorePct(nextStats) });
       }
     },
-    [deal, answer, stats, signedIn, token, recordLocalStreak, applyHandResult, applyServerXpTotal],
+    [deal, answer, stats, signedIn, token, recordLocalStreak, applyHandResult, applyServerXpTotal, recordGuestHand],
   );
 
   // Keyboard: only the visible buttons, Enter/Space for the next hand.
@@ -287,6 +292,8 @@ export function Trainer() {
       {deal ? <Table deal={deal} /> : <div className="mx-auto aspect-[16/9.6] max-w-[860px] animate-pulse rounded-[999px] bg-card/40" />}
 
       {deal && <ActionButtons deal={deal} onChoose={choose} disabled={Boolean(answer)} />}
+
+      <GuestSignup guest={guest} resultOpen={Boolean(answer)} />
 
       {deal && answer && <ResultModal deal={deal} answer={answer} stats={stats} high={high} onNext={() => next()} />}
 

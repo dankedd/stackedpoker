@@ -129,6 +129,21 @@ ORDER BY signups DESC;
 ```
 
 `confirmed` counts accounts whose email is verified (Google accounts are verified at once).
+
+Sign-ups per trainer prompt (`signup_source`: `trainer_prompt_5`, `trainer_prompt_20`, `trainer_banner`;
+empty for sign-ups that did not come through the trainer's save-progress prompt) and per ad:
+
+```sql
+SELECT
+  COALESCE(raw_user_meta_data ->> 'signup_source', '(other)')                 AS source,
+  COALESCE(raw_user_meta_data -> 'signup_utm' ->> 'utm_content', '(no utm)') AS ad,
+  COUNT(*)                                                                    AS signups,
+  COUNT(*) FILTER (WHERE email_confirmed_at IS NOT NULL)                      AS confirmed
+FROM auth.users
+WHERE created_at >= TIMESTAMPTZ '2026-10-12 00:00:00 Europe/Amsterdam'
+GROUP BY 1, 2
+ORDER BY signups DESC;
+```
 Visitors who declined cookies are still counted here: the UTM data is first-party and does not depend on the Meta Pixel.
 
 ## Environment Variables

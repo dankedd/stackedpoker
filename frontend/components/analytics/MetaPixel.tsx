@@ -5,6 +5,7 @@ import Script from "next/script";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { createClient } from "@/lib/supabase/client";
+import { readSignupIntent } from "@/lib/ranges/guestProgress";
 import {
   CONSENT_CHANGE_EVENT,
   META_PIXEL_ID,
@@ -119,10 +120,12 @@ function SignupAttribution() {
     if (user.user_metadata?.signup_attributed) return;
     if (Date.now() - new Date(user.created_at).getTime() > NEW_ACCOUNT_WINDOW_MS) return;
     done.current = true;
-    track("CompleteRegistration", { registration_method: provider });
+    // Signed up from the trainer's save-progress prompt or banner.
+    const source = readSignupIntent()?.source;
+    track("CompleteRegistration", { registration_method: provider, ...(source ? { source } : {}) });
     const utm = readUtm();
     void createClient().auth.updateUser({
-      data: { signup_attributed: true, ...(utm ? { signup_utm: utm } : {}) },
+      data: { signup_attributed: true, ...(utm ? { signup_utm: utm } : {}), ...(source ? { signup_source: source } : {}) },
     });
   }, [user]);
 
