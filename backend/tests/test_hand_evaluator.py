@@ -143,7 +143,9 @@ class TestClassifyMadeHandCategory:
     def test_flush_draw_does_not_make_flush(self):
         """4 to a flush is not a made flush."""
         cat = classify_made_hand_category(['9h', '8h'], ['7h', '6h', 'Ac'])
-        assert cat == 'straight'  # 5-6-7-8-9 straight! Not flush (only 4 hearts)
+        # 9-8-7-6-A: four hearts and four to a straight, but no five — no 5 on
+        # board, so no straight either (the old expectation was wrong).
+        assert cat == 'high_card'
 
 
 class TestHasPairOrBetter:

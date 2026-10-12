@@ -229,13 +229,20 @@ class BaseParser(ABC):
     # ── Seat / position helpers ────────────────────────────────────────────
 
     def _parse_seats(self, text: str, bb: float) -> list[dict]:
-        """Parse 'Seat N: Name (X in chips)' lines. Handles $ prefix or bare numbers."""
+        """Parse 'Seat N: Name (X in chips)' lines. Handles $ prefix or bare numbers.
+
+        A minus sign ("$-50.00" or "-$50.00") is kept, not dropped: a seat line
+        that failed to match used to vanish silently, so the validator never
+        saw the corrupt stack it exists to report (NEGATIVE_STACK).
+        """
         seats = []
         for m in re.finditer(
-            r"Seat (\d+):\s+(\S+)\s+\(\$?([0-9,]+(?:\.[0-9]+)?)\s+in chips\)",
+            r"Seat (\d+):\s+(\S+)\s+\((-)?\$?(-)?([0-9,]+(?:\.[0-9]+)?)\s+in chips\)",
             text,
         ):
-            stack = float(m.group(3).replace(",", ""))
+            stack = float(m.group(5).replace(",", ""))
+            if m.group(3) or m.group(4):
+                stack = -stack
             seats.append({
                 "seat": int(m.group(1)),
                 "name": m.group(2),

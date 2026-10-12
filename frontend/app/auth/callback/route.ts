@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getSiteUrl } from '@/lib/site-url'
+import { syncOAuthProfile, type ProfilesClient } from '@/lib/auth/profileSync'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
@@ -59,19 +60,13 @@ export async function GET(request: NextRequest) {
       console.log('[auth/callback] authenticated user:', user?.id ?? 'none')
 
       if (user) {
-        // Upsert profile for new OAuth users. ignoreDuplicates prevents
-        // overwriting existing usernames on returning logins.
-        const { error: upsertError } = await supabase.from('profiles').upsert(
-          {
-            id:         user.id,
-            email:      user.email,
-            full_name:  user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
-            avatar_url: user.user_metadata?.avatar_url ?? user.user_metadata?.picture ?? null,
-          },
-          { onConflict: 'id', ignoreDuplicates: true },
-        )
-        if (upsertError) {
-          console.warn('[auth/callback] profile upsert warning:', upsertError.message)
+        // Name and avatar from Google, filled into the profile only where
+        // still empty (the row itself comes from the signup trigger). A
+        // failure never blocks the login, but it is logged with the real
+        // Postgres error so it can be found.
+        const sync = await syncOAuthProfile(supabase as unknown as ProfilesClient, user)
+        if (sync.status === 'error') {
+          console.error(`[auth/callback] profile ${sync.step} failed: ${sync.error}`)
         }
       }
 

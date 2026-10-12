@@ -158,8 +158,9 @@ class TestStraightDrawDetection:
         assert not has_oesd, "7-8-9 is only 3 consecutive ranks — NOT an OESD"
 
     def test_gutshot(self):
-        """5-6-_-8 is a gutshot (needs 7)."""
-        da = analyze_draws(["5h", "8d"], ["6c", "Ks", "2h"])
+        """4-5-6-_-8 is a gutshot (needs 7). (5-6-_-8 alone is only three
+        cards of any five-card window — not a draw at all.)"""
+        da = analyze_draws(["5h", "8d"], ["6c", "4s", "Kh"])
         has_gutshot = any(sd.draw_type == "gutshot" for sd in da.straight_draws)
         assert has_gutshot
 
