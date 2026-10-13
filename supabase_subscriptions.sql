@@ -342,13 +342,16 @@ $$;
 -- `created_at > latest`: Postgres also checks this policy against the row an
 -- INSERT ... ON CONFLICT proposes, before it exists. The importer's upsert of
 -- a brand-new tournament (created_at = now()) must pass, and once committed
--- that row IS the latest.
+-- that row IS the latest. `latest IS NULL`: the user's very first tournament
+-- (nothing to compare against — without this the comparison is NULL and the
+-- first upload is refused).
 DROP POLICY IF EXISTS "hh_tournaments_select_own" ON public.hh_tournaments;
 CREATE POLICY "hh_tournaments_select_own" ON public.hh_tournaments
   FOR SELECT USING (
     auth.uid() = user_id
     AND (
       (SELECT public.hh_full_history())
+      OR (SELECT (public.hh_latest_tournament()).id) IS NULL
       OR id = (SELECT (public.hh_latest_tournament()).id)
       OR created_at > (SELECT (public.hh_latest_tournament()).created_at)
     )

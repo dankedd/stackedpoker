@@ -156,8 +156,12 @@ END $$;
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', false) \gset
 
+-- A Free user's very first tournament, sent exactly like the importer does
+-- (upsert): with no tournament yet there is no "latest" to compare against.
 INSERT INTO public.hh_tournaments (user_id, site, tournament_id, name)
-VALUES ('00000000-0000-0000-0000-00000000000a', 'ggpoker', 'T1', 'First');
+VALUES ('00000000-0000-0000-0000-00000000000a', 'ggpoker', 'T1', 'First')
+ON CONFLICT (user_id, site, tournament_id) DO NOTHING;
+\echo 'ok   first upload of a free user with no tournaments accepted'
 
 DO $$
 BEGIN
