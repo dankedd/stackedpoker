@@ -45,6 +45,7 @@ import { cn } from "@/lib/utils";
 import { ACTION_ORDER, HandBreakdown, Pills, SourceLegend, Swatch, TOOL_SLUG, sourceLabel, toStrategies } from "./shared";
 import { useTrainerProgress } from "./useTrainerProgress";
 import { GuestSignup, useGuestSignup } from "./GuestSignup";
+import { TrainerLimitGate, useTrainerLimit } from "./TrainerLimit";
 
 const TYPE_LABEL: Record<TrainerType, string> = { open: "Open", def: "Defense", mix: "Mixed" };
 const MODE_LABEL: Record<TrainerMode, string> = { all: "All", mtt: "MTT", pf: "Push/fold ≤10bb", cash: "Cash 100bb" };
@@ -94,6 +95,9 @@ export function Trainer() {
   // Signed out: count hands locally and offer to save them after hand 5 and 20.
   const guest = useGuestSignup();
   const recordGuestHand = guest.recordHand;
+  // Free plan: 50 answered hands a day (the server refuses hand 51 when signed in).
+  const trainerLimit = useTrainerLimit(signedIn);
+  const { allowHand, recordGuestHand: countGuestDailyHand, applyServerUsage, handleServerError } = trainerLimit;
   const [showFilters, setShowFilters] = useState(false);
 
   // Signed in, the streak lives on the server and carries over between sessions.
@@ -120,6 +124,7 @@ export function Trainer() {
   const choose = useCallback(
     (k: RangeActionKey) => {
       if (!deal || answer) return;
+      if (!allowHand()) return;
       // Instant local verdict for the feedback; XP and the authoritative streak follow from the server.
       const g = grade(deal, deal.hand, k);
       const nextStats = applyVerdict(stats, g.verdict);
@@ -127,6 +132,7 @@ export function Trainer() {
       setStats(nextStats);
       if (!signedIn) {
         recordGuestHand(deal, g.verdict);
+        countGuestDailyHand();
         const newRecord = recordLocalStreak(nextStats.streak);
         setAnswer({ id, key: k, grade: g, streakBefore: stats.streak, newRecord, xp: { status: "guest" } });
       } else {
@@ -136,9 +142,18 @@ export function Trainer() {
             const newRecord = applyHandResult(result);
             setStats((s) => ({ ...s, streak: result.streak }));
             applyServerXpTotal(result.total_xp);
+            applyServerUsage(result.usage);
             setAnswer((a) => (a && a.id === id ? { ...a, newRecord, xp: { status: "done", result } } : a));
           },
-          () => setAnswer((a) => (a && a.id === id ? { ...a, xp: { status: "error" } } : a)),
+          (err) => {
+            // Over the daily limit: the hand never counted, so drop it and show the limit screen.
+            if (handleServerError(err)) {
+              setStats(stats);
+              setAnswer((a) => (a && a.id === id ? null : a));
+            } else {
+              setAnswer((a) => (a && a.id === id ? { ...a, xp: { status: "error" } } : a));
+            }
+          },
         );
       }
       // First answered hand of the visit: the drill has started.
@@ -147,7 +162,21 @@ export function Trainer() {
         trackEvent(SEO_EVENTS.toolCalculate, { tool_slug: TOOL_SLUG, hands: nextStats.hands, score: scorePct(nextStats) });
       }
     },
-    [deal, answer, stats, signedIn, token, recordLocalStreak, applyHandResult, applyServerXpTotal, recordGuestHand],
+    [
+      deal,
+      answer,
+      stats,
+      signedIn,
+      token,
+      recordLocalStreak,
+      applyHandResult,
+      applyServerXpTotal,
+      recordGuestHand,
+      allowHand,
+      countGuestDailyHand,
+      applyServerUsage,
+      handleServerError,
+    ],
   );
 
   // Keyboard: only the visible buttons, Enter/Space for the next hand.
@@ -294,6 +323,8 @@ export function Trainer() {
       {deal && <ActionButtons deal={deal} onChoose={choose} disabled={Boolean(answer)} />}
 
       <GuestSignup guest={guest} resultOpen={Boolean(answer)} />
+
+      <TrainerLimitGate limit={trainerLimit} resultOpen={Boolean(answer)} />
 
       {deal && answer && <ResultModal deal={deal} answer={answer} stats={stats} high={high} onNext={() => next()} />}
 

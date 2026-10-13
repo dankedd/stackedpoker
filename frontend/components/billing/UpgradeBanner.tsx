@@ -3,21 +3,26 @@
 import { useState, useEffect } from "react";
 import { CheckCircle2, Sparkles, X } from "lucide-react";
 import { trackSubscribe } from "@/lib/metaPixel";
+import { refreshEntitlements } from "@/hooks/useEntitlements";
 
 /**
- * Shows a dismissible success banner when the URL contains ?upgraded=1.
+ * Shows a dismissible success banner when the URL contains ?upgraded=1
+ * (Stripe's success_url, which also carries &source=<upgrade moment>).
  * Rendered inside the Dashboard (client-side only — reads window.location).
  */
 export function UpgradeBanner() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("upgraded") === "1") {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("upgraded") === "1") {
       setVisible(true);
-      trackSubscribe();
+      trackSubscribe(params.get("source"));
+      void refreshEntitlements();
       // Clean the URL without reloading
       const url = new URL(window.location.href);
       url.searchParams.delete("upgraded");
+      url.searchParams.delete("source");
       window.history.replaceState({}, "", url.toString());
     }
   }, []);
@@ -34,7 +39,7 @@ export function UpgradeBanner() {
           Welcome to Pro! <Sparkles className="h-4 w-4 text-violet-400" />
         </p>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Your subscription is active. You now have unlimited hand analyses and full access to all features.
+          Your subscription is active: unlimited hands, unlimited tournaments with your full history, and unlimited AI Coach.
         </p>
       </div>
       <button

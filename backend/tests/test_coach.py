@@ -82,36 +82,56 @@ class FakeSupabase:
             if _row_matches(row, filters):
                 row.update(data)
 
-    # ── ai_coach_usage RPCs — mirrors reserve_coach_usage/release_coach_usage's
-    #    real SQL semantics (see supabase_ai_coach_usage_schema.sql). Since this
-    #    runs as a single synchronous Python call with no `await` inside, two
-    #    "concurrent" asyncio tasks calling it can never interleave mid-check —
-    #    exactly the atomicity the real DB's row lock provides.
-    def reserve_coach_usage(self, user_id: str, daily_limit: int) -> dict:
-        # Return shape mirrors the REAL RPC exactly (message_count, allowed) —
-        # `usage_date` was removed from RETURNS TABLE by the ambiguous-column
-        # bugfix (see supabase_ai_coach_usage_schema.sql); it's still tracked
-        # in the internal row dict below, just never part of what the RPC
-        # hands back to the caller.
-        from datetime import datetime, timezone
-        today = datetime.now(timezone.utc).date().isoformat()
-        rows = self._table("ai_coach_usage")
-        row = next((r for r in rows if r["user_id"] == user_id and r["usage_date"] == today), None)
-        if row is None:
-            row = {"user_id": user_id, "usage_date": today, "message_count": 1}
-            rows.append(row)
-            return {"message_count": 1, "allowed": True}
-        if row["message_count"] < daily_limit:
-            row["message_count"] += 1
-            return {"message_count": row["message_count"], "allowed": True}
-        return {"message_count": row["message_count"], "allowed": False}
+    # ── usage RPCs — mirror consume_usage/release_usage/get_entitlements
+    #    (supabase_subscriptions.sql) for metric 'ai_question'. Each call is a
+    #    single synchronous Python call with no `await` inside, so two
+    #    "concurrent" asyncio tasks can never interleave mid-check — exactly the
+    #    atomicity the real statement's row lock provides.
+    FREE_AI_LIMIT = 3
+    PRO_AI_LIMIT = 100  # hidden fair-use cap
 
-    def release_coach_usage(self, user_id: str) -> None:
+    def plan(self, user_id: str) -> str:
+        profile = next((r for r in self._table("profiles") if r.get("id") == user_id), {})
+        if profile.get("subscription_tier") == "admin":
+            return "pro"
+        sub = next((r for r in self._table("subscriptions") if r.get("user_id") == user_id), {})
+        return "pro" if sub.get("status") in ("active", "trialing") else "free"
+
+    def _today(self) -> str:
         from datetime import datetime, timezone
-        today = datetime.now(timezone.utc).date().isoformat()
-        for row in self._table("ai_coach_usage"):
-            if row["user_id"] == user_id and row["usage_date"] == today:
-                row["message_count"] = max(row["message_count"] - 1, 0)
+        return datetime.now(timezone.utc).date().isoformat()
+
+    def _usage_row(self, user_id: str, metric: str) -> dict | None:
+        return next((r for r in self._table("usage_daily")
+                     if r["user_id"] == user_id and r["metric"] == metric and r["usage_date"] == self._today()), None)
+
+    def consume_usage(self, user_id: str, metric: str) -> dict:
+        plan = self.plan(user_id)
+        limit = self.FREE_AI_LIMIT if plan == "free" else self.PRO_AI_LIMIT
+        row = self._usage_row(user_id, metric)
+        base = {"limit": limit, "plan": plan, "reset_at": "2099-01-01T23:00:00+00:00"}
+        if row is None:
+            self._table("usage_daily").append({"user_id": user_id, "metric": metric, "usage_date": self._today(), "count": 1})
+            return {**base, "allowed": True, "used": 1}
+        if row["count"] < limit:
+            row["count"] += 1
+            return {**base, "allowed": True, "used": row["count"]}
+        return {**base, "allowed": False, "used": row["count"]}
+
+    def release_usage(self, user_id: str, metric: str) -> None:
+        row = self._usage_row(user_id, metric)
+        if row:
+            row["count"] = max(row["count"] - 1, 0)
+
+    def get_entitlements(self, user_id: str) -> dict:
+        plan = self.plan(user_id)
+        row = self._usage_row(user_id, "ai_question")
+        return {
+            "plan": plan,
+            "limits": {"ai_questions_per_day": self.FREE_AI_LIMIT if plan == "free" else None},
+            "usage": {"ai_questions_today": row["count"] if row else 0},
+            "daily_reset_at": "2099-01-01T23:00:00+00:00",
+        }
 
 
 class FakeAsyncClient:
@@ -146,14 +166,14 @@ class FakeAsyncClient:
 
     async def post(self, url, headers=None, json=None):
         path, _ = self._split(url)
-        if path == "rpc/reserve_coach_usage":
-            # The real RPC always returns exactly one row (allowed true or
-            # false) via RETURN QUERY in both IF branches — never zero rows.
-            result = self.db.reserve_coach_usage(json["p_user_id"], json["p_daily_limit"])
-            return FakeResponse([result])
-        if path == "rpc/release_coach_usage":
-            self.db.release_coach_usage(json["p_user_id"])
-            return FakeResponse([])
+        # jsonb-returning RPCs come back from PostgREST as the bare object.
+        if path == "rpc/consume_usage":
+            return FakeResponse(self.db.consume_usage(json["p_user_id"], json["p_metric"]))
+        if path == "rpc/release_usage":
+            self.db.release_usage(json["p_user_id"], json["p_metric"])
+            return FakeResponse(None)
+        if path == "rpc/get_entitlements":
+            return FakeResponse(self.db.get_entitlements(json["p_user_id"]))
         return FakeResponse([self.db.insert(path, json)])
 
     async def patch(self, url, headers=None, json=None):
@@ -1134,11 +1154,10 @@ def test_concurrent_requests_at_2_of_3_only_one_succeeds(fake_db, captured_reply
 
 
 def test_paid_tier_gets_the_unlimited_daily_limit(fake_db, captured_reply):
-    """entitlements.ai_coach_daily_limit reads the real subscription_tier —
-    a pro/premium/admin profile row must resolve to the unlimited sentinel,
-    not the free-tier 3/day fake_db defaults every other test in this file
-    implicitly gets (empty profiles table -> get_user_profile's free fallback)."""
-    fake_db.tables["profiles"] = [{"id": "user-quota-paid", "subscription_tier": "pro"}]
+    """An active Stripe subscription (subscriptions table, written only by the
+    webhook) resolves to Pro: reported as unlimited, with the UNLIMITED
+    sentinel as the limit so the hidden fair-use cap never reaches the UI."""
+    fake_db.tables["subscriptions"] = [{"user_id": "user-quota-paid", "status": "active"}]
     user = {"sub": "user-quota-paid"}
     body = coach_module.CoachMessageBody(message="hi", context={})
     result = run(coach_module.coach_message(body, FakeRequest(ip="10.0.1.5"), user))
@@ -1147,6 +1166,30 @@ def test_paid_tier_gets_the_unlimited_daily_limit(fake_db, captured_reply):
     # The frontend must never infer "unlimited" from the limit number being
     # huge — this explicit flag is the single source of truth for that.
     assert result["usage"]["unlimited"] is True
+
+
+def test_profile_tier_alone_does_not_unlock_pro(fake_db, captured_reply):
+    """profiles.subscription_tier is only a mirror — a 'pro' value there
+    without a subscription row grants nothing."""
+    fake_db.tables["profiles"] = [{"id": "user-quota-mirror", "subscription_tier": "pro"}]
+    result = run(coach_module.coach_message(
+        coach_module.CoachMessageBody(message="hi", context={}), FakeRequest(ip="10.0.1.6"), {"sub": "user-quota-mirror"},
+    ))
+    assert result["usage"]["unlimited"] is False
+    assert result["usage"]["limit"] == 3
+
+
+def test_pro_fair_use_cap_returns_a_message_not_the_upgrade_panel(fake_db, captured_reply):
+    fake_db.tables["subscriptions"] = [{"user_id": "user-fair-use", "status": "active"}]
+    fake_db.tables["usage_daily"] = [{"user_id": "user-fair-use", "metric": "ai_question",
+                                      "usage_date": fake_db._today(), "count": 100}]
+    with pytest.raises(HTTPException) as exc_info:
+        run(coach_module.coach_message(
+            coach_module.CoachMessageBody(message="hi", context={}), FakeRequest(ip="10.0.1.7"), {"sub": "user-fair-use"},
+        ))
+    assert exc_info.value.status_code == 429
+    assert exc_info.value.detail["code"] == "AI_COACH_FAIR_USE_LIMIT"
+    assert "100" not in exc_info.value.detail["message"]
 
 
 def test_llm_failure_releases_the_reserved_slot(fake_db, monkeypatch):
@@ -1163,8 +1206,8 @@ def test_llm_failure_releases_the_reserved_slot(fake_db, monkeypatch):
         run(coach_module.coach_message(body, FakeRequest(), user))
     assert exc_info.value.status_code == 503
 
-    usage_row = fake_db.tables["ai_coach_usage"][0]
-    assert usage_row["message_count"] == 0  # reserved (1) then released back to 0
+    usage_row = fake_db.tables["usage_daily"][0]
+    assert usage_row["count"] == 0  # reserved (1) then released back to 0
 
 
 def test_get_usage_endpoint_has_no_side_effects(fake_db, captured_reply):
@@ -1183,14 +1226,13 @@ def test_get_usage_reflects_zero_before_any_message(fake_db):
     assert result["usage"] == {"limit": 3, "used": 0, "remaining": 3, "reset_at": result["usage"]["reset_at"], "unlimited": False}
 
 
-def test_reset_at_is_next_utc_midnight(fake_db):
-    from datetime import datetime, timezone
-    reset_at = coach_usage_module.compute_reset_at()
-    parsed = datetime.fromisoformat(reset_at)
-    assert parsed.tzinfo is not None
-    assert parsed.utcoffset().total_seconds() == 0  # UTC, not server-local time
-    assert parsed.hour == 0 and parsed.minute == 0 and parsed.second == 0
-    assert parsed.date() > datetime.now(timezone.utc).date()
+def test_reset_at_comes_from_the_database(fake_db, captured_reply):
+    """The Amsterdam-midnight reset is computed in SQL (next_amsterdam_midnight);
+    the backend passes it through instead of guessing a timezone."""
+    result = run(coach_module.coach_message(
+        coach_module.CoachMessageBody(message="hi", context={}), FakeRequest(ip="10.0.1.8"), {"sub": "user-reset"},
+    ))
+    assert result["usage"]["reset_at"] == "2099-01-01T23:00:00+00:00"
 
 
 def test_quota_isolated_per_user(fake_db, captured_reply):

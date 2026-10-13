@@ -36,8 +36,8 @@ class Settings(BaseSettings):
     # Stripe  (server-side only — never expose secret key to frontend)
     stripe_secret_key: str = ""
     stripe_webhook_secret: str = ""
+    # The one Pro price (€7.99/month, tax-inclusive).
     stripe_pro_price_id: str = ""
-    stripe_premium_price_id: str = ""
 
     # ── Solver engine controls ────────────────────────────────────────────────
     # Master switch for solver-backed strategy retrieval in the analysis pipeline.

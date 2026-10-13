@@ -1,18 +1,26 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { rememberCheckoutPlan } from "@/lib/metaPixel";
+import { rememberCheckoutSource } from "@/lib/metaPixel";
+import type { UpgradeSource } from "@/lib/billing/entitlements";
 
 // ── Shared checkout helper ─────────────────────────────────────────────────
 
-export async function startCheckout(plan: "pro" | "premium" = "pro"): Promise<void> {
+/** Thrown when the account already has Pro — the caller should refresh, not retry. */
+export class AlreadySubscribedError extends Error {}
+
+/**
+ * Opens Stripe Checkout for Pro in a new tab. `source` is the upgrade moment
+ * (hand_limit, upload_limit, …); the server validates it and stores it with
+ * the subscription.
+ */
+export async function startCheckout(source: UpgradeSource = "pricing_page"): Promise<void> {
   // Open a blank tab NOW, synchronously, while still inside the user-interaction
   // event stack. Popup blockers only fire when window.open() is called after an
   // await (i.e. outside the original user gesture). By opening "about:blank" here
   // we secure a real tab reference before any async work, then navigate it once
   // we have the Stripe URL.
   const tab = window.open("about:blank", "_blank");
-  console.log("[checkout] blank tab opened:", !!tab);
 
   try {
     const supabase = createClient();
@@ -26,30 +34,26 @@ export async function startCheckout(plan: "pro" | "premium" = "pro"): Promise<vo
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ origin: window.location.origin, plan }),
+      body: JSON.stringify({ source }),
     });
 
     const data = await res.json().catch(() => ({}));
-    console.log("[checkout] response:", data);
-
+    if (data.error === "already_subscribed") throw new AlreadySubscribedError(data.message);
     if (!res.ok || data.error) {
       throw new Error(data.message ?? data.detail ?? "Failed to start checkout. Please try again.");
     }
 
     const url: string | undefined = data.url;
     if (!url || typeof url !== "string" || !url.startsWith("http")) {
-      console.error("[checkout] invalid or missing URL in response:", data);
       throw new Error("Checkout failed — invalid redirect URL.");
     }
 
-    rememberCheckoutPlan(plan);
+    rememberCheckoutSource(source);
     if (tab && !tab.closed) {
       // Navigate the pre-opened tab — original tab stays put
       tab.location.href = url;
-      console.log("[checkout] external tab navigated to Stripe");
     } else {
       // True fallback: popup was blocked and the user dismissed the notice
-      console.warn("[checkout] popup blocked — same-tab fallback");
       window.location.href = url;
     }
   } catch (err) {

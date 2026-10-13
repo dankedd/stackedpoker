@@ -80,7 +80,7 @@ export function UserMenu() {
           label: 'Manage subscription',
           busy: managingSubscription,
         }
-      : { kind: 'link', href: '/pricing', icon: CreditCard, label: 'Upgrade to Plus' },
+      : { kind: 'link', href: '/pricing', icon: CreditCard, label: 'Upgrade to Pro' },
     { kind: 'link', href: '/settings', icon: Settings, label: 'Settings' },
   ]
 

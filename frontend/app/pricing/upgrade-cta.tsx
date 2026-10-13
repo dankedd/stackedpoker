@@ -1,151 +1,111 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Loader2, Zap, ArrowRight, Crown } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ArrowRight, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { startCheckout } from "@/components/poker/UpgradePrompt";
-import { createClient } from "@/lib/supabase/client";
+import { AlreadySubscribedError, startCheckout } from "@/components/poker/UpgradePrompt";
+import { refreshEntitlements, useEntitlements } from "@/hooks/useEntitlements";
+import { PRO_PRICE_LABEL, type UpgradeSource } from "@/lib/billing/entitlements";
 
 const POLL_INTERVAL_MS = 3_000;
-const POLL_TIMEOUT_MS  = 10 * 60 * 1_000;
+const POLL_TIMEOUT_MS = 10 * 60 * 1_000;
 
-export function UpgradePricingCTA({
-  plan = "pro",
-  loggedIn,
-  fullWidth = true,
-}: {
-  plan?: "pro" | "premium";
-  loggedIn: boolean;
-  fullWidth?: boolean;
-}) {
-  const router     = useRouter();
-  const [loading, setLoading]  = useState(false);
-  const [waiting, setWaiting]  = useState(false);
-  const [error,   setError]    = useState<string | null>(null);
-  const startedAt  = useRef<number>(0);
-  const inFlight   = useRef(false);
+/**
+ * The Pro button on /pricing. Signed out it starts the free account (and with
+ * it the 7-day trial); signed in it opens Stripe Checkout and waits for the
+ * webhook to turn the account Pro.
+ */
+export function PricingCTA({ loggedIn, onTrial, source }: { loggedIn: boolean; onTrial: boolean; source: UpgradeSource }) {
+  const router = useRouter();
+  const { entitlements } = useEntitlements();
+  const [loading, setLoading] = useState(false);
+  const [waiting, setWaiting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const startedAt = useRef(0);
 
+  // Poll while the Stripe tab is open; the webhook flips the plan.
   useEffect(() => {
     if (!waiting) return;
-
-    const supabase = createClient();
     startedAt.current = Date.now();
-
-    const targetTier = plan === "premium" ? "premium" : "pro";
-
-    const interval = setInterval(async () => {
-      if (Date.now() - startedAt.current > POLL_TIMEOUT_MS) {
-        setWaiting(false);
-        return;
-      }
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("subscription_tier")
-        .eq("id", user.id)
-        .single();
-
-      const t = profile?.subscription_tier;
-      const activated =
-        t === "admin" ||
-        t === targetTier ||
-        (targetTier === "pro" && t === "premium");
-
-      if (activated) {
-        setWaiting(false);
-        toast.success(`Welcome to ${plan === "premium" ? "Elite" : "Plus"}!`, {
-          description: plan === "premium"
-            ? "Unlimited AI Coach and full solver access are now active."
-            : "Full platform access is now active.",
-          duration: 6000,
-        });
-        router.refresh();
-      }
+    const t = setInterval(() => {
+      if (Date.now() - startedAt.current > POLL_TIMEOUT_MS) setWaiting(false);
+      else void refreshEntitlements();
     }, POLL_INTERVAL_MS);
+    return () => clearInterval(t);
+  }, [waiting]);
 
-    return () => clearInterval(interval);
-  }, [waiting, router, plan]);
-
-  async function handleUpgrade() {
-    if (!loggedIn) {
-      router.push(`/signup?next=pricing`);
-      return;
+  useEffect(() => {
+    if (waiting && entitlements?.plan === "pro") {
+      setWaiting(false);
+      toast.success("Welcome to Pro!", { description: "Everything is unlimited now.", duration: 6000 });
+      router.refresh();
     }
-    if (inFlight.current) return;
-    inFlight.current = true;
+  }, [waiting, entitlements?.plan, router]);
+
+  if (!loggedIn) {
+    return (
+      <Link
+        href="/signup"
+        className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#7C5CFF] text-sm font-semibold text-white shadow-lg shadow-[#7C5CFF]/30 transition-colors hover:bg-[#6B4BEE]"
+      >
+        <Sparkles className="h-4 w-4" /> Try Pro free for 7 days
+      </Link>
+    );
+  }
+
+  async function upgrade() {
     setLoading(true);
     setError(null);
     try {
-      await startCheckout(plan);
+      await startCheckout(source);
       setWaiting(true);
-    } catch {
-      setError("Something went wrong. Please try again.");
+    } catch (e) {
+      if (e instanceof AlreadySubscribedError) {
+        void refreshEntitlements();
+        router.refresh();
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
     } finally {
       setLoading(false);
-      inFlight.current = false;
     }
   }
-
-  const disabled = loading || waiting;
-
-  const isPremium = plan === "premium";
-
-  const buttonLabel = loading
-    ? "Opening checkout…"
-    : waiting
-    ? "Waiting for payment…"
-    : loggedIn
-    ? isPremium ? "Become Elite" : "Upgrade to Plus"
-    : isPremium ? `Become Elite — €11.99/month` : `Upgrade to Plus — €7.99/month`;
 
   return (
     <div className="space-y-2">
       <button
-        onClick={handleUpgrade}
-        disabled={disabled}
-        className={
-          "inline-flex items-center justify-center gap-2.5 rounded-xl " +
-          (isPremium
-            ? "bg-gradient-to-r from-amber-600 to-amber-500 shadow-lg shadow-amber-900/30 hover:shadow-amber-900/50 hover:from-amber-500 hover:to-amber-400 "
-            : "bg-gradient-to-r from-violet-600 to-blue-500 shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 ") +
-          "px-6 py-3.5 text-sm font-semibold text-white " +
-          "hover:-translate-y-0.5 transition-all duration-200 " +
-          "disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none " +
-          (fullWidth ? "w-full" : "")
-        }
+        type="button"
+        onClick={upgrade}
+        disabled={loading || waiting}
+        className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#7C5CFF] text-sm font-semibold text-white shadow-lg shadow-[#7C5CFF]/30 transition-colors hover:bg-[#6B4BEE] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? (
-          <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+          <Loader2 className="h-4 w-4 animate-spin" />
         ) : waiting ? (
-          <span className="h-4 w-4 rounded-full border-2 border-white/40 border-t-white animate-spin shrink-0" />
-        ) : isPremium ? (
-          <Crown className="h-4 w-4 shrink-0" />
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
         ) : (
-          <Zap className="h-4 w-4 shrink-0" />
+          <Sparkles className="h-4 w-4" />
         )}
-        {buttonLabel}
-        {!loading && !waiting && <ArrowRight className="h-4 w-4 shrink-0" />}
+        {loading
+          ? "Opening checkout…"
+          : waiting
+            ? "Waiting for payment…"
+            : onTrial
+              ? `Keep Pro · ${PRO_PRICE_LABEL}/month`
+              : `Upgrade to Pro · ${PRO_PRICE_LABEL}/month`}
+        {!loading && !waiting && <ArrowRight className="h-4 w-4" />}
       </button>
-
       {waiting && (
-        <p className="text-center text-xs text-muted-foreground">
+        <p className="text-center text-xs text-white/55">
           Complete payment in the checkout tab.{" "}
-          <button
-            onClick={() => setWaiting(false)}
-            className="underline underline-offset-2 hover:text-foreground transition-colors"
-          >
+          <button type="button" onClick={() => setWaiting(false)} className="underline underline-offset-2 hover:text-white">
             Cancel
           </button>
         </p>
       )}
-
-      {error && (
-        <p className="text-xs text-destructive text-center">{error}</p>
-      )}
+      {error && <p className="text-center text-xs text-red-400">{error}</p>}
     </div>
   );
 }

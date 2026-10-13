@@ -89,9 +89,8 @@ export function LeaderboardSection({ rows }: { rows: LeaderRow[] }) {
 // ── Pricing teaser ───────────────────────────────────────────────────────────
 
 const TIERS = [
-  { name: "Free", price: "€0", per: "", popular: false, perks: ["Preflop trainer (limited scenarios)", "AI coach · 3 messages a day", "XP, levels, streaks & leaderboard"] },
-  { name: "Plus", price: "€7.99", per: "/mo", popular: true, perks: ["Full preflop trainer", "AI coach · 15 messages a day", "Full bankroll tracker with AI insights"] },
-  { name: "Elite", price: "€11.99", per: "/mo", popular: false, perks: ["Everything in Plus", "Unlimited AI coach"] },
+  { name: "Free", price: "€0", per: "", popular: false, perks: ["50 Preflop Trainer hands a day", "1 tournament a week, with full analysis", "3 AI Coach questions a day"] },
+  { name: "Pro", price: "€7.99", per: "/mo", popular: true, perks: ["Unlimited hands", "Unlimited tournaments + full history", "Unlimited AI Coach", "7 days free for new accounts"] },
 ];
 
 export function PricingTeaser() {
@@ -100,7 +99,7 @@ export function PricingTeaser() {
       <h2 id="pricing-title" className="text-center text-3xl font-black tracking-tight text-white sm:text-4xl">
         Start free. Upgrade when you&apos;re ready.
       </h2>
-      <InView className="mt-10 grid gap-4 md:grid-cols-3">
+      <InView className="mx-auto mt-10 grid max-w-3xl gap-4 md:grid-cols-2">
         {TIERS.map((t, n) => (
           <article
             key={t.name}
@@ -131,7 +130,7 @@ export function PricingTeaser() {
         <Link href="/pricing" onClick={() => trackEvent(SEO_EVENTS.ctaClick, { location: "pricing", cta: "compare_plans" })} className="text-sm font-semibold text-violet-300 hover:underline">
           Compare plans
         </Link>
-        <p className="text-[13px] text-white/50">Stripe-secured · Cancel anytime · Same AI engine on every plan</p>
+        <p className="text-[13px] text-white/50">Stripe-secured · VAT included · Cancel anytime</p>
       </div>
     </section>
   );

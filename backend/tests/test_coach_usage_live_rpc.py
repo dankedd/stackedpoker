@@ -85,12 +85,37 @@ async def _delete_disposable_user(user_id: str, settings) -> None:
         )
 
 
+async def _end_trial(user_id: str, settings) -> None:
+    """New accounts start a 7-day Pro trial (start_reverse_trial in
+    supabase_subscriptions.sql); end it so the Free limits apply."""
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        r = await client.patch(
+            f"{settings.supabase_url}/rest/v1/subscriptions",
+            headers={**_admin_headers(settings), "Content-Type": "application/json"},
+            params={"user_id": f"eq.{user_id}"},
+            json={"trial_ends_at": "2000-01-01T00:00:00+00:00"},
+        )
+        r.raise_for_status()
+
+
 @pytest.fixture
-def disposable_user_id():
+def new_user_id():
     settings = get_settings()
     user_id = run(_create_disposable_user(settings))
     yield user_id
     run(_delete_disposable_user(user_id, settings))
+
+
+@pytest.fixture
+def disposable_user_id(new_user_id):
+    """A Free account (trial already over)."""
+    run(_end_trial(new_user_id, get_settings()))
+    return new_user_id
+
+
+def test_new_account_is_on_the_pro_trial(new_user_id):
+    usage = run(coach_usage.get_coach_usage(new_user_id, get_settings()))
+    assert usage.unlimited is True
 
 
 def test_reserve_coach_usage_rpc_succeeds_against_real_supabase(disposable_user_id):
@@ -98,8 +123,7 @@ def test_reserve_coach_usage_rpc_succeeds_against_real_supabase(disposable_user_
     usage, allowed = run(coach_usage.reserve_coach_usage(disposable_user_id, settings))
     assert allowed is True
     assert usage.used == 1
-    # A freshly-created disposable user gets subscription_tier='free' via the
-    # handle_new_user trigger — 3/day is entitlements.FREE_AI_COACH_DAILY_LIMIT.
+    # Trial ended → Free: 3/day (plan_limits.free_ai_questions_per_day).
     assert usage.limit == 3
     assert usage.remaining == 2
 
@@ -117,8 +141,7 @@ def test_reserve_then_release_nets_to_zero_against_real_supabase(disposable_user
 
 
 def test_reserve_at_the_limit_is_rejected_against_real_supabase(disposable_user_id):
-    """A fresh disposable user is subscription_tier='free', so
-    get_ai_coach_entitlement resolves the real free-tier limit (3/day) —
+    """With the trial ended the database resolves the real free-tier limit (3/day) —
     this drives the user to the actual default limit rather than a synthetic
     one, so it also catches any issue specific to hitting exactly the
     3rd/4th call."""

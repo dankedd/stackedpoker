@@ -6,7 +6,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { ManageSubscriptionButton } from "@/components/billing/ManageSubscriptionButton";
 import { PlanBadge } from "@/components/layout/PlanBadge";
-import { isPaidTier } from "@/lib/entitlements";
+import { parseEntitlements, type Entitlements } from "@/lib/billing/entitlements";
 import { cn } from "@/lib/utils";
 import { PokerExperiencePicker } from "./PokerExperiencePicker";
 import type { ExperienceLevel } from "@/lib/learn/experienceLevel";
@@ -26,7 +26,7 @@ export default async function SettingsPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("username, subscription_tier, hands_analyzed_count, analyses_limit, subscription_status, current_period_end, stripe_customer_id")
+    .select("username, subscription_tier")
     .eq("id", user.id)
     .single();
 
@@ -37,16 +37,16 @@ export default async function SettingsPage() {
     .maybeSingle();
   const currentLevel = (assessmentRow?.experience_level ?? null) as ExperienceLevel | null;
 
+  // Plan, limits and usage: the database's own view (my_entitlements()).
+  const { data: entRaw } = await supabase.rpc("my_entitlements");
+  const ent = parseEntitlements(entRaw);
   const tier = profile?.subscription_tier ?? "free";
-  const status = profile?.subscription_status ?? null;
-  const periodEnd = profile?.current_period_end
-    ? new Date(profile.current_period_end).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
-    : null;
-  const hasStripeCustomer = !!profile?.stripe_customer_id;
+  const plan = ent?.plan ?? "free";
+  const status = ent?.subscription.status ?? null;
+  const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  const periodEnd = ent?.subscription.currentPeriodEnd ? fmtDate(ent.subscription.currentPeriodEnd) : null;
+  const hasStripeCustomer = !!ent?.subscription.hasCustomer;
   const statusInfo = status ? STATUS_STYLE[status] ?? null : null;
-  const isUnlimited = isPaidTier(tier);
-  const used = profile?.hands_analyzed_count ?? 0;
-  const limit = profile?.analyses_limit ?? 3;
 
   return (
     <div className="min-h-screen bg-background">
@@ -70,7 +70,13 @@ export default async function SettingsPage() {
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4">
             <h2 className="font-semibold text-foreground">Subscription</h2>
-            <PlanBadge tier={tier} />
+            {plan === "trial" ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-violet-400">
+                <Zap className="h-3 w-3" /> Pro trial
+              </span>
+            ) : (
+              <PlanBadge tier={tier === "admin" ? "admin" : plan === "pro" ? "pro" : "free"} />
+            )}
           </div>
 
           {/* Details */}
@@ -83,25 +89,21 @@ export default async function SettingsPage() {
               </div>
             )}
 
-            {/* Usage */}
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Analyses used</span>
-              <span className="font-medium text-foreground">
-                {isUnlimited ? (
-                  <span className="flex items-center gap-1 text-blue-400">
-                    <Zap className="h-3.5 w-3.5" /> Unlimited
-                  </span>
-                ) : (
-                  `${used} / ${limit}`
-                )}
-              </span>
-            </div>
+            {plan === "trial" && ent?.trialEndsAt && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Trial ends</span>
+                <span className="font-medium text-foreground">{fmtDate(ent.trialEndsAt)}</span>
+              </div>
+            )}
+
+            {/* Usage (Free limits; Pro and trial are unlimited) */}
+            {ent && <UsageRows ent={ent} />}
 
             {/* Period end */}
-            {periodEnd && (
+            {periodEnd && status !== "canceled" && (
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">
-                  {status === "canceled" ? "Access until" : "Next billing date"}
+                  {ent?.subscription.cancelAtPeriodEnd ? "Pro until" : "Next billing date"}
                 </span>
                 <span className="font-medium text-foreground">{periodEnd}</span>
               </div>
@@ -116,9 +118,9 @@ export default async function SettingsPage() {
 
           {/* Actions */}
           <div className="px-6 py-4 flex flex-wrap gap-3">
-            {tier === "free" && (
+            {plan !== "pro" && (
               <Button variant="poker" size="sm" asChild>
-                <Link href="/pricing">Upgrade to Plus →</Link>
+                <Link href="/pricing?source=pricing_page">Upgrade to Pro →</Link>
               </Button>
             )}
             {hasStripeCustomer && (
@@ -164,5 +166,31 @@ export default async function SettingsPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+function UsageRows({ ent }: { ent: Entitlements }) {
+  const rows: [string, number, number | null][] = [
+    ["Preflop Trainer hands today", ent.usage.trainerHandsToday, ent.limits.trainerHandsPerDay],
+    ["Tournaments uploaded this week", ent.usage.tournamentsThisWeek, ent.limits.tournamentsPerWeek],
+    ["AI Coach questions today", ent.usage.aiQuestionsToday, ent.limits.aiQuestionsPerDay],
+  ];
+  return (
+    <>
+      {rows.map(([label, used, limit]) => (
+        <div key={label} className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">{label}</span>
+          <span className="font-medium text-foreground">
+            {limit === null ? (
+              <span className="flex items-center gap-1 text-violet-400">
+                <Zap className="h-3.5 w-3.5" /> Unlimited
+              </span>
+            ) : (
+              `${Math.min(used, limit)} / ${limit}`
+            )}
+          </span>
+        </div>
+      ))}
+    </>
   );
 }

@@ -13,9 +13,9 @@ import {
 describe("getSubscription", () => {
   it("maps DB tier values to display labels", () => {
     expect(getSubscription("free")).toEqual({ tier: "free", label: "Free" });
-    expect(getSubscription("pro")).toEqual({ tier: "pro", label: "Plus" });
-    expect(getSubscription("premium")).toEqual({ tier: "premium", label: "Elite" });
-    expect(getSubscription("admin")).toEqual({ tier: "admin", label: "Elite" });
+    expect(getSubscription("pro")).toEqual({ tier: "pro", label: "Pro" });
+    expect(getSubscription("premium")).toEqual({ tier: "premium", label: "Pro" });
+    expect(getSubscription("admin")).toEqual({ tier: "admin", label: "Admin" });
   });
 
   it("treats null/undefined/unknown values as free", () => {

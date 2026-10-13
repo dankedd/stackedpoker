@@ -148,9 +148,9 @@ export default async function DashboardPage() {
                 <Zap className="h-4 w-4 text-violet-400" />
               </div>
               <div>
-                <p className="font-semibold text-foreground text-sm">Upgrade to Plus</p>
+                <p className="font-semibold text-foreground text-sm">Upgrade to Pro</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Unlock every Learn module, full Bankroll Tracker, and more AI Coach — €7.99/month · iDEAL & card
+                  Unlimited hands, unlimited tournaments with full history, unlimited AI Coach — €7.99/month incl. VAT
                 </p>
               </div>
             </div>

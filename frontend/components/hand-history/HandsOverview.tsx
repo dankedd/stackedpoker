@@ -28,6 +28,7 @@ import { HANDS_IMPORT_PATH, HANDS_PATH } from "@/lib/handHistory/feature";
 import { fmtBb, fmtNum, fmtPlayedAt, fmtSignedBb } from "@/lib/handHistory/format";
 import type { HandListRow } from "@/lib/handHistory/rows";
 import { t } from "@/lib/handHistory/strings";
+import { useEntitlements } from "@/hooks/useEntitlements";
 import { cn } from "@/lib/utils";
 import { FavoriteStar } from "./FavoriteStar";
 import { FiltersBar } from "./HandFilterBar";
@@ -166,6 +167,8 @@ export function HandsOverview() {
           <Upload className="h-4 w-4" /> {t.overview.importButton}
         </Link>
       </PageHeader>
+
+      <HiddenHistoryNote />
 
       {rechecking != null && (
         <p className="mb-3 inline-flex items-center gap-2 text-xs text-muted-foreground" aria-live="polite">
@@ -395,6 +398,24 @@ function EmptyState() {
         className="mt-5 inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500"
       >
         <Upload className="h-4 w-4" /> {t.overview.importButton}
+      </Link>
+    </div>
+  );
+}
+
+/** Free shows the most recent tournament only; older ones are kept, not deleted. */
+function HiddenHistoryNote() {
+  const { entitlements } = useEntitlements();
+  const hidden = entitlements?.plan === "free" ? entitlements.hiddenTournaments : 0;
+  if (!hidden) return null;
+  return (
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#7C5CFF]/30 bg-[#7C5CFF]/[0.07] px-4 py-3 text-sm">
+      <p className="text-foreground/85">{t.overview.hiddenHistory(hidden)}</p>
+      <Link
+        href="/pricing?source=upload_limit"
+        className="shrink-0 rounded-lg bg-[#7C5CFF] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#6B4BEE]"
+      >
+        {t.overview.seeFullHistory}
       </Link>
     </div>
   );

@@ -7,9 +7,20 @@ import { useAuth } from "@/contexts/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { HANDS_PATH } from "@/lib/handHistory/feature";
 import { fmtNum } from "@/lib/handHistory/format";
-import { parseTexts, readFiles, saveHands, type ImportProgress, type ImportSummary } from "@/lib/handHistory/importer";
+import {
+  UploadLimitError,
+  keepLatestTournament,
+  parseTexts,
+  readFiles,
+  saveHands,
+  type ImportProgress,
+  type ImportSummary,
+} from "@/lib/handHistory/importer";
 import { t } from "@/lib/handHistory/strings";
 import { track } from "@/lib/metaPixel";
+import { formatDateTime, uploadLimitReached } from "@/lib/billing/entitlements";
+import { refreshEntitlements, useEntitlements } from "@/hooks/useEntitlements";
+import { UpgradeButton, UpgradeModal, UsageMeter } from "@/components/billing/UpgradeUi";
 import { cn } from "@/lib/utils";
 import { PageHeader, SectionNav } from "./SectionNav";
 
@@ -23,7 +34,12 @@ export function HandImporter() {
   const [progress, setProgress] = useState<ImportProgress | null>(null);
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Free plan: 1 new tournament per rolling 7 days (enforced by the database).
+  const { entitlements } = useEntitlements();
+  const [limitHit, setLimitHit] = useState<{ nextAt: string | null } | null>(null);
+  const [trimmed, setTrimmed] = useState<{ name: string | null; skipped: number } | null>(null);
   const busy = progress != null && progress.phase !== "done";
+  const uploadLimit = entitlements?.limits.tournamentsPerWeek ?? null;
 
   const run = useCallback(
     async (files: File[]) => {
@@ -34,6 +50,11 @@ export function HandImporter() {
       }
       setError(null);
       setSummary(null);
+      setTrimmed(null);
+      if (uploadLimitReached(entitlements)) {
+        setLimitHit({ nextAt: entitlements?.nextUploadAt ?? null });
+        return;
+      }
       try {
         const { texts, fileErrors } = await readFiles(files, setProgress);
         setProgress({ phase: "parsing", done: 0, total: texts.length });
@@ -47,16 +68,32 @@ export function HandImporter() {
           if (!parsed.failures.length && !parsed.fileErrors.length) setError(t.import.noHandsFound);
           return;
         }
-        const result = await saveHands(supabase, user.id, files.map((f) => f.name), parsed, setProgress);
+        let toSave = parsed;
+        if (uploadLimit !== null) {
+          const kept = keepLatestTournament(parsed);
+          if (kept.skipped > 0) {
+            toSave = kept.parsed;
+            setTrimmed({ name: kept.name, skipped: kept.skipped });
+          }
+        }
+        const result = await saveHands(supabase, user.id, files.map((f) => f.name), toSave, setProgress);
         setSummary(result);
         if (result.imported > 0) track("ViewContent", { content_name: "Hand history upload", num_items: result.tournaments });
+        void refreshEntitlements();
       } catch (e) {
-        setError(e instanceof Error ? e.message : t.import.failed);
+        if (e instanceof UploadLimitError) {
+          setProgress(null);
+          setTrimmed(null);
+          setLimitHit({ nextAt: e.nextAvailableAt });
+          void refreshEntitlements();
+        } else {
+          setError(e instanceof Error ? e.message : t.import.failed);
+        }
       } finally {
         setProgress((p) => (p ? { ...p, phase: "done" } : p));
       }
     },
-    [busy, supabase, user],
+    [busy, supabase, user, entitlements, uploadLimit],
   );
 
   const pct = progress && progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
@@ -70,6 +107,13 @@ export function HandImporter() {
         title={t.import.title}
         subtitle={t.import.subtitle}
       />
+
+      {entitlements && uploadLimit !== null && (
+        <div className="-mt-2 mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          <UsageMeter used={entitlements.usage.tournamentsThisWeek} limit={uploadLimit} label={t.import.uploadsThisWeek} />
+          {entitlements.nextUploadAt && <span>{t.import.nextFreeUpload(formatDateTime(entitlements.nextUploadAt))}</span>}
+        </div>
+      )}
 
       <div
         onDragOver={(e) => {
@@ -144,7 +188,26 @@ export function HandImporter() {
         </div>
       )}
 
+      {summary && trimmed && (
+        <div className="mt-6 rounded-2xl border border-[#7C5CFF]/30 bg-[#7C5CFF]/[0.07] p-4 text-sm">
+          <p className="text-foreground/90">{t.import.onlyLatestImported(trimmed.name ?? "", trimmed.skipped)}</p>
+          <div className="mt-3 max-w-xs">
+            <UpgradeButton source="upload_limit">{t.import.importAllWithPro}</UpgradeButton>
+          </div>
+        </div>
+      )}
+
       {summary && <Summary summary={summary} />}
+
+      {limitHit && (
+        <UpgradeModal
+          source="upload_limit"
+          title={t.import.limitTitle}
+          body={t.import.limitBody}
+          detail={limitHit.nextAt ? t.import.nextFreeUpload(formatDateTime(limitHit.nextAt)) : undefined}
+          onClose={() => setLimitHit(null)}
+        />
+      )}
     </div>
   );
 }

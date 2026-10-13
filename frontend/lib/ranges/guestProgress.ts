@@ -38,7 +38,7 @@ export interface GuestProgress {
 }
 
 export type PromptTrigger = "hand_5" | "hand_20";
-export type SignupSource = "trainer_prompt_5" | "trainer_prompt_20" | "trainer_banner";
+export type SignupSource = "trainer_prompt_5" | "trainer_prompt_20" | "trainer_banner" | "trainer_limit";
 
 export const PROMPT_AT: Record<PromptTrigger, number> = { hand_5: 5, hand_20: 20 };
 export const SOURCE_FOR: Record<PromptTrigger | "banner", SignupSource> = {
@@ -204,6 +204,9 @@ export interface SignupIntent {
 
 const INTENT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
+/** The prompts plus the hand-50 limit screen (components/preflop-trainer/TrainerLimit.tsx). */
+const KNOWN_SOURCES: readonly SignupSource[] = [...Object.values(SOURCE_FOR), "trainer_limit"];
+
 /** Only same-site paths: "/x", never "//host" or "https://host". */
 export function safeReturnPath(path: string | null | undefined): string | null {
   return path && path.startsWith("/") && !path.startsWith("//") && !path.startsWith("/\\") ? path : null;
@@ -221,7 +224,7 @@ export function readSignupIntent(now = Date.now()): SignupIntent | null {
   try {
     const v = JSON.parse(local()?.getItem(INTENT_KEY) ?? "null") as SignupIntent | null;
     if (!v || now - v.at > INTENT_MAX_AGE_MS || !safeReturnPath(v.return_to)) return null;
-    if (!Object.values(SOURCE_FOR).includes(v.source)) return null;
+    if (!KNOWN_SOURCES.includes(v.source)) return null;
     return v;
   } catch {
     return null;

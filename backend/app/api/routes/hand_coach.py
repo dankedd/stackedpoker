@@ -163,7 +163,7 @@ async def hand_coach_message(
     try:
         usage, ok = await reserve_coach_usage(user_id, settings)
         if not ok:
-            raise HTTPException(status_code=429, detail={"code": "AI_COACH_DAILY_LIMIT_REACHED", **usage.to_dict()})
+            raise HTTPException(status_code=429, detail=usage.limit_error_detail())
 
         stage = "SESSION"
         now = datetime.now(timezone.utc).isoformat()

@@ -104,7 +104,8 @@ function returnPath() {
   return window.location.pathname + window.location.search;
 }
 
-function useSignupActions(source: SignupSource) {
+/** Google / email sign-up and log-in, remembering where to come back to. */
+export function useSignupActions(source: SignupSource) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   return {
@@ -288,7 +289,7 @@ function SignupPrompt({ trigger, progress, onClose }: { trigger: PromptTrigger; 
   );
 }
 
-function GoogleIcon() {
+export function GoogleIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" className="rounded-full bg-white p-px">
       <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />

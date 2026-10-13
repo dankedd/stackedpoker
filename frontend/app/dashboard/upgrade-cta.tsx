@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 export function UpgradeCTA() {
   return (
     <Button variant="poker" size="sm" className="gap-2 shrink-0" asChild>
-      <Link href="/pricing">
+      <Link href="/pricing?source=pricing_page">
         <Zap className="h-3.5 w-3.5" />
-        Upgrade to Plus
+        Upgrade to Pro
       </Link>
     </Button>
   );

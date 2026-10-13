@@ -5,6 +5,8 @@ import { Send, Bot, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { CoachMessage } from '@/lib/learn/types'
 import { sendCoachMessage, getCoachUsage, isCoachQuotaExceeded, type CoachAction, type CoachUsage } from '@/lib/learn/api'
+import { UpgradeButton } from '@/components/billing/UpgradeUi'
+import { trackUpgradePromptShown } from '@/lib/metaPixel'
 
 // ── Props ──────────────────────────────────────────────────────────────────────
 
@@ -67,10 +69,9 @@ const STARTERS = [
 ]
 
 // ── Reset-time helper ──────────────────────────────────────────────────────────
-// The backend always computes reset_at as the next UTC midnight (see
-// coach_usage.py's compute_reset_at) — displayed here in the learner's own
-// local time so "resets at 00:00 UTC" doesn't show up as a confusing raw
-// timestamp to a non-technical user.
+// The database computes reset_at as the next 00:00 in Amsterdam
+// (next_amsterdam_midnight in supabase_subscriptions.sql) — displayed here in
+// the learner's own local time so it never shows up as a raw timestamp.
 
 function formatResetTime(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
@@ -253,6 +254,11 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
   // alone without risking a false "limit reached" for a heavy paid user.
   const limitReached = usage != null && !usage.unlimited && usage.remaining <= 0
 
+  // Question 4 of a Free day: the upgrade panel replaces the input.
+  useEffect(() => {
+    if (limitReached) trackUpgradePromptShown('ai_limit')
+  }, [limitReached])
+
   const send = async (text?: string, action?: CoachAction) => {
     const msg = (text ?? input).trim()
     if (!msg || loading || limitReached) return
@@ -294,9 +300,11 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
       }
       const status = (err as { status?: number } | undefined)?.status
       let content = "Sorry, I couldn't connect right now. Please try again in a moment."
+      const fairUse = detail && typeof detail === 'object' && (detail as { code?: unknown }).code === 'AI_COACH_FAIR_USE_LIMIT'
       // Auth failures are never described as "temporarily unavailable" —
       // that phrasing implies retrying will help, which it won't here.
-      if (status === 401) content = 'Your session expired — please sign in again to keep chatting.'
+      if (fairUse) content = String((detail as { message?: unknown }).message ?? content)
+      else if (status === 401) content = 'Your session expired — please sign in again to keep chatting.'
       else if (status === 403) content = "You don't have access to the coach right now — please sign in again."
       else if (status === 429) content = "You're sending messages a bit fast — give it a few seconds and try again."
       else if (status === 0) content = 'That took too long to respond. Please try again.'
@@ -408,17 +416,13 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
       <div className="border-t border-border/40 p-3 shrink-0">
         {limitReached ? (
           <div className="rounded-xl border border-violet-500/25 bg-gradient-to-b from-violet-500/8 to-secondary/20 px-4 py-3.5 text-center space-y-2.5">
-            <p className="text-sm font-medium text-foreground/80">Daily Coach limit reached</p>
-            <p className="text-xs text-muted-foreground/60 leading-relaxed">
-              You&apos;ve used your {usage!.limit} free Coach questions for today. Your questions reset at{' '}
-              {formatResetTime(usage!.resetAt)}.
+            <p className="text-sm font-medium text-foreground/90">
+              You&apos;ve used today&apos;s {usage!.limit} free questions. Ask unlimited with Pro.
             </p>
-            <a
-              href="/pricing"
-              className="inline-flex items-center justify-center gap-1.5 w-full rounded-lg bg-gradient-to-r from-violet-600 to-blue-500 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-violet-500/25 hover:shadow-violet-500/40 transition-all duration-150"
-            >
-              Upgrade for unlimited Coach access
-            </a>
+            <p className="text-xs text-muted-foreground/70 leading-relaxed">
+              Your free questions reset at {formatResetTime(usage!.resetAt)}.
+            </p>
+            <UpgradeButton source="ai_limit" />
             {onLimitReachedContinue && (
               <button
                 type="button"
@@ -481,7 +485,7 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
                   usage.limit - usage.used <= 1 ? 'text-amber-400/60' : 'text-muted-foreground/35',
                 )}
               >
-                {usage.used} of {usage.limit} questions used today
+                {Math.min(usage.used, usage.limit)}/{usage.limit} questions today
               </p>
             ) : usageLoadFailed ? (
               // Honest degraded state — never silently shown as "0 of {limit}"

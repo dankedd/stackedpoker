@@ -10,6 +10,9 @@ XP are applied atomically by the `record_preflop_trainer_hand` RPC
 increment_user_xp — so trainer XP lands in user_skill_progress.total_xp and
 the xp_events ledger exactly like lesson XP, and both leaderboards (all-time
 and 24h) pick it up with no change of their own.
+
+Free accounts get 50 answered hands per Amsterdam day (supabase_subscriptions.sql,
+consume_usage): hand 51 is refused with 429 before anything is recorded.
 """
 
 from __future__ import annotations
@@ -25,6 +28,7 @@ from app.config import get_settings
 from app.engines.learn.xp_calculator import level_for_xp
 from app.engines.preflop_trainer import ChartRef, InvalidHand, grade_hand
 from app.middleware.auth import get_current_user
+from app.services import billing
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["preflop-trainer"])
@@ -72,6 +76,8 @@ class HandResponse(TrainerState):
     total_xp: int
     level: int
     leveled_up: bool
+    #: Today's trainer usage after this hand ({used, limit, reset_at}); limit None = unlimited.
+    usage: dict | None = None
 
 
 def _state(row: dict) -> dict:
@@ -95,6 +101,20 @@ async def record_hand(body: HandRequest, current_user: dict = Depends(get_curren
     except InvalidHand as e:
         raise HTTPException(status_code=422, detail=str(e))
 
+    # Daily limit: checked after grading (an invalid hand costs nothing) and
+    # before recording (a refused hand earns no XP and moves no streak).
+    usage: billing.UsageResult | None = None
+    try:
+        usage = await billing.consume_usage(user_id, "trainer_hand", settings)
+    except httpx.HTTPError as e:
+        # The limit store being unreachable must not break the trainer.
+        logger.error("trainer usage check failed user=%s: %s", user_id, e)
+    if usage is not None and not usage.allowed:
+        raise HTTPException(
+            status_code=429,
+            detail={"code": "TRAINER_DAILY_LIMIT_REACHED", "used": usage.used, "limit": usage.limit, "reset_at": usage.reset_at},
+        )
+
     hand_ref = f"{body.kind}:{body.chart_id}:{body.stack or ''}:{body.hand}"
     try:
         row = await _rpc(
@@ -104,6 +124,8 @@ async def record_hand(body: HandRequest, current_user: dict = Depends(get_curren
         )
     except httpx.HTTPError as e:
         logger.error("record_preflop_trainer_hand failed user=%s: %s", user_id, e)
+        if usage is not None:
+            await billing.release_usage(user_id, "trainer_hand", settings)
         raise HTTPException(status_code=502, detail="Could not save this hand.")
 
     xp = row.get("xp_awarded", 0)
@@ -117,6 +139,7 @@ async def record_hand(body: HandRequest, current_user: dict = Depends(get_curren
         total_xp=total,
         level=level,
         leveled_up=xp > 0 and level > level_for_xp(total - xp),
+        usage={"used": usage.used, "limit": usage.limit, "reset_at": usage.reset_at} if usage else None,
     )
 
 

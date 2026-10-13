@@ -169,7 +169,7 @@ async def coach_message(
         if not allowed:
             raise HTTPException(
                 status_code=429,
-                detail={"code": "AI_COACH_DAILY_LIMIT_REACHED", **usage.to_dict()},
+                detail=usage.limit_error_detail(),
             )
 
         stage = "SESSION"

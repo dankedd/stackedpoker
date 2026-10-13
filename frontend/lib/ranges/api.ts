@@ -28,6 +28,8 @@ export interface HandXpResult extends TrainerXpState {
   total_xp: number;
   level: number;
   leveled_up: boolean;
+  /** Absent when the limit store was unreachable (the hand still counted for XP). */
+  usage?: TrainerUsage | null;
 }
 
 export interface HandRef {
@@ -48,8 +50,35 @@ async function call<T>(path: string, token: string, init?: RequestInit): Promise
     ...init,
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new ApiError(res.status, body?.detail);
+  }
   return (await res.json()) as T;
+}
+
+/** A failed call, with the server's `detail` (e.g. the daily-limit body on 429). */
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    public detail?: unknown,
+  ) {
+    super(`HTTP ${status}`);
+  }
+}
+
+/** Today's trainer usage after a hand; limit null = unlimited. */
+export interface TrainerUsage {
+  used: number;
+  limit: number | null;
+  reset_at: string;
+}
+
+/** The 429 body when the Free daily hand limit is reached. */
+export function trainerLimitDetail(err: unknown): (TrainerUsage & { code: string }) | null {
+  if (!(err instanceof ApiError) || err.status !== 429) return null;
+  const d = err.detail as { code?: string } | undefined;
+  return d && d.code === "TRAINER_DAILY_LIMIT_REACHED" ? (d as TrainerUsage & { code: string }) : null;
 }
 
 export function submitTrainerHand(token: string, deal: Deal, action: RangeActionKey): Promise<HandXpResult> {

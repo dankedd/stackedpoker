@@ -70,7 +70,7 @@ describe('account dropdown', () => {
   it('offers the billing portal to paying accounts and the upgrade to everyone else', () => {
     expect(SRC).toContain('isPaidTier(subscription?.tier)')
     expect(SRC).toMatch(/isPaid[\s\S]{0,200}Manage subscription/)
-    expect(SRC).toMatch(/Upgrade to Plus/)
+    expect(SRC).toMatch(/Upgrade to Pro/)
     expect(SRC).toContain('onClick: handleManage')
   })
 

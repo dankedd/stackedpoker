@@ -1,39 +1,32 @@
 """AI Coach daily usage quota — server-authoritative, concurrency-safe.
 
-Per-tier limits are resolved from the user's real subscription_tier via
-app.services.entitlements (free=3/day, pro/premium/admin=unlimited) — nothing
-in coach.py, CoachChat.tsx, or the quota-enforcement RPCs needs to know why a
-given user has a given limit, only `get_ai_coach_entitlement`'s return value.
+Backed by supabase_subscriptions.sql: consume_usage/release_usage with metric
+'ai_question' and get_entitlements for the read-only view. The database
+resolves the plan and the limit (Free 3/day; Pro and trial a hidden
+fair-use cap, plan_limits.pro_ai_questions_per_day) and counts per
+Europe/Amsterdam calendar day — nothing in coach.py, hand_coach.py or
+CoachChat.tsx needs to know why a user has a given limit.
 
-See supabase_ai_coach_usage_schema.sql for the `ai_coach_usage` table and
-the `reserve_coach_usage`/`release_coach_usage` RPCs this module calls.
+Pro/trial usage is reported as `unlimited` with the UNLIMITED sentinel as
+the limit, so the fair-use number never reaches the browser.
 """
 
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
 
-import httpx
-
-from app.services.entitlements import ai_coach_daily_limit, can_use_unlimited_ai, get_subscription_tier
+from app.services import billing
+from app.services.entitlements import UNLIMITED
 
 logger = logging.getLogger(__name__)
 
+METRIC = "ai_question"
 
-async def get_ai_coach_entitlement(user_id: str, settings) -> dict:
-    """Resolves a user's AI Coach entitlement from their real subscription
-    tier. Takes `settings` (mirroring every other function in this module)
-    so tests that fake Supabase for the usage RPCs also fake it for the
-    profile/tier lookup, instead of this reaching for the real config.
-
-    `unlimited` is returned explicitly (not left for the frontend to infer
-    from `daily_messages` happening to be a very large number) so nothing
-    downstream — CoachChat.tsx included — ever has to know or guess what the
-    "unlimited" sentinel value is."""
-    tier = await get_subscription_tier(user_id, settings)
-    return {"daily_messages": ai_coach_daily_limit(tier), "unlimited": can_use_unlimited_ai(tier)}
+FAIR_USE_MESSAGE = (
+    "You've reached today's fair-use limit for the AI Coach. "
+    "It resets at midnight (Amsterdam time)."
+)
 
 
 @dataclass
@@ -41,7 +34,7 @@ class CoachUsage:
     limit: int
     used: int
     remaining: int
-    reset_at: str  # ISO8601, next UTC midnight
+    reset_at: str  # ISO8601, next 00:00 Europe/Amsterdam (computed by the database)
     unlimited: bool = False
 
     def to_dict(self) -> dict:
@@ -50,93 +43,41 @@ class CoachUsage:
             "reset_at": self.reset_at, "unlimited": self.unlimited,
         }
 
-
-def compute_reset_at() -> str:
-    """Next UTC midnight, as an ISO8601 string. "Per day" is defined as one
-    UTC calendar day — deliberately not the client's local Date(), and not
-    (yet) a per-user timezone, until a real timezone/entitlement system
-    exists. Documented here rather than left implicit."""
-    now = datetime.now(timezone.utc)
-    tomorrow = (now + timedelta(days=1)).date()
-    reset = datetime.combine(tomorrow, datetime.min.time(), tzinfo=timezone.utc)
-    return reset.isoformat()
+    def limit_error_detail(self) -> dict:
+        """429 body for a refused question. Free users get the quota shape
+        CoachChat turns into the upgrade panel; Pro users hitting the hidden
+        fair-use cap get a plain message instead."""
+        if self.unlimited:
+            return {"code": "AI_COACH_FAIR_USE_LIMIT", "message": FAIR_USE_MESSAGE, "reset_at": self.reset_at}
+        return {"code": "AI_COACH_DAILY_LIMIT_REACHED", **self.to_dict()}
 
 
-# ── Supabase REST helpers (local to this module — mirrors coach.py's own) ────
-
-def _sb_headers(settings) -> dict:
-    return {
-        "apikey": settings.supabase_service_role_key,
-        "Authorization": f"Bearer {settings.supabase_service_role_key}",
-        "Content-Type": "application/json",
-    }
-
-
-async def _supabase_post(path: str, data: dict, settings) -> list[dict]:
-    url = f"{settings.supabase_url}/rest/v1/{path}"
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        r = await client.post(url, headers=_sb_headers(settings), json=data)
-        r.raise_for_status()
-        return r.json()
-
-
-async def _supabase_get(path: str, query: str, settings) -> list[dict]:
-    url = f"{settings.supabase_url}/rest/v1/{path}?{query}"
-    async with httpx.AsyncClient(timeout=10.0) as client:
-        r = await client.get(url, headers=_sb_headers(settings))
-        r.raise_for_status()
-        return r.json()
+def _from_result(r: billing.UsageResult) -> CoachUsage:
+    if r.is_paid:
+        return CoachUsage(limit=UNLIMITED, used=r.used, remaining=max(UNLIMITED - r.used, 0), reset_at=r.reset_at, unlimited=True)
+    limit = r.limit if r.limit is not None else UNLIMITED
+    return CoachUsage(limit=limit, used=r.used, remaining=max(limit - r.used, 0), reset_at=r.reset_at, unlimited=False)
 
 
 async def reserve_coach_usage(user_id: str, settings) -> tuple[CoachUsage, bool]:
-    """Atomically checks-and-increments today's usage via the
-    reserve_coach_usage RPC (see supabase_ai_coach_usage_schema.sql).
-    Returns (usage, allowed). Never trusts a client-supplied count — the
-    entitlement limit is resolved server-side and the increment/check is one
-    atomic SQL statement, so concurrent requests for the same user can never
-    both land the same final slot."""
-    entitlement = await get_ai_coach_entitlement(user_id, settings)
-    limit = entitlement["daily_messages"]
-    rows = await _supabase_post(
-        "rpc/reserve_coach_usage",
-        {"p_user_id": user_id, "p_daily_limit": limit},
-        settings,
-    )
-    row = rows[0] if rows else {"message_count": 0, "allowed": False}
-    used = row.get("message_count", 0)
-    allowed = bool(row.get("allowed", False))
-    usage = CoachUsage(
-        limit=limit, used=used, remaining=max(limit - used, 0),
-        reset_at=compute_reset_at(), unlimited=entitlement["unlimited"],
-    )
-    return usage, allowed
+    """Atomically checks-and-increments today's usage (one SQL statement, so
+    two concurrent requests at 2/3 can never both land question 3).
+    Returns (usage, allowed). Never trusts a client-supplied count."""
+    r = await billing.consume_usage(user_id, METRIC, settings)
+    return _from_result(r), r.allowed
 
 
 async def release_coach_usage(user_id: str, settings) -> None:
     """Rolls back one reserved-but-never-processed request (the LLM call
-    itself failed after the quota gate already let it through) — best-effort,
-    a release failure must never mask the original error the caller is
-    already handling."""
-    try:
-        await _supabase_post("rpc/release_coach_usage", {"p_user_id": user_id}, settings)
-    except Exception:
-        logger.exception("coach_usage_release_failed stage=QUOTA_RELEASE user=%s", user_id)
+    failed after the gate let it through) — best-effort, never raises."""
+    await billing.release_usage(user_id, METRIC, settings)
 
 
 async def get_coach_usage(user_id: str, settings) -> CoachUsage:
-    """Read-only — no side effects, safe to call on every page load/drawer
-    open so the frontend shows correct usage even before any message is sent
-    this session (and after a refresh)."""
-    entitlement = await get_ai_coach_entitlement(user_id, settings)
-    limit = entitlement["daily_messages"]
-    today = datetime.now(timezone.utc).date().isoformat()
-    rows = await _supabase_get(
-        "ai_coach_usage",
-        f"user_id=eq.{user_id}&usage_date=eq.{today}&select=message_count",
-        settings,
-    )
-    used = rows[0]["message_count"] if rows else 0
-    return CoachUsage(
-        limit=limit, used=used, remaining=max(limit - used, 0),
-        reset_at=compute_reset_at(), unlimited=entitlement["unlimited"],
-    )
+    """Read-only — no side effects, safe to call on every page load."""
+    e = await billing.get_entitlements(user_id, settings)
+    plan = e.get("plan") or "free"
+    used = int((e.get("usage") or {}).get("ai_questions_today") or 0)
+    limit = (e.get("limits") or {}).get("ai_questions_per_day")
+    r = billing.UsageResult(allowed=True, used=used, limit=limit, plan=plan, reset_at=str(e.get("daily_reset_at") or ""))
+    return _from_result(r)

@@ -26,25 +26,25 @@ function usage(overrides: Partial<CoachUsage> = {}): CoachUsage {
 describe('CoachChat — usage indicator (Free tier)', () => {
   it('shows nothing when usage is unknown (not yet fetched)', () => {
     const html = renderToStaticMarkup(<CoachChat token="t" />)
-    expect(html).not.toMatch(/questions used today/)
+    expect(html).not.toMatch(/questions today/)
   })
 
-  it('shows a muted "X of Y questions used today" line reflecting the REAL limit from the API, never a hardcoded number', () => {
+  it('shows a muted "X/Y questions today" line reflecting the REAL limit from the API, never a hardcoded number', () => {
     const html = renderToStaticMarkup(<CoachChat token="t" initialUsage={usage({ used: 1, remaining: 2 })} />)
-    expect(html).toMatch(/1 of 3 questions used today/)
+    expect(html).toMatch(/1\/3 questions today/)
   })
 
   it('reflects whatever limit the backend actually sends — not just 3 (proves the number is read from data, not hardcoded)', () => {
     const html = renderToStaticMarkup(
       <CoachChat token="t" initialUsage={usage({ limit: 15, used: 4, remaining: 11 })} />,
     )
-    expect(html).toMatch(/4 of 15 questions used today/)
+    expect(html).toMatch(/4\/15 questions today/)
   })
 
   it('does not render an alarming banner-style warning at any usage level', () => {
     const html = renderToStaticMarkup(<CoachChat token="t" initialUsage={usage({ used: 2, remaining: 1 })} />)
     expect(html).not.toMatch(/only have|hurry|last chance/i)
-    expect(html).toMatch(/2 of 3 questions used today/)
+    expect(html).toMatch(/2\/3 questions today/)
   })
 })
 
@@ -54,7 +54,7 @@ describe('CoachChat — usage indicator (Plus/Elite, unlimited)', () => {
       <CoachChat token="t" initialUsage={usage({ limit: 2_147_483_647, used: 40, remaining: 2_147_483_607, unlimited: true })} />,
     )
     expect(html).toMatch(/Unlimited AI Coach/)
-    expect(html).not.toMatch(/questions used today/)
+    expect(html).not.toMatch(/questions today/)
     // The raw sentinel number must never leak into the UI even if it's present in the data.
     expect(html).not.toMatch(/2147483647|2,147,483,647/)
   })
@@ -65,7 +65,7 @@ describe('CoachChat — usage indicator (Plus/Elite, unlimited)', () => {
     const html = renderToStaticMarkup(
       <CoachChat token="t" initialUsage={usage({ limit: 2_147_483_647, used: 2_147_483_647, remaining: 0, unlimited: true })} />,
     )
-    expect(html).not.toMatch(/Daily Coach limit reached/)
+    expect(html).not.toMatch(/free questions\. Ask unlimited with Pro/)
     expect(html).toMatch(/<textarea/)
   })
 })
@@ -73,16 +73,15 @@ describe('CoachChat — usage indicator (Plus/Elite, unlimited)', () => {
 describe('CoachChat — limit-reached state (Free tier only)', () => {
   it('replaces the input area with the limit-reached panel once remaining=0', () => {
     const html = renderToStaticMarkup(<CoachChat token="t" initialUsage={usage({ used: 3, remaining: 0 })} />)
-    expect(html).toMatch(/Daily Coach limit reached/)
-    expect(html).toMatch(/used your 3 free Coach questions for today/)
+    expect(html).toMatch(/You&#x27;ve used today&#x27;s 3 free questions\. Ask unlimited with Pro\./)
+    expect(html).toMatch(/free questions reset at/)
     expect(html).not.toMatch(/<textarea/)
     expect(html).not.toMatch(/Ask your coach anything/)
   })
 
-  it('shows a clear upgrade prompt — never a generic error, never a silent dead end', () => {
+  it('shows a clear upgrade button — never a generic error, never a silent dead end', () => {
     const html = renderToStaticMarkup(<CoachChat token="t" initialUsage={usage({ used: 3, remaining: 0 })} />)
-    expect(html).toMatch(/href="\/pricing"/)
-    expect(html).toMatch(/upgrade/i)
+    expect(html).toMatch(/Upgrade to Pro · €7\.99\/month/)
   })
 
   it('hides quick actions once the limit is reached, even with no messages sent yet', () => {
@@ -110,7 +109,7 @@ describe('CoachChat — limit-reached state (Free tier only)', () => {
 
   it('still under limit at remaining=1 shows the normal input, not the limit panel', () => {
     const html = renderToStaticMarkup(<CoachChat token="t" initialUsage={usage({ used: 2, remaining: 1 })} />)
-    expect(html).not.toMatch(/Daily Coach limit reached/)
+    expect(html).not.toMatch(/free questions\. Ask unlimited with Pro/)
     expect(html).toMatch(/<textarea/)
   })
 })

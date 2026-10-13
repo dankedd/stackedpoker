@@ -76,27 +76,36 @@ export function flushPending() {
   for (const [method, event, params] of pending.splice(0)) window.fbq(method, event, params);
 }
 
-/** Monthly prices in EUR, as listed on /pricing (PLUS_PRICE / ELITE_PRICE). */
-export const PLAN_VALUE_EUR = { pro: 7.99, premium: 11.99 } as const;
+/** Pro, per month incl. VAT — the only paid plan (/pricing). */
+export const PRO_VALUE_EUR = 7.99;
 
-const CHECKOUT_KEY = "sp_checkout_plan";
+const CHECKOUT_KEY = "sp_checkout_source";
 
-/** Remembers which plan went to Stripe, so the return page can report its value. */
-export function rememberCheckoutPlan(plan: keyof typeof PLAN_VALUE_EUR) {
+/** Remembers which upgrade moment sent the user to Stripe, for the Subscribe event on return. */
+export function rememberCheckoutSource(source: string) {
   try {
-    window.localStorage.setItem(CHECKOUT_KEY, plan);
+    window.localStorage.setItem(CHECKOUT_KEY, source);
   } catch {}
 }
 
-/** Subscribe, fired once on the Stripe success return (/dashboard?upgraded=1). */
-export function trackSubscribe() {
-  let plan: string | null = null;
+/**
+ * Subscribe, fired once on the Stripe success return (/dashboard?upgraded=1&source=…).
+ * The source comes from the return URL (set by the server) or, failing that,
+ * from what was remembered when checkout started.
+ */
+export function trackSubscribe(sourceFromUrl?: string | null) {
+  let remembered: string | null = null;
   try {
-    plan = window.localStorage.getItem(CHECKOUT_KEY);
+    remembered = window.localStorage.getItem(CHECKOUT_KEY);
     window.localStorage.removeItem(CHECKOUT_KEY);
   } catch {}
-  const value = plan === "pro" || plan === "premium" ? PLAN_VALUE_EUR[plan] : undefined;
-  track("Subscribe", value !== undefined ? { value, currency: "EUR", content_name: plan! } : { currency: "EUR" });
+  const source = sourceFromUrl || remembered || "unknown";
+  track("Subscribe", { value: PRO_VALUE_EUR, currency: "EUR", content_name: "pro", source });
+}
+
+/** An upgrade prompt became visible (limit modal, trial banner, trial-ended screen). */
+export function trackUpgradePromptShown(trigger: string) {
+  trackCustom("UpgradePromptShown", { trigger });
 }
 
 // ── UTM attribution ─────────────────────────────────────────────────────────

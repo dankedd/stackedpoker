@@ -146,6 +146,50 @@ ORDER BY signups DESC;
 ```
 Visitors who declined cookies are still counted here: the UTM data is first-party and does not depend on the Meta Pixel.
 
+## Subscriptions (Free / Pro)
+
+One paid plan: **Pro, €7.99/month incl. VAT**. New accounts get 7 days of Pro (reverse trial, no card).
+Everything lives in `supabase_subscriptions.sql`:
+
+| Free limit | Value (`plan_limits`) | Enforced by |
+|---|---|---|
+| Preflop Trainer | 50 answered hands / Amsterdam day | `consume_usage` in `POST /api/preflop-trainer/hands` |
+| Hand Review | 1 new tournament / rolling 7 days; history shows the latest tournament | trigger + RLS on `hh_tournaments` / `hh_hands` |
+| AI Coach | 3 questions / Amsterdam day (Pro & trial: hidden fair-use cap 100) | `consume_usage` in the coach endpoints |
+
+Change a limit with `UPDATE public.plan_limits SET value = … WHERE key = '…';` — no deploy needed.
+Subscription state is written only by the Stripe webhook (`subscriptions`, idempotent via `stripe_events`).
+SQL tests: `bash supabase/tests/run.sh` (throwaway Postgres in Docker).
+
+Upgrades per upgrade moment (`hand_limit`, `upload_limit`, `ai_limit`, `trial_ending`, `trial_ended`, `pricing_page`):
+
+```sql
+SELECT
+  COALESCE(upgrade_source, '(unknown)')                                       AS source,
+  COUNT(*)                                                                    AS upgrades,
+  COUNT(*) FILTER (WHERE status IN ('active', 'trialing', 'past_due'))        AS still_paying
+FROM public.subscriptions
+WHERE stripe_subscription_id IS NOT NULL
+GROUP BY 1
+ORDER BY upgrades DESC;
+```
+
+Trial → paid conversion per signup week (trials that have ended; "paid" = ever started a subscription):
+
+```sql
+SELECT
+  date_trunc('week', created_at AT TIME ZONE 'Europe/Amsterdam')::date        AS signup_week,
+  COUNT(*)                                                                    AS trials_ended,
+  COUNT(*) FILTER (WHERE stripe_subscription_id IS NOT NULL)                  AS paid,
+  ROUND(100.0 * COUNT(*) FILTER (WHERE stripe_subscription_id IS NOT NULL)
+        / NULLIF(COUNT(*), 0), 1)                                             AS conversion_pct
+FROM public.subscriptions
+WHERE trial_ends_at IS NOT NULL
+  AND trial_ends_at <= now()
+GROUP BY 1
+ORDER BY 1 DESC;
+```
+
 ## Environment Variables
 
 ### Frontend — `frontend/.env.local`
@@ -169,6 +213,9 @@ Visitors who declined cookies are still counted here: the UTM data is first-part
 | `DATABASE_URL` | PostgreSQL connection string |
 | `ALLOWED_ORIGINS` | Comma-separated CORS origins |
 | `DEBUG` | `true` / `false` |
+| `STRIPE_SECRET_KEY` | Stripe secret key (`sk_test_…` / `sk_live_…`) |
+| `STRIPE_WEBHOOK_SECRET` | Signing secret of the webhook endpoint `/api/stripe/webhook` |
+| `STRIPE_PRO_PRICE_ID` | The Pro price (€7.99/month, tax-inclusive) |
 
 ---
 

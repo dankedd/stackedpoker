@@ -1,13 +1,23 @@
 """
-Stripe Billing integration.
+Stripe Billing integration — one Pro plan (€7.99/month incl. VAT).
 
 Endpoints:
-  POST /api/stripe/create-checkout   — create a Checkout Session for Pro
-  POST /api/stripe/customer-portal   — create a Billing Portal session
+  POST /api/stripe/create-checkout   — Checkout Session for Pro
+  POST /api/stripe/customer-portal   — Billing Portal session (cancel, payment details)
   POST /api/stripe/webhook           — Stripe webhook receiver
 
-All subscription state changes are applied by the webhook handler so that
-plan upgrades/downgrades are always authoritative and server-side.
+Subscription state lives in public.subscriptions (supabase_subscriptions.sql)
+and is written ONLY here, by the webhook, with the service role. What a user
+may do is decided in the database (effective_plan / get_entitlements) from
+that row — never from anything the browser sends.
+
+Webhook guarantees:
+  * idempotent: every event id is claimed in stripe_events before it is applied
+  * order-safe: an event older than the last one applied to a subscription is ignored
+  * retried: if applying fails, the claim is released and Stripe gets a 500,
+    so it delivers the event again
+  * past_due: payment_failed starts a 3-day grace window (plan_limits); after
+    that effective_plan() treats the user as Free until Stripe reports active
 """
 from __future__ import annotations
 
@@ -18,84 +28,112 @@ from typing import Annotated
 import httpx
 import stripe
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from app.config import get_settings
 from app.middleware.auth import get_current_user
+from app.services import billing
 
 router = APIRouter(prefix="/stripe", tags=["stripe"])
 logger = logging.getLogger(__name__)
 
+UPGRADE_SOURCES = {"hand_limit", "upload_limit", "ai_limit", "trial_ending", "trial_ended", "pricing_page"}
+DEFAULT_SOURCE = "pricing_page"
 
-# ── Supabase helpers (mirrors usage_service pattern) ──────────────────────────
-
-def _supa_headers() -> dict[str, str]:
-    key = get_settings().supabase_service_role_key
-    return {
-        "apikey": key,
-        "Authorization": f"Bearer {key}",
-        "Content-Type": "application/json",
-    }
+# Stripe statuses that mean "paying customer" for the legacy profiles mirror.
+# The grace period for past_due is applied by effective_plan(), not here.
+_PAID_STATUSES = {"active", "trialing", "past_due"}
 
 
-async def _get_profile_stripe_info(user_id: str) -> dict:
-    """Return stripe_customer_id for a user (empty dict on any failure)."""
-    s = get_settings()
-    if not s.supabase_url or not s.supabase_service_role_key:
-        return {}
-    url = f"{s.supabase_url}/rest/v1/profiles"
-    params = {"id": f"eq.{user_id}", "select": "stripe_customer_id"}
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            resp = await client.get(url, headers=_supa_headers(), params=params)
-        if resp.status_code == 200 and resp.json():
-            return resp.json()[0]
-    except Exception as exc:
-        logger.warning("stripe_info fetch failed for %s: %s", user_id, exc)
-    return {}
+def _iso(ts: int | None) -> str | None:
+    return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat() if ts else None
 
 
-async def _get_profile_by_customer(customer_id: str) -> dict:
-    """Return {id} for the profile matching a Stripe customer ID."""
-    s = get_settings()
-    if not s.supabase_url or not s.supabase_service_role_key:
-        return {}
-    url = f"{s.supabase_url}/rest/v1/profiles"
-    params = {"stripe_customer_id": f"eq.{customer_id}", "select": "id"}
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            resp = await client.get(url, headers=_supa_headers(), params=params)
-        if resp.status_code == 200 and resp.json():
-            return resp.json()[0]
-    except Exception as exc:
-        logger.warning("customer lookup failed for %s: %s", customer_id, exc)
-    return {}
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
-async def _update_profile(user_id: str, data: dict) -> None:
-    """PATCH profile row via service role (bypasses RLS)."""
-    s = get_settings()
-    if not s.supabase_url or not s.supabase_service_role_key:
-        return
-    url = f"{s.supabase_url}/rest/v1/profiles"
-    headers = {**_supa_headers(), "Prefer": "return=minimal"}
-    params = {"id": f"eq.{user_id}"}
-    # Strip None values — PATCH should only update supplied fields
-    payload = {k: v for k, v in data.items() if v is not None or k in (
-        "stripe_subscription_id",  # allow explicit null on cancellation
-    )}
-    try:
+# ── Supabase store (service role) ─────────────────────────────────────────────
+
+
+class SupabaseStore:
+    """The few reads/writes billing needs. Tests swap in an in-memory fake."""
+
+    def _headers(self, **extra: str) -> dict[str, str]:
+        key = get_settings().supabase_service_role_key
+        return {"apikey": key, "Authorization": f"Bearer {key}", "Content-Type": "application/json", **extra}
+
+    def _url(self, path: str) -> str:
+        return f"{get_settings().supabase_url}/rest/v1/{path}"
+
+    async def _get_one(self, table: str, params: dict) -> dict | None:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            resp = await client.patch(url, headers=headers, params=params, json=payload)
-        if resp.status_code not in (200, 204):
-            logger.error(
-                "Profile update failed for %s: %s %s",
-                user_id, resp.status_code, resp.text[:200],
+            r = await client.get(self._url(table), headers=self._headers(), params={**params, "limit": "1"})
+            r.raise_for_status()
+            rows = r.json()
+        return rows[0] if rows else None
+
+    async def subscription_for_user(self, user_id: str) -> dict | None:
+        return await self._get_one("subscriptions", {"user_id": f"eq.{user_id}", "select": "*"})
+
+    async def subscription_for_customer(self, customer_id: str) -> dict | None:
+        return await self._get_one("subscriptions", {"stripe_customer_id": f"eq.{customer_id}", "select": "*"})
+
+    async def legacy_profile_customer(self, user_id: str) -> str | None:
+        row = await self._get_one("profiles", {"id": f"eq.{user_id}", "select": "stripe_customer_id"})
+        return (row or {}).get("stripe_customer_id")
+
+    async def user_for_legacy_customer(self, customer_id: str) -> str | None:
+        row = await self._get_one("profiles", {"stripe_customer_id": f"eq.{customer_id}", "select": "id"})
+        return (row or {}).get("id")
+
+    async def upsert_subscription(self, user_id: str, data: dict) -> None:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.post(
+                self._url("subscriptions"),
+                headers=self._headers(Prefer="resolution=merge-duplicates,return=minimal"),
+                params={"on_conflict": "user_id"},
+                json={**data, "user_id": user_id, "updated_at": _now_iso()},
             )
-        else:
-            logger.info("Profile updated for %s: %s", user_id, list(payload.keys()))
-    except Exception as exc:
-        logger.error("Profile update error for %s: %s", user_id, exc)
+            r.raise_for_status()
+
+    async def mirror_profile(self, user_id: str, data: dict) -> None:
+        """Keeps profiles.subscription_tier/stripe_* in step for code that still
+        reads them (PlanBadge, Learn, /community). Never touches the admin row."""
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.patch(
+                self._url("profiles"),
+                headers=self._headers(Prefer="return=minimal"),
+                params={"id": f"eq.{user_id}", "subscription_tier": "neq.admin"},
+                json=data,
+            )
+            r.raise_for_status()
+
+    async def claim_event(self, event_id: str, event_type: str) -> bool:
+        """True when this call is the first to see the event."""
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.post(
+                self._url("stripe_events"),
+                headers=self._headers(Prefer="resolution=ignore-duplicates,return=representation"),
+                params={"on_conflict": "event_id"},
+                json={"event_id": event_id, "type": event_type},
+            )
+            r.raise_for_status()
+            return bool(r.json())
+
+    async def release_event(self, event_id: str) -> None:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.delete(self._url("stripe_events"), headers=self._headers(), params={"event_id": f"eq.{event_id}"})
+            r.raise_for_status()
+
+
+store = SupabaseStore()
+
+
+async def _customer_id_for(user_id: str) -> str | None:
+    sub = await store.subscription_for_user(user_id)
+    return (sub or {}).get("stripe_customer_id") or await store.legacy_profile_customer(user_id)
 
 
 # ── Stripe client helper ───────────────────────────────────────────────────────
@@ -103,17 +141,18 @@ async def _update_profile(user_id: str, data: dict) -> None:
 def _init_stripe() -> None:
     s = get_settings()
     if not s.stripe_secret_key:
-        raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Stripe is not configured on this server.",
-        )
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail="Stripe is not configured on this server.")
     stripe.api_key = s.stripe_secret_key
+
+
+_CHECKOUT_FAILED = {"error": "stripe_checkout_failed", "message": "Unable to create checkout session"}
 
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
 
 class _CheckoutRequest(BaseModel):
-    plan: str = "pro"
+    # hand_limit | upload_limit | ai_limit | trial_ending | trial_ended | pricing_page
+    source: str | None = None
 
 
 @router.post("/create-checkout")
@@ -121,112 +160,84 @@ async def create_checkout(
     user: Annotated[dict, Depends(get_current_user)],
     body: _CheckoutRequest = _CheckoutRequest(),
 ):
-    """Create a Stripe Checkout Session for a Pro or Premium subscription.
+    """Create a Stripe Checkout Session for Pro.
 
-    The client redirects to the returned URL. On success Stripe sends a
-    webhook which upgrades the user's profile to the correct tier.
+    The client redirects to the returned URL. Payment methods (card, iDEAL,
+    Bancontact, Apple Pay / Google Pay) come from the Stripe dashboard —
+    deliberately not listed here — and VAT is computed by Stripe Tax on a
+    tax-inclusive price, so €7.99 is what the customer pays.
     """
-    plan = body.plan if body.plan in ("pro", "premium") else "pro"
     s = get_settings()
-    if not s.stripe_secret_key:
-        logger.error("Stripe checkout called but STRIPE_SECRET_KEY is not set")
-        return {
-            "error": "stripe_checkout_failed",
-            "message": "Unable to create checkout session",
-        }
+    if not s.stripe_secret_key or not s.stripe_pro_price_id:
+        logger.error("Stripe checkout called but STRIPE_SECRET_KEY / STRIPE_PRO_PRICE_ID is not set")
+        return _CHECKOUT_FAILED
     _init_stripe()
-
-    price_id = s.stripe_premium_price_id if plan == "premium" else s.stripe_pro_price_id
-    price_id_env = "STRIPE_PREMIUM_PRICE_ID" if plan == "premium" else "STRIPE_PRO_PRICE_ID"
-    if not price_id:
-        logger.error("Stripe checkout called but %s is not set", price_id_env)
-        return {
-            "error": "stripe_checkout_failed",
-            "message": "Unable to create checkout session",
-        }
 
     user_id: str = user.get("sub", "")
     email: str | None = user.get("email")
-
-    # Use server-configured origin — never trust client-supplied redirect URLs.
-    origin = s.frontend_url
-
-    # Reuse existing Stripe customer if we already created one
-    profile_info = await _get_profile_stripe_info(user_id)
-    customer_id: str | None = profile_info.get("stripe_customer_id")
+    source = body.source if body.source in UPGRADE_SOURCES else DEFAULT_SOURCE
 
     try:
-        kwargs: dict = dict(
-            mode="subscription",
-            payment_method_types=["card"],
-            line_items=[{"price": price_id, "quantity": 1}],
-            success_url=f"{origin}/dashboard?upgraded=1",
-            cancel_url=f"{origin}/dashboard",
-            metadata={"user_id": user_id, "plan": plan},
-            subscription_data={"metadata": {"user_id": user_id, "plan": plan}},
-            allow_promotion_codes=True,
-        )
-        if customer_id:
-            kwargs["customer"] = customer_id
-        elif email:
-            kwargs["customer_email"] = email
+        ent = await billing.get_entitlements(user_id, s)
+        if ent.get("plan") == "pro" and (ent.get("subscription") or {}).get("status") in ("active", "trialing", "past_due"):
+            return {"error": "already_subscribed", "message": "You already have Pro."}
+        customer_id = await _customer_id_for(user_id)
+    except httpx.HTTPError as exc:
+        logger.error("Checkout: entitlement lookup failed | user=%s error=%s", user_id, exc)
+        return _CHECKOUT_FAILED
 
+    # Server-configured origin — never a client-supplied redirect URL.
+    origin = s.frontend_url
+    metadata = {"user_id": user_id, "plan": "pro", "source": source}
+    kwargs: dict = dict(
+        mode="subscription",
+        line_items=[{"price": s.stripe_pro_price_id, "quantity": 1}],
+        automatic_tax={"enabled": True},
+        client_reference_id=user_id,
+        success_url=f"{origin}/dashboard?upgraded=1&source={source}",
+        cancel_url=f"{origin}/pricing",
+        metadata=metadata,
+        subscription_data={"metadata": metadata},
+        allow_promotion_codes=True,
+    )
+    if customer_id:
+        kwargs["customer"] = customer_id
+        # Stripe Tax needs the customer's address; let Checkout save what it collects.
+        kwargs["customer_update"] = {"address": "auto", "name": "auto"}
+    elif email:
+        kwargs["customer_email"] = email
+
+    try:
         session = stripe.checkout.Session.create(**kwargs)
-        logger.info(
-            "Checkout session created | user=%s plan=%s customer=%s price=%s session=%s url=%s",
-            user_id,
-            plan,
-            customer_id or "(new)",
-            price_id,
-            session.id,
-            session.url,
-        )
     except stripe.StripeError as exc:
         logger.error("Stripe checkout failed | user=%s error=%s", user_id, exc)
-        return {
-            "error": "stripe_checkout_failed",
-            "message": "Unable to create checkout session",
-        }
+        return _CHECKOUT_FAILED
     except Exception as exc:
         logger.error("Unexpected checkout error | user=%s error=%s", user_id, exc)
-        return {
-            "error": "stripe_checkout_failed",
-            "message": "Unable to create checkout session",
-        }
+        return _CHECKOUT_FAILED
 
+    logger.info("Checkout session created | user=%s source=%s customer=%s session=%s", user_id, source, customer_id or "(new)", session.id)
     return {"url": session.url}
 
 
 @router.post("/customer-portal")
-async def customer_portal(
-    user: Annotated[dict, Depends(get_current_user)],
-):
-    """Create a Stripe Billing Portal session so the user can manage their plan."""
+async def customer_portal(user: Annotated[dict, Depends(get_current_user)]):
+    """Stripe Billing Portal: cancel, change payment method, invoices."""
     s = get_settings()
     _init_stripe()
-
     user_id: str = user.get("sub", "")
-    profile_info = await _get_profile_stripe_info(user_id)
-    customer_id: str | None = profile_info.get("stripe_customer_id")
-
+    try:
+        customer_id = await _customer_id_for(user_id)
+    except httpx.HTTPError:
+        raise HTTPException(status.HTTP_502_BAD_GATEWAY, detail="Failed to open billing portal.")
     if not customer_id:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND,
-            detail="No billing account found. Please subscribe first.",
-        )
-
-    # Use server-configured origin — never trust client-supplied redirect URLs.
-    origin = s.frontend_url
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="No billing account found. Please subscribe first.")
 
     try:
-        portal = stripe.billing_portal.Session.create(
-            customer=customer_id,
-            return_url=f"{origin}/dashboard",
-        )
+        portal = stripe.billing_portal.Session.create(customer=customer_id, return_url=f"{s.frontend_url}/settings")
     except stripe.StripeError as exc:
         logger.error("Stripe portal error for user %s: %s", user_id, exc)
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, detail="Failed to open billing portal.")
-
     return {"url": portal.url}
 
 
@@ -237,134 +248,205 @@ async def stripe_webhook(
 ):
     """Receive and process Stripe webhook events.
 
-    Must use raw body bytes for signature verification — do NOT parse JSON
-    before passing to construct_event.
+    Uses the raw body bytes for signature verification — never parsed JSON.
     """
     s = get_settings()
-    _init_stripe()
     if not s.stripe_webhook_secret:
-        raise HTTPException(
-            status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Webhook secret not configured.",
-        )
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, detail="Webhook secret not configured.")
 
     payload = await request.body()
-
     try:
-        event = stripe.Webhook.construct_event(
-            payload, stripe_signature, s.stripe_webhook_secret
-        )
-    except stripe.errors.SignatureVerificationError:
+        event = stripe.Webhook.construct_event(payload, stripe_signature, s.stripe_webhook_secret)
+    except stripe.SignatureVerificationError:
         logger.warning("Stripe webhook: invalid signature — possible replay/forgery")
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid signature.")
     except Exception as exc:
         logger.error("Stripe webhook: bad payload: %s", exc)
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="Invalid payload.")
 
+    return await process_event(event)
+
+
+async def process_event(event) -> JSONResponse | dict:
+    event_id: str = event["id"]
     event_type: str = event["type"]
-    obj: dict = event["data"]["object"]
-    logger.info("Stripe webhook received: %s", event_type)
+    handler = _HANDLERS.get(event_type)
+    if handler is None:
+        logger.debug("Stripe webhook: unhandled event %s", event_type)
+        return {"received": True}
 
     try:
-        if event_type == "checkout.session.completed":
-            await _on_checkout_completed(obj)
-        elif event_type in ("customer.subscription.created", "customer.subscription.updated"):
-            await _on_subscription_updated(obj)
-        elif event_type == "customer.subscription.deleted":
-            await _on_subscription_deleted(obj)
-        elif event_type == "invoice.payment_failed":
-            await _on_payment_failed(obj)
-        else:
-            logger.debug("Stripe webhook: unhandled event %s", event_type)
-    except Exception as exc:
-        # Return 200 so Stripe stops retrying — log for investigation
-        logger.error("Webhook handler error for %s: %s", event_type, exc)
+        if not await store.claim_event(event_id, event_type):
+            logger.info("Stripe webhook: duplicate %s %s — already applied", event_type, event_id)
+            return {"received": True, "duplicate": True}
+    except httpx.HTTPError as exc:
+        logger.error("Stripe webhook: could not claim %s: %s", event_id, exc)
+        return JSONResponse({"received": False}, status_code=500)
 
+    try:
+        await handler(event["data"]["object"], event.get("created"))
+    except Exception as exc:
+        logger.exception("Stripe webhook: handler failed for %s %s: %s", event_type, event_id, exc)
+        try:
+            await store.release_event(event_id)
+        except Exception:
+            logger.exception("Stripe webhook: could not release claim on %s", event_id)
+        # 500 → Stripe retries with backoff; the released claim lets the retry run.
+        return JSONResponse({"received": False}, status_code=500)
+
+    logger.info("Stripe webhook applied: %s %s", event_type, event_id)
     return {"received": True}
 
 
 # ── Webhook event handlers ─────────────────────────────────────────────────────
 
-async def _on_checkout_completed(session: dict) -> None:
-    metadata = session.get("metadata", {})
-    user_id: str | None = metadata.get("user_id")
+async def _resolve_user(metadata: dict | None, customer_id: str | None) -> tuple[str | None, dict | None]:
+    """(user_id, current subscriptions row)."""
+    user_id = (metadata or {}).get("user_id")
+    if user_id:
+        return user_id, await store.subscription_for_user(user_id)
+    if customer_id:
+        row = await store.subscription_for_customer(customer_id)
+        if row:
+            return row["user_id"], row
+        user_id = await store.user_for_legacy_customer(customer_id)
+        if user_id:
+            return user_id, await store.subscription_for_user(user_id)
+    return None, None
+
+
+def _is_stale(row: dict | None, event_created: int | None) -> bool:
+    if not row or not row.get("stripe_event_at") or not event_created:
+        return False
+    applied = datetime.fromisoformat(str(row["stripe_event_at"]).replace("Z", "+00:00"))
+    return datetime.fromtimestamp(event_created, tz=timezone.utc) < applied
+
+
+def _past_due_since(new_status: str, row: dict | None) -> str | None:
+    if new_status != "past_due":
+        return None
+    return (row or {}).get("past_due_since") or _now_iso()
+
+
+async def _apply(user_id: str, row: dict | None, data: dict, event_created: int | None) -> None:
+    if event_created:
+        data["stripe_event_at"] = _iso(event_created)
+    await store.upsert_subscription(user_id, data)
+    if "status" in data:
+        profile: dict = {"subscription_tier": "pro" if data["status"] in _PAID_STATUSES else "free", "subscription_status": data["status"]}
+        if data.get("stripe_customer_id"):
+            profile["stripe_customer_id"] = data["stripe_customer_id"]
+        if "stripe_subscription_id" in data:
+            profile["stripe_subscription_id"] = data["stripe_subscription_id"]
+        if data.get("current_period_end"):
+            profile["current_period_end"] = data["current_period_end"]
+        await store.mirror_profile(user_id, profile)
+
+
+async def _on_checkout_completed(session: dict, event_created: int | None) -> None:
+    if session.get("mode") not in (None, "subscription"):
+        return
+    metadata = {**(session.get("metadata") or {})}
+    metadata.setdefault("user_id", session.get("client_reference_id"))
+    user_id, row = await _resolve_user(metadata, session.get("customer"))
     if not user_id:
-        logger.warning("checkout.session.completed: missing user_id in metadata — skipping")
+        # Raise, not return: a retry may succeed once the row exists.
+        raise RuntimeError(f"checkout.session.completed {session.get('id')}: cannot resolve user")
+    if _is_stale(row, event_created):
         return
 
-    plan = metadata.get("plan", "pro")
-    tier = "premium" if plan == "premium" else "pro"
-
-    await _update_profile(user_id, {
+    data: dict = {
         "stripe_customer_id": session.get("customer"),
         "stripe_subscription_id": session.get("subscription"),
-        "subscription_tier": tier,
-        "subscription_status": "active",
-        "analyses_limit": 999999,
-    })
-    logger.info("User %s upgraded to %s via checkout", user_id, tier)
-
-
-async def _on_subscription_updated(sub: dict) -> None:
-    user_id: str | None = sub.get("metadata", {}).get("user_id")
-    customer_id: str | None = sub.get("customer")
-    sub_status: str = sub.get("status", "")
-    period_end_ts: int | None = sub.get("current_period_end")
-
-    # Fall back to customer lookup if metadata is missing
-    if not user_id and customer_id:
-        profile = await _get_profile_by_customer(customer_id)
-        user_id = profile.get("id")
-
-    if not user_id:
-        logger.warning("subscription.updated: cannot resolve user_id for customer %s", customer_id)
-        return
-
-    plan = sub.get("metadata", {}).get("plan", "pro")
-    active_tier = "premium" if plan == "premium" else "pro"
-    tier = active_tier if sub_status in ("active", "trialing") else "free"
-    update: dict = {
-        "subscription_status": sub_status,
-        "subscription_tier": tier,
+        "plan": "pro",
     }
-    if period_end_ts:
-        update["current_period_end"] = datetime.fromtimestamp(
-            period_end_ts, tz=timezone.utc
-        ).isoformat()
+    source = metadata.get("source")
+    if source in UPGRADE_SOURCES:
+        data["upgrade_source"] = source
+    # Paid right away (card, iDEAL, Bancontact, wallets). A delayed method
+    # leaves the status to customer.subscription.updated.
+    if session.get("payment_status") in ("paid", "no_payment_required"):
+        data["status"] = "active"
+        data["past_due_since"] = None
+    await _apply(user_id, row, data, event_created)
+    logger.info("User %s subscribed via checkout (source=%s)", user_id, source)
 
-    await _update_profile(user_id, update)
+
+def _period_end(sub: dict) -> str | None:
+    # Newer API versions moved current_period_end onto the subscription items.
+    ts = sub.get("current_period_end")
+    if not ts:
+        items = (sub.get("items") or {}).get("data") or []
+        ts = items[0].get("current_period_end") if items else None
+    return _iso(ts)
 
 
-async def _on_subscription_deleted(sub: dict) -> None:
-    user_id: str | None = sub.get("metadata", {}).get("user_id")
-    customer_id: str | None = sub.get("customer")
+def _price_id(sub: dict) -> str | None:
+    items = (sub.get("items") or {}).get("data") or []
+    return ((items[0].get("price") or {}).get("id")) if items else None
 
-    if not user_id and customer_id:
-        profile = await _get_profile_by_customer(customer_id)
-        user_id = profile.get("id")
 
+async def _on_subscription_updated(sub: dict, event_created: int | None) -> None:
+    user_id, row = await _resolve_user(sub.get("metadata"), sub.get("customer"))
     if not user_id:
-        logger.warning("subscription.deleted: cannot resolve user_id for customer %s", customer_id)
+        raise RuntimeError(f"subscription event {sub.get('id')}: cannot resolve user for customer {sub.get('customer')}")
+    if _is_stale(row, event_created):
+        logger.info("Stripe webhook: stale subscription event for %s ignored", user_id)
         return
 
-    await _update_profile(user_id, {
-        "subscription_tier": "free",
-        "subscription_status": "canceled",
-        "stripe_subscription_id": None,
-        "analyses_limit": 3,
-    })
-    logger.info("User %s subscription canceled — downgraded to free", user_id)
+    new_status: str = sub.get("status") or ""
+    data: dict = {
+        "stripe_customer_id": sub.get("customer"),
+        "stripe_subscription_id": sub.get("id"),
+        "status": new_status,
+        "plan": "pro",
+        "price_id": _price_id(sub),
+        "current_period_end": _period_end(sub),
+        "cancel_at_period_end": bool(sub.get("cancel_at_period_end")),
+        "past_due_since": _past_due_since(new_status, row),
+    }
+    source = (sub.get("metadata") or {}).get("source")
+    if source in UPGRADE_SOURCES and not (row or {}).get("upgrade_source"):
+        data["upgrade_source"] = source
+    await _apply(user_id, row, data, event_created)
 
 
-async def _on_payment_failed(invoice: dict) -> None:
-    customer_id: str | None = invoice.get("customer")
-    if not customer_id:
-        return
-
-    profile = await _get_profile_by_customer(customer_id)
-    user_id: str | None = profile.get("id")
+async def _on_subscription_deleted(sub: dict, event_created: int | None) -> None:
+    user_id, row = await _resolve_user(sub.get("metadata"), sub.get("customer"))
     if not user_id:
+        raise RuntimeError(f"subscription.deleted {sub.get('id')}: cannot resolve user")
+    if _is_stale(row, event_created):
         return
+    await _apply(user_id, row, {
+        "stripe_customer_id": sub.get("customer"),
+        "status": sub.get("status") or "canceled",
+        "cancel_at_period_end": False,
+        "past_due_since": None,
+    }, event_created)
+    logger.info("User %s subscription ended — back to Free", user_id)
 
-    await _update_profile(user_id, {"subscription_status": "past_due"})
-    logger.warning("Payment failed for user %s (customer %s)", user_id, customer_id)
+
+async def _on_payment_failed(invoice: dict, event_created: int | None) -> None:
+    if not invoice.get("subscription") and not (invoice.get("parent") or {}).get("subscription_details"):
+        return  # not a subscription invoice
+    user_id, row = await _resolve_user(None, invoice.get("customer"))
+    if not user_id:
+        raise RuntimeError(f"invoice.payment_failed {invoice.get('id')}: cannot resolve user")
+    # Grace is for subscribers who were paying. A failed FIRST payment
+    # (status incomplete) never unlocks Pro.
+    if (row or {}).get("status") not in ("active", "trialing", "past_due"):
+        return
+    # Not stamped with stripe_event_at: the status itself still comes from
+    # customer.subscription.updated, which Stripe sends alongside.
+    await store.upsert_subscription(user_id, {"status": "past_due", "past_due_since": _past_due_since("past_due", row)})
+    await store.mirror_profile(user_id, {"subscription_status": "past_due"})
+    logger.warning("Payment failed for user %s — 3-day grace started", user_id)
+
+
+_HANDLERS = {
+    "checkout.session.completed": _on_checkout_completed,
+    "customer.subscription.created": _on_subscription_updated,
+    "customer.subscription.updated": _on_subscription_updated,
+    "customer.subscription.deleted": _on_subscription_deleted,
+    "invoice.payment_failed": _on_payment_failed,
+}

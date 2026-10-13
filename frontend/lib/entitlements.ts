@@ -5,22 +5,27 @@
  * (dashboard, settings, pricing, useUsage, the Learn module/lesson locking, the
  * AI Coach quota) should call these instead — see the membership-system plan.
  *
- * DB/Stripe values stay `free` / `pro` / `premium` / `admin` (see
- * supabase_schema.sql). "Plus"/"Elite" are display labels only.
+ * DB values stay `free` / `pro` / `premium` / `admin` (see
+ * supabase_schema.sql); profiles.subscription_tier is a mirror kept by the
+ * Stripe webhook. The Free/Pro limits (trainer hands, uploads, AI Coach) are
+ * NOT decided here — they come from the database via my_entitlements()
+ * (lib/billing/entitlements.ts, supabase_subscriptions.sql).
  */
 
 export type Tier = "free" | "pro" | "premium" | "admin";
 
 export interface Subscription {
   tier: Tier;
-  label: "Free" | "Plus" | "Elite";
+  label: "Free" | "Pro" | "Admin";
 }
 
+// One paid plan (Pro). `premium` is a retired tier value kept only so old
+// rows still read as paid.
 const PLAN_LABEL: Record<Tier, Subscription["label"]> = {
   free: "Free",
-  pro: "Plus",
-  premium: "Elite",
-  admin: "Elite",
+  pro: "Pro",
+  premium: "Pro",
+  admin: "Admin",
 };
 
 export function normalizeTier(tier: Tier | string | null | undefined): Tier {

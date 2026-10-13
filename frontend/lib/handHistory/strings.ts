@@ -52,6 +52,9 @@ const en = {
     page: (page: number, pages: number) => `Page ${page} of ${pages}`,
     emptyTitle: "No hands imported yet",
     emptyBody: "Export your tournament history from PokerCraft and upload the .zip file. Your biggest pots will show up here.",
+    hiddenHistory: (n: number) =>
+      `Free shows your most recent tournament. ${n} older ${plural(n, "tournament is", "tournaments are")} saved and come back with Pro.`,
+    seeFullHistory: "See full history",
   },
 
   filters: {
@@ -375,6 +378,14 @@ const en = {
     failedHands: (n: number) => `${n} ${plural(n, "hand", "hands")} couldn't be processed`,
     unknownHand: "unknown hand",
     andMore: (n: number) => `And ${n} more.`,
+    // Free plan: 1 new tournament per rolling 7 days.
+    uploadsThisWeek: "upload this week",
+    limitTitle: "Free includes 1 tournament per week.",
+    limitBody: "Upload unlimited tournaments with Pro, with your full history and every analysis option.",
+    nextFreeUpload: (when: string) => `Your next free upload is available ${when}.`,
+    onlyLatestImported: (name: string, skipped: number) =>
+      `Free includes 1 tournament per week, so we imported the most recent one${name ? ` (${name})` : ""} and skipped ${skipped} ${plural(skipped, "other", "others")}.`,
+    importAllWithPro: "Import all of them with Pro",
   },
 
   /** Import pipeline, zip reader and parser errors (also stored in hh_imports.failures). */

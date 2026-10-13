@@ -159,14 +159,8 @@ export async function saveHands(
     }
   }
 
-  const { data: importRow, error: importErr } = await supabase
-    .from("hh_imports")
-    .insert({ user_id: userId, file_names: fileNames.slice(0, 200) })
-    .select("id")
-    .single();
-  if (importErr) throw new Error(dbErrorMessage(importErr));
-  const importId = (importRow as { id: string }).id;
-
+  // Tournaments first: the Free plan's weekly limit is enforced right here
+  // (hh_tournaments_upload_limit trigger), before anything else is written.
   if (tournaments.size) {
     const { error } = await supabase
       .from("hh_tournaments")
@@ -174,8 +168,16 @@ export async function saveHands(
         onConflict: "user_id,site,tournament_id",
         ignoreDuplicates: true,
       });
-    if (error) throw new Error(dbErrorMessage(error));
+    if (error) throw uploadLimitError(error) ?? new Error(dbErrorMessage(error));
   }
+
+  const { data: importRow, error: importErr } = await supabase
+    .from("hh_imports")
+    .insert({ user_id: userId, file_names: fileNames.slice(0, 200) })
+    .select("id")
+    .single();
+  if (importErr) throw new Error(dbErrorMessage(importErr));
+  const importId = (importRow as { id: string }).id;
 
   let imported = 0;
   let skipped = parsed.duplicatesInUpload;
@@ -221,6 +223,46 @@ async function insertBatch(supabase: SupabaseClient, rows: unknown[]) {
     .upsert(rows, { onConflict: "user_id,site,hand_id", ignoreDuplicates: true })
     .select("hand_id");
   return { inserted: data?.length ?? 0, error };
+}
+
+// ── Free plan ───────────────────────────────────────────────────────────────
+
+/**
+ * Keeps only the tournament whose last hand was played most recently — what
+ * a Free account may import in one week. `skipped` counts the other
+ * tournaments in the upload.
+ */
+export function keepLatestTournament(parsed: ParseOutcome): { parsed: ParseOutcome; skipped: number; name: string | null } {
+  const last = new Map<string, { at: string; name: string | null }>();
+  for (const { hand } of parsed.entries) {
+    if (!hand.tournamentId) continue;
+    const key = `${hand.site}:${hand.tournamentId}`;
+    const cur = last.get(key);
+    if (!cur || hand.playedAt > cur.at) last.set(key, { at: hand.playedAt, name: hand.tournamentName });
+  }
+  if (last.size <= 1) return { parsed, skipped: 0, name: null };
+  const [keep, info] = [...last.entries()].sort((a, b) => b[1].at.localeCompare(a[1].at))[0];
+  return {
+    parsed: { ...parsed, entries: parsed.entries.filter((e) => `${e.hand.site}:${e.hand.tournamentId}` === keep) },
+    skipped: last.size - 1,
+    name: info.name,
+  };
+}
+
+/** The Free weekly limit refused this upload (raised by the database). */
+export class UploadLimitError extends Error {
+  constructor(public nextAvailableAt: string | null) {
+    super("UPLOAD_LIMIT_REACHED");
+  }
+}
+
+function uploadLimitError(err: { message?: string; details?: string | null }): UploadLimitError | null {
+  if (err.message !== "UPLOAD_LIMIT_REACHED") return null;
+  let next: string | null = null;
+  try {
+    next = (JSON.parse(err.details ?? "{}") as { next_available_at?: string }).next_available_at ?? null;
+  } catch {}
+  return new UploadLimitError(next);
 }
 
 // ── Errors ──────────────────────────────────────────────────────────────────
