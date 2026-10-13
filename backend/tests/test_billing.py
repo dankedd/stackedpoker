@@ -357,3 +357,11 @@ def test_invalid_hand_costs_nothing(trainer):
     with pytest.raises(HTTPException):
         run(trainer_route.record_hand(trainer_route.HandRequest(kind="open", chart_id=327, hand="ZZ", action="raise"), {"sub": "u"}))
     assert trainer["used"] == 0
+
+
+def test_checkout_failure_says_what_is_missing(store, settings, captured_checkout):
+    settings.stripe_pro_price_id = ""
+    out = run(sr.create_checkout({"sub": "user-1"}, sr._CheckoutRequest()))
+    assert out["error"] == "stripe_checkout_failed"
+    assert out["reason"] == "not_configured: STRIPE_PRO_PRICE_ID"
+    assert "sk_test" not in json.dumps(out)

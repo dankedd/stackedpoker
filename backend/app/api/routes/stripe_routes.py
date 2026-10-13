@@ -145,7 +145,11 @@ def _init_stripe() -> None:
     stripe.api_key = s.stripe_secret_key
 
 
-_CHECKOUT_FAILED = {"error": "stripe_checkout_failed", "message": "Unable to create checkout session"}
+def _checkout_failed(reason: str) -> dict:
+    """`reason` says which step failed (never a key or secret): not_configured,
+    lookup_failed, or Stripe's own error code and message — so a broken
+    setup shows up in the response, not only in the server log."""
+    return {"error": "stripe_checkout_failed", "message": "Unable to create checkout session", "reason": reason}
 
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
@@ -170,7 +174,8 @@ async def create_checkout(
     s = get_settings()
     if not s.stripe_secret_key or not s.stripe_pro_price_id:
         logger.error("Stripe checkout called but STRIPE_SECRET_KEY / STRIPE_PRO_PRICE_ID is not set")
-        return _CHECKOUT_FAILED
+        missing = [n for n, v in (("STRIPE_SECRET_KEY", s.stripe_secret_key), ("STRIPE_PRO_PRICE_ID", s.stripe_pro_price_id)) if not v]
+        return _checkout_failed(f"not_configured: {', '.join(missing)}")
     _init_stripe()
 
     user_id: str = user.get("sub", "")
@@ -184,7 +189,7 @@ async def create_checkout(
         customer_id = await _customer_id_for(user_id)
     except httpx.HTTPError as exc:
         logger.error("Checkout: entitlement lookup failed | user=%s error=%s", user_id, exc)
-        return _CHECKOUT_FAILED
+        return _checkout_failed("lookup_failed")
 
     # Server-configured origin — never a client-supplied redirect URL.
     origin = s.frontend_url
@@ -211,10 +216,10 @@ async def create_checkout(
         session = stripe.checkout.Session.create(**kwargs)
     except stripe.StripeError as exc:
         logger.error("Stripe checkout failed | user=%s error=%s", user_id, exc)
-        return _CHECKOUT_FAILED
+        return _checkout_failed(f"stripe: {exc.code or type(exc).__name__}: {exc.user_message or ''}".strip())
     except Exception as exc:
         logger.error("Unexpected checkout error | user=%s error=%s", user_id, exc)
-        return _CHECKOUT_FAILED
+        return _checkout_failed(f"unexpected: {type(exc).__name__}")
 
     logger.info("Checkout session created | user=%s source=%s customer=%s session=%s", user_id, source, customer_id or "(new)", session.id)
     return {"url": session.url}
