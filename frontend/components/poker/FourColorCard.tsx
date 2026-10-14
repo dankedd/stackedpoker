@@ -15,6 +15,19 @@ const SUIT: Record<string, { sym: string; face: string; edge: string }> = {
   c: { sym: "♣", face: "linear-gradient(160deg, #22c55e 0%, #15803d 55%, #14532d 100%)", edge: "rgba(187,247,208,0.45)" },
 };
 
+/**
+ * Brighter faces and a light edge, for cards on a dark felt (the replayer):
+ * the default spade face is dark slate and nearly vanishes against it.
+ */
+const HIGH_CONTRAST: Record<string, { face: string; edge: string }> = {
+  // White index on #64748b is 4.8:1; the face itself is ~3.4:1 against the felt.
+  s: { face: "linear-gradient(160deg, #64748b 0%, #475569 55%, #334155 100%)", edge: "rgba(241,245,249,0.85)" },
+  h: { face: SUIT.h.face, edge: "rgba(254,226,226,0.8)" },
+  d: { face: SUIT.d.face, edge: "rgba(219,234,254,0.8)" },
+  // Darker than the default green so the white index reaches 3:1 (large text).
+  c: { face: "linear-gradient(160deg, #16a34a 0%, #15803d 55%, #14532d 100%)", edge: "rgba(220,252,231,0.8)" },
+};
+
 const SIZES = {
   sm: { w: 50, h: 70, rank: 30, suit: 16, mark: 44, r: 7 },
   md: { w: 62, h: 87, rank: 38, suit: 20, mark: 56, r: 8 },
@@ -28,15 +41,19 @@ export function FourColorCard({
   size = "md",
   className,
   style,
+  highContrast = false,
 }: {
   /** e.g. "As", "Td". */
   card: string;
   size?: FourColorCardSize;
   className?: string;
   style?: React.CSSProperties;
+  /** Lighter faces and edges for a dark background. Off by default, so existing tables are unchanged. */
+  highContrast?: boolean;
 }) {
   const s = SIZES[size];
-  const suit = SUIT[card[1]?.toLowerCase()] ?? SUIT.s;
+  const base = SUIT[card[1]?.toLowerCase()] ?? SUIT.s;
+  const suit = highContrast ? { ...base, ...(HIGH_CONTRAST[card[1]?.toLowerCase()] ?? HIGH_CONTRAST.s) } : base;
   const rank = card[0]?.toUpperCase() === "T" ? "10" : card[0]?.toUpperCase();
 
   return (

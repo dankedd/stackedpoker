@@ -18,7 +18,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getHand, neighbours, setFavorite } from "@/lib/handHistory/api";
 import { readQueryState, writeQueryState } from "@/lib/handHistory/filters";
 import { HANDS_PATH } from "@/lib/handHistory/feature";
-import { amountFormatter, fmtBb, fmtChips, fmtPlayedAt, fmtSignedBb, fmtSignedChips, type AmountUnit } from "@/lib/handHistory/format";
+import { amountFormatter, fmtBb, fmtChips, fmtPct, fmtPlayedAt, fmtSignedBb, fmtSignedChips, type AmountUnit } from "@/lib/handHistory/format";
 import { deriveHand } from "@/lib/handHistory/derive";
 import type { HandDetailRow } from "@/lib/handHistory/rows";
 import { t } from "@/lib/handHistory/strings";
@@ -60,6 +60,8 @@ export function HandReplayer({ id }: { id: string }) {
   const [hasNote, setHasNote] = useState(false);
   const [favoritedAt, setFavoritedAt] = useState<string | null>(null);
   const [favPending, setFavPending] = useState(false);
+  const [fullTitle, setFullTitle] = useState(false);
+  const [equity, setEquity] = useState<{ villain: string; byStreet: Partial<Record<Street, number>> } | null>(null);
 
   useEffect(() => {
     try {
@@ -83,6 +85,11 @@ export function HandReplayer({ id }: { id: string }) {
     setRow(null);
     setError(null);
     setIndex(0);
+    setEquity(null);
+    // Start every hand at the top of the page: navigating in from a scrolled
+    // list otherwise lands on the title with nothing above it, where a phone's
+    // status bar can cover it.
+    window.scrollTo({ top: 0 });
     getHand(supabase, id)
       .then((r) => {
         if (cancelled) return;
@@ -160,6 +167,7 @@ export function HandReplayer({ id }: { id: string }) {
   }, [go, index, last, steps, toggleFavorite]);
 
   const onHasNoteChange = useCallback((v: boolean) => setHasNote(v), []);
+  const onEquity = useCallback((villain: string, byStreet: Partial<Record<Street, number>>) => setEquity({ villain, byStreet }), []);
 
   if (error) {
     return (
@@ -181,7 +189,7 @@ export function HandReplayer({ id }: { id: string }) {
 
   return (
     <div className="page-enter">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3 sm:mb-4">
         <BackLink suffix={suffix} />
         <div className="flex items-center gap-2">
           <HandNavLink id={nav.prevId} suffix={suffix} label={t.replayer.prevHand} dir="prev" />
@@ -191,15 +199,27 @@ export function HandReplayer({ id }: { id: string }) {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex min-w-0 items-start gap-1">
+          <div className="flex items-start justify-between gap-2" style={{ scrollMarginTop: "max(12px, env(safe-area-inset-top))" }}>
+            <div className="flex min-w-0 flex-1 items-start gap-1">
               <FavoriteStar on={favoritedAt != null} pending={favPending} onToggle={toggleFavorite} shortcut="S" className="-ml-1.5 mt-0.5" />
-              <div className="min-w-0">
-              <h1 className="truncate text-lg font-bold sm:text-xl">{row.hh_tournaments?.name ?? hand.tournamentName ?? t.replayer.tournament(hand.tournamentId)}</h1>
-              <p className="text-xs text-muted-foreground sm:text-sm">
-                {fmtPlayedAt(hand.playedAt)} · Level {hand.level} · {fmtChips(hand.smallBlind)}/{fmtChips(hand.bigBlind)}
-                {hand.ante ? t.replayer.ante(fmtChips(hand.ante)) : ""}
-              </p>
+              <div className="min-w-0 flex-1">
+                {/* One line with an ellipsis; a tap shows the whole name. */}
+                <h1 className="text-lg font-bold sm:text-xl">
+                  <button
+                    type="button"
+                    onClick={() => setFullTitle((v) => !v)}
+                    aria-expanded={fullTitle}
+                    title={tournamentTitle(row, hand)}
+                    className={cn("block w-full text-left", fullTitle ? "whitespace-normal break-words" : "truncate")}
+                  >
+                    {tournamentTitle(row, hand)}
+                    <span className="sr-only">{fullTitle ? "" : ` (${t.replayer.showFullName})`}</span>
+                  </button>
+                </h1>
+                <p className="text-xs text-muted-foreground sm:text-sm">
+                  {fmtPlayedAt(hand.playedAt)} · Level {hand.level} · <span className="font-mono">{fmtChips(hand.smallBlind)}/{fmtChips(hand.bigBlind)}</span>
+                  {hand.ante ? t.replayer.ante(fmtChips(hand.ante)) : ""}
+                </p>
               </div>
             </div>
             <UnitToggle unit={unit} onChange={changeUnit} />
@@ -207,7 +227,7 @@ export function HandReplayer({ id }: { id: string }) {
 
           <ReplayTable hand={hand} step={step} fmt={fmt} />
 
-          <div className="mt-3 flex min-h-[44px] items-center gap-2 rounded-xl border border-border/60 bg-card/50 px-3 py-2" aria-live="polite">
+          <div className="mt-2 flex min-h-[44px] items-center gap-2 rounded-xl border border-border/60 bg-card/50 px-3 py-2 sm:mt-3" aria-live="polite">
             <span
               className="shrink-0 rounded-md px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-black"
               style={{ background: STREET_COLOR[step.street] }}
@@ -221,29 +241,30 @@ export function HandReplayer({ id }: { id: string }) {
             </span>
           </div>
 
-          <div className="mt-3 flex items-center justify-center gap-1.5 sm:gap-2">
-            <CtrlButton label={t.replayer.toStart} onClick={() => go(0)} disabled={index === 0}>
+          <div className="mt-2 flex items-center justify-center gap-1.5 sm:mt-3 sm:gap-2">
+            <CtrlButton label={t.replayer.toStart} keyHint="Home" onClick={() => go(0)} disabled={index === 0}>
               <ChevronFirst className="h-5 w-5" />
             </CtrlButton>
-            <CtrlButton label={t.replayer.prevAction} onClick={() => go(index - 1)} disabled={index === 0}>
+            <CtrlButton label={t.replayer.prevAction} keyHint="ArrowLeft" onClick={() => go(index - 1)} disabled={index === 0}>
               <ChevronLeft className="h-5 w-5" />
             </CtrlButton>
-            <CtrlButton label={t.replayer.nextAction} onClick={() => go(index + 1)} disabled={index >= last} primary>
+            <CtrlButton label={t.replayer.nextAction} keyHint="ArrowRight" onClick={() => go(index + 1)} disabled={index >= last} primary>
               <ChevronRight className="h-5 w-5" />
             </CtrlButton>
-            <CtrlButton label={t.replayer.nextStreet} onClick={() => go(nextStreetIndex(steps, index))} disabled={index >= last}>
+            <CtrlButton label={t.replayer.nextStreet} keyHint="ArrowDown" onClick={() => go(nextStreetIndex(steps, index))} disabled={index >= last}>
               <ChevronsRight className="h-5 w-5" />
               <span className="hidden text-xs font-semibold sm:inline">{t.replayer.streetButton}</span>
             </CtrlButton>
-            <CtrlButton label={t.replayer.toEnd} onClick={() => go(last)} disabled={index >= last}>
+            <CtrlButton label={t.replayer.toEnd} keyHint="End" onClick={() => go(last)} disabled={index >= last}>
               <ChevronLast className="h-5 w-5" />
             </CtrlButton>
           </div>
+          <HandSummary hand={hand} street={step.street} equity={equity} verdict={preflop?.verdict ?? null} />
           <p className="mt-2 hidden text-center text-xs text-muted-foreground sm:block">
             {t.replayer.keys}
           </p>
           {preflop && <PreflopCheckPanel check={preflop} active={index === preflopStep} />}
-          <EquityPanel key={row.id} hand={hand} step={step} fmt={fmt} handRef={row.id} />
+          <EquityPanel key={row.id} hand={hand} step={step} fmt={fmt} handRef={row.id} onEquity={onEquity} />
         </div>
 
         <aside className="space-y-4">
@@ -286,6 +307,39 @@ export function HandReplayer({ id }: { id: string }) {
       </div>
     </div>
   );
+}
+
+function tournamentTitle(row: HandDetailRow, hand: HandDetailRow["data"]): string {
+  return row.hh_tournaments?.name ?? hand.tournamentName ?? t.replayer.tournament(hand.tournamentId);
+}
+
+/**
+ * One line under the playback controls with the hand's key point: Hero's
+ * equity against villain on the current street (the equity block's own
+ * numbers) and the preflop check of Hero's decision.
+ */
+function HandSummary({
+  hand,
+  street,
+  equity,
+  verdict,
+}: {
+  hand: HandDetailRow["data"];
+  street: Street;
+  equity: { villain: string; byStreet: Partial<Record<Street, number>> } | null;
+  verdict: string | null;
+}) {
+  const parts: string[] = [];
+  const eq = equity?.byStreet[street];
+  if (equity && eq != null) {
+    const pos = hand.players.find((p) => p.name === equity.villain)?.position ?? equity.villain;
+    parts.push(t.replayer.summaryEquity(pos, fmtPct(eq)));
+  }
+  const heroAction = hand.events.find((e) => e.kind === "action" && e.street === "preflop" && e.player === hand.heroName);
+  const word = verdict ? t.replayer.summaryVerdictWord[verdict] : undefined;
+  if (heroAction?.kind === "action" && word) parts.push(t.replayer.summaryVerdict(t.replayer.summaryAction[heroAction.action], word));
+  if (!parts.length) return null;
+  return <p className="mt-2 truncate text-center text-sm font-medium text-slate-200">{parts.join(" · ")}</p>;
 }
 
 function HandFacts({
@@ -378,14 +432,19 @@ function UnitToggle({ unit, onChange }: { unit: AmountUnit; onChange: (u: Amount
   );
 }
 
+const KEY_GLYPH: Record<string, string> = { ArrowLeft: "←", ArrowRight: "→", ArrowDown: "↓" };
+
 function CtrlButton({
   label,
+  keyHint,
   onClick,
   disabled,
   primary,
   children,
 }: {
   label: string;
+  /** The keyboard key for this button (aria-keyshortcuts value). */
+  keyHint: string;
   onClick: () => void;
   disabled?: boolean;
   primary?: boolean;
@@ -395,7 +454,8 @@ function CtrlButton({
     <button
       type="button"
       aria-label={label}
-      title={label}
+      aria-keyshortcuts={keyHint}
+      title={t.replayer.withKey(label, KEY_GLYPH[keyHint] ?? keyHint)}
       onClick={onClick}
       disabled={disabled}
       className={cn(

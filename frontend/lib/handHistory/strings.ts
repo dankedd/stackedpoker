@@ -186,12 +186,26 @@ const en = {
     nextHand: "Next hand",
     tournament: (id: string | null) => `Tournament #${id}`,
     ante: (amount: string) => ` (ante ${amount})`,
-    toStart: "To start (Home)",
-    prevAction: "Previous action (←)",
-    nextAction: "Next action (→)",
-    nextStreet: "Next street (↓)",
+    toStart: "Start",
+    prevAction: "Previous",
+    nextAction: "Next",
+    nextStreet: "Next street",
     streetButton: "Street",
-    toEnd: "To end (End)",
+    toEnd: "End",
+    /** Tooltip: the button's name plus its key. */
+    withKey: (label: string, key: string) => `${label} (${key})`,
+    showFullName: "Show the full tournament name",
+    /** One-line summary under the playback controls. */
+    summaryEquity: (villain: string, pct: string) => `Equity vs ${villain}: ${pct}`,
+    summaryVerdict: (action: string, verdict: string) => `${action} was ${verdict}`,
+    summaryAction: { fold: "Fold", check: "Check", call: "Call", bet: "Bet", raise: "Raise" } as Record<string, string>,
+    summaryVerdictWord: {
+      correct: "correct",
+      too_loose: "too loose",
+      too_tight: "too tight",
+      wrong_action: "the wrong action",
+      mixed: "a mixed play",
+    } as Record<string, string>,
     keys: "Keys: ← → action · ↑ ↓ street · Home/End start/end · S star",
     showAmountsIn: "Show amounts in",
     chips: "Chips",
@@ -243,9 +257,13 @@ const en = {
     uncalled: (amount: string, player: string) => `${amount} uncalled, returned to ${player}`,
     show: (player: string, cards: string) => `${player} shows ${cards}`,
     collect: (player: string, amount: string) => `${player} wins ${amount}`,
-    pot: (amount: string) => `Pot ${amount}`,
-    /** Pot plus the bets still in front of the players. */
-    total: (amount: string) => ` · total ${amount}`,
+    /** Replay table: "Pot 85.1 BB" (everything in the middle and in front of players). */
+    potLabel: "Pot",
+    /** Under the pot: "0.9 BB in pot + 84.2 BB in bets" (desktop), "0.9 BB + 84.2 BB in bets" (phone). */
+    potSplit: (pot: string, bets: string) => `${pot} in pot + ${bets} in bets`,
+    potSplitShort: (pot: string, bets: string) => `${pot} + ${bets} in bets`,
+    hero: "Hero",
+    dealer: "Dealer button",
   },
 
   // ── Notes ─────────────────────────────────────────────────────────────────

@@ -28,6 +28,7 @@ export function EquityPanel({
   fmt,
   handRef,
   storedVersion,
+  onEquity,
 }: {
   hand: ParsedHand;
   step: TimelineStep;
@@ -35,6 +36,8 @@ export function EquityPanel({
   /** When set, the default-range analysis is stored on the hand for the AI coach (lib/handHistory/analysis.ts). */
   handRef?: string;
   storedVersion?: string | null;
+  /** Reports Hero's equity per street once computed (the replayer's summary line). */
+  onEquity?: (villain: string, byStreet: Partial<Record<Street, number>>) => void;
 }) {
   const villain = useMemo(() => findVillain(hand), [hand]);
   const initial = useMemo(() => (villain ? villainRange(hand, villain) : null), [hand, villain]);
@@ -73,6 +76,16 @@ export function EquityPanel({
       clearTimeout(timer);
     };
   }, [range, hand, streets]);
+
+  useEffect(() => {
+    if (!onEquity || !villain || !results) return;
+    const byStreet: Partial<Record<Street, number>> = {};
+    streets.forEach((s, i) => {
+      const r = results[i];
+      if (r) byStreet[s.street] = r.equity;
+    });
+    onEquity(villain, byStreet);
+  }, [onEquity, villain, results, streets]);
 
   const decisions = useMemo(() => potOddsDecisions(hand), [hand]);
 
