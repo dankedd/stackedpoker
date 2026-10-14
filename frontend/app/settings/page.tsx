@@ -9,6 +9,7 @@ import { PlanBadge } from "@/components/layout/PlanBadge";
 import { parseEntitlements, type Entitlements } from "@/lib/billing/entitlements";
 import { cn } from "@/lib/utils";
 import { PokerExperiencePicker } from "./PokerExperiencePicker";
+import { ProductToursCard } from "@/components/onboarding/TourLinks";
 import type { ExperienceLevel } from "@/lib/learn/experienceLevel";
 
 const STATUS_STYLE: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
@@ -151,6 +152,8 @@ export default async function SettingsPage() {
             </div>
           </div>
         </div>
+
+        <ProductToursCard />
 
         {/* Learning card */}
         <div className="rounded-xl border border-border/60 bg-card/60 divide-y divide-border/40 mt-6">

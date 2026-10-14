@@ -1,70 +1,57 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { ArrowRight, Clock, FileSearch, Loader2, Target } from 'lucide-react'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
-import { OnboardingWelcome } from '@/components/onboarding/OnboardingWelcome'
-import { LevelSelectStep } from '@/components/onboarding/LevelSelectStep'
-import { RecommendationScreen } from '@/components/onboarding/RecommendationScreen'
-import { computeRecommendation, type ExperienceLevel, type Recommendation } from '@/lib/learn/experienceLevel'
-import { submitAssessment, describeAssessmentError } from '@/lib/learn/assessmentApi'
+import { LearnOnboarding } from '@/components/onboarding/LearnOnboarding'
 import { useAuth } from '@/contexts/AuthContext'
+import { useOnboarding } from '@/hooks/useOnboarding'
 import { useSubscription } from '@/hooks/useSubscription'
-import { trackEvent, SEO_EVENTS } from '@/lib/seo/analytics'
+import { canUseFeature } from '@/lib/features'
+import { TOUR_META, tourHref, type Tour } from '@/lib/onboarding/state'
+import { cn } from '@/lib/utils'
 
-type Phase = 'welcome' | 'level_select' | 'recommendation'
-
+/**
+ * First stop after sign-up: pick the Preflop Trainer or the Hand Review tour
+ * (the other one is offered right after). Also the "Product tours" page in
+ * the user menu — once the choice was made, picking here just replays a tour.
+ */
 export default function OnboardingPage() {
-  const router = useRouter()
-  const { session } = useAuth()
+  return (
+    <Suspense fallback={null}>
+      <Onboarding />
+    </Suspense>
+  )
+}
+
+const CARDS: { tour: Tour; icon: typeof Target; text: string }[] = [
+  { tour: 'preflop', icon: Target, text: 'Drill real tournament spots and learn your ranges by position and stack depth.' },
+  { tour: 'hands', icon: FileSearch, text: 'Upload your tournament and find the hands where you lost chips.' },
+]
+
+function Onboarding() {
+  const params = useSearchParams()
   const { subscription } = useSubscription()
+  if (params.get('flow') === 'learn' && canUseFeature('learn', subscription?.tier)) return <LearnOnboarding />
+  return <ChoiceScreen />
+}
 
-  const [phase, setPhase] = useState<Phase>('welcome')
-  const [recommendation, setRecommendation] = useState<Recommendation | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [submitError, setSubmitError] = useState<string | null>(null)
+function ChoiceScreen() {
+  const router = useRouter()
+  const { user, loading } = useAuth()
+  const ob = useOnboarding()
+  const [busy, setBusy] = useState<Tour | 'skip' | null>(null)
+  // Seen before = opened from "Product tours": replay, don't record a new choice.
+  const replay = Boolean(ob.row?.onboarding_choice_seen_at)
+  const ready = Boolean(user) && !loading && !busy
 
-  useEffect(() => {
-    trackEvent(SEO_EVENTS.onboardingStarted)
-  }, [])
-
-  function handleSelectLevel(level: ExperienceLevel) {
-    trackEvent(SEO_EVENTS.onboardingLevelSelected, { level })
-    const rec = computeRecommendation(level, subscription?.tier)
-    setRecommendation(rec)
-    trackEvent(SEO_EVENTS.onboardingRecommendationShown, { level, start_module_id: rec.startModuleId })
-    setPhase('recommendation')
-  }
-
-  async function handleSkip() {
-    // "Skip for now" still needs to clear the gate — otherwise middleware
-    // just bounces the learner right back here on their next request.
-    // Defaults to beginner, same fallback the acceptance criteria implies
-    // for anyone who never picked ("every user receives a recommendation").
-    await finish('beginner')
-  }
-
-  async function finish(level: ExperienceLevel) {
-    setSubmitting(true)
-    setSubmitError(null)
-    const rec = recommendation ?? computeRecommendation(level, subscription?.tier)
-    trackEvent(SEO_EVENTS.onboardingStartLearningClicked, { level })
-    try {
-      await submitAssessment(session?.access_token ?? '', {
-        experience_level: level,
-        recommended_module_id: rec.startModuleId,
-      })
-      trackEvent(SEO_EVENTS.onboardingCompleted, { level })
-      // Only navigate on a confirmed save — middleware gates every
-      // authenticated route on assessment_completed, so pushing to
-      // /dashboard before the write actually lands just bounces straight
-      // back here with no visible error, which looks like the page hung.
-      router.push('/dashboard')
-    } catch (err) {
-      setSubmitting(false)
-      setSubmitError(describeAssessmentError(err))
-    }
+  async function pick(choice: Tour | 'skip') {
+    setBusy(choice)
+    // Saved before navigating: middleware sends users without a choice back here.
+    if (!replay) await ob.choose(choice)
+    router.push(choice === 'skip' ? '/dashboard' : tourHref(choice))
   }
 
   return (
@@ -72,35 +59,58 @@ export default function OnboardingPage() {
       <Navbar variant="static" />
       <main className="flex-1 py-10 sm:py-14">
         <div className="mx-auto max-w-2xl px-4 sm:px-6">
-          {phase === 'welcome' && (
-            <OnboardingWelcome onStart={() => setPhase('level_select')} onSkip={handleSkip} />
-          )}
+          <div className="relative overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-br from-violet-950/40 via-card/80 to-blue-950/20 px-5 py-10 sm:px-10 sm:py-12">
+            <div aria-hidden className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full bg-violet-500/15 blur-3xl" />
+            <div aria-hidden className="pointer-events-none absolute -bottom-16 -left-16 h-56 w-56 rounded-full bg-blue-500/10 blur-3xl" />
 
-          {phase === 'level_select' && <LevelSelectStep onSelect={handleSelectLevel} />}
+            <div className="relative text-center">
+              <h1 className="text-2xl font-bold text-foreground sm:text-3xl">Welcome to Stacked Poker</h1>
+              <p className="mx-auto mt-2 max-w-md text-sm font-medium text-violet-300/80 sm:text-base">
+                What do you want to learn first? You can do the other one right after.
+              </p>
+            </div>
 
-          {phase === 'recommendation' && recommendation && (
-            <RecommendationScreen
-              recommendation={recommendation}
-              onStartLearning={() => finish(recommendation.level)}
-            />
-          )}
+            <div className="relative mt-8 grid gap-4 sm:grid-cols-2">
+              {CARDS.map(({ tour, icon: Icon, text }) => (
+                <button
+                  key={tour}
+                  type="button"
+                  disabled={!ready}
+                  onClick={() => pick(tour)}
+                  className={cn(
+                    'group flex flex-col rounded-2xl border border-white/10 bg-[#0B0E1A]/70 p-5 text-left transition-all',
+                    'hover:-translate-y-0.5 hover:border-[#7C5CFF]/60 hover:shadow-lg hover:shadow-violet-900/30',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7C5CFF] disabled:cursor-wait disabled:opacity-70',
+                  )}
+                >
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#7C5CFF]/30 bg-[#7C5CFF]/15">
+                    {busy === tour ? <Loader2 className="h-5 w-5 animate-spin text-[#B9A8FF]" /> : <Icon className="h-5 w-5 text-[#B9A8FF]" />}
+                  </span>
+                  <span className="mt-4 text-lg font-bold text-foreground">{TOUR_META[tour].title}</span>
+                  <span className="mt-1 flex-1 text-sm leading-relaxed text-muted-foreground">{text}</span>
+                  <span className="mt-4 flex items-center justify-between text-xs">
+                    <span className="inline-flex items-center gap-1 text-muted-foreground/80">
+                      <Clock className="h-3.5 w-3.5" /> ~{TOUR_META[tour].minutes} min
+                    </span>
+                    <span className="inline-flex items-center gap-1 font-semibold text-[#B9A8FF]">
+                      Start tour <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
 
-          {submitting && (
-            <p className="mt-4 text-center text-xs text-muted-foreground/50">Saving…</p>
-          )}
-
-          {submitError && (
-            <div className="mt-4 rounded-xl border border-red-500/25 bg-red-500/[0.05] px-4 py-3 text-center">
-              <p className="text-xs text-red-300/90 mb-2">{submitError}</p>
+            <div className="relative mt-6 text-center">
               <button
                 type="button"
-                onClick={() => finish(recommendation?.level ?? 'beginner')}
-                className="text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors"
+                disabled={!ready}
+                onClick={() => pick('skip')}
+                className="text-xs font-medium text-muted-foreground/70 transition-colors hover:text-muted-foreground disabled:opacity-60"
               >
-                Try again
+                {replay ? 'Back to the dashboard' : "Skip, I'll explore myself"}
               </button>
             </div>
-          )}
+          </div>
         </div>
       </main>
       <Footer />

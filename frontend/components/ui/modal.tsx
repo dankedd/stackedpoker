@@ -12,6 +12,8 @@ export interface ModalProps {
   maxWidthClassName?: string;
   /** Padding of the body; defaults to the roomy desktop padding. */
   bodyClassName?: string;
+  /** `data-tour` anchor on the panel, for the product tours' coach marks. */
+  dataTour?: string;
 }
 
 /**
@@ -25,7 +27,7 @@ export interface ModalProps {
  * conditionally inline) so `document` is never touched during SSR, matching
  * UserMenu's `{open && createPortal(...)}` pattern.
  */
-export function Modal({ open, onClose, title, children, maxWidthClassName = "max-w-lg", bodyClassName = "px-6 py-5" }: ModalProps) {
+export function Modal({ open, onClose, title, children, maxWidthClassName = "max-w-lg", bodyClassName = "px-6 py-5", dataTour }: ModalProps) {
   if (!open) return null;
 
   const modal = (
@@ -34,6 +36,7 @@ export function Modal({ open, onClose, title, children, maxWidthClassName = "max
       onClick={onClose}
     >
       <div
+        data-tour={dataTour}
         className={cn(
           "w-full rounded-2xl border border-white/10 bg-[#0B1120] shadow-2xl shadow-black/60 max-h-[90vh] overflow-y-auto",
           maxWidthClassName

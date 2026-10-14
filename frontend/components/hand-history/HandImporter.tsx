@@ -118,6 +118,7 @@ export function HandImporter() {
       )}
 
       <div
+        data-tour="hands-upload"
         onDragOver={(e) => {
           e.preventDefault();
           setDragging(true);

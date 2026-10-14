@@ -150,6 +150,26 @@ const en = {
     investedShort: (bb: string) => `invested ${bb}`,
   },
 
+  /** The built-in example tournament (product tour). Nothing in it is saved. */
+  example: {
+    badge: "Example tournament",
+    title: "Example tournament",
+    intro: "Made-up hands to try Hand Review without uploading anything. Nothing here is saved, and it doesn't count toward your upload limit.",
+    uploadOwn: "Upload your own tournament",
+    mattersTitle: "Only the hands that matter",
+    mattersSub: (shown: number, total: number, minPot: number) =>
+      `${shown} of ${total} hands: the ones you played with a pot of at least ${minPot} bb. Folded hands and small pots are hidden.`,
+    leaksTitle: "Preflop leaks",
+    leaksSub: "First-in decisions checked against the trainer's ranges.",
+    studyTitle: "Star and note",
+    studyStar: "Star this hand to find it again",
+    studyNotePlaceholder: "Your note for this hand (example only, not saved)",
+    noCheck: "No preflop check for this hand.",
+    board: "Board",
+    pot: "Pot",
+    result: "Result",
+  },
+
   favorite: {
     add: "Add to favorites",
     remove: "Remove from favorites",

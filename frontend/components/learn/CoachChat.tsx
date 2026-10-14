@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import type { CoachMessage } from '@/lib/learn/types'
 import { sendCoachMessage, getCoachUsage, isCoachQuotaExceeded, type CoachAction, type CoachUsage } from '@/lib/learn/api'
 import { UpgradeButton } from '@/components/billing/UpgradeUi'
+import { LevelPrompt } from '@/components/onboarding/LevelPrompt'
 import { trackUpgradePromptShown } from '@/lib/metaPixel'
 
 // ── Props ──────────────────────────────────────────────────────────────────────
@@ -435,6 +436,8 @@ export const CoachChat = forwardRef<CoachChatHandle, CoachChatProps>(function Co
           </div>
         ) : (
           <>
+            {/* Once, after the first answer: the user's level for the coach. */}
+            {messages.some(m => m.role === 'coach') && <LevelPrompt token={token} />}
             {aboveInput}
             <div className="flex gap-2 items-end">
               <textarea

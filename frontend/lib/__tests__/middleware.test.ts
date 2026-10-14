@@ -6,16 +6,27 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-type Who = { user: { id: string } | null; tier: string; onboarded: boolean };
+type Who = {
+  user: { id: string; user_metadata?: Record<string, unknown> } | null;
+  tier: string;
+  onboarded: boolean;
+  onboardingError?: boolean;
+};
 let who: Who = { user: null, tier: "free", onboarded: true };
 
 vi.mock("@supabase/ssr", () => ({
   createServerClient: () => ({
     auth: { getUser: async () => ({ data: { user: who.user } }) },
-    from: () => ({
+    from: (table: string) => ({
       select: () => ({
         eq: () => ({
-          single: async () => ({ data: { subscription_tier: who.tier, assessment_completed: who.onboarded } }),
+          single: async () => ({ data: { subscription_tier: who.tier } }),
+          maybeSingle: async () =>
+            table === "user_onboarding"
+              ? who.onboardingError
+                ? { data: null, error: { message: "relation does not exist" } }
+                : { data: who.onboarded ? { onboarding_choice_seen_at: "2026-10-13T10:00:00Z" } : null, error: null }
+              : { data: null, error: null },
         }),
       }),
     }),
@@ -61,5 +72,40 @@ describe("dev-only features are blocked server-side", () => {
     expect(await visit("/learn/think-in-ranges")).toEqual({ redirect: null, robots: null });
     expect((await visit("/preflop-trainer")).redirect).toBeNull();
     expect((await visit("/")).redirect).toBeNull();
+  });
+});
+
+describe("onboarding choice screen", () => {
+  it("a new user is sent to /onboarding from any app page", async () => {
+    who = { user: { id: "n1" }, tier: "free", onboarded: false };
+    for (const p of ["/dashboard", "/hands", "/settings"]) expect((await visit(p)).redirect, p).toBe("/onboarding");
+  });
+
+  it("not once the choice screen has been seen", async () => {
+    who = { user: { id: "n2" }, tier: "free", onboarded: true };
+    expect((await visit("/dashboard")).redirect).toBeNull();
+    expect((await visit("/hands")).redirect).toBeNull();
+  });
+
+  it("trainer-prompt signups skip the choice screen", async () => {
+    who = { user: { id: "n3", user_metadata: { signup_source: "trainer_prompt_5" } }, tier: "free", onboarded: false };
+    expect((await visit("/dashboard")).redirect).toBeNull();
+    expect((await visit("/hands")).redirect).toBeNull();
+  });
+
+  it("other signup sources still get it", async () => {
+    who = { user: { id: "n4", user_metadata: { signup_source: "trainer_banner" } }, tier: "free", onboarded: false };
+    expect((await visit("/dashboard")).redirect).toBe("/onboarding");
+  });
+
+  it("the onboarding page itself and the trainer are never redirected", async () => {
+    who = { user: { id: "n5" }, tier: "free", onboarded: false };
+    expect((await visit("/onboarding")).redirect).toBeNull();
+    expect((await visit("/preflop-trainer")).redirect).toBeNull();
+  });
+
+  it("a failed lookup never traps the user", async () => {
+    who = { user: { id: "n6" }, tier: "free", onboarded: false, onboardingError: true };
+    expect((await visit("/dashboard")).redirect).toBeNull();
   });
 });

@@ -102,7 +102,7 @@ export function TrainerLimitGate({ limit, resultOpen }: { limit: TrainerLimit; r
   return (
     <>
       {max !== null && (
-        <div className="mx-auto mt-3 flex max-w-[860px] justify-center">
+        <div data-tour="trainer-usage" className="mx-auto mt-3 flex max-w-[860px] justify-center">
           <UsageMeter used={used} limit={max} label="hands today" />
         </div>
       )}

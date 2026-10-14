@@ -38,3 +38,6 @@ psql_file < "$ROOT/supabase_subscriptions.sql"
 # Re-running must be safe.
 psql_file < "$ROOT/supabase_subscriptions.sql"
 psql_file < "$ROOT/supabase/tests/subscriptions.test.sql"
+psql_file < "$ROOT/supabase_onboarding.sql"
+psql_file < "$ROOT/supabase_onboarding.sql"
+psql_file < "$ROOT/supabase/tests/onboarding.test.sql"

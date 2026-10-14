@@ -10,6 +10,7 @@ import { MetaPixel } from "@/components/analytics/MetaPixel";
 import { ConsentBanner } from "@/components/analytics/ConsentBanner";
 import { GuestProgressSync } from "@/components/preflop-trainer/GuestProgressSync";
 import { BillingNotices } from "@/components/billing/BillingNotices";
+import { ProductTours } from "@/components/onboarding/ProductTours";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from "@/lib/seo/config";
@@ -100,6 +101,8 @@ export default function RootLayout({
           <GuestProgressSync />
           {/* Reverse trial: "ends tomorrow" banner and the one-time "trial ended" screen. */}
           <BillingNotices />
+          {/* Product tours (?tour=preflop / ?tour=hands) and the "other tour" offer. */}
+          <ProductTours />
         </AuthProvider>
         <GoogleAnalytics />
       </body>

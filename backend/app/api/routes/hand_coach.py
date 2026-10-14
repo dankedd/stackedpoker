@@ -29,6 +29,7 @@ from app.engines.hand_review.context import build_hand_context
 from app.engines.learn.ai_coach import CoachUnavailableError, generate_coach_reply
 from app.engines.learn.coach_context import MAX_MESSAGE_LENGTH
 from app.engines.learn.coach_usage import release_coach_usage, reserve_coach_usage
+from app.api.routes.coach import DEFAULT_EXPERIENCE_LEVEL
 from app.engines.learn.xp_calculator import level_for_xp
 from app.middleware.auth import get_current_user
 from app.middleware.rate_limiter import _check_rate_limit, _get_ip
@@ -86,6 +87,16 @@ async def _open_session(hand_id: UUID, user_id: str, settings) -> dict | None:
         settings,
     )
     return rows[0] if rows else None
+
+
+async def _experience_level(user_id: str, settings) -> str:
+    """The user's self-reported level (same signal the Learn coach uses);
+    'recreational' until they pick one."""
+    try:
+        rows = await _supabase_get("user_skill_assessment", f"user_id=eq.{user_id}&select=experience_level", settings)
+        return (rows[0].get("experience_level") if rows else None) or DEFAULT_EXPERIENCE_LEVEL
+    except Exception:
+        return DEFAULT_EXPERIENCE_LEVEL
 
 
 async def _user_level(user_id: str, settings) -> int:
@@ -191,7 +202,10 @@ async def hand_coach_message(
 
         stage = "CONTEXT"
         notes = await _notes(body.hand_id, user_id, settings)
-        llm_context = {"hand_review_block": build_hand_context(row, notes, body.step_index)}
+        llm_context = {
+            "hand_review_block": build_hand_context(row, notes, body.step_index),
+            "experience_level": await _experience_level(user_id, settings),
+        }
         logger.info("hand_coach_request req_id=%s user=%s step=%s", req_id, user_id, body.step_index)
 
         stage = "LLM"

@@ -272,7 +272,7 @@ export function Trainer() {
           </div>
         </div>
         {/* Phone: four tiles instead of a line that wraps. */}
-        <dl className="grid w-full grid-cols-4 gap-1.5 md:hidden" aria-live="polite">
+        <dl data-tour="trainer-stats" className="grid w-full grid-cols-4 gap-1.5 md:hidden" aria-live="polite">
           {[
             ["Score", `${scorePct(stats)}%`, `${stats.correct + stats.mixed}/${stats.hands}`],
             ["Streak", stats.streak, null],
@@ -289,7 +289,7 @@ export function Trainer() {
           ))}
         </dl>
 
-        <dl className="hidden flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground md:flex" aria-live="polite">
+        <dl data-tour="trainer-stats" className="hidden flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground md:flex" aria-live="polite">
           {[
             ["Hands", stats.hands],
             ["Correct", stats.correct],
@@ -318,9 +318,11 @@ export function Trainer() {
         </dl>
       </div>
 
-      {deal ? <Table deal={deal} /> : <div className="mx-auto aspect-[16/9.6] max-w-[860px] animate-pulse rounded-[999px] bg-card/40" />}
+      <div data-tour="trainer-spot">
+        {deal ? <Table deal={deal} /> : <div className="mx-auto aspect-[16/9.6] max-w-[860px] animate-pulse rounded-[999px] bg-card/40" />}
+      </div>
 
-      {deal && <ActionButtons deal={deal} onChoose={choose} disabled={Boolean(answer)} />}
+      <div data-tour="trainer-actions">{deal && <ActionButtons deal={deal} onChoose={choose} disabled={Boolean(answer)} />}</div>
 
       <GuestSignup guest={guest} resultOpen={Boolean(answer)} />
 
@@ -613,6 +615,7 @@ function ResultModal({
       open
       onClose={onNext}
       title={scenarioTitle(deal)}
+      dataTour="trainer-result"
       maxWidthClassName="max-w-4xl"
       bodyClassName="px-4 pt-4 sm:px-6 sm:pt-5"
     >

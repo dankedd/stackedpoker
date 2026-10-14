@@ -486,8 +486,15 @@ def test_unrelated_curriculum_content_not_dumped_into_context(fake_db, captured_
     run(coach_module.coach_message(body, FakeRequest(), user))
 
     ctx = captured_reply[0]["context"]
-    assert ctx == {}
+    # Only the default level (no level set yet) — no curriculum riding along.
+    assert ctx == {"experience_level": "recreational"}
     assert captured_reply[0]["theory"] == []
+
+
+def test_users_own_level_replaces_the_default(fake_db, captured_reply):
+    fake_db.tables["user_skill_assessment"] = [{"user_id": "user-7", "experience_level": "advanced"}]
+    run(coach_module.coach_message(coach_module.CoachMessageBody(message="Hello", context={}), FakeRequest(ip="10.0.7.7"), {"sub": "user-7"}))
+    assert captured_reply[0]["context"]["experience_level"] == "advanced"
 
 
 # ── Regression: training_sessions schema drift ─────────────────────────────────

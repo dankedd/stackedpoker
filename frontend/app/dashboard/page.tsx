@@ -7,6 +7,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/Navbar";
 import { UpgradeBanner } from "@/components/billing/UpgradeBanner";
+import { TourTip } from "@/components/onboarding/TourLinks";
 import { ManageSubscriptionButton } from "@/components/billing/ManageSubscriptionButton";
 import { StatusBadge } from "@/components/layout/StatusBadge";
 import { PlanBadge } from "@/components/layout/PlanBadge";
@@ -73,6 +74,9 @@ export default async function DashboardPage() {
 
         {/* Success banner (client — reads ?upgraded=1) */}
         <UpgradeBanner />
+
+        {/* "Take the … tour" until both tours are done or the tip is dismissed */}
+        <TourTip />
 
         {/* ── Welcome hero ── */}
         <div className="relative mb-10 overflow-hidden rounded-3xl border border-violet-500/12 bg-gradient-to-br from-violet-950/40 via-background/70 to-blue-950/20 px-8 py-8 sm:px-10 animate-fade-in">

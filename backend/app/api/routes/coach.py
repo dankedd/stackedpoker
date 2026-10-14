@@ -25,6 +25,9 @@ from app.engines.learn.coach_usage import get_coach_usage, release_coach_usage, 
 from app.engines.learn.xp_calculator import level_for_xp
 
 logger = logging.getLogger(__name__)
+
+# Assumed until the user picks a level (frontend LevelPrompt / Settings).
+DEFAULT_EXPERIENCE_LEVEL = "recreational"
 router = APIRouter(tags=["coach"])
 
 # Coach messages hit an LLM on every call — tighter than the default path
@@ -241,7 +244,10 @@ async def coach_message(
             if assessment_rows:
                 experience_level = assessment_rows[0].get("experience_level")
         except Exception:
-            pass  # non-critical — Coach just won't see an assessment signal
+            pass  # non-critical — falls back to the default below
+        # The level is no longer asked during onboarding; until the user sets
+        # it (first AI Coach answer or Settings) the coach assumes recreational.
+        experience_level = experience_level or DEFAULT_EXPERIENCE_LEVEL
 
         stage = "CONTEXT"
         # ── Resolve coaching mode + sanitize context (server-enforced) ─────────

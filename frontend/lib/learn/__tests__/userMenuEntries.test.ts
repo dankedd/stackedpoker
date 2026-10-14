@@ -48,7 +48,7 @@ describe('no navigation into the unreleased hand-history feature', () => {
 describe('account dropdown', () => {
   const SRC = read('components/layout/UserMenu.tsx')
 
-  it('keeps Dashboard -> subscription -> Settings in the menu array', () => {
+  it('keeps Dashboard -> subscription -> Product tours -> Settings in the menu array', () => {
     // Assert order inside the array literal itself, not by position in the
     // file — constants and types above the component would skew that.
     const start = SRC.indexOf('const menuItems')
@@ -56,7 +56,7 @@ describe('account dropdown', () => {
     // `dropdownRef` declared further up and would slice backwards to nothing.
     const arr = SRC.slice(start, SRC.indexOf('const dropdown = (', start))
     expect(arr.length).toBeGreaterThan(0)
-    const order = ['/dashboard', 'Manage subscription', '/pricing', '/settings']
+    const order = ['/dashboard', 'Manage subscription', '/pricing', '/onboarding', '/settings']
       .map((s) => arr.indexOf(s))
     expect(order.every((i) => i > -1), `missing entry in ${arr}`).toBe(true)
     expect(order).toEqual([...order].sort((a, b) => a - b))

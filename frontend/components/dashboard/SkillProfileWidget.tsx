@@ -22,11 +22,11 @@ export function SkillProfileWidget({ data }: { data: SkillProfileData | null }) 
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground">Tell us your poker level</p>
           <p className="text-xs text-muted-foreground/60 mt-0.5">
-            One question, under a minute, to personalize your dashboard.
+            One question in Settings, so the AI Coach can pitch its answers at your level.
           </p>
         </div>
         <Link
-          href="/onboarding"
+          href="/settings"
           className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors"
         >
           Start

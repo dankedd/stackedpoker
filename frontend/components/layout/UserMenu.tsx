@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
-import { LayoutDashboard, Settings, LogOut, ChevronDown, CreditCard, Loader2, type LucideIcon } from 'lucide-react'
+import { LayoutDashboard, Settings, LogOut, ChevronDown, CreditCard, Loader2, Compass, type LucideIcon } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLearnProgress } from '@/contexts/LearnProgressContext'
 import { useSubscription } from '@/hooks/useSubscription'
@@ -58,7 +58,7 @@ export function UserMenu() {
     user.user_metadata?.username ?? user.email?.split('@')[0] ?? 'Player'
   const initials = displayName.slice(0, 2).toUpperCase()
 
-  // Dashboard -> subscription -> Settings, then Sign out below the divider.
+  // Dashboard -> subscription -> Product tours -> Settings, then Sign out below the divider.
   //
   // The middle entry is the only one that changes: a free account is offered
   // the upgrade, a paying one gets the billing portal instead of being sold
@@ -81,6 +81,7 @@ export function UserMenu() {
           busy: managingSubscription,
         }
       : { kind: 'link', href: '/pricing', icon: CreditCard, label: 'Upgrade to Pro' },
+    { kind: 'link', href: '/onboarding', icon: Compass, label: 'Product tours' },
     { kind: 'link', href: '/settings', icon: Settings, label: 'Settings' },
   ]
 
