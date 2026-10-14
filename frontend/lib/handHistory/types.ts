@@ -62,7 +62,8 @@ export interface HandWinner {
 }
 
 export interface ParsedHand {
-  site: "ggpoker";
+  /** Parser/site id, stored per hand and per tournament: "ggpoker", "pokerstars", … */
+  site: string;
   handId: string;
   tournamentId: string | null;
   tournamentName: string | null;
@@ -73,7 +74,10 @@ export interface ParsedHand {
   bigBlind: number;
   /** Ante per player (0 when none). */
   ante: number;
-  /** Local time as printed by the site, ISO form without zone: "2026-10-08T21:40:24". */
+  /**
+   * ISO form without zone, "2026-10-08T21:40:24". GGPoker: the local time as
+   * printed. PokerStars: UTC (converted from the ET time it prints).
+   */
   playedAt: string;
   tableName: string;
   maxSeats: number;

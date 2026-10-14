@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { deriveHand } from "../derive";
 import { parseTexts, readFiles } from "../importer";
 import { parseChips, parseGGHand } from "../parsers/ggpoker";
-import { splitHands } from "../split";
+import { splitGGHands as splitHands } from "../parsers/ggpoker";
 import { buildTimeline, describeStep, totalOnTable } from "../timeline";
 import { fmtChips } from "../format";
 import type { ParsedHand } from "../types";

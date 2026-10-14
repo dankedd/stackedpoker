@@ -10,6 +10,7 @@ import { fmtNum } from "@/lib/handHistory/format";
 import {
   UploadLimitError,
   keepLatestTournament,
+  logUnsupportedFiles,
   parseTexts,
   readFiles,
   saveHands,
@@ -62,6 +63,7 @@ export function HandImporter() {
         await new Promise((r) => setTimeout(r, 0));
         const parsed = parseTexts(texts);
         parsed.fileErrors.unshift(...fileErrors);
+        void logUnsupportedFiles(supabase, user.id, parsed.fileErrors);
         if (!parsed.entries.length) {
           setProgress(null);
           setSummary({ tournaments: 0, imported: 0, skipped: parsed.duplicatesInUpload, failures: parsed.failures, fileErrors: parsed.fileErrors, importId: null });
@@ -147,7 +149,7 @@ export function HandImporter() {
           ref={inputRef}
           type="file"
           multiple
-          accept=".zip,.txt,application/zip,text/plain"
+          accept=".zip,.txt,.xml,application/zip,text/plain,text/xml,application/xml"
           className="hidden"
           onChange={(e) => {
             run(Array.from(e.target.files ?? []));
@@ -158,10 +160,21 @@ export function HandImporter() {
 
       <details className="mt-4 rounded-xl border border-border/50 bg-card/20 px-4 py-3 text-sm text-muted-foreground">
         <summary className="cursor-pointer font-medium text-foreground">{t.import.howTo}</summary>
-        <ol className="mt-2 list-decimal space-y-1 pl-5">
-          <li>{t.import.howTo1}</li>
-          <li>{t.import.howTo2}</li>
+        <p className="mt-3 font-medium text-foreground">{t.import.howToGG}</p>
+        <ol className="mt-1 list-decimal space-y-1 pl-5">
+          <li>{t.import.howToGG1}</li>
+          <li>{t.import.howToGG2}</li>
         </ol>
+        <p className="mt-3 font-medium text-foreground">{t.import.howToPS}</p>
+        <ol className="mt-1 list-decimal space-y-1 pl-5">
+          <li>{t.import.howToPS1}</li>
+          <li>
+            <span className="block break-all font-mono text-xs">{t.import.howToPSWindows}</span>
+            <span className="block break-all font-mono text-xs">{t.import.howToPSMac}</span>
+          </li>
+          <li>{t.import.howToPS2}</li>
+        </ol>
+        <p className="mt-3">{t.import.howToAgain}</p>
       </details>
 
       {busy && progress && (

@@ -14,7 +14,7 @@ import { buildAnalysis } from "../analysis";
 import { parseGGHand } from "../parsers/ggpoker";
 import { potOddsDecisions } from "../potOdds";
 import { preflopColumns } from "../rows";
-import { splitHands } from "../split";
+import { splitGGHands as splitHands } from "../parsers/ggpoker";
 import type { Street } from "../types";
 import { findVillain, villainRange } from "../villain";
 import { rangePct } from "@/components/hand-history/RangeEditor";

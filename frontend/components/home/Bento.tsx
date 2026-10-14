@@ -32,7 +32,7 @@ export function Bento({ btnOpen }: { btnOpen: HomeChart }) {
         <Tile className="md:col-span-3 md:row-span-2" title="Hand Replayer" text="Step through every hand you played: stacks, pot and actions exactly as they happened.">
           <ReplayerMini />
         </Tile>
-        <Tile className="md:col-span-2" title="Hand History Import" text="Drop your PokerCraft (GGPoker) export — zip or txt.">
+        <Tile className="md:col-span-2" title="Hand History Import" text="Drop your GGPoker (PokerCraft) or PokerStars tournament files — zip or txt.">
           <ImportMini />
         </Tile>
         <Tile className="md:col-span-2" title="AI Coach" text="Ask about the hand in front of you.">

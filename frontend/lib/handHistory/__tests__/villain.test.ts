@@ -5,7 +5,7 @@ import { buildPreflopTable, type PreflopTableData } from "@/lib/equity/preflopTa
 import { equityVsRange } from "@/lib/equity/rangeEquity";
 import { parseGGHand } from "../parsers/ggpoker";
 import { potOddsDecisions } from "../potOdds";
-import { splitHands } from "../split";
+import { splitGGHands as splitHands } from "../parsers/ggpoker";
 import type { ParsedHand } from "../types";
 import { findVillain, position9, rangePresets, villainRange } from "../villain";
 import { NO_FLOP_HAND, TOP_HAND } from "./reconstructed";

@@ -190,6 +190,28 @@ GROUP BY 1
 ORDER BY 1 DESC;
 ```
 
+## Hand Review: requested sites (files we couldn't import)
+
+Every uploaded file the importer rejects is logged in `hh_unsupported_files`
+(`supabase_hand_history_unsupported.sql`): the recognised site, the game type, the reason and
+the file extension, never the file name or contents. Which sites and game types do players ask for?
+
+```sql
+SELECT
+  COALESCE(site, '(not recognised)') AS site,
+  game_type,
+  reason,
+  COUNT(*)                AS files,
+  COUNT(DISTINCT user_id) AS players,
+  MAX(created_at)         AS last_seen
+FROM public.hh_unsupported_files
+GROUP BY 1, 2, 3
+ORDER BY players DESC, files DESC;
+```
+
+`reason`: `unsupported_site` (e.g. 888poker, iPoker), `cash` (cash game from a supported site),
+`language` (PokerStars client not in English), `unrecognised`, `file_type` (e.g. a .pdf).
+
 ## Environment Variables
 
 ### Frontend — `frontend/.env.local`

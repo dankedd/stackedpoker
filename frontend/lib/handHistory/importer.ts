@@ -7,9 +7,9 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { parserFor, type HandParser } from "./parsers";
+import { SITE_LABEL, detectFormat, type GameType, type SiteId } from "./detect";
+import { PARSERS, type HandParser } from "./parsers";
 import { toInsertRow } from "./rows";
-import { splitHands } from "./split";
 import { t } from "./strings";
 import type { ParseFailure, ParsedHand } from "./types";
 import { ZipError, isZip, readZip } from "./zip";
@@ -19,9 +19,19 @@ export interface SourceText {
   text: string;
 }
 
+/** Why a file was not imported, for the unsupported-files log (no file contents, no names). */
+export interface UnsupportedFile {
+  site: SiteId | null;
+  gameType: GameType;
+  reason: "unsupported_site" | "cash" | "language" | "unrecognised" | "file_type";
+  /** Lower-case file extension, e.g. "xml". */
+  extension: string;
+}
+
 export interface FileError {
   fileName: string;
   error: string;
+  unsupported?: UnsupportedFile;
 }
 
 export interface ParsedEntry {
@@ -62,7 +72,11 @@ const MAX_STORED_RAW = 4000;
 
 // ── Reading ─────────────────────────────────────────────────────────────────
 
-/** Expands .zip files and reads .txt files. Anything else becomes a FileError. */
+const HAND_FILE = /\.(txt|xml)$/i;
+
+const extensionOf = (name: string) => (/\.([a-z0-9]{1,10})$/i.exec(name)?.[1] ?? "").toLowerCase();
+
+/** Expands .zip files and reads .txt and .xml files. Anything else becomes a FileError. */
 export async function readFiles(
   files: { name: string; arrayBuffer(): Promise<ArrayBuffer> }[],
   onProgress?: (p: ImportProgress) => void,
@@ -78,7 +92,7 @@ export async function readFiles(
     try {
       const bytes = new Uint8Array(await f.arrayBuffer());
       if (lower.endsWith(".zip") || isZip(bytes)) {
-        const entries = readZip(bytes).filter((e) => e.name.toLowerCase().endsWith(".txt") && !e.name.startsWith("__MACOSX/"));
+        const entries = readZip(bytes).filter((e) => HAND_FILE.test(e.name) && !e.name.startsWith("__MACOSX/"));
         if (!entries.length) fileErrors.push({ fileName: f.name, error: t.errors.zipNoTxt });
         for (const e of entries) {
           try {
@@ -87,10 +101,14 @@ export async function readFiles(
             fileErrors.push({ fileName: `${f.name} › ${e.name}`, error: messageOf(err, t.errors.zipEntryUnreadable) });
           }
         }
-      } else if (lower.endsWith(".txt")) {
+      } else if (HAND_FILE.test(lower)) {
         texts.push({ fileName: f.name, text: decoder.decode(bytes) });
       } else {
-        fileErrors.push({ fileName: f.name, error: t.errors.unsupportedType });
+        fileErrors.push({
+          fileName: f.name,
+          error: t.errors.unsupportedType,
+          unsupported: { site: null, gameType: "unknown", reason: "file_type", extension: extensionOf(f.name) },
+        });
       }
     } catch (err) {
       fileErrors.push({ fileName: f.name, error: messageOf(err, t.errors.fileUnreadable) });
@@ -107,12 +125,13 @@ export function parseTexts(texts: SourceText[]): ParseOutcome {
   const seen = new Set<string>();
 
   for (const { fileName, text } of texts) {
-    const parser = parserFor(text);
-    if (!parser) {
-      out.fileErrors.push({ fileName, error: t.errors.noGgHands });
+    const rejected = rejectFile(fileName, text);
+    if (rejected) {
+      out.fileErrors.push(rejected);
       continue;
     }
-    const { hands, leftover } = splitHands(text);
+    const parser = PARSERS[detectFormat(text).site!]!;
+    const { hands, leftover } = parser.splitHands(text);
     if (leftover) {
       out.failures.push({ handId: null, error: t.errors.textBeforeFirstHand, rawText: leftover, fileName });
     }
@@ -140,6 +159,43 @@ export function parseTexts(texts: SourceText[]): ParseOutcome {
   // Oldest first: exports list the newest hand at the top.
   out.entries.sort((a, b) => a.hand.playedAt.localeCompare(b.hand.playedAt));
   return out;
+}
+
+/**
+ * Recognises the file and decides whether it can be imported. Returns the
+ * error to show (and log) when it can't; null when its parser should run.
+ */
+export function rejectFile(fileName: string, text: string): FileError | null {
+  const { site, gameType, language } = detectFormat(text);
+  const extension = extensionOf(fileName);
+  const reject = (error: string, reason: UnsupportedFile["reason"]): FileError => ({
+    fileName,
+    error,
+    unsupported: { site, gameType, reason, extension },
+  });
+  if (!site) return reject(t.errors.notRecognised, "unrecognised");
+  if (!PARSERS[site]) return reject(t.errors.unsupportedSite(SITE_LABEL[site]), "unsupported_site");
+  if (language !== "en") return reject(t.errors.psLanguage, "language");
+  if (gameType === "cash") return reject(t.errors.cashNotSupported, "cash");
+  return null;
+}
+
+/**
+ * Logs every file that could not be imported (site, game type, reason and
+ * extension only — never names or contents), so we can see which sites and
+ * game types players ask for. Best effort: a failure here never affects the
+ * import.
+ */
+export async function logUnsupportedFiles(supabase: SupabaseClient, userId: string, fileErrors: FileError[]): Promise<void> {
+  const rows = fileErrors
+    .filter((f) => f.unsupported)
+    .map((f) => ({ user_id: userId, site: f.unsupported!.site, game_type: f.unsupported!.gameType, reason: f.unsupported!.reason, extension: f.unsupported!.extension || null }));
+  if (!rows.length) return;
+  try {
+    await supabase.from("hh_unsupported_files").insert(rows);
+  } catch {
+    // Logging only.
+  }
 }
 
 // ── Saving ──────────────────────────────────────────────────────────────────
