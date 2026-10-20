@@ -27,12 +27,25 @@ import {
   tierFor,
   type FlopDetail,
   type FlopIndexRow,
+  type CategoryStats,
   type FlopSpot,
   type Graded,
   type NutSide,
 } from "@/lib/flopTrainer/logic";
 import { cn } from "@/lib/utils";
+import {
+  BAND_LABEL,
+  cbetAdvice,
+  gradeCbet,
+  inCategory,
+  isCategory,
+  SIZE_LABEL,
+  type Band,
+  type CbetAdvice,
+  type Size,
+} from "@/lib/flopTrainer/phase3";
 import { FlopResult, InfoModal, SessionSummary, type SessionEntry } from "./FlopResult";
+import { TextureTracker } from "./TextureTracker";
 
 type SpotChoice = "bn" | "utg" | "mix";
 const SPOT_OF: Record<Exclude<SpotChoice, "mix">, string> = { bn: MVP_SPOTS[0], utg: MVP_SPOTS[1] };
@@ -51,11 +64,22 @@ export type AnswerXp =
   | { status: "done"; result: AnswerResult }
   | { status: "error" };
 
+export interface CbetAnswer {
+  band: Band;
+  size: Size;
+  advice: CbetAdvice;
+  bandOk: boolean;
+  sizeOk: boolean;
+  points: number;
+}
+
 export interface Answer {
   id: number;
   guess: number;
   nut: NutSide;
   graded: Graded;
+  /** The c-bet part, when the question was on. */
+  cbet: CbetAnswer | null;
   xp: AnswerXp;
 }
 
@@ -67,7 +91,19 @@ export function FlopTrainer() {
   const pathname = usePathname();
   const params = useSearchParams();
   const choice: SpotChoice = (["bn", "utg", "mix"] as const).find((c) => c === params.get("spot")) ?? "bn";
-  const setChoice = (c: SpotChoice) => router.replace(`${pathname}?spot=${c}`, { scroll: false });
+  const cbetOn = params.get("cbet") === "1";
+  const focusParam = params.get("focus");
+  const focus = isCategory(focusParam) ? focusParam : null;
+  // Query string = shareable setup: ?spot=bn|utg|mix&cbet=1&focus=<category>.
+  const setQuery = (patch: Record<string, string | null>) => {
+    const q = new URLSearchParams(params.toString());
+    for (const [k, v] of Object.entries(patch)) {
+      if (v === null) q.delete(k);
+      else q.set(k, v);
+    }
+    router.replace(`${pathname}?${q.toString()}`, { scroll: false });
+  };
+  const setChoice = (c: SpotChoice) => setQuery({ spot: c });
 
   const { user, session: auth } = useAuth();
   const token = auth?.access_token ?? "";
@@ -82,6 +118,8 @@ export function FlopTrainer() {
   const [detail, setDetail] = useState<FlopDetail | null>(null);
   const [guess, setGuess] = useState(50);
   const [nut, setNut] = useState<NutSide | null>(null);
+  const [band, setBand] = useState<Band | null>(null);
+  const [size, setSize] = useState<Size | null>(null);
   const [answer, setAnswer] = useState<Answer | null>(null);
   const [sessionId, setSessionId] = useState(newSessionId);
   const [entries, setEntries] = useState<SessionEntry[]>([]);
@@ -116,20 +154,24 @@ export function FlopTrainer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, signedIn]);
 
+  // This browser's history is read after mount (never during SSR, which has
+  // no storage) and again after every answer.
+  const [localStats, setLocalStats] = useState<CategoryStats>({});
+  useEffect(() => setLocalStats(localCategoryStats()), [entries.length]);
   const categoryStats = useMemo(
-    () => (serverState && Object.keys(serverState.categories).length ? serverState.categories : localCategoryStats()),
-    // Recomputed per answer so the local history is fresh.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [serverState, entries.length],
+    () => (serverState && Object.keys(serverState.categories).length ? serverState.categories : localStats),
+    [serverState, localStats],
   );
 
   const dealNext = useCallback(
-    async (c: SpotChoice = choice, n = entries.length) => {
+    async (c: SpotChoice = choice, n = entries.length, f = focus) => {
       if (!spots?.length) return;
       const ids = c === "mix" ? spots.map((s) => s.spot_id) : [SPOT_OF[c]];
       const spot = spots.find((s) => s.spot_id === ids[Math.floor(Math.random() * ids.length)]) ?? spots[0];
       try {
-        const index = await fetchIndex(spot.spot_id);
+        const all = await fetchIndex(spot.spot_id);
+        // Training one board type: only its flops, still from clear to close.
+        const index = inCategory(all, f);
         const row = pickFlop(
           index,
           tierCuts(index),
@@ -142,6 +184,8 @@ export function FlopTrainer() {
         setAnswer(null);
         setGuess(50);
         setNut(null);
+        setBand(null);
+        setSize(null);
         setDetail(null);
         setDeal({ spot, row, cards: displayCards(row.flop, Math.random) });
         // Bucket shares for the answer screen, loaded while the player thinks.
@@ -150,7 +194,7 @@ export function FlopTrainer() {
         setLoadError(true);
       }
     },
-    [spots, choice, entries.length, categoryStats],
+    [spots, choice, focus, entries.length, categoryStats],
   );
 
   // First flop once the spots are in (client only: Math.random).
@@ -163,23 +207,37 @@ export function FlopTrainer() {
   }, [spots, dealNext]);
 
   const startSession = useCallback(
-    (c: SpotChoice = choice) => {
+    (c: SpotChoice = choice, f: typeof focus = focus) => {
       setSessionId(newSessionId());
       setEntries([]);
       setShowSummary(false);
       setNewRecord(false);
       seen.current = new Set();
-      void dealNext(c, 0);
+      void dealNext(c, 0, f);
     },
-    [choice, dealNext],
+    [choice, focus, dealNext],
   );
 
+  // The c-bet question needs the flop's buckets (loaded with the deal).
+  const ready = Boolean(deal && nut && (!cbetOn || (band && size && detail)));
+
   const submit = useCallback(() => {
-    if (!deal || answer || !nut) return;
+    if (!deal || answer || !nut || !ready) return;
     if (!allowHand()) return;
     const graded = gradeAnswer(guess, deal.row.equity_ip, nut, deal.row.nut_adv.leader);
+    let cbet: CbetAnswer | null = null;
+    if (cbetOn && band && size && detail) {
+      const advice = cbetAdvice(deal.spot.spot_id, deal.row.flop, detail.buckets_ip, detail.buckets_oop, deal.row.texture);
+      const g = gradeCbet(band, size, advice);
+      cbet = { band, size, advice, bandOk: g.bandOk, sizeOk: g.sizeOk, points: g.points };
+    }
     const id = ++answerId.current;
-    const entry: SessionEntry = { ...graded, category: textureCategory(deal.row.texture) };
+    const entry: SessionEntry = {
+      ...graded,
+      points: graded.points + (cbet?.points ?? 0),
+      maxPoints: cbet ? 5 : 3,
+      category: textureCategory(deal.row.texture),
+    };
     const before = entries;
     const nextEntries = [...entries, entry];
     setEntries(nextEntries);
@@ -196,11 +254,18 @@ export function FlopTrainer() {
         setNewRecord(rec);
         if (rec) setBest(pts);
       }
-      setAnswer({ id, guess, nut, graded, xp: { status: "guest" } });
+      setAnswer({ id, guess, nut, graded, cbet, xp: { status: "guest" } });
       return;
     }
-    setAnswer({ id, guess, nut, graded, xp: { status: "pending" } });
-    submitAnswer(token, { spot_id: deal.spot.spot_id, flop: deal.row.flop, guess_equity: guess, nut_guess: nut, session_id: sessionId }).then(
+    setAnswer({ id, guess, nut, graded, cbet, xp: { status: "pending" } });
+    submitAnswer(token, {
+      spot_id: deal.spot.spot_id,
+      flop: deal.row.flop,
+      guess_equity: guess,
+      nut_guess: nut,
+      session_id: sessionId,
+      ...(cbet ? { cbet_band: cbet.band, cbet_size: cbet.size } : {}),
+    }).then(
       (result) => {
         applyServerXpTotal(result.total_xp);
         applyServerUsage(result.usage);
@@ -219,7 +284,7 @@ export function FlopTrainer() {
         }
       },
     );
-  }, [deal, answer, nut, guess, entries, allowHand, signedIn, token, sessionId, recordGuestHand, applyServerXpTotal, applyServerUsage, handleServerError]);
+  }, [deal, answer, nut, ready, cbetOn, band, size, detail, guess, entries, allowHand, signedIn, token, sessionId, recordGuestHand, applyServerXpTotal, applyServerUsage, handleServerError]);
 
   const next = useCallback(() => {
     if (entries.length >= SESSION_LENGTH) setShowSummary(true);
@@ -269,6 +334,16 @@ export function FlopTrainer() {
             startSession(c);
           }}
         />
+        <ChoiceGroup
+          toolSlug="flop-trainer"
+          label="C-bet question"
+          value={cbetOn ? "on" : "off"}
+          options={[
+            { value: "off", label: "Off" },
+            { value: "on", label: "On" },
+          ]}
+          onChange={(v) => setQuery({ cbet: v === "on" ? "1" : null })}
+        />
         <button
           type="button"
           onClick={() => setShowInfo(true)}
@@ -278,6 +353,15 @@ export function FlopTrainer() {
           How it works
         </button>
       </div>
+
+      <TextureTracker
+        stats={categoryStats}
+        focus={focus}
+        onFocus={(c) => {
+          setQuery({ focus: c });
+          startSession(choice, c);
+        }}
+      />
 
       <dl className="mb-4 grid grid-cols-4 gap-1.5 sm:flex sm:gap-x-5" aria-live="polite">
         {[
@@ -320,14 +404,32 @@ export function FlopTrainer() {
           </div>
         </fieldset>
 
+        {cbetOn && (
+          <fieldset disabled={!deal || Boolean(answer)} className="space-y-3">
+            <legend className="text-sm font-semibold text-foreground">How should {ip || "the raiser"} c-bet here?</legend>
+            <ChoiceRow
+              label="How often"
+              value={band}
+              options={(["high", "mid", "low"] as const).map((b) => ({ value: b, label: BAND_LABEL[b] }))}
+              onChange={setBand}
+            />
+            <ChoiceRow
+              label="Bet size"
+              value={size}
+              options={(["small", "big"] as const).map((x) => ({ value: x, label: SIZE_LABEL[x] }))}
+              onChange={setSize}
+            />
+          </fieldset>
+        )}
+
         <button
           type="button"
           onClick={submit}
-          disabled={!deal || !nut || Boolean(answer)}
+          disabled={!ready || Boolean(answer)}
           className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-sm font-semibold text-white shadow-md shadow-violet-900/30 transition-all hover:from-violet-500 hover:to-blue-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {nut ? "Check answer" : "Pick who has the nut advantage"}
-          {nut && <span className="hidden md:inline">&nbsp;(Enter)</span>}
+          {!nut ? "Pick who has the nut advantage" : cbetOn && (!band || !size) ? "Pick how to c-bet" : "Check answer"}
+          {ready && <span className="hidden md:inline">&nbsp;(Enter)</span>}
         </button>
       </div>
 
@@ -356,25 +458,69 @@ export function FlopTrainer() {
   );
 }
 
+// ── Choice row ──────────────────────────────────────────────────────────────
+
+function ChoiceRow<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T | null;
+  options: { value: T; label: string }[];
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <div className={cn("mt-1.5 grid gap-2", options.length === 3 ? "grid-cols-3" : "grid-cols-2")} role="radiogroup" aria-label={label}>
+        {options.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={value === o.value}
+            onClick={() => onChange(o.value)}
+            className={cn(
+              "min-h-11 rounded-xl border px-2 py-1.5 text-xs font-semibold leading-tight transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 sm:text-sm",
+              value === o.value ? "border-violet-500/60 bg-violet-500/20 text-violet-100" : "border-border bg-card/40 text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ── Board ───────────────────────────────────────────────────────────────────
 
-function Board({ deal }: { deal: Deal }) {
+export function Board({ deal, compact = false }: { deal: Deal; compact?: boolean }) {
   const mobile = useIsMobile();
   return (
     <div
-      className="relative mx-auto max-w-[860px] overflow-hidden rounded-3xl border border-emerald-950/40 px-4 py-5 text-center sm:py-7"
+      className={cn(
+        "relative mx-auto max-w-[860px] overflow-hidden rounded-3xl border border-emerald-950/40 px-4 text-center",
+        compact ? "pb-4 pt-9" : "py-5 sm:py-7",
+      )}
       style={{
         background: "radial-gradient(ellipse at 50% 40%, rgba(21,63,46,0.92) 0%, rgba(13,44,32,0.95) 55%, rgba(7,26,20,0.97) 100%)",
         boxShadow: "inset 0 0 46px rgba(0,0,0,0.5), 0 18px 44px rgba(0,0,0,0.35)",
       }}
     >
-      <p className="text-[10px] uppercase tracking-[0.12em] text-emerald-100/60 sm:text-[11px]">
-        MTT · 9-handed · antes · {deal.spot.stack_bb}bb
-      </p>
-      <p className="mt-1 text-sm font-semibold text-white sm:text-base">{spotTitle(deal.spot)}</p>
-      <div className="mt-4 flex justify-center gap-2 sm:gap-3" aria-label="Flop">
+      {!compact && (
+        <>
+          <p className="text-[10px] uppercase tracking-[0.12em] text-emerald-100/60 sm:text-[11px]">
+            MTT · 9-handed · antes · {deal.spot.stack_bb}bb
+          </p>
+          <p className="mt-1 text-sm font-semibold text-white sm:text-base">{spotTitle(deal.spot)}</p>
+        </>
+      )}
+      <div className={cn("flex justify-center gap-2 sm:gap-3", !compact && "mt-4")} aria-label="Flop">
         {deal.cards.map((c) => (
-          <FourColorCard key={c} card={c} size={mobile ? "md" : "lg"} highContrast />
+          <FourColorCard key={c} card={c} size={mobile || compact ? "md" : "lg"} highContrast />
         ))}
       </div>
     </div>

@@ -1,4 +1,4 @@
-import type { Category, CategoryStats } from "./logic";
+import { GOOD_WITHIN, type Category, type CategoryStats } from "./logic";
 
 /**
  * This browser's recent answers (error per texture category) and, signed
@@ -35,14 +35,17 @@ export function recordLocalAnswer(c: Category, error: number) {
 }
 
 export function localCategoryStats(): CategoryStats {
-  const acc: Partial<Record<Category, [number, number]>> = {};
+  const acc: Partial<Record<Category, [number, number, number]>> = {};
   for (const { c, e } of read()) {
-    const a = (acc[c] ??= [0, 0]);
+    const a = (acc[c] ??= [0, 0, 0]);
     a[0] += 1;
     a[1] += e;
+    if (e <= GOOD_WITHIN) a[2] += 1;
   }
   const out: CategoryStats = {};
-  for (const [c, [n, sum]] of Object.entries(acc) as [Category, [number, number]][]) out[c] = [n, sum / n];
+  for (const [c, [n, sum, hits]] of Object.entries(acc) as [Category, [number, number, number]][]) {
+    out[c] = [n, sum / n, Math.round((1000 * hits) / n) / 10];
+  }
   return out;
 }
 

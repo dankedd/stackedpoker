@@ -12,7 +12,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type Plan = "free" | "trial" | "pro";
 
-export type UpgradeSource = "hand_limit" | "upload_limit" | "ai_limit" | "trial_ending" | "trial_ended" | "pricing_page";
+export type UpgradeSource =
+  | "hand_limit"
+  | "upload_limit"
+  | "ai_limit"
+  | "trial_ending"
+  | "trial_ended"
+  | "pricing_page"
+  | "flop_explorer";
 
 export const UPGRADE_SOURCES: readonly UpgradeSource[] = [
   "hand_limit",
@@ -21,6 +28,7 @@ export const UPGRADE_SOURCES: readonly UpgradeSource[] = [
   "trial_ending",
   "trial_ended",
   "pricing_page",
+  "flop_explorer",
 ];
 
 export const PRO_PRICE_EUR = 7.99;

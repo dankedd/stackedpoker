@@ -8,3 +8,5 @@ import { PREFLOP_RANGES_ENABLED } from "@/lib/ranges/feature";
 export const FLOP_TRAINER_ENABLED = PREFLOP_RANGES_ENABLED;
 
 export const FLOP_TRAINER_PATH = "/flop-trainer";
+export const FLOP_QUICK_FIRE_PATH = "/flop-trainer/quick-fire";
+export const FLOP_EXPLORER_PATH = "/flop-trainer/explorer";

@@ -145,7 +145,8 @@ export function tierFor(n: number, recentError: number | null): Tier {
   return Math.max(1, Math.min(3, base + shift)) as Tier;
 }
 
-export type CategoryStats = Partial<Record<Category, [answers: number, avgError: number]>>;
+/** Per category: answers, average error, and (when known) % of answers within 7 points. */
+export type CategoryStats = Partial<Record<Category, [answers: number, avgError: number, hitPct?: number]>>;
 
 /**
  * How much more often each category is dealt: up to 3x for categories where
@@ -153,7 +154,7 @@ export type CategoryStats = Partial<Record<Category, [answers: number, avgError:
  * 3 answers in that category).
  */
 export function categoryWeights(stats: CategoryStats): Record<Category, number> {
-  const entries = Object.entries(stats) as [Category, [number, number]][];
+  const entries = Object.entries(stats) as [Category, [number, number, number?]][];
   const n = entries.reduce((s, [, [k]]) => s + k, 0);
   const overall = n > 0 ? entries.reduce((s, [, [k, e]]) => s + k * e, 0) / n : 0;
   const w = {} as Record<Category, number>;

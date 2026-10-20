@@ -13,7 +13,6 @@ import {
   explain,
   fmt,
   GOOD_WITHIN,
-  MAX_SESSION_POINTS,
   PERFECT_WITHIN,
   type BucketKey,
   type Buckets,
@@ -22,11 +21,14 @@ import {
   type Graded,
   type Verdict,
 } from "@/lib/flopTrainer/logic";
+import { BAND_LABEL, explainCbet, SIZE_LABEL } from "@/lib/flopTrainer/phase3";
 import { cn } from "@/lib/utils";
-import type { Answer, AnswerXp, Deal } from "./FlopTrainer";
+import type { Answer, AnswerXp, CbetAnswer, Deal } from "./FlopTrainer";
 
 export interface SessionEntry extends Graded {
   category: Category;
+  /** 3 without the c-bet question, 5 with it. */
+  maxPoints: number;
 }
 
 const VERDICT: Record<Verdict, { label: string; className: string }> = {
@@ -119,6 +121,8 @@ export function FlopResult({
 
       <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{explain(deal.spot, deal.row, detail)}</p>
 
+      {answer.cbet && detail && <CbetResult cbet={answer.cbet} ip={ip} oop={oop} detail={detail} />}
+
       <div className="sticky bottom-0 -mx-4 mt-5 border-t border-white/[0.07] bg-[#0B1120] px-4 py-3 sm:-mx-6 sm:px-6 sm:py-5">
         <button ref={nextRef} type="button" onClick={onNext} className={NEXT_BUTTON}>
           {last ? "See your session" : "Next flop"}
@@ -126,6 +130,31 @@ export function FlopResult({
         </button>
       </div>
     </Modal>
+  );
+}
+
+function CbetResult({ cbet, ip, oop, detail }: { cbet: CbetAnswer; ip: string; oop: string; detail: FlopDetail }) {
+  const a = cbet.advice;
+  const Mark = ({ ok }: { ok: boolean }) =>
+    ok ? <Check aria-label="right" className="h-4 w-4 text-emerald-300" /> : <X aria-label="wrong" className="h-4 w-4 text-red-300" />;
+  return (
+    <section className="mt-5 rounded-xl border border-border/60 bg-card/30 p-3 text-sm">
+      <h3 className="font-semibold text-foreground">
+        C-bet: {BAND_LABEL[a.band].split(" ")[0].toLowerCase()} frequency, {a.size} size
+        <span className="ml-2 text-xs font-normal text-muted-foreground">+{cbet.points}</span>
+      </h3>
+      <ul className="mt-1.5 space-y-1 text-muted-foreground">
+        <li className="flex items-center gap-2">
+          <Mark ok={cbet.bandOk} /> How often: you said {BAND_LABEL[cbet.band]}
+          {!cbet.bandOk && ` — ${a.bands.map((b) => BAND_LABEL[b]).join(" or ")}`}
+        </li>
+        <li className="flex items-center gap-2">
+          <Mark ok={cbet.sizeOk} /> Size: you said {SIZE_LABEL[cbet.size]}
+          {!cbet.sizeOk && ` — ${SIZE_LABEL[a.size]}`}
+        </li>
+      </ul>
+      <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{explainCbet(a, ip, oop, detail.buckets_oop)}</p>
+    </section>
   );
 }
 
@@ -173,7 +202,7 @@ function Marker({ at, className, label, top }: { at: number; className: string; 
   );
 }
 
-function BucketBars({ detail, ip, oop, examples }: { detail: FlopDetail; ip: string; oop: string; examples: BucketExamples | null | false }) {
+export function BucketBars({ detail, ip, oop, examples }: { detail: FlopDetail; ip: string; oop: string; examples: BucketExamples | null | false }) {
   const [sel, setSel] = useState<{ side: "ip" | "oop"; key: BucketKey } | null>(null);
   const rows: { side: "ip" | "oop"; name: string; b: Buckets }[] = [
     { side: "ip", name: ip, b: detail.buckets_ip },
@@ -287,6 +316,7 @@ export function SessionSummary({
   onAgain: () => void;
 }) {
   const points = entries.reduce((s, e) => s + e.points, 0);
+  const max = entries.reduce((s, e) => s + e.maxPoints, 0);
   const count = (v: Verdict) => entries.filter((e) => e.verdict === v).length;
   const avg = entries.length ? entries.reduce((s, e) => s + e.error, 0) / entries.length : 0;
   const nuts = entries.filter((e) => e.nutCorrect).length;
@@ -303,7 +333,7 @@ export function SessionSummary({
       <div className="text-center">
         <p className="font-mono text-5xl font-bold tabular-nums text-white">
           {points}
-          <span className="text-xl text-muted-foreground">/{MAX_SESSION_POINTS}</span>
+          <span className="text-xl text-muted-foreground">/{max}</span>
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
           points · best <b className="font-mono text-foreground">{Math.max(best, newRecord ? points : 0)}</b>
@@ -368,6 +398,7 @@ export function InfoModal({ onClose }: { onClose: () => void }) {
             <li>Within {GOOD_WITHIN} points: Good, 1 point</li>
             <li>Further off: Miss, 0 points</li>
             <li>Nut advantage right: +1 point</li>
+            <li>C-bet question (optional): +1 for how often, +1 for the size</li>
           </ul>
           <p className="mt-1">A session is 10 flops, from clear spots to close ones. Signed in, points are also your XP.</p>
         </div>
@@ -377,6 +408,15 @@ export function InfoModal({ onClose }: { onClose: () => void }) {
             Every hand is sorted by its equity against the other player&apos;s range: Strong (75% or more), Good (50–75%),
             Weak (33–50%) and Trash (under 33%). The player with clearly more Strong hands — over 3 points more — has
             the nut advantage.
+          </p>
+        </div>
+        <div>
+          <h3 className="font-semibold text-foreground">The c-bet question</h3>
+          <p className="mt-1">
+            How often should the opener bet this flop — 80% or more, 60–80%, or under 60% — and with a small (min-bet or
+            1/3 pot) or big (1/2 or 2/3 pot) size? The answer comes from the book&apos;s average range profiles for each
+            kind of flop: the flop is matched to the closest one. Paired and monotone boards use small sizes. On the six
+            flops the book solves in full, its own numbers are used.
           </p>
         </div>
         <div>

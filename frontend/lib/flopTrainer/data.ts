@@ -49,6 +49,23 @@ export function fetchIndex(spotId: string): Promise<FlopIndexRow[]> {
   return p;
 }
 
+/** Everything public about one flop, for the explorer. */
+export interface FlopFull extends FlopIndexRow, FlopDetail {
+  hand_classes: Record<"ip" | "oop", Record<string, [number, number]>>;
+}
+
+export async function fetchFull(spotId: string, flop: string): Promise<FlopFull> {
+  const { data, error } = await createClient()
+    .from("flop_equity")
+    .select("flop,flop_weight,equity_ip,equity_oop,nut_adv,texture,buckets_ip,buckets_oop,hand_classes")
+    .eq("spot_id", spotId)
+    .eq("flop", flop)
+    .single();
+  if (error) throw error;
+  const row = data as FlopFull;
+  return { ...row, equity_ip: Number(row.equity_ip), equity_oop: Number(row.equity_oop) };
+}
+
 export async function fetchDetail(spotId: string, flop: string): Promise<FlopDetail> {
   const { data, error } = await createClient()
     .from("flop_equity")

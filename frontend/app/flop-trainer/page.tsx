@@ -14,7 +14,7 @@ export const metadata: Metadata = buildMetadata({
 export default function FlopTrainerPage() {
   return (
     <>
-      <header className="mb-4 mt-1 sm:mb-6 sm:mt-2">
+      <header className="mb-4 mt-4 sm:mb-6 sm:mt-6">
         <h1 className="text-2xl font-bold tracking-tight text-white sm:text-4xl">Flop Equity Trainer</h1>
         <p className="mt-2 hidden max-w-2xl text-[15px] leading-relaxed text-slate-400 sm:block">
           Read a flop the way the ranges see it: how much equity does the opener have, and who holds the strongest hands?
