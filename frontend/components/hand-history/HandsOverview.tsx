@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight, Loader2, NotebookPen, Upload } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, NotebookPen, PenLine, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -24,13 +24,14 @@ import {
   type HandFilters,
   type HandQueryState,
 } from "@/lib/handHistory/filters";
-import { HANDS_IMPORT_PATH, HANDS_PATH } from "@/lib/handHistory/feature";
+import { HANDS_IMPORT_PATH, HANDS_MANUAL_PATH, HANDS_PATH } from "@/lib/handHistory/feature";
 import { fmtBb, fmtNum, fmtPlayedAt, fmtSignedBb } from "@/lib/handHistory/format";
 import type { HandListRow } from "@/lib/handHistory/rows";
 import { t } from "@/lib/handHistory/strings";
 import { useEntitlements } from "@/hooks/useEntitlements";
 import { cn } from "@/lib/utils";
 import { FavoriteStar } from "./FavoriteStar";
+import { ManualBadge } from "./manual/ManualNotes";
 import { FiltersBar } from "./HandFilterBar";
 import { MiniCards } from "./MiniCards";
 import { PreflopBadge } from "./PreflopBadge";
@@ -160,12 +161,20 @@ export function HandsOverview() {
         title={t.section.title}
         subtitle={total == null ? t.overview.subtitleLoading : t.overview.subtitle(fmtNum(total), fmtNum(count))}
       >
-        <Link
-          href={HANDS_IMPORT_PATH}
-          className="inline-flex items-center gap-2 self-start rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-500"
-        >
-          <Upload className="h-4 w-4" /> {t.overview.importButton}
-        </Link>
+        <div className="flex flex-wrap gap-2 self-start">
+          <Link
+            href={HANDS_MANUAL_PATH}
+            className="inline-flex items-center gap-2 rounded-xl border border-violet-500/40 px-4 py-2 text-sm font-semibold text-violet-100 transition hover:bg-violet-500/10"
+          >
+            <PenLine className="h-4 w-4" /> {t.manual.enterButton}
+          </Link>
+          <Link
+            href={HANDS_IMPORT_PATH}
+            className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-500"
+          >
+            <Upload className="h-4 w-4" /> {t.overview.importButton}
+          </Link>
+        </div>
       </PageHeader>
 
       <HiddenHistoryNote />
@@ -309,8 +318,11 @@ export function HandList({
                   </Link>
                 </td>
                 <td className="max-w-[220px] px-4 py-2.5">
-                  <p className="truncate">{r.hh_tournaments?.name ?? `#${r.tournament_id}`}</p>
-                  <p className="text-xs text-muted-foreground">{t.list.level(r.level)}</p>
+                  <p className="truncate">{rowTitle(r)}</p>
+                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    {r.source === "manual" && <ManualBadge />}
+                    {r.level != null || r.source !== "manual" ? t.list.level(r.level) : null}
+                  </p>
                 </td>
                 <td className="px-4 py-2.5">
                   <span className="font-semibold text-violet-300">{r.hero_position ?? "—"}</span>
@@ -344,9 +356,13 @@ export function HandList({
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{r.hh_tournaments?.name ?? `#${r.tournament_id}`}</p>
+                  <p className="flex items-center gap-1.5 truncate text-sm font-medium">
+                    {r.source === "manual" && <ManualBadge />}
+                    <span className="truncate">{rowTitle(r)}</span>
+                  </p>
                   <p className="text-xs text-muted-foreground">
-                    {fmtPlayedAt(r.played_at)} · {t.list.level(r.level)}
+                    {fmtPlayedAt(r.played_at)}
+                    {r.level != null || r.source !== "manual" ? ` · ${t.list.level(r.level)}` : ""}
                   </p>
                 </div>
                 <div className="text-right">
@@ -386,6 +402,10 @@ function SkeletonRows() {
   );
 }
 
+function rowTitle(r: HandListRow): string {
+  return r.hh_tournaments?.name ?? (r.source === "manual" ? t.manual.untitled : `#${r.tournament_id}`);
+}
+
 function EmptyState() {
   return (
     <div className="mt-6 rounded-2xl border border-dashed border-violet-500/30 bg-violet-500/[0.04] px-6 py-12 text-center">
@@ -399,6 +419,11 @@ function EmptyState() {
       >
         <Upload className="h-4 w-4" /> {t.overview.importButton}
       </Link>
+      <p className="mt-4 text-sm text-muted-foreground">
+        <Link href={HANDS_MANUAL_PATH} className="font-semibold text-violet-300 underline-offset-4 hover:underline">
+          {t.manual.emptyHint}
+        </Link>
+      </p>
     </div>
   );
 }

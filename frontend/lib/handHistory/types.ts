@@ -1,3 +1,5 @@
+import type { ManualEntry } from "./manual/entry";
+
 /**
  * Hand history — site-independent data model.
  *
@@ -94,6 +96,22 @@ export interface ParsedHand {
   rake: number;
   /** Lines the parser did not recognise but could safely ignore. */
   warnings: string[];
+  /** Tournament (all imports) or cash; only manual hands can be cash. */
+  format?: "tournament" | "cash";
+  /** Set on hands the user entered themselves (lib/handHistory/manual). */
+  manual?: ManualHandMeta;
+}
+
+export interface ManualHandMeta {
+  /** Positions whose stack was not entered and is assumed equal to Hero's. */
+  assumedStacks: string[];
+  live: boolean;
+  venue: string | null;
+  buyIn: string | null;
+  /** Streets the hand reached: 1 = preflop … 4 = river. */
+  streets: number;
+  /** What the user entered, so the hand can be edited later. */
+  entry?: ManualEntry;
 }
 
 /** Values computed from a ParsedHand (derive.ts). */

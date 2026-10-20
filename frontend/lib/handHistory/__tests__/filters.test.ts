@@ -38,12 +38,20 @@ describe("hand filters", () => {
   it("round-trips through the query string and keeps defaults out of it", () => {
     expect(writeQueryState(DEFAULT_STATE)).toBe("");
     const s = readQueryState(new URLSearchParams("alle=1&minPot=35&t=316999261&notes=1&sort=invested&dir=asc&page=3"));
-    expect(s.filters).toEqual({ cards: [], favorites: false, preflop: [], heroInvolved: false, minPotBb: 35, tournamentId: "316999261", withNotes: true });
+    expect(s.filters).toEqual({ cards: [], favorites: false, preflop: [], heroInvolved: false, minPotBb: 35, tournamentId: "316999261", withNotes: true, manual: false });
     expect(s.sort).toBe("invested");
     expect(readQueryState(new URLSearchParams(writeQueryState(s).slice(1)))).toEqual(s);
     expect(writeQueryState(s, false)).not.toContain("page");
     // "Notes" is a targeted filter: the minimum pot steps aside (kept in the state).
     expect(applyFilters(new FakeQuery(), s.filters).calls).toEqual(["eq tournament_id 316999261", "eq has_note true"]);
+  });
+
+  it("manual hands: their own filter, and every manual hand shows (defaults step aside)", () => {
+    const s = readQueryState(new URLSearchParams("manual=1"));
+    expect(s.filters.manual).toBe(true);
+    expect(applyFilters(new FakeQuery(), s.filters).calls).toEqual(["eq source manual"]);
+    expect(writeQueryState(s)).toBe("?manual=1");
+    expect(readQueryState(new URLSearchParams("")).filters.manual).toBe(false);
   });
 
   it("the preflop filter goes before 'involved' and the minimum pot", () => {

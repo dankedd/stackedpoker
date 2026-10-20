@@ -34,6 +34,13 @@ INSERT INTO public.profiles (id, subscription_tier) VALUES
 SQL
 
 psql_file < "$ROOT/supabase_hand_history.sql"
+psql_file < "$ROOT/supabase_hand_history_involved.sql"
+psql_file < "$ROOT/supabase_hand_history_preflop.sql"
+psql_file < "$ROOT/supabase_hand_history_english.sql"
+psql_file < "$ROOT/supabase_hand_history_favorites.sql"
+psql_file < "$ROOT/supabase_hand_history_coach.sql"
+psql_file < "$ROOT/supabase_hand_history_cards.sql"
+psql_file < "$ROOT/supabase_hand_history_unsupported.sql"
 psql_file < "$ROOT/supabase_subscriptions.sql"
 # Re-running must be safe.
 psql_file < "$ROOT/supabase_subscriptions.sql"
@@ -41,3 +48,6 @@ psql_file < "$ROOT/supabase/tests/subscriptions.test.sql"
 psql_file < "$ROOT/supabase_onboarding.sql"
 psql_file < "$ROOT/supabase_onboarding.sql"
 psql_file < "$ROOT/supabase/tests/onboarding.test.sql"
+psql_file < "$ROOT/supabase_manual_hands.sql"
+psql_file < "$ROOT/supabase_manual_hands.sql"
+psql_file < "$ROOT/supabase/tests/manual_hands.test.sql"

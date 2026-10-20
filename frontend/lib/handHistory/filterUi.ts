@@ -27,7 +27,7 @@ export function withoutFavorites(state: HandQueryState): StatePatch {
 
 /** The targeted filters cleared — the defaults apply again. Tournament and sort stay. */
 export function restoreDefaults(state: HandQueryState): StatePatch {
-  return { ...withoutFavorites(state), filters: { cards: [], preflop: [], favorites: false, withNotes: false } };
+  return { ...withoutFavorites(state), filters: { cards: [], preflop: [], favorites: false, withNotes: false, manual: false } };
 }
 
 /** Everything back to the default state (tournament included); the sort stays unless it is the star date. */
@@ -60,6 +60,7 @@ export function activeChips(state: HandQueryState, tournamentName?: (id: string)
   }
   if (f.favorites) chips.push({ key: "fav", label: `★ ${t.filterBar.favorites}`, remove: withoutFavorites(state) });
   if (f.withNotes) chips.push({ key: "notes", label: t.filterBar.notes, remove: { filters: { withNotes: false } } });
+  if (f.manual) chips.push({ key: "manual", label: t.manual.navItem, remove: { filters: { manual: false } } });
   if (f.tournamentId) {
     chips.push({ key: "t", label: tournamentName?.(f.tournamentId) ?? `#${f.tournamentId}`, remove: { filters: { tournamentId: null } } });
   }
@@ -82,8 +83,14 @@ export interface Preset {
 const same = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x) => b.includes(x));
 
 function targetedOnly(f: HandFilters, want: Partial<HandFilters>): boolean {
-  const base = { cards: [] as string[], preflop: [] as string[], favorites: false, withNotes: false, ...want };
-  return same(f.cards, base.cards) && same(f.preflop, base.preflop) && f.favorites === base.favorites && f.withNotes === base.withNotes;
+  const base = { cards: [] as string[], preflop: [] as string[], favorites: false, withNotes: false, manual: false, ...want };
+  return (
+    same(f.cards, base.cards) &&
+    same(f.preflop, base.preflop) &&
+    f.favorites === base.favorites &&
+    f.withNotes === base.withNotes &&
+    f.manual === base.manual
+  );
 }
 
 const reset = (state: HandQueryState, extra: Partial<HandFilters>): Partial<HandFilters> => ({

@@ -8,6 +8,7 @@ import { dbErrorMessage } from "./importer";
 import { parserFor } from "./parsers";
 import { PREFLOP_CHECK_VERSION, type PreflopVerdict } from "./preflop";
 import { LIST_COLUMNS, preflopColumns, type HandDetailRow, type HandListRow } from "./rows";
+import type { ParsedHand } from "./types";
 
 export interface TournamentRow {
   site: string;
@@ -166,14 +167,25 @@ export async function refreshPreflopChecks(
   for (;;) {
     const { data, error } = await supabase
       .from("hh_hands")
-      .select("id, raw_text")
+      .select("id, raw_text, source")
       .or(`preflop_version.is.null,preflop_version.neq.${PREFLOP_CHECK_VERSION}`)
       .limit(RECHECK_BATCH);
     if (error) throw new Error(dbErrorMessage(error));
-    const rows = (data ?? []) as { id: string; raw_text: string }[];
+    const rows = (data ?? []) as { id: string; raw_text: string; source?: string }[];
     if (!rows.length) return done;
 
+    // Manual hands have no hand history to re-parse: re-check their stored hand.
+    const manualIds = rows.filter((r) => r.source === "manual").map((r) => r.id);
+    const manual = new Map<string, ParsedHand>();
+    if (manualIds.length) {
+      const { data: md, error: me } = await supabase.from("hh_hands").select("id, data").in("id", manualIds);
+      if (me) throw new Error(dbErrorMessage(me));
+      for (const m of (md ?? []) as { id: string; data: ParsedHand }[]) manual.set(m.id, m.data);
+    }
+
     const updates = rows.map((r) => {
+      const stored = manual.get(r.id);
+      if (stored) return { id: r.id, ...preflopColumns(stored) };
       const parser = parserFor(r.raw_text);
       const parsed = parser?.parseHand(r.raw_text);
       // A hand that no longer parses still gets the version, or it would be retried forever.

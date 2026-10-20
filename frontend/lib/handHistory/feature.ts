@@ -10,3 +10,6 @@ export const HAND_HISTORY_ENABLED = process.env.NEXT_PUBLIC_FEATURE_HAND_HISTORY
 
 export const HANDS_PATH = "/hands";
 export const HANDS_IMPORT_PATH = "/hands/import";
+/** Enter a hand by hand; the list of manual hands is HANDS_PATH + "?manual=1". */
+export const HANDS_MANUAL_PATH = "/hands/manual";
+export const HANDS_MANUAL_LIST = `${HANDS_PATH}?manual=1`;

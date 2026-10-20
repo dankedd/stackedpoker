@@ -36,3 +36,15 @@ CREATE TABLE public.profiles (
 );
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY profiles_select_own ON public.profiles FOR SELECT USING (auth.uid() = id);
+
+-- The slice of training_sessions (supabase_learning_schema.sql) that
+-- supabase_hand_history_coach.sql indexes.
+CREATE TABLE public.training_sessions (
+  id           uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id      uuid        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  session_type text,
+  context      jsonb       NOT NULL DEFAULT '{}',
+  messages     jsonb       NOT NULL DEFAULT '[]',
+  started_at   timestamptz NOT NULL DEFAULT now(),
+  updated_at   timestamptz NOT NULL DEFAULT now()
+);

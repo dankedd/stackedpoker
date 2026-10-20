@@ -166,6 +166,8 @@ function defenseChart(
 }
 
 export function villainRange(hand: ParsedHand, villain: string): VillainRange | null {
+  // Tournament charts only: no range for a (manually entered) cash hand.
+  if (hand.format === "cash") return null;
   const pre = hand.events.filter((e): e is Action => e.kind === "action" && e.street === "preflop");
   const mine = pre.map((a, i) => ({ a, i })).filter((x) => x.a.player === villain && x.a.action !== "fold" && x.a.action !== "check");
   const pos = position9(hand, villain);

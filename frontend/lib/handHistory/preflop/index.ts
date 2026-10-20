@@ -40,6 +40,8 @@ export const PREFLOP_CHECK_VERSION = `${CHECK_LOGIC_VERSION}-${fnv1a(JSON.string
 
 /** Null when Hero's preflop spot is not one the trainer has ranges for. */
 export function checkPreflop(hand: ParsedHand): PreflopCheck | null {
+  // The ranges are tournament charts; a (manually entered) cash hand has none.
+  if (hand.format === "cash") return null;
   const spot = findRfiSpot(hand);
   if (!spot) return null;
 

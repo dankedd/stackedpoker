@@ -36,6 +36,8 @@ import { PreflopBadge } from "./PreflopBadge";
 import { PreflopCheckPanel } from "./PreflopCheckPanel";
 import { NotesPanel, type NotesPanelHandle } from "./NotesPanel";
 import { ReplayTable } from "./ReplayTable";
+import { ManualAnalysisNotes } from "./manual/ManualNotes";
+import { ManualHandActions } from "./manual/ManualHandActions";
 
 const STREET_COLOR: Record<Street, string> = {
   preflop: "#38BDF8",
@@ -221,9 +223,11 @@ export function HandReplayer({ id }: { id: string }) {
                   </button>
                 </h1>
                 <p className="text-xs text-muted-foreground sm:text-sm">
-                  {fmtPlayedAt(hand.playedAt)} · Level {hand.level} · <span className="font-mono">{fmtChips(hand.smallBlind)}/{fmtChips(hand.bigBlind)}</span>
+                  {fmtPlayedAt(hand.playedAt)}
+                  {hand.level != null ? ` · Level ${hand.level}` : ""} · <span className="font-mono">{fmtChips(hand.smallBlind)}/{fmtChips(hand.bigBlind)}</span>
                   {hand.ante ? t.replayer.ante(fmtChips(hand.ante)) : ""}
                 </p>
+                {row.source === "manual" && <ManualHandActions id={row.id} />}
               </div>
             </div>
             <UnitToggle unit={unit} onChange={changeUnit} />
@@ -269,6 +273,7 @@ export function HandReplayer({ id }: { id: string }) {
           </p>
           {preflop && <PreflopCheckPanel check={preflop} active={index === preflopStep} />}
           <EquityPanel key={row.id} hand={hand} step={step} fmt={fmt} handRef={row.id} onEquity={onEquity} />
+          <ManualAnalysisNotes hand={hand} fmt={fmt} />
           {/* Shown once the flop is dealt in the replay, so it never gives the board away. */}
           {step.street !== "preflop" && <FlopSpotPanel match={flopSpot} active={step.street === "flop"} />}
         </div>
@@ -316,7 +321,7 @@ export function HandReplayer({ id }: { id: string }) {
 }
 
 function tournamentTitle(row: HandDetailRow, hand: HandDetailRow["data"]): string {
-  return row.hh_tournaments?.name ?? hand.tournamentName ?? t.replayer.tournament(hand.tournamentId);
+  return row.hh_tournaments?.name ?? hand.tournamentName ?? (hand.manual ? t.manual.untitled : t.replayer.tournament(hand.tournamentId));
 }
 
 /**

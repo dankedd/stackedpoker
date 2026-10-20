@@ -41,6 +41,8 @@ export interface HandFilters {
   minPotBb: number;
   tournamentId: string | null;
   withNotes: boolean;
+  /** Only hands the user entered by hand (source = 'manual'). */
+  manual: boolean;
 }
 
 export type SortKey = "pot" | "invested" | "date" | "result" | "favorited";
@@ -54,7 +56,7 @@ export interface HandQueryState {
 }
 
 export const DEFAULT_STATE: HandQueryState = {
-  filters: { cards: [], favorites: false, preflop: [], heroInvolved: true, minPotBb: DEFAULT_MIN_POT_BB, tournamentId: null, withNotes: false },
+  filters: { cards: [], favorites: false, preflop: [], heroInvolved: true, minPotBb: DEFAULT_MIN_POT_BB, tournamentId: null, withNotes: false, manual: false },
   sort: "pot",
   dir: "desc",
   page: 1,
@@ -84,7 +86,7 @@ interface FilterDef<K extends keyof HandFilters> {
 
 /** Any targeted filter active? Then the default filters step aside. */
 export function isTargeted(f: HandFilters): boolean {
-  return f.cards.length > 0 || f.preflop.length > 0 || f.favorites || f.withNotes;
+  return f.cards.length > 0 || f.preflop.length > 0 || f.favorites || f.withNotes || f.manual;
 }
 const overridesDefaults = isTargeted;
 
@@ -154,6 +156,13 @@ export const FILTERS = [
     read: (raw) => raw === "1",
     write: (v) => (v ? "1" : null),
     apply: (q, v) => (v ? q.eq("has_note", true) : q),
+  }),
+  def({
+    key: "manual",
+    param: "manual",
+    read: (raw) => raw === "1",
+    write: (v) => (v ? "1" : null),
+    apply: (q, v) => (v ? q.eq("source", "manual") : q),
   }),
 ] as const;
 
