@@ -5,6 +5,7 @@ POST /flop-trainer/versus           quick fire: which of two flops is better for
 GET  /flop-trainer/state            today's XP, best session, accuracy per texture category
 GET  /flop-trainer/examples         a few typical hands per Equity Bucket for one flop
 GET  /flop-trainer/explorer/hands   per-hand equity for the 13x13 heatmap (Pro)
+GET  /flop-trainer/hand-position    where one starting hand sits in its range on a flop (Hand Review)
 
 The exact equity and nut-advantage answer are read from flop_equity (the
 precomputed table, supabase_flop_equity.sql) by the server — the client only
@@ -23,6 +24,7 @@ anything is recorded.
 from __future__ import annotations
 
 import logging
+import re
 from typing import Literal
 
 import httpx
@@ -433,3 +435,67 @@ async def explorer_hands(
     if not rows:
         raise HTTPException(status_code=404, detail="Unknown spot or flop.")
     return rows[0]["hands"]
+
+
+# ── Hand Review: where hero's hand sits in its range ────────────────────────
+
+HAND_RE = r"^[2-9TJQKA]{2}[so]?$"
+RANKS = "23456789TJQKA"
+SUITS = "cdhs"
+
+
+def live_combos(hand: str, board: list[str]) -> int:
+    """Combos of a starting hand that don't use a board card."""
+    a, b = hand[0], hand[1]
+    used = set(board)
+    if a == b:
+        cards = [a + s for s in SUITS if a + s not in used]
+        return len(cards) * (len(cards) - 1) // 2
+    pairs = [(a + s1, b + s2) for s1 in SUITS for s2 in SUITS if (s1 == s2) == hand.endswith("s")]
+    return sum(1 for x, y in pairs if x not in used and y not in used)
+
+
+def hand_position(hands: dict[str, list[float]], hand: str, board: list[str]) -> dict:
+    """Hero's hand class among the range on this flop: its equity, bucket and
+    how much of the range is at least as strong ("top X%"), weighting every
+    hand by its preflop frequency times its live combos."""
+    weights = {h: f * live_combos(h, board) for h, (f, _) in hands.items() if f > 0}
+    total = sum(weights.values())
+    entry = hands.get(hand)
+    if not entry or total <= 0:
+        return {"in_range": False}
+    freq, eq = entry
+    bucket = next(b for b, lo in BUCKETS if eq >= lo)
+    if freq <= 0 or weights.get(hand, 0) <= 0:
+        return {"in_range": False, "equity": eq, "bucket": bucket}
+    at_least = sum(w for h, w in weights.items() if hands[h][1] >= eq)
+    return {"in_range": True, "equity": eq, "bucket": bucket, "frequency": freq,
+            "top_pct": round(100 * at_least / total, 1)}
+
+
+@router.get("/flop-trainer/hand-position")
+async def get_hand_position(
+    spot_id: str = Query(pattern=SPOT_RE),
+    flop: str = Query(pattern=FLOP_RE),
+    hand: str = Query(pattern=HAND_RE),
+    side: Literal["ip", "oop"] = Query(),
+    current_user: dict = Depends(get_current_user),
+) -> dict:
+    """One hand only (never the whole table, which is Pro): signed-in Hand
+    Review users on every plan. `hand` is the class, e.g. AKs; `flop` the
+    canonical flop."""
+    # Pairs have no suffix, other hands must have one (s/o); higher rank first.
+    if not re.fullmatch(HAND_RE, hand) or (len(hand) == 2) != (hand[0] == hand[1]) or RANKS.index(hand[0]) < RANKS.index(hand[1]):
+        raise HTTPException(status_code=422, detail="Invalid hand.")
+    settings = get_settings()
+    try:
+        rows = await _select(
+            "flop_equity_hands", {"select": "hands", "spot_id": f"eq.{spot_id}", "flop": f"eq.{flop}"}, settings
+        )
+    except httpx.HTTPError as e:
+        logger.error("flop_equity_hands lookup failed spot=%s flop=%s: %s", spot_id, flop, e)
+        raise HTTPException(status_code=502, detail="Could not load the range.")
+    if not rows:
+        raise HTTPException(status_code=404, detail="Unknown spot or flop.")
+    board = [flop[i : i + 2] for i in (0, 2, 4)]
+    return hand_position(rows[0]["hands"][side], hand, board)

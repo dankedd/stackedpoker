@@ -245,3 +245,29 @@ def test_explorer_is_pro_only(fake_db, monkeypatch, plan, ok):
         with pytest.raises(HTTPException) as e:
             asyncio.run(call)
         assert e.value.status_code == 403 and e.value.detail == {"code": "PRO_REQUIRED"}
+
+
+# ── Hand Review: hand position ────────────────────────────────────────────────
+
+
+def test_live_combos_remove_board_cards():
+    board = ["Ac", "Qd", "3h"]
+    assert [route.live_combos(h, board) for h in ("AA", "AKs", "AKo", "KK")] == [3, 3, 9, 6]
+
+
+def test_hand_position_ranks_by_equity_and_weight():
+    hands = {"AA": [1, 95.0], "KK": [1, 70.0], "72o": [0, 20.0], "54s": [0.5, 40.0]}
+    board = ["Ac", "Qd", "3h"]  # AA 3 combos, KK 6, 54s 4 x 0.5 = 2 -> total 11
+    assert route.hand_position(hands, "AA", board) == {"in_range": True, "equity": 95.0, "bucket": "strong", "frequency": 1, "top_pct": 27.3}
+    assert route.hand_position(hands, "KK", board)["top_pct"] == 81.8
+    assert route.hand_position(hands, "72o", board) == {"in_range": False, "equity": 20.0, "bucket": "trash"}
+
+
+def test_hand_position_endpoint_rejects_bad_hands(fake_db):
+    for bad in ("AKx", "KA", "AAs", "KAs"):
+        try:
+            asyncio.run(route.get_hand_position(spot_id="srp_bb_vs_bn_40", flop="AcQd3h", hand=bad, side="ip", current_user=USER))
+        except HTTPException as e:
+            assert e.status_code == 422
+        else:
+            raise AssertionError(f"{bad} accepted")

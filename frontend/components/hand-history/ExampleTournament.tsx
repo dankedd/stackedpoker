@@ -17,6 +17,8 @@ import { FavoriteStar } from "./FavoriteStar";
 import { MiniCards } from "./MiniCards";
 import { PreflopBadge } from "./PreflopBadge";
 import { PreflopCheckPanel } from "./PreflopCheckPanel";
+import { FlopSpotPanel } from "@/components/flop-trainer/FlopSpotPanel";
+import { matchFlopSpot } from "@/lib/flopTrainer/match";
 import { PageHeader, SectionNav } from "./SectionNav";
 
 /**
@@ -143,6 +145,8 @@ export function ExampleTournament() {
               {t.example.noCheck}
             </p>
           )}
+          {/* Tournament view: the compact flop panel for heads-up pots that match a trainer spot. */}
+          <FlopSpotPanel match={matchFlopSpot(selected.hand)} showHero={false} />
         </div>
 
         <section

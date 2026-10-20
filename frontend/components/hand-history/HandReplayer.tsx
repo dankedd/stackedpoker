@@ -26,6 +26,8 @@ import { buildTimeline, describeStep, nextStreetIndex, prevStreetIndex } from "@
 import type { Street } from "@/lib/handHistory/types";
 import { cn } from "@/lib/utils";
 import { checkPreflop } from "@/lib/handHistory/preflop";
+import { matchFlopSpot } from "@/lib/flopTrainer/match";
+import { FlopSpotPanel } from "@/components/flop-trainer/FlopSpotPanel";
 import { EquityPanel } from "./EquityPanel";
 import { HandCoachPanel } from "./HandCoachPanel";
 import { FavoriteStar } from "./FavoriteStar";
@@ -122,6 +124,8 @@ export function HandReplayer({ id }: { id: string }) {
     () => steps.findIndex((s) => s.kind === "action" && s.street === "preflop" && s.player === hand?.heroName),
     [steps, hand],
   );
+  // Heads-up single-raised pots that match a Flop Trainer spot (book ranges, ~40bb).
+  const flopSpot = useMemo(() => (hand ? matchFlopSpot(hand) : null), [hand]);
   const last = Math.max(0, steps.length - 1);
   const step = steps[Math.min(index, last)];
   const fmt = useMemo(() => amountFormatter(unit, hand?.bigBlind ?? 1), [unit, hand]);
@@ -265,6 +269,8 @@ export function HandReplayer({ id }: { id: string }) {
           </p>
           {preflop && <PreflopCheckPanel check={preflop} active={index === preflopStep} />}
           <EquityPanel key={row.id} hand={hand} step={step} fmt={fmt} handRef={row.id} onEquity={onEquity} />
+          {/* Shown once the flop is dealt in the replay, so it never gives the board away. */}
+          {step.street !== "preflop" && <FlopSpotPanel match={flopSpot} active={step.street === "flop"} />}
         </div>
 
         <aside className="space-y-4">

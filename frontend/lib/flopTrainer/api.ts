@@ -105,3 +105,19 @@ export function fetchExplorerHands(token: string, spotId: string, flop: string):
     token,
   );
 }
+
+/** Where one starting hand sits in its range on a flop (backend hand_position). */
+export interface HandPosition {
+  in_range: boolean;
+  equity?: number;
+  bucket?: "strong" | "good" | "weak" | "trash";
+  /** Preflop frequency of the hand in the chart (0-1). */
+  frequency?: number;
+  /** Share of the range (by combos) with at least this hand's equity. */
+  top_pct?: number;
+}
+
+export function fetchHandPosition(token: string, spotId: string, flop: string, hand: string, side: "ip" | "oop"): Promise<HandPosition> {
+  const q = new URLSearchParams({ spot_id: spotId, flop, hand, side });
+  return call<HandPosition>(`/api/flop-trainer/hand-position?${q.toString()}`, token);
+}

@@ -146,6 +146,96 @@ ORDER BY signups DESC;
 ```
 Visitors who declined cookies are still counted here: the UTM data is first-party and does not depend on the Meta Pixel.
 
+## Flop Equity Trainer
+
+`/flop-trainer` (trainer), `/flop-trainer/quick-fire`, `/flop-trainer/explorer` (Pro). Ranges and Equity
+Buckets come from Modern Poker Theory (`data/mpt/`); every flop is precomputed offline
+(`backend/app/flop_equity`, `python -m app.flop_equity.precompute` then `… .load`) into `flop_equity`.
+Migrations, in order: `supabase_flop_equity.sql`, `supabase_flop_trainer.sql`, `supabase_flop_trainer_phase3.sql`.
+SQL tests: `bash supabase/tests/run_flop_trainer.sh`.
+
+Answers count toward the Free plan's 50 trainer actions a day (shared with the Preflop Trainer). Every
+answer is stored in `flop_trainer_answers` (quick fire: `flop_versus_answers`); XP goes through
+`xp_events` with `source_type = 'flop_equity'`.
+
+**Leak of the week** — the board types players misjudged most in the last 7 days (`bias` > 0: players
+overrate the raiser's equity; < 0: they underrate it):
+
+```sql
+SELECT
+  category                                                          AS board_type,
+  COUNT(*)                                                          AS answers,
+  COUNT(DISTINCT user_id)                                           AS players,
+  ROUND(AVG(abs_error), 1)                                          AS avg_off,
+  ROUND(AVG(guess_equity - actual_equity), 1)                       AS bias,
+  ROUND(100.0 * AVG((abs_error <= 7)::int), 1)                      AS within_7_pct,
+  ROUND(100.0 * AVG((nut_guess = nut_actual)::int), 1)              AS nut_right_pct,
+  ROUND(100.0 * AVG(cbet_size_ok::int), 1)                          AS cbet_size_right_pct,
+  ROUND(100.0 * AVG(cbet_band_ok::int), 1)                          AS cbet_freq_right_pct
+FROM public.flop_trainer_answers
+WHERE created_at >= now() - interval '7 days'
+GROUP BY category
+HAVING COUNT(*) >= 20
+ORDER BY avg_off DESC;
+```
+
+And the single flops behind it:
+
+```sql
+SELECT
+  spot_id, flop,
+  COUNT(*)                                          AS answers,
+  ROUND(AVG(actual_equity), 1)                      AS real_equity,
+  ROUND(AVG(guess_equity), 1)                       AS avg_guess,
+  ROUND(AVG(abs_error), 1)                          AS avg_off
+FROM public.flop_trainer_answers
+WHERE created_at >= now() - interval '7 days'
+GROUP BY spot_id, flop
+HAVING COUNT(*) >= 5
+ORDER BY avg_off DESC
+LIMIT 10;
+```
+
+**Usage per day** (last 30 Amsterdam days): flop trainer users (both modes), their accuracy on the equity
+question, and the share that also used the Preflop Trainer that day (a preflop day = at least one XP
+award, so a day of only wrong preflop answers is not counted):
+
+```sql
+WITH flop AS (
+  SELECT (created_at AT TIME ZONE 'Europe/Amsterdam')::date AS day, user_id, abs_error
+  FROM public.flop_trainer_answers
+  UNION ALL
+  SELECT (created_at AT TIME ZONE 'Europe/Amsterdam')::date, user_id, NULL
+  FROM public.flop_versus_answers
+),
+preflop AS (
+  SELECT DISTINCT (earned_at AT TIME ZONE 'Europe/Amsterdam')::date AS day, user_id
+  FROM public.xp_events
+  WHERE source_type = 'preflop_trainer'
+),
+per_user AS (
+  SELECT f.day, f.user_id,
+         AVG(f.abs_error)                                           AS avg_off,
+         AVG((f.abs_error <= 7)::int) FILTER (WHERE f.abs_error IS NOT NULL) AS hit,
+         bool_or(p.user_id IS NOT NULL)                             AS also_preflop
+  FROM flop f
+  LEFT JOIN preflop p ON p.day = f.day AND p.user_id = f.user_id
+  GROUP BY f.day, f.user_id
+)
+SELECT day,
+       COUNT(*)                                                     AS flop_trainer_users,
+       ROUND(AVG(avg_off), 1)                                       AS avg_off,
+       ROUND(100 * AVG(hit), 1)                                     AS within_7_pct,
+       ROUND(100.0 * AVG(also_preflop::int), 1)                     AS also_preflop_pct
+FROM per_user
+WHERE day >= (now() AT TIME ZONE 'Europe/Amsterdam')::date - 30
+GROUP BY day
+ORDER BY day DESC;
+```
+
+Meta Pixel events (behind cookie consent): `FlopTrainerStart`, `FlopTrainerComplete`, `FlopQuickFireStart`,
+`ExplorerOpen`, `PaywallView` (`source: flop_explorer`), `FlopTrainThisTexture`.
+
 ## Subscriptions (Free / Pro)
 
 One paid plan: **Pro, €7.99/month incl. VAT**. New accounts get 7 days of Pro (reverse trial, no card).
@@ -161,7 +251,7 @@ Change a limit with `UPDATE public.plan_limits SET value = … WHERE key = '…'
 Subscription state is written only by the Stripe webhook (`subscriptions`, idempotent via `stripe_events`).
 SQL tests: `bash supabase/tests/run.sh` (throwaway Postgres in Docker).
 
-Upgrades per upgrade moment (`hand_limit`, `upload_limit`, `ai_limit`, `trial_ending`, `trial_ended`, `pricing_page`):
+Upgrades per upgrade moment (`hand_limit`, `upload_limit`, `ai_limit`, `trial_ending`, `trial_ended`, `pricing_page`, `flop_explorer`):
 
 ```sql
 SELECT
