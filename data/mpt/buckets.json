@@ -1,0 +1,44 @@
+{
+  "name": "Equity Buckets (EQB)",
+  "source": {
+    "book": "Modern Poker Theory (Michael Acevedo)",
+    "section": "Chapter 10, Equity Buckets (EQB)",
+    "page": 597
+  },
+  "metric": "hand vs range equity on the flop (the hand's equity against the opponent's whole range, runouts to the river)",
+  "buckets": [
+    {
+      "id": "strong",
+      "label": "Strong",
+      "min": 0.75,
+      "max": 1.0,
+      "rule": ">= 75%",
+      "color": "#231f20"
+    },
+    {
+      "id": "good",
+      "label": "Good",
+      "min": 0.5,
+      "max": 0.75,
+      "rule": ">= 50% and < 75%",
+      "color": "#a7a9ac"
+    },
+    {
+      "id": "weak",
+      "label": "Weak",
+      "min": 0.33,
+      "max": 0.5,
+      "rule": ">= 33% and < 50%",
+      "color": "#ed1c24"
+    },
+    {
+      "id": "trash",
+      "label": "Trash",
+      "min": 0.0,
+      "max": 0.33,
+      "rule": "< 33%",
+      "color": "#8b1a1a"
+    }
+  ],
+  "colors_note": "Colours as used in the book's EQB pie charts (black / grey / red / dark red); hex values sampled from the printed diagrams, approximate."
+}

@@ -1,0 +1,586 @@
+{
+  "source": "Modern Poker Theory (Michael Acevedo)",
+  "page_numbering": "1-based PDF page (as a PDF viewer shows it)",
+  "spots": [
+    {
+      "spot_id": "srp_bb_vs_bn_40",
+      "type": "srp",
+      "game": "MTT",
+      "table": "9-max, 12.5% ante",
+      "stack_bb": 40,
+      "ip": "BN",
+      "oop": "BB",
+      "preflop": "BN opens 2.3x, folds to BB, BB calls",
+      "open_size": "2.3x",
+      "status": "ready",
+      "range_pages": [
+        329,
+        397
+      ],
+      "analysis_pages": [
+        632,
+        656,
+        657,
+        683,
+        728
+      ],
+      "notes": [
+        "Ranges re-verified against the book cell by cell (mean |diff| <= 0.12%).",
+        "Phase-0 exact equity check reproduces the book's flop examples (see golden_examples.json)."
+      ]
+    },
+    {
+      "spot_id": "srp_bb_vs_utg_40",
+      "type": "srp",
+      "game": "MTT",
+      "table": "9-max, 12.5% ante",
+      "stack_bb": 40,
+      "ip": "UTG",
+      "oop": "BB",
+      "preflop": "UTG opens 2.3x, folds to BB, BB calls",
+      "open_size": "2.3x",
+      "status": "ready",
+      "range_pages": [
+        359,
+        403
+      ],
+      "analysis_pages": [
+        632,
+        656,
+        657,
+        683,
+        728
+      ],
+      "notes": [
+        "Ranges re-verified against the book cell by cell (mean |diff| <= 0.12%).",
+        "Phase-0 exact equity check reproduces the book's flop examples (see golden_examples.json).",
+        "Open size: HR 138 (p.359) prints 2x, the postflop chapter prints the same range as 'Open 2.3x' (HR 343, p.703; HR 318-322). Decision 2026-10-20: use 2.3x, as the postflop chapter does."
+      ]
+    },
+    {
+      "spot_id": "srp_bb_vs_bn_20",
+      "type": "srp",
+      "game": "MTT",
+      "stack_bb": 20,
+      "ip": "BN",
+      "oop": "BB",
+      "status": "blocked_missing_ranges",
+      "analysis_pages": [
+        632,
+        656,
+        657,
+        683,
+        728
+      ],
+      "notes": [
+        "The book analyses BB vs BN at 20/30/40bb but prints BB defence charts only at 15, 25, 40 and 60bb (Hand Ranges 155-181).",
+        "BN opens at 20/30bb (HR 110/111) include limps."
+      ]
+    },
+    {
+      "spot_id": "srp_bb_vs_bn_30",
+      "type": "srp",
+      "game": "MTT",
+      "stack_bb": 30,
+      "ip": "BN",
+      "oop": "BB",
+      "status": "blocked_missing_ranges",
+      "analysis_pages": [
+        632,
+        656,
+        657,
+        683,
+        728
+      ],
+      "notes": [
+        "The book analyses BB vs BN at 20/30/40bb but prints BB defence charts only at 15, 25, 40 and 60bb (Hand Ranges 155-181).",
+        "BN opens at 20/30bb (HR 110/111) include limps."
+      ]
+    },
+    {
+      "spot_id": "srp_bb_vs_utg_20",
+      "type": "srp",
+      "game": "MTT",
+      "stack_bb": 20,
+      "ip": "UTG",
+      "oop": "BB",
+      "status": "blocked_missing_ranges",
+      "analysis_pages": [
+        632,
+        656,
+        657,
+        683,
+        728
+      ],
+      "notes": [
+        "The book analyses BB vs UTG at 20/30/40bb but prints BB defence charts only at 15, 25, 40 and 60bb (Hand Ranges 155-181).",
+        "BN opens at 20/30bb (HR 110/111) include limps."
+      ]
+    },
+    {
+      "spot_id": "srp_bb_vs_utg_30",
+      "type": "srp",
+      "game": "MTT",
+      "stack_bb": 30,
+      "ip": "UTG",
+      "oop": "BB",
+      "status": "blocked_missing_ranges",
+      "analysis_pages": [
+        632,
+        656,
+        657,
+        683,
+        728
+      ],
+      "notes": [
+        "The book analyses BB vs UTG at 20/30/40bb but prints BB defence charts only at 15, 25, 40 and 60bb (Hand Ranges 155-181).",
+        "BN opens at 20/30bb (HR 110/111) include limps."
+      ]
+    },
+    {
+      "spot_id": "cc_co_vs_bn_40",
+      "type": "cold_call",
+      "game": "MTT",
+      "table": "9-max, 12.5% ante",
+      "stack_bb": 40,
+      "ip": "BN",
+      "oop": "CO",
+      "preflop": "CO opens 2.3x, BN calls, blinds fold",
+      "open_size": "2.3x",
+      "status": "ready",
+      "range_pages": [
+        701,
+        702
+      ],
+      "analysis_pages": [
+        699,
+        700,
+        709,
+        712
+      ],
+      "postflop_bet_sizes_in_book": "OOP 40bb: 3/4, 2/3, 1/2, 1/3, min; 20bb: all-in, 2/3, 1/2, 1/3, min (p.699)",
+      "notes": [
+        "HR 341/343/344 are the same charts as the preflop trainer's HR 118/138/224 (cell |diff| <= 0.1%)."
+      ]
+    },
+    {
+      "spot_id": "cc_utg_vs_bn_40",
+      "type": "cold_call",
+      "game": "MTT",
+      "table": "9-max, 12.5% ante",
+      "stack_bb": 40,
+      "ip": "BN",
+      "oop": "UTG",
+      "preflop": "UTG opens 2.3x, BN calls, blinds fold",
+      "open_size": "2.3x",
+      "status": "ready",
+      "range_pages": [
+        703,
+        704
+      ],
+      "analysis_pages": [
+        699,
+        700,
+        709,
+        712
+      ],
+      "postflop_bet_sizes_in_book": "OOP 40bb: 3/4, 2/3, 1/2, 1/3, min; 20bb: all-in, 2/3, 1/2, 1/3, min (p.699)",
+      "notes": [
+        "HR 341/343/344 are the same charts as the preflop trainer's HR 118/138/224 (cell |diff| <= 0.1%)."
+      ]
+    },
+    {
+      "spot_id": "cc_co_vs_bn_20",
+      "type": "cold_call",
+      "game": "MTT",
+      "table": "9-max, 12.5% ante",
+      "stack_bb": 20,
+      "ip": "BN",
+      "oop": "CO",
+      "preflop": "CO opens 2x, BN calls, blinds fold",
+      "open_size": "2x",
+      "status": "ready",
+      "range_pages": [
+        705,
+        706
+      ],
+      "analysis_pages": [
+        699,
+        700,
+        709,
+        712
+      ],
+      "postflop_bet_sizes_in_book": "OOP 40bb: 3/4, 2/3, 1/2, 1/3, min; 20bb: all-in, 2/3, 1/2, 1/3, min (p.699)",
+      "notes": [
+        "New charts (not in the preflop trainer); totals match the captions within 0.1%."
+      ]
+    },
+    {
+      "spot_id": "cc_utg_vs_bn_20",
+      "type": "cold_call",
+      "game": "MTT",
+      "table": "9-max, 12.5% ante",
+      "stack_bb": 20,
+      "ip": "BN",
+      "oop": "UTG",
+      "preflop": "UTG opens 2x, BN calls, blinds fold",
+      "open_size": "2x",
+      "status": "ready",
+      "range_pages": [
+        707,
+        708
+      ],
+      "analysis_pages": [
+        699,
+        700,
+        709,
+        712
+      ],
+      "postflop_bet_sizes_in_book": "OOP 40bb: 3/4, 2/3, 1/2, 1/3, min; 20bb: all-in, 2/3, 1/2, 1/3, min (p.699)",
+      "notes": [
+        "New charts (not in the preflop trainer); totals match the captions within 0.1%."
+      ]
+    },
+    {
+      "spot_id": "3bp_bb_vs_bn_40",
+      "type": "3bet",
+      "game": "MTT",
+      "table": "9-max, 12.5% ante",
+      "stack_bb": 40,
+      "ip": "BN",
+      "oop": "BB",
+      "preflop": "BN opens 2.3x, BB 3-bets 3.5x, BN calls",
+      "three_bet_size": "3.5x",
+      "status": "ready",
+      "range_pages": [
+        397,
+        329,
+        549
+      ],
+      "analysis_pages": [
+        717,
+        718,
+        719,
+        723,
+        726
+      ],
+      "spr_in_book": "1.7-2 (p.717)",
+      "postflop_bet_sizes_in_book": "all-in, 1/2, 1/3, 1/4 pot (p.717)",
+      "notes": [
+        "Caller range = opener's RFI frequency x 'call vs 3-bet' frequency (the vs-3-bet charts show only opened hands; their caption totals match the captions within 0.8% when weighted this way).",
+        "3-bettor range = the non-all-in 3-bet part of the defence chart (all-ins never see a flop)."
+      ]
+    },
+    {
+      "spot_id": "3bp_bb_vs_co_40",
+      "type": "3bet",
+      "game": "MTT",
+      "table": "9-max, 12.5% ante",
+      "stack_bb": 40,
+      "ip": "CO",
+      "oop": "BB",
+      "preflop": "CO opens 2.3x, BB 3-bets 3.5x, CO calls",
+      "three_bet_size": "3.5x",
+      "status": "ready",
+      "range_pages": [
+        399,
+        334,
+        554
+      ],
+      "analysis_pages": [
+        717,
+        718,
+        719,
+        723,
+        726
+      ],
+      "spr_in_book": "1.7-2 (p.717)",
+      "postflop_bet_sizes_in_book": "all-in, 1/2, 1/3, 1/4 pot (p.717)",
+      "notes": [
+        "Caller range = opener's RFI frequency x 'call vs 3-bet' frequency (the vs-3-bet charts show only opened hands; their caption totals match the captions within 0.8% when weighted this way).",
+        "3-bettor range = the non-all-in 3-bet part of the defence chart (all-ins never see a flop)."
+      ]
+    },
+    {
+      "spot_id": "3bp_sb_vs_bn_40",
+      "type": "3bet",
+      "game": "MTT",
+      "table": "9-max, 12.5% ante",
+      "stack_bb": 40,
+      "ip": "BN",
+      "oop": "SB",
+      "preflop": "BN opens 2.3x, SB 3-bets 3.3x, BN calls",
+      "three_bet_size": "3.3x",
+      "status": "ready",
+      "range_pages": [
+        429,
+        329,
+        550
+      ],
+      "analysis_pages": [
+        717,
+        718,
+        719,
+        723,
+        726
+      ],
+      "spr_in_book": "1.7-2 (p.717)",
+      "postflop_bet_sizes_in_book": "all-in, 1/2, 1/3, 1/4 pot (p.717)",
+      "notes": [
+        "Caller range = opener's RFI frequency x 'call vs 3-bet' frequency (the vs-3-bet charts show only opened hands; their caption totals match the captions within 0.8% when weighted this way).",
+        "3-bettor range = the non-all-in 3-bet part of the defence chart (all-ins never see a flop)."
+      ]
+    },
+    {
+      "spot_id": "3bp_sb_vs_co_40",
+      "type": "3bet",
+      "game": "MTT",
+      "table": "9-max, 12.5% ante",
+      "stack_bb": 40,
+      "ip": "CO",
+      "oop": "SB",
+      "preflop": "CO opens 2.3x, SB 3-bets 3.3x, CO calls",
+      "three_bet_size": "3.3x",
+      "status": "ready",
+      "range_pages": [
+        431,
+        334,
+        555
+      ],
+      "analysis_pages": [
+        717,
+        718,
+        719,
+        723,
+        726
+      ],
+      "spr_in_book": "1.7-2 (p.717)",
+      "postflop_bet_sizes_in_book": "all-in, 1/2, 1/3, 1/4 pot (p.717)",
+      "notes": [
+        "Caller range = opener's RFI frequency x 'call vs 3-bet' frequency (the vs-3-bet charts show only opened hands; their caption totals match the captions within 0.8% when weighted this way).",
+        "3-bettor range = the non-all-in 3-bet part of the defence chart (all-ins never see a flop)."
+      ]
+    },
+    {
+      "spot_id": "3bp_bb_vs_utg_40",
+      "type": "3bet",
+      "game": "MTT",
+      "table": "9-max, 12.5% ante",
+      "stack_bb": 40,
+      "ip": "UTG",
+      "oop": "BB",
+      "preflop": "UTG opens 2.3x, BB 3-bets 3.5x, UTG calls",
+      "three_bet_size": "3.5x",
+      "status": "ready",
+      "range_pages": [
+        403,
+        359,
+        570
+      ],
+      "analysis_pages": [
+        717,
+        718,
+        719,
+        723,
+        726
+      ],
+      "spr_in_book": "1.7-2 (p.717)",
+      "postflop_bet_sizes_in_book": "all-in, 1/2, 1/3, 1/4 pot (p.717)",
+      "notes": [
+        "Caller range = opener's RFI frequency x 'call vs 3-bet' frequency (the vs-3-bet charts show only opened hands; their caption totals match the captions within 0.8% when weighted this way).",
+        "3-bettor range = the non-all-in 3-bet part of the defence chart (all-ins never see a flop).",
+        "Position mapping (confirmed 2026-10-20): book lists 'BB vs EP'; EP read as UTG."
+      ]
+    },
+    {
+      "spot_id": "3bp_sb_vs_utg_40",
+      "type": "3bet",
+      "game": "MTT",
+      "table": "9-max, 12.5% ante",
+      "stack_bb": 40,
+      "ip": "UTG",
+      "oop": "SB",
+      "preflop": "UTG opens 2.3x, SB 3-bets 3.3x, UTG calls",
+      "three_bet_size": "3.3x",
+      "status": "ready",
+      "range_pages": [
+        435,
+        359,
+        571
+      ],
+      "analysis_pages": [
+        717,
+        718,
+        719,
+        723,
+        726
+      ],
+      "spr_in_book": "1.7-2 (p.717)",
+      "postflop_bet_sizes_in_book": "all-in, 1/2, 1/3, 1/4 pot (p.717)",
+      "notes": [
+        "Caller range = opener's RFI frequency x 'call vs 3-bet' frequency (the vs-3-bet charts show only opened hands; their caption totals match the captions within 0.8% when weighted this way).",
+        "3-bettor range = the non-all-in 3-bet part of the defence chart (all-ins never see a flop).",
+        "Position mapping (confirmed 2026-10-20): book lists 'SB vs EP'; EP read as UTG."
+      ]
+    },
+    {
+      "spot_id": "3bp_bn_vs_co_40",
+      "type": "3bet",
+      "game": "MTT",
+      "table": "9-max, 12.5% ante",
+      "stack_bb": 40,
+      "ip": "BN",
+      "oop": "CO",
+      "preflop": "CO opens 2.3x, BN 3-bets 3.25x, CO calls",
+      "three_bet_size": "3.25x",
+      "status": "ready",
+      "range_pages": [
+        458,
+        334,
+        556
+      ],
+      "analysis_pages": [
+        717,
+        718,
+        719,
+        723,
+        726
+      ],
+      "spr_in_book": "1.7-2 (p.717)",
+      "postflop_bet_sizes_in_book": "all-in, 1/2, 1/3, 1/4 pot (p.717)",
+      "notes": [
+        "Caller range = opener's RFI frequency x 'call vs 3-bet' frequency (the vs-3-bet charts show only opened hands; their caption totals match the captions within 0.8% when weighted this way).",
+        "3-bettor range = the non-all-in 3-bet part of the defence chart (all-ins never see a flop)."
+      ]
+    },
+    {
+      "spot_id": "3bp_bn_vs_utg_40",
+      "type": "3bet",
+      "game": "MTT",
+      "table": "9-max, 12.5% ante",
+      "stack_bb": 40,
+      "ip": "BN",
+      "oop": "UTG",
+      "preflop": "UTG opens 2.3x, BN 3-bets 3.25x, UTG calls",
+      "three_bet_size": "3.25x",
+      "status": "ready",
+      "range_pages": [
+        462,
+        359,
+        572
+      ],
+      "analysis_pages": [
+        717,
+        718,
+        719,
+        723,
+        726
+      ],
+      "spr_in_book": "1.7-2 (p.717)",
+      "postflop_bet_sizes_in_book": "all-in, 1/2, 1/3, 1/4 pot (p.717)",
+      "notes": [
+        "Caller range = opener's RFI frequency x 'call vs 3-bet' frequency (the vs-3-bet charts show only opened hands; their caption totals match the captions within 0.8% when weighted this way).",
+        "3-bettor range = the non-all-in 3-bet part of the defence chart (all-ins never see a flop).",
+        "Position mapping (confirmed 2026-10-20): book lists 'BN vs EP'; EP read as UTG."
+      ]
+    },
+    {
+      "spot_id": "3bp_bn_vs_lj_40",
+      "type": "3bet",
+      "game": "MTT",
+      "table": "9-max, 12.5% ante",
+      "stack_bb": 40,
+      "ip": "BN",
+      "oop": "LJ",
+      "preflop": "LJ opens 2.3x, BN 3-bets 3.25x, LJ calls",
+      "three_bet_size": "3.25x",
+      "status": "ready",
+      "range_pages": [
+        460,
+        344,
+        563
+      ],
+      "analysis_pages": [
+        717,
+        718,
+        719,
+        723,
+        726
+      ],
+      "spr_in_book": "1.7-2 (p.717)",
+      "postflop_bet_sizes_in_book": "all-in, 1/2, 1/3, 1/4 pot (p.717)",
+      "notes": [
+        "Caller range = opener's RFI frequency x 'call vs 3-bet' frequency (the vs-3-bet charts show only opened hands; their caption totals match the captions within 0.8% when weighted this way).",
+        "3-bettor range = the non-all-in 3-bet part of the defence chart (all-ins never see a flop).",
+        "Position mapping (confirmed 2026-10-20): book lists 'BN vs MP'; MP read as LJ."
+      ]
+    },
+    {
+      "spot_id": "3bp_utgp1_vs_utg_40",
+      "type": "3bet",
+      "game": "MTT",
+      "table": "9-max, 12.5% ante",
+      "stack_bb": 40,
+      "ip": "UTG+1",
+      "oop": "UTG",
+      "preflop": "UTG opens 2.3x, UTG+1 3-bets 3.25x, UTG calls",
+      "three_bet_size": "3.25x",
+      "status": "ready",
+      "range_pages": [
+        510,
+        359,
+        574
+      ],
+      "analysis_pages": [
+        717,
+        718,
+        719,
+        723,
+        726
+      ],
+      "spr_in_book": "1.7-2 (p.717)",
+      "postflop_bet_sizes_in_book": "all-in, 1/2, 1/3, 1/4 pot (p.717)",
+      "notes": [
+        "Caller range = opener's RFI frequency x 'call vs 3-bet' frequency (the vs-3-bet charts show only opened hands; their caption totals match the captions within 0.8% when weighted this way).",
+        "3-bettor range = the non-all-in 3-bet part of the defence chart (all-ins never see a flop).",
+        "Position mapping (confirmed 2026-10-20): book lists 'EP vs EP'; read as UTG+1 vs UTG."
+      ]
+    },
+    {
+      "spot_id": "3bp_co_vs_utg_40",
+      "type": "3bet",
+      "stack_bb": 40,
+      "status": "blocked_missing_ranges",
+      "analysis_pages": [
+        717,
+        718,
+        719,
+        723,
+        726
+      ],
+      "notes": [
+        "Book lists 'CO vs EP'. CO's 3-bet chart exists (HR 240, p.482) but no 'UTG 40bb vs CO 3-bet' response chart is printed (HR 318-322 cover BB, SB, BN, HJ, UTG+1)."
+      ]
+    },
+    {
+      "spot_id": "3bp_co_vs_mp_40",
+      "type": "3bet",
+      "stack_bb": 40,
+      "status": "blocked_missing_ranges",
+      "analysis_pages": [
+        717,
+        718,
+        719,
+        723,
+        726
+      ],
+      "notes": [
+        "Book lists 'CO vs MP'. No 40bb 'CO vs LJ' 3-bet with a matching 'LJ vs CO 3-bet' response chart (HR 309-312 cover BB, SB, BN, HJ)."
+      ]
+    }
+  ],
+  "mvp_spots": [
+    "srp_bb_vs_bn_40",
+    "srp_bb_vs_utg_40"
+  ]
+}

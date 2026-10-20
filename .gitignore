@@ -68,3 +68,8 @@ docs/
 
 .vercel
 .env*
+
+# Modern Poker Theory (copyrighted) - local reference only, never committed or deployed
+docs/book-local/
+*.pdf
+data/mpt/precomputed/

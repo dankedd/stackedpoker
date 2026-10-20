@@ -1,0 +1,916 @@
+{
+ "page_numbering": "1-based PDF page",
+ "tolerance_spec": {
+  "equity": 1.0,
+  "bucket": 2.0
+ },
+ "examples": [
+  {
+   "id": "AhQd3s_UTG_40",
+   "spot_id": "srp_bb_vs_utg_40",
+   "flop": "AhQd3s",
+   "pages": [
+    684,
+    685
+   ],
+   "eqb": {
+    "ip": {
+     "strong": 56,
+     "good": 33,
+     "weak": 10,
+     "trash": 1
+    },
+    "oop": {
+     "strong": 3,
+     "good": 17,
+     "weak": 10,
+     "trash": 70
+    }
+   },
+   "equity_ip": 72,
+   "pot_captured_ip": 85,
+   "table113_ip_classes": [
+    [
+     "Sets",
+     3.5,
+     96
+    ],
+    [
+     "Two Pair",
+     6.3,
+     93
+    ],
+    [
+     "Top Pair",
+     31.8,
+     86
+    ],
+    [
+     "Pocket 1-2 (KK)",
+     3.5,
+     77
+    ],
+    [
+     "Second Pair",
+     11.9,
+     77
+    ],
+    [
+     "Pocket 2-3 (66-JJ)",
+     21.1,
+     61
+    ],
+    [
+     "Gutshot",
+     10.7,
+     55
+    ],
+    [
+     "King High",
+     4.2,
+     47
+    ],
+    [
+     "Air",
+     6.5,
+     37
+    ],
+    [
+     "Full Range",
+     100.0,
+     72
+    ]
+   ],
+   "cbet_overall_ip": {
+    "bet_2_3": 84.6,
+    "bet_1_2": 8.8,
+    "bet_1_3": 3.6,
+    "bet_min": 2.2,
+    "check": 0.8
+   },
+   "oop_extra_p726": {
+    "trash_pct": 70,
+    "weak_pct": 10,
+    "trash_avg_equity": 16
+   },
+   "oop_pot_captured_p737": 14,
+   "phase0_check": {
+    "equity_ip": 71.9,
+    "eqb_ip": {
+     "strong": 55.4,
+     "good": 33.3,
+     "weak": 10.5,
+     "trash": 0.8
+    },
+    "eqb_oop": {
+     "strong": 2.4,
+     "good": 17.2,
+     "weak": 8.5,
+     "trash": 71.9
+    },
+    "method": "exact enumeration of all turn+river runouts, card removal, printed 40bb ranges"
+   }
+  },
+  {
+   "id": "QhJhTh_UTG_40",
+   "spot_id": "srp_bb_vs_utg_40",
+   "flop": "QhJhTh",
+   "pages": [
+    686,
+    687
+   ],
+   "eqb": {
+    "ip": {
+     "strong": 27,
+     "good": 53,
+     "weak": 19,
+     "trash": 1
+    },
+    "oop": {
+     "strong": 7,
+     "good": 14,
+     "weak": 29,
+     "trash": 50
+    }
+   },
+   "equity_ip": 64,
+   "table114_ip_classes": [
+    [
+     "Straight Flush",
+     1.1,
+     100
+    ],
+    [
+     "Flush",
+     4.6,
+     97
+    ],
+    [
+     "Straight",
+     10.3,
+     82
+    ],
+    [
+     "Sets",
+     5.2,
+     74
+    ],
+    [
+     "Two Pair",
+     5.2,
+     65
+    ],
+    [
+     "Over Pair",
+     3.4,
+     67
+    ],
+    [
+     "Top Pair",
+     11.6,
+     84
+    ],
+    [
+     "Second Pair",
+     10.1,
+     79
+    ],
+    [
+     "Third Pair",
+     9.7,
+     56
+    ],
+    [
+     "Underpair",
+     3.5,
+     35
+    ],
+    [
+     "Combo Draw",
+     14.7,
+     77
+    ],
+    [
+     "Flush Draw",
+     3.5,
+     55
+    ],
+    [
+     "OESD",
+     6.5,
+     46
+    ],
+    [
+     "Gutshot",
+     10.1,
+     38
+    ],
+    [
+     "Air",
+     0.5,
+     15
+    ],
+    [
+     "Full Range",
+     100.0,
+     64
+    ]
+   ],
+   "cbet_overall_ip": {
+    "bet_2_3": 0.4,
+    "bet_1_2": 0.4,
+    "bet_1_3": 2.0,
+    "bet_min": 96.7,
+    "check": 0.6
+   },
+   "oop_equity_p739": 36,
+   "phase0_check": {
+    "equity_ip": 64,
+    "eqb_ip": {
+     "strong": 27.3,
+     "good": 53,
+     "weak": 19.4,
+     "trash": 0.4
+    },
+    "eqb_oop": {
+     "strong": 8.4,
+     "good": 17.5,
+     "weak": 24.4,
+     "trash": 49.7
+    },
+    "method": "exact enumeration of all turn+river runouts, card removal, printed 40bb ranges"
+   }
+  },
+  {
+   "id": "9h8h4d_UTG_40",
+   "spot_id": "srp_bb_vs_utg_40",
+   "flop": "9h8h4d",
+   "pages": [
+    688,
+    689,
+    690
+   ],
+   "eqb": {
+    "ip": {
+     "strong": 18,
+     "good": 26,
+     "weak": 56,
+     "trash": 0
+    },
+    "oop": {
+     "strong": 4,
+     "good": 36,
+     "weak": 25,
+     "trash": 35
+    }
+   },
+   "eqb_note": "IP trash slice is unlabelled (text p.690: only 65s is trash) \u2014 treat as ~0-1%",
+   "equity_ip_text": 59,
+   "equity_ip_table115": 56,
+   "conflict": "text p.688 says 59% equity, Table 115 Full Range says 56%",
+   "pot_captured_ip": 69.04,
+   "table115_ip_classes": [
+    [
+     "Sets",
+     3.1,
+     90
+    ],
+    [
+     "Over Pair",
+     15.4,
+     78
+    ],
+    [
+     "Top Pair",
+     7.3,
+     73
+    ],
+    [
+     "Second Pair",
+     3.3,
+     65
+    ],
+    [
+     "Pocket 2-3 (77-55)",
+     6.3,
+     55
+    ],
+    [
+     "Third Pair",
+     1.0,
+     52
+    ],
+    [
+     "Combo Draw",
+     1.7,
+     65
+    ],
+    [
+     "Flush Draw",
+     6.2,
+     65
+    ],
+    [
+     "OESD",
+     1.7,
+     50
+    ],
+    [
+     "Gutshot",
+     3.4,
+     42
+    ],
+    [
+     "Ace-high",
+     36.7,
+     46
+    ],
+    [
+     "King-high",
+     14.2,
+     40
+    ],
+    [
+     "Full Range",
+     100,
+     56
+    ]
+   ],
+   "cbet_overall_ip": {
+    "bet_2_3": 64.3,
+    "bet_1_2": 1.7,
+    "bet_1_3": 1.0,
+    "bet_min": 1.8,
+    "check": 31.1
+   },
+   "phase0_check": {
+    "equity_ip": 56,
+    "eqb_ip": {
+     "strong": 18.5,
+     "good": 26.2,
+     "weak": 55,
+     "trash": 0.4
+    },
+    "eqb_oop": {
+     "strong": 3.8,
+     "good": 36.4,
+     "weak": 24.6,
+     "trash": 35.1
+    },
+    "method": "exact enumeration of all turn+river runouts, card removal, printed 40bb ranges"
+   }
+  },
+  {
+   "id": "Js6h6d_BN_40",
+   "spot_id": "srp_bb_vs_bn_40",
+   "flop": "Js6h6d",
+   "pages": [
+    691,
+    692
+   ],
+   "eqb": {
+    "ip": {
+     "strong": 23,
+     "good": 42,
+     "weak": 24,
+     "trash": 11
+    },
+    "oop": {
+     "strong": 14,
+     "good": 9,
+     "weak": 25,
+     "trash": 52
+    }
+   },
+   "equity_ip": 57,
+   "trips_pct": {
+    "oop": 8.9,
+    "ip": 5.0
+   },
+   "cbet_freq_ip": 72,
+   "table116_ip_classes": [
+    [
+     "Quads",
+     0.2,
+     100
+    ],
+    [
+     "Full House",
+     0.7,
+     99
+    ],
+    [
+     "Trips",
+     5.0,
+     94
+    ],
+    [
+     "Over Pair",
+     3.0,
+     85
+    ],
+    [
+     "Top Pair",
+     14.0,
+     80
+    ],
+    [
+     "Pocket Pair 1-2 (TT-77)",
+     4.0,
+     69
+    ],
+    [
+     "Under Pair",
+     4.0,
+     52
+    ],
+    [
+     "A-high",
+     26.4,
+     59
+    ],
+    [
+     "K-high",
+     16.5,
+     51
+    ],
+    [
+     "Air",
+     26.3,
+     36
+    ],
+    [
+     "Full Range",
+     100,
+     57
+    ]
+   ],
+   "cbet_overall_ip": {
+    "bet_min": 72,
+    "check": 28
+   },
+   "phase0_check": {
+    "equity_ip": 57.1,
+    "eqb_ip": {
+     "strong": 22.8,
+     "good": 41.2,
+     "weak": 25.4,
+     "trash": 10.7
+    },
+    "eqb_oop": {
+     "strong": 14.9,
+     "good": 8.9,
+     "weak": 32.3,
+     "trash": 43.8
+    },
+    "method": "exact enumeration of all turn+river runouts, card removal, printed 40bb ranges"
+   }
+  },
+  {
+   "id": "8h6d2s_BN_40",
+   "spot_id": "srp_bb_vs_bn_40",
+   "flop": "8h6d2s",
+   "pages": [
+    693,
+    694,
+    695
+   ],
+   "eqb": {
+    "ip": {
+     "strong": 20,
+     "good": 32,
+     "weak": 44,
+     "trash": 4
+    },
+    "oop": {
+     "strong": 4,
+     "good": 33,
+     "weak": 32,
+     "trash": 31
+    }
+   },
+   "equity_ip": 55,
+   "table117_ip_classes": [
+    [
+     "Sets",
+     1.5,
+     93
+    ],
+    [
+     "Two Pair",
+     0.3,
+     88
+    ],
+    [
+     "Over Pair",
+     6.2,
+     92
+    ],
+    [
+     "Top Pair",
+     12.7,
+     76
+    ],
+    [
+     "Pocket 1-2 (77)",
+     1.0,
+     69
+    ],
+    [
+     "Second Pair",
+     7.3,
+     68
+    ],
+    [
+     "Pocket 2-3 (55-33)",
+     2.9,
+     55
+    ],
+    [
+     "Third Pair",
+     3.1,
+     56
+    ],
+    [
+     "OESD",
+     1.9,
+     46
+    ],
+    [
+     "Gutshot",
+     4.3,
+     40
+    ],
+    [
+     "Ace-high",
+     23.4,
+     52
+    ],
+    [
+     "King-high",
+     15.6,
+     47
+    ],
+    [
+     "Air",
+     20.2,
+     36
+    ],
+    [
+     "Full Range",
+     100,
+     55
+    ]
+   ],
+   "cbet_overall_ip": {
+    "bet_2_3": 48.6,
+    "bet_1_2": 2.5,
+    "bet_1_3": 3.1,
+    "bet_min": 3.0,
+    "check": 42.8
+   },
+   "phase0_check": {
+    "equity_ip": 54.4,
+    "eqb_ip": {
+     "strong": 19.6,
+     "good": 32,
+     "weak": 44.3,
+     "trash": 4
+    },
+    "eqb_oop": {
+     "strong": 3.8,
+     "good": 33.3,
+     "weak": 32.2,
+     "trash": 30.6
+    },
+    "method": "exact enumeration of all turn+river runouts, card removal, printed 40bb ranges"
+   }
+  },
+  {
+   "id": "5h5d4h_BN_40",
+   "spot_id": "srp_bb_vs_bn_40",
+   "flop": "5h5d4h",
+   "pages": [
+    696,
+    697,
+    698
+   ],
+   "eqb": {
+    "ip": {
+     "strong": 10,
+     "good": 57,
+     "weak": 24,
+     "trash": 9
+    },
+    "oop": {
+     "strong": 8,
+     "good": 24,
+     "weak": 33,
+     "trash": 35
+    }
+   },
+   "equity_ip": 55,
+   "caption_error": "Table 118 is captioned 'UTG C-betting Range Breakdown' but Example 6 is BB vs BN",
+   "table118_ip_classes": [
+    [
+     "Quads",
+     0.2,
+     99.9
+    ],
+    [
+     "Full House",
+     0.8,
+     97
+    ],
+    [
+     "Trips",
+     4.3,
+     91
+    ],
+    [
+     "Over Pair",
+     8.6,
+     77
+    ],
+    [
+     "Second Pair",
+     4.4,
+     65
+    ],
+    [
+     "Under Pair",
+     1.9,
+     52
+    ],
+    [
+     "Combo Draw",
+     0.8,
+     66
+    ],
+    [
+     "Flush Draw",
+     6.1,
+     64
+    ],
+    [
+     "OESD",
+     0.5,
+     44
+    ],
+    [
+     "Gutshot",
+     5.7,
+     58
+    ],
+    [
+     "A-high",
+     19.1,
+     62
+    ],
+    [
+     "K-high",
+     17.7,
+     53
+    ],
+    [
+     "Air",
+     30,
+     37
+    ],
+    [
+     "Full Range",
+     100,
+     55
+    ]
+   ],
+   "cbet_overall_ip": {
+    "bet_2_3": 0.5,
+    "bet_1_2": 0.8,
+    "bet_1_3": 35.3,
+    "bet_min": 22.8,
+    "check": 40.6
+   },
+   "phase0_check": {
+    "equity_ip": 54.8,
+    "eqb_ip": {
+     "strong": 10,
+     "good": 54.1,
+     "weak": 26.9,
+     "trash": 9
+    },
+    "eqb_oop": {
+     "strong": 9.2,
+     "good": 24.2,
+     "weak": 32.7,
+     "trash": 33.9
+    },
+    "method": "exact enumeration of all turn+river runouts, card removal, printed 40bb ranges"
+   }
+  },
+  {
+   "id": "AsThTd_UTG_30",
+   "spot_id": "srp_bb_vs_utg_30",
+   "flop": "AsThTd",
+   "pages": [
+    682,
+    683
+   ],
+   "eqb": {
+    "ip": {
+     "strong": 57,
+     "good": 37,
+     "weak": 5,
+     "trash": 1
+    },
+    "oop": {
+     "strong": 7,
+     "good": 12,
+     "weak": 0,
+     "trash": 81
+    }
+   },
+   "note": "30bb: BB defense range at 30bb is not printed in the book"
+  },
+  {
+   "id": "table88_UTG_40",
+   "spot_id": "srp_bb_vs_utg_40",
+   "flop": null,
+   "pages": [
+    598
+   ],
+   "note": "average hand-vs-range equity per hand category",
+   "flops": {
+    "AhQdTs": {
+     "Straight": [
+      94,
+      88
+     ],
+     "Set": [
+      91,
+      81
+     ],
+     "Two Pair": [
+      87,
+      68
+     ],
+     "Top Pair": [
+      82,
+      53
+     ],
+     "Middle Pair": [
+      77,
+      42
+     ],
+     "Bottom Pair": [
+      67,
+      35
+     ]
+    },
+    "Th9d8s": {
+     "Straight": [
+      93,
+      86
+     ],
+     "Set": [
+      83,
+      82
+     ],
+     "Two Pair": [
+      76,
+      72
+     ],
+     "Top Pair": [
+      69,
+      58
+     ],
+     "Middle Pair": [
+      66,
+      54
+     ],
+     "Bottom Pair": [
+      56,
+      50
+     ]
+    },
+    "Td9h8h": {
+     "Straight": [
+      90,
+      84
+     ],
+     "Set": [
+      81,
+      80
+     ],
+     "Two Pair": [
+      73,
+      69
+     ],
+     "Top Pair": [
+      69,
+      54
+     ],
+     "Middle Pair": [
+      63,
+      52
+     ],
+     "Bottom Pair": [
+      53,
+      48
+     ]
+    },
+    "Th9h8h": {
+     "Straight": [
+      77,
+      75
+     ],
+     "Set": [
+      74,
+      73
+     ],
+     "Two Pair": [
+      65,
+      61
+     ],
+     "Top Pair": [
+      60,
+      51
+     ],
+     "Middle Pair": [
+      54,
+      47
+     ],
+     "Bottom Pair": [
+      45,
+      44
+     ]
+    }
+   },
+   "columns": [
+    "ip_eq",
+    "bb_eq"
+   ],
+   "text_conflict": "text says top pair 'only has 60% EQ on the single suited T98 flop' but the table shows 60% on the monotone Th9h8h (single suited T98 = Td9h8h shows 69%)"
+  },
+  {
+   "id": "diagram38_all_flops",
+   "type": "aggregate",
+   "pages": [
+    658
+   ],
+   "note": "Average EQB over all 1,755 flops; stack depth(s) not stated on the diagram (chapter uses 20/30/40bb) - use as a loose sanity check only",
+   "eqb": {
+    "BN": {
+     "strong": 22,
+     "good": 43,
+     "weak": 29,
+     "trash": 6
+    },
+    "BB_vs_BN": {
+     "strong": 7,
+     "good": 25,
+     "weak": 23,
+     "trash": 45
+    },
+    "UTG": {
+     "strong": 30,
+     "good": 46,
+     "weak": 22,
+     "trash": 2
+    },
+    "BB_vs_UTG": {
+     "strong": 5,
+     "good": 20,
+     "weak": 22,
+     "trash": 53
+    }
+   }
+  },
+  {
+   "id": "donk_text_averages",
+   "type": "aggregate",
+   "pages": [
+    633,
+    634,
+    635
+   ],
+   "note": "Averages over BB vs BN and BB vs UTG at 20/30/40bb - not a single spot; descriptive only",
+   "A76r": {
+    "equity_ip": 62,
+    "strong_ip": 31,
+    "strong_bb": 8,
+    "bb_trash": 49,
+    "bb_good": 17,
+    "ip_top_pair_avg_equity": 85
+   },
+   "654r": {
+    "equity_ip": 49,
+    "strong_ip": 4,
+    "strong_bb": 7,
+    "bb_trash": 18,
+    "bb_good": 40,
+    "ip_top_pair_avg_equity": 65,
+    "ip_ax_avg_equity": 49
+   }
+  }
+ ]
+}

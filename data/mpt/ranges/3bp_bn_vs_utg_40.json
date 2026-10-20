@@ -1,0 +1,86 @@
+{
+ "spot_id": "3bp_bn_vs_utg_40",
+ "notation": "hand class -> frequency (0-1): the share of that hand class's combos that are in the range",
+ "ip": {
+  "player": "BN",
+  "range": {
+   "53s": 0.076,
+   "97s": 0.227,
+   "98s": 0.09,
+   "A2s": 0.851,
+   "A3s": 0.409,
+   "A6s": 0.576,
+   "A7s": 0.273,
+   "A8s": 0.284,
+   "AA": 1,
+   "AJo": 0.182,
+   "AKo": 0.879,
+   "AKs": 0.727,
+   "ATo": 0.515,
+   "JJ": 0.388,
+   "K4s": 0.621,
+   "K5s": 0.507,
+   "K6s": 0.348,
+   "K7s": 0.106,
+   "K8s": 0.284,
+   "K9s": 0.152,
+   "KJo": 0.227,
+   "KK": 1,
+   "KQo": 0.212,
+   "Q9s": 0.273,
+   "QQ": 0.909,
+   "TT": 0.303
+  },
+  "derived_from": [
+   {
+    "hand_range": 224,
+    "page": 462,
+    "action": "3-bet (non-all-in)",
+    "via": "preflop trainer chart"
+   }
+  ],
+  "pct_of_hands": 5.2
+ },
+ "oop": {
+  "player": "UTG",
+  "range": {
+   "65s": 0.167,
+   "66": 0.418,
+   "76s": 0.045,
+   "77": 0.182,
+   "88": 0.606,
+   "99": 0.636,
+   "A4s": 0.227,
+   "A5s": 0.333,
+   "A7s": 0.318,
+   "A8s": 0.061,
+   "A9s": 0.288,
+   "AA": 0.591,
+   "AJs": 1.0,
+   "AQo": 0.576,
+   "AQs": 1.0,
+   "ATs": 1.0,
+   "KJs": 0.545,
+   "KQs": 1.0,
+   "QJs": 0.303,
+   "QTs": 0.582,
+   "T9s": 0.242,
+   "TT": 0.731
+  },
+  "derived_from": [
+   {
+    "hand_range": 138,
+    "page": 359,
+    "action": "raise",
+    "via": "preflop trainer chart"
+   },
+   {
+    "hand_range": 320,
+    "page": 572,
+    "action": "call vs 3-bet",
+    "via": "extracted from the book"
+   }
+  ],
+  "pct_of_hands": 4.1
+ }
+}
