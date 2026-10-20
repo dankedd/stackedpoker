@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { FLOP_TRAINER_PATH } from "@/lib/flopTrainer/feature";
 import { PREFLOP_TRAINER_PATH } from "@/lib/ranges/feature";
 import { ROUTES } from "../routes";
 import { FOOTER_NAV, LANDING_FOOTER_NAV, PRIMARY_NAV, devNav, globalLinkTargets, primaryNav } from "../navigation";
@@ -31,6 +32,12 @@ describe("header navigation", () => {
 
   it("has no Preflop Trainer item when the flag is off", () => {
     expect(labels(primaryNav({ preflopTrainer: false, ...LIVE }))).toEqual(["Learn", "Puzzles", "Bankroll", "Leaderboard"]);
+  });
+
+  it("adds Flop Trainer right after Preflop Trainer when its flag is on", () => {
+    const nav = primaryNav({ preflopTrainer: true, flopTrainer: true, ...LIVE });
+    expect(labels(nav)).toEqual(["Learn", "Puzzles", "Preflop Trainer", "Flop Trainer", "Bankroll", "Leaderboard"]);
+    expect(nav[3].href).toBe(FLOP_TRAINER_PATH);
   });
 
   it("adds Hands before Bankroll only when the hand history flag is on", () => {

@@ -110,6 +110,14 @@ try:
 except Exception as e:
     print(f"[BOOT] Preflop trainer routes failed: {e}")
 
+# Flop Equity Trainer — own block for the same reason.
+try:
+    from app.api.routes import flop_trainer
+    app.include_router(flop_trainer.router, prefix="/api")
+    print("[BOOT] Flop trainer routes registered OK")
+except Exception as e:
+    print(f"[BOOT] Flop trainer routes failed: {e}")
+
 # Hand review coach — own block for the same reason.
 try:
     from app.api.routes import hand_coach

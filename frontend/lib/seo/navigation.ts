@@ -1,3 +1,4 @@
+import { FLOP_TRAINER_ENABLED, FLOP_TRAINER_PATH } from "@/lib/flopTrainer/feature";
 import { PREFLOP_RANGES_ENABLED, PREFLOP_TRAINER_PATH } from "@/lib/ranges/feature";
 import { HAND_HISTORY_ENABLED, HANDS_PATH } from "@/lib/handHistory/feature";
 import { t as handHistoryStrings } from "@/lib/handHistory/strings";
@@ -31,11 +32,14 @@ export interface NavLink {
  */
 export function primaryNav({
   preflopTrainer,
+  flopTrainer = false,
   handHistory = false,
   learn = isFeaturePublic("learn"),
   puzzles = isFeaturePublic("puzzles"),
 }: {
   preflopTrainer: boolean;
+  /** Behind the same flag as the Preflop Trainer (lib/flopTrainer/feature.ts). */
+  flopTrainer?: boolean;
   handHistory?: boolean;
   /** Learn and Puzzles are header items only once public (lib/features.ts);
    *  until then they live in the dev-only "In development" menu (devNav). */
@@ -47,6 +51,7 @@ export function primaryNav({
     ...(puzzles ? [{ label: "Puzzles", href: ROUTES.puzzles }] : []),
     // Behind NEXT_PUBLIC_FEATURE_PREFLOP_RANGES (lib/ranges/feature.ts).
     ...(preflopTrainer ? [{ label: "Preflop Trainer", href: PREFLOP_TRAINER_PATH }] : []),
+    ...(flopTrainer ? [{ label: "Flop Trainer", href: FLOP_TRAINER_PATH }] : []),
     // Behind NEXT_PUBLIC_FEATURE_HAND_HISTORY (lib/handHistory/feature.ts).
     ...(handHistory ? [{ label: handHistoryStrings.section.navItem, href: HANDS_PATH }] : []),
     { label: "Bankroll", href: "/bankroll" },
@@ -68,6 +73,7 @@ export function devNav(): NavLink[] {
 /** Header navigation (components/layout/Navbar.tsx) — desktop and mobile menu. */
 export const PRIMARY_NAV: NavLink[] = primaryNav({
   preflopTrainer: PREFLOP_RANGES_ENABLED,
+  flopTrainer: FLOP_TRAINER_ENABLED,
   handHistory: HAND_HISTORY_ENABLED,
 });
 
