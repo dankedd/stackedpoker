@@ -7,6 +7,10 @@ import { guestHandsToday, nextAmsterdamMidnight, recordGuestDailyHand } from "@/
 import { trainerLimitDetail, type TrainerUsage } from "@/lib/ranges/api";
 import { Countdown, UpgradeModal, UsageMeter } from "@/components/billing/UpgradeUi";
 import { GoogleIcon, useSignupActions } from "./GuestSignup";
+import { useStreak } from "@/hooks/useStreak";
+import { StreakLine } from "@/components/retention/DailyProgress";
+import { cn } from "@/lib/utils";
+import { DAILY } from "@/lib/lifecycle/strings";
 
 /**
  * The Free plan's 50 answered hands per day in the Preflop Trainer.
@@ -97,25 +101,19 @@ export function useTrainerLimit(signedIn: boolean) {
 type TrainerLimit = ReturnType<typeof useTrainerLimit>;
 
 /** Usage meter under the table, and the limit screen. `resultOpen`: the hand's result is still up. */
-export function TrainerLimitGate({ limit, resultOpen }: { limit: TrainerLimit; resultOpen: boolean }) {
+/** `compact` (phone): the usage meter smaller and muted. */
+export function TrainerLimitGate({ limit, resultOpen, compact }: { limit: TrainerLimit; resultOpen: boolean; compact?: boolean }) {
   const { limit: max, used, resetAt, signedIn } = limit;
   return (
     <>
       {max !== null && (
-        <div data-tour="trainer-usage" className="mx-auto mt-3 flex max-w-[860px] justify-center">
-          <UsageMeter used={used} limit={max} label="hands today" />
+        <div data-tour="trainer-usage" className={cn("mx-auto mt-3 flex max-w-[860px] justify-center", compact && "mt-2 opacity-70")}>
+          <UsageMeter used={used} limit={max} label="hands today" className={compact ? "px-2 py-0 text-[11px]" : undefined} />
         </div>
       )}
       {limit.showScreen && !resultOpen && max !== null && (
         signedIn ? (
-          <UpgradeModal
-            source="hand_limit"
-            title={`You've hit today's ${max} free hands.`}
-            body="Keep drilling with Pro, or come back tomorrow."
-            detail={resetAt ? <ResetLine resetAt={resetAt} onReset={limit.onReset} /> : undefined}
-            onClose={limit.dismiss}
-            dismissLabel="Come back tomorrow"
-          />
+          <SignedInLimitScreen max={max} resetAt={resetAt} onClose={limit.dismiss} onReset={limit.onReset} />
         ) : (
           <GuestLimitScreen max={max} resetAt={resetAt} onClose={limit.dismiss} onReset={limit.onReset} />
         )
@@ -131,6 +129,53 @@ function ResetLine({ resetAt, onReset }: { resetAt: string; onReset: () => void 
       <span className="text-white/55"> · at 00:00 Amsterdam time</span>
     </>
   );
+}
+
+/**
+ * "You've done today's 50 spots 🔥": a reason to come back (streak +
+ * countdown) first, Pro second. The countdown runs to the real reset — the
+ * server's daily limit resets at 00:00 Amsterdam time — shown on the
+ * viewer's own clock, so it is never a promise the server doesn't keep.
+ */
+function SignedInLimitScreen({
+  max,
+  resetAt,
+  onClose,
+  onReset,
+}: {
+  max: number;
+  resetAt: string | null;
+  onClose: () => void;
+  onReset: () => void;
+}) {
+  const streak = useStreak();
+  return (
+    <UpgradeModal
+      source="hand_limit"
+      title={DAILY.limitTitle(max)}
+      body={
+        <>
+          {DAILY.limitBody}
+          {streak && <StreakLine streak={streak} className="mt-2 block text-sm" />}
+        </>
+      }
+      detail={
+        resetAt ? (
+          <>
+            {DAILY.unlocksIn} <b className="text-white"><Countdown to={resetAt} onDone={onReset} /></b>
+            <span className="text-white/55"> · {DAILY.unlocksAt(localClock(resetAt))}</span>
+          </>
+        ) : undefined
+      }
+      onClose={onClose}
+      dismissLabel={DAILY.comeBack}
+    />
+  );
+}
+
+/** "00:00" or "23:00" — the reset moment on the viewer's clock. */
+function localClock(iso: string): string {
+  return new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
 }
 
 function GuestLimitScreen({

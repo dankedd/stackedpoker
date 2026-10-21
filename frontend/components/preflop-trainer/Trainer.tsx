@@ -5,19 +5,13 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowUpRight, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { PokerRangeGrid } from "@/components/learn/visuals/PokerRangeGrid";
-import { DealerMarker } from "@/components/poker/DealerMarker";
-import { CHIP_PALETTE, PokerChip, type ChipTone } from "@/components/poker/ChipStack";
-import { FourColorCard } from "@/components/poker/FourColorCard";
 import { Modal } from "@/components/ui/modal";
-import { useIsMobile } from "@/hooks/useIsMobile";
 import { SEO_EVENTS, trackEvent } from "@/lib/seo/analytics";
 import { track } from "@/lib/metaPixel";
-import { actionStyle } from "@/lib/learn/actionStyles";
 import {
   actionName,
   applyVerdict,
   availableActions,
-  betFor,
   displayPos,
   frequencies,
   grade,
@@ -25,10 +19,7 @@ import {
   pushValue,
   scenarioTitle,
   scorePct,
-  seatStatus,
-  seatsFor,
   spotLabel,
-  villainAllIn,
   type Deal,
   type Grade,
   type TrainerMode,
@@ -43,20 +34,14 @@ import { LevelUpModal } from "@/components/learn/LevelUpModal";
 import { XPGain } from "@/components/learn/XPGain";
 import { cn } from "@/lib/utils";
 import { ACTION_ORDER, HandBreakdown, Pills, SourceLegend, Swatch, TOOL_SLUG, sourceLabel, toStrategies } from "./shared";
+import { ActionButtons, HOTKEY, PhoneTable, Table, VERDICT } from "./TrainerTable";
+import { useIsPhone } from "@/hooks/useIsMobile";
 import { useTrainerProgress } from "./useTrainerProgress";
 import { GuestSignup, useGuestSignup } from "./GuestSignup";
 import { TrainerLimitGate, useTrainerLimit } from "./TrainerLimit";
 
 const TYPE_LABEL: Record<TrainerType, string> = { open: "Open", def: "Defense", mix: "Mixed" };
 const MODE_LABEL: Record<TrainerMode, string> = { all: "All", mtt: "MTT", pf: "Push/fold ≤10bb", cash: "Cash 100bb" };
-
-const HOTKEY: Record<RangeActionKey, string> = { fold: "F", limp: "L", call: "C", raise: "R", allin: "A" };
-
-const VERDICT: Record<Grade["verdict"], { label: string; className: string }> = {
-  correct: { label: "Correct", className: "border-emerald-500/40 bg-emerald-500/15 text-emerald-300" },
-  mixed: { label: "Mixed", className: "border-amber-500/40 bg-amber-500/15 text-amber-300" },
-  wrong: { label: "Wrong", className: "border-red-500/40 bg-red-500/15 text-red-300" },
-};
 
 /** XP for one hand — always from the server, never computed in the browser. */
 type AnswerXp =
@@ -99,6 +84,8 @@ export function Trainer() {
   const trainerLimit = useTrainerLimit(signedIn);
   const { allowHand, recordGuestHand: countGuestDailyHand, applyServerUsage, handleServerError } = trainerLimit;
   const [showFilters, setShowFilters] = useState(false);
+  // ≤480px: the calmer phone table, a one-line stats row and the result inline under the table.
+  const phone = useIsPhone();
 
   // Signed in, the streak lives on the server and carries over between sessions.
   const serverStreak = xpState?.streak;
@@ -221,8 +208,13 @@ export function Trainer() {
       >
         <SlidersHorizontal aria-hidden="true" className="h-4 w-4 shrink-0 text-violet-300" />
         <span className="min-w-0 flex-1 truncate font-medium text-foreground">
-          {TYPE_LABEL[type]} · {MODE_LABEL[mode]}
-          {fewerFolds && <span className="text-muted-foreground"> · fewer folds</span>}
+          {TYPE_LABEL[type]}
+          {!phone && (
+            <>
+              {" "}· {MODE_LABEL[mode]}
+              {fewerFolds && <span className="text-muted-foreground"> · fewer folds</span>}
+            </>
+          )}
         </span>
         <ChevronDown
           aria-hidden="true"
@@ -271,8 +263,21 @@ export function Trainer() {
             </button>
           </div>
         </div>
-        {/* Phone: four tiles instead of a line that wraps. */}
-        <dl data-tour="trainer-stats" className="grid w-full grid-cols-4 gap-1.5 md:hidden" aria-live="polite">
+        {/* Phone (≤480px): one compact line. */}
+        {phone && (
+          <p data-tour="trainer-stats" className="w-full truncate text-xs tabular-nums text-muted-foreground" aria-live="polite">
+            <b className="font-mono text-foreground">{scorePct(stats)}%</b>
+            <span className="text-muted-foreground/60"> ({stats.correct + stats.mixed}/{stats.hands})</span> · 🔥{" "}
+            <b className="font-mono text-foreground">{stats.streak}</b> · Best <b className="font-mono text-foreground">{high}</b>
+            {xpState && (
+              <>
+                {" "}· <b className="font-mono text-foreground">{xpState.daily_xp}</b>/{xpState.daily_cap} XP
+              </>
+            )}
+          </p>
+        )}
+        {/* Tablet: four tiles instead of a line that wraps. */}
+        <dl data-tour={phone ? undefined : "trainer-stats"} className={cn("grid w-full grid-cols-4 gap-1.5 md:hidden", phone && "hidden")} aria-live="polite">
           {[
             ["Score", `${scorePct(stats)}%`, `${stats.correct + stats.mixed}/${stats.hands}`],
             ["Streak", stats.streak, null],
@@ -318,255 +323,32 @@ export function Trainer() {
         </dl>
       </div>
 
-      <div data-tour="trainer-spot">
-        {deal ? <Table deal={deal} /> : <div className="mx-auto aspect-[16/9.6] max-w-[860px] animate-pulse rounded-[999px] bg-card/40" />}
+      <div
+        data-tour="trainer-spot"
+        // Phone: with the result open under the table, a tap on the table deals the next hand.
+        onClick={phone && answer ? () => next() : undefined}
+        className={cn(phone && answer && "cursor-pointer")}
+      >
+        {deal ? (
+          phone ? <PhoneTable deal={deal} /> : <Table deal={deal} />
+        ) : (
+          <div className="mx-auto aspect-[16/9.6] max-w-[860px] animate-pulse rounded-[999px] bg-card/40" />
+        )}
       </div>
 
-      <div data-tour="trainer-actions">{deal && <ActionButtons deal={deal} onChoose={choose} disabled={Boolean(answer)} />}</div>
+      <div data-tour="trainer-actions">{deal && <ActionButtons deal={deal} onChoose={choose} disabled={Boolean(answer)} phone={phone} />}</div>
 
       <GuestSignup guest={guest} resultOpen={Boolean(answer)} />
 
-      <TrainerLimitGate limit={trainerLimit} resultOpen={Boolean(answer)} />
+      <TrainerLimitGate limit={trainerLimit} resultOpen={Boolean(answer)} compact={phone} />
 
-      {deal && answer && <ResultModal deal={deal} answer={answer} stats={stats} high={high} onNext={() => next()} />}
+      {deal && answer && <ResultModal deal={deal} answer={answer} stats={stats} high={high} onNext={() => next()} inline={phone} />}
 
       {/* Same level-up celebration as Learn, once the result is closed. */}
       {!answer && progress.pendingLevelUp && (
         <LevelUpModal event={progress.pendingLevelUp} onContinue={dismissLevelUp} onDismiss={dismissLevelUp} token={token || undefined} />
       )}
     </div>
-  );
-}
-
-// ── Table ───────────────────────────────────────────────────────────────────
-
-function Table({ deal }: { deal: Deal }) {
-  const mobile = useIsMobile();
-  const seats = seatsFor(deal);
-  const n = seats.length;
-  const heroIdx = seats.indexOf(deal.hero);
-  const rx = mobile ? 40 : 44;
-  const ry = mobile ? 42 : 41;
-  const fmtLabel = deal.kind === "pf" ? "MTT · push/fold" : deal.fmt === "cash" ? "Cash · 6-max" : "MTT · 9-handed · antes";
-  const situation = deal.type === "def" ? spotLabel(deal) : "Folded to you";
-
-  return (
-    <div className={cn("relative mx-auto w-full max-w-[860px]", mobile ? "aspect-[4/5]" : "aspect-[16/9.6]")}>
-      {/* Rail and felt — same tokens as PreflopTable. */}
-      <div
-        className="absolute rounded-[999px]"
-        style={{
-          inset: mobile ? "10% 12%" : "11% 8%",
-          background: "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.015) 100%)",
-          boxShadow: "0 18px 44px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.04) inset",
-        }}
-      />
-      <div
-        className="absolute rounded-[999px] border border-emerald-950/40"
-        style={{
-          inset: mobile ? "12% 15%" : "13% 10%",
-          background: "radial-gradient(ellipse at 50% 40%, rgba(21,63,46,0.92) 0%, rgba(13,44,32,0.95) 55%, rgba(7,26,20,0.97) 100%)",
-          boxShadow: "inset 0 0 46px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03)",
-        }}
-      >
-        <div className="absolute left-1/2 top-[44%] w-3/5 -translate-x-1/2 -translate-y-1/2 text-center sm:w-4/5">
-          <p className="text-[10px] uppercase tracking-[0.12em] text-emerald-100/60 sm:text-[11px]">
-            {fmtLabel}
-            {deal.type === "def" ? " · defense" : ""}
-          </p>
-          <p className="font-mono text-2xl font-bold tracking-tight text-emerald-50 sm:text-3xl">{deal.stack}bb</p>
-          <p className="text-xs text-emerald-100/80 sm:text-sm">{situation}</p>
-        </div>
-      </div>
-
-      {Array.from({ length: n }, (_, k) => {
-        const pos = seats[(heroIdx + k) % n];
-        const ang = Math.PI / 2 + (k * 2 * Math.PI) / n;
-        const x = 50 + rx * Math.cos(ang);
-        const y = 50 + ry * Math.sin(ang);
-        const st = seatStatus(deal, pos);
-        const bet = betFor(deal, pos);
-        // Chips sit between seat and centre. Hero's go nearer the centre to clear the
-        // hole cards; on a phone the felt is narrow, so the others stay close to their
-        // seat instead of running into the text in the middle.
-        const pullX = k === 0 ? 0.3 : mobile ? 0.76 : 0.58;
-        const pullY = k === 0 ? 0.3 : mobile ? 0.74 : 0.55;
-        const bx = 50 + rx * pullX * Math.cos(ang);
-        const by = 50 + ry * pullY * Math.sin(ang);
-        const da = ang + (k === 0 ? 0.42 : mobile ? 0.22 : 0.3);
-        const dealerPull = mobile && k !== 0 ? 0.82 : 0.62;
-        // All-in red, a real bet or raise blue, a posted blind grey.
-        const tone: ChipTone =
-          bet === `${deal.stack}bb`
-            ? "allin"
-            : (deal.type === "def" && pos === deal.vil) || (pos === deal.hero && /bet|raise/.test(bet))
-              ? "bet"
-              : "blind";
-        const active = st.state === "hero" || st.state === "villain" || st.state === "waiting";
-        return (
-          <div key={pos}>
-            {/* Every seat — hero included — is centred on the rail, so the pods line up. */}
-            <div
-              className={cn(
-                "absolute flex w-[72px] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1 sm:w-[92px]",
-                st.state === "hero" ? "z-[3]" : "z-[2]",
-              )}
-              style={{ left: `${x}%`, top: `${y}%` }}
-            >
-              <div className="relative">
-                {st.state === "hero" && (
-                  // Hole cards rise out of the seat; the name plate overlaps their lower edge.
-                  <div className="absolute bottom-[calc(100%-10px)] left-1/2 flex -translate-x-1/2">
-                    <FourColorCard card={deal.cards[0]} size={mobile ? "sm" : "md"} style={{ transform: "rotate(-4deg)" }} />
-                    <FourColorCard
-                      card={deal.cards[1]}
-                      size={mobile ? "sm" : "md"}
-                      style={{ marginLeft: mobile ? -16 : -20, transform: "rotate(4deg) translateY(-3px)" }}
-                    />
-                  </div>
-                )}
-                <div
-                  className={cn(
-                    "relative min-w-[64px] rounded-xl border px-2.5 py-1 text-center shadow-md shadow-black/40 sm:min-w-[84px]",
-                    st.state === "hero" && "border-violet-500/70 bg-[rgba(16,8,42,0.96)]",
-                    st.state === "villain" && "border-amber-400/50 bg-[rgba(40,30,8,0.92)]",
-                    st.state === "folded" && "border-border/40 bg-card/40 opacity-50 shadow-none",
-                    st.state === "waiting" && "border-border/60 bg-card/90",
-                  )}
-                >
-                  <p
-                    className={cn(
-                      "text-xs font-bold sm:text-[13px]",
-                      st.state === "hero" ? "text-violet-300" : st.state === "villain" ? "text-amber-300" : "text-foreground",
-                    )}
-                  >
-                    {displayPos(pos)}
-                  </p>
-                  <p
-                    className={cn(
-                      "font-mono text-[10px] font-semibold sm:text-[12px]",
-                      active ? "text-sky-300" : "text-muted-foreground",
-                    )}
-                  >
-                    {deal.stack} BB
-                  </p>
-                </div>
-              </div>
-              <p
-                className={cn(
-                  "min-h-3 whitespace-nowrap text-[10px] font-bold uppercase tracking-wide",
-                  st.state === "hero" ? "text-violet-300" : st.state === "villain" ? "text-amber-300" : "text-muted-foreground",
-                )}
-              >
-                {st.text}
-              </p>
-            </div>
-            {bet && <BetChips label={bet} tone={tone} left={bx} top={by} size={mobile ? 13 : 16} />}
-            {pos === "BN" && (
-              <DealerMarker
-                style={{
-                  left: `${50 + rx * dealerPull * Math.cos(da)}%`,
-                  top: `${50 + ry * dealerPull * Math.sin(da)}%`,
-                  transform: "translate(-50%,-50%)",
-                }}
-              />
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/**
- * A seat's committed chips: the same two-chip pile as ChipStack (PokerChip +
- * CHIP_PALETTE, shared with PreflopTable), but with a free-text label because
- * a 3-bet or 4-bet here has no size in the source data.
- */
-function BetChips({ label, tone, left, top, size }: { label: string; tone: ChipTone; left: number; top: number; size: number }) {
-  const spread = Math.max(3, Math.round(size * 0.22));
-  return (
-    <div
-      className="absolute z-[2] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-[3px]"
-      style={{ left: `${left}%`, top: `${top}%` }}
-    >
-      <div className="relative" style={{ width: size + spread, height: size + spread }}>
-        <PokerChip tone={tone} sizePx={size} style={{ left: 0, top: spread, opacity: 0.7 }} />
-        <PokerChip tone={tone} sizePx={size} style={{ left: spread, top: 0 }} />
-      </div>
-      <span
-        className={cn(
-          "whitespace-nowrap rounded-full bg-black/40 px-1.5 py-px font-mono text-[10px] font-bold leading-tight sm:text-[11px]",
-          CHIP_PALETTE[tone].text,
-        )}
-      >
-        {label}
-      </span>
-    </div>
-  );
-}
-
-// ── Buttons ─────────────────────────────────────────────────────────────────
-
-const BUTTON_CLASS: Record<RangeActionKey, string> = {
-  fold: "border border-border bg-card/60 text-foreground hover:bg-card",
-  limp: `${actionStyle("limp").bg} text-white hover:brightness-110`,
-  call: `${actionStyle("call").bg} text-white hover:brightness-110`,
-  raise: `${actionStyle("raise").bg} text-white hover:brightness-110`,
-  allin: `${actionStyle("allin").bg} text-white hover:brightness-110`,
-};
-
-function ActionButtons({ deal, onChoose, disabled }: { deal: Deal; onChoose: (k: RangeActionKey) => void; disabled: boolean }) {
-  const keys = availableActions(deal);
-  const raiseLabel =
-    deal.type === "open" && deal.kind === "freq"
-      ? deal.chart.actions.find((a) => a.key === "raise")?.label.replace("Raise ", "")
-      : undefined;
-  return (
-    <>
-      <div
-        className={cn(
-          "mx-auto mt-5 grid gap-2.5 md:mt-7",
-          keys.length === 4 ? "max-w-[640px] grid-cols-2 sm:grid-cols-4" : keys.length === 3 ? "max-w-[540px] grid-cols-3" : "max-w-[360px] grid-cols-2",
-        )}
-        role="group"
-        aria-label="Your action"
-      >
-        {keys.map((k) => {
-          // The size stays on every screen; the hotkey letter only where there is a keyboard.
-          const size = k === "allin" ? `${deal.stack}bb` : k === "raise" ? raiseLabel : undefined;
-          return (
-            <button
-              key={k}
-              type="button"
-              disabled={disabled}
-              onClick={() => onChoose(k)}
-              className={cn(
-                "rounded-xl px-3 py-2.5 text-[15px] font-bold md:py-3 transition-transform active:scale-[0.97] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                BUTTON_CLASS[k],
-              )}
-            >
-              {actionName(k, deal)}
-              <small className={cn("mt-0.5 text-[11px] font-medium opacity-80", size ? "block" : "hidden md:block")}>
-                {size}
-                <span className="hidden md:inline">
-                  {size && " · "}
-                  {HOTKEY[k]}
-                </span>
-              </small>
-            </button>
-          );
-        })}
-      </div>
-      {villainAllIn(deal) && (
-        <p className="mt-2.5 text-center text-xs text-muted-foreground md:hidden">Villain is all-in: fold or call</p>
-      )}
-      {/* Keyboard shortcuts mean nothing on a phone. */}
-      <p className="mt-2.5 hidden text-center text-xs text-muted-foreground md:block">
-        {villainAllIn(deal) ? "Villain is all-in: fold or call · " : "Shortcuts: "}
-        {keys.map((k) => HOTKEY[k]).join(" · ")}, Enter for the next hand
-      </p>
-    </>
   );
 }
 
@@ -578,15 +360,26 @@ function ResultModal({
   stats,
   high,
   onNext,
+  inline,
 }: {
   deal: Deal;
   answer: Answer;
   stats: TrainerStats;
   high: number;
   onNext: () => void;
+  /**
+   * Phone: the result sits in the page under the table instead of in a modal —
+   * no fixed overlay, no viewport-height cap and no sticky button, so the
+   * browser's dynamic toolbars can never cover the range or the button.
+   */
+  inline?: boolean;
 }) {
   const nextRef = useRef<HTMLButtonElement>(null);
-  useEffect(() => nextRef.current?.focus({ preventScroll: true }), []);
+  const sectionRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    nextRef.current?.focus({ preventScroll: true });
+    if (inline) sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [inline]);
   const { grade: g, key: k } = answer;
   const name = (x: RangeActionKey) => actionName(x, deal);
   const pct = (x: number) => Math.round(x * 100);
@@ -610,15 +403,8 @@ function ResultModal({
     .map((c) => (c[0] === "T" ? "10" : c[0]) + ({ s: "♠", h: "♥", d: "♦", c: "♣" } as Record<string, string>)[c[1]])
     .join(" ");
 
-  return (
-    <Modal
-      open
-      onClose={onNext}
-      title={scenarioTitle(deal)}
-      dataTour="trainer-result"
-      maxWidthClassName="max-w-4xl"
-      bodyClassName="px-4 pt-4 sm:px-6 sm:pt-5"
-    >
+  const content = (
+    <>
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <span className={cn("rounded-full border px-3 py-1 text-sm font-bold", VERDICT[g.verdict].className)}>
           {VERDICT[g.verdict].label}
@@ -712,8 +498,14 @@ function ResultModal({
         </aside>
       </div>
 
-      {/* Stays on screen while the chart scrolls underneath. */}
-      <div className="sticky bottom-0 -mx-4 mt-5 border-t border-white/[0.07] bg-[#0B1120] px-4 py-3 sm:-mx-6 sm:px-6 sm:py-5">
+      {/* Modal: stays on screen while the chart scrolls underneath. Inline (phone): a plain button right under the range. */}
+      <div
+        className={cn(
+          inline
+            ? "mt-5 pb-[max(1rem,env(safe-area-inset-bottom))]"
+            : "sticky bottom-0 -mx-4 mt-5 border-t border-white/[0.07] bg-[#0B1120] px-4 py-3 sm:-mx-6 sm:px-6 sm:py-5",
+        )}
+      >
         <button
           ref={nextRef}
           type="button"
@@ -723,6 +515,33 @@ function ResultModal({
           Next hand<span className="hidden md:inline">&nbsp;(Enter)</span>
         </button>
       </div>
+    </>
+  );
+
+  if (inline) {
+    return (
+      <section
+        ref={sectionRef}
+        data-tour="trainer-result"
+        aria-label={scenarioTitle(deal)}
+        className="mt-5 scroll-mt-3 rounded-2xl border border-white/10 bg-[#0B1120] px-4 pt-4 shadow-2xl shadow-black/40"
+      >
+        <h2 className="mb-3 text-sm font-semibold text-foreground">{scenarioTitle(deal)}</h2>
+        {content}
+      </section>
+    );
+  }
+
+  return (
+    <Modal
+      open
+      onClose={onNext}
+      title={scenarioTitle(deal)}
+      dataTour="trainer-result"
+      maxWidthClassName="max-w-4xl"
+      bodyClassName="px-4 pt-4 sm:px-6 sm:pt-5"
+    >
+      {content}
     </Modal>
   );
 }

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -33,6 +33,17 @@ const geistMono = Geist_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
 });
+
+/**
+ * `viewport-fit=cover` lets fixed bottom bars read env(safe-area-inset-bottom)
+ * on phones with a home indicator (it is 0 without it). Width/scale are
+ * Next.js's defaults, restated because exporting `viewport` replaces them.
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 /**
  * Root metadata (§1).
@@ -104,11 +115,11 @@ export default function RootLayout({
           <BillingNotices />
           {/* Product tours (?tour=preflop / ?tour=hands) and the "other tour" offer. */}
           <ProductTours />
+          {/* Saves the user's time zone (day streaks) and fires ReturnVisit. */}
+          <RetentionTracker />
         </AuthProvider>
         <GoogleAnalytics />
       </body>
     </html>
   );
 }
-          {/* Saves the user's time zone (day streaks) and fires ReturnVisit. */}
-          <RetentionTracker />

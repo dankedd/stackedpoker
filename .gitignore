@@ -73,3 +73,9 @@ docs/
 docs/book-local/
 *.pdf
 data/mpt/precomputed/
+
+# Instagram downloads for the bluffnations edit (Apify token + videos): never commit
+ads/bluffnations/
+
+# Local QA screenshots
+qa-screenshots/*/*/*.png

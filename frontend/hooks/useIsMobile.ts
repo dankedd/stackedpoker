@@ -44,3 +44,22 @@ export function useIsNarrowPhone(): boolean {
 
   return isNarrow
 }
+
+const PHONE_QUERY = '(max-width: 480px)'
+
+/** True on phones (≤480px). The preflop trainer's calmer phone table and inline
+ *  result use this; tablets keep the `useIsMobile` layout. Same SSR-safe `false`
+ *  default, so server markup always matches the desktop layout. */
+export function useIsPhone(): boolean {
+  const [isPhone, setIsPhone] = useState(false)
+
+  useEffect(() => {
+    const mq = window.matchMedia(PHONE_QUERY)
+    setIsPhone(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsPhone(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+
+  return isPhone
+}

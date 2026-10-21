@@ -32,7 +32,7 @@ export function ConsentBanner() {
     <div
       role="region"
       aria-label="Cookie consent"
-      className="fixed inset-x-0 bottom-0 z-[60] p-4 sm:bottom-4 sm:left-4 sm:right-auto sm:max-w-md sm:p-0"
+      className="fixed inset-x-0 bottom-0 z-[60] p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:bottom-4 sm:left-4 sm:right-auto sm:max-w-md sm:p-0"
     >
       <div className="rounded-2xl border border-white/10 bg-[#0B0E1A] p-4 shadow-2xl shadow-black/60">
         <p className="text-sm leading-relaxed text-white/85">

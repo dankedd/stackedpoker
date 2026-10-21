@@ -29,6 +29,8 @@ const HIGH_CONTRAST: Record<string, { face: string; edge: string }> = {
 };
 
 const SIZES = {
+  // Phone trainer table: small enough that Hero's cards clear both neighbouring seats.
+  xs: { w: 42, h: 59, rank: 26, suit: 14, mark: 38, r: 6 },
   sm: { w: 50, h: 70, rank: 30, suit: 16, mark: 44, r: 7 },
   md: { w: 62, h: 87, rank: 38, suit: 20, mark: 56, r: 8 },
   lg: { w: 74, h: 104, rank: 46, suit: 24, mark: 68, r: 10 },
