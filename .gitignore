@@ -79,3 +79,8 @@ ads/bluffnations/
 
 # Local QA screenshots
 qa-screenshots/*/*/*.png
+qa-screenshots/flop/data/
+qa-screenshots/*/out/
+
+# Private hand-history exports used by local tests (the repo is public): never commit
+frontend/lib/handHistory/__tests__/fixtures/

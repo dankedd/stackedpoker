@@ -1,0 +1,722 @@
+[
+ {
+  "spot_id": "3bp_bb_vs_bn_40",
+  "pot": "3bp",
+  "ip": "BN",
+  "oop": "BB",
+  "pfr": "BB",
+  "stack_bb": 40,
+  "derived": false,
+  "precomputed": false
+ },
+ {
+  "spot_id": "3bp_bb_vs_co_40",
+  "pot": "3bp",
+  "ip": "CO",
+  "oop": "BB",
+  "pfr": "BB",
+  "stack_bb": 40,
+  "derived": false,
+  "precomputed": false
+ },
+ {
+  "spot_id": "3bp_bb_vs_utg_40",
+  "pot": "3bp",
+  "ip": "UTG",
+  "oop": "BB",
+  "pfr": "BB",
+  "stack_bb": 40,
+  "derived": false,
+  "precomputed": false
+ },
+ {
+  "spot_id": "3bp_bn_vs_co_40",
+  "pot": "3bp",
+  "ip": "BN",
+  "oop": "CO",
+  "pfr": "BN",
+  "stack_bb": 40,
+  "derived": false,
+  "precomputed": false
+ },
+ {
+  "spot_id": "3bp_bn_vs_lj_40",
+  "pot": "3bp",
+  "ip": "BN",
+  "oop": "LJ",
+  "pfr": "BN",
+  "stack_bb": 40,
+  "derived": false,
+  "precomputed": false
+ },
+ {
+  "spot_id": "3bp_bn_vs_utg_40",
+  "pot": "3bp",
+  "ip": "BN",
+  "oop": "UTG",
+  "pfr": "BN",
+  "stack_bb": 40,
+  "derived": false,
+  "precomputed": false
+ },
+ {
+  "spot_id": "3bp_sb_vs_bn_40",
+  "pot": "3bp",
+  "ip": "BN",
+  "oop": "SB",
+  "pfr": "SB",
+  "stack_bb": 40,
+  "derived": false,
+  "precomputed": false
+ },
+ {
+  "spot_id": "3bp_sb_vs_co_40",
+  "pot": "3bp",
+  "ip": "CO",
+  "oop": "SB",
+  "pfr": "SB",
+  "stack_bb": 40,
+  "derived": false,
+  "precomputed": false
+ },
+ {
+  "spot_id": "3bp_sb_vs_utg_40",
+  "pot": "3bp",
+  "ip": "UTG",
+  "oop": "SB",
+  "pfr": "SB",
+  "stack_bb": 40,
+  "derived": false,
+  "precomputed": false
+ },
+ {
+  "spot_id": "3bp_utgp1_vs_utg_40",
+  "pot": "3bp",
+  "ip": "UTG+1",
+  "oop": "UTG",
+  "pfr": "UTG+1",
+  "stack_bb": 40,
+  "derived": false,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_co_vs_bn_15",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "CO",
+  "pfr": "CO",
+  "stack_bb": 15,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_co_vs_bn_20",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "CO",
+  "pfr": "CO",
+  "stack_bb": 20,
+  "derived": false,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_co_vs_bn_25",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "CO",
+  "pfr": "CO",
+  "stack_bb": 25,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_co_vs_bn_40",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "CO",
+  "pfr": "CO",
+  "stack_bb": 40,
+  "derived": false,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_co_vs_bn_60",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "CO",
+  "pfr": "CO",
+  "stack_bb": 60,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_lj_vs_bn_15",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "LJ",
+  "pfr": "LJ",
+  "stack_bb": 15,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_lj_vs_bn_25",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "LJ",
+  "pfr": "LJ",
+  "stack_bb": 25,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_lj_vs_bn_40",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "LJ",
+  "pfr": "LJ",
+  "stack_bb": 40,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_lj_vs_bn_60",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "LJ",
+  "pfr": "LJ",
+  "stack_bb": 60,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_lj_vs_co_25",
+  "pot": "srp",
+  "ip": "CO",
+  "oop": "LJ",
+  "pfr": "LJ",
+  "stack_bb": 25,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_lj_vs_co_40",
+  "pot": "srp",
+  "ip": "CO",
+  "oop": "LJ",
+  "pfr": "LJ",
+  "stack_bb": 40,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_lj_vs_co_60",
+  "pot": "srp",
+  "ip": "CO",
+  "oop": "LJ",
+  "pfr": "LJ",
+  "stack_bb": 60,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_lj_vs_hj_25",
+  "pot": "srp",
+  "ip": "HJ",
+  "oop": "LJ",
+  "pfr": "LJ",
+  "stack_bb": 25,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_lj_vs_hj_40",
+  "pot": "srp",
+  "ip": "HJ",
+  "oop": "LJ",
+  "pfr": "LJ",
+  "stack_bb": 40,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_lj_vs_hj_60",
+  "pot": "srp",
+  "ip": "HJ",
+  "oop": "LJ",
+  "pfr": "LJ",
+  "stack_bb": 60,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_utg_vs_bn_15",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "UTG",
+  "pfr": "UTG",
+  "stack_bb": 15,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_utg_vs_bn_20",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "UTG",
+  "pfr": "UTG",
+  "stack_bb": 20,
+  "derived": false,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_utg_vs_bn_25",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "UTG",
+  "pfr": "UTG",
+  "stack_bb": 25,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_utg_vs_bn_40",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "UTG",
+  "pfr": "UTG",
+  "stack_bb": 40,
+  "derived": false,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_utg_vs_bn_60",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "UTG",
+  "pfr": "UTG",
+  "stack_bb": 60,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_utg_vs_co_25",
+  "pot": "srp",
+  "ip": "CO",
+  "oop": "UTG",
+  "pfr": "UTG",
+  "stack_bb": 25,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_utg_vs_co_40",
+  "pot": "srp",
+  "ip": "CO",
+  "oop": "UTG",
+  "pfr": "UTG",
+  "stack_bb": 40,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_utg_vs_co_60",
+  "pot": "srp",
+  "ip": "CO",
+  "oop": "UTG",
+  "pfr": "UTG",
+  "stack_bb": 60,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_utg_vs_hj_25",
+  "pot": "srp",
+  "ip": "HJ",
+  "oop": "UTG",
+  "pfr": "UTG",
+  "stack_bb": 25,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_utg_vs_hj_40",
+  "pot": "srp",
+  "ip": "HJ",
+  "oop": "UTG",
+  "pfr": "UTG",
+  "stack_bb": 40,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_utg_vs_hj_60",
+  "pot": "srp",
+  "ip": "HJ",
+  "oop": "UTG",
+  "pfr": "UTG",
+  "stack_bb": 60,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_utg_vs_utgp1_25",
+  "pot": "srp",
+  "ip": "UTG+1",
+  "oop": "UTG",
+  "pfr": "UTG",
+  "stack_bb": 25,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_utg_vs_utgp1_40",
+  "pot": "srp",
+  "ip": "UTG+1",
+  "oop": "UTG",
+  "pfr": "UTG",
+  "stack_bb": 40,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "cc_utg_vs_utgp1_60",
+  "pot": "srp",
+  "ip": "UTG+1",
+  "oop": "UTG",
+  "pfr": "UTG",
+  "stack_bb": 60,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_bb_vs_bn_15",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "BB",
+  "pfr": "BN",
+  "stack_bb": 15,
+  "derived": true,
+  "precomputed": true
+ },
+ {
+  "spot_id": "srp_bb_vs_bn_25",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "BB",
+  "pfr": "BN",
+  "stack_bb": 25,
+  "derived": true,
+  "precomputed": true
+ },
+ {
+  "spot_id": "srp_bb_vs_bn_40",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "BB",
+  "pfr": "BN",
+  "stack_bb": 40,
+  "derived": false,
+  "precomputed": true
+ },
+ {
+  "spot_id": "srp_bb_vs_bn_60",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "BB",
+  "pfr": "BN",
+  "stack_bb": 60,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_bb_vs_co_15",
+  "pot": "srp",
+  "ip": "CO",
+  "oop": "BB",
+  "pfr": "CO",
+  "stack_bb": 15,
+  "derived": true,
+  "precomputed": true
+ },
+ {
+  "spot_id": "srp_bb_vs_co_25",
+  "pot": "srp",
+  "ip": "CO",
+  "oop": "BB",
+  "pfr": "CO",
+  "stack_bb": 25,
+  "derived": true,
+  "precomputed": true
+ },
+ {
+  "spot_id": "srp_bb_vs_co_40",
+  "pot": "srp",
+  "ip": "CO",
+  "oop": "BB",
+  "pfr": "CO",
+  "stack_bb": 40,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_bb_vs_co_60",
+  "pot": "srp",
+  "ip": "CO",
+  "oop": "BB",
+  "pfr": "CO",
+  "stack_bb": 60,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_bb_vs_lj_15",
+  "pot": "srp",
+  "ip": "LJ",
+  "oop": "BB",
+  "pfr": "LJ",
+  "stack_bb": 15,
+  "derived": true,
+  "precomputed": true
+ },
+ {
+  "spot_id": "srp_bb_vs_lj_25",
+  "pot": "srp",
+  "ip": "LJ",
+  "oop": "BB",
+  "pfr": "LJ",
+  "stack_bb": 25,
+  "derived": true,
+  "precomputed": true
+ },
+ {
+  "spot_id": "srp_bb_vs_lj_40",
+  "pot": "srp",
+  "ip": "LJ",
+  "oop": "BB",
+  "pfr": "LJ",
+  "stack_bb": 40,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_bb_vs_lj_60",
+  "pot": "srp",
+  "ip": "LJ",
+  "oop": "BB",
+  "pfr": "LJ",
+  "stack_bb": 60,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_bb_vs_sb_25",
+  "pot": "srp",
+  "ip": "BB",
+  "oop": "SB",
+  "pfr": "SB",
+  "stack_bb": 25,
+  "derived": true,
+  "precomputed": true
+ },
+ {
+  "spot_id": "srp_bb_vs_sb_40",
+  "pot": "srp",
+  "ip": "BB",
+  "oop": "SB",
+  "pfr": "SB",
+  "stack_bb": 40,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_bb_vs_sb_60",
+  "pot": "srp",
+  "ip": "BB",
+  "oop": "SB",
+  "pfr": "SB",
+  "stack_bb": 60,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_bb_vs_utg_15",
+  "pot": "srp",
+  "ip": "UTG",
+  "oop": "BB",
+  "pfr": "UTG",
+  "stack_bb": 15,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_bb_vs_utg_25",
+  "pot": "srp",
+  "ip": "UTG",
+  "oop": "BB",
+  "pfr": "UTG",
+  "stack_bb": 25,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_bb_vs_utg_40",
+  "pot": "srp",
+  "ip": "UTG",
+  "oop": "BB",
+  "pfr": "UTG",
+  "stack_bb": 40,
+  "derived": false,
+  "precomputed": true
+ },
+ {
+  "spot_id": "srp_bb_vs_utg_60",
+  "pot": "srp",
+  "ip": "UTG",
+  "oop": "BB",
+  "pfr": "UTG",
+  "stack_bb": 60,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_sb_vs_bn_25",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "SB",
+  "pfr": "BN",
+  "stack_bb": 25,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_sb_vs_bn_40",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "SB",
+  "pfr": "BN",
+  "stack_bb": 40,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_sb_vs_bn_60",
+  "pot": "srp",
+  "ip": "BN",
+  "oop": "SB",
+  "pfr": "BN",
+  "stack_bb": 60,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_sb_vs_co_25",
+  "pot": "srp",
+  "ip": "CO",
+  "oop": "SB",
+  "pfr": "CO",
+  "stack_bb": 25,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_sb_vs_co_40",
+  "pot": "srp",
+  "ip": "CO",
+  "oop": "SB",
+  "pfr": "CO",
+  "stack_bb": 40,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_sb_vs_co_60",
+  "pot": "srp",
+  "ip": "CO",
+  "oop": "SB",
+  "pfr": "CO",
+  "stack_bb": 60,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_sb_vs_lj_15",
+  "pot": "srp",
+  "ip": "LJ",
+  "oop": "SB",
+  "pfr": "LJ",
+  "stack_bb": 15,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_sb_vs_lj_25",
+  "pot": "srp",
+  "ip": "LJ",
+  "oop": "SB",
+  "pfr": "LJ",
+  "stack_bb": 25,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_sb_vs_lj_40",
+  "pot": "srp",
+  "ip": "LJ",
+  "oop": "SB",
+  "pfr": "LJ",
+  "stack_bb": 40,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_sb_vs_lj_60",
+  "pot": "srp",
+  "ip": "LJ",
+  "oop": "SB",
+  "pfr": "LJ",
+  "stack_bb": 60,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_sb_vs_utg_15",
+  "pot": "srp",
+  "ip": "UTG",
+  "oop": "SB",
+  "pfr": "UTG",
+  "stack_bb": 15,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_sb_vs_utg_25",
+  "pot": "srp",
+  "ip": "UTG",
+  "oop": "SB",
+  "pfr": "UTG",
+  "stack_bb": 25,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_sb_vs_utg_40",
+  "pot": "srp",
+  "ip": "UTG",
+  "oop": "SB",
+  "pfr": "UTG",
+  "stack_bb": 40,
+  "derived": true,
+  "precomputed": false
+ },
+ {
+  "spot_id": "srp_sb_vs_utg_60",
+  "pot": "srp",
+  "ip": "UTG",
+  "oop": "SB",
+  "pfr": "UTG",
+  "stack_bb": 60,
+  "derived": true,
+  "precomputed": false
+ }
+]
