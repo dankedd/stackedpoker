@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { createClient } from "@/lib/supabase/client";
 import { getSiteUrl } from "@/lib/site-url";
 import { trackCustom } from "@/lib/metaPixel";
+import { SIGNUP_NOTICE } from "@/lib/lifecycle/strings";
 import { displayPos, scenarioTitle, spotLabel, type Deal, type Verdict } from "@/lib/ranges/logic";
 import {
   SOURCE_FOR,
@@ -269,6 +270,7 @@ function SignupPrompt({ trigger, progress, onClose }: { trigger: PromptTrigger; 
             Sign up with email
           </button>
         </div>
+        <p className="mt-2 text-center text-xs text-white/50">{SIGNUP_NOTICE}</p>
 
         <button
           type="button"

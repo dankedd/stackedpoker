@@ -87,6 +87,10 @@ export const SEO_EVENTS = {
   ctaClick: "cta_click",
   /** A homepage FAQ item was opened (params: question). */
   faqOpen: "faq_open",
+
+  // ── Retention (components/retention) ────────────────────────────────────
+  /** A signed-in user is back on a day other than their signup day (params: days_since_signup). Once per day. */
+  returnVisit: "return_visit",
 } as const;
 
 export type SeoEventName = (typeof SEO_EVENTS)[keyof typeof SEO_EVENTS];

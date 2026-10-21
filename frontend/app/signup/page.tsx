@@ -6,6 +6,7 @@ import { Eye, EyeOff, AlertCircle, CheckCircle2, Loader2, Spade } from 'lucide-r
 import { createClient } from '@/lib/supabase/client'
 import { getSiteUrl } from '@/lib/site-url'
 import { readUtm, track } from '@/lib/metaPixel'
+import { SIGNUP_NOTICE } from '@/lib/lifecycle/strings'
 import { readSignupIntent } from '@/lib/ranges/guestProgress'
 import { Button } from '@/components/ui/button'
 import {
@@ -349,6 +350,8 @@ export default function SignupPage() {
               )}
             </Button>
           </form>
+
+          <p className="mt-3 text-center text-xs text-muted-foreground/70">{SIGNUP_NOTICE}</p>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{' '}

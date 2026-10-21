@@ -9,6 +9,8 @@ import { PlanBadge } from "@/components/layout/PlanBadge";
 import { parseEntitlements, type Entitlements } from "@/lib/billing/entitlements";
 import { cn } from "@/lib/utils";
 import { PokerExperiencePicker } from "./PokerExperiencePicker";
+import { EmailPreferences } from "./EmailPreferences";
+import { SETTINGS } from "@/lib/lifecycle/strings";
 import { ProductToursCard } from "@/components/onboarding/TourLinks";
 import type { ExperienceLevel } from "@/lib/learn/experienceLevel";
 
@@ -37,6 +39,10 @@ export default async function SettingsPage() {
     .eq("user_id", user.id)
     .maybeSingle();
   const currentLevel = (assessmentRow?.experience_level ?? null) as ExperienceLevel | null;
+
+  // Separate query: the column comes from supabase_retention.sql.
+  const { data: emailRow } = await supabase.from("profiles").select("email_opt_out").eq("id", user.id).maybeSingle();
+  const emailOptOut = emailRow?.email_opt_out === true;
 
   // Plan, limits and usage: the database's own view (my_entitlements()).
   const { data: entRaw } = await supabase.rpc("my_entitlements");
@@ -150,6 +156,16 @@ export default async function SettingsPage() {
                 {new Date(user.created_at).toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
               </span>
             </div>
+          </div>
+        </div>
+
+        {/* Email card */}
+        <div className="rounded-xl border border-border/60 bg-card/60 divide-y divide-border/40 mt-6">
+          <div className="px-6 py-4">
+            <h2 className="font-semibold text-foreground">{SETTINGS.title}</h2>
+          </div>
+          <div className="px-6 py-5">
+            <EmailPreferences optedOut={emailOptOut} />
           </div>
         </div>
 

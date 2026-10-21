@@ -15,6 +15,7 @@ import { ContinueLearningCard } from "@/components/dashboard/ContinueLearningCar
 import { LearningPathSummary } from "@/components/dashboard/LearningPathSummary";
 import { SkillProfileWidget, type SkillProfileData } from "@/components/dashboard/SkillProfileWidget";
 import { PersonalizedActionsWidget } from "@/components/dashboard/PersonalizedActionsWidget";
+import { DailyProgress } from "@/components/retention/DailyProgress";
 // Metadata only — never '@/lib/learn/curriculum'. See scripts/generateCurriculumPublic.ts.
 import { MODULES_BY_SLUG } from "@/lib/learn/curriculumPublic.generated";
 import { isPaidTier, canAccessElite, getSubscription } from "@/lib/entitlements";
@@ -105,6 +106,9 @@ export default async function DashboardPage() {
             </Link>
           </div>
         </div>
+
+        {/* Day streak + today's trainer spots */}
+        <DailyProgress className="mb-6" />
 
         {/* ── Stats grid ── */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">

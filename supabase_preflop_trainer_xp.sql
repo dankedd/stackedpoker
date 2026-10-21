@@ -35,6 +35,26 @@ ALTER TABLE public.trainer_highscores
   ADD COLUMN IF NOT EXISTS last_hand_at   timestamptz,
   ADD COLUMN IF NOT EXISTS hands_played   integer     NOT NULL DEFAULT 0;
 
+-- 2b. Every graded hand, wrong ones included. xp_events only sees hands that
+--     earned XP, so accuracy and "weakest spot" (lifecycle emails,
+--     supabase_retention.sql) need this. hand_ref = kind:chart_id:stack:hand,
+--     as built by backend/app/api/routes/preflop_trainer.py.
+CREATE TABLE IF NOT EXISTS public.trainer_hand_log (
+  id         bigint       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  user_id    uuid         NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  hand_ref   text,
+  verdict    text         NOT NULL CHECK (verdict IN ('correct', 'mixed', 'wrong')),
+  played_at  timestamptz  NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS trainer_hand_log_user_idx ON public.trainer_hand_log (user_id, played_at DESC);
+
+ALTER TABLE public.trainer_hand_log ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "trainer_hand_log_select_own" ON public.trainer_hand_log;
+CREATE POLICY "trainer_hand_log_select_own" ON public.trainer_hand_log
+  FOR SELECT USING (auth.uid() = user_id);
+-- No write policies: only record_preflop_trainer_hand (SECURITY DEFINER) inserts.
+
 -- 3. Apply one graded hand: streak, record, daily cap and XP in one locked step.
 DROP FUNCTION IF EXISTS public.record_preflop_trainer_hand(uuid, text, text);
 CREATE OR REPLACE FUNCTION public.record_preflop_trainer_hand(
@@ -114,6 +134,9 @@ BEGIN
     updated_at     = now()
   WHERE h.user_id = p_user_id AND h.trainer_key = c_key
   RETURNING * INTO r;
+
+  INSERT INTO public.trainer_hand_log (user_id, hand_ref, verdict)
+  VALUES (p_user_id, p_hand_ref, p_verdict);
 
   IF v_xp > 0 THEN
     -- increment_user_xp UPDATEs user_skill_progress, so make sure the row exists

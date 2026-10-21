@@ -11,6 +11,7 @@ import { ConsentBanner } from "@/components/analytics/ConsentBanner";
 import { GuestProgressSync } from "@/components/preflop-trainer/GuestProgressSync";
 import { BillingNotices } from "@/components/billing/BillingNotices";
 import { ProductTours } from "@/components/onboarding/ProductTours";
+import { RetentionTracker } from "@/components/retention/RetentionTracker";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from "@/lib/seo/config";
@@ -109,3 +110,5 @@ export default function RootLayout({
     </html>
   );
 }
+          {/* Saves the user's time zone (day streaks) and fires ReturnVisit. */}
+          <RetentionTracker />

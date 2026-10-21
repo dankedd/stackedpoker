@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Trainer } from "@/components/preflop-trainer/Trainer";
+import { DailyProgress } from "@/components/retention/DailyProgress";
 import { PREFLOP_TRAINER_PATH } from "@/lib/ranges/feature";
 import { buildMetadata } from "@/lib/seo/metadata";
 
@@ -21,6 +22,8 @@ export default function PreflopTrainerPage() {
           your hand.
         </p>
       </header>
+      {/* Signed in: day streak + today's spots. Renders nothing for guests. */}
+      <DailyProgress className="mb-3" />
       <section className="rounded-2xl border border-violet-500/25 bg-gradient-to-br from-violet-600/[0.08] via-card/70 to-blue-500/[0.05] p-4 sm:p-6">
         {/* The trainer reads its filters from the query string. */}
         <Suspense fallback={<div className="mx-auto aspect-[16/9.6] max-w-[860px] animate-pulse rounded-[999px] bg-card/40" />}>
