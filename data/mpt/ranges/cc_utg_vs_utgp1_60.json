@@ -1,0 +1,96 @@
+{
+ "spot_id": "cc_utg_vs_utgp1_60",
+ "notation": "hand class -> frequency (0-1): the share of that hand class's combos that are in the range",
+ "ip": {
+  "player": "UTG+1",
+  "range": {
+   "44": 0.061,
+   "55": 0.061,
+   "66": 0.149,
+   "77": 0.212,
+   "88": 0.455,
+   "99": 0.667,
+   "AQs": 1,
+   "AJs": 0.545,
+   "ATs": 0.552,
+   "A5s": 0.227,
+   "A4s": 0.152,
+   "AKo": 0.167,
+   "KQs": 0.197,
+   "KJs": 0.333,
+   "KTs": 0.209,
+   "QQ": 0.258,
+   "QJs": 0.106,
+   "QTs": 0.164,
+   "JJ": 0.515,
+   "JTs": 0.224,
+   "TT": 0.866,
+   "65s": 0.045,
+   "54s": 0.152
+  },
+  "derived_from": [
+   {
+    "hand_range": 265,
+    "page": 512,
+    "action": "call",
+    "via": "preflop trainer chart"
+   }
+  ],
+  "pct_of_hands": 2.8
+ },
+ "oop": {
+  "player": "UTG",
+  "range": {
+   "44": 0.212,
+   "55": 0.409,
+   "66": 1,
+   "77": 1,
+   "88": 1,
+   "99": 1,
+   "AA": 1,
+   "AKs": 1,
+   "AQs": 1,
+   "AJs": 1,
+   "ATs": 1,
+   "A9s": 1,
+   "A8s": 1,
+   "A7s": 1,
+   "A6s": 1,
+   "A5s": 1,
+   "A4s": 1,
+   "A3s": 0.682,
+   "AKo": 1,
+   "KK": 1,
+   "KQs": 1,
+   "KJs": 1,
+   "KTs": 1,
+   "K9s": 1,
+   "K8s": 0.606,
+   "AQo": 1,
+   "KQo": 1,
+   "QQ": 1,
+   "QJs": 1,
+   "QTs": 1,
+   "Q9s": 1,
+   "AJo": 1,
+   "JJ": 1,
+   "JTs": 1,
+   "J9s": 0.727,
+   "ATo": 0.712,
+   "TT": 1,
+   "T9s": 1,
+   "87s": 0.182,
+   "76s": 0.403,
+   "65s": 0.258
+  },
+  "derived_from": [
+   {
+    "hand_range": 139,
+    "page": 360,
+    "action": "raise",
+    "via": "preflop trainer chart"
+   }
+  ],
+  "pct_of_hands": 15.2
+ }
+}

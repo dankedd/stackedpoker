@@ -232,3 +232,34 @@ The trainer was not changed.
 | 6 | MVP spots | srp_bb_vs_bn_40 and srp_bb_vs_utg_40. |
 | 7 | XP / daily limit | Later. |
 | 8 | Tooling | Python + eval7 (offline only, `backend/requirements-precompute.txt`). |
+
+## 8. Derived single-raised-pot spots (2026-10-21)
+
+Hand Review's flop panel needs more spots than the postflop chapters analyse.
+Every heads-up single-raised pot is still fully described by the book's
+**preflop charts** (the ones the Preflop Trainer shows, chapters 5 and 7):
+
+- opener's range = the **raise** share of the opener's open chart (the all-in
+  and limp shares are other lines);
+- caller's range = the **call** share of the caller's defense chart against
+  that opener, at that stack.
+
+`backend/app/flop_equity/derive.py` writes these as `ranges/srp_<caller>_vs_<opener>_<stack>.json`
+(blind callers) and `ranges/cc_<opener>_vs_<caller>_<stack>.json` (cold calls),
+adds them to `spots.json` with `"derived": true`, and writes the matcher's
+catalog `frontend/lib/flopTrainer/spotCatalog.json`. Classification:
+**exact derivation** — no new numbers.
+
+Validation: deriving the two spots the postflop chapters print gives the
+book's own files exactly (srp_bb_vs_bn_40, srp_bb_vs_utg_40: max cell
+difference 0). The book's own spot always wins when both exist.
+
+What the book doesn't have stays out: no BB defense chart against an HJ,
+UTG+1 or UTG+2 open (the most common opens at 8-handed tables after the 9-max
+mapping), no SB open-raise option at 15bb, 3-bet pots only at 40bb. 56 spots
+are derivable (72 in the catalog with the book's own 16).
+
+Precomputed (same pipeline and golden tests as Phase 1), chosen from the top
+15 flop situations in the example tournament, local exports and the imported
+hands (aggregated): srp_bb_vs_bn_25, srp_bb_vs_bn_15, srp_bb_vs_co_25,
+srp_bb_vs_co_15, srp_bb_vs_lj_25, srp_bb_vs_lj_15, srp_bb_vs_sb_25.
