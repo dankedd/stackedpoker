@@ -21,10 +21,12 @@
 -- ============================================================
 
 -- 1. Let the XP ledger record trainer awards (feeds both leaderboards).
+--    Keep every source any migration allows: re-running this file must never
+--    drop one ('flop_equity' comes from supabase_flop_trainer.sql).
 ALTER TABLE public.xp_events DROP CONSTRAINT IF EXISTS xp_events_source_type_check;
 ALTER TABLE public.xp_events ADD CONSTRAINT xp_events_source_type_check CHECK (source_type IN (
   'step', 'lesson_completion', 'module_completion',
-  'achievement', 'guest_merge', 'unknown', 'preflop_trainer'
+  'achievement', 'guest_merge', 'unknown', 'preflop_trainer', 'flop_equity'
 ));
 
 -- 2. Server-side trainer state on the existing per-user trainer row.
