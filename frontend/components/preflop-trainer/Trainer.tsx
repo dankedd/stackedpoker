@@ -437,6 +437,8 @@ function ResultModal({
       </div>
 
       <div className="grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_250px] md:gap-6">
+        {/* Own stacking context: the grid's cell labels (z-10) and tooltips must never paint over the modal's sticky title or "Next hand" bar. */}
+        <div className="isolate min-w-0">
         {deal.kind === "pf" ? (
           <PokerRangeGrid
             range={[]}
@@ -458,6 +460,7 @@ function ResultModal({
             hideLegend
           />
         )}
+        </div>
         <aside className="space-y-4">
           <Link
             href={chartHrefForDeal(deal)}

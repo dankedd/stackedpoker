@@ -58,6 +58,7 @@ const TARGETS = [
   { name: "iphone-375x812", type: webkit, ctx: { ...devices["iPhone 14"], viewport: { width: 375, height: 632 }, screen: { width: 375, height: 812 } } },
   { name: "android-412x915", type: chromium, ctx: { ...devices["Pixel 7"], viewport: { width: 412, height: 839 }, screen: { width: 412, height: 915 } } },
   { name: "desktop-1280x900", type: chromium, ctx: { viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1 } },
+  ...(process.env.LAPTOP ? [{ name: "laptop-1341x843", type: chromium, ctx: { viewport: { width: 1341, height: 843 }, deviceScaleFactor: 1 } }] : []),
 ];
 
 /** Phone table: no seat, chip, Hero's cards or center text may overlap another (360–430px). */
