@@ -147,3 +147,32 @@ def test_vs_push_context():
     assert "Verdict: correct" in ctx
     assert "who went all-in" in ctx
     assert "BB vs SB vs-shove chart at 25 BB" in ctx
+
+
+@needs_rows
+def test_flop_check_reaches_the_coach_context():
+    """The flop verdict, Hero's line, hand position and the book's flop strategy are all in the context."""
+    row = dict(_rows()["TM6510945691"])
+    row["flop_check"] = "questionable"
+    row["flop_detail"] = {
+        "spot_id": "srp_bb_vs_bn_40",
+        "flop": "Qs7d2c",
+        "hero_side": "ip",
+        "verdict": "questionable",
+        "line": {"kind": "cbet", "betPct": 75},
+        "hand": {"bucket": "good", "equity": 61.4, "in_range": True, "top_pct": 38.2},
+        "advice": {"source": "book", "strategy": {"bet_1_3": 12, "bet_2_3": 8, "check": 80}, "pages": [680]},
+        "explain": "On this board the range checks a lot.",
+    }
+    ctx = build_hand_context(row, [], None)
+    assert "OUR FLOP CHECK" in ctx
+    assert "Verdict: questionable" in ctx
+    assert "Hero's flop decision: c-bet 75% of the pot" in ctx
+    assert "good bucket, 61% equity vs villain's range, top 38% of Hero's range" in ctx
+    assert "The book's strategy for this flop" in ctx
+
+
+@needs_rows
+def test_hands_without_a_flop_check_have_no_flop_section():
+    ctx = build_hand_context(_rows()["TM6510945691"], [], None)
+    assert "OUR FLOP CHECK" not in ctx

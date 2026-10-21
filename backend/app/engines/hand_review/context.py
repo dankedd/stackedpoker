@@ -42,6 +42,14 @@ _SPOT_TITLE = {
     "vs_limp_raise": "facing a limp-raise after Hero raised the limp",
     "other": "facing more than one opponent",
 }
+_FLOP_VERDICT_TEXT = {
+    "good": "good (in line with the guideline)",
+    "ok": "ok (fine / a reasonable mix)",
+    "questionable": "questionable (the flop data argues against it — explain why, mildly)",
+    "not_evaluated": "not evaluated",
+}
+_FLOP_LINE_WORD = {"cbet": "c-bet", "check": "check", "check_raise": "check-raise", "call": "call", "fold": "fold",
+                   "raise": "raise", "lead": "lead (bet into the preflop raiser)", "stab": "bet after the raiser checked"}
 _CHART_SPOT_WORD = {"open": "vs-open", "push": "vs-shove", "limp": "vs-limp", "4bet": "vs-4-bet", "lr": "vs-limp-raise"}
 
 
@@ -275,6 +283,33 @@ def build_hand_context(
         if detail.get("reason"):
             out.append(f"- Not evaluated because: {_reason_text(detail['reason'])}")
 
+    # ── Our flop check ──
+    flop = row.get("flop_detail")
+    flop_verdict = row.get("flop_check")
+    if flop_verdict and isinstance(flop, dict) and flop.get("line"):
+        line = flop["line"] or {}
+        out.append("OUR FLOP CHECK (range-level guideline from the book's flop data — not solver output for this exact hand)")
+        out.append(f"- Verdict: {_FLOP_VERDICT_TEXT.get(flop_verdict, flop_verdict)}")
+        what = _FLOP_LINE_WORD.get(line.get("kind"), line.get("kind"))
+        if line.get("betPct") is not None:
+            what += f" {line['betPct']}% of the pot"
+        if isinstance(line.get("facing"), dict):
+            f = line["facing"]
+            what += f" facing a {f.get('pct')}% pot bet (needed {_pct(f.get('required'))} equity to call)"
+        out.append(f"- Hero's flop decision: {what}")
+        hand_pos = flop.get("hand")
+        if isinstance(hand_pos, dict) and hand_pos.get("equity") is not None:
+            top = f", top {round(hand_pos['top_pct'])}% of Hero's range" if hand_pos.get("in_range") and hand_pos.get("top_pct") is not None else ", outside the book's range"
+            out.append(f"- Hero's hand on this flop: {hand_pos.get('bucket')} bucket, {round(hand_pos['equity'])}% equity vs villain's range{top}")
+        adv = flop.get("advice")
+        if isinstance(adv, dict):
+            if adv.get("source") == "book" and isinstance(adv.get("strategy"), dict):
+                out.append("- The book's strategy for this flop: " + ", ".join(f"{k.replace('bet_', 'bet ').replace('_', '/')} {v}%" for k, v in adv["strategy"].items()))
+            else:
+                out.append(f"- C-bet guideline for this board: {adv.get('band')} frequency, {adv.get('size')} size")
+        if flop.get("explain"):
+            out.append(f"- Our explanation: {_strip_pages(flop['explain'])}")
+
     # ── Our equity and pot odds ──
     analysis = row.get("analysis")
     if isinstance(analysis, dict) and analysis.get("streets"):
@@ -327,6 +362,17 @@ def build_hand_context(
         out.append("RAW HAND HISTORY (anonymised, fallback only — the structured data above wins):\n" + clipped)
 
     return "\n".join(out)
+
+
+_PAGE = r"pp?\.\s*\d+(?:\s*[–-]\s*\d+)?"
+
+
+def _strip_pages(text: str) -> str:
+    """Page references are for the app's UI; the coach context never carries page numbers."""
+    text = re.sub(rf"{_PAGE};\s*", "", text)  # "(p.727; you needed …)" → "(you needed …)"
+    text = re.sub(rf"\s*\({_PAGE}\)", "", text)  # " (p.680–681)"
+    text = re.sub(rf"\s*{_PAGE}", "", text)  # anything left
+    return re.sub(r"\(\s*\)", "", text).strip()
 
 
 def _reason_text(reason: Any) -> str:

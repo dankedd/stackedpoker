@@ -38,8 +38,9 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["hand-coach"])
 
 SESSION_TYPE = "hand_review"
-HAND_COLUMNS = "data,raw_text,preflop_check,preflop_detail,analysis,favorited_at"
-HAND_COLUMNS_FALLBACK = "data,raw_text,preflop_check,preflop_detail"  # before the analysis/favourites migrations
+HAND_COLUMNS = "data,raw_text,preflop_check,preflop_detail,analysis,favorited_at,flop_check,flop_detail"
+# Older databases: before supabase_hand_history_flop.sql, and before the analysis/favourites migrations.
+HAND_COLUMNS_FALLBACKS = ("data,raw_text,preflop_check,preflop_detail,analysis,favorited_at", "data,raw_text,preflop_check,preflop_detail")
 
 
 class HandCoachMessage(BaseModel):
@@ -61,12 +62,15 @@ class HandCoachMessage(BaseModel):
 async def load_own_hand(hand_id: UUID, user_id: str, settings) -> dict:
     """The caller's hand, or 404 — never anyone else's."""
     base = f"id=eq.{hand_id}&user_id=eq.{user_id}"
-    try:
-        rows = await _supabase_get("hh_hands", f"{base}&select={HAND_COLUMNS}", settings)
-    except httpx.HTTPStatusError as e:
-        if e.response is None or e.response.status_code != 400:
-            raise
-        rows = await _supabase_get("hh_hands", f"{base}&select={HAND_COLUMNS_FALLBACK}", settings)
+    rows = None
+    for cols in (HAND_COLUMNS, *HAND_COLUMNS_FALLBACKS):
+        try:
+            rows = await _supabase_get("hh_hands", f"{base}&select={cols}", settings)
+            break
+        except httpx.HTTPStatusError as e:
+            # 400 = a column that this database doesn't have yet: try the older column set.
+            if e.response is None or e.response.status_code != 400 or cols == HAND_COLUMNS_FALLBACKS[-1]:
+                raise
     if not rows:
         raise HTTPException(status_code=404, detail="Hand not found.")
     return rows[0]
