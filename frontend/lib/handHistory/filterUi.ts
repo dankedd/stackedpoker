@@ -27,7 +27,7 @@ export function withoutFavorites(state: HandQueryState): StatePatch {
 
 /** The targeted filters cleared — the defaults apply again. Tournament and sort stay. */
 export function restoreDefaults(state: HandQueryState): StatePatch {
-  return { ...withoutFavorites(state), filters: { cards: [], preflop: [], spots: [], favorites: false, withNotes: false, manual: false } };
+  return { ...withoutFavorites(state), filters: { cards: [], preflop: [], spots: [], flop: [], favorites: false, withNotes: false, manual: false } };
 }
 
 /** Everything back to the default state (tournament included); the sort stays unless it is the star date. */
@@ -61,6 +61,9 @@ export function activeChips(state: HandQueryState, tournamentName?: (id: string)
   for (const g of f.spots) {
     chips.push({ key: `spot:${g}`, label: t.preflop.group[g], remove: { filters: { spots: f.spots.filter((x) => x !== g) } } });
   }
+  for (const v of f.flop) {
+    chips.push({ key: `flop:${v}`, label: `${t.flop.filterTitle}: ${t.flop.verdict[v]}`, remove: { filters: { flop: f.flop.filter((x) => x !== v) } } });
+  }
   if (f.favorites) chips.push({ key: "fav", label: `★ ${t.filterBar.favorites}`, remove: withoutFavorites(state) });
   if (f.withNotes) chips.push({ key: "notes", label: t.filterBar.notes, remove: { filters: { withNotes: false } } });
   if (f.manual) chips.push({ key: "manual", label: t.manual.navItem, remove: { filters: { manual: false } } });
@@ -76,7 +79,7 @@ export function activeCount(state: HandQueryState): number {
 }
 
 export interface Preset {
-  key: "biggest" | "mistakes" | "favorites" | "notes";
+  key: "biggest" | "mistakes" | "flop" | "favorites" | "notes";
   label: string;
   /** Full state to apply (tournament kept by the caller). */
   apply: (state: HandQueryState) => StatePatch;
@@ -86,11 +89,12 @@ export interface Preset {
 const same = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x) => b.includes(x));
 
 function targetedOnly(f: HandFilters, want: Partial<HandFilters>): boolean {
-  const base = { cards: [] as string[], preflop: [] as string[], spots: [] as string[], favorites: false, withNotes: false, manual: false, ...want };
+  const base = { cards: [] as string[], preflop: [] as string[], spots: [] as string[], flop: [] as string[], favorites: false, withNotes: false, manual: false, ...want };
   return (
     same(f.cards, base.cards) &&
     same(f.preflop, base.preflop) &&
     same(f.spots, base.spots) &&
+    same(f.flop, base.flop) &&
     f.favorites === base.favorites &&
     f.withNotes === base.withNotes &&
     f.manual === base.manual
@@ -120,6 +124,12 @@ export const PRESETS: Preset[] = [
     label: t.filterBar.presetMistakes,
     apply: (s) => ({ filters: reset(s, { preflop: [...PREFLOP_ERRORS] }), sort: "pot", dir: "desc" }),
     isActive: (s) => targetedOnly(s.filters, { preflop: [...PREFLOP_ERRORS] }),
+  },
+  {
+    key: "flop",
+    label: t.filterBar.presetFlop,
+    apply: (s) => ({ filters: reset(s, { flop: ["questionable"] }), sort: "pot", dir: "desc" }),
+    isActive: (s) => targetedOnly(s.filters, { flop: ["questionable"] }),
   },
   {
     key: "favorites",

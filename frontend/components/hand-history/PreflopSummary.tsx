@@ -18,10 +18,15 @@ export function PreflopSummary({
   rows,
   onPick,
   onPickSpot,
+  flop,
+  onPickFlop,
 }: {
   rows: PreflopSummaryRow[];
   onPick: (verdicts: PreflopVerdict[]) => void;
   onPickSpot?: (groups: SpotGroup[]) => void;
+  /** Flop decision check counts (null until loaded / signed out). */
+  flop?: { analysed: number; questionable: number } | null;
+  onPickFlop?: () => void;
 }) {
   const by = (v: PreflopVerdict) => rows.filter((r) => r.preflop_check === v).reduce((a, r) => a + r.n, 0);
   const graded = rows.filter((r) => r.preflop_check !== "not_evaluated").reduce((a, r) => a + r.n, 0);
@@ -124,6 +129,17 @@ export function PreflopSummary({
             ))}
           </div>
         </div>
+      )}
+
+      {flop && flop.analysed > 0 && (
+        <p className="mt-3 text-sm">
+          <span className="font-semibold">{t.flop.summary(flop.analysed, flop.questionable)}</span>
+          {flop.questionable > 0 && onPickFlop && (
+            <button type="button" onClick={onPickFlop} data-flop-summary="questionable" className="ml-2 text-xs font-semibold text-amber-200 underline-offset-2 hover:underline">
+              {t.preflop.showHands(t.flop.verdict.questionable)}
+            </button>
+          )}
+        </p>
       )}
 
       {positions.length > 0 && (

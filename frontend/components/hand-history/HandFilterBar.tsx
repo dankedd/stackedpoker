@@ -11,6 +11,8 @@ import type { TournamentRow } from "@/lib/handHistory/api";
 import { cn } from "@/lib/utils";
 import { CardSearch } from "./CardSearch";
 import { VERDICT_STYLE } from "./PreflopBadge";
+import { FLOP_VERDICT_STYLE } from "./FlopBadge";
+import { FLOP_VERDICTS, type FlopVerdict } from "@/lib/handHistory/flopCheck";
 import { Popover } from "./Popover";
 
 const POT_SLIDER_MAX = 200;
@@ -139,6 +141,9 @@ export function FiltersBar({
           <Section title={t.filterBar.spotTitle}>
             <SpotOptions state={state} onChange={onChange} />
           </Section>
+          <Section title={t.flop.filterTitle}>
+            <FlopOptions state={state} onChange={onChange} />
+          </Section>
           <Section title={`${t.filterBar.favorites} · ${t.filterBar.notes}`}>
             <div className="flex flex-wrap gap-2">
               <FavToggle state={state} onChange={onChange} favCount={favCount} />
@@ -258,6 +263,32 @@ function PreflopOptions({ state, onChange }: { state: HandQueryState; onChange: 
   );
 }
 
+/** "Flop decisions": the flop decision check's verdicts. */
+function FlopOptions({ state, onChange }: { state: HandQueryState; onChange: Change }) {
+  const sel = state.filters.flop;
+  const toggle = (v: FlopVerdict) =>
+    onChange({ filters: { flop: sel.includes(v) ? sel.filter((x) => x !== v) : FLOP_VERDICTS.filter((x) => x === v || sel.includes(x)) } });
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {FLOP_VERDICTS.map((v) => {
+        const on = sel.includes(v);
+        return (
+          <button
+            key={v}
+            type="button"
+            aria-pressed={on}
+            data-flop={v}
+            onClick={() => toggle(v)}
+            className={cn("rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors duration-150", on ? FLOP_VERDICT_STYLE[v] : "border-border/60 text-muted-foreground hover:text-foreground")}
+          >
+            {t.flop.verdict[v]}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /** "Spot type": which kind of preflop decision (open, facing open/shove/limp/4-bet). */
 function SpotOptions({ state, onChange }: { state: HandQueryState; onChange: Change }) {
   const sel = state.filters.spots;
@@ -288,7 +319,7 @@ function SpotOptions({ state, onChange }: { state: HandQueryState; onChange: Cha
 }
 
 function PreflopControl({ state, onChange }: { state: HandQueryState; onChange: Change }) {
-  const k = state.filters.preflop.length + state.filters.spots.length;
+  const k = state.filters.preflop.length + state.filters.spots.length + state.filters.flop.length;
   return (
     <Popover
       dataFilter="preflop"
@@ -308,6 +339,8 @@ function PreflopControl({ state, onChange }: { state: HandQueryState; onChange: 
       <PreflopOptions state={state} onChange={onChange} />
       <p className="mb-2 mt-3 text-xs font-semibold text-muted-foreground">{t.filterBar.spotTitle}</p>
       <SpotOptions state={state} onChange={onChange} />
+      <p className="mb-2 mt-3 text-xs font-semibold text-muted-foreground">{t.flop.filterTitle}</p>
+      <FlopOptions state={state} onChange={onChange} />
     </Popover>
   );
 }

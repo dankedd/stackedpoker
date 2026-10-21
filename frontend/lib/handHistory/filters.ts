@@ -9,6 +9,7 @@
 
 import { cardFilter, parseCardQuery, termText } from "./cardSearch";
 import { PREFLOP_VERDICTS, SPOT_GROUPS, SPOT_GROUP_KINDS, type PreflopVerdict, type SpotGroup } from "./preflop/types";
+import { FLOP_VERDICTS, type FlopVerdict } from "./flopCheck";
 import { t } from "./strings";
 
 export const DEFAULT_MIN_POT_BB = 20;
@@ -42,6 +43,8 @@ export interface HandFilters {
    * the two combine (AND).
    */
   spots: SpotGroup[];
+  /** Flop decision check verdicts (hh_hands.flop_check). Targeted, like `preflop`. */
+  flop: FlopVerdict[];
   /** Only hands where Hero called, bet, raised or showed down (derive.ts). */
   heroInvolved: boolean;
   minPotBb: number;
@@ -62,7 +65,7 @@ export interface HandQueryState {
 }
 
 export const DEFAULT_STATE: HandQueryState = {
-  filters: { cards: [], favorites: false, preflop: [], spots: [], heroInvolved: true, minPotBb: DEFAULT_MIN_POT_BB, tournamentId: null, withNotes: false, manual: false },
+  filters: { cards: [], favorites: false, preflop: [], spots: [], flop: [], heroInvolved: true, minPotBb: DEFAULT_MIN_POT_BB, tournamentId: null, withNotes: false, manual: false },
   sort: "pot",
   dir: "desc",
   page: 1,
@@ -92,7 +95,7 @@ interface FilterDef<K extends keyof HandFilters> {
 
 /** Any targeted filter active? Then the default filters step aside. */
 export function isTargeted(f: HandFilters): boolean {
-  return f.cards.length > 0 || f.preflop.length > 0 || f.spots.length > 0 || f.favorites || f.withNotes || f.manual;
+  return f.cards.length > 0 || f.preflop.length > 0 || f.spots.length > 0 || f.flop.length > 0 || f.favorites || f.withNotes || f.manual;
 }
 const overridesDefaults = isTargeted;
 
@@ -137,6 +140,16 @@ export const FILTERS = [
     },
     write: (v) => (v.length ? v.join(",") : null),
     apply: (q, v) => (v.length ? q.in("preflop_spot", v.flatMap((g) => SPOT_GROUP_KINDS[g])) : q),
+  }),
+  def({
+    key: "flop",
+    param: "flop",
+    read: (raw) => {
+      const wanted = new Set((raw ?? "").split(","));
+      return FLOP_VERDICTS.filter((v) => wanted.has(v));
+    },
+    write: (v) => (v.length ? v.join(",") : null),
+    apply: (q, v) => (v.length ? q.in("flop_check", v) : q),
   }),
   def({
     key: "heroInvolved",

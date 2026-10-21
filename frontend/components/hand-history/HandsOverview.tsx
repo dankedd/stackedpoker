@@ -12,6 +12,7 @@ import {
   listHands,
   listTournaments,
   preflopSummary,
+  flopSummary,
   refreshPreflopChecks,
   setFavorite,
   type PreflopSummaryRow,
@@ -35,6 +36,9 @@ import { ManualBadge } from "./manual/ManualNotes";
 import { FiltersBar } from "./HandFilterBar";
 import { MiniCards } from "./MiniCards";
 import { PreflopBadge } from "./PreflopBadge";
+import { FlopBadge } from "./FlopBadge";
+import { useAuth } from "@/contexts/AuthContext";
+import { refreshFlopChecks } from "@/lib/handHistory/flopCheckApi";
 import { PreflopSummary } from "./PreflopSummary";
 import { PageHeader, SectionNav } from "./SectionNav";
 
@@ -54,6 +58,9 @@ export function HandsOverview() {
   const [favCount, setFavCount] = useState<number | null>(null);
   const [pendingFav, setPendingFav] = useState<ReadonlySet<string>>(new Set());
   const [summary, setSummary] = useState<PreflopSummaryRow[]>([]);
+  const [flopStats, setFlopStats] = useState<{ analysed: number; questionable: number } | null>(null);
+  const { session } = useAuth();
+  const token = session?.access_token ?? null;
   const [rechecking, setRechecking] = useState<number | null>(null);
   // Bumped after a preflop re-check so the list reloads with the new labels.
   const [reloadKey, setReloadKey] = useState(0);
@@ -125,12 +132,27 @@ export function HandsOverview() {
           setRechecking(null);
           setError(e instanceof Error ? e.message : t.overview.recheckFailed);
         }
+        return;
+      }
+      // Then the flop decision check (needs the signed-in token for Hero's hand position).
+      if (!token) return;
+      try {
+        const changed = await refreshFlopChecks(supabase, token, (n) => !cancelled && setRechecking(n));
+        if (cancelled) return;
+        setRechecking(null);
+        if (changed) setReloadKey((k) => k + 1);
+        setFlopStats(await flopSummary(supabase));
+      } catch (e) {
+        if (!cancelled) {
+          setRechecking(null);
+          setError(e instanceof Error ? e.message : t.overview.recheckFailed);
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [supabase]);
+  }, [supabase, token]);
 
   useEffect(() => {
     let cancelled = false;
@@ -184,7 +206,7 @@ export function HandsOverview() {
           <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t.overview.rechecking(rechecking)}
         </p>
       )}
-      <PreflopSummary rows={summary} onPick={(preflop) => update({ filters: { preflop } })} onPickSpot={(spots) => update({ filters: { spots } })} />
+      <PreflopSummary rows={summary} onPick={(preflop) => update({ filters: { preflop } })} onPickSpot={(spots) => update({ filters: { spots } })} flop={flopStats} onPickFlop={() => update({ filters: { flop: ["questionable"] } })} />
 
       <FiltersBar
         state={state}
@@ -327,6 +349,7 @@ export function HandList({
                 <td className="px-4 py-2.5">
                   <span className="font-semibold text-violet-300">{r.hero_position ?? "—"}</span>
                   <PreflopBadge verdict={r.preflop_check} className="ml-1.5" />
+                  <FlopBadge verdict={r.flop_check ?? null} className="ml-1.5" />
                 </td>
                 <td className="px-4 py-2.5">
                   <MiniCards cards={r.hero_cards} />
@@ -376,6 +399,7 @@ export function HandList({
                 <MiniCards cards={r.hero_cards} />
                 <MiniCards cards={r.board} className="ml-1" />
                 <PreflopBadge verdict={r.preflop_check} />
+                <FlopBadge verdict={r.flop_check ?? null} />
                 {r.has_note && <NotebookPen aria-label={t.list.hasNote} className="ml-auto h-4 w-4 text-amber-300" />}
               </div>
             </Link>

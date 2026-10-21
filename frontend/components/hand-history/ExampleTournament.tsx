@@ -17,8 +17,7 @@ import { FavoriteStar } from "./FavoriteStar";
 import { MiniCards } from "./MiniCards";
 import { PreflopBadge } from "./PreflopBadge";
 import { PreflopCheckPanel } from "./PreflopCheckPanel";
-import { FlopSpotPanel } from "@/components/flop-trainer/FlopSpotPanel";
-import { matchFlopSpot } from "@/lib/flopTrainer/match";
+import { FlopSpotPanel, useFlopAnalysis } from "@/components/flop-trainer/FlopSpotPanel";
 import { PageHeader, SectionNav } from "./SectionNav";
 
 /**
@@ -39,6 +38,7 @@ export function ExampleTournament() {
   const [stars, setStars] = useState<Set<string>>(() => new Set());
   const [notes, setNotes] = useState<Record<string, string>>({});
   const selected = hands.find((h) => h.id === selectedId) ?? shown[0];
+  const selectedFlop = useFlopAnalysis(selected.hand);
 
   const toggleStar = (id: string) =>
     setStars((s) => {
@@ -146,7 +146,7 @@ export function ExampleTournament() {
             </p>
           )}
           {/* Tournament view: the compact flop panel for heads-up pots that match a trainer spot. */}
-          <FlopSpotPanel match={matchFlopSpot(selected.hand)} showHero={false} />
+          <FlopSpotPanel analysis={selectedFlop} showHero={false} />
         </div>
 
         <section

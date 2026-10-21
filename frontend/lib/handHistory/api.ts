@@ -209,6 +209,18 @@ export interface PreflopSummaryRow {
   n: number;
 }
 
+/** Flop decision check at a glance: graded hands and questionable ones. */
+export async function flopSummary(supabase: SupabaseClient): Promise<{ analysed: number; questionable: number }> {
+  const head = { count: "exact" as const, head: true };
+  const [a, q] = await Promise.all([
+    supabase.from("hh_hands").select("id", head).in("flop_check", ["good", "ok", "questionable"]),
+    supabase.from("hh_hands").select("id", head).eq("flop_check", "questionable"),
+  ]);
+  if (a.error) throw new Error(dbErrorMessage(a.error));
+  if (q.error) throw new Error(dbErrorMessage(q.error));
+  return { analysed: a.count ?? 0, questionable: q.count ?? 0 };
+}
+
 export async function preflopSummary(supabase: SupabaseClient): Promise<PreflopSummaryRow[]> {
   const { data, error } = await supabase.rpc("hh_preflop_summary");
   if (error) throw new Error(dbErrorMessage(error));

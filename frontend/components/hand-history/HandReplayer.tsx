@@ -26,8 +26,8 @@ import { buildTimeline, describeStep, nextStreetIndex, prevStreetIndex } from "@
 import type { Street } from "@/lib/handHistory/types";
 import { cn } from "@/lib/utils";
 import { checkPreflop } from "@/lib/handHistory/preflop";
-import { matchFlopSpot } from "@/lib/flopTrainer/match";
-import { FlopSpotPanel } from "@/components/flop-trainer/FlopSpotPanel";
+import { FlopSpotPanel, useFlopAnalysis } from "@/components/flop-trainer/FlopSpotPanel";
+import { FlopBadge } from "./FlopBadge";
 import { EquityPanel } from "./EquityPanel";
 import { HandCoachPanel } from "./HandCoachPanel";
 import { FavoriteStar } from "./FavoriteStar";
@@ -126,8 +126,9 @@ export function HandReplayer({ id }: { id: string }) {
     () => steps.findIndex((s) => s.kind === "action" && s.street === "preflop" && s.player === hand?.heroName),
     [steps, hand],
   );
-  // Heads-up single-raised pots that match a Flop Trainer spot (book ranges, ~40bb).
-  const flopSpot = useMemo(() => (hand ? matchFlopSpot(hand) : null), [hand]);
+  // Flop analysis: matched book spot, precomputed flop data, Hero's hand and the flop decision check.
+  const flopAnalysis = useFlopAnalysis(hand);
+  const flopEvent = flopAnalysis?.check?.line.eventIndex != null && hand ? hand.events[flopAnalysis.check.line.eventIndex] : null;
   const last = Math.max(0, steps.length - 1);
   const step = steps[Math.min(index, last)];
   const fmt = useMemo(() => amountFormatter(unit, hand?.bigBlind ?? 1), [unit, hand]);
@@ -244,6 +245,7 @@ export function HandReplayer({ id }: { id: string }) {
             </span>
             <span className="text-sm font-medium">{describeStep(step, fmt)}</span>
             {preflop && index === preflopStep && <PreflopBadge verdict={preflop.verdict} showAll />}
+            {flopEvent && step.events[0] === flopEvent && <FlopBadge verdict={flopAnalysis!.check!.verdict} showAll />}
             <span className="ml-auto shrink-0 font-mono text-xs text-muted-foreground">
               {index}/{last}
             </span>
@@ -275,7 +277,7 @@ export function HandReplayer({ id }: { id: string }) {
           <EquityPanel key={row.id} hand={hand} step={step} fmt={fmt} handRef={row.id} onEquity={onEquity} />
           <ManualAnalysisNotes hand={hand} fmt={fmt} />
           {/* Shown once the flop is dealt in the replay, so it never gives the board away. */}
-          {step.street !== "preflop" && <FlopSpotPanel match={flopSpot} active={step.street === "flop"} />}
+          <FlopSpotPanel analysis={flopAnalysis} active={step.street === "flop"} hidden={step.street === "preflop"} />
         </div>
 
         <aside className="space-y-4">
