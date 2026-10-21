@@ -107,6 +107,7 @@ const en = {
     playedOff: "All hands, incl. folds",
     preflop: "Preflop",
     preflopTitle: "Preflop check",
+    spotTitle: "Spot type",
     favorites: "Favorites",
     notes: "Notes",
     tournament: "Tournament",
@@ -160,7 +161,7 @@ const en = {
     mattersSub: (shown: number, total: number, minPot: number) =>
       `${shown} of ${total} hands: the ones you played with a pot of at least ${minPot} bb. Folded hands and small pots are hidden.`,
     leaksTitle: "Preflop leaks",
-    leaksSub: "First-in decisions checked against the trainer's ranges.",
+    leaksSub: "Preflop decisions — first in and facing a raise, limp or shove — checked against the trainer's charts.",
     studyTitle: "Star and note",
     studyStar: "Star this hand to find it again",
     studyNotePlaceholder: "Your note for this hand (example only, not saved)",
@@ -382,7 +383,7 @@ const en = {
   preflop: {
     title: "Preflop check",
     spotKind: "raise first in",
-    summarySubtitle: "raise first in, using the trainer's ranges",
+    summarySubtitle: "every preflop decision the trainer has a chart for",
     spotsChecked: (n: number) => `${n} ${plural(n, "spot", "spots")} checked`,
     notEvaluatedCount: (n: number) => ` · ${n} not evaluated`,
     correct: "correct",
@@ -401,12 +402,66 @@ const en = {
     bucket: (bb: number) => ` → bucket ${bb} BB`,
     mapped: (table: string, behind: number, pos: string) =>
       ` · ${table} with ${behind} ${plural(behind, "player", "players")} behind you plays the 9-max ${pos} range`,
+    mappedVillain: (table: string, pos: string) => ` · villain's ${table} plays the 9-max ${pos} range`,
     pushFoldNote: (hand: string, bb: number) => `Each number is the biggest stack (in BB) at which the hand still goes all-in. ${hand}: ${bb} BB.`,
     reason: {
       no_position: (behind: number) => `no range for a spot with ${behind} ${plural(behind, "player", "players")} behind you.`,
       too_deep: (bb: number) => `effective stack of ${bb} BB is deeper than the trainer's ranges (max. 60 BB).`,
+      too_short: (bb: number) => `effective stack of ${bb} BB is shorter than the trainer's defense charts (min. 15 BB).`,
       no_chart: (pos: string) => `the trainer has no range for ${pos}.`,
+      no_defense_chart: (spot: string, hero: string, vil: string) => `no matching chart: the trainer has no “${spot}” chart for ${hero} vs ${vil}.`,
+      unmatched: {
+        squeeze: "no matching chart: an open plus a caller before you (a squeeze spot) — the trainer only has charts against a single raise.",
+        cold_4bet: "no matching chart: you faced a raise and a re-raise before acting (a cold 4-bet spot).",
+        multi_limp: "no matching chart: more than one player limped before you.",
+        limp_then_raise: "no matching chart: a limp and then a raise before you.",
+        multi_allin: "no matching chart: more than one player was all-in before you.",
+      } as Record<string, string>,
+      not_in_range: "this hand doesn't reach this spot in the trainer's range (the chart has no entry for it), so there is nothing to grade.",
     },
+
+    // Spot names: overview chips/summary and the panel heading.
+    kind: {
+      rfi: "Open",
+      vs_open: "Facing open",
+      vs_push: "Facing shove",
+      vs_limp: "Facing limp",
+      vs_4bet: "Facing 4-bet",
+      vs_limp_raise: "Facing limp-raise",
+      other: "Other",
+    } as Record<string, string>,
+    group: { open: "Open", vs_open: "Facing open", vs_push: "Facing shove", vs_limp: "Facing limp", vs_4bet: "Facing 4-bet" } as Record<string, string>,
+    /** Short group names for the summary line ("Opens 82% · Defense 61%"). */
+    groupShort: { open: "Opens", vs_open: "vs open", vs_push: "vs shove", vs_limp: "vs limp", vs_4bet: "vs 4-bet" } as Record<string, string>,
+    defense: "Defense",
+    byType: "By spot type",
+    title_rfi: (hero: string, bb: string) => `Raise first in · ${bb}bb · ${hero}`,
+    title_vs_open: (vil: string, size: string, bb: string, hero: string) => `Facing a ${vil} open (${size}bb) · ${bb}bb · ${hero}`,
+    title_vs_push: (vil: string, bb: string, hero: string) => `Facing a ${vil} shove · ${bb}bb · ${hero}`,
+    title_vs_limp: (vil: string, bb: string, hero: string) => `Facing a ${vil} limp · ${bb}bb · ${hero}`,
+    title_vs_4bet: (vil: string, bb: string, hero: string) => `Facing a 4-bet from ${vil} · ${bb}bb · ${hero}`,
+    title_vs_limp_raise: (vil: string, bb: string, hero: string) => `Facing a limp-raise from ${vil} · ${bb}bb · ${hero}`,
+    title_other: (hero: string) => `Facing more than one opponent · ${hero}`,
+    /** Defense chart sentence. */
+    chartSays: (hero: string, spot: string, bucket: number, hand: string, action: string) => `Chart: ${hero} ${spot}, ${bucket} BB, ${hand} → ${action}.`,
+    withHand: (hand: string, mix: string) => `With ${hand} here: ${mix}.`,
+    youDid: (did: string, verdict: string) => `You ${did} → ${verdict}.`,
+    did: { fold: "folded", call: "called", check: "checked", allin: "went all-in", limp: "limped" } as Record<string, string>,
+    gradedAs: (as: string) => ` (graded as ${as}: this chart has only one size of raise)`,
+    /** One line per verdict — what the frequencies say, in plain words. */
+    explain: {
+      correct: (action: string) => `${action} is what the chart does with this hand here most of the time.`,
+      mixed: (action: string, best: string) =>
+        `The chart picks ${action.toLowerCase()} with this hand only part of the time (10–50%). Not a mistake — its main play is ${best.toLowerCase()}.`,
+      too_loose: () => "The chart folds this hand here: continuing puts chips in with a hand the range gives up.",
+      too_tight: (best: string) => `The chart (almost) never folds this hand here (under 10%); its main play is ${best.toLowerCase()}.`,
+      wrong_action: (action: string, best: string) => `The chart plays this hand, but as ${best.toLowerCase()} — ${action.toLowerCase()} is (almost) never its choice here.`,
+    },
+    also: (kind: string, verdict: string) => `Your other decision in this hand (${kind}): ${verdict}.`,
+    alsoKind: { rfi: "the open", vs_open: "vs the open", vs_limp: "vs the limp", vs_4bet: "vs the 4-bet", vs_limp_raise: "vs the limp-raise", vs_push: "vs the shove", other: "other" } as Record<string, string>,
+    trainSpot: "Train this spot",
+    trainSpotHint: "Opens the Preflop Trainer on defense spots (it can't start on one exact chart yet).",
+    openChart: "Open this chart",
   },
 
   // ── Equity and pot odds ───────────────────────────────────────────────────
@@ -567,7 +622,7 @@ const en = {
       unknown: "Unknown error.",
       notSetUp: "The database isn't set up for hand history yet (supabase_hand_history.sql hasn't been run).",
       missingUpdate:
-        "The database is missing a hand history update (run supabase_hand_history_involved.sql, supabase_hand_history_preflop.sql, supabase_hand_history_favorites.sql, supabase_hand_history_english.sql, supabase_hand_history_coach.sql and supabase_hand_history_cards.sql).",
+        "The database is missing a hand history update (run supabase_hand_history_involved.sql, supabase_hand_history_preflop.sql, supabase_hand_history_favorites.sql, supabase_hand_history_english.sql, supabase_hand_history_coach.sql, supabase_hand_history_cards.sql and supabase_hand_history_preflop_defense.sql).",
       noPermission: "Permission denied. Sign in again and retry.",
       offline: "Can't reach the server. Check your connection and try again.",
       generic: (msg: string) => `Database error: ${msg}`,

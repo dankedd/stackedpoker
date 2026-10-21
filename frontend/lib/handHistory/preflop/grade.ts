@@ -11,11 +11,11 @@
 
 import { gradeFrequencies } from "@/lib/ranges/logic";
 import type { RangeActionKey } from "@/lib/ranges/types";
-import type { HeroPreflopAction, PreflopVerdict } from "./types";
+import type { PreflopVerdict } from "./types";
 
 export function gradeAction(
   freqs: Partial<Record<RangeActionKey, number>>,
-  action: HeroPreflopAction,
+  action: RangeActionKey,
 ): { verdict: PreflopVerdict; expected: RangeActionKey } {
   const g = gradeFrequencies(freqs, action);
   // On a tie for the most frequent action, Hero's own pick is the one to show.

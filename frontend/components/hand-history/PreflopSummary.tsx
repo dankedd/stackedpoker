@@ -1,30 +1,47 @@
 "use client";
 
 import type { PreflopSummaryRow } from "@/lib/handHistory/api";
-import { PREFLOP_ERRORS, VERDICT_LABEL, type PreflopVerdict } from "@/lib/handHistory/preflop";
+import { PREFLOP_ERRORS, SPOT_GROUPS, VERDICT_LABEL, spotGroup, type PreflopSpotKind, type PreflopVerdict, type SpotGroup } from "@/lib/handHistory/preflop";
 import { t } from "@/lib/handHistory/strings";
 import { displayPos } from "@/lib/ranges/logic";
 import { cn } from "@/lib/utils";
 import { VERDICT_STYLE } from "./PreflopBadge";
 
-const POSITION_ORDER = ["UTG", "UTG+1", "UTG+2", "LJ", "HJ", "CO", "BN", "SB"];
+const POSITION_ORDER = ["UTG", "UTG+1", "UTG+2", "LJ", "HJ", "CO", "BN", "SB", "BB"];
 
 /**
- * Preflop check at a glance: spots checked, % correct, errors per type and
- * per position. Positions are the trainer's 9-max chart positions.
+ * Preflop check at a glance: spots checked, % correct, errors per type,
+ * correct % per spot type (opens vs the defense spots — where the leak is)
+ * and per position. Positions are the trainer's 9-max chart positions.
  */
 export function PreflopSummary({
   rows,
   onPick,
+  onPickSpot,
 }: {
   rows: PreflopSummaryRow[];
   onPick: (verdicts: PreflopVerdict[]) => void;
+  onPickSpot?: (groups: SpotGroup[]) => void;
 }) {
   const by = (v: PreflopVerdict) => rows.filter((r) => r.preflop_check === v).reduce((a, r) => a + r.n, 0);
   const graded = rows.filter((r) => r.preflop_check !== "not_evaluated").reduce((a, r) => a + r.n, 0);
   if (!graded && !by("not_evaluated")) return null;
   const correct = by("correct");
   const errors = PREFLOP_ERRORS.reduce((a, v) => a + by(v), 0);
+
+  // Per spot type — only once the database reports the spot kind (preflop_defense migration).
+  const hasSpots = rows.some((r) => r.preflop_spot);
+  const byGroup = (g: SpotGroup | "defense") => {
+    const mine = rows.filter((r) => {
+      const grp = spotGroup(r.preflop_spot as PreflopSpotKind | null);
+      return r.preflop_check !== "not_evaluated" && (g === "defense" ? grp !== null && grp !== "open" : grp === g);
+    });
+    const total = mine.reduce((a, r) => a + r.n, 0);
+    const ok = mine.filter((r) => r.preflop_check === "correct").reduce((a, r) => a + r.n, 0);
+    return { total, pct: total ? Math.round((ok / total) * 100) : null };
+  };
+  const groups = hasSpots ? SPOT_GROUPS.map((g) => ({ g, ...byGroup(g) })).filter((x) => x.total > 0) : [];
+  const defense = hasSpots ? byGroup("defense") : null;
 
   const positions = POSITION_ORDER.map((pos) => {
     const mine = rows.filter((r) => r.preflop_position === pos);
@@ -75,6 +92,39 @@ export function PreflopSummary({
           </button>
         )}
       </div>
+
+      {groups.length > 0 && (
+        <div className="mt-4" data-tour="preflop-by-spot">
+          <p className="text-sm">
+            <span className="font-semibold">{t.preflop.groupShort.open}</span>{" "}
+            <span className="font-mono">{byGroup("open").pct ?? "–"}%</span>
+            {defense && defense.total > 0 && (
+              <>
+                <span className="text-muted-foreground"> · </span>
+                <span className="font-semibold">{t.preflop.defense}</span> <span className="font-mono">{defense.pct}%</span>
+              </>
+            )}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label={t.preflop.byType}>
+            {groups.map(({ g, total, pct }) => (
+              <button
+                key={g}
+                type="button"
+                data-spot-summary={g}
+                onClick={() => onPickSpot?.([g])}
+                disabled={!onPickSpot}
+                title={t.preflop.showHands(t.preflop.group[g])}
+                className="rounded-xl border border-border/60 px-3 py-1.5 text-left transition hover:border-violet-500/50 hover:bg-violet-500/10 disabled:cursor-default"
+              >
+                <span className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{t.preflop.group[g]}</span>
+                <span className="block font-mono text-sm font-bold leading-tight">
+                  {pct}% <span className="text-[11px] font-normal text-muted-foreground">· {total}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {positions.length > 0 && (
         <div className="mt-4 overflow-x-auto">

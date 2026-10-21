@@ -38,7 +38,7 @@ describe("hand filters", () => {
   it("round-trips through the query string and keeps defaults out of it", () => {
     expect(writeQueryState(DEFAULT_STATE)).toBe("");
     const s = readQueryState(new URLSearchParams("alle=1&minPot=35&t=316999261&notes=1&sort=invested&dir=asc&page=3"));
-    expect(s.filters).toEqual({ cards: [], favorites: false, preflop: [], heroInvolved: false, minPotBb: 35, tournamentId: "316999261", withNotes: true, manual: false });
+    expect(s.filters).toEqual({ cards: [], favorites: false, preflop: [], spots: [], heroInvolved: false, minPotBb: 35, tournamentId: "316999261", withNotes: true, manual: false });
     expect(s.sort).toBe("invested");
     expect(readQueryState(new URLSearchParams(writeQueryState(s).slice(1)))).toEqual(s);
     expect(writeQueryState(s, false)).not.toContain("page");
@@ -52,6 +52,17 @@ describe("hand filters", () => {
     expect(applyFilters(new FakeQuery(), s.filters).calls).toEqual(["eq source manual"]);
     expect(writeQueryState(s)).toBe("?manual=1");
     expect(readQueryState(new URLSearchParams("")).filters.manual).toBe(false);
+  });
+
+  it("spot type: a targeted filter on preflop_spot, combined with the verdict filter", () => {
+    const s = readQueryState(new URLSearchParams("spot=vs_limp,bogus,open&pf=too_tight"));
+    expect(s.filters.spots).toEqual(["open", "vs_limp"]);
+    // "Facing limp" covers the limp and the limp-raise spot.
+    expect(applyFilters(new FakeQuery(), s.filters).calls).toEqual([
+      "in preflop_check too_tight",
+      "in preflop_spot rfi|vs_limp|vs_limp_raise",
+    ]);
+    expect(writeQueryState(s)).toBe("?pf=too_tight&spot=open%2Cvs_limp");
   });
 
   it("the preflop filter goes before 'involved' and the minimum pot", () => {

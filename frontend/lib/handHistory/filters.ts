@@ -8,7 +8,7 @@
  */
 
 import { cardFilter, parseCardQuery, termText } from "./cardSearch";
-import { PREFLOP_VERDICTS, type PreflopVerdict } from "./preflop/types";
+import { PREFLOP_VERDICTS, SPOT_GROUPS, SPOT_GROUP_KINDS, type PreflopVerdict, type SpotGroup } from "./preflop/types";
 import { t } from "./strings";
 
 export const DEFAULT_MIN_POT_BB = 20;
@@ -36,6 +36,12 @@ export interface HandFilters {
    * involved and minimum-pot filters, so folded hands ("te strak") show up.
    */
   preflop: PreflopVerdict[];
+  /**
+   * Preflop spot types (open, facing open/shove/limp/4-bet) — the kind of the
+   * checked decision, stored as hh_hands.preflop_spot. Targeted like `preflop`;
+   * the two combine (AND).
+   */
+  spots: SpotGroup[];
   /** Only hands where Hero called, bet, raised or showed down (derive.ts). */
   heroInvolved: boolean;
   minPotBb: number;
@@ -56,7 +62,7 @@ export interface HandQueryState {
 }
 
 export const DEFAULT_STATE: HandQueryState = {
-  filters: { cards: [], favorites: false, preflop: [], heroInvolved: true, minPotBb: DEFAULT_MIN_POT_BB, tournamentId: null, withNotes: false, manual: false },
+  filters: { cards: [], favorites: false, preflop: [], spots: [], heroInvolved: true, minPotBb: DEFAULT_MIN_POT_BB, tournamentId: null, withNotes: false, manual: false },
   sort: "pot",
   dir: "desc",
   page: 1,
@@ -86,7 +92,7 @@ interface FilterDef<K extends keyof HandFilters> {
 
 /** Any targeted filter active? Then the default filters step aside. */
 export function isTargeted(f: HandFilters): boolean {
-  return f.cards.length > 0 || f.preflop.length > 0 || f.favorites || f.withNotes || f.manual;
+  return f.cards.length > 0 || f.preflop.length > 0 || f.spots.length > 0 || f.favorites || f.withNotes || f.manual;
 }
 const overridesDefaults = isTargeted;
 
@@ -121,6 +127,16 @@ export const FILTERS = [
     },
     write: (v) => (v.length ? v.join(",") : null),
     apply: (q, v) => (v.length ? q.in("preflop_check", v) : q),
+  }),
+  def({
+    key: "spots",
+    param: "spot",
+    read: (raw) => {
+      const wanted = new Set((raw ?? "").split(","));
+      return SPOT_GROUPS.filter((g) => wanted.has(g));
+    },
+    write: (v) => (v.length ? v.join(",") : null),
+    apply: (q, v) => (v.length ? q.in("preflop_spot", v.flatMap((g) => SPOT_GROUP_KINDS[g])) : q),
   }),
   def({
     key: "heroInvolved",

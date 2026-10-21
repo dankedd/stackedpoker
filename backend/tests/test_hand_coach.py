@@ -118,3 +118,32 @@ def test_no_token_is_401():
     app.include_router(hand_coach.router, prefix="/api")
     r = TestClient(app).post("/api/hand-coach/message", json={"hand_id": HAND, "message": "hi"})
     assert r.status_code == 401
+
+
+# ── Defense spots (made-up example hands; rows written by preflopDefense.test.ts) ──
+
+EXAMPLE_ROWS = Path(__file__).resolve().parent / "data" / "example_defense_rows.json"
+
+
+def _example(hand_id: str) -> dict:
+    return json.loads(EXAMPLE_ROWS.read_text(encoding="utf8"))[hand_id]
+
+
+def test_vs_open_context_names_the_defense_chart_and_the_frequencies():
+    ctx = build_hand_context(_example("TM9900000007"), [], None)
+    assert "OUR PREFLOP CHECK (facing an open" in ctx
+    assert "Verdict: too tight" in ctx
+    assert "faces" in ctx and "(9-max chart position BB)" in ctx and "opened to 2 BB" in ctx
+    assert "BB vs BN vs-open chart at 25 BB" in ctx
+    assert "Chart frequencies for this hand: call 100.0%" in ctx
+    assert "Range says: call" in ctx and "Hero: fold" in ctx
+    assert not re.search(r"\bp\.\s*\d", ctx)  # no page numbers in the coach context
+    assert "4d6e2c03" not in ctx  # villain stays anonymised
+
+
+def test_vs_push_context():
+    ctx = build_hand_context(_example("TM9900000008"), [], None)
+    assert "OUR PREFLOP CHECK (facing an all-in" in ctx
+    assert "Verdict: correct" in ctx
+    assert "who went all-in" in ctx
+    assert "BB vs SB vs-shove chart at 25 BB" in ctx

@@ -27,6 +27,22 @@ _VERDICT_TEXT = {
     "not_evaluated": "not evaluated (no matching range)",
 }
 _ACTION_WORD = {"raise": "open-raise", "allin": "all-in", "limp": "limp", "fold": "fold", "call": "call"}
+# Facing a bet, the chart's "raise" is named after the spot; "call" behind a limp is the BB's check.
+_RAISE_WORD = {"vs_open": "3-bet", "vs_push": "raise", "vs_limp": "raise (iso-raise)", "vs_4bet": "5-bet", "vs_limp_raise": "4-bet"}
+
+
+def _defense_words(kind: str) -> dict[str, str]:
+    return {"raise": _RAISE_WORD.get(kind, "raise"), "allin": "all-in", "fold": "fold", "call": "check" if kind == "vs_limp" else "call"}
+_SPOT_TITLE = {
+    "rfi": "raise first in",
+    "vs_open": "facing an open",
+    "vs_push": "facing an all-in",
+    "vs_limp": "facing a limp",
+    "vs_4bet": "facing a 4-bet after Hero's 3-bet",
+    "vs_limp_raise": "facing a limp-raise after Hero raised the limp",
+    "other": "facing more than one opponent",
+}
+_CHART_SPOT_WORD = {"open": "vs-open", "push": "vs-shove", "limp": "vs-limp", "4bet": "vs-4-bet", "lr": "vs-limp-raise"}
 
 
 def _bb(chips: float, bb: float) -> str:
@@ -201,24 +217,61 @@ def build_hand_context(
     verdict = row.get("preflop_check")
     if verdict and isinstance(detail, dict):
         spot = detail.get("spot") or {}
+        kind = spot.get("kind") or "rfi"
         rng = detail.get("range")
-        out.append("OUR PREFLOP CHECK (raise first in, against the user's preflop trainer ranges — the user's own range)")
+        defense = kind != "rfi"
+        title = _SPOT_TITLE.get(kind, "preflop decision")
+        out.append(f"OUR PREFLOP CHECK ({title}, against the user's preflop trainer charts — the user's own range)")
         out.append(f"- Verdict: {_VERDICT_TEXT.get(verdict, verdict)}")
-        out.append(
-            f"- Spot: Hero {spot.get('tablePosition')} with {spot.get('playersBehind')} players behind, "
-            f"effective stack {spot.get('effStackBb', 0):.1f} BB, hand {spot.get('hand')}"
-        )
+        if defense:
+            vil = spot.get("villain") or {}
+            vil_label = labels.get(vil.get("name", ""), "Villain")
+            size = vil.get("sizeBb")
+            what = {
+                "vs_open": f"opened to {size:g} BB" if isinstance(size, (int, float)) else "opened",
+                "vs_push": "went all-in",
+                "vs_limp": "limped",
+                "vs_4bet": "4-bet" + (" all-in" if vil.get("allIn") else (f" to {size:g} BB" if isinstance(size, (int, float)) else "")),
+                "vs_limp_raise": "limped, then re-raised Hero's raise" + (" all-in" if vil.get("allIn") else ""),
+            }.get(kind, "acted")
+            out.append(
+                f"- Spot: Hero {spot.get('tablePosition')} (9-max chart position {spot.get('position')}) faces "
+                f"{vil_label} (chart position {vil.get('position')}), who {what}; "
+                f"effective stack {spot.get('effStackBb', 0):.1f} BB, hand {spot.get('hand')}"
+            )
+            if kind == "other":
+                out.append("- More than one opponent acted before Hero (or a re-raise): the trainer has no chart for this spot.")
+        else:
+            out.append(
+                f"- Spot: Hero {spot.get('tablePosition')} with {spot.get('playersBehind')} players behind, "
+                f"effective stack {spot.get('effStackBb', 0):.1f} BB, hand {spot.get('hand')}"
+            )
         if rng:
-            kind = "push/fold chart" if rng.get("kind") == "pushfold" else "open-raise chart"
-            out.append(f"- Range used: {rng.get('position')} {kind} at {rng.get('bucket')} BB (9-max chart; the table seat maps to it by players behind)")
+            if rng.get("kind") == "defense":
+                out.append(
+                    f"- Range used: the {rng.get('position')} vs {rng.get('vil')} {_CHART_SPOT_WORD.get(rng.get('spot'), 'defense')} chart "
+                    f"at {rng.get('bucket')} BB (9-max chart; seats map to it by players behind)"
+                )
+            else:
+                kind_word = "push/fold chart" if rng.get("kind") == "pushfold" else "open-raise chart"
+                out.append(f"- Range used: {rng.get('position')} {kind_word} at {rng.get('bucket')} BB (9-max chart; the table seat maps to it by players behind)")
         expected = detail.get("expected")
-        hero_action = _ACTION_WORD.get(spot.get("action"), spot.get("action"))
+        words = _defense_words(kind) if defense else _ACTION_WORD
+        hero_action = words.get(spot.get("action"), spot.get("action"))
         size = f" to {spot['sizeBb']:.1f} BB" if spot.get("sizeBb") and spot.get("action") == "raise" else ""
-        out.append(f"- Range says: {_ACTION_WORD.get(expected, expected) if expected else 'n/a'}. Hero: {hero_action}{size}.")
+        out.append(f"- Range says: {words.get(expected, expected) if expected else 'n/a'}. Hero: {hero_action}{size}.")
+        if detail.get("graded"):
+            out.append(f"- Hero's action was graded as {words.get(detail['graded'], detail['graded'])}: this chart has only one size of raise.")
         freqs = detail.get("freqs") or {}
         played = {k: v for k, v in freqs.items() if v and v > 0}
         if played:
-            out.append("- Frequencies for this hand: " + ", ".join(f"{_ACTION_WORD.get(k, k)} {_pct(v)}" for k, v in sorted(played.items(), key=lambda kv: -kv[1])))
+            out.append("- Chart frequencies for this hand: " + ", ".join(f"{words.get(k, k)} {_pct(v)}" for k, v in sorted(played.items(), key=lambda kv: -kv[1])))
+        also = detail.get("also")
+        if isinstance(also, dict):
+            out.append(
+                f"- Hero's other graded decision in this hand ({_SPOT_TITLE.get(also.get('kind'), also.get('kind'))}): "
+                f"{_VERDICT_TEXT.get(also.get('verdict'), also.get('verdict'))}"
+            )
         if detail.get("reason"):
             out.append(f"- Not evaluated because: {_reason_text(detail['reason'])}")
 
@@ -286,6 +339,21 @@ def _reason_text(reason: Any) -> str:
         return f"no chart for a seat with {reason.get('playersBehind')} players behind"
     if code == "no_chart":
         return f"the trainer has no chart for {reason.get('position')}"
+    if code == "too_short":
+        return f"effective stack {reason.get('effStackBb')} BB is shorter than the trainer's defense charts (min 15 BB)"
+    if code == "no_defense_chart":
+        return f"no matching chart: the trainer has no chart for {reason.get('hero')} vs {reason.get('vil')} in this spot"
+    if code == "unmatched":
+        why = {
+            "squeeze": "an open plus a caller before Hero (squeeze)",
+            "cold_4bet": "a raise and a re-raise before Hero (cold 4-bet)",
+            "multi_limp": "more than one limper",
+            "limp_then_raise": "a limp and then a raise",
+            "multi_allin": "more than one all-in before Hero",
+        }.get(reason.get("why"), "several opponents")
+        return f"no matching chart: {why}"
+    if code == "not_in_range":
+        return "this hand does not reach this spot in the trainer's range (no chart entry)"
     return str(code)
 
 

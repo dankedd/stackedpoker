@@ -6,7 +6,7 @@ describe("Example tournament", () => {
   const hands = exampleHands();
 
   it("every hand parses as one tournament", () => {
-    expect(hands).toHaveLength(6);
+    expect(hands).toHaveLength(8);
     for (const h of hands) {
       expect(h.hand.tournamentName).toBe(EXAMPLE_TOURNAMENT_NAME);
       expect(h.hand.heroName).toBe("Hero");
@@ -25,9 +25,9 @@ describe("Example tournament", () => {
     }
   });
 
-  it("the default filters show the three hands that matter", () => {
+  it("the default filters show the four hands that matter", () => {
     const shown = hands.filter((h) => h.matters).map((h) => h.hand.heroCards?.join(" "));
-    expect(shown).toEqual(["Td Th", "9s 4d", "Ac Kd"]);
+    expect(shown).toEqual(["Ah 8d", "Td Th", "9s 4d", "Ac Kd"]);
   });
 
   it("the real preflop check flags one too-loose and one too-tight hand", () => {
@@ -36,5 +36,11 @@ describe("Example tournament", () => {
     expect(verdict("Ah Qh")).toBe("too_tight");
     expect(verdict("Ac Kd")).toBe("correct");
     expect(verdict("7c 2d")).toBe("correct");
+  });
+
+  it("the defense check: K9o folded to a button open is too tight, A8o calling the SB's shove is correct", () => {
+    const check = (cards: string) => hands.find((h) => h.hand.heroCards?.join(" ") === cards)?.check;
+    expect(check("Kd 9c")).toMatchObject({ verdict: "too_tight", detail: { spot: { kind: "vs_open" } } });
+    expect(check("Ah 8d")).toMatchObject({ verdict: "correct", detail: { spot: { kind: "vs_push" } } });
   });
 });

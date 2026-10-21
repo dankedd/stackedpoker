@@ -1,0 +1,640 @@
+{
+  "TM9900000007": {
+    "data": {
+      "site": "ggpoker",
+      "handId": "TM9900000007",
+      "tournamentId": "900000001",
+      "tournamentName": "Example Tournament $10",
+      "game": "Hold'em No Limit",
+      "level": 10,
+      "smallBlind": 500,
+      "bigBlind": 1000,
+      "ante": 125,
+      "playedAt": "2026-10-08T19:25:37",
+      "tableName": "7",
+      "maxSeats": 8,
+      "buttonSeat": 8,
+      "players": [
+        {
+          "seat": 1,
+          "name": "d41c09a7",
+          "stack": 25000,
+          "isHero": false,
+          "position": "SB"
+        },
+        {
+          "seat": 2,
+          "name": "Hero",
+          "stack": 25000,
+          "isHero": true,
+          "position": "BB"
+        },
+        {
+          "seat": 3,
+          "name": "5a90c3e2",
+          "stack": 25000,
+          "isHero": false,
+          "position": "UTG"
+        },
+        {
+          "seat": 4,
+          "name": "b27d4f18",
+          "stack": 25000,
+          "isHero": false,
+          "position": "UTG+1"
+        },
+        {
+          "seat": 5,
+          "name": "e6012ac9",
+          "stack": 25000,
+          "isHero": false,
+          "position": "LJ"
+        },
+        {
+          "seat": 6,
+          "name": "3c8b7d55",
+          "stack": 25000,
+          "isHero": false,
+          "position": "HJ"
+        },
+        {
+          "seat": 7,
+          "name": "91fa06be",
+          "stack": 25000,
+          "isHero": false,
+          "position": "CO"
+        },
+        {
+          "seat": 8,
+          "name": "4d6e2c03",
+          "stack": 25000,
+          "isHero": false,
+          "position": "BTN"
+        }
+      ],
+      "heroName": "Hero",
+      "heroCards": [
+        "Kd",
+        "9c"
+      ],
+      "events": [
+        {
+          "kind": "post",
+          "street": "preflop",
+          "player": "d41c09a7",
+          "post": "ante",
+          "amount": 125,
+          "allIn": false
+        },
+        {
+          "kind": "post",
+          "street": "preflop",
+          "player": "Hero",
+          "post": "ante",
+          "amount": 125,
+          "allIn": false
+        },
+        {
+          "kind": "post",
+          "street": "preflop",
+          "player": "5a90c3e2",
+          "post": "ante",
+          "amount": 125,
+          "allIn": false
+        },
+        {
+          "kind": "post",
+          "street": "preflop",
+          "player": "b27d4f18",
+          "post": "ante",
+          "amount": 125,
+          "allIn": false
+        },
+        {
+          "kind": "post",
+          "street": "preflop",
+          "player": "e6012ac9",
+          "post": "ante",
+          "amount": 125,
+          "allIn": false
+        },
+        {
+          "kind": "post",
+          "street": "preflop",
+          "player": "3c8b7d55",
+          "post": "ante",
+          "amount": 125,
+          "allIn": false
+        },
+        {
+          "kind": "post",
+          "street": "preflop",
+          "player": "91fa06be",
+          "post": "ante",
+          "amount": 125,
+          "allIn": false
+        },
+        {
+          "kind": "post",
+          "street": "preflop",
+          "player": "4d6e2c03",
+          "post": "ante",
+          "amount": 125,
+          "allIn": false
+        },
+        {
+          "kind": "post",
+          "street": "preflop",
+          "player": "d41c09a7",
+          "post": "small_blind",
+          "amount": 500,
+          "allIn": false
+        },
+        {
+          "kind": "post",
+          "street": "preflop",
+          "player": "Hero",
+          "post": "big_blind",
+          "amount": 1000,
+          "allIn": false
+        },
+        {
+          "kind": "action",
+          "street": "preflop",
+          "player": "5a90c3e2",
+          "action": "fold",
+          "amount": 0,
+          "allIn": false
+        },
+        {
+          "kind": "action",
+          "street": "preflop",
+          "player": "b27d4f18",
+          "action": "fold",
+          "amount": 0,
+          "allIn": false
+        },
+        {
+          "kind": "action",
+          "street": "preflop",
+          "player": "e6012ac9",
+          "action": "fold",
+          "amount": 0,
+          "allIn": false
+        },
+        {
+          "kind": "action",
+          "street": "preflop",
+          "player": "3c8b7d55",
+          "action": "fold",
+          "amount": 0,
+          "allIn": false
+        },
+        {
+          "kind": "action",
+          "street": "preflop",
+          "player": "91fa06be",
+          "action": "fold",
+          "amount": 0,
+          "allIn": false
+        },
+        {
+          "kind": "action",
+          "street": "preflop",
+          "player": "4d6e2c03",
+          "action": "raise",
+          "amount": 2000,
+          "toAmount": 2000,
+          "allIn": false
+        },
+        {
+          "kind": "action",
+          "street": "preflop",
+          "player": "d41c09a7",
+          "action": "fold",
+          "amount": 0,
+          "allIn": false
+        },
+        {
+          "kind": "action",
+          "street": "preflop",
+          "player": "Hero",
+          "action": "fold",
+          "amount": 0,
+          "allIn": false
+        },
+        {
+          "kind": "uncalled",
+          "street": "preflop",
+          "player": "4d6e2c03",
+          "amount": 1000
+        },
+        {
+          "kind": "collect",
+          "street": "preflop",
+          "player": "4d6e2c03",
+          "amount": 3500
+        }
+      ],
+      "board": {
+        "flop": [],
+        "turn": null,
+        "river": null
+      },
+      "shown": {},
+      "winners": [
+        {
+          "player": "4d6e2c03",
+          "amount": 3500
+        }
+      ],
+      "totalPot": 3500,
+      "rake": 0,
+      "warnings": []
+    },
+    "raw_text": "Poker Hand #TM9900000007: Tournament #900000001, Example Tournament $10 Hold'em No Limit - Level10(500/1,000(125)) - 2026/10/08 19:25:37\nTable '7' 8-max Seat #8 is the button\nSeat 1: d41c09a7 (25,000 in chips)\nSeat 2: Hero (25,000 in chips)\nSeat 3: 5a90c3e2 (25,000 in chips)\nSeat 4: b27d4f18 (25,000 in chips)\nSeat 5: e6012ac9 (25,000 in chips)\nSeat 6: 3c8b7d55 (25,000 in chips)\nSeat 7: 91fa06be (25,000 in chips)\nSeat 8: 4d6e2c03 (25,000 in chips)\nd41c09a7: posts the ante 125\nHero: posts the ante 125\n5a90c3e2: posts the ante 125\nb27d4f18: posts the ante 125\ne6012ac9: posts the ante 125\n3c8b7d55: posts the ante 125\n91fa06be: posts the ante 125\n4d6e2c03: posts the ante 125\nd41c09a7: posts small blind 500\nHero: posts big blind 1,000\n*** HOLE CARDS ***\nDealt to Hero [Kd 9c]\n5a90c3e2: folds\nb27d4f18: folds\ne6012ac9: folds\n3c8b7d55: folds\n91fa06be: folds\n4d6e2c03: raises 1,000 to 2,000\nd41c09a7: folds\nHero: folds\nUncalled bet (1,000) returned to 4d6e2c03\n*** SHOWDOWN ***\n4d6e2c03 collected 3,500 from pot\n*** SUMMARY ***\nTotal pot 3,500 | Rake 0",
+    "preflop_check": "too_tight",
+    "preflop_detail": {
+      "spot": {
+        "kind": "vs_open",
+        "tablePosition": "BB",
+        "playersBehind": 0,
+        "hand": "K9o",
+        "position": "BB",
+        "effStackBb": 25,
+        "villain": {
+          "name": "4d6e2c03",
+          "tablePosition": "BTN",
+          "position": "BN",
+          "sizeBb": 2,
+          "allIn": false
+        },
+        "action": "fold"
+      },
+      "range": {
+        "kind": "defense",
+        "position": "BB",
+        "bucket": 25,
+        "page": 388,
+        "hr": "Hand Range 159",
+        "n": 159,
+        "vil": "BN",
+        "spot": "open",
+        "group": "mtt",
+        "size": null
+      },
+      "freqs": {
+        "fold": 0,
+        "call": 1,
+        "raise": 0,
+        "allin": 0
+      },
+      "expected": "call"
+    },
+    "analysis": null,
+    "favorited_at": null
+  },
+  "TM9900000008": {
+    "data": {
+      "site": "ggpoker",
+      "handId": "TM9900000008",
+      "tournamentId": "900000001",
+      "tournamentName": "Example Tournament $10",
+      "game": "Hold'em No Limit",
+      "level": 10,
+      "smallBlind": 500,
+      "bigBlind": 1000,
+      "ante": 125,
+      "playedAt": "2026-10-08T19:29:02",
+      "tableName": "7",
+      "maxSeats": 8,
+      "buttonSeat": 8,
+      "players": [
+        {
+          "seat": 1,
+          "name": "d41c09a7",
+          "stack": 25000,
+          "isHero": false,
+          "position": "SB"
+        },
+        {
+          "seat": 2,
+          "name": "Hero",
+          "stack": 25000,
+          "isHero": true,
+          "position": "BB"
+        },
+        {
+          "seat": 3,
+          "name": "5a90c3e2",
+          "stack": 25000,
+          "isHero": false,
+          "position": "UTG"
+        },
+        {
+          "seat": 4,
+          "name": "b27d4f18",
+          "stack": 25000,
+          "isHero": false,
+          "position": "UTG+1"
+        },
+        {
+          "seat": 5,
+          "name": "e6012ac9",
+          "stack": 25000,
+          "isHero": false,
+          "position": "LJ"
+        },
+        {
+          "seat": 6,
+          "name": "3c8b7d55",
+          "stack": 25000,
+          "isHero": false,
+          "position": "HJ"
+        },
+        {
+          "seat": 7,
+          "name": "91fa06be",
+          "stack": 25000,
+          "isHero": false,
+          "position": "CO"
+        },
+        {
+          "seat": 8,
+          "name": "4d6e2c03",
+          "stack": 25000,
+          "isHero": false,
+          "position": "BTN"
+        }
+      ],
+      "heroName": "Hero",
+      "heroCards": [
+        "Ah",
+        "8d"
+      ],
+      "events": [
+        {
+          "kind": "post",
+          "street": "preflop",
+          "player": "d41c09a7",
+          "post": "ante",
+          "amount": 125,
+          "allIn": false
+        },
+        {
+          "kind": "post",
+          "street": "preflop",
+          "player": "Hero",
+          "post": "ante",
+          "amount": 125,
+          "allIn": false
+        },
+        {
+          "kind": "post",
+          "street": "preflop",
+          "player": "5a90c3e2",
+          "post": "ante",
+          "amount": 125,
+          "allIn": false
+        },
+        {
+          "kind": "post",
+          "street": "preflop",
+          "player": "b27d4f18",
+          "post": "ante",
+          "amount": 125,
+          "allIn": false
+        },
+        {
+          "kind": "post",
+          "street": "preflop",
+          "player": "e6012ac9",
+          "post": "ante",
+          "amount": 125,
+          "allIn": false
+        },
+        {
+          "kind": "post",
+          "street": "preflop",
+          "player": "3c8b7d55",
+          "post": "ante",
+          "amount": 125,
+          "allIn": false
+        },
+        {
+          "kind": "post",
+          "street": "preflop",
+          "player": "91fa06be",
+          "post": "ante",
+          "amount": 125,
+          "allIn": false
+        },
+        {
+          "kind": "post",
+          "street": "preflop",
+          "player": "4d6e2c03",
+          "post": "ante",
+          "amount": 125,
+          "allIn": false
+        },
+        {
+          "kind": "post",
+          "street": "preflop",
+          "player": "d41c09a7",
+          "post": "small_blind",
+          "amount": 500,
+          "allIn": false
+        },
+        {
+          "kind": "post",
+          "street": "preflop",
+          "player": "Hero",
+          "post": "big_blind",
+          "amount": 1000,
+          "allIn": false
+        },
+        {
+          "kind": "action",
+          "street": "preflop",
+          "player": "5a90c3e2",
+          "action": "fold",
+          "amount": 0,
+          "allIn": false
+        },
+        {
+          "kind": "action",
+          "street": "preflop",
+          "player": "b27d4f18",
+          "action": "fold",
+          "amount": 0,
+          "allIn": false
+        },
+        {
+          "kind": "action",
+          "street": "preflop",
+          "player": "e6012ac9",
+          "action": "fold",
+          "amount": 0,
+          "allIn": false
+        },
+        {
+          "kind": "action",
+          "street": "preflop",
+          "player": "3c8b7d55",
+          "action": "fold",
+          "amount": 0,
+          "allIn": false
+        },
+        {
+          "kind": "action",
+          "street": "preflop",
+          "player": "91fa06be",
+          "action": "fold",
+          "amount": 0,
+          "allIn": false
+        },
+        {
+          "kind": "action",
+          "street": "preflop",
+          "player": "4d6e2c03",
+          "action": "fold",
+          "amount": 0,
+          "allIn": false
+        },
+        {
+          "kind": "action",
+          "street": "preflop",
+          "player": "d41c09a7",
+          "action": "raise",
+          "amount": 24375,
+          "toAmount": 24875,
+          "allIn": true
+        },
+        {
+          "kind": "action",
+          "street": "preflop",
+          "player": "Hero",
+          "action": "call",
+          "amount": 23875,
+          "allIn": true
+        },
+        {
+          "kind": "show",
+          "street": "preflop",
+          "player": "Hero",
+          "cards": [
+            "Ah",
+            "8d"
+          ]
+        },
+        {
+          "kind": "show",
+          "street": "preflop",
+          "player": "d41c09a7",
+          "cards": [
+            "Kc",
+            "5c"
+          ]
+        },
+        {
+          "kind": "deal",
+          "street": "flop",
+          "cards": [
+            "Jd",
+            "8s",
+            "3h"
+          ]
+        },
+        {
+          "kind": "deal",
+          "street": "turn",
+          "cards": [
+            "2c"
+          ]
+        },
+        {
+          "kind": "deal",
+          "street": "river",
+          "cards": [
+            "Qs"
+          ]
+        },
+        {
+          "kind": "collect",
+          "street": "river",
+          "player": "Hero",
+          "amount": 50750
+        }
+      ],
+      "board": {
+        "flop": [
+          "Jd",
+          "8s",
+          "3h"
+        ],
+        "turn": "2c",
+        "river": "Qs"
+      },
+      "shown": {
+        "Hero": [
+          "Ah",
+          "8d"
+        ],
+        "d41c09a7": [
+          "Kc",
+          "5c"
+        ]
+      },
+      "winners": [
+        {
+          "player": "Hero",
+          "amount": 50750
+        }
+      ],
+      "totalPot": 50750,
+      "rake": 0,
+      "warnings": []
+    },
+    "raw_text": "Poker Hand #TM9900000008: Tournament #900000001, Example Tournament $10 Hold'em No Limit - Level10(500/1,000(125)) - 2026/10/08 19:29:02\nTable '7' 8-max Seat #8 is the button\nSeat 1: d41c09a7 (25,000 in chips)\nSeat 2: Hero (25,000 in chips)\nSeat 3: 5a90c3e2 (25,000 in chips)\nSeat 4: b27d4f18 (25,000 in chips)\nSeat 5: e6012ac9 (25,000 in chips)\nSeat 6: 3c8b7d55 (25,000 in chips)\nSeat 7: 91fa06be (25,000 in chips)\nSeat 8: 4d6e2c03 (25,000 in chips)\nd41c09a7: posts the ante 125\nHero: posts the ante 125\n5a90c3e2: posts the ante 125\nb27d4f18: posts the ante 125\ne6012ac9: posts the ante 125\n3c8b7d55: posts the ante 125\n91fa06be: posts the ante 125\n4d6e2c03: posts the ante 125\nd41c09a7: posts small blind 500\nHero: posts big blind 1,000\n*** HOLE CARDS ***\nDealt to Hero [Ah 8d]\n5a90c3e2: folds\nb27d4f18: folds\ne6012ac9: folds\n3c8b7d55: folds\n91fa06be: folds\n4d6e2c03: folds\nd41c09a7: raises 23,875 to 24,875 and is all-in\nHero: calls 23,875 and is all-in\nHero: shows [Ah 8d]\nd41c09a7: shows [Kc 5c]\n*** FLOP *** [Jd 8s 3h]\n*** TURN *** [Jd 8s 3h] [2c]\n*** RIVER *** [Jd 8s 3h 2c] [Qs]\n*** SHOWDOWN ***\nHero collected 50,750 from pot\n*** SUMMARY ***\nTotal pot 50,750 | Rake 0",
+    "preflop_check": "correct",
+    "preflop_detail": {
+      "spot": {
+        "kind": "vs_push",
+        "tablePosition": "BB",
+        "playersBehind": 0,
+        "hand": "A8o",
+        "position": "BB",
+        "effStackBb": 25,
+        "villain": {
+          "name": "d41c09a7",
+          "tablePosition": "SB",
+          "position": "SB",
+          "sizeBb": 24.875,
+          "allIn": true
+        },
+        "action": "call"
+      },
+      "range": {
+        "kind": "defense",
+        "position": "BB",
+        "bucket": 25,
+        "page": 366,
+        "hr": "Hand Range 141",
+        "n": 141,
+        "vil": "SB",
+        "spot": "push",
+        "group": "mtt",
+        "size": null
+      },
+      "freqs": {
+        "fold": 0,
+        "call": 1,
+        "raise": 0,
+        "allin": 0
+      },
+      "expected": "call"
+    },
+    "analysis": null,
+    "favorited_at": null
+  }
+}

@@ -204,6 +204,8 @@ export async function refreshPreflopChecks(
 export interface PreflopSummaryRow {
   preflop_check: PreflopVerdict;
   preflop_position: string | null;
+  /** Spot kind (supabase_hand_history_preflop_defense.sql); undefined before that migration. */
+  preflop_spot?: string | null;
   n: number;
 }
 

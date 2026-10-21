@@ -112,10 +112,10 @@ describe("preflop check — building blocks", () => {
     expect(findRfiSpot(h)!.action).toBe("allin");
   });
 
-  it("no check outside raise-first-in spots", () => {
+  it("facing a raise is no longer skipped: it is a defense spot (preflopDefense.test.ts)", () => {
     // Hero faces a raise in the top hand (and is in the BB).
     const r = parseGGHand(TOP_HAND);
-    expect(r.ok && checkPreflop(r.hand)).toBeNull();
+    expect(r.ok && checkPreflop(r.hand)!.detail.spot.kind).not.toBe("rfi");
   });
 
   it("the version changes with the range data", () => {
@@ -178,7 +178,8 @@ const hasFixture = existsSync(FIXTURE);
 
 describe.skipIf(!hasFixture)("preflop check on the real export", () => {
   const out = parseTexts([{ fileName: "f", text: hasFixture ? readFileSync(FIXTURE, "utf8") : "" }]);
-  const checks = out.entries.map((e) => ({ id: e.hand.handId, c: checkPreflop(e.hand) })).filter((x) => x.c);
+  const all = out.entries.map((e) => ({ id: e.hand.handId, c: checkPreflop(e.hand) })).filter((x) => x.c);
+  const checks = all.filter((x) => x.c!.detail.spot.kind === "rfi");
 
   it("50 raise-first-in spots outside the BB: 42 folds, 6 open-raises, 2 all-ins", () => {
     expect(checks).toHaveLength(50);
@@ -190,6 +191,16 @@ describe.skipIf(!hasFixture)("preflop check on the real export", () => {
     expect(actions.filter((a) => a === "allin")).toHaveLength(3);
     expect(checks.find((x) => x.id === "TM6510945652")!.c!.detail.spot.action).toBe("allin");
     expect(checks.every((x) => x.c!.verdict !== "not_evaluated")).toBe(true);
+  });
+
+  it("defense spots: 12 graded (11 vs open, 1 vs shove), the rest have no matching chart", () => {
+    const defense = all.filter((x) => x.c!.detail.spot.kind !== "rfi");
+    const graded = defense.filter((x) => x.c!.verdict !== "not_evaluated");
+    expect(graded.map((x) => x.c!.detail.spot.kind).sort()).toEqual([...Array(11).fill("vs_open"), "vs_push"]);
+    expect(graded.every((x) => x.c!.verdict === "correct")).toBe(true);
+    const reasons = defense.filter((x) => x.c!.verdict === "not_evaluated").map((x) => x.c!.detail.reason!.code);
+    expect(reasons.every((r) => r === "no_defense_chart" || r === "unmatched")).toBe(true);
+    expect(all).toHaveLength(105); // 107 hands, 2 walks in the BB
   });
 
   it("finds the spots that deviate from the ranges", () => {

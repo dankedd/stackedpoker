@@ -19,8 +19,12 @@ import { DEFENSE_CHARTS, MTT_OPEN_CHARTS, PUSH_FOLD_CHARTS } from "@/lib/ranges/
 import { ALL_HANDS, displayPos, shouldPush } from "@/lib/ranges/logic";
 import type { DefenseChart, DefenseSpot, RangeActionKey } from "@/lib/ranges/types";
 import type { WeightedRange } from "@/lib/equity/rangeEquity";
-import { lookupRfi, rangePosition } from "../preflop/lookup";
+import { lookupRfi } from "../preflop/lookup";
+import { playersAfter, position9 } from "../preflop/positions";
 import { NEAR_ALL_IN } from "../preflop/spots";
+
+// Seat → 9-max chart position lives with the preflop check (one translation for both).
+export { playersAfter, position9 };
 import { t } from "../strings";
 import type { HandEvent, ParsedHand } from "../types";
 
@@ -58,23 +62,6 @@ export function findVillain(hand: ParsedHand): string | null {
 }
 
 // ── Where ────────────────────────────────────────────────────────────────────
-
-/** Players acting after `name` preflop (0 for the big blind). */
-export function playersAfter(hand: ParsedHand, name: string): number {
-  const bySeat = [...hand.players].sort((a, b) => a.seat - b.seat);
-  const bbPost = hand.events.find((e) => e.kind === "post" && e.post === "big_blind");
-  const bbName = bbPost && "player" in bbPost ? bbPost.player : hand.players.find((p) => p.position === "BB")?.name;
-  const bb = bySeat.findIndex((p) => p.name === bbName);
-  const me = bySeat.findIndex((p) => p.name === name);
-  if (bb < 0 || me < 0) return -1;
-  return (bb - me + bySeat.length) % bySeat.length;
-}
-
-export function position9(hand: ParsedHand, name: string): string | null {
-  const after = playersAfter(hand, name);
-  if (after === 0) return "BB";
-  return after > 0 ? rangePosition(after) : null;
-}
 
 function nearestPosition(wanted: string, available: string[]): string | null {
   const w = ORDER_9.indexOf(wanted);

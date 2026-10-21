@@ -155,6 +155,37 @@ export const EXAMPLE_HAND_TEXTS: string[] = [
     "*** SUMMARY ***",
     "Total pot 51,250 | Rake 0",
   ].join("\n"),
+
+  // 7. Folds K9o in the big blind to a button open: the defense check flags it (BB vs BN, 25bb).
+  [
+    ...header(7, "19:25:37", 2, "Kd 9c"),
+    ...folds([3, 4, 5, 6, 7]),
+    `${NAMES[8]}: raises 1,000 to 2,000`,
+    `${NAMES[1]}: folds`,
+    "Hero: folds",
+    `Uncalled bet (1,000) returned to ${NAMES[8]}`,
+    "*** SHOWDOWN ***",
+    `${NAMES[8]} collected 3,500 from pot`,
+    "*** SUMMARY ***",
+    "Total pot 3,500 | Rake 0",
+  ].join("\n"),
+
+  // 8. Calls the small blind's 25bb shove with A8o in the big blind and wins a 50.8 bb pot (BB vs SB push, 25bb).
+  [
+    ...header(8, "19:29:02", 2, "Ah 8d"),
+    ...folds([3, 4, 5, 6, 7, 8]),
+    `${NAMES[1]}: raises 23,875 to 24,875 and is all-in`,
+    "Hero: calls 23,875 and is all-in",
+    "Hero: shows [Ah 8d]",
+    `${NAMES[1]}: shows [Kc 5c]`,
+    "*** FLOP *** [Jd 8s 3h]",
+    "*** TURN *** [Jd 8s 3h] [2c]",
+    "*** RIVER *** [Jd 8s 3h 2c] [Qs]",
+    "*** SHOWDOWN ***",
+    "Hero collected 50,750 from pot",
+    "*** SUMMARY ***",
+    "Total pot 50,750 | Rake 0",
+  ].join("\n"),
 ];
 
 export interface ExampleHand {

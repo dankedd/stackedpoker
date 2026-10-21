@@ -184,7 +184,7 @@ export function HandsOverview() {
           <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t.overview.rechecking(rechecking)}
         </p>
       )}
-      <PreflopSummary rows={summary} onPick={(preflop) => update({ filters: { preflop } })} />
+      <PreflopSummary rows={summary} onPick={(preflop) => update({ filters: { preflop } })} onPickSpot={(spots) => update({ filters: { spots } })} />
 
       <FiltersBar
         state={state}

@@ -5,7 +5,7 @@ import { ArrowDownUp, Check, ChevronDown, NotebookPen, SlidersHorizontal, Star, 
 import { DEFAULT_MIN_POT_BB, isTargeted, SORT_LABELS, type HandQueryState, type SortKey } from "@/lib/handHistory/filters";
 import { PRESETS, activeChips, activeCount, clearAll, restoreDefaults, withoutFavorites, type StatePatch } from "@/lib/handHistory/filterUi";
 import { fmtNum, fmtPlayedDate } from "@/lib/handHistory/format";
-import { PREFLOP_VERDICTS, VERDICT_LABEL, type PreflopVerdict } from "@/lib/handHistory/preflop";
+import { PREFLOP_VERDICTS, SPOT_GROUPS, VERDICT_LABEL, type PreflopVerdict, type SpotGroup } from "@/lib/handHistory/preflop";
 import { t } from "@/lib/handHistory/strings";
 import type { TournamentRow } from "@/lib/handHistory/api";
 import { cn } from "@/lib/utils";
@@ -136,6 +136,9 @@ export function FiltersBar({
           <Section title={t.filterBar.preflopTitle}>
             <PreflopOptions state={state} onChange={onChange} />
           </Section>
+          <Section title={t.filterBar.spotTitle}>
+            <SpotOptions state={state} onChange={onChange} />
+          </Section>
           <Section title={`${t.filterBar.favorites} · ${t.filterBar.notes}`}>
             <div className="flex flex-wrap gap-2">
               <FavToggle state={state} onChange={onChange} favCount={favCount} />
@@ -255,8 +258,37 @@ function PreflopOptions({ state, onChange }: { state: HandQueryState; onChange: 
   );
 }
 
+/** "Spot type": which kind of preflop decision (open, facing open/shove/limp/4-bet). */
+function SpotOptions({ state, onChange }: { state: HandQueryState; onChange: Change }) {
+  const sel = state.filters.spots;
+  const toggle = (g: SpotGroup) =>
+    onChange({ filters: { spots: sel.includes(g) ? sel.filter((x) => x !== g) : SPOT_GROUPS.filter((x) => x === g || sel.includes(x)) } });
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {SPOT_GROUPS.map((g) => {
+        const on = sel.includes(g);
+        return (
+          <button
+            key={g}
+            type="button"
+            aria-pressed={on}
+            data-spot={g}
+            onClick={() => toggle(g)}
+            className={cn(
+              "rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors duration-150",
+              on ? "border-violet-500/50 bg-violet-500/20 text-violet-100" : "border-border/60 text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {t.preflop.group[g]}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function PreflopControl({ state, onChange }: { state: HandQueryState; onChange: Change }) {
-  const k = state.filters.preflop.length;
+  const k = state.filters.preflop.length + state.filters.spots.length;
   return (
     <Popover
       dataFilter="preflop"
@@ -274,6 +306,8 @@ function PreflopControl({ state, onChange }: { state: HandQueryState; onChange: 
     >
       <p className="mb-2 text-xs font-semibold text-muted-foreground">{t.filterBar.preflopTitle}</p>
       <PreflopOptions state={state} onChange={onChange} />
+      <p className="mb-2 mt-3 text-xs font-semibold text-muted-foreground">{t.filterBar.spotTitle}</p>
+      <SpotOptions state={state} onChange={onChange} />
     </Popover>
   );
 }
