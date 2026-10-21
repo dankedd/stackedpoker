@@ -11,14 +11,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLearnProgress } from "@/contexts/LearnProgressContext";
 import { trackCustom } from "@/lib/metaPixel";
 import { fetchFlopTrainerState, submitVersus, type VersusResult } from "@/lib/flopTrainer/api";
-import { fetchIndex, fetchSpots, MVP_SPOTS } from "@/lib/flopTrainer/data";
+import { fetchIndex, fetchSpots } from "@/lib/flopTrainer/data";
+import { FLOP_TRAINER_SPOTS } from "@/lib/flopTrainer/feature";
 import { displayCards, displayPos, fmt, spotTitle, type FlopSpot } from "@/lib/flopTrainer/logic";
 import { pickPair, versusCorrect, versusGap } from "@/lib/flopTrainer/phase3";
 import { cn } from "@/lib/utils";
 import { Board, type Deal } from "./FlopTrainer";
 
 type SpotChoice = "bn" | "utg" | "mix";
-const SPOT_OF: Record<Exclude<SpotChoice, "mix">, string> = { bn: MVP_SPOTS[0], utg: MVP_SPOTS[1] };
+const SPOT_OF: Record<Exclude<SpotChoice, "mix">, string> = FLOP_TRAINER_SPOTS;
 const CHOICE_LABEL: Record<SpotChoice, string> = { bn: "BTN vs BB", utg: "UTG vs BB", mix: "Mixed" };
 const BEST_KEY = "sp_flop_versus_best";
 

@@ -1,32 +1,99 @@
 /**
  * Does a played hand match a Flop Equity Trainer spot?
  *
- * Only the spots with book ranges qualify (data/mpt/spots.json, MVP): a
- * single-raised pot where the 9-max BN or UTG opens, everyone else folds and
- * the big blind calls, heads-up to the flop, with stacks near the 40bb the
- * charts were made for. Multiway pots, limps, 3-bets, all-ins, cash hands and
- * other positions get no panel — the precomputed ranges would not describe
- * them.
+ * The spot catalog (spotCatalog.json, written by backend/app/flop_equity/
+ * derive.py) holds every heads-up spot with book ranges: the postflop
+ * chapters' own spots plus the single-raised pots derived from the book's
+ * preflop charts. A hand matches when it reached the flop heads-up as
+ *   - a single-raised pot: one open (not all-in), one caller, everyone else folded
+ *   - a 3-bet pot: an open, one 3-bet (not all-in), the opener called
+ * with positions translated to the book's 9-max naming (the preflop check's
+ * mapping, preflop/positions.ts) and the effective stack within ±30% of a
+ * catalog stack. Anything else gets a reason instead of a match.
+ *
+ * Whether a matched spot has been precomputed is only known to the database:
+ * the panel shows "not analysed yet" when flop_equity has no row.
  */
 
 import { handClass, NEAR_ALL_IN } from "@/lib/handHistory/preflop/spots";
+import { position9 } from "@/lib/handHistory/preflop/positions";
 import type { HandEvent, ParsedHand } from "@/lib/handHistory/types";
-import { position9 } from "@/lib/handHistory/villain";
-import { MVP_SPOTS } from "./data";
+import CATALOG from "./spotCatalog.json";
 import { canonicalFlop } from "./phase3";
 
 type Action = Extract<HandEvent, { kind: "action" }>;
 
-/** Effective stacks (bb) that count as "the 40bb charts" — an implementation choice, labelled in the UI. */
-export const STACK_RANGE: [number, number] = [30, 50];
-/** Largest open (raise-to, in bb) still read as a standard open; the book's charts open 2.3x. */
-export const MAX_OPEN_BB = 3.5;
+export interface CatalogSpot {
+  spot_id: string;
+  pot: "srp" | "3bp";
+  ip: string;
+  oop: string;
+  /** 9-max position of the last preflop raiser. */
+  pfr: string;
+  stack_bb: number;
+  /** Ranges derived from the preflop charts (not one of the postflop chapters' own spots). */
+  derived: boolean;
+  /** Its flops are in Supabase (set by backend/app/flop_equity/load.py); false → "coming soon". */
+  precomputed: boolean;
+}
 
-const SPOT_BY_OPENER: Record<string, string> = { BN: MVP_SPOTS[0], UTG: MVP_SPOTS[1] };
+export const SPOT_CATALOG = CATALOG as CatalogSpot[];
+
+/** A stack bucket matches when the effective stack is within this share of it. */
+export const STACK_TOLERANCE = 0.3;
+/** Largest open (raise-to, in bb) still read as a standard open; the book's charts open 2–3.5x. */
+export const MAX_OPEN_BB = 3.5;
+/** Postflop order: the later player is in position. */
+const POSTFLOP_ORDER = ["SB", "BB", "UTG", "UTG+1", "UTG+2", "LJ", "HJ", "CO", "BN"];
+
+export type NoMatchReason =
+  | "no_flop"
+  | "cash"
+  | "multiway"
+  | "limped"
+  | "allin_preflop"
+  | "four_bet"
+  | "no_book_range"
+  | "stack_too_deep"
+  | "stack_too_short"
+  | "unknown_position";
+
+export const NO_MATCH_LABEL: Record<NoMatchReason, string> = {
+  no_flop: "No flop",
+  cash: "Cash game — the book's ranges are tournament ranges",
+  multiway: "Multiway pot",
+  limped: "Limped pot",
+  allin_preflop: "All-in before the flop",
+  four_bet: "4-bet pot — the book has no ranges for it",
+  no_book_range: "No book range for this spot",
+  stack_too_deep: "Stack too deep for the book's ranges",
+  stack_too_short: "Stack too short for the book's ranges",
+  unknown_position: "Position couldn't be read",
+};
+
+/** What happened before the flop, whether or not a spot matches. */
+export interface FlopSituation {
+  pot: "srp" | "3bp";
+  /** 9-max positions. */
+  ip: string;
+  oop: string;
+  pfr: string;
+  opener: string;
+  caller: string;
+  /** Player names. */
+  ipName: string;
+  oopName: string;
+  pfrName: string;
+  openerName: string;
+  callerName: string;
+  effBb: number;
+}
 
 export interface FlopSpotMatch {
   spotId: string;
-  /** 9-max chart position of the opener ("BN" | "UTG"). */
+  spot: CatalogSpot;
+  situation: FlopSituation;
+  /** 9-max chart position of the opener (kept for older callers). */
   openerPosition: string;
   opener: string;
   caller: string;
@@ -36,50 +103,126 @@ export interface FlopSpotMatch {
   effBb: number;
   /** Hero's side in the spot, or null when Hero is not one of the two players. */
   heroSide: "ip" | "oop" | null;
+  /** Hero raised last preflop (c-bettor). */
+  heroIsPfr: boolean;
   /** Hero's starting hand class (e.g. "AKo") when Hero is in the pot. */
   heroHand: string | null;
 }
 
-export function matchFlopSpot(hand: ParsedHand): FlopSpotMatch | null {
-  // Book charts are tournament charts (a manually entered cash hand has format "cash").
-  if ("format" in hand && (hand as { format?: string }).format === "cash") return null;
-  if (hand.board.flop.length !== 3 || hand.bigBlind <= 0) return null;
+export type FlopMatchResult =
+  | { ok: true; match: FlopSpotMatch }
+  | { ok: false; reason: NoMatchReason; situation?: FlopSituation };
+
+/** The preflop line to the flop: pot type, positions, effective stack. */
+export function flopSituation(hand: ParsedHand): { ok: true; situation: FlopSituation } | { ok: false; reason: NoMatchReason } {
+  if ("format" in hand && (hand as { format?: string }).format === "cash") return { ok: false, reason: "cash" };
+  if (hand.board.flop.length !== 3 || hand.bigBlind <= 0) return { ok: false, reason: "no_flop" };
 
   const pre = hand.events.filter((e): e is Action => e.kind === "action" && e.street === "preflop");
-  const first = pre.findIndex((a) => a.action !== "fold");
-  if (first < 0) return null;
-  const open = pre[first];
-  if (open.action !== "raise" || open.allIn) return null;
+  const acting = pre.filter((a) => a.action !== "fold");
+  const folded = new Set(pre.filter((a) => a.action === "fold").map((a) => a.player));
+  const inPot = hand.players.filter((p) => !folded.has(p.name));
+  if (inPot.length > 2) return { ok: false, reason: "multiway" };
+  if (pre.some((a) => a.allIn)) return { ok: false, reason: "allin_preflop" };
+
+  const raises = acting.filter((a) => a.action === "raise" || a.action === "bet");
+  if (!raises.length) return { ok: false, reason: "limped" };
+  if (raises.length > 2) return { ok: false, reason: "four_bet" };
+  // A limp before the open (limp, then raise) is not a spot the book covers.
+  if (acting.indexOf(raises[0]) > 0) return { ok: false, reason: "limped" };
 
   const stackOf = (name: string) => hand.players.find((p) => p.name === name)?.stack ?? 0;
-  const raiseTo = open.toAmount ?? open.amount;
-  if (raiseTo / hand.bigBlind > MAX_OPEN_BB) return null;
-  if (raiseTo >= NEAR_ALL_IN * (stackOf(open.player) - hand.ante)) return null;
+  const open = raises[0];
+  const openTo = open.toAmount ?? open.amount;
+  if (openTo >= NEAR_ALL_IN * (stackOf(open.player) - hand.ante)) return { ok: false, reason: "allin_preflop" };
+  if (raises.length === 1 && openTo / hand.bigBlind > MAX_OPEN_BB) return { ok: false, reason: "no_book_range" };
 
-  const openerPosition = position9(hand, open.player);
-  const spotId = openerPosition ? SPOT_BY_OPENER[openerPosition] : undefined;
-  if (!spotId || !openerPosition) return null;
+  const players = inPot.map((p) => p.name);
+  if (players.length !== 2) return { ok: false, reason: "multiway" };
+  const pfrName = raises[raises.length - 1].player;
+  const opener = open.player;
+  const other = players.find((n) => n !== opener);
+  if (!other || !players.includes(opener)) return { ok: false, reason: "no_book_range" };
+  if (raises.length === 2) {
+    const three = raises[1];
+    const to = three.toAmount ?? three.amount;
+    if (to >= NEAR_ALL_IN * (stackOf(three.player) - hand.ante)) return { ok: false, reason: "allin_preflop" };
+    if (three.player === opener) return { ok: false, reason: "four_bet" };
+  }
 
-  // After the open: folds, and exactly one call — by the big blind.
-  const rest = pre.slice(first + 1).filter((a) => a.action !== "fold");
-  if (rest.length !== 1) return null;
-  const call = rest[0];
-  if (call.action !== "call" || call.allIn || position9(hand, call.player) !== "BB") return null;
-
-  const effBb = Math.min(stackOf(open.player), stackOf(call.player)) / hand.bigBlind;
-  if (effBb < STACK_RANGE[0] || effBb > STACK_RANGE[1]) return null;
-
-  const hero = hand.heroName;
-  const heroSide = hero === open.player ? "ip" : hero === call.player ? "oop" : null;
+  const pos = (n: string) => position9(hand, n);
+  const oPos = pos(opener);
+  const cPos = pos(other);
+  if (!oPos || !cPos) return { ok: false, reason: "unknown_position" };
+  const [ipName, oopName] = POSTFLOP_ORDER.indexOf(oPos) > POSTFLOP_ORDER.indexOf(cPos) ? [opener, other] : [other, opener];
+  const effBb = Math.min(stackOf(opener), stackOf(other)) / hand.bigBlind;
   return {
-    spotId,
-    openerPosition,
-    opener: open.player,
-    caller: call.player,
-    cards: hand.board.flop,
-    flop: canonicalFlop(hand.board.flop),
-    effBb: Math.round(effBb * 10) / 10,
-    heroSide,
-    heroHand: heroSide && hand.heroCards ? handClass(hand.heroCards) : null,
+    ok: true,
+    situation: {
+      pot: raises.length === 2 ? "3bp" : "srp",
+      ip: pos(ipName)!,
+      oop: pos(oopName)!,
+      pfr: pos(pfrName)!,
+      opener: oPos,
+      caller: cPos,
+      ipName,
+      oopName,
+      pfrName,
+      openerName: opener,
+      callerName: other,
+      effBb,
+    },
   };
+}
+
+/** The catalog spot for a situation: same structure and positions, nearest stack within ±30%. */
+export function spotFor(s: FlopSituation): { spot: CatalogSpot } | { reason: NoMatchReason } {
+  const same = SPOT_CATALOG.filter((c) => c.pot === s.pot && c.ip === s.ip && c.oop === s.oop && c.pfr === s.pfr);
+  if (!same.length) return { reason: "no_book_range" };
+  const best = same.reduce((b, c) => (Math.abs(c.stack_bb - s.effBb) < Math.abs(b.stack_bb - s.effBb) ? c : b));
+  if (Math.abs(best.stack_bb - s.effBb) > STACK_TOLERANCE * best.stack_bb) {
+    return { reason: s.effBb > best.stack_bb ? "stack_too_deep" : "stack_too_short" };
+  }
+  return { spot: best };
+}
+
+export function matchFlop(hand: ParsedHand): FlopMatchResult {
+  const sit = flopSituation(hand);
+  if (!sit.ok) return { ok: false, reason: sit.reason };
+  const s = sit.situation;
+  const found = spotFor(s);
+  if ("reason" in found) return { ok: false, reason: found.reason, situation: s };
+  const hero = hand.heroName;
+  const heroSide = hero === s.ipName ? "ip" : hero === s.oopName ? "oop" : null;
+  return {
+    ok: true,
+    match: {
+      spotId: found.spot.spot_id,
+      spot: found.spot,
+      situation: s,
+      openerPosition: s.opener,
+      opener: s.openerName,
+      caller: s.callerName,
+      cards: hand.board.flop,
+      flop: canonicalFlop(hand.board.flop),
+      effBb: Math.round(s.effBb * 10) / 10,
+      heroSide,
+      heroIsPfr: hero === s.pfrName,
+      heroHand: heroSide && hand.heroCards ? handClass(hand.heroCards) : null,
+    },
+  };
+}
+
+/** Backwards-compatible: the match, or null. */
+export function matchFlopSpot(hand: ParsedHand): FlopSpotMatch | null {
+  const r = matchFlop(hand);
+  return r.ok ? r.match : null;
+}
+
+/** "SRP · BTN vs BB · 25bb" (positions in the site's display naming). */
+export function spotTitle(spot: CatalogSpot): string {
+  const d = (p: string) => (p === "BN" ? "BTN" : p);
+  const opener = spot.pot === "3bp" ? (spot.pfr === spot.ip ? spot.oop : spot.ip) : spot.pfr;
+  const other = opener === spot.ip ? spot.oop : spot.ip;
+  return `${spot.pot === "3bp" ? "3-bet pot" : "SRP"} · ${d(opener)} vs ${d(other)} · ${spot.stack_bb}bb`;
 }

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { FLOP_TRAINER_SPOTS } from "./feature";
 import type { BucketKey, FlopDetail, FlopIndexRow, FlopSpot } from "./logic";
 
 /**
@@ -6,8 +7,8 @@ import type { BucketKey, FlopDetail, FlopIndexRow, FlopSpot } from "./logic";
  * flop_spots and flop_equity — supabase_flop_equity.sql). Works signed out.
  */
 
-/** The spots the MVP deals, in menu order. */
-export const MVP_SPOTS = ["srp_bb_vs_bn_40", "srp_bb_vs_utg_40"] as const;
+/** The Flop Trainer's spots, in menu order (FLOP_TRAINER_SPOTS in ./feature). */
+const TRAINER_SPOT_IDS: string[] = Object.values(FLOP_TRAINER_SPOTS);
 
 const PAGE = 1000; // PostgREST's default row cap
 
@@ -15,10 +16,10 @@ export async function fetchSpots(): Promise<FlopSpot[]> {
   const { data, error } = await createClient()
     .from("flop_spots")
     .select("spot_id,spot_type,ip,oop,stack_bb,action,ip_range_pct,oop_range_pct,source_pages")
-    .in("spot_id", [...MVP_SPOTS]);
+    .in("spot_id", TRAINER_SPOT_IDS);
   if (error) throw error;
   const rows = (data ?? []) as FlopSpot[];
-  return MVP_SPOTS.map((id) => rows.find((r) => r.spot_id === id)).filter((r): r is FlopSpot => Boolean(r));
+  return TRAINER_SPOT_IDS.map((id) => rows.find((r) => r.spot_id === id)).filter((r): r is FlopSpot => Boolean(r));
 }
 
 const indexCache = new Map<string, Promise<FlopIndexRow[]>>();

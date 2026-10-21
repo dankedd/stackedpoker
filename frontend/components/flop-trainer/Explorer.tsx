@@ -12,14 +12,15 @@ import { useEntitlements } from "@/hooks/useEntitlements";
 import { hasProAccess, PRO_PRICE_LABEL } from "@/lib/billing/entitlements";
 import { trackCustom } from "@/lib/metaPixel";
 import { fetchExplorerHands, type ExplorerHands } from "@/lib/flopTrainer/api";
-import { fetchExamples, fetchFull, fetchSpots, MVP_SPOTS, type BucketExamples, type FlopFull } from "@/lib/flopTrainer/data";
+import { fetchExamples, fetchFull, fetchSpots, type BucketExamples, type FlopFull } from "@/lib/flopTrainer/data";
+import { FLOP_TRAINER_SPOTS } from "@/lib/flopTrainer/feature";
 import { BUCKETS, CATEGORY_LABEL, displayPos, fmt, spotTitle, textureCategory, type FlopSpot } from "@/lib/flopTrainer/logic";
 import { canonicalFlop, cbetAdvice, explainCbet, gridHand, BAND_LABEL, SIZE_LABEL } from "@/lib/flopTrainer/phase3";
 import { cn } from "@/lib/utils";
 import { BucketBars } from "./FlopResult";
 
 type SpotChoice = "bn" | "utg";
-const SPOT_OF: Record<SpotChoice, string> = { bn: MVP_SPOTS[0], utg: MVP_SPOTS[1] };
+const SPOT_OF: Record<SpotChoice, string> = FLOP_TRAINER_SPOTS;
 const DEFAULT_FLOP = ["Ks", "7d", "2c"];
 const CARD_RE = /^[2-9TJQKA][cdhs]$/;
 

@@ -12,7 +12,8 @@ import { useLearnProgress } from "@/contexts/LearnProgressContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { trackCustom } from "@/lib/metaPixel";
 import { fetchFlopTrainerState, submitAnswer, type AnswerResult, type FlopTrainerState } from "@/lib/flopTrainer/api";
-import { fetchDetail, fetchIndex, fetchSpots, MVP_SPOTS } from "@/lib/flopTrainer/data";
+import { fetchDetail, fetchIndex, fetchSpots } from "@/lib/flopTrainer/data";
+import { FLOP_TRAINER_SPOTS } from "@/lib/flopTrainer/feature";
 import { localCategoryStats, localRecentError, readLocalBest, recordLocalAnswer, recordLocalBest } from "@/lib/flopTrainer/history";
 import {
   categoryWeights,
@@ -48,7 +49,7 @@ import { FlopResult, InfoModal, SessionSummary, type SessionEntry } from "./Flop
 import { TextureTracker } from "./TextureTracker";
 
 type SpotChoice = "bn" | "utg" | "mix";
-const SPOT_OF: Record<Exclude<SpotChoice, "mix">, string> = { bn: MVP_SPOTS[0], utg: MVP_SPOTS[1] };
+const SPOT_OF: Record<Exclude<SpotChoice, "mix">, string> = FLOP_TRAINER_SPOTS;
 const CHOICE_LABEL: Record<SpotChoice, string> = { bn: "BTN vs BB", utg: "UTG vs BB", mix: "Mixed" };
 
 export interface Deal {
