@@ -47,13 +47,9 @@ interface DevNavItem {
 const NAV_ITEMS: NavItem[] = PRIMARY_NAV;
 
 // Only users with development access see this menu (lib/features.ts).
-// Learn and Puzzles join it while they are not public.
-const DEV_ITEMS: DevNavItem[] = [
-  ...devNav().map((item) => ({ ...item, status: "development" as ProductStatus })),
-  { label: "Practice", href: "/practice", status: "next" },
-  { label: "Analyze",  href: "/analyze",  status: "development" },
-  { label: "Replay",   href: "/replay",   status: "development" },
-];
+// Learn and Puzzles join it while they are not public, and so does any
+// product area set to "dev" in PRODUCT_AREAS (lib/seo/navigation.ts).
+const DEV_ITEMS: DevNavItem[] = devNav().map((item) => ({ ...item, status: "development" as ProductStatus }));
 
 function isItemActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(href + "/");
@@ -176,7 +172,8 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
         ))}
 
         {/* ── In development cluster (desktop dropdown) — dev access only ── */}
-        {devAccess && (
+        {/* No heading for an empty group. */}
+        {devAccess && DEV_ITEMS.length > 0 && (
         <div className="ml-1">
           <button
             ref={devTriggerRef}
@@ -302,7 +299,7 @@ export function Navbar({ variant = "sticky" }: NavbarProps) {
           ))}
 
           {/* ── In development section — dev access only ── */}
-          {devAccess && (
+          {devAccess && DEV_ITEMS.length > 0 && (
           <div className="mt-2 pt-2 border-t border-white/[0.06]">
             <p className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-600">
               In development

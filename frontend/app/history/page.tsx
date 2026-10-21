@@ -15,6 +15,10 @@ import { Footer } from "@/components/layout/Footer";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+import { PRODUCT_AREAS } from "@/lib/seo/navigation";
+
+/** Analyze is not released: its links go where hand analysis lives today (PRODUCT_AREAS). */
+const ANALYZE_TARGET = PRODUCT_AREAS.analyze.status === "off" ? PRODUCT_AREAS.analyze.redirectTo : PRODUCT_AREAS.analyze.href;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -446,7 +450,7 @@ function EmptyState({ filtered }: { filtered: boolean }) {
             Start building your study library by analyzing your first hand.
           </p>
           <Link
-            href="/analyze"
+            href={ANALYZE_TARGET}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-sm font-semibold hover:opacity-90 transition-opacity shadow-lg shadow-violet-900/25"
           >
             <Spade className="h-4 w-4" />
@@ -813,7 +817,7 @@ export default function HistoryPage() {
               )}
             </p>
             <Link
-              href="/analyze"
+              href={ANALYZE_TARGET}
               className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors px-3 py-1.5 rounded-xl border border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10"
             >
               <Zap className="h-3.5 w-3.5" />
@@ -870,7 +874,7 @@ export default function HistoryPage() {
           {/* ── Footer CTA (mobile) ── */}
           <div className="mt-10 sm:hidden flex justify-center">
             <Link
-              href="/analyze"
+              href={ANALYZE_TARGET}
               className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-sm font-semibold shadow-lg shadow-violet-900/25"
             >
               <Spade className="h-4 w-4" />

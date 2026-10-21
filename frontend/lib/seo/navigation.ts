@@ -56,19 +56,65 @@ export function primaryNav({
     ...(handHistory ? [{ label: handHistoryStrings.section.navItem, href: HANDS_PATH }] : []),
     { label: "Bankroll", href: "/bankroll" },
     { label: "Leaderboard", href: "/leaderboard" },
+    // Product areas switched to "live" in PRODUCT_AREAS (none today).
+    ...areasWith("live"),
   ];
 }
 
 /**
- * Features in development (lib/features.ts), for the "In development" menu —
- * which only users with dev access see.
+ * Unfinished product areas — the ONE switch for each. Their pages still exist
+ * (so the work can continue), but what visitors get depends on `status`:
+ *
+ *   "off"   in no menu, link or tile; the page is noindex and redirects
+ *           (redirect()) to `redirectTo`, so old links land on a working page.
+ *   "dev"   only in the "In development" menu, which only users with dev
+ *           access see (lib/features.ts); the page renders its placeholder.
+ *   "live"  a normal header item.
+ *
+ * Switching one back on is a one-line change here.
+ */
+export type ProductAreaStatus = "off" | "dev" | "live";
+
+export interface ProductArea extends NavLink {
+  status: ProductAreaStatus;
+  /** Where the page sends visitors while it is "off". */
+  redirectTo: string;
+}
+
+/** The working place for "practice": the Preflop Trainer, or Hands when its flag is off. */
+const PRACTICE_FALLBACK = PREFLOP_RANGES_ENABLED ? PREFLOP_TRAINER_PATH : HAND_HISTORY_ENABLED ? HANDS_PATH : "/";
+/** Analysis and replay of your own hands live in Hand Review (/hands). */
+const HANDS_FALLBACK = HAND_HISTORY_ENABLED ? HANDS_PATH : "/";
+
+export const PRODUCT_AREAS = {
+  practice: { label: "Practice", href: "/practice", status: "off", redirectTo: PRACTICE_FALLBACK },
+  analyze: { label: "Analyze", href: "/analyze", status: "off", redirectTo: HANDS_FALLBACK },
+  replay: { label: "Replay", href: "/replay", status: "off", redirectTo: HANDS_FALLBACK },
+} as const satisfies Record<string, ProductArea>;
+
+export type ProductAreaKey = keyof typeof PRODUCT_AREAS;
+
+const areasWith = (status: ProductAreaStatus): NavLink[] =>
+  Object.values(PRODUCT_AREAS as Record<string, ProductArea>)
+    .filter((a) => a.status === status)
+    .map(({ label, href }) => ({ label, href }));
+
+/**
+ * Features in development (lib/features.ts) and product areas with status
+ * "dev", for the "In development" menu — which only users with dev access see.
  */
 export function devNav(): NavLink[] {
   return [
     ...(isFeaturePublic("learn") ? [] : [{ label: "Learn", href: "/learn" }]),
     ...(isFeaturePublic("puzzles") ? [] : [{ label: "Puzzles", href: ROUTES.puzzles }]),
+    ...areasWith("dev"),
   ];
 }
+
+/** Planned free-tool pages (status "planned" in lib/seo/content/tools.ts) send visitors here. */
+export const PLANNED_TOOL_REDIRECT: Record<string, string> = {
+  "range-viewer": "/preflop-charts",
+};
 
 /** Header navigation (components/layout/Navbar.tsx) — desktop and mobile menu. */
 export const PRIMARY_NAV: NavLink[] = primaryNav({

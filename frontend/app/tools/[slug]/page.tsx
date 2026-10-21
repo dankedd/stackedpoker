@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { PLANNED_TOOL_REDIRECT } from "@/lib/seo/navigation";
+import { ROUTES } from "@/lib/seo/routes";
 import { ArrowRight } from "lucide-react";
 import { ContentPage } from "@/components/seo/ContentPage";
 import { TrackedLink } from "@/components/seo/TrackedLink";
@@ -43,6 +45,9 @@ export default async function ToolPage({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const entry = toolEntryBySlug(slug);
   if (!entry) notFound();
+  // Not shipped yet: old links land on a working page instead of the notice
+  // (the page stays noindex through entryMetadata).
+  if (entry.status === "planned") redirect(PLANNED_TOOL_REDIRECT[slug] ?? ROUTES.tools);
 
   const livePath = toolLivePath(slug);
   const context = { contentKind: entry.kind, contentSlug: entry.slug, cluster: entry.clusters?.[0] };

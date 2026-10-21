@@ -19,8 +19,9 @@ export const metadata: Metadata = entryMetadata(entry);
 
 export default function ToolsIndexPage() {
   const all = toolEntries();
+  // Planned tools are not listed: their pages redirect to a working page
+  // (PLANNED_TOOL_REDIRECT in lib/seo/navigation.ts) until they ship.
   const live = all.filter((t) => t.status === "published");
-  const upcoming = all.filter((t) => t.status === "planned");
 
   return (
     <div className="min-h-screen bg-background">
@@ -63,30 +64,6 @@ export default function ToolsIndexPage() {
             ))}
           </ul>
         </section>
-
-        {upcoming.length > 0 && (
-          <section aria-labelledby="upcoming-tools" className="mt-12">
-            <h2 id="upcoming-tools" className="text-lg font-semibold tracking-tight text-foreground">
-              In development
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              These need engines StackedPoker has not shipped publicly yet, so their pages stay
-              empty rather than showing numbers we cannot stand behind.
-            </p>
-            <ul className="mt-4 flex flex-wrap gap-2">
-              {upcoming.map((tool) => (
-                <li key={tool.path}>
-                  <Link
-                    href={tool.path}
-                    className="inline-flex rounded-full border border-border/60 bg-card/30 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-violet-500/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    {tool.title}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
 
         <SignupCta
           context={{ contentKind: "page", contentSlug: "tools" }}

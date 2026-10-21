@@ -78,3 +78,28 @@ describe("header navigation", () => {
     expect(tools.items.some((i) => i.href.includes("preflop"))).toBe(false);
   });
 });
+
+describe("product areas (PRODUCT_AREAS)", () => {
+  it("keeps every area that is off out of the header, the dev menu, the footers and the link graph", async () => {
+    const { PRODUCT_AREAS } = await import("../navigation");
+    const off = Object.values(PRODUCT_AREAS as Record<string, { href: string; status: string }>)
+      .filter((a) => a.status === "off")
+      .map((a) => a.href);
+    expect(off.length).toBeGreaterThan(0);
+    const everywhere = [
+      ...PRIMARY_NAV.map((l) => l.href),
+      ...devNav().map((l) => l.href),
+      ...FOOTER_NAV.flatMap((g) => g.items.map((l) => l.href)),
+      ...LANDING_FOOTER_NAV.flatMap((g) => g.items.map((l) => l.href)),
+      ...globalLinkTargets(),
+    ];
+    for (const href of off) expect(everywhere).not.toContain(href);
+  });
+
+  it("sends every area that is off to a page that is not itself an unfinished area", async () => {
+    const { PRODUCT_AREAS } = await import("../navigation");
+    const areas = Object.values(PRODUCT_AREAS as Record<string, { href: string; redirectTo: string }>);
+    const hrefs = new Set(areas.map((a) => a.href));
+    for (const a of areas) expect(hrefs.has(a.redirectTo)).toBe(false);
+  });
+});

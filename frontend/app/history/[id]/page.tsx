@@ -15,6 +15,10 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import type { ReplayAnalysis, ActionCoaching } from "@/lib/types";
+import { PRODUCT_AREAS } from "@/lib/seo/navigation";
+
+/** Analyze is not released: its links go where hand analysis lives today (PRODUCT_AREAS). */
+const ANALYZE_TARGET = PRODUCT_AREAS.analyze.status === "off" ? PRODUCT_AREAS.analyze.redirectTo : PRODUCT_AREAS.analyze.href;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DB row type
@@ -624,7 +628,7 @@ export default function AnalysisDetailPage() {
               Back to History
             </Link>
             <Link
-              href="/analyze"
+              href={ANALYZE_TARGET}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-sm font-semibold hover:opacity-90 transition-opacity shadow-md shadow-violet-900/25"
             >
               <Spade className="h-4 w-4" />

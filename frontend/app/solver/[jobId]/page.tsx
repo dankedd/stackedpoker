@@ -8,6 +8,10 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { useSolverReplay } from "@/hooks/useSolverReplay";
 import SolverReplay from "@/components/solver/SolverReplay";
+import { PRODUCT_AREAS } from "@/lib/seo/navigation";
+
+/** Analyze is not released: its links go where hand analysis lives today (PRODUCT_AREAS). */
+const ANALYZE_TARGET = PRODUCT_AREAS.analyze.status === "off" ? PRODUCT_AREAS.analyze.redirectTo : PRODUCT_AREAS.analyze.href;
 
 export default function SolverReplayPage() {
   const params = useParams<{ jobId: string }>();
@@ -33,7 +37,7 @@ export default function SolverReplayPage() {
       <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-8">
         {/* Back link */}
         <Link
-          href="/analyze"
+          href={ANALYZE_TARGET}
           className="inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider mb-6 transition-colors"
           style={{ color: "rgba(148,163,184,0.45)" }}
         >

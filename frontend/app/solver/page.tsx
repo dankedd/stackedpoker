@@ -6,6 +6,10 @@ import Link from "next/link";
 import { ArrowLeft, TreePine, ArrowRight } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { PRODUCT_AREAS } from "@/lib/seo/navigation";
+
+/** Analyze is not released: its links go where hand analysis lives today (PRODUCT_AREAS). */
+const ANALYZE_TARGET = PRODUCT_AREAS.analyze.status === "off" ? PRODUCT_AREAS.analyze.redirectTo : PRODUCT_AREAS.analyze.href;
 
 export default function SolverIndexPage() {
   const router = useRouter();
@@ -22,7 +26,7 @@ export default function SolverIndexPage() {
 
       <main className="flex-1 w-full max-w-2xl mx-auto px-4 py-8">
         <Link
-          href="/analyze"
+          href={ANALYZE_TARGET}
           className="inline-flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider mb-6 transition-colors"
           style={{ color: "rgba(148,163,184,0.45)" }}
         >
