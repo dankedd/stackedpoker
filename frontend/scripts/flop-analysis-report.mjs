@@ -44,30 +44,47 @@ function report(hands, label) {
   const c = { flops: 0, before: 0, after: 0, analysed: 0, decisions: 0 };
   const verdicts = {};
   const spots = {};
+  // Why a flop hand got no good/ok/questionable verdict (aggregated).
+  const why = {};
+  const no = (k) => (why[k] = (why[k] ?? 0) + 1);
   for (const h of hands) {
     if (h.board?.flop?.length !== 3) continue;
     c.flops++;
     const r = matchFlop(h);
-    if (!r.ok) continue;
+    if (!r.ok) {
+      no(`no spot: ${r.reason}`);
+      continue;
+    }
     const m = r.match;
     c.after++;
     if ((m.spotId === "srp_bb_vs_bn_40" || m.spotId === "srp_bb_vs_utg_40") && m.effBb >= 30 && m.effBb <= 50) c.before++;
     const row = rows.get(m.spotId)?.get(m.flop);
-    if (!row) continue;
+    if (!row) {
+      no("spot not computed yet (coming soon)");
+      continue;
+    }
     c.analysed++;
     spots[m.spotId] = (spots[m.spotId] ?? 0) + 1;
-    if (!m.heroSide) continue;
+    if (!m.heroSide) {
+      no("Hero not in the pot");
+      continue;
+    }
     const pos = m.heroHand ? handPositionFrom(row.hands[m.heroSide], m.heroHand, [m.flop.slice(0, 2), m.flop.slice(2, 4), m.flop.slice(4, 6)]) : null;
     const check = gradeFlop({ match: m, line: flopLine(h, m), row, hand: pos, names: { ip: displayPos(m.spot.ip), oop: displayPos(m.spot.oop) } });
-    if (check.line.kind === "none") continue;
+    if (check.line.kind === "none") {
+      no("Hero made no flop decision");
+      continue;
+    }
     c.decisions++;
     verdicts[check.verdict] = (verdicts[check.verdict] ?? 0) + 1;
+    if (check.verdict === "not_evaluated") no(`not evaluated: ${check.reason}`);
   }
   const pct = (n) => (c.flops ? `${Math.round((100 * n) / c.flops)}%` : "–");
   console.log(`\n== ${label}: ${c.flops} hands reach the flop`);
   console.log(`   matched before: ${c.before} (${pct(c.before)}) → after: ${c.after} (${pct(c.after)}), of which analysed (data computed): ${c.analysed} (${pct(c.analysed)})`);
   console.log(`   Hero flop decisions graded: ${c.decisions}  verdicts:`, verdicts);
   console.log(`   analysed per spot:`, spots);
+  console.log(`   no verdict, by reason:`, Object.fromEntries(Object.entries(why).sort((a, b) => b[1] - a[1])));
 }
 
 const example = parseTexts([{ fileName: "x.txt", text: EXAMPLE_HAND_TEXTS.join("\n\n\n") }]).entries.map((e) => e.hand);
