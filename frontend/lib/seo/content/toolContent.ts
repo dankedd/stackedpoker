@@ -223,7 +223,7 @@ export function startingHandExamples(): ArticleSection {
         .map(([action, freq]) => `${action} ${((freq ?? 0) * 100).toFixed(0)}%`);
       return {
         term: `${hand} in the big blind facing a button open`,
-        description: `${parts.join(", ")} — ${provenance.figure}, p.${provenance.page}.`,
+        description: `${parts.join(", ")}.`,
       };
     });
 

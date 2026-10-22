@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Spade } from "lucide-react";
 import { FOOTER_NAV } from "@/lib/seo/navigation";
 import { CookieSettingsLink } from "@/components/analytics/ConsentBanner";
+import { SOURCE_CREDIT } from "@/lib/ranges/credit";
 
 /**
  * The shared app/content footer.
@@ -59,10 +60,14 @@ export function Footer() {
         </div>
 
         <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-border/40 pt-6 sm:flex-row">
-          <p className="text-center text-xs text-muted-foreground">
-            Educational tool only. Not a replacement for a real GTO solver. For training purposes
-            only.
-          </p>
+          <div className="text-center text-xs text-muted-foreground sm:text-left">
+            <p>
+              Educational tool only. Not a replacement for a real GTO solver. For training purposes
+              only.
+            </p>
+            {/* The single credit for the preflop chart data; feature screens carry no source labels. */}
+            <p className="mt-1 text-[11px] text-muted-foreground/70">Preflop ranges adapted from {SOURCE_CREDIT}.</p>
+          </div>
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <CookieSettingsLink className="transition-colors hover:text-foreground" />
             <p>© {new Date().getFullYear()} Stacked Poker</p>

@@ -60,14 +60,14 @@ export type NoMatchReason =
 
 export const NO_MATCH_LABEL: Record<NoMatchReason, string> = {
   no_flop: "No flop",
-  cash: "Cash game — the book's ranges are tournament ranges",
+  cash: "Cash game — the flop ranges are tournament ranges",
   multiway: "Multiway pot",
   limped: "Limped pot",
   allin_preflop: "All-in before the flop",
-  four_bet: "4-bet pot — the book has no ranges for it",
-  no_book_range: "No book range for this spot",
-  stack_too_deep: "Stack too deep for the book's ranges",
-  stack_too_short: "Stack too short for the book's ranges",
+  four_bet: "4-bet pot — no ranges available for it yet",
+  no_book_range: "No range available for this spot",
+  stack_too_deep: "Stack too deep for the available ranges",
+  stack_too_short: "Stack too short for the available ranges",
   unknown_position: "Position couldn't be read",
 };
 

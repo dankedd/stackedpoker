@@ -31,7 +31,6 @@ export default async function HomePage() {
   const stats = await getSiteStats();
   const trust: TrustItem[] = [
     { value: trainerChartCount(), label: "preflop charts in the trainer" },
-    { label: "Ranges from Modern Poker Theory" },
     { label: "GGPoker & PokerStars import" },
     ...(stats?.hands != null ? [{ value: stats.hands, label: "hands reviewed" }] : []),
     ...(stats?.players != null ? [{ value: stats.players, label: "players" }] : []),

@@ -182,7 +182,7 @@ export function gradeFlop({ match, line, row, hand, names }: FlopCheckInput): Fl
   if (!row) return { ...base, verdict: "not_evaluated", reason: "not_analysed", explain: "This spot's flops haven't been analysed yet." };
   if (line.kind === "none") return { ...base, verdict: "not_evaluated", reason: "no_decision", explain: "Hero made no flop decision." };
   if (line.kind === "lead") {
-    return { ...base, verdict: "not_evaluated", reason: "lead", explain: "Leads (betting into the preflop raiser) aren't graded: the book only analyses them on a few boards." };
+    return { ...base, verdict: "not_evaluated", reason: "lead", explain: "Leads (betting into the preflop raiser) aren't graded: there's no reliable reference for most boards." };
   }
 
   const heroName = match.heroSide === "ip" ? names.ip : names.oop;
@@ -191,7 +191,7 @@ export function gradeFlop({ match, line, row, hand, names }: FlopCheckInput): Fl
     ? `${nut} has the nut advantage (${Math.round(Math.max(row.nut_adv.ip, row.nut_adv.oop))}% vs ${Math.round(Math.min(row.nut_adv.ip, row.nut_adv.oop))}% Strong hands)`
     : `neither side has a clear nut advantage`;
   const b = hand?.equity !== undefined ? hand.bucket : undefined;
-  const handText = b ? `your hand is ${BUCKET_WORD[b]} (${Math.round(hand!.equity!)}% equity${hand!.in_range && hand!.top_pct !== undefined ? `, top ${Math.max(1, Math.round(hand!.top_pct))}% of your range` : ", outside the book's range"})` : null;
+  const handText = b ? `your hand is ${BUCKET_WORD[b]} (${Math.round(hand!.equity!)}% equity${hand!.in_range && hand!.top_pct !== undefined ? `, top ${Math.max(1, Math.round(hand!.top_pct))}% of your range` : ", outside the range"})` : null;
   const did = flopLineLabel(line);
 
   // ── IP raiser, villain checked: the c-bet guideline ──
@@ -210,7 +210,7 @@ export function gradeFlop({ match, line, row, hand, names }: FlopCheckInput): Fl
         verdict,
         advice,
         hand: hand ?? undefined,
-        explain: `The book solves this flop (p.${a.pages[0]}): ${heroName} bets small ${Math.round(small)}%, big ${Math.round(big)}%, checks ${Math.round(s.check ?? 0)}%. Your ${did} is a line the range takes ${Math.round(f)}% of the time.`,
+        explain: `The reference strategy for this flop: ${heroName} bets small ${Math.round(small)}%, big ${Math.round(big)}%, checks ${Math.round(s.check ?? 0)}%. Your ${did} is a line the range takes ${Math.round(f)}% of the time.`,
       };
     }
     const bandWord = a.band === "high" ? "bets almost its whole range (80%+)" : a.band === "mid" ? "bets 60–80% and checks back part of its range" : "checks a lot (bets under 60%)";
@@ -226,7 +226,7 @@ export function gradeFlop({ match, line, row, hand, names }: FlopCheckInput): Fl
       } else if (b === "good" || (b === "weak" && line.size === "big")) {
         verdict = "questionable";
         // The hand itself is already in the explanation (handText, below): don't repeat it.
-        why = "On a board like this the book checks back good-but-not-great hands and bets a polarized range (p.680–681).";
+        why = "On a board like this, good-but-not-great hands are usually checked back and the betting range is polarized.";
       } else {
         verdict = sizeOk ? (b ? "good" : "ok") : "ok";
         why = b === "strong" ? "A strong hand belongs in the betting range." : b === "trash" ? "A bluff with a hand that can't check down fits a polarized betting range." : sizeOk ? "Reasonable." : `Reasonable, though the guideline prefers ${sizeWord}.`;
@@ -235,13 +235,13 @@ export function gradeFlop({ match, line, row, hand, names }: FlopCheckInput): Fl
       // Checked back.
       if (a.band === "high") {
         verdict = "ok";
-        why = b === "strong" ? "Checking a strong hand is allowed when it blocks villain's continuing hands (p.681), but here the range bets almost everything." : "The range can bet nearly everything here, but checking some hands loses little.";
+        why = b === "strong" ? "Checking a strong hand is allowed when it blocks villain's continuing hands, but here the range bets almost everything." : "The range can bet nearly everything here, but checking some hands loses little.";
       } else if (b === "strong") {
         verdict = "ok";
-        why = "Strong hands are mostly bet; checking some back is allowed when they block villain's continuing hands (p.681).";
+        why = "Strong hands are mostly bet; checking some back is allowed when they block villain's continuing hands.";
       } else {
         verdict = "good";
-        why = b === "trash" ? "Giving up with little equity is fine on a board that suits the caller." : "Checking back a good-but-not-great hand is what the book recommends on boards like this (p.680).";
+        why = b === "trash" ? "Giving up with little equity is fine on a board that suits the caller." : "Checking back a good-but-not-great hand is standard on boards like this.";
       }
     }
     return { ...base, verdict, advice, hand: hand ?? undefined, explain: `${lead} ${handText ? `${capital(handText)}. ` : ""}${why}` };
@@ -261,14 +261,14 @@ export function gradeFlop({ match, line, row, hand, names }: FlopCheckInput): Fl
       if (b === "strong") [verdict, why] = ["questionable", `Folding a Strong hand gives up a lot: ${odds}.`];
       else if (b === "good") [verdict, why] = r <= 25 ? ["questionable", `Against a small bet ${odds}; a Good hand usually continues.`] : ["ok", `Against a big bet folding some Good hands is fine (${odds}).`];
       else if (b === "weak") [verdict, why] = e > r + 10 ? ["ok", `Close: ${odds}, and villain's betting range is stronger than the range average.`] : ["good", `Folding a weak hand is fine (${odds}).`];
-      else [verdict, why] = ["good", `Folding little equity is right even against small bets (p.727; ${odds}).`];
+      else [verdict, why] = ["good", `Folding little equity is right even against small bets (${odds}).`];
     } else if (line.kind === "call") {
-      if (b === "trash") [verdict, why] = e < r ? ["questionable", `Calling with ${e}% equity when ${odds} loses money (p.727).`] : ["ok", `Thin: ${odds}, and villain's betting range is stronger than average.`];
+      if (b === "trash") [verdict, why] = e < r ? ["questionable", `Calling with ${e}% equity when ${odds} loses money.`] : ["ok", `Thin: ${odds}, and villain's betting range is stronger than average.`];
       else [verdict, why] = ["good", `Your equity covers the price (${odds}).`];
     } else {
       // raise / check-raise
       if (b === "strong") [verdict, why] = ["good", "Raising a Strong hand builds the pot."];
-      else if (b === "trash") [verdict, why] = ["ok", "A raise as a bluff: fine in moderation, the book balances strong raises with some bluffs."];
+      else if (b === "trash") [verdict, why] = ["ok", "A raise as a bluff: fine in moderation, a balanced raising range mixes strong hands with some bluffs."];
       else [verdict, why] = ["ok", "Raising a medium-strength hand is unusual; calling is the more common line."];
     }
     return { ...base, verdict, hand: hand ?? undefined, explain: `${intro} ${why}` };
@@ -279,7 +279,7 @@ export function gradeFlop({ match, line, row, hand, names }: FlopCheckInput): Fl
   let why: string;
   if (line.kind === "cbet") {
     verdict = b === "strong" || b === "good" ? "good" : "ok";
-    why = match.heroSide === "oop" ? "Out of position the raiser c-bets often and bigger (p.726)." : "A c-bet here is reasonable.";
+    why = match.heroSide === "oop" ? "Out of position the raiser c-bets often and bigger." : "A c-bet here is reasonable.";
   } else if (line.kind === "stab") {
     why = "Betting when the raiser checks is a reasonable try.";
   } else {

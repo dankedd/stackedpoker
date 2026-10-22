@@ -288,7 +288,7 @@ def build_hand_context(
     flop_verdict = row.get("flop_check")
     if flop_verdict and isinstance(flop, dict) and flop.get("line"):
         line = flop["line"] or {}
-        out.append("OUR FLOP CHECK (range-level guideline from the book's flop data — not solver output for this exact hand)")
+        out.append("OUR FLOP CHECK (range-level guideline from the precomputed flop data — not solver output for this exact hand)")
         out.append(f"- Verdict: {_FLOP_VERDICT_TEXT.get(flop_verdict, flop_verdict)}")
         what = _FLOP_LINE_WORD.get(line.get("kind"), line.get("kind"))
         if line.get("betPct") is not None:
@@ -299,12 +299,12 @@ def build_hand_context(
         out.append(f"- Hero's flop decision: {what}")
         hand_pos = flop.get("hand")
         if isinstance(hand_pos, dict) and hand_pos.get("equity") is not None:
-            top = f", top {round(hand_pos['top_pct'])}% of Hero's range" if hand_pos.get("in_range") and hand_pos.get("top_pct") is not None else ", outside the book's range"
+            top = f", top {round(hand_pos['top_pct'])}% of Hero's range" if hand_pos.get("in_range") and hand_pos.get("top_pct") is not None else ", outside the range"
             out.append(f"- Hero's hand on this flop: {hand_pos.get('bucket')} bucket, {round(hand_pos['equity'])}% equity vs villain's range{top}")
         adv = flop.get("advice")
         if isinstance(adv, dict):
             if adv.get("source") == "book" and isinstance(adv.get("strategy"), dict):
-                out.append("- The book's strategy for this flop: " + ", ".join(f"{k.replace('bet_', 'bet ').replace('_', '/')} {v}%" for k, v in adv["strategy"].items()))
+                out.append("- Reference strategy for this flop: " + ", ".join(f"{k.replace('bet_', 'bet ').replace('_', '/')} {v}%" for k, v in adv["strategy"].items()))
             else:
                 out.append(f"- C-bet guideline for this board: {adv.get('band')} frequency, {adv.get('size')} size")
         if flop.get("explain"):

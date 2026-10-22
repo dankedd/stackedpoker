@@ -414,9 +414,9 @@ export function InfoModal({ onClose }: { onClose: () => void }) {
           <h3 className="font-semibold text-foreground">The c-bet question</h3>
           <p className="mt-1">
             How often should the opener bet this flop — 80% or more, 60–80%, or under 60% — and with a small (min-bet or
-            1/3 pot) or big (1/2 or 2/3 pot) size? The answer comes from the book&apos;s average range profiles for each
-            kind of flop: the flop is matched to the closest one. Paired and monotone boards use small sizes. On the six
-            flops the book solves in full, its own numbers are used.
+            1/3 pot) or big (1/2 or 2/3 pot) size? The answer comes from average range profiles for each kind of flop:
+            the flop is matched to the closest one. Paired and monotone boards use small sizes. On the few flops with a
+            full reference strategy, those numbers are used.
           </p>
         </div>
         <div>
@@ -427,7 +427,6 @@ export function InfoModal({ onClose }: { onClose: () => void }) {
             Flops you misjudge come up more often.
           </p>
         </div>
-        <p className="border-t border-border/50 pt-3 text-xs">Concepts based on Modern Poker Theory by Michael Acevedo.</p>
       </div>
     </Modal>
   );

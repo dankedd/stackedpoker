@@ -46,7 +46,7 @@ for (const row of [demo.good.row, demo.questionable.row]) {
   if (!r.ok) throw new Error(`seed flop_equity: ${r.status}`);
 }
 
-const POSITIONS = { [demo.good.cls]: demo.good.position, [demo.questionable.cls]: demo.questionable.position };
+const POSITIONS = { [demo.good.cls]: demo.good.position, [demo.questionable.cls]: demo.questionable.position, [demo.defense.cls]: demo.defense.position };
 
 async function newContext(type, ctx) {
   const browser = await type.launch();
@@ -125,6 +125,7 @@ const STATES = [
   { key: "good", handId: demo.good.handId, expect: "Good" },
   { key: "questionable", handId: demo.questionable.handId, expect: "Questionable" },
   { key: "coming-soon", handId: demo.comingSoon.handId, expect: "Analysis for this spot is coming soon." },
+  { key: "defense", handId: demo.defense.handId, expect: "Good" },
 ];
 const VIEWS = [
   { name: "desktop", type: chromium, ctx: { viewport: { width: 1280, height: 900 } } },
@@ -152,7 +153,7 @@ for (const v of VIEWS) {
     const body = await page.evaluate(() => document.body.innerText);
     ok(`${v.name} ${s.key}: panel shows "${s.expect}"`, body.toLowerCase().includes(s.expect.toLowerCase()));
     if (s.key !== "coming-soon") {
-      const pos = s.key === "good" ? demo.good.position : demo.questionable.position;
+      const pos = demo[s.key].position;
       ok(`${v.name} ${s.key}: hand position (bucket + top %)`, new RegExp(`top ${Math.round(pos.top_pct)}% of your range`).test(body), `${pos.bucket}, top ${pos.top_pct}%`);
     }
     // Phones: no sideways scroll, nothing fixed/sticky over the panel.
@@ -177,6 +178,13 @@ for (const v of VIEWS) {
     await flopPanel.scrollIntoViewIfNeeded().catch(() => {});
     await page.waitForTimeout(300);
     await flopPanel.screenshot({ path: path.join(OUT, `panel-${v.name}-${s.key}.png`) }).catch((e) => ok(`${v.name} ${s.key}: panel screenshot`, false, e.message));
+    // The preflop check panel (open or defense chart) for the same hand.
+    const pfPanel = page.locator('section[aria-labelledby="pf-check"]');
+    if (await pfPanel.count()) {
+      await pfPanel.scrollIntoViewIfNeeded().catch(() => {});
+      await page.waitForTimeout(300);
+      await pfPanel.screenshot({ path: path.join(OUT, `preflop-${v.name}-${s.key}.png`) }).catch(() => {});
+    }
     await page.waitForTimeout(400);
     await page.screenshot({ path: path.join(OUT, `${v.name}-${s.key}.png`) });
     await page.screenshot({ path: path.join(OUT, `${v.name}-${s.key}-full.png`), fullPage: true });

@@ -185,7 +185,7 @@ export function StartingHandQuiz() {
                     {question.explanation}
                   </p>
                   <p className="text-[11px] leading-relaxed text-muted-foreground/70">
-                    Source: {question.source}
+                    Assumes: {question.source}
                   </p>
                 </>
               )}

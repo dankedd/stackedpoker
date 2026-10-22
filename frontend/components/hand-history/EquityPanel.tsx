@@ -122,7 +122,6 @@ export function EquityPanel({
         <span className="text-muted-foreground">
           {" "}
           · {t.equity.ofHands(fmtNum(rangePct(range), 1))}
-          {!edited && initial.source ? ` · ${t.equity.source(initial.source.hr, initial.source.page)}` : ""}
         </span>
       </p>
       {!edited && initial.approximation && (

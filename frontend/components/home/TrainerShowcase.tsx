@@ -64,7 +64,7 @@ export function TrainerShowcase({ open, defend }: { open: HomeChart; defend: Hom
         <p className="mt-4 text-[16px] leading-relaxed text-white/75">
           The range that opens and the range that defends, side by side. Point at a hand to see how often each side plays it — then drill it until it&apos;s automatic.
         </p>
-        <p className="mt-3 text-[13px] text-white/50">Ranges from Modern Poker Theory by Michael Acevedo · cash 6-max, 100 BB</p>
+        <p className="mt-3 text-[13px] text-white/50">Cash 6-max, 100 BB</p>
         <TryTrainerButton location="showcase" className="mt-7">
           Try the trainer — no account needed
         </TryTrainerButton>

@@ -170,7 +170,7 @@ function checkBvb(flop: HandEvent[], row: FlopRowLite | null, hp: HandPositionLi
   return { m, g: gradeFlop({ match: m, line: flopLine(h, m), row, hand: hp, names: bvbNames }) };
 }
 
-describe("flop check — OOP raiser (blind vs blind, p.726)", () => {
+describe("flop check — OOP raiser (blind vs blind)", () => {
   it("matches the SB as the out-of-position raiser", () => {
     const { m } = checkBvb([act("SB", "check", 0, "flop")], OOP_BOARD, pos("good", 55));
     expect(m.heroSide).toBe("oop");
@@ -180,7 +180,8 @@ describe("flop check — OOP raiser (blind vs blind, p.726)", () => {
   it("c-betting a Good hand out of position is good", () => {
     const { g } = checkBvb([act("SB", "bet", 400, "flop")], OOP_BOARD, pos("good", 62));
     expect(g.verdict).toBe("good");
-    expect(g.explain).toContain("p.726");
+    expect(g.explain).toContain("c-bets often and bigger");
+    expect(g.explain).not.toMatch(/p\.\d+|book/i);
   });
 
   it("c-betting a Weak hand out of position is ok, not wrong", () => {

@@ -114,7 +114,7 @@ export function FlopSpotPanel({
   const mm = match.match;
   const names = spotNames(mm);
   const title = spotTitle(mm.spot);
-  const sub = `${t.flop.bookRanges}${mm.spot.derived ? t.flop.derivedNote : ""} · ${t.flop.stacksHere(Math.round(mm.effBb))}`;
+  const sub = t.flop.stacksHere(Math.round(mm.effBb));
   const row = analysis.row;
   if (!row) return shell(<p className="text-sm text-muted-foreground">{t.flop.notAnalysed}</p>, title, sub);
 

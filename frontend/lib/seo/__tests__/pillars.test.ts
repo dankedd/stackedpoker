@@ -156,16 +156,15 @@ describe("the pillar pages earn their URL", () => {
 describe("the pillars state nothing they cannot back", () => {
   const byPath = (p: string) => pillarEntries().find((e) => e.path === p)!;
 
-  it("the charts page counts real charts, and names their figures", () => {
+  it("the charts page counts real charts and says they are published, without naming a source", () => {
     const entry = byPath("/preflop-charts");
     const text = entryText(entry);
     // The count is derived, so it must equal the registries.
     const expected = Object.keys(MTT_RFI_CHARTS).length + 5 + 1;
     expect(text).toContain(String(expected));
-    expect(text).toMatch(/Modern Poker Theory/);
-    expect(text).toMatch(/Hand Ranges 96 to 139/);
-    expect(text).toMatch(/Hand Ranges 76 to 84/);
-    expect(text).toMatch(/Hand Range 66/);
+    expect(text).toMatch(/published chart/);
+    // The single credit lives in the site footer; the page itself names no book, chapter or figure.
+    expect(text).not.toMatch(/Modern Poker Theory|Acevedo|Hand Ranges? \d|Chapter \d/);
   });
 
   it("the charts page states the gap instead of filling it", () => {

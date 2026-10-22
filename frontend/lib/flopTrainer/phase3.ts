@@ -115,7 +115,7 @@ export function explainCbet(a: CbetAdvice, ipName: string, oopName: string, oop:
     )
       .filter(([, v]) => v !== undefined)
       .map(([k, v]) => `${k} ${v}%`);
-    return `The book solves this exact flop (p.${a.pages[0]}–${a.pages[a.pages.length - 1]}): ${parts.join(" · ")}.`;
+    return `Reference strategy for this exact flop: ${parts.join(" · ")}.`;
   }
   const size =
     a.rule === "paired" || a.rule === "trips"
@@ -131,7 +131,7 @@ export function explainCbet(a: CbetAdvice, ipName: string, oopName: string, oop:
       : a.band === "mid"
         ? `The ranges are closer here, so ${ipName} checks back part of its good-but-not-great hands.`
         : `This board suits ${oopName}: ${ipName} checks a lot and bets a more polarized range.`;
-  return `${size} ${freq} (Closest of the book's six c-bet profiles, p.${a.pages.filter((p) => p !== 675).join(", ")}.)`;
+  return `${size} ${freq}`;
 }
 
 // ── Texture tracking ────────────────────────────────────────────────────────

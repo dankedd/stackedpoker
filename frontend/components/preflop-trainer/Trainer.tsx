@@ -33,7 +33,7 @@ import { useLearnProgress } from "@/contexts/LearnProgressContext";
 import { LevelUpModal } from "@/components/learn/LevelUpModal";
 import { XPGain } from "@/components/learn/XPGain";
 import { cn } from "@/lib/utils";
-import { ACTION_ORDER, HandBreakdown, Pills, SourceLegend, Swatch, TOOL_SLUG, sourceLabel, toStrategies } from "./shared";
+import { ACTION_ORDER, HandBreakdown, Pills, SourceLegend, Swatch, TOOL_SLUG, toStrategies } from "./shared";
 import { ActionButtons, HOTKEY, PhoneTable, Table, VERDICT } from "./TrainerTable";
 import { useIsPhone } from "@/hooks/useIsMobile";
 import { useTrainerProgress } from "./useTrainerProgress";
@@ -472,11 +472,8 @@ function ResultModal({
             <ArrowUpRight aria-hidden="true" className="h-3.5 w-3.5" />
             <span className="sr-only">(opens in a new tab, so this session keeps its score)</span>
           </Link>
-          <p className="text-xs text-muted-foreground">
-            {deal.type === "def"
-              ? `${spotLabel(deal)} · Hand Range ${deal.chart.n} · p. ${deal.chart.page}`
-              : `${sourceLabel(deal.chart.hr)} · p. ${deal.chart.page}`}
-          </p>
+          {/* Defense spots: what happened before Hero acts. */}
+          {deal.type === "def" && <p className="text-xs text-muted-foreground">{spotLabel(deal)}</p>}
           {deal.kind === "pf" ? (
             <div className="hidden md:block">
               <PushFoldResult deal={deal} chosen={k} />

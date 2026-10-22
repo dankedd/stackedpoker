@@ -6,7 +6,7 @@ import { DEFENSE_CHARTS, PUSH_FOLD_CHARTS } from "@/lib/ranges/data";
 import { ALL_HANDS, combos, displayPos, pushValue, spotLabel, type DefenseScenario } from "@/lib/ranges/logic";
 import type { ChartAction, DefenseChart, DefenseSpot, OpenChart } from "@/lib/ranges/types";
 import { cn } from "@/lib/utils";
-import { ACTION_ORDER, ChartPanel, Note, Pills, fmtPct, sourceLabel, toStrategies } from "./shared";
+import { ACTION_ORDER, ChartPanel, Note, Pills, fmtPct, toStrategies } from "./shared";
 
 // ── Small multiples ─────────────────────────────────────────────────────────
 
@@ -111,7 +111,6 @@ export function OpenRangesView({
       </div>
       <ChartPanel
         heading={`${displayPos(chart.pos)} · ${chart.stack}bb`}
-        source={`${sourceLabel(chart.hr)} · p. ${chart.page}`}
         grid={chart.grid}
         actions={chart.actions}
       />
@@ -207,7 +206,7 @@ export function DefenseView({ value, onChange }: { value: DefenseSelection; onCh
       </div>
       <ChartPanel
         heading={`${displayPos(chart.hero)} vs ${displayPos(chart.vil)}${chart.group === "mtt" ? ` · ${chart.stack}bb` : ""}`}
-        source={`${label(chart)} · Hand Range ${chart.n} · p. ${chart.page}`}
+        source={label(chart)}
         grid={chart.grid}
         actions={chart.actions}
       />
@@ -219,8 +218,8 @@ export function DefenseView({ value, onChange }: { value: DefenseSelection; onCh
       />
       <Note>
         {fmt === "mtt"
-          ? "MTT defense with antes (Hand Ranges 140–266). Facing a 4-bet or a re-raise, only the hands that actually reach that spot are shown; the percentages on the right are the source's own figures. Per-hand frequencies are read from the charts (±1–2 points)."
-          : "6-max cash game, 100bb (chapter 5, Hand Ranges 56–87). Facing a 4-bet or a re-raise, only the hands that actually reach that spot are shown. Per-hand frequencies are read from the charts (±1–2 points)."}
+          ? "MTT defense with antes. Facing a 4-bet or a re-raise, only the hands that actually reach that spot are shown; the percentages on the right are each chart's totals. Per-hand frequencies are approximate (±1–2 points)."
+          : "6-max cash game, 100bb. Facing a 4-bet or a re-raise, only the hands that actually reach that spot are shown. Per-hand frequencies are approximate (±1–2 points)."}
       </Note>
     </div>
   );
@@ -324,7 +323,7 @@ export function PushFoldView({
         </aside>
       </div>
       <Note>
-        Push/fold tables (Hand Ranges 88–95), computed in the source with HRC (FGS). Drag the slider to see which hands
+        Push/fold tables, computed with HRC (FGS). Drag the slider to see which hands
         you can shove at your stack; hands with a lower number are dimmed.
       </Note>
     </div>

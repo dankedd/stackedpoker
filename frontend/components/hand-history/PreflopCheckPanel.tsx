@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { Dumbbell, Table2 } from "lucide-react";
 import { PokerRangeGrid } from "@/components/learn/visuals/PokerRangeGrid";
-import { ChartPanel, sourceLabel } from "@/components/preflop-trainer/shared";
+import { ChartPanel } from "@/components/preflop-trainer/shared";
 import { DEFENSE_CHARTS, MTT_OPEN_CHARTS, PUSH_FOLD_CHARTS } from "@/lib/ranges/data";
 import { PREFLOP_RANGES_ENABLED, PREFLOP_TRAINER_PATH } from "@/lib/ranges/feature";
 import { cardsFor, displayPos, pushValue } from "@/lib/ranges/logic";
@@ -109,7 +109,6 @@ function DefenseChartView({ refInfo, hand }: { refInfo: RangeRef; hand: string }
   return (
     <ChartPanel
       heading={`${chart.title}${chart.group === "mtt" && !/\d+bb/.test(chart.title) ? ` · ${chart.stack}bb` : ""}`}
-      source={`Hand Range ${chart.n} · p. ${chart.page}`}
       grid={chart.grid}
       actions={chart.actions}
       highlight={hand}
@@ -123,7 +122,6 @@ function OpenChart({ position, bucket, hand }: { position: string; bucket: numbe
   return (
     <ChartPanel
       heading={`${displayPos(chart.pos)} · ${chart.stack}bb`}
-      source={`${sourceLabel(chart.hr)} · p. ${chart.page}`}
       grid={chart.grid}
       actions={chart.actions}
       highlight={hand}

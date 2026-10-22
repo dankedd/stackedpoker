@@ -565,7 +565,7 @@ const TOOLS: ToolSource[] = [
       {
         heading: "Where these numbers come from, and where they do not",
         paragraphs: [
-          "Modern Poker Theory states a bankroll figure for tournaments only — at least 200 buy-ins, and 1,000 to minimise the risk of going broke. It gives no figure for cash games, PLO or Spin & Go anywhere in the book.",
+          "The published figure covers tournaments only — at least 200 buy-ins, and 1,000 to minimise the risk of going broke. There is no published figure behind the cash game, PLO or Spin & Go presets.",
           "So the tournament presets are a published figure and the rest are StackedPoker's own defaults. The calculator says which is which every time you switch game type, because a house default presented as a rule is how players end up broke following advice nobody stands behind.",
         ],
       },
@@ -600,7 +600,7 @@ const TOOLS: ToolSource[] = [
       {
         question: "How big should my poker bankroll be?",
         answer:
-          "It depends on format and your own risk tolerance. Modern Poker Theory states at least 200 buy-ins for tournaments; StackedPoker's cash-game default is 40 buy-ins, which is a house default rather than a published figure. The calculator applies whichever rule you choose.",
+          "It depends on format and your own risk tolerance. The published guideline is at least 200 buy-ins for tournaments; StackedPoker's cash-game default is 40 buy-ins, which is a house default rather than a published figure. The calculator applies whichever rule you choose.",
       },
       {
         question: "When should I move up in stakes?",
@@ -614,7 +614,7 @@ const TOOLS: ToolSource[] = [
       },
     ],
     sourceNote:
-      "Buy-in presets and the safe/move-up/move-down classification come from lib/bankroll/management.ts, the same module the StackedPoker bankroll tracker uses. Only the tournament figure is a published one (Modern Poker Theory p.264); the others are StackedPoker defaults and are labelled as such on the page.",
+      "Buy-in presets and the safe/move-up/move-down classification come from lib/bankroll/management.ts, the same module the StackedPoker bankroll tracker uses. Only the tournament figure is a published one; the others are StackedPoker defaults and are labelled as such on the page.",
   },
   {
     slug: "variance-calculator",
@@ -714,7 +714,7 @@ const TOOLS: ToolSource[] = [
       {
         heading: "How the grading works",
         paragraphs: [
-          "Open-or-fold questions are graded against StackedPoker's RFI baseline, ported from the backend's 100bb cash opening ranges. Big-blind defence questions are graded against a complete fold/call/3-bet chart read from Modern Poker Theory's own chart images, cited by page and figure.",
+          "Open-or-fold questions are graded against StackedPoker's RFI baseline, ported from the backend's 100bb cash opening ranges. Big-blind defence questions are graded against a complete, published fold/call/3-bet chart.",
           "Real charts play many hands two ways on purpose. Where the chart is close to indifferent, both answers are accepted — marking a 52/48 hand wrong would be teaching you something false.",
         ],
       },
@@ -754,7 +754,7 @@ const TOOLS: ToolSource[] = [
       {
         question: "Where do the answers come from?",
         answer:
-          "Open-or-fold uses StackedPoker's RFI baseline, ported from the backend's 100bb cash opening ranges. Big-blind defence uses a complete chart from Modern Poker Theory, cited by page and figure on each answer.",
+          "Open-or-fold uses StackedPoker's RFI baseline, ported from the backend's 100bb cash opening ranges. Big-blind defence uses a complete, published chart.",
       },
       {
         question: "Why is the same hand sometimes a raise and sometimes a fold?",
@@ -763,7 +763,7 @@ const TOOLS: ToolSource[] = [
       },
     ],
     sourceNote:
-      "Graded against lib/learn/preflopBaselines.ts (RFI, ported from the backend's 100bb cash open ranges, documented as simplified practical ranges) and lib/learn/bbDefenseComplete.ts (Modern Poker Theory, chapter 5, cited by page and figure per matchup). The quiz decides nothing itself.",
+      "Graded against lib/learn/preflopBaselines.ts (RFI, ported from the backend's 100bb cash open ranges, documented as simplified practical ranges) and lib/learn/bbDefenseComplete.ts (a complete published chart per matchup). The quiz decides nothing itself.",
   },
   {
     slug: "range-viewer",

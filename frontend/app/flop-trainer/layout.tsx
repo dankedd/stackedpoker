@@ -15,8 +15,7 @@ export default function FlopTrainerLayout({ children }: { children: React.ReactN
         <FlopSectionNav />
         {children}
         <p className="mt-10 border-t border-border/50 pt-4 text-[11px] leading-relaxed text-muted-foreground/80">
-          Concepts based on Modern Poker Theory by Michael Acevedo. Ranges are the book&apos;s 40bb charts; every equity is
-          computed exactly from them, ahead of time.
+          Ranges are 40bb tournament charts; every equity is computed exactly from them, ahead of time.
         </p>
       </main>
       <Footer />

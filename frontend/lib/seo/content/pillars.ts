@@ -71,7 +71,7 @@ function preflopChartsEntry(): SeoEntry {
     slug: "preflop-charts",
     path: "/preflop-charts",
     title: "Preflop Poker Charts: How to Read Them and Which Ones Are Real",
-    summary: `What a preflop chart actually encodes, how to read a 13x13 hand grid, and the ${chart.total} charts StackedPoker publishes — every one traced to a numbered figure in a named book, with the gaps stated rather than filled in.`,
+    summary: `What a preflop chart actually encodes, how to read a 13x13 hand grid, and the ${chart.total} charts StackedPoker publishes — every one traced to a published chart, with the gaps stated rather than filled in.`,
     status: "published",
     tags: [
       "preflop charts",
@@ -127,22 +127,22 @@ function preflopChartsEntry(): SeoEntry {
       {
         heading: "The charts StackedPoker publishes",
         paragraphs: [
-          `There are ${chart.total}, and every one was read out of a numbered figure in Michael Acevedo's Modern Poker Theory (D&B Poker, 2019) and then checked against the aggregate percentage the book prints beneath that same figure.`,
+          `There are ${chart.total}, and every one was read out of a published chart and then checked against the aggregate percentage printed with that same chart.`,
         ],
         definitions: [
           {
             term: `First-in raising, ${chart.mttCount} charts`,
-            description: `${chart.mttPositions} positions at ${depths} effective, for 9-handed tournament play with an ante. Chapter 7, Hand Ranges 96 to 139.`,
+            description: `${chart.mttPositions} positions at ${depths} effective, for 9-handed tournament play with an ante.`,
           },
           {
             term: `Big blind defence, ${chart.bbDefenceCount} charts`,
             description:
-              "Fold, call and 3-bet frequencies for the big blind facing a single raise from each earlier seat, 6-max cash at 100bb. Chapter 5, Hand Ranges 76 to 84.",
+              "Fold, call and 3-bet frequencies for the big blind facing a single raise from each earlier seat, 6-max cash at 100bb.",
           },
           {
             term: `Button versus cutoff, ${chart.openResponseCount} chart`,
             description:
-              "The button's complete response to a cutoff open, 6-max cash at 100bb. Chapter 5, Hand Range 66.",
+              "The button's complete response to a cutoff open, 6-max cash at 100bb.",
           },
         ],
       },
@@ -185,7 +185,7 @@ function preflopChartsEntry(): SeoEntry {
       {
         question: "Where do these preflop charts come from?",
         answer:
-          "Every one was read from a numbered figure in Modern Poker Theory (Acevedo, 2019) by pixel measurement of the book's own chart images, then cross-validated against the aggregate percentage printed beneath each figure. The page names the chapter and figure numbers.",
+          "Every one was read from a published chart by pixel measurement, then cross-validated against the aggregate percentage printed with that chart.",
       },
       {
         question: "Why is there no 6-max cash opening chart here?",
@@ -205,7 +205,7 @@ function preflopChartsEntry(): SeoEntry {
     priority: 0.8,
     changeFrequency: "monthly",
     sourceNote:
-      "Chart counts, positions and stack depths on this page are counted from the chart registries at build time. The charts themselves come from Modern Poker Theory (Acevedo, 2019), chapters 5 and 7; no range on this page is authored by StackedPoker.",
+      "Chart counts, positions and stack depths on this page are counted from the chart registries at build time. The charts themselves are published preflop charts; no range on this page is authored by StackedPoker.",
   };
 
   entry.authority = {

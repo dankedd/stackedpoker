@@ -532,7 +532,7 @@ function HandAnalyzerBody({ recommendations = {} }: PokerHandAnalyzerProps) {
               // page — pasted into a forum, the condition is the first thing
               // that would otherwise be lost.
               analysis.conditional
-                ? `Conditional on the ${analysis.conditional.presetLabel} range (${analysis.conditional.citation}).`
+                ? `Conditional on the ${analysis.conditional.presetLabel} range.`
                 : "",
               "— StackedPoker hand analyzer",
             ]
@@ -1018,7 +1018,6 @@ function ConditionalNotice({ conditional }: { conditional: ConditionalRange }) {
       <p className="mt-1.5 text-sm font-medium text-foreground">
         Villain range: {conditional.presetLabel}
       </p>
-      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{conditional.citation}</p>
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
         This analysis assumes villain holds that range. Your real equity depends on the range they
         actually have.

@@ -201,6 +201,35 @@ const cs = matchFlop(parse(csText));
 if (!cs.ok) throw new Error(`coming-soon hand did not match: ${cs.reason}`);
 if (cs.match.spot.precomputed) throw new Error(`${cs.match.spotId} is precomputed — pick another spot for "coming soon"`);
 
+// Defense: BTN opens 2.3x, Hero defends the BB, then check-raises the c-bet with a
+// Strong hand on the "good" hand's flop (its row is already seeded in the mock).
+function defendHand(cards, board) {
+  const { name, lines } = header(2, cards, 40000);
+  const out = [...lines];
+  for (const s of [3, 4, 5, 6, 7]) out.push(`${name(s)}: folds`);
+  out.push(`${name(8)}: raises 1,300 to 2,300`, `${name(1)}: folds`, "Hero: calls 1,300");
+  const pre = 2 * 2300 + 500 + 8 * 125;
+  out.push(`*** FLOP *** [${board.join(" ")}]`, "Hero: checks", `${name(8)}: bets 2,000`, "Hero: raises 4,000 to 6,000", `${name(8)}: folds`);
+  out.push("Uncalled bet (4,000) returned to Hero", "*** SHOWDOWN ***", `Hero collected ${fmt(pre + 4000)} from pot`, "*** SUMMARY ***", `Total pot ${fmt(pre + 4000)} | Rake 0`);
+  return out.join("\n");
+}
+const dBoard = good.board;
+const dRow = good.row;
+const dBoardCards = [dRow.flop.slice(0, 2), dRow.flop.slice(2, 4), dRow.flop.slice(4, 6)];
+const dCls = ["KK", "QQ", "JJ", "TT", "99", "A2s", "A3s", "33", "22", "A2o"].find((c) => {
+  const p = handPosition(dRow.hands.oop, c, dBoardCards);
+  return c !== good.cls && p.in_range && p.bucket === "strong" && cardsFor(c, dBoard);
+});
+if (!dCls) throw new Error("no Strong BB hand found for the defense demo");
+const dText = defendHand(cardsFor(dCls, dBoard), dBoard);
+const dId = `TM8800000${String(handNo).padStart(3, "0")}`;
+texts.push(dText);
+const dHand = parse(dText);
+const dm = matchFlop(dHand);
+if (!dm.ok) throw new Error(`defense hand did not match: ${dm.reason}`);
+const dPos = handPosition(dRow.hands[dm.match.heroSide], dCls, dBoardCards);
+const dCheck = gradeFlop({ match: dm.match, line: flopLine(dHand, dm.match), row: dRow, hand: dPos, names: NAMES_FOR });
+
 const file = path.join(OUT, "GG20261021-1500 - Demo Flop Cup.txt");
 fs.writeFileSync(file, texts.join("\n\n\n") + "\n");
 const strip = (r) => Object.fromEntries(Object.entries(r).filter(([k]) => !["hands", "texture_detail", "seconds"].includes(k)));
@@ -209,8 +238,9 @@ const demo = {
   good: { handId: goodId, flop: good.match.match.flop, cls: good.cls, side: good.match.match.heroSide, verdict: good.g.verdict, explain: good.g.explain, row: strip(good.row), position: good.pos },
   questionable: { handId: qId, flop: questionable.match.match.flop, cls: questionable.cls, side: questionable.match.match.heroSide, verdict: questionable.g.verdict, explain: questionable.g.explain, row: strip(questionable.row), position: questionable.pos },
   comingSoon: { handId: csId, spotId: cs.match.spotId, flop: cs.match.flop },
+  defense: { handId: dId, flop: dm.match.flop, cls: dCls, side: dm.match.heroSide, verdict: dCheck.verdict, explain: dCheck.explain, row: strip(dRow), position: dPos },
 };
 fs.writeFileSync(path.join(OUT, "demo.json"), JSON.stringify(demo, null, 1));
 console.log(file);
-for (const k of ["good", "questionable"]) console.log(k, demo[k].handId, demo[k].cls, demo[k].flop, demo[k].verdict, "|", demo[k].explain);
+for (const k of ["good", "questionable", "defense"]) console.log(k, demo[k].handId, demo[k].cls, demo[k].flop, demo[k].verdict, "|", demo[k].explain);
 console.log("coming soon", csId, cs.match.spotId, "precomputed:", cs.match.spot.precomputed);

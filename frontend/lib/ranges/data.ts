@@ -21,5 +21,4 @@ export const DEFENSE_CHARTS = defenseJson as unknown as DefenseChart[];
 export const MTT_OPEN_CHARTS = OPEN_CHARTS.filter((c) => c.group === "mtt");
 export const CASH_OPEN_CHARTS = OPEN_CHARTS.filter((c) => c.group === "cash");
 
-export const SOURCE_CREDIT =
-  "Modern Poker Theory by Michael Acevedo (D&B Publishing, 2019)";
+export { SOURCE_CREDIT } from "./credit";

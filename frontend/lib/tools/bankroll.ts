@@ -38,22 +38,22 @@ export const BANKROLL_PROVENANCE: Record<BankrollCategory, BankrollProvenance> =
   tournament: {
     cited: true,
     note:
-      "Modern Poker Theory (Acevedo, 2019), \"MTT Bankroll Management\" p.264 — \"at least 200 buy-ins\", with 1,000 cited to minimise the risk of going broke.",
+      "A published guideline for tournaments: at least 200 buy-ins, and 1,000 to minimise the risk of going broke.",
   },
   cash: {
     cited: false,
     note:
-      "StackedPoker's own default. Modern Poker Theory states no cash-game bankroll figure, so nothing here is presented as a book citation.",
+      "StackedPoker's own default: there is no published cash-game figure behind it.",
   },
   plo: {
     cited: false,
     note:
-      "StackedPoker's own default, set above the cash presets because PLO is conventionally higher-variance. Not a book figure.",
+      "StackedPoker's own default, set above the cash presets because PLO is conventionally higher-variance.",
   },
   spin_and_go: {
     cited: false,
     note:
-      "StackedPoker's own default, mirroring the tournament presets because a Spin & Go is a hyper-turbo SNG. Not a book figure.",
+      "StackedPoker's own default, mirroring the tournament presets because a Spin & Go is a hyper-turbo SNG.",
   },
 };
 

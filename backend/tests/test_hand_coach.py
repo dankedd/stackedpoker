@@ -169,7 +169,8 @@ def test_flop_check_reaches_the_coach_context():
     assert "Verdict: questionable" in ctx
     assert "Hero's flop decision: c-bet 75% of the pot" in ctx
     assert "good bucket, 61% equity vs villain's range, top 38% of Hero's range" in ctx
-    assert "The book's strategy for this flop" in ctx
+    assert "Reference strategy for this flop" in ctx
+    assert "book" not in ctx.lower().split("our flop check")[1]
 
 
 @needs_rows

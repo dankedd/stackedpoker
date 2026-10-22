@@ -70,7 +70,7 @@ export function RangesBrowser() {
             stack={state.mtt.stack}
             onChange={(mtt) => update({ ...state, mtt })}
             showStacks
-            note="MTT ranges with antes (chapter 7, Hand Ranges 96–139). The button also has limping variants at 12, 20 and 30bb (Hand Ranges 109–111). Raise sizes as in the book: 2x at 15–25bb, 2.3x from 40bb (UTG/UTG+1: 2x). Per-hand frequencies are read from the charts and can be 1–2 points off; the totals on the right are the book's exact figures."
+            note="MTT ranges with antes. The button also has limping variants at 12, 20 and 30bb. Raise sizes: 2x at 15–25bb, 2.3x from 40bb (UTG/UTG+1: 2x). Per-hand frequencies are approximate (±1–2 points); the totals on the right are each chart's exact figures."
           />
         )}
         {state.view === "def" && <DefenseView value={state.def} onChange={(def) => update({ ...state, def })} />}
@@ -85,7 +85,7 @@ export function RangesBrowser() {
             stack={100}
             onChange={({ pos }) => update({ ...state, cash: { pos } })}
             showStacks={false}
-            note="6-max cash game, 100bb, GTO raise-first-in (chapter 5, Hand Ranges 32–47). The small blind mixes a 3x raise with limping."
+            note="6-max cash game, 100bb, GTO raise-first-in. The small blind mixes a 3x raise with limping."
           />
         )}
       </div>

@@ -103,7 +103,7 @@ export function RangeEditor({
               <optgroup key={g} label={g}>
                 {items.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.label} ({p.source})
+                    {p.label}
                   </option>
                 ))}
               </optgroup>

@@ -130,10 +130,11 @@ describe("bankroll", () => {
     }
   });
 
-  it("cites the book only where the book actually says something", () => {
-    // Modern Poker Theory gives an MTT figure and nothing for the others.
+  it("marks only the tournament figure as published, and names no source", () => {
+    // There is a published MTT figure and nothing for the others.
     expect(BANKROLL_PROVENANCE.tournament.cited).toBe(true);
-    expect(BANKROLL_PROVENANCE.tournament.note).toContain("p.264");
+    expect(BANKROLL_PROVENANCE.tournament.note).toContain("200 buy-ins");
+    expect(BANKROLL_PROVENANCE.tournament.note).not.toMatch(/Modern Poker Theory|Acevedo|p\.\d+/);
     for (const category of ["cash", "plo", "spin_and_go"] as const) {
       expect(BANKROLL_PROVENANCE[category].cited, category).toBe(false);
       expect(BANKROLL_PROVENANCE[category].note, category).toMatch(/own default/);
@@ -427,8 +428,9 @@ describe("starting hand quiz", () => {
       const charts = Object.values(BB_DEFENSE_COMPLETE_100BB);
       const known = charts.some((chart) => chart[question.hand] !== undefined);
       expect(known, question.hand).toBe(true);
-      expect(question.source).toContain("Modern Poker Theory");
-      expect(question.source).toMatch(/p\.\d+/);
+      // The quiz shows the game assumptions only — no title or page (the credit lives in the site footer).
+      expect(question.source).not.toMatch(/Modern Poker Theory|Acevedo|p\.\d+|Hand Range/);
+      expect(question.source.length).toBeGreaterThan(3);
     }
   });
 

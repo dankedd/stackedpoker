@@ -133,7 +133,7 @@ export function BankrollCalculator() {
         // nobody actually stands behind.
         <p className="rounded-lg border border-border/50 bg-background/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
           <span className="font-medium text-foreground/80">
-            {provenance.cited ? "Source: " : "Not a book figure: "}
+            {provenance.cited ? "Published figure: " : "House default: "}
           </span>
           {provenance.note}
         </p>

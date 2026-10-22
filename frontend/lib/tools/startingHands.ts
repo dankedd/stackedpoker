@@ -167,7 +167,7 @@ function defendQuestion(rng: () => number): QuizQuestion {
     alsoAccepted,
     mix,
     explanation: `The chart plays ${hand} as ${formatMix(mix)}.`,
-    source: `${provenance.source}, p.${provenance.page} — ${provenance.figure}. ${provenance.gameAssumptions}.`,
+    source: `${provenance.gameAssumptions}.`,
   };
 }
 

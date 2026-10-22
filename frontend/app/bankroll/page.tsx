@@ -242,7 +242,7 @@ export default async function BankrollPage() {
             icon={ShieldCheck}
             label="Recommended Stake"
             value={recommendedBuyIn != null ? `${formatCurrency(recommendedBuyIn, currency)} buy-in` : "—"}
-            caption="200 buy-in rule · Modern Poker Theory p.264"
+            caption="200 buy-in rule"
             delayMs={280}
           />
         </div>

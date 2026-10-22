@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
 import { SectionNav } from "@/components/preflop-trainer/SectionNav";
-import { SOURCE_CREDIT } from "@/lib/ranges/data";
 import { PREFLOP_RANGES_ENABLED } from "@/lib/ranges/feature";
 
 /**
@@ -19,10 +18,6 @@ export default function PreflopTrainerLayout({ children }: { children: React.Rea
       <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         <SectionNav />
         {children}
-        <p className="mt-10 border-t border-border/50 pt-4 text-[11px] leading-relaxed text-muted-foreground/80">
-          Source: {SOURCE_CREDIT}. Each chart names its Hand Range and page. Per-hand frequencies are read from the
-          book&apos;s charts; the totals are the book&apos;s own printed figures.
-        </p>
       </main>
       <Footer />
     </div>

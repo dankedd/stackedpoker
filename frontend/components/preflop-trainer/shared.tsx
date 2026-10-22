@@ -16,7 +16,6 @@ export const TOOL_SLUG = "preflop-trainer";
 export const ACTION_ORDER: RangeActionKey[] = ["allin", "raise", "limp", "call", "fold"];
 
 /** Source labels carry a Dutch suffix ("met limp"); translated for display only. */
-export const sourceLabel = (hr: string) => hr.replace("(met limp)", "(with limp)");
 
 export const fmtPct = (x: number) => (Math.round(x * 10) / 10).toString();
 
@@ -176,7 +175,8 @@ export function ChartPanel({
   children,
 }: {
   heading: string;
-  source: string;
+  /** A short line under the heading (e.g. the situation); omitted when there is none. */
+  source?: string;
   grid: Record<string, number[] | null>;
   actions: ChartAction[];
   highlight?: string;
@@ -199,7 +199,7 @@ export function ChartPanel({
       <aside className="space-y-4 rounded-xl border border-border/60 bg-background/40 p-4">
         <div>
           <h3 className="text-lg font-semibold tracking-tight text-foreground">{heading}</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">{source}</p>
+          {source && <p className="mt-0.5 text-xs text-muted-foreground">{source}</p>}
         </div>
         <SourceLegend actions={actions} showAbsent={absent.length > 0} />
         <div className="min-h-[7.5rem] border-t border-border/50 pt-3">
