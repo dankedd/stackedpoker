@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { ArrowRight, Sparkles, Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getLevelProgress } from '@/lib/learn/levelCurve'
+import { tierForLevel, TIER_STYLES } from '@/lib/levels'
+import { LEVELS } from '@/lib/levels/strings'
 import type { LevelUpEvent } from '@/lib/learn/levelUpDetection'
 import { fetchMyLeaderboardRank, type LeaderboardPeriod } from '@/lib/leaderboard/api'
 
@@ -168,7 +170,7 @@ function useFocusTrap(containerRef: React.RefObject<HTMLElement | null>, active:
 
 export interface LevelUpModalProps {
   event: LevelUpEvent
-  /** Primary action — "Continue Learning". Just dismisses; the underlying
+  /** Primary action — "Keep going". Just dismisses; the underlying
    *  page (lesson/module/step flow) is already wherever "continuing" means. */
   onContinue: () => void
   /** Escape / backdrop click / close button. */
@@ -185,6 +187,9 @@ export function LevelUpModal({ event, onContinue, onDismiss, token }: LevelUpMod
   const rank = useRankPreview(token ?? '')
 
   const levelProgress = useMemo(() => getLevelProgress(event.totalXp), [event.totalXp])
+  const tier = tierForLevel(event.newLevel)
+  const tierStyle = TIER_STYLES[tier.color]
+  const newTitle = tierForLevel(event.previousLevel).title !== tier.title
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), reducedMotion ? 0 : 30)
@@ -314,11 +319,19 @@ export function LevelUpModal({ event, onContinue, onDismiss, token }: LevelUpMod
             </span>
           </div>
 
-          <p id="level-up-description" className="text-sm text-muted-foreground mb-4">
+          <p id="level-up-description" className="text-sm text-muted-foreground mb-3">
             You reached <span className="font-semibold text-violet-300">Level {event.newLevel}</span>
+            {newTitle && <> · {LEVELS.reached(tier.title)}</>}
           </p>
 
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3.5 py-1 mb-5">
+          <div className={cn('mx-auto mb-4 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-bold', tierStyle.badge)}>
+            {newTitle && (
+              <span className="text-[10px] font-black uppercase tracking-widest opacity-70">{LEVELS.newTitle}</span>
+            )}
+            {tier.title}
+          </div>
+
+          <div className="mx-auto mb-5 flex w-fit items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3.5 py-1">
             <Sparkles className="h-3.5 w-3.5 text-amber-400" aria-hidden />
             <span className="text-sm font-bold tabular-nums text-amber-300">
               +{event.xpAwarded.toLocaleString()} XP
@@ -333,12 +346,14 @@ export function LevelUpModal({ event, onContinue, onDismiss, token }: LevelUpMod
                 Level {levelProgress.level} · {levelProgress.totalXp.toLocaleString()} XP total
               </span>
               <span className="text-[11px] text-muted-foreground/50">
-                {levelProgress.xpRemaining.toLocaleString()} to Level {levelProgress.level + 1}
+                {levelProgress.isMaxLevel
+                  ? LEVELS.maxLevel
+                  : `${levelProgress.xpRemaining.toLocaleString()} to Level ${levelProgress.level + 1}`}
               </span>
             </div>
             <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-violet-500 to-blue-400 transition-all duration-700"
+                className={cn('h-full rounded-full bg-gradient-to-r transition-all duration-700', tierStyle.bar)}
                 style={{ width: `${levelProgress.progressPercent}%` }}
                 role="progressbar"
                 aria-valuenow={levelProgress.progressPercent}
@@ -363,7 +378,7 @@ export function LevelUpModal({ event, onContinue, onDismiss, token }: LevelUpMod
               onClick={handleContinue}
               className="w-full rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:-translate-y-0.5 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
-              Continue Learning
+              Keep going
             </button>
             <Link
               href="/leaderboard"

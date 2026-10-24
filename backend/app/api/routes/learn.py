@@ -40,7 +40,7 @@ from app.engines.learn.srs_engine import compute_next_review
 from app.engines.learn.leak_detector import detect_leaks_from_step
 from app.engines.learn.curriculum_access import can_access_lesson
 from app.services.entitlements import get_subscription_tier
-from app.services.features import require_feature
+from app.services.features import is_feature_public, require_feature
 from app.engines.learn.achievements import check_and_award_achievements
 
 logger = logging.getLogger(__name__)
@@ -246,6 +246,11 @@ async def _award_xp(
     never a second source of truth. Returns (new_total_xp, new_level, leveled_up).
     """
     if delta <= 0:
+        return current_xp, level_for_xp(current_xp), False
+    # Learn is offline (dev-only): progress is still saved for dev accounts,
+    # but it earns no XP — levels are built around the trainers now
+    # (supabase_xp_rebalance.sql voided all Learn XP).
+    if not is_feature_public("learn"):
         return current_xp, level_for_xp(current_xp), False
 
     result = await _supabase_post(

@@ -1,0 +1,46 @@
+{
+  "_readme": "Single source of truth for levels and XP rules. Edit curve/tiers/xp here, then run `python shared/generate_levels.py`: it rewrites `thresholds` and `reference_days` below and syncs backend/app/engines/learn/levels.json, frontend/lib/levels/levels.json and supabase_xp_levels_data.sql. Tests on every side fail when a copy differs.",
+  "curve": {
+    "formula": "xp_to_next(level) = round_half_up(base * level ^ exponent)",
+    "base": 1.5,
+    "exponent": 1.75,
+    "max_level": 50
+  },
+  "tiers": [
+    {"min": 1, "max": 4, "title": "Fish", "color": "slate"},
+    {"min": 5, "max": 9, "title": "Calling Station", "color": "sky"},
+    {"min": 10, "max": 14, "title": "Grinder", "color": "emerald"},
+    {"min": 15, "max": 19, "title": "Reg", "color": "blue"},
+    {"min": 20, "max": 29, "title": "Shark", "color": "violet"},
+    {"min": 30, "max": 39, "title": "Crusher", "color": "fuchsia"},
+    {"min": 40, "max": 49, "title": "High Roller", "color": "amber"},
+    {"min": 50, "max": 50, "title": "Legend", "color": "legend"}
+  ],
+  "xp": {
+    "daily_cap": 150,
+    "streak_bonus": {
+      "min_streak_days": 7,
+      "percent": 10,
+      "daily_max": 15
+    },
+    "hand_review_bonus": {
+      "xp": 5,
+      "per_day": 1
+    },
+    "sources": {
+      "preflop_trainer": "correct 1 XP, +1 per 10-hand streak (max 4); mixed 1; wrong 0. Enforced in record_preflop_trainer_hand.",
+      "flop_equity": "equity guess within 3 = 2, within 7 = 1; nut advantage +1; c-bet band +1, size +1 (max 5). Quick Fire: 1 per right pick. Enforced in record_flop_trainer_answer / record_flop_versus_answer.",
+      "streak_bonus": "+percent of trainer XP once the day streak users see (activity_streak: days in a row with trainer hands or XP, own time zone) reaches min_streak_days, at most daily_max per day.",
+      "hand_review": "xp for the first hand-history import of the UTC day.",
+      "daily_cap": "trainer XP per UTC day, preflop and flop together. Bonuses come on top and have their own limits."
+    }
+  },
+  "reference_player": {
+    "_readme": "Who the curve is calibrated on: free limit, preflop trainer only, 65% correct. xp_per_action = 0.65 * (1 + 0.65^10 + 0.65^20 + 0.65^30), the streak tiers of record_preflop_trainer_hand.",
+    "actions_per_day": 50,
+    "accuracy": 0.65,
+    "xp_per_action": 0.6589
+  },
+  "thresholds": [0, 2, 7, 17, 34, 59, 94, 139, 196, 266, 350, 450, 566, 700, 852, 1023, 1215, 1428, 1664, 1923, 2207, 2516, 2851, 3213, 3603, 4022, 4471, 4951, 5462, 6006, 6583, 7194, 7840, 8522, 9240, 9995, 10789, 11622, 12494, 13407, 14361, 15357, 16396, 17479, 18607, 19780, 20999, 22265, 23578, 24939],
+  "reference_days": [0.0, 0.1, 0.2, 0.5, 1.0, 1.8, 2.9, 4.2, 5.9, 7.9, 10.2, 13.0, 16.2, 19.9, 24.1, 28.8, 34.1, 39.9, 46.5, 53.6, 61.4, 70.0, 79.2, 89.2, 100.0, 111.5, 123.9, 137.2, 151.3, 166.3, 182.2, 199.1, 216.9, 235.7, 255.5, 276.3, 298.3, 321.2, 345.3, 370.5, 396.8, 424.3, 453.0, 482.9, 514.0, 546.4, 580.0, 614.9, 651.2, 688.7]
+}

@@ -28,6 +28,10 @@ export interface HandXpResult extends TrainerXpState {
   total_xp: number;
   level: number;
   leveled_up: boolean;
+  /** Day-streak bonus on top of xp_awarded. */
+  bonus_xp?: number;
+  /** Highest level shown before this answer. */
+  previous_level?: number | null;
   /** Absent when the limit store was unreachable (the hand still counted for XP). */
   usage?: TrainerUsage | null;
 }

@@ -1,25 +1,33 @@
-"""XP calculation for lesson completions and step responses.
+"""XP → level, and XP for Learn step responses.
 
 Level curve
 -----------
-Levels are NOT a hardcoded threshold table — they're derived from one
-deterministic formula, mirrored exactly in `frontend/lib/learn/levelCurve.ts`
-(the two must stay in lockstep; there is no shared package between the Python
-backend and the TS frontend, so "shared" means "same formula, verified by
-tests in both languages," not literally one file).
+The curve is defined once, in shared/levels.json (curve parameters, tiers,
+XP rules). shared/generate_levels.py derives the cumulative threshold table
+from it and copies the file here (Railway builds backend/ only), to
+frontend/lib/levels/levels.json and into SQL (supabase_xp_levels_data.sql).
+This module only reads the table — it never rounds or computes the curve
+itself, so Python, TypeScript and SQL cannot disagree.
 
-    xp_required_for_level(level) = round(LEVEL_BASE_XP * LEVEL_GROWTH_RATE ** (level - 1))
+    xp_to_next(level) = round_half_up(base * level ** exponent)
 
-This is the XP needed to advance FROM `level` TO `level + 1` — level 1 needs
-500 XP to reach level 2, level 2 needs 550 to reach level 3, etc. (+10% per
-level). Cumulative thresholds are the running sum of these per-level costs,
-never authored/guessed directly.
+Polynomial, not exponential: level 10 comes in about a week of free-limit
+trainer play, level 50 (the max, "Legend") in about two years.
 """
 
-from dataclasses import dataclass
+from __future__ import annotations
 
-LEVEL_BASE_XP = 500
-LEVEL_GROWTH_RATE = 1.10
+import json
+from dataclasses import dataclass
+from pathlib import Path
+
+_CONFIG = json.loads((Path(__file__).with_name("levels.json")).read_text(encoding="utf-8"))
+
+#: THRESHOLDS[i] = total XP needed to reach level i + 1.
+THRESHOLDS: tuple[int, ...] = tuple(_CONFIG["thresholds"])
+MAX_LEVEL: int = _CONFIG["curve"]["max_level"]
+TIERS: tuple[dict, ...] = tuple(_CONFIG["tiers"])
+XP_RULES: dict = _CONFIG["xp"]
 
 
 @dataclass
@@ -38,58 +46,80 @@ class LevelProgress:
     level: int
     total_xp: int
     current_level_xp: int
+    #: 0 at the max level.
     xp_required_for_next_level: int
     xp_remaining: int
     progress_percent: int
     current_level_threshold: int
-    next_level_threshold: int
+    #: None at the max level.
+    next_level_threshold: int | None
+    title: str
+    tier_color: str
+    is_max_level: bool
+
+
+def tier_for_level(level: int) -> dict:
+    level = min(max(1, level), MAX_LEVEL)
+    return next(t for t in TIERS if t["min"] <= level <= t["max"])
 
 
 def xp_required_for_level(level: int) -> int:
-    """XP needed to advance from `level` to `level + 1`."""
+    """XP needed to advance from `level` to `level + 1` (0 at the max level)."""
     level = max(1, level)
-    return round(LEVEL_BASE_XP * (LEVEL_GROWTH_RATE ** (level - 1)))
-
-
-def get_level_progress(total_xp: int) -> LevelProgress:
-    """Single source of truth: derives level + all display fields from total_xp.
-
-    Never stores/increments level independently — always recomputed from the
-    persisted total_xp ledger. O(level) — fine since level grows very slowly
-    against XP under a 10%-compounding curve.
-    """
-    total_xp = max(0, total_xp)
-    level = 1
-    threshold = 0
-    while True:
-        required = xp_required_for_level(level)
-        if threshold + required > total_xp:
-            break
-        threshold += required
-        level += 1
-
-    required_for_next = xp_required_for_level(level)
-    next_threshold = threshold + required_for_next
-    current_level_xp = total_xp - threshold
-    xp_remaining = next_threshold - total_xp
-    progress_percent = (
-        round((current_level_xp / required_for_next) * 100) if required_for_next else 0
-    )
-
-    return LevelProgress(
-        level=level,
-        total_xp=total_xp,
-        current_level_xp=current_level_xp,
-        xp_required_for_next_level=required_for_next,
-        xp_remaining=xp_remaining,
-        progress_percent=progress_percent,
-        current_level_threshold=threshold,
-        next_level_threshold=next_threshold,
-    )
+    if level >= MAX_LEVEL:
+        return 0
+    return THRESHOLDS[level] - THRESHOLDS[level - 1]
 
 
 def level_for_xp(total_xp: int) -> int:
-    return get_level_progress(total_xp).level
+    total_xp = max(0, total_xp)
+    level = 1
+    while level < MAX_LEVEL and THRESHOLDS[level] <= total_xp:
+        level += 1
+    return level
+
+
+def get_level_progress(total_xp: int) -> LevelProgress:
+    """Derives level + all display fields from total_xp, the only stored value."""
+    total_xp = max(0, total_xp)
+    level = level_for_xp(total_xp)
+    tier = tier_for_level(level)
+    threshold = THRESHOLDS[level - 1]
+    is_max = level >= MAX_LEVEL
+    required = xp_required_for_level(level)
+    current = total_xp - threshold
+    return LevelProgress(
+        level=level,
+        total_xp=total_xp,
+        current_level_xp=current,
+        xp_required_for_next_level=required,
+        xp_remaining=0 if is_max else threshold + required - total_xp,
+        progress_percent=100 if is_max else min(100, round(current / required * 100)),
+        current_level_threshold=threshold,
+        next_level_threshold=None if is_max else threshold + required,
+        title=tier["title"],
+        tier_color=tier["color"],
+        is_max_level=is_max,
+    )
+
+
+def level_fields(row: dict, xp_awarded: int) -> dict:
+    """level / leveled_up / bonus_xp / previous_level for a trainer response,
+    from a grant RPC row (supabase_xp_rebalance.sql). The RPC decides the
+    level-up against the highest level the user has seen (level_seen), so the
+    rebalance never shows one. Before that migration the row has no
+    `leveled_up`; then it is "this award crossed a boundary"."""
+    total = row.get("total_xp", 0)
+    level = level_for_xp(total)
+    if "leveled_up" in row:
+        return {
+            "level": level,
+            "leveled_up": bool(row["leveled_up"]),
+            "bonus_xp": row.get("bonus_xp") or 0,
+            "previous_level": row.get("previous_level"),
+        }
+    before = level_for_xp(total - xp_awarded)
+    return {"level": level, "leveled_up": xp_awarded > 0 and level > before, "bonus_xp": 0, "previous_level": before}
 
 
 def calculate_step_xp(base: int, score: int, time_ms: int, streak: int) -> XPResult:

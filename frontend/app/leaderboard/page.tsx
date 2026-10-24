@@ -15,6 +15,7 @@ import {
   type MyRankResponse,
 } from '@/lib/leaderboard/api'
 import { cn } from '@/lib/utils'
+import { LevelBadge } from '@/components/levels/LevelBadge'
 
 const PAGE_SIZE = 50
 
@@ -77,9 +78,7 @@ function LeaderboardRowItem({ row, period }: { row: LeaderboardRow; period: Lead
           )}
         </div>
         <div className="flex shrink-0 items-center gap-3 sm:ml-auto">
-          <span className="rounded-full border border-border/50 bg-white/[0.03] px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-            LVL {row.level}
-          </span>
+          <LevelBadge level={row.level} showTitle titleClassName="hidden sm:inline" />
           <span
             className={cn(
               'text-[13px] font-bold tabular-nums',
@@ -102,7 +101,7 @@ function MyRankRow({ myRank, period }: { myRank: MyRankResponse; period: Leaderb
       <div className="rounded-2xl border border-dashed border-violet-500/25 bg-violet-500/[0.04] px-4 py-3.5 text-center text-[13px] text-muted-foreground">
         {period === '24h'
           ? "You haven't earned XP in the last 24 hours yet."
-          : 'Complete a lesson to join the leaderboard.'}
+          : 'Answer a trainer hand to join the leaderboard.'}
       </div>
     )
   }
@@ -225,7 +224,7 @@ function LeaderboardContent() {
           </p>
           <h1 className="text-2xl font-bold text-foreground sm:text-3xl">Leaderboard</h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            See how your XP progression compares across every Stacked learner.
+            Trainer XP and levels, compared across every Stacked player.
           </p>
         </div>
 

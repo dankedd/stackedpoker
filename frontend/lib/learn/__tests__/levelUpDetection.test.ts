@@ -1,11 +1,11 @@
 /**
  * Tests for server-confirmed level-up detection (lib/learn/levelUpDetection.ts) —
  * the single shared layer LearnProgressContext uses for step/lesson/module
- * award responses alike. Uses the real canonical levelForXP curve (500 XP
- * for level 1->2, +10% per level — see levelCurve.ts), never a fabricated one.
+ * award responses alike, plus the trainers' server-decided level-ups. Uses
+ * the real level table (lib/levels), never a fabricated one.
  */
 import { describe, it, expect } from 'vitest'
-import { detectLevelUp, mergeLevelUpDetection } from '../levelUpDetection'
+import { detectLevelUp, mergeLevelUpDetection, mergeServerLevelUp } from '../levelUpDetection'
 import { getLevelProgress } from '../levelCurve'
 
 // Real thresholds from the canonical curve, used to build unambiguous fixtures.
@@ -13,7 +13,7 @@ function thresholdFor(level: number): number {
   // Smallest total_xp at which levelForXP returns exactly `level`.
   let xp = 0
   while (getLevelProgress(xp).level < level) {
-    xp = getLevelProgress(xp).nextLevelThreshold
+    xp = getLevelProgress(xp).nextLevelThreshold ?? xp + 1
   }
   return xp
 }
@@ -109,5 +109,27 @@ describe('mergeLevelUpDetection', () => {
     // A duplicate/replay response for the same total arrives afterward.
     const stillPending = mergeLevelUpDetection(pending, 5, lvl5, lvl5)
     expect(stillPending).toBe(pending)
+  })
+})
+
+describe('mergeServerLevelUp: the trainer RPC decides (level_seen)', () => {
+  it('no level-up when the server says so, even if the local level is lower (the rebalance)', () => {
+    expect(mergeServerLevelUp(null, 1, 10, { total_xp: 300, level: 10, leveled_up: false })).toBeNull()
+  })
+
+  it('a server level-up shows from the level the user last saw', () => {
+    expect(mergeServerLevelUp(null, 9, 264, { total_xp: 267, level: 10, previous_level: 9, leveled_up: true, xp_awarded: 2, bonus_xp: 1 }))
+      .toEqual({ previousLevel: 9, newLevel: 10, totalXp: 267, xpAwarded: 3 })
+  })
+
+  it('merges into a pending level-up and keeps its starting level', () => {
+    const pending = { previousLevel: 8, newLevel: 9, totalXp: 200, xpAwarded: 4 }
+    expect(mergeServerLevelUp(pending, 9, 200, { total_xp: 267, level: 10, previous_level: 9, leveled_up: true, xp_awarded: 2 }))
+      .toEqual({ previousLevel: 8, newLevel: 10, totalXp: 267, xpAwarded: 6 })
+  })
+
+  it('falls back to the local comparison for responses from before the migration', () => {
+    expect(mergeServerLevelUp(null, 9, 264, { total_xp: 267 })?.newLevel).toBe(10)
+    expect(mergeServerLevelUp(null, 10, 266, { total_xp: 267 })).toBeNull()
   })
 })

@@ -12,7 +12,7 @@ import {
 import { useAuth } from '@/hooks/useAuth'
 import type { StepResult, UserLeak } from '@/lib/learn/types'
 import { levelForXP } from '@/lib/learn/types'
-import { mergeLevelUpDetection, type LevelUpEvent } from '@/lib/learn/levelUpDetection'
+import { mergeLevelUpDetection, mergeServerLevelUp, type LevelUpEvent, type ServerLevelResult } from '@/lib/learn/levelUpDetection'
 import {
   fetchFullProgress,
   submitStepResult,
@@ -119,7 +119,7 @@ interface LearnProgressContextType {
   /** Applies a CONFIRMED server total from an XP source outside Learn (the
    *  Preflop Trainer), so the navbar level and the level-up flag stay in sync
    *  without a full progress refetch. Never call it with optimistic numbers. */
-  applyServerXpTotal: (newTotalXp: number) => void
+  applyServerXpTotal: (newTotalXp: number, result?: ServerLevelResult) => void
 }
 
 const EMPTY_STATE: LearnProgressState = {
@@ -691,16 +691,16 @@ export function LearnProgressProvider({ children }: { children: React.ReactNode 
     setProgress((prev) => (prev.pendingLevelUp ? { ...prev, pendingLevelUp: null } : prev))
   }, [])
 
-  const applyServerXpTotal = useCallback((newTotalXp: number) => {
+  const applyServerXpTotal = useCallback((newTotalXp: number, result?: ServerLevelResult) => {
     setProgress((prev) =>
-      prev.isGuest || newTotalXp === prev.skill.total_xp
+      prev.isGuest || (newTotalXp === prev.skill.total_xp && !result?.leveled_up)
         ? prev
         : {
             ...prev,
             skill: { ...prev.skill, total_xp: newTotalXp, level: levelForXP(newTotalXp) },
-            pendingLevelUp: mergeLevelUpDetection(
-              prev.pendingLevelUp, prev.skill.level, prev.skill.total_xp, newTotalXp,
-            ),
+            pendingLevelUp: result
+              ? mergeServerLevelUp(prev.pendingLevelUp, prev.skill.level, prev.skill.total_xp, { ...result, total_xp: newTotalXp })
+              : mergeLevelUpDetection(prev.pendingLevelUp, prev.skill.level, prev.skill.total_xp, newTotalXp),
           },
     )
   }, [])

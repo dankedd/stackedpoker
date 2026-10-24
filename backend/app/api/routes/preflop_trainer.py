@@ -25,7 +25,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.config import get_settings
-from app.engines.learn.xp_calculator import level_for_xp
+from app.engines.learn.xp_calculator import level_fields
 from app.engines.preflop_trainer import ChartRef, InvalidHand, chart_for, grade_hand
 from app.middleware.auth import get_current_user
 from app.services import billing
@@ -76,6 +76,10 @@ class HandResponse(TrainerState):
     total_xp: int
     level: int
     leveled_up: bool
+    #: Play-streak bonus on top of xp_awarded (its own ledger row).
+    bonus_xp: int = 0
+    #: Highest level shown before this hand — the level-up moment starts here.
+    previous_level: int | None = None
     #: Today's trainer usage after this hand ({used, limit, reset_at}); limit None = unlimited.
     usage: dict | None = None
 
@@ -131,15 +135,13 @@ async def record_hand(body: HandRequest, current_user: dict = Depends(get_curren
 
     xp = row.get("xp_awarded", 0)
     total = row.get("total_xp", 0)
-    level = level_for_xp(total)
     return HandResponse(
         **_state(row),
         verdict=graded.verdict,
         xp_awarded=xp,
         too_fast=bool(row.get("too_fast", False)),
         total_xp=total,
-        level=level,
-        leveled_up=xp > 0 and level > level_for_xp(total - xp),
+        **level_fields(row, xp),
         usage={"used": usage.used, "limit": usage.limit, "reset_at": usage.reset_at} if usage else None,
     )
 

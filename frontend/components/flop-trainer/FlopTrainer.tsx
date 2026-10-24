@@ -269,7 +269,7 @@ export function FlopTrainer() {
       ...(cbet ? { cbet_band: cbet.band, cbet_size: cbet.size } : {}),
     }).then(
       (result) => {
-        applyServerXpTotal(result.total_xp);
+        applyServerXpTotal(result.total_xp, result);
         applyServerUsage(result.usage);
         setBest(result.best_session_points);
         if (result.session_complete) setNewRecord(result.new_record);

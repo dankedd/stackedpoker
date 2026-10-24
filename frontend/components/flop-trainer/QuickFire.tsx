@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Check, X } from "lucide-react";
 import { XPGain } from "@/components/learn/XPGain";
+import { tierForLevel } from "@/lib/levels";
 import { LevelUpModal } from "@/components/learn/LevelUpModal";
 import { ChoiceGroup } from "@/components/tools/ToolFields";
 import { TrainerLimitGate, useTrainerLimit } from "@/components/preflop-trainer/TrainerLimit";
@@ -153,7 +154,7 @@ export function QuickFire() {
       setPick({ id, side, correct, xp: { status: "pending" } });
       submitVersus(token, { spot_id: pair.spot.spot_id, flop_a: pair.a.row.flop, flop_b: pair.b.row.flop, pick: side }).then(
         (result) => {
-          applyServerXpTotal(result.total_xp);
+          applyServerXpTotal(result.total_xp, result);
           applyServerUsage(result.usage);
           setStreak(result.streak);
           setBest(result.best_streak);
@@ -307,10 +308,10 @@ function PickXp({ xp }: { xp: Pick["xp"] }) {
   const r = xp.result;
   return (
     <div className="flex items-center justify-center gap-3">
-      {r.xp_awarded > 0 && <XPGain xp={r.xp_awarded} className="px-3 py-1" />}
+      {r.xp_awarded > 0 && <XPGain xp={r.xp_awarded} bonus={r.bonus_xp ?? 0} className="px-3 py-1" />}
       <p className="text-xs text-muted-foreground">
         {r.too_fast ? "Too quick — no XP for this one. " : ""}Today <b className="font-mono text-foreground">{r.daily_xp}</b>/{r.daily_cap} XP
-        {r.leveled_up && <span className="ml-1 font-semibold text-amber-300">· Level {r.level}!</span>}
+        {r.leveled_up && <span className="ml-1 font-semibold text-amber-300">· Level {r.level}, {tierForLevel(r.level).title}!</span>}
       </p>
     </div>
   );

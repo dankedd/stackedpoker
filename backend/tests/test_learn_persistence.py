@@ -258,16 +258,7 @@ class FakeSupabase:
         self._table("user_achievements").append({
             "user_id": user_id, "achievement_id": achievement_id, "earned_at": _now_iso(),
         })
-        xp_bonus = catalog[achievement_id]["xp_bonus"]
-        for row in self._table("user_skill_progress"):
-            if row.get("user_id") == user_id:
-                row["total_xp"] = row.get("total_xp", 0) + xp_bonus
-        if xp_bonus > 0:
-            self._table("xp_events").append({
-                "user_id": user_id, "amount": xp_bonus,
-                "source_type": "achievement", "source_id": achievement_id,
-                "earned_at": _now_iso(),
-            })
+        # Achievements grant no XP while Learn is offline (supabase_xp_rebalance.sql).
         return True
 
     # ── Leaderboard ranking RPCs (mirrors supabase_display_name.sql) ──
@@ -483,6 +474,9 @@ def fake_db(monkeypatch):
     # otherwise 403 every one of these tests. Bypass it here the same way
     # reward resolution is faked above.
     monkeypatch.setattr(learn_module, "can_access_lesson", lambda tier, lesson_id: True)
+    # XP mechanics as they work once Learn is public again; while it is
+    # offline it awards nothing (test_offline_learn_awards_no_xp).
+    monkeypatch.setattr(learn_module, "is_feature_public", lambda feature: True)
     return db
 
 
@@ -531,6 +525,20 @@ def test_step_result_awards_xp_once(fake_db):
     assert skill_rows[0]["total_xp"] == 50
 
 
+def test_offline_learn_awards_no_xp(fake_db, monkeypatch):
+    # Learn is a "dev" feature: dev accounts still save progress, but no XP
+    # reaches total_xp or the ledger (supabase_xp_rebalance.sql).
+    monkeypatch.setattr(learn_module, "is_feature_public", lambda feature: False)
+    user = {"sub": "user-1"}
+    body = learn_module.StepResultBody(
+        score=90, quality="good", xp_earned=50, concept_ids=[], step_index=0, total_steps=10,
+    )
+    result = run(learn_module.submit_step_result("lesson-a", "step-1", body, user))
+    assert result["new_total_xp"] == 0
+    assert fake_db.select("user_skill_progress", "user_id=eq.user-1")[0]["total_xp"] == 0
+    assert fake_db.select("xp_events", "user_id=eq.user-1") == []
+
+
 def test_step_result_updates_lesson_resume_position(fake_db):
     user = {"sub": "user-1"}
     body = learn_module.StepResultBody(
@@ -554,18 +562,18 @@ def test_lesson_complete_awards_bonus_once(fake_db):
     first = run(learn_module.complete_lesson("lesson-b", body, user))
     assert first["already_completed"] is False
     assert first["bonus_xp_earned"] == 200
-    # A 100%-score first lesson also unlocks first_lesson (+25) and perfect_lesson
-    # (+50) in the same request — the response reflects the true post-achievement total.
-    assert first["new_total_xp"] == 275
+    # A 100%-score first lesson also unlocks first_lesson and perfect_lesson in
+    # the same request; achievements grant no XP (supabase_xp_rebalance.sql).
+    assert first["new_total_xp"] == 200
 
     # Replaying a completed lesson must not re-award the completion bonus or achievements
     second = run(learn_module.complete_lesson("lesson-b", body, user))
     assert second["already_completed"] is True
     assert second["bonus_xp_earned"] == 0
-    assert second["new_total_xp"] == 275
+    assert second["new_total_xp"] == 200
 
     skill_rows = fake_db.select("user_skill_progress", "user_id=eq.user-2")
-    assert skill_rows[0]["total_xp"] == 275
+    assert skill_rows[0]["total_xp"] == 200
 
 
 def test_lesson_complete_scales_bonus_by_score(fake_db):
@@ -625,8 +633,8 @@ def test_achievement_awarded_once_across_repeated_checks(fake_db):
     assert ids.count("perfect_lesson") == 1
 
     skill_rows = fake_db.select("user_skill_progress", f"user_id=eq.{user_id}")
-    # 25 (first_lesson) + 50 (perfect_lesson) credited exactly once each
-    assert skill_rows[0]["total_xp"] == 75
+    # Unlocked exactly once each, and without XP (supabase_xp_rebalance.sql).
+    assert skill_rows[0]["total_xp"] == 0
 
 
 def test_path_completion_is_server_verified_not_trusted(fake_db):
@@ -739,10 +747,9 @@ def test_progress_survives_a_fresh_session_fetch(fake_db):
 
     assert restored["lessons"]["lesson-f"]["status"] == "completed"
     assert set(restored["completed_steps"]["lesson-f"]) == {"step-1", "step-2", "step-3"}
-    # 3 steps * 20 xp + 150 lesson-completion bonus (100% score) = 210,
-    # plus the "first_lesson" (25) and "perfect_lesson" (50) achievements
-    # auto-unlocked by a 100%-score first completion.
-    assert restored["skill"]["total_xp"] == 210 + 25 + 50
+    # 3 steps * 20 xp + 150 lesson-completion bonus (100% score) = 210; the
+    # achievements it unlocks grant no XP.
+    assert restored["skill"]["total_xp"] == 210
     assert "pot_odds" in restored["concepts"]
 
     # Simulate logout → login as the SAME user: fetching again must return the
@@ -887,19 +894,18 @@ def test_module_complete_awards_bonus_once(fake_db):
     assert first["eligible"] is True
     assert first["already_completed"] is False
     assert first["bonus_xp_earned"] == 100
-    # 100 module bonus + 25 for the "first_lesson" achievement (2 lessons were
-    # already completed server-side, auto-unlocked in this same request).
-    assert first["new_total_xp"] == 125
+    # 100 module bonus; the "first_lesson" achievement it unlocks grants no XP.
+    assert first["new_total_xp"] == 100
 
     # Replay (refresh, reopening the module, clicking through again) must not
     # re-award the bonus a second time.
     second = run(learn_module.complete_module("module-2", body, user))
     assert second["already_completed"] is True
     assert second["bonus_xp_earned"] == 0
-    assert second["new_total_xp"] == 125
+    assert second["new_total_xp"] == 100
 
     skill_rows = fake_db.select("user_skill_progress", f"user_id=eq.{user_id}")
-    assert skill_rows[0]["total_xp"] == 125
+    assert skill_rows[0]["total_xp"] == 100
 
     module_rows = fake_db.select("user_module_progress", f"user_id=eq.{user_id}&module_id=eq.module-2")
     assert len(module_rows) == 1
@@ -1111,8 +1117,8 @@ def test_duplicate_concurrent_completion_requests_award_once(fake_db):
     assert sorted(r["already_completed"] for r in results) == [False, True]
 
     skill_rows = fake_db.select("user_skill_progress", f"user_id=eq.{user_id}")
-    # 200 lesson bonus + 25 first_lesson + 50 perfect_lesson achievements, exactly once.
-    assert skill_rows[0]["total_xp"] == 275
+    # 200 lesson bonus exactly once (achievements grant no XP).
+    assert skill_rows[0]["total_xp"] == 200
 
     lesson_rows = fake_db.select("user_lesson_progress", f"user_id=eq.{user_id}&lesson_id=eq.lesson-race-2")
     assert len(lesson_rows) == 1
@@ -1163,15 +1169,15 @@ def test_module_bonus_xp_is_server_resolved_not_client_claimed(fake_db):
 
 
 def test_get_full_progress_recomputes_level_even_if_cached_column_is_stale(fake_db):
-    """Simulates a level-curve formula change: total_xp implies level 3 under
-    the current formula, but the cached `level` column was left at a stale
-    value from before. GET /learn/progress must report the recomputed level."""
+    """Simulates a level-curve change: total_xp implies level 16 under the
+    current table (1,023-1,214 XP), but the cached `level` column was left at
+    a stale value. GET /learn/progress must report the recomputed level."""
     user = {"sub": "user-stale-level"}
     fake_db.insert("user_skill_progress", {
         "user_id": "user-stale-level", "total_xp": 1050, "level": 99, "streak_days": 0,
     })
     restored = run(learn_module.get_full_progress(user))
-    assert restored["skill"]["level"] == 3
+    assert restored["skill"]["level"] == 16
 
 
 def test_replaying_completion_after_relogin_does_not_duplicate_xp(fake_db):

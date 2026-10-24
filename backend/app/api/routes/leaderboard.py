@@ -32,7 +32,7 @@ from pydantic import BaseModel
 
 from app.config import get_settings
 from app.middleware.auth import get_current_user
-from app.engines.learn.xp_calculator import level_for_xp
+from app.engines.learn.xp_calculator import level_for_xp, tier_for_level
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["leaderboard"])
@@ -82,6 +82,9 @@ class LeaderboardRow(BaseModel):
     rank: int
     username: str
     level: int
+    #: Tier title and color key for the level badge (shared/levels.json).
+    title: str = ""
+    tier: str = ""
     total_xp: int
     # Only populated for period="24h" — the XP earned within the rolling
     # window. Level is always derived from total_xp, never from this.
@@ -104,8 +107,16 @@ class MyRankResponse(BaseModel):
     rank: int | None
     username: str
     level: int
+    title: str = ""
+    tier: str = ""
     total_xp: int
     period_xp: int | None = None
+
+
+def _level(total_xp: int) -> dict:
+    level = level_for_xp(total_xp)
+    tier = tier_for_level(level)
+    return {"level": level, "title": tier["title"], "tier": tier["color"]}
 
 
 def _display_username(raw: str | None) -> str:
@@ -150,7 +161,7 @@ async def get_leaderboard(
         LeaderboardRow(
             rank=r["rank"],
             username=_display_username(r.get("username")),
-            level=level_for_xp(r.get("total_xp", 0)),
+            **_level(r.get("total_xp", 0)),
             total_xp=r.get("total_xp", 0),
             period_xp=r.get("period_xp") if period == "24h" else None,
             is_you=(r.get("user_id") == my_user_id),
@@ -185,7 +196,7 @@ async def get_my_leaderboard_rank(
             period=period,
             rank=r.get("rank"),
             username=_display_username(r.get("username")),
-            level=level_for_xp(total_xp),
+            **_level(total_xp),
             total_xp=total_xp,
             period_xp=r.get("period_xp") if period == "24h" else None,
         )
@@ -210,7 +221,7 @@ async def get_my_leaderboard_rank(
         period=period,
         rank=None,
         username=username,
-        level=level_for_xp(total_xp),
+        **_level(total_xp),
         total_xp=total_xp,
         period_xp=0 if period == "24h" else None,
     )

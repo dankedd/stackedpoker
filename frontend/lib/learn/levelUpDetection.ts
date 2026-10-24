@@ -75,3 +75,41 @@ export function mergeLevelUpDetection(
     xpAwarded: pending.xpAwarded + detected.xpAwarded,
   }
 }
+
+/** What a trainer XP response says about levels (supabase_xp_rebalance.sql). */
+export interface ServerLevelResult {
+  total_xp: number
+  level?: number
+  /** Decided by the server against the highest level the user has seen. */
+  leveled_up?: boolean
+  previous_level?: number | null
+  xp_awarded?: number
+  bonus_xp?: number
+}
+
+/**
+ * Trainer responses carry the server's own level-up verdict (level_seen), so
+ * a recompute of everyone's XP never shows one and a bonus that crossed a
+ * level earlier is still celebrated once. Responses from before that
+ * migration have no `leveled_up`: then the local comparison decides.
+ */
+export function mergeServerLevelUp(
+  pending: LevelUpEvent | null,
+  previousLevel: number,
+  previousTotalXp: number,
+  result: ServerLevelResult,
+): LevelUpEvent | null {
+  if (typeof result.leveled_up !== 'boolean') {
+    return mergeLevelUpDetection(pending, previousLevel, previousTotalXp, result.total_xp)
+  }
+  if (!result.leveled_up) return pending
+  const newLevel = result.level ?? levelForXP(result.total_xp)
+  const from = Math.min(result.previous_level ?? previousLevel, newLevel - 1)
+  const gained = (result.xp_awarded ?? 0) + (result.bonus_xp ?? 0)
+  return {
+    previousLevel: pending ? pending.previousLevel : from,
+    newLevel,
+    totalXp: result.total_xp,
+    xpAwarded: (pending?.xpAwarded ?? 0) + gained,
+  }
+}

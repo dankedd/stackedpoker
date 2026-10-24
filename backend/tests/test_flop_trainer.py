@@ -85,7 +85,7 @@ def fake_db(monkeypatch):
             return {"xp_awarded": int(args["p_correct"]), "daily_xp": 10, "daily_cap": 300, "too_fast": False,
                     "total_xp": 600, "streak": 4, "best_streak": 9}
         if fn == "record_flop_trainer_answer":
-            return {"xp_awarded": args["p_points"], "daily_xp": 9, "daily_cap": 300, "too_fast": False, "total_xp": 497 + args["p_points"],
+            return {"xp_awarded": args["p_points"], "daily_xp": 9, "daily_cap": 300, "too_fast": False, "total_xp": 264 + args["p_points"],
                     "session_answers": 10, "session_points": 21, "session_complete": True, "best_session_points": 21,
                     "new_record": True, "hands_played": 40}
         return {"daily_xp": 9, "daily_cap": 300, "best_session_points": 21, "hands_played": 40, "categories": {"paired": [3, 8.5]}}
@@ -123,7 +123,7 @@ def test_endpoint_grades_against_the_stored_flop(fake_db):
         "p_cbet_band": None, "p_cbet_size": None, "p_cbet_band_ok": None, "p_cbet_size_ok": None,
     }
     assert res.verdict == "perfect" and res.exact_equity == 62.4 and res.nut_correct
-    assert res.xp_awarded == 3 and res.total_xp == 500 and res.leveled_up  # 497 -> 500 crosses level 2
+    assert res.xp_awarded == 3 and res.total_xp == 267 and res.leveled_up  # 264 -> 267 crosses level 10
     assert res.session_complete and res.new_record and res.best_session_points == 21
 
 

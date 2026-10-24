@@ -160,14 +160,29 @@ def test_endpoint_sends_the_servers_verdict(fake_rpc):
 
 
 def test_endpoint_reports_a_level_up(fake_rpc, monkeypatch):
+    # A row from before supabase_xp_rebalance.sql: the award crossed 266 (level 10).
     async def rpc(fn, args, settings):
         return {"xp_awarded": 4, "streak": 1, "best_streak": 1, "daily_xp": 4, "daily_cap": 300,
-                "xp_per_correct": 1, "next_tier_at": 10, "too_fast": False, "total_xp": 502}
+                "xp_per_correct": 1, "next_tier_at": 10, "too_fast": False, "total_xp": 268}
 
     monkeypatch.setattr(route, "_rpc", rpc)
     body = route.HandRequest(kind="open", chart_id=327, hand="AA", action="raise")
     res = asyncio.run(route.record_hand(body, current_user=USER))
-    assert res.level == 2 and res.leveled_up is True
+    assert res.level == 10 and res.leveled_up is True and res.previous_level == 9
+
+
+def test_endpoint_takes_the_level_up_from_the_rpc(fake_rpc, monkeypatch):
+    # The RPC compares with level_seen: crossing a level the user already saw
+    # (or the rebalance) is not a level-up; a bonus rides along.
+    async def rpc(fn, args, settings):
+        return {"xp_awarded": 4, "streak": 1, "best_streak": 1, "daily_xp": 4, "daily_cap": 150,
+                "xp_per_correct": 1, "next_tier_at": 10, "too_fast": False, "total_xp": 268,
+                "bonus_xp": 1, "level": 10, "previous_level": 10, "leveled_up": False}
+
+    monkeypatch.setattr(route, "_rpc", rpc)
+    body = route.HandRequest(kind="open", chart_id=327, hand="AA", action="raise")
+    res = asyncio.run(route.record_hand(body, current_user=USER))
+    assert res.level == 10 and res.leveled_up is False and res.bonus_xp == 1 and res.daily_cap == 150
 
 
 def test_endpoint_rejects_an_undealable_hand(fake_rpc):

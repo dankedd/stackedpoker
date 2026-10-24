@@ -12,6 +12,9 @@ export interface LeaderboardRow {
   rank: number
   username: string
   level: number
+  /** Tier title and color key (shared/levels.json); older backends omit them. */
+  title?: string
+  tier?: string
   total_xp: number
   /** Only present for period="24h" — XP earned within the rolling window. */
   period_xp: number | null
@@ -30,6 +33,9 @@ export interface MyRankResponse {
   rank: number | null
   username: string
   level: number
+  /** Tier title and color key (shared/levels.json); older backends omit them. */
+  title?: string
+  tier?: string
   total_xp: number
   period_xp: number | null
 }

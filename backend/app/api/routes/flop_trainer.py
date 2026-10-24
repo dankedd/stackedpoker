@@ -32,7 +32,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from app.config import get_settings
-from app.engines.learn.xp_calculator import level_for_xp
+from app.engines.learn.xp_calculator import level_fields
 from app.flop_equity.grading import cbet_advice, grade_answer, grade_cbet, texture_category
 from app.middleware.auth import get_current_user
 from app.services import billing
@@ -123,6 +123,10 @@ class AnswerResponse(BaseModel):
     total_xp: int
     level: int
     leveled_up: bool
+    #: Play-streak bonus on top of xp_awarded (its own ledger row).
+    bonus_xp: int = 0
+    #: Highest level shown before this answer — the level-up moment starts here.
+    previous_level: int | None = None
     session_answers: int
     session_points: int
     session_complete: bool
@@ -203,7 +207,6 @@ async def record_answer(body: AnswerRequest, current_user: dict = Depends(get_cu
 
     xp = res.get("xp_awarded", 0)
     total = res.get("total_xp", 0)
-    level = level_for_xp(total)
     return AnswerResponse(
         verdict=graded.verdict,
         error=graded.error,
@@ -216,8 +219,7 @@ async def record_answer(body: AnswerRequest, current_user: dict = Depends(get_cu
         daily_cap=res.get("daily_cap", 0),
         too_fast=bool(res.get("too_fast", False)),
         total_xp=total,
-        level=level,
-        leveled_up=xp > 0 and level > level_for_xp(total - xp),
+        **level_fields(res, xp),
         session_answers=res.get("session_answers", 0),
         session_points=res.get("session_points", 0),
         session_complete=bool(res.get("session_complete", False)),
@@ -321,6 +323,10 @@ class VersusResponse(BaseModel):
     total_xp: int
     level: int
     leveled_up: bool
+    #: Play-streak bonus on top of xp_awarded (its own ledger row).
+    bonus_xp: int = 0
+    #: Highest level shown before this answer — the level-up moment starts here.
+    previous_level: int | None = None
     streak: int
     best_streak: int
     usage: dict | None = None
@@ -379,7 +385,6 @@ async def record_versus(body: VersusRequest, current_user: dict = Depends(get_cu
 
     xp = res.get("xp_awarded", 0)
     total = res.get("total_xp", 0)
-    level = level_for_xp(total)
     return VersusResponse(
         correct=correct,
         equity_a=a,
@@ -389,8 +394,7 @@ async def record_versus(body: VersusRequest, current_user: dict = Depends(get_cu
         daily_cap=res.get("daily_cap", 0),
         too_fast=bool(res.get("too_fast", False)),
         total_xp=total,
-        level=level,
-        leveled_up=xp > 0 and level > level_for_xp(total - xp),
+        **level_fields(res, xp),
         streak=res.get("streak", 0),
         best_streak=res.get("best_streak", 0),
         usage={"used": usage.used, "limit": usage.limit, "reset_at": usage.reset_at} if usage else None,

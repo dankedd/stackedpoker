@@ -25,7 +25,7 @@ const noop = () => {}
 function thresholdFor(level: number): number {
   let xp = 0
   while (getLevelProgress(xp).level < level) {
-    xp = getLevelProgress(xp).nextLevelThreshold
+    xp = getLevelProgress(xp).nextLevelThreshold ?? xp + 1
   }
   return xp
 }
@@ -102,15 +102,15 @@ describe('LevelUpModal — dialog semantics and content', () => {
     expect(html).toMatch(/Progress toward Level 9/)
   })
 
-  it('Continue Learning is the primary action, View Leaderboard the secondary action linking to /leaderboard', () => {
+  it('Keep going is the primary action, View Leaderboard the secondary action linking to /leaderboard', () => {
     const html = renderToStaticMarkup(
       <LevelUpModal event={baseEvent()} onContinue={noop} onDismiss={noop} />,
     )
-    expect(html).toMatch(/Continue Learning/)
+    expect(html).toMatch(/Keep going/)
     expect(html).toMatch(/View Leaderboard/)
     expect(html).toMatch(/href="\/leaderboard"/)
     // Primary action appears before the secondary one in document order.
-    expect(html.indexOf('Continue Learning')).toBeLessThan(html.indexOf('View Leaderboard'))
+    expect(html.indexOf('Keep going')).toBeLessThan(html.indexOf('View Leaderboard'))
   })
 
   it('with no token, never attempts a leaderboard fetch and falls back to the generic CTA — the modal itself still renders fully', () => {
@@ -119,7 +119,7 @@ describe('LevelUpModal — dialog semantics and content', () => {
     )
     expect(html).toMatch(/See how you rank on the leaderboard\./)
     // The rest of the modal is unaffected by the missing rank data.
-    expect(html).toMatch(/Continue Learning/)
+    expect(html).toMatch(/Keep going/)
     expect(html).toMatch(/Level Up/)
   })
 })

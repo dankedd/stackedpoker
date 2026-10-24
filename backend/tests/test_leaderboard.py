@@ -146,7 +146,7 @@ def test_24h_leaderboard_is_not_since_midnight(fake_db):
 
 def test_level_uses_total_xp_not_period_xp_on_24h_tab(fake_db):
     base = NOW - timedelta(days=100)
-    _seed_user(fake_db, "u-lowlevel", "LowLevel", 10, base)  # level 1 by total_xp
+    _seed_user(fake_db, "u-lowlevel", "LowLevel", 1, base)  # level 1 by total_xp
     _seed_xp_event(fake_db, "u-lowlevel", 5000, NOW - timedelta(hours=1))  # huge 24h burst
 
     resp = run(leaderboard_module.get_leaderboard(
@@ -154,8 +154,9 @@ def test_level_uses_total_xp_not_period_xp_on_24h_tab(fake_db):
     ))
     row = resp.rows[0]
     assert row.period_xp == 5000
-    assert row.total_xp == 10
+    assert row.total_xp == 1
     assert row.level == 1  # not inflated by the 24h burst
+    assert (row.title, row.tier) == ("Fish", "slate")
 
 
 def test_all_time_row_never_carries_period_xp(fake_db):
@@ -291,7 +292,7 @@ def test_leaderboard_response_never_exposes_user_id_or_email(fake_db):
     dumped = resp.rows[0].model_dump()
     assert "user_id" not in dumped
     assert "email" not in dumped
-    assert set(dumped.keys()) == {"rank", "username", "level", "total_xp", "period_xp", "is_you"}
+    assert set(dumped.keys()) == {"rank", "username", "level", "title", "tier", "total_xp", "period_xp", "is_you"}
 
 
 def test_no_display_name_falls_back_to_player_code_never_email(fake_db):
@@ -353,8 +354,8 @@ def test_duplicate_concurrent_lesson_completion_does_not_inflate_leaderboard_tot
     )
 
     resp = run(leaderboard_module.get_leaderboard(period="all", limit=50, offset=0, current_user={"sub": user_id}))
-    # 200 lesson bonus + 25 first_lesson + 50 perfect_lesson achievements, exactly once.
-    assert resp.rows[0].total_xp == 275
+    # 200 lesson bonus exactly once (achievements grant no XP).
+    assert resp.rows[0].total_xp == 200
 
 
 def test_replaying_a_completed_lesson_does_not_add_leaderboard_xp(fake_db):
@@ -366,7 +367,7 @@ def test_replaying_a_completed_lesson_does_not_add_leaderboard_xp(fake_db):
     run(learn_module.complete_lesson("lesson-lb-replay", body, {"sub": user_id}))  # reopen + "complete" again
 
     resp = run(leaderboard_module.get_leaderboard(period="all", limit=50, offset=0, current_user={"sub": user_id}))
-    assert resp.rows[0].total_xp == 150 + 25 + 50  # lesson bonus + first_lesson + perfect_lesson, once
+    assert resp.rows[0].total_xp == 150  # lesson bonus once; achievements grant no XP
 
 
 def test_step_xp_award_is_server_resolved_so_leaderboard_total_cannot_be_inflated(fake_db):

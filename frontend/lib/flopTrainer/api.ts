@@ -34,6 +34,10 @@ export interface AnswerResult {
   total_xp: number;
   level: number;
   leveled_up: boolean;
+  /** Day-streak bonus on top of xp_awarded. */
+  bonus_xp?: number;
+  /** Highest level shown before this answer. */
+  previous_level?: number | null;
   session_answers: number;
   session_points: number;
   session_complete: boolean;
@@ -84,6 +88,10 @@ export interface VersusResult {
   total_xp: number;
   level: number;
   leveled_up: boolean;
+  /** Day-streak bonus on top of xp_awarded. */
+  bonus_xp?: number;
+  /** Highest level shown before this answer. */
+  previous_level?: number | null;
   streak: number;
   best_streak: number;
   usage?: TrainerUsage | null;

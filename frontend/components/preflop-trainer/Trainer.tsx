@@ -32,6 +32,7 @@ import { submitTrainerHand, type HandXpResult } from "@/lib/ranges/api";
 import { useLearnProgress } from "@/contexts/LearnProgressContext";
 import { LevelUpModal } from "@/components/learn/LevelUpModal";
 import { XPGain } from "@/components/learn/XPGain";
+import { tierForLevel } from "@/lib/levels";
 import { cn } from "@/lib/utils";
 import { ACTION_ORDER, HandBreakdown, Pills, SourceLegend, Swatch, TOOL_SLUG, toStrategies } from "./shared";
 import { ActionButtons, HOTKEY, PhoneTable, Table, VERDICT } from "./TrainerTable";
@@ -132,7 +133,7 @@ export function Trainer() {
           (result) => {
             const newRecord = applyHandResult(result);
             setStats((s) => ({ ...s, streak: result.streak }));
-            applyServerXpTotal(result.total_xp);
+            applyServerXpTotal(result.total_xp, result);
             applyServerUsage(result.usage);
             setAnswer((a) => (a && a.id === id ? { ...a, newRecord, xp: { status: "done", result } } : a));
           },
@@ -578,7 +579,7 @@ function XpLine({ xp }: { xp: AnswerXp }) {
         : `Top streak bonus: ${r.xp_per_correct} XP per correct hand.`;
   return (
     <div className="flex basis-full flex-wrap items-center gap-3">
-      {r.xp_awarded > 0 && <XPGain xp={r.xp_awarded} className="px-3 py-1" />}
+      {r.xp_awarded > 0 && <XPGain xp={r.xp_awarded} bonus={r.bonus_xp ?? 0} className="px-3 py-1" />}
       <p className="text-xs leading-relaxed text-muted-foreground">
         {r.too_fast
           ? "Too quick after the last hand — no XP for this one."
@@ -588,7 +589,7 @@ function XpLine({ xp }: { xp: AnswerXp }) {
         <span className="whitespace-nowrap">
           Today <b className="font-mono text-foreground">{r.daily_xp}</b>/{r.daily_cap} XP
         </span>
-        {r.leveled_up && <span className="ml-1 font-semibold text-amber-300">· Level {r.level}!</span>}
+        {r.leveled_up && <span className="ml-1 font-semibold text-amber-300">· Level {r.level}, {tierForLevel(r.level).title}!</span>}
       </p>
     </div>
   );

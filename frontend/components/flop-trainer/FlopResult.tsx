@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Check, X } from "lucide-react";
 import { XPGain } from "@/components/learn/XPGain";
+import { tierForLevel } from "@/lib/levels";
 import { Modal } from "@/components/ui/modal";
 import { fetchExamples, type BucketExamples } from "@/lib/flopTrainer/data";
 import {
@@ -284,17 +285,17 @@ function XpLine({ xp }: { xp: AnswerXp }) {
   const r = xp.result;
   return (
     <div className="flex basis-full flex-wrap items-center gap-3">
-      {r.xp_awarded > 0 && <XPGain xp={r.xp_awarded} className="px-3 py-1" />}
+      {r.xp_awarded > 0 && <XPGain xp={r.xp_awarded} bonus={r.bonus_xp ?? 0} className="px-3 py-1" />}
       <p className="text-xs text-muted-foreground">
         {r.too_fast
           ? "Too quick after the last answer — no XP for this one."
           : r.daily_xp >= r.daily_cap && r.xp_awarded === 0 && r.points > 0
-            ? "Today's flop trainer XP is maxed out — your points still count."
+            ? "Today's trainer XP is maxed out — your points still count."
             : null}{" "}
         <span className="whitespace-nowrap">
           Today <b className="font-mono text-foreground">{r.daily_xp}</b>/{r.daily_cap} XP
         </span>
-        {r.leveled_up && <span className="ml-1 font-semibold text-amber-300">· Level {r.level}!</span>}
+        {r.leveled_up && <span className="ml-1 font-semibold text-amber-300">· Level {r.level}, {tierForLevel(r.level).title}!</span>}
       </p>
     </div>
   );

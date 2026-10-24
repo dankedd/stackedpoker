@@ -10,6 +10,9 @@ import { useSubscription } from '@/hooks/useSubscription'
 import { useManageSubscription } from '@/hooks/useManageSubscription'
 import { PlanBadge } from '@/components/layout/PlanBadge'
 import { isPaidTier } from '@/lib/entitlements'
+import { LevelBadge } from '@/components/levels/LevelBadge'
+import { tierForLevel, type TierColor } from '@/lib/levels'
+import { cn } from '@/lib/utils'
 import {
   MENU_Z_INDEX,
   useAnchoredMenuPosition,
@@ -18,6 +21,18 @@ import {
 } from '@/hooks/useAnchoredMenu'
 
 const DROPDOWN_W = 224 // w-56 = 14rem
+
+/** Solid dot behind the level number on the avatar, per tier. */
+const TIER_DOT: Record<TierColor, string> = {
+  slate: 'bg-slate-500',
+  sky: 'bg-sky-500',
+  emerald: 'bg-emerald-500',
+  blue: 'bg-blue-500',
+  violet: 'bg-violet-500',
+  fuchsia: 'bg-fuchsia-500',
+  amber: 'bg-amber-500',
+  legend: 'bg-gradient-to-r from-amber-400 to-rose-500',
+}
 
 /** One row style, so the upgrade link and the billing-portal button are
  *  indistinguishable to the eye. */
@@ -111,9 +126,7 @@ export function UserMenu() {
               <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
             </div>
             {!progress.isGuest && (
-              <span className="ml-auto shrink-0 rounded-full border border-violet-400/30 bg-violet-500/10 px-2 py-0.5 text-[10px] font-bold text-violet-300">
-                LVL {progress.skill.level}
-              </span>
+              <LevelBadge level={progress.skill.level} className="ml-auto text-[10px]" />
             )}
           </div>
           {subscription && (
@@ -184,7 +197,7 @@ export function UserMenu() {
         <div className="relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-600/80 to-blue-500/80 border border-violet-400/30 text-white text-[11px] font-bold shadow-sm shadow-violet-500/30">
           {initials}
           {!progress.isGuest && (
-            <span className="absolute -bottom-1.5 -right-1.5 rounded-full border border-[#070C1B] bg-violet-500 px-1 text-[9px] font-bold leading-[13px] text-white">
+            <span className={cn("absolute -bottom-1.5 -right-1.5 rounded-full border border-[#070C1B] px-1 text-[9px] font-bold leading-[13px] text-white", TIER_DOT[tierForLevel(progress.skill.level).color])}>
               {progress.skill.level}
             </span>
           )}
