@@ -302,6 +302,22 @@ ORDER BY players DESC, files DESC;
 `reason`: `unsupported_site` (e.g. 888poker, iPoker), `cash` (cash game from a supported site),
 `language` (PokerStars client not in English), `unrecognised`, `file_type` (e.g. a .pdf).
 
+## Lifecycle emails (day 1 / 3 / 7)
+
+`frontend/app/api/cron/lifecycle-emails` runs daily via Vercel Cron (`frontend/vercel.json`) and needs
+`CRON_SECRET` as a Bearer token. Env vars: see `frontend/.env.example`.
+
+Send one template to yourself right away (subject prefixed `[TEST] `, nothing written to `email_log`,
+no other user mailed; `to` must be listed in `LIFECYCLE_TEST_RECIPIENTS`):
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" "https://stackedpokerai.com/api/cron/lifecycle-emails?test=day1&to=manueladema33@gmail.com"
+```
+
+`test=day1|day3|day7`. Stats, streak and weakest spot come from manueladema33@gmail.com's account (dummy
+data if it doesn't exist); the response has the Resend message id and `missingEnv` (env var names that
+aren't set). Dry run of the real cron without sending: `?dry=1` (optionally `&now=<ISO>`).
+
 ## Environment Variables
 
 ### Frontend — `frontend/.env.local`

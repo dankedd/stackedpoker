@@ -1,7 +1,9 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { TEMPLATES, type Template } from "@/lib/lifecycle/plan";
 import { maskEmail, runLifecycleEmails } from "@/lib/lifecycle/run";
+import { missingEnv, sendTestEmail, testRecipients } from "@/lib/lifecycle/testSend";
 
 /**
  * Daily lifecycle emails (day 1 / 3 / 7), triggered by Vercel Cron
@@ -9,6 +11,9 @@ import { maskEmail, runLifecycleEmails } from "@/lib/lifecycle/run";
  *
  *   ?dry=1             decide and render, send nothing, write nothing
  *   ?dry=1&now=<ISO>   the same, as if it ran at that moment
+ *   ?test=day1|day3|day7&to=<email>
+ *                      send that one template, "[TEST] " subject, to an
+ *                      address in LIFECYCLE_TEST_RECIPIENTS only; writes nothing
  *
  * A Next.js route, not the FastAPI backend: this file wins over the /api/*
  * rewrite in next.config.ts because filesystem routes are matched first.
@@ -29,6 +34,7 @@ export async function GET(req: NextRequest) {
   if (!authorized(req)) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const q = req.nextUrl.searchParams;
+  if (q.has("test")) return testSend(q);
   const dry = q.get("dry") === "1";
   const nowParam = q.get("now");
   if (nowParam && !dry) return NextResponse.json({ error: "now= is only allowed with dry=1" }, { status: 400 });
@@ -54,5 +60,23 @@ export async function GET(req: NextRequest) {
     const message = e instanceof Error ? e.message : String(e);
     console.error(JSON.stringify({ job: "lifecycle-emails", error: message }));
     return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+async function testSend(q: URLSearchParams) {
+  const template = q.get("test") as Template;
+  if (!TEMPLATES.includes(template)) return NextResponse.json({ error: "test= must be day1, day3, day7 or trial_ending" }, { status: 400 });
+  const to = (q.get("to") ?? "").trim().toLowerCase();
+  if (!to || !testRecipients().has(to)) {
+    return NextResponse.json({ error: "to= is not listed in LIFECYCLE_TEST_RECIPIENTS" }, { status: 403 });
+  }
+  try {
+    const result = await sendTestEmail(createAdminClient(), { template, to, now: Date.now() });
+    console.log(JSON.stringify({ job: "lifecycle-emails", ...result, to: maskEmail(to) }));
+    return NextResponse.json({ ...result, missingEnv: missingEnv() });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    console.error(JSON.stringify({ job: "lifecycle-emails", test: template, error: message }));
+    return NextResponse.json({ error: message, missingEnv: missingEnv() }, { status: 500 });
   }
 }
