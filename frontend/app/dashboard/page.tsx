@@ -23,6 +23,7 @@ import { LEARN_CTA, SECONDARY_CTA, canUseFeature } from "@/lib/features";
 
 // Client component just for the upgrade CTA (needs onClick)
 import { UpgradeCTA } from "./upgrade-cta";
+import { HandlePrompt } from "@/components/social/HandlePrompt";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -60,6 +61,13 @@ export default async function DashboardPage() {
   const tier = profile?.subscription_tier ?? "free";
   // Learn is dev-only for now (lib/features.ts): everyone else gets the trainer and hand history.
   const learnOn = canUseFeature("learn", tier);
+  // Social layer: ask for a username until one is set. An error (migration
+  // not run yet) reads as "has one", so the card never shows by mistake.
+  let needsHandle = false;
+  if (canUseFeature("social", tier)) {
+    const { data: handleRow, error: handleError } = await supabase.from("profiles").select("handle").eq("id", user.id).maybeSingle();
+    needsHandle = !handleError && !handleRow?.handle;
+  }
   const subStatus = profile?.subscription_status ?? null;
   const hasStripeCustomer = !!profile?.stripe_customer_id;
   const limit = profile?.analyses_limit ?? 3;
@@ -80,6 +88,12 @@ export default async function DashboardPage() {
 
         {/* "Take the … tour" until both tours are done or the tip is dismissed */}
         <TourTip />
+
+        {needsHandle && (
+          <div className="mb-6">
+            <HandlePrompt />
+          </div>
+        )}
 
         {/* ── Welcome hero ── */}
         <div className="relative mb-10 overflow-hidden rounded-3xl border border-violet-500/12 bg-gradient-to-br from-violet-950/40 via-background/70 to-blue-950/20 px-8 py-8 sm:px-10 animate-fade-in">

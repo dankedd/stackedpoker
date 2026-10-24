@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 import { FEATURES, canUseFeature, gatedFeatureForPath, hasDevAccess, isFeaturePublic } from "../features";
 
 describe("feature availability", () => {
-  it("Learn and Puzzles are dev-only for now", () => {
-    expect(FEATURES).toEqual({ learn: "dev", puzzles: "dev" });
+  it("Learn, Puzzles and Social are dev-only for now", () => {
+    expect(FEATURES).toEqual({ learn: "dev", puzzles: "dev", social: "dev" });
     expect(isFeaturePublic("learn")).toBe(false);
     expect(isFeaturePublic("puzzles")).toBe(false);
   });
@@ -25,6 +25,13 @@ describe("feature availability", () => {
     // Public SEO lesson overview — stays open and indexable by decision.
     expect(gatedFeatureForPath("/learn/think-in-ranges")).toBeNull();
     for (const p of ["/", "/hands", "/preflop-trainer", "/learning", "/puzzlesque", "/dashboard"]) expect(gatedFeatureForPath(p), p).toBeNull();
+  });
+
+  it("gates the social routes without catching look-alikes", () => {
+    for (const p of ["/u/bobby", "/h/abc1234", "/embed/h/abc1234", "/admin/moderation", "/forum", "/messages/x"]) {
+      expect(gatedFeatureForPath(p), p).toBe("social");
+    }
+    for (const p of ["/hands", "/hands/1", "/help", "/upgrade", "/admin/debug-strategy"]) expect(gatedFeatureForPath(p), p).toBeNull();
   });
 
   it("matches the backend's copy (backend/app/services/features.py)", () => {

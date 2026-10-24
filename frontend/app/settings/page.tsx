@@ -14,6 +14,9 @@ import { DisplayNameForm } from "./DisplayNameForm";
 import { SETTINGS } from "@/lib/lifecycle/strings";
 import { ProductToursCard } from "@/components/onboarding/TourLinks";
 import type { ExperienceLevel } from "@/lib/learn/experienceLevel";
+import { canUseFeature } from "@/lib/features";
+import { HandleForm } from "@/components/social/HandleForm";
+import { AccountDataCard } from "@/components/social/AccountDataCard";
 
 const STATUS_STYLE: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
   active:     { icon: <CheckCircle2 className="h-4 w-4" />, label: "Active",     color: "text-emerald-400" },
@@ -54,6 +57,12 @@ export default async function SettingsPage() {
   const { data: entRaw } = await supabase.rpc("my_entitlements");
   const ent = parseEntitlements(entRaw);
   const tier = profile?.subscription_tier ?? "free";
+
+  // Social layer (supabase/migrations/*social*): username + data controls.
+  // my_social_profile() fails until the migration has run → no form.
+  const social = canUseFeature("social", tier);
+  const { data: socialRaw } = social ? await supabase.rpc("my_social_profile") : { data: null };
+  const socialProfile = socialRaw as { handle: string | null; next_handle_change_at: string | null } | null;
   const plan = ent?.plan ?? "free";
   const status = ent?.subscription.status ?? null;
   const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
@@ -148,6 +157,9 @@ export default async function SettingsPage() {
             <h2 className="font-semibold text-foreground">Account</h2>
           </div>
           <div className="px-6 py-5 space-y-3">
+            {socialProfile && (
+              <HandleForm current={socialProfile.handle} nextChangeAt={socialProfile.next_handle_change_at} />
+            )}
             {nameError ? (
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Username</span>
@@ -193,6 +205,8 @@ export default async function SettingsPage() {
             <PokerExperiencePicker currentLevel={currentLevel} />
           </div>
         </div>
+
+        {social && <AccountDataCard />}
       </main>
     </div>
   );

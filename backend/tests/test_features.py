@@ -12,8 +12,8 @@ from app.middleware.auth import get_current_user
 from app.services import features
 
 
-def test_learn_and_puzzles_are_dev_only():
-    assert features.FEATURES == {"learn": "dev", "puzzles": "dev"}
+def test_learn_puzzles_and_social_are_dev_only():
+    assert features.FEATURES == {"learn": "dev", "puzzles": "dev", "social": "dev"}
     assert not features.is_feature_public("learn")
     assert features.has_dev_access("admin")
     for tier in ("free", "pro", "premium", None):

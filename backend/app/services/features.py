@@ -19,6 +19,7 @@ from app.services.entitlements import get_subscription_tier
 FEATURES: dict[str, str] = {
     "learn": "dev",
     "puzzles": "dev",
+    "social": "dev",
 }
 
 

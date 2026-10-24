@@ -21,6 +21,9 @@ export type FeatureMode = "dev" | "public";
 export const FEATURES = {
   learn: "dev",
   puzzles: "dev",
+  // Friends, profiles, sharing, chat, groups, forum. Goes public once the
+  // supabase/migrations/*social* files have run in production.
+  social: "dev",
 } as const satisfies Record<string, FeatureMode>;
 
 export type Feature = keyof typeof FEATURES;
@@ -31,6 +34,7 @@ export const FEATURE_ROUTES: Record<Feature, string[]> = {
   // (/learn/<lesson>) stay open — see gatedFeatureForPath.
   learn: ["/learn", "/progress"],
   puzzles: ["/puzzles"],
+  social: ["/admin/moderation", "/u", "/h", "/embed", "/friends", "/messages", "/groups", "/forum", "/notifications", "/invite"],
 };
 
 export function isFeaturePublic(feature: Feature): boolean {
