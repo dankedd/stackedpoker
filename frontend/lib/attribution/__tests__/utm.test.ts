@@ -21,6 +21,9 @@ describe("utm attribution", () => {
     expect(decodeUtmCookie("not json")).toBeNull();
     expect(decodeUtmCookie(encodeURIComponent('{"utm_source":"fb","evil":"x","utm_term":5}'))).toEqual({ utm_source: "fb" });
     expect(decodeUtmCookie(undefined)).toBeNull();
+    // Raw (request.cookies after Next.js decoded it) and double-encoded both work.
+    expect(decodeUtmCookie(JSON.stringify(utm))).toEqual(utm);
+    expect(decodeUtmCookie(encodeURIComponent(encodeUtmCookie(utm)))).toEqual(utm);
   });
 
   describe("oauthSignupMetadata", () => {

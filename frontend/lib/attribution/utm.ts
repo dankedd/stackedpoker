@@ -39,14 +39,24 @@ export function withShareReferral(utm: Utm): Utm {
   return utm;
 }
 
+/** For document.cookie. (Next.js response.cookies.set() encodes on its own: pass JSON.stringify(utm) there.) */
 export function encodeUtmCookie(utm: Utm): string {
   return encodeURIComponent(JSON.stringify(utm));
 }
 
+/** Accepts the cookie value raw, URL-encoded once or twice (whichever path set or read it). */
 export function decodeUtmCookie(raw: string | null | undefined): Utm | null {
   if (!raw) return null;
+  let text = raw;
+  for (let i = 0; i < 3 && !text.trimStart().startsWith("{"); i++) {
+    try {
+      text = decodeURIComponent(text);
+    } catch {
+      return null;
+    }
+  }
   try {
-    const parsed = JSON.parse(decodeURIComponent(raw)) as unknown;
+    const parsed = JSON.parse(text) as unknown;
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
     const out: Utm = {};
     for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {

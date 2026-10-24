@@ -4,7 +4,7 @@ import { canAccessPremium, canAccessElite } from '@/lib/entitlements'
 import { isPublicSeoPath } from '@/lib/seo/routes'
 import { canUseFeature, gatedFeatureForPath } from '@/lib/features'
 import { needsChoiceScreen } from '@/lib/onboarding/state'
-import { UTM_COOKIE, UTM_COOKIE_MAX_AGE, encodeUtmCookie, utmFromUrl } from '@/lib/attribution/utm'
+import { UTM_COOKIE, UTM_COOKIE_MAX_AGE, utmFromUrl } from '@/lib/attribution/utm'
 
 // Guest -> /login. Per the membership-system plan, this is now every /learn
 // route too (no more anonymous trial) — see that plan for why.
@@ -51,7 +51,8 @@ export async function middleware(request: NextRequest) {
   if (!request.cookies.has(UTM_COOKIE)) {
     const utm = utmFromUrl(request.nextUrl.searchParams, request.nextUrl.pathname)
     if (utm) {
-      response.cookies.set(UTM_COOKIE, encodeUtmCookie(utm), {
+      // Next.js URL-encodes cookie values itself, so plain JSON here.
+      response.cookies.set(UTM_COOKIE, JSON.stringify(utm), {
         maxAge: UTM_COOKIE_MAX_AGE, path: '/', sameSite: 'lax', secure: request.nextUrl.protocol === 'https:',
       })
     }
