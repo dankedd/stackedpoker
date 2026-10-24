@@ -6,7 +6,7 @@
 
 -- Old curve (sections 4-5): 500 * 1.10^(level-1) XP per level, xp_calculator before 2026-10.
 WITH learn AS (
-  SELECT e.*, (e.source_type IN ('step', 'lesson_completion', 'module_completion', 'guest_merge', 'achievement')) AS to_void
+  SELECT e.*, (e.source_type IN ('step', 'lesson_completion', 'module_completion', 'guest_merge', 'achievement', 'unknown')) AS to_void
   FROM public.xp_events e
   WHERE (to_jsonb(e) ->> 'voided_at') IS NULL
 )
@@ -19,7 +19,7 @@ SELECT source_id AS achievement, count(*) AS events, sum(amount) AS xp
 FROM public.xp_events e WHERE source_type = 'achievement' AND (to_jsonb(e) ->> 'voided_at') IS NULL
 GROUP BY source_id ORDER BY xp DESC;
 
--- 3. 'unknown' (kept, needs a decision): per user and day.
+-- 3. 'unknown' (voided too: Learn awards from before source types): per user and day.
 SELECT user_id, earned_at::date AS day, count(*) AS events, sum(amount) AS xp
 FROM public.xp_events e WHERE source_type = 'unknown' AND (to_jsonb(e) ->> 'voided_at') IS NULL
 GROUP BY 1, 2 ORDER BY xp DESC;
@@ -33,7 +33,7 @@ WITH RECURSIVE old_curve(level, min_xp) AS (
 per_user AS (
   SELECT s.user_id, s.total_xp AS old_total,
          COALESCE(sum(e.amount) FILTER (WHERE (to_jsonb(e) ->> 'voided_at') IS NULL
-           AND e.source_type NOT IN ('step', 'lesson_completion', 'module_completion', 'guest_merge', 'achievement')), 0)::integer AS new_total,
+           AND e.source_type NOT IN ('step', 'lesson_completion', 'module_completion', 'guest_merge', 'achievement', 'unknown')), 0)::integer AS new_total,
          COALESCE(sum(e.amount) FILTER (WHERE (to_jsonb(e) ->> 'voided_at') IS NULL), 0)::integer AS ledger_now
   FROM public.user_skill_progress s
   LEFT JOIN public.xp_events e ON e.user_id = s.user_id
@@ -58,7 +58,7 @@ WITH RECURSIVE old_curve(level, min_xp) AS (
 per_user AS (
   SELECT s.user_id, s.total_xp AS old_total,
          COALESCE(sum(e.amount) FILTER (WHERE (to_jsonb(e) ->> 'voided_at') IS NULL
-           AND e.source_type NOT IN ('step', 'lesson_completion', 'module_completion', 'guest_merge', 'achievement')), 0)::integer AS new_total
+           AND e.source_type NOT IN ('step', 'lesson_completion', 'module_completion', 'guest_merge', 'achievement', 'unknown')), 0)::integer AS new_total
   FROM public.user_skill_progress s
   LEFT JOIN public.xp_events e ON e.user_id = s.user_id
   GROUP BY s.user_id, s.total_xp

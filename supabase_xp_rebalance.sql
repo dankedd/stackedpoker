@@ -18,7 +18,9 @@
 --      Learn guest merge in learn.py — the trainer guest merge never awards XP)
 --      and every 'achievement' (all 18 catalog achievements are Learn ones: the
 --      streak ones count Learn's streak_days, the level ones were reached with
---      Learn XP). 'unknown' is NOT touched.
+--      Learn XP), and 'unknown' (one admin account on 2026-07-29, Learn
+--      step/lesson awards logged before source types existed; approved).
+--      Afterwards only trainer XP remains.
 --      Undo: UPDATE xp_events SET voided_at = NULL, void_reason = NULL
 --            WHERE void_reason = 'learn_offline';  then re-run section 6.
 --   3. total_xp := sum of the user's non-voided xp_events. XP that never had a
@@ -178,7 +180,7 @@ GRANT EXECUTE ON FUNCTION public.award_achievement(uuid, text) TO service_role;
 UPDATE public.xp_events
 SET voided_at = now(), void_reason = 'learn_offline'
 WHERE voided_at IS NULL
-  AND source_type IN ('step', 'lesson_completion', 'module_completion', 'guest_merge', 'achievement');
+  AND source_type IN ('step', 'lesson_completion', 'module_completion', 'guest_merge', 'achievement', 'unknown');
 
 -- ──────────────────────────────────────────────────────────
 -- 5. Recompute totals and levels.

@@ -38,16 +38,16 @@ BEGIN
   ASSERT (SELECT total_xp FROM public.user_skill_progress_backup_2026_10 WHERE user_id = a1) = 4630, 'skill backup keeps old total';
 
   -- 3. Learn events voided, everything else kept.
-  ASSERT (SELECT count(*) FROM public.xp_events WHERE void_reason = 'learn_offline') = 6, 'six Learn events voided';
+  ASSERT (SELECT count(*) FROM public.xp_events WHERE void_reason = 'learn_offline') = 7, 'Learn + unknown events voided';
   ASSERT NOT EXISTS (SELECT 1 FROM public.xp_events WHERE voided_at IS NOT NULL
-                     AND source_type IN ('preflop_trainer', 'flop_equity', 'unknown')), 'trainer + unknown kept';
+                     AND source_type IN ('preflop_trainer', 'flop_equity')), 'trainer XP kept';
   ASSERT NOT EXISTS (SELECT 1 FROM public.xp_events WHERE voided_at IS NULL
-                     AND source_type IN ('step', 'lesson_completion', 'module_completion', 'achievement', 'guest_merge')), 'no live Learn XP';
+                     AND source_type IN ('step', 'lesson_completion', 'module_completion', 'achievement', 'guest_merge', 'unknown')), 'no live Learn XP';
 
   -- 4. Recomputed totals and levels, no level-up pending from the recompute.
   ASSERT (SELECT total_xp FROM public.user_skill_progress WHERE user_id = a1) = 180, 'a1 trainer XP only';
   ASSERT (SELECT total_xp FROM public.user_skill_progress WHERE user_id = a2) = 300, 'a2 unchanged';
-  ASSERT (SELECT total_xp FROM public.user_skill_progress WHERE user_id = a3) = 50, 'a3 keeps unknown';
+  ASSERT (SELECT total_xp FROM public.user_skill_progress WHERE user_id = a3) = 0, 'a3 unknown voided';
   ASSERT NOT EXISTS (SELECT 1 FROM public.user_skill_progress
                      WHERE level <> public.xp_level_for(total_xp) OR level_seen IS DISTINCT FROM level), 'level = level_seen = new level';
   ASSERT (SELECT level FROM public.user_skill_progress WHERE user_id = a2) = 10, 'a2 is level 10';
@@ -107,7 +107,7 @@ BEGIN
   -- 7. Hand review: first new tournament of the day = +5, once.
   INSERT INTO public.hh_tournaments (user_id, site, tournament_id) VALUES (a3, 'gg', 't1'), (a3, 'gg', 't2');
   ASSERT (SELECT count(*) FROM public.xp_events WHERE user_id = a3 AND source_type = 'hand_review') = 1, 'one hand review bonus';
-  ASSERT (SELECT total_xp FROM public.user_skill_progress WHERE user_id = a3) = 55, 'a3 + 5';
+  ASSERT (SELECT total_xp FROM public.user_skill_progress WHERE user_id = a3) = 5, 'a3 + 5';
 
   -- 8. Achievements unlock without XP; the level trigger is gone.
   ASSERT public.award_achievement(a4, 'first_lesson'), 'achievement unlocks';
