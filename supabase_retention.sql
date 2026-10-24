@@ -42,10 +42,11 @@ CREATE TABLE IF NOT EXISTS public.email_log (
   CONSTRAINT email_log_user_template_key UNIQUE (user_id, template)
 );
 
--- Named, so a re-run can widen it when a template is added.
+-- Named, so a re-run can widen it when a template is added. 'promo_3m_50'
+-- is the one-time promo (supabase/migrations/20261025_01_promo_3m_50.sql).
 ALTER TABLE public.email_log DROP CONSTRAINT IF EXISTS email_log_template_check;
 ALTER TABLE public.email_log ADD CONSTRAINT email_log_template_check
-  CHECK (template IN ('day1', 'day3', 'day7', 'trial_ending'));
+  CHECK (template IN ('day1', 'day3', 'day7', 'trial_ending', 'promo_3m_50'));
 
 ALTER TABLE public.email_log ENABLE ROW LEVEL SECURITY;
 -- No policies: the cron route (service role) is the only reader and writer.

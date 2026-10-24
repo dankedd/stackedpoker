@@ -22,6 +22,7 @@ Webhook guarantees:
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime, timezone
 from typing import Annotated
 
@@ -38,8 +39,11 @@ from app.services import billing
 router = APIRouter(prefix="/stripe", tags=["stripe"])
 logger = logging.getLogger(__name__)
 
-UPGRADE_SOURCES = {"hand_limit", "upload_limit", "ai_limit", "trial_ending", "trial_ended", "pricing_page", "flop_explorer", "tournament_summary"}
+UPGRADE_SOURCES = {"hand_limit", "upload_limit", "ai_limit", "trial_ending", "trial_ended", "pricing_page", "flop_explorer", "tournament_summary", "promo_3m_50"}
 DEFAULT_SOURCE = "pricing_page"
+
+# Shape of a Stripe promotion code we let a link pre-apply (?promo= on /checkout).
+_PROMO_CODE = re.compile(r"^[A-Z0-9]{3,32}$")
 
 # Stripe statuses that mean "paying customer" for the legacy profiles mirror.
 # The grace period for past_due is applied by effective_plan(), not here.
@@ -155,8 +159,27 @@ def _checkout_failed(reason: str) -> dict:
 # ── Routes ─────────────────────────────────────────────────────────────────────
 
 class _CheckoutRequest(BaseModel):
-    # hand_limit | upload_limit | ai_limit | trial_ending | trial_ended | pricing_page | flop_explorer | tournament_summary
+    # hand_limit | upload_limit | ai_limit | trial_ending | trial_ended | pricing_page | flop_explorer | tournament_summary | promo_3m_50
     source: str | None = None
+    # A promotion code to pre-apply (e.g. from a campaign email). Optional.
+    promo: str | None = None
+
+
+def _active_promotion_code(code: str | None) -> str | None:
+    """Stripe id of an active promotion code with this exact code, else None.
+
+    Stripe itself enforces expiry, redemption limits and restrictions such as
+    first_time_transaction; an unknown or expired code just means checkout
+    opens at the regular price, with the usual promo-code field."""
+    code = (code or "").strip().upper()
+    if not _PROMO_CODE.match(code):
+        return None
+    try:
+        found = stripe.PromotionCode.list(code=code, active=True, limit=1)
+    except stripe.StripeError as exc:
+        logger.warning("Promotion code lookup failed | code=%s error=%s", code, exc)
+        return None
+    return found.data[0]["id"] if found.data else None
 
 
 @router.post("/create-checkout")
@@ -212,8 +235,25 @@ async def create_checkout(
     elif email:
         kwargs["customer_email"] = email
 
+    promotion_code = _active_promotion_code(body.promo) if body.promo else None
+    if promotion_code:
+        # Stripe refuses discounts together with allow_promotion_codes.
+        kwargs.pop("allow_promotion_codes")
+        kwargs["discounts"] = [{"promotion_code": promotion_code}]
+
     try:
-        session = stripe.checkout.Session.create(**kwargs)
+        try:
+            session = stripe.checkout.Session.create(**kwargs)
+        except stripe.InvalidRequestError as exc:
+            if not promotion_code:
+                raise
+            # The code exists but this customer can't redeem it (e.g. prior
+            # transactions): open checkout at the regular price instead.
+            logger.info("Promotion code not applicable | user=%s error=%s", user_id, exc)
+            kwargs.pop("discounts")
+            kwargs["allow_promotion_codes"] = True
+            promotion_code = None
+            session = stripe.checkout.Session.create(**kwargs)
     except stripe.StripeError as exc:
         logger.error("Stripe checkout failed | user=%s error=%s", user_id, exc)
         return _checkout_failed(f"stripe: {exc.code or type(exc).__name__}: {exc.user_message or ''}".strip())
@@ -221,7 +261,10 @@ async def create_checkout(
         logger.error("Unexpected checkout error | user=%s error=%s", user_id, exc)
         return _checkout_failed(f"unexpected: {type(exc).__name__}")
 
-    logger.info("Checkout session created | user=%s source=%s customer=%s session=%s", user_id, source, customer_id or "(new)", session.id)
+    logger.info(
+        "Checkout session created | user=%s source=%s customer=%s promo=%s session=%s",
+        user_id, source, customer_id or "(new)", "yes" if promotion_code else "no", session.id,
+    )
     return {"url": session.url}
 
 

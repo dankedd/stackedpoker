@@ -1,6 +1,6 @@
 import { PRO_PRICE_LABEL } from "@/lib/billing/entitlements";
 import { BRAND, EMAIL } from "./strings";
-import { accuracyPct, firstName, type Candidate, type Template } from "./plan";
+import { accuracyPct, firstName, type Candidate, type EmailTemplate, type Template } from "./plan";
 import { spotInfo, teaserSpot } from "./spots";
 
 /**
@@ -14,7 +14,7 @@ import { spotInfo, teaserSpot } from "./spots";
  */
 
 export interface RenderedEmail {
-  template: Template;
+  template: EmailTemplate;
   subject: string;
   preheader: string;
   html: string;
@@ -216,6 +216,61 @@ function trialEnding(c: Candidate, ctx: RenderContext, now: number): RenderedEma
     `${T.cta(PRO_PRICE_LABEL)}: ${url}\n${T.fine}\n\n${T.after}` +
     textFooter(ctx);
   return { template: "trial_ending", subject, preheader, html, text, summary: `trial ends ${when} (${endsAt})` };
+}
+
+// ── Promo: 50% off Pro for 3 months ─────────────────────────────────────────
+
+export interface PromoInput {
+  name: string | null;
+  timezone: string;
+  /** When the Stripe promotion code stops working. */
+  expiresAt: string;
+  promoCode: string;
+}
+
+/** "Saturday, October 31 at 18:00 GMT+1" in the user's own time zone. */
+export function promoDeadline(iso: string, timezone: string): string {
+  const fmt = (timeZone: string) => {
+    const d = new Date(iso);
+    const date = d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone });
+    const time = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone, timeZoneName: "short" });
+    return `${date} at ${time}`;
+  };
+  try {
+    return fmt(timezone);
+  } catch {
+    return fmt("Europe/Amsterdam");
+  }
+}
+
+/** Personal, plain-looking note from the founder with one button (like day7). */
+export function renderPromo3m50(input: PromoInput, ctx: RenderContext): RenderedEmail {
+  const T = EMAIL.promo3m50;
+  const deadline = promoDeadline(input.expiresAt, input.timezone);
+  // Straight into Stripe Checkout with the code applied (app/checkout).
+  const url =
+    `${ctx.siteUrl}/checkout?source=promo_3m_50&promo=${encodeURIComponent(input.promoCode)}` +
+    "&utm_source=email&utm_medium=campaign&utm_campaign=promo_3m_50";
+  const lines = T.lines(firstName(input.name));
+  const plain = (s: string, style = "") => `<p style="margin:0 0 14px;font:16px/1.6 ${FONT};color:${C.text};${style}">${escapeHtml(s)}</p>`;
+  const perks = T.perks.map((x) => `<li style="margin:0 0 6px">${escapeHtml(x)}</li>`).join("");
+  const html = layout(
+    T.preheader(deadline),
+    lines.map((l) => plain(l)).join("") +
+      plain(T.perksIntro, "margin-bottom:6px") +
+      `<ul style="margin:0 0 18px;padding-left:22px;font:16px/1.6 ${FONT};color:${C.text}">${perks}</ul>` +
+      button(url, T.cta) +
+      plain(T.deadline(deadline), `color:${C.muted};font-size:15px`) +
+      p(escapeHtml(T.fine), `color:${C.faint};font-size:13px;margin-top:-6px`) +
+      plain(T.signoff) +
+      `<p style="margin:18px 0 20px;font:14px/1.6 ${FONT};color:${C.muted}">P.S. ${escapeHtml(T.ps)}</p>`,
+    ctx,
+  );
+  const text =
+    `${lines.join("\n\n")}\n\n${T.perksIntro}\n${T.perks.map((x) => `  - ${x}`).join("\n")}\n\n` +
+    `${T.cta}: ${url}\n\n${T.deadline(deadline)}\n${T.fine}\n\n${T.signoff}\n\nP.S. ${T.ps}` +
+    textFooter(ctx);
+  return { template: "promo_3m_50", subject: T.subject, preheader: T.preheader(deadline), html, text, summary: `promo ${input.promoCode}, ends ${deadline}` };
 }
 
 export function renderEmail(template: Template, c: Candidate, ctx: RenderContext, now = Date.now()): RenderedEmail {

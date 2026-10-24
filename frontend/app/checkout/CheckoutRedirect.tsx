@@ -11,10 +11,16 @@ import { CHECKOUT } from "@/lib/billing/strings";
 
 type State = "working" | "signin" | "already" | "failed";
 
+/** Same shape the server accepts (stripe_routes._PROMO_CODE). */
+const PROMO_CODE = /^[A-Z0-9]{3,32}$/;
+
 export function CheckoutRedirect() {
   const params = useSearchParams();
   const raw = params.get("source");
   const source: UpgradeSource = UPGRADE_SOURCES.includes(raw as UpgradeSource) ? (raw as UpgradeSource) : "pricing_page";
+  const rawPromo = (params.get("promo") ?? "").trim().toUpperCase();
+  const promo = PROMO_CODE.test(rawPromo) ? rawPromo : undefined;
+  const query = `source=${source}${promo ? `&promo=${promo}` : ""}`;
   const { user, loading } = useAuth();
   const [state, setState] = useState<State>("working");
   const started = useRef(false);
@@ -23,7 +29,7 @@ export function CheckoutRedirect() {
     setState("working");
     try {
       // Same tab: this page has nothing else to show.
-      window.location.replace(await requestCheckoutUrl(source));
+      window.location.replace(await requestCheckoutUrl(source, promo));
     } catch (e) {
       if (e instanceof AlreadySubscribedError) {
         setState("already");
@@ -32,18 +38,18 @@ export function CheckoutRedirect() {
         setState("failed");
       }
     }
-  }, [source]);
+  }, [source, promo]);
 
   useEffect(() => {
     if (loading || started.current) return;
     started.current = true;
     if (!user) {
       setState("signin");
-      window.location.replace(`/login?redirect=${encodeURIComponent(`/checkout?source=${source}`)}`);
+      window.location.replace(`/login?redirect=${encodeURIComponent(`/checkout?${query}`)}`);
       return;
     }
     void go();
-  }, [loading, user, source, go]);
+  }, [loading, user, query, go]);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#0B0E1A] px-4">

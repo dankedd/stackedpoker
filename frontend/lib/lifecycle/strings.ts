@@ -91,6 +91,28 @@ export const EMAIL = {
     fine: "VAT included. Cancel anytime. Payments by Stripe.",
   },
 
+  /** One-time promo (frontend/scripts/promo-3m-50.ts). Prices are VAT included. */
+  promo3m50: {
+    subject: `50% off ${BRAND} Pro for 3 months (7 days only)`,
+    preheader: (deadline: string) => `€3.99/month for your first 3 months. Ends ${deadline}.`,
+    lines: (name: string | null) => [
+      `Hi${name ? ` ${name}` : ""}, ${FOUNDER_NAME} here.`,
+      `I'd love for you to try ${BRAND} Pro, so for the next 7 days you can get it for 50% off: €3.99/month for your first 3 months, then the regular €7.99/month.`,
+    ],
+    perksIntro: "Pro gives you:",
+    perks: [
+      "Unlimited hands in the Preflop Trainer and the Flop Trainer",
+      "The hand analyzer for every tournament you upload, not just one a week",
+      "The new Stacked score for each tournament, with every hand behind it",
+    ],
+    cta: "Get Pro for €3.99/month",
+    /** "Saturday, October 31 at 18:00 GMT+1" */
+    deadline: (when: string) => `The offer ends ${when}. The discount is already applied when you click the button.`,
+    fine: "VAT included. Cancel anytime. Payments by Stripe.",
+    signoff: `— ${FOUNDER_NAME}`,
+    ps: `What would make ${BRAND} more useful for you? Just hit reply. I read every answer myself.`,
+  },
+
   /** Streak line inside the day-1 and day-3 emails. */
   streak: (streak: number) =>
     streak > 0

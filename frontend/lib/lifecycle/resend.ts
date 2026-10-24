@@ -19,8 +19,8 @@ export interface SendInput {
 
 export function senderFor(template: RenderedEmail["template"]): { from: string; replyTo?: string } {
   const address = process.env.EMAIL_FROM_ADDRESS || SENDER;
-  if (template === "day7") {
-    // The founder note: personal sender name, replies go to the founder.
+  if (template === "day7" || template === "promo_3m_50") {
+    // The founder notes: personal sender name, replies go to the founder.
     return { from: `${FOUNDER_NAME} from ${BRAND} <${address}>`, replyTo: process.env.LIFECYCLE_REPLY_TO || undefined };
   }
   return { from: `${BRAND} Coach <${address}>` };
@@ -49,7 +49,7 @@ export async function sendWithResend(input: SendInput): Promise<{ id: string }> 
         "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
       },
       tags: [
-        { name: "category", value: "lifecycle" },
+        { name: "category", value: input.email.template === "promo_3m_50" ? "campaign" : "lifecycle" },
         { name: "template", value: input.email.template },
       ],
     }),

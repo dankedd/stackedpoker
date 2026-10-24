@@ -12,9 +12,10 @@ export class AlreadySubscribedError extends Error {}
 /**
  * Creates a Stripe Checkout session for Pro and returns its URL. `source` is
  * the upgrade moment (hand_limit, upload_limit, …); the server validates it
- * and stores it with the subscription.
+ * and stores it with the subscription. `promo` is a Stripe promotion code to
+ * pre-apply (campaign emails); the server ignores it unless it is active.
  */
-export async function requestCheckoutUrl(source: UpgradeSource = "pricing_page"): Promise<string> {
+export async function requestCheckoutUrl(source: UpgradeSource = "pricing_page", promo?: string): Promise<string> {
   const supabase = createClient();
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
@@ -26,7 +27,7 @@ export async function requestCheckoutUrl(source: UpgradeSource = "pricing_page")
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ source }),
+    body: JSON.stringify(promo ? { source, promo } : { source }),
   });
 
   const data = await res.json().catch(() => ({}));

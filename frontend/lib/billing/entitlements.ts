@@ -20,7 +20,8 @@ export type UpgradeSource =
   | "trial_ended"
   | "pricing_page"
   | "flop_explorer"
-  | "tournament_summary";
+  | "tournament_summary"
+  | "promo_3m_50";
 
 export const UPGRADE_SOURCES: readonly UpgradeSource[] = [
   "hand_limit",
@@ -31,6 +32,7 @@ export const UPGRADE_SOURCES: readonly UpgradeSource[] = [
   "pricing_page",
   "flop_explorer",
   "tournament_summary",
+  "promo_3m_50",
 ];
 
 export const PRO_PRICE_EUR = 7.99;

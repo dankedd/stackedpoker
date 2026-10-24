@@ -25,6 +25,9 @@ export type Template = "day1" | "day3" | "day7" | "trial_ending";
 
 export const TEMPLATES: readonly Template[] = ["day1", "day3", "day7", "trial_ending"];
 
+/** Every email_log template: the lifecycle flow plus one-time campaigns (lib/campaigns). */
+export type EmailTemplate = Template | "promo_3m_50";
+
 export interface Candidate {
   userId: string;
   email: string;

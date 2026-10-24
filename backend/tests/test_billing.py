@@ -304,6 +304,60 @@ def test_checkout_refused_for_existing_subscribers(store, settings, captured_che
     assert captured_checkout == []
 
 
+@pytest.fixture
+def promo_codes(monkeypatch):
+    """Fake Stripe promotion codes: code → id; looked-up codes are recorded."""
+    codes = {"STACKED50": "promo_123"}
+    lookups: list[dict] = []
+
+    def _list(**kwargs):
+        lookups.append(kwargs)
+        hit = codes.get(kwargs["code"]) if kwargs.get("active") else None
+        return SimpleNamespace(data=[{"id": hit}] if hit else [])
+
+    monkeypatch.setattr(sr.stripe.PromotionCode, "list", _list)
+    return lookups
+
+
+def test_checkout_pre_applies_an_active_promo_code(store, settings, captured_checkout, promo_codes, monkeypatch):
+    _entitlements(monkeypatch, {"plan": "free", "subscription": {"status": None}})
+    out = run(sr.create_checkout({"sub": "user-1"}, sr._CheckoutRequest(source="promo_3m_50", promo="stacked50")))
+    assert out == {"url": "https://checkout.stripe.com/c/pay/cs_test"}
+    kw = captured_checkout[0]
+    assert promo_codes == [{"code": "STACKED50", "active": True, "limit": 1}]
+    assert kw["discounts"] == [{"promotion_code": "promo_123"}]
+    assert "allow_promotion_codes" not in kw  # Stripe refuses both together
+    assert kw["line_items"] == [{"price": "price_pro_799", "quantity": 1}]  # the regular price, unchanged
+    assert kw["metadata"]["source"] == "promo_3m_50"
+
+
+def test_checkout_with_an_unknown_or_malformed_promo_opens_at_the_regular_price(store, settings, captured_checkout, promo_codes, monkeypatch):
+    _entitlements(monkeypatch, {"plan": "free", "subscription": {"status": None}})
+    run(sr.create_checkout({"sub": "user-1"}, sr._CheckoutRequest(promo="EXPIRED1")))
+    run(sr.create_checkout({"sub": "user-1"}, sr._CheckoutRequest(promo="x; drop")))
+    assert [l["code"] for l in promo_codes] == ["EXPIRED1"]  # the malformed one never reaches Stripe
+    for kw in captured_checkout:
+        assert "discounts" not in kw
+        assert kw["allow_promotion_codes"] is True
+
+
+def test_checkout_falls_back_when_stripe_refuses_the_promo_for_this_customer(store, settings, promo_codes, monkeypatch):
+    _entitlements(monkeypatch, {"plan": "free", "subscription": {"status": None}})
+    calls: list[dict] = []
+
+    def _create(**kwargs):
+        calls.append(dict(kwargs))
+        if "discounts" in kwargs:
+            raise sr.stripe.InvalidRequestError("This promotion code cannot be redeemed", "discounts")
+        return SimpleNamespace(id="cs_test", url="https://checkout.stripe.com/c/pay/cs_test")
+
+    monkeypatch.setattr(sr.stripe.checkout.Session, "create", _create)
+    out = run(sr.create_checkout({"sub": "user-1"}, sr._CheckoutRequest(promo="STACKED50")))
+    assert out == {"url": "https://checkout.stripe.com/c/pay/cs_test"}
+    assert len(calls) == 2
+    assert "discounts" not in calls[1] and calls[1]["allow_promotion_codes"] is True
+
+
 # ── Preflop Trainer: hand 51 is refused server-side ───────────────────────────
 
 
