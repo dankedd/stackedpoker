@@ -16,7 +16,20 @@ import { ShareDialog } from "./ShareDialog";
  * already loaded (replayer); otherwise it is fetched on the first click
  * (hands overview). Renders nothing while the social feature is off.
  */
-export function ShareButton({ handId, hand, compact, className }: { handId: string; hand?: ParsedHand | null; compact?: boolean; className?: string }) {
+export function ShareButton({
+  handId,
+  hand,
+  compact,
+  label = SHARE.button,
+  className,
+}: {
+  handId: string;
+  hand?: ParsedHand | null;
+  compact?: boolean;
+  /** Button text, e.g. "Share & ask" on the dashboard. */
+  label?: string;
+  className?: string;
+}) {
   const enabled = useSocialEnabled();
   const supabase = useMemo(() => createClient(), []);
   const [open, setOpen] = useState(false);
@@ -43,8 +56,8 @@ export function ShareButton({ handId, hand, compact, className }: { handId: stri
       <button
         type="button"
         onClick={openDialog}
-        aria-label={SHARE.button}
-        title={SHARE.button}
+        aria-label={label}
+        title={label}
         data-share-hand={handId}
         className={cn(
           "inline-flex items-center justify-center gap-1.5 rounded-lg border border-border/60 text-sm font-medium text-foreground transition-colors hover:bg-white/[0.05]",
@@ -53,7 +66,7 @@ export function ShareButton({ handId, hand, compact, className }: { handId: stri
         )}
       >
         <Share2 className="h-4 w-4" />
-        {!compact && <span>{SHARE.button}</span>}
+        {!compact && <span>{label}</span>}
       </button>
       <ShareDialog open={open} onClose={() => setOpen(false)} handId={handId} hand={hand ?? loaded} />
     </>

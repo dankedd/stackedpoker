@@ -15,7 +15,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { createClient } from "@/lib/supabase/client";
-import { getHand, neighbours, setFavorite } from "@/lib/handHistory/api";
+import { getHand, markReviewed, neighbours, setFavorite } from "@/lib/handHistory/api";
 import { readQueryState, writeQueryState } from "@/lib/handHistory/filters";
 import { HANDS_PATH } from "@/lib/handHistory/feature";
 import { amountFormatter, fmtBb, fmtChips, fmtPct, fmtPlayedAt, fmtSignedBb, fmtSignedChips, type AmountUnit } from "@/lib/handHistory/format";
@@ -103,6 +103,7 @@ export function HandReplayer({ id }: { id: string }) {
           return;
         }
         setRow(r);
+        markReviewed(supabase, { hand: r.id });
         setHasNote(r.has_note);
         setFavoritedAt(r.favorited_at);
         neighbours(supabase, r as unknown as Record<string, unknown>, query)

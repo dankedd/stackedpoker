@@ -30,7 +30,6 @@ const readCode = (rel: string) =>
 const SURFACES = [
   'components/layout/UserMenu.tsx',
   'app/dashboard/page.tsx',
-  'components/dashboard/PersonalizedActionsWidget.tsx',
 ]
 
 describe('no navigation into the unreleased hand-history feature', () => {
@@ -89,23 +88,5 @@ describe('account dropdown', () => {
 
   it('imports no icon it no longer renders', () => {
     expect(SRC).not.toContain('BookOpen')
-  })
-})
-
-describe('surfaces rebalance instead of leaving a hole', () => {
-  it('the dashboard Account row is a single column now that Settings is alone', () => {
-    const src = read('app/dashboard/page.tsx')
-    const account = src.slice(src.indexOf('{/* Account */}'), src.indexOf('{/* Account */}') + 900)
-    expect(account).toContain('grid grid-cols-1 gap-3')
-    expect(account).not.toContain('sm:grid-cols-2')
-  })
-
-  it('the actions widget sizes its grid from the real action count', () => {
-    const src = read('components/dashboard/PersonalizedActionsWidget.tsx')
-    expect(src).toContain('COLUMNS[actions.length]')
-    // Literal classes only — an interpolated column count is invisible to
-    // Tailwind's scanner.
-    expect(src).not.toMatch(/grid-cols-\$\{/)
-    for (const n of [1, 2, 3, 4]) expect(src).toContain(`${n}: "sm:grid-cols-${n}"`)
   })
 })

@@ -6,6 +6,7 @@
 --   supabase_flop_trainer_phase3.sql      (the trainer RPCs replaced below)
 --   supabase_display_name.sql             (the 24h leaderboards replaced below)
 --   supabase_retention.sql                (activity_streak: the day streak users see)
+--   supabase_subscriptions.sql            (amsterdam_day: the day for the daily XP cap)
 --   supabase_xp_levels_data.sql           (GENERATED level table + XP rules)
 -- Safe to run more than once: backups and the rebalance log keep their FIRST
 -- contents, voiding and the recompute are idempotent.
@@ -80,7 +81,7 @@ ALTER TABLE public.user_skill_progress
   ADD COLUMN IF NOT EXISTS levels_notice_pending      boolean NOT NULL DEFAULT false,
   ADD COLUMN IF NOT EXISTS levels_notice_dismissed_at timestamptz;
 
--- XP per user per UTC day: the shared trainer cap and the bonuses.
+-- XP per user per day (xp_day(): Amsterdam): the shared trainer cap and the bonuses.
 CREATE TABLE IF NOT EXISTS public.xp_daily (
   user_id        uuid    NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   day            date    NOT NULL,
@@ -242,6 +243,20 @@ GRANT EXECUTE ON FUNCTION public.xp_ledger_drift() TO service_role;
 -- 7. Granting XP: daily cap, play streak, bonuses, level-up.
 -- ──────────────────────────────────────────────────────────
 
+-- "Today" for XP is the Europe/Amsterdam calendar day — the same day as the
+-- trainer's daily spot limit and its reset countdown (amsterdam_day() in
+-- supabase_subscriptions.sql), so "Today: 12/50 spots" and "Today 30/150
+-- trainer XP" always count the same hands. It used to be the UTC day, which
+-- reset one or two hours later than the spots.
+CREATE OR REPLACE FUNCTION public.xp_day(p_now timestamptz DEFAULT now())
+RETURNS date
+LANGUAGE sql
+STABLE
+SET search_path = public
+AS $$
+  SELECT public.amsterdam_day(p_now);
+$$;
+
 -- After XP: cache the level and say whether it passed the highest level seen.
 CREATE OR REPLACE FUNCTION public._settle_level(p_user_id uuid, OUT level integer, OUT previous_level integer, OUT leveled_up boolean, OUT total_xp integer)
 LANGUAGE plpgsql
@@ -295,7 +310,7 @@ DECLARE
   c_min     constant integer := (SELECT value FROM public.xp_rules WHERE key = 'streak_min_days');
   c_pct     constant integer := (SELECT value FROM public.xp_rules WHERE key = 'streak_percent');
   c_bmax    constant integer := (SELECT value FROM public.xp_rules WHERE key = 'streak_daily_max');
-  v_today   date := (now() AT TIME ZONE 'utc')::date;
+  v_today   date := public.xp_day();
   d         public.xp_daily%ROWTYPE;
   v_xp      integer;
   v_bonus   integer := 0;
@@ -349,7 +364,7 @@ REVOKE ALL ON FUNCTION public.grant_trainer_xp(uuid, integer, text, text) FROM p
 GRANT EXECUTE ON FUNCTION public.grant_trainer_xp(uuid, integer, text, text) TO service_role;
 REVOKE ALL ON FUNCTION public._settle_level(uuid) FROM public, anon, authenticated;
 
--- Hand review: the first new tournament of the UTC day earns a small bonus.
+-- Hand review: the first new tournament of the day (xp_day) earns a small bonus.
 -- Never blocks an import.
 CREATE OR REPLACE FUNCTION public.hand_review_daily_xp()
 RETURNS trigger
@@ -358,7 +373,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_today date := (now() AT TIME ZONE 'utc')::date;
+  v_today date := public.xp_day();
   v_xp    integer := (SELECT value FROM public.xp_rules WHERE key = 'hand_review_xp');
 BEGIN
   BEGIN
@@ -503,7 +518,7 @@ AS $$
   )
   SELECT r.current_streak, r.best_streak,
          COALESCE((SELECT x.trainer_xp FROM public.xp_daily x
-                   WHERE x.user_id = p_user_id AND x.day = (now() AT TIME ZONE 'utc')::date), 0),
+                   WHERE x.user_id = p_user_id AND x.day = public.xp_day()), 0),
          (SELECT value FROM public.xp_rules WHERE key = 'daily_cap'),
          1 + LEAST(r.current_streak / 10, 3),
          CASE WHEN r.current_streak >= 30 THEN NULL ELSE (r.current_streak / 10 + 1) * 10 END,
@@ -743,7 +758,7 @@ AS $$
     ) x
   )
   SELECT COALESCE((SELECT x.trainer_xp FROM public.xp_daily x
-                   WHERE x.user_id = p_user_id AND x.day = (now() AT TIME ZONE 'utc')::date), 0),
+                   WHERE x.user_id = p_user_id AND x.day = public.xp_day()), 0),
          (SELECT value FROM public.xp_rules WHERE key = 'daily_cap'),
          COALESCE((SELECT best_session_points FROM h), 0),
          COALESCE((SELECT hands_played FROM h), 0),
@@ -792,7 +807,7 @@ AS $$
     COALESCE(sum(e.amount) FILTER (WHERE e.source_type = 'hand_review'), 0)::integer,
     COALESCE((public.activity_streak(p_user_id) ->> 'streak')::integer, 0),
     COALESCE((SELECT x.trainer_xp FROM public.xp_daily x
-              WHERE x.user_id = p_user_id AND x.day = (now() AT TIME ZONE 'utc')::date), 0),
+              WHERE x.user_id = p_user_id AND x.day = public.xp_day()), 0),
     (SELECT value FROM public.xp_rules WHERE key = 'daily_cap'),
     COALESCE(s.levels_notice_pending, false)
   FROM (SELECT p_user_id AS user_id) me

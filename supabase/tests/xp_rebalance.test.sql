@@ -78,6 +78,27 @@ BEGIN
   SELECT * INTO r FROM public.flop_trainer_state(a4);
   ASSERT r.daily_xp = cap, format('flop state shows the shared cap: %s', r);
 
+  -- 5b. "Today" is one day everywhere: trainer XP counts on the Amsterdam day,
+  --     the same day as the daily spot limit (get_entitlements), not the UTC
+  --     day. The dashboard showed "Today: 5 spots done" next to "Today 0/150
+  --     trainer XP" while the two days differed.
+  ASSERT public.xp_day('2026-07-01 22:30+00') = '2026-07-02', 'summer: 00:30 in Amsterdam is already the next day';
+  ASSERT public.xp_day('2026-01-01 23:30+00') = '2026-01-02', 'winter: 00:30 in Amsterdam is already the next day';
+  ASSERT public.xp_day('2026-07-01 21:59+00') = '2026-07-01', 'summer: 23:59 in Amsterdam is still the same day';
+  ASSERT (SELECT bool_and(public.xp_day(t) = public.amsterdam_day(t))
+            FROM generate_series('2026-03-28 00:00+00'::timestamptz, '2026-03-30 00:00+00', interval '15 minutes') t),
+    'xp day = spot-limit day, also across the DST switch';
+  ASSERT EXISTS (SELECT 1 FROM public.xp_daily WHERE user_id = a4 AND day = public.amsterdam_day()), 'XP was counted on the Amsterdam day';
+  INSERT INTO public.xp_daily (user_id, day, trainer_xp) VALUES (a4, public.amsterdam_day() - 1, 99);
+  SELECT * INTO r FROM public.xp_profile(a4);
+  ASSERT r.daily_xp = cap, format('yesterday''s XP is not today''s: %s', r);
+  ASSERT NOT EXISTS (
+    SELECT 1 FROM pg_proc p JOIN pg_namespace ns ON ns.oid = p.pronamespace
+     WHERE ns.nspname = 'public'
+       AND p.proname IN ('grant_trainer_xp', 'hand_review_daily_xp', 'preflop_trainer_state', 'flop_trainer_state', 'xp_profile')
+       AND p.prosrc ILIKE '%time zone ''utc''%'
+  ), 'no XP function counts the UTC day';
+
   -- 6. Day streak bonus (activity_streak): day 7 adds 10%, carried in 1/100 XP, max per day.
   INSERT INTO public.trainer_hand_log (user_id, hand_ref, verdict, played_at)
   SELECT a2, 'x', 'wrong', now() - k * interval '1 day' FROM generate_series(1, 6) k;

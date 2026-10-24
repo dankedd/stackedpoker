@@ -226,3 +226,13 @@ export async function preflopSummary(supabase: SupabaseClient): Promise<PreflopS
   if (error) throw new Error(dbErrorMessage(error));
   return ((data ?? []) as PreflopSummaryRow[]).map((r) => ({ ...r, n: Number(r.n) }));
 }
+
+/**
+ * The user looked at a tournament (its summary, or one of its hands): the
+ * dashboard stops calling its mistakes "new". Best effort — never blocks or
+ * fails the page, also not before the dashboard migration has run.
+ */
+export function markReviewed(supabase: SupabaseClient, by: { tournament: string } | { hand: string }): void {
+  const args = "tournament" in by ? { p_tournament: by.tournament } : { p_hand: by.hand };
+  void Promise.resolve(supabase.rpc("hh_mark_reviewed", args)).catch(() => {});
+}

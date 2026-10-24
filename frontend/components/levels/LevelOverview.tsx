@@ -9,14 +9,16 @@ import { LevelCard } from "./LevelCard";
 
 /**
  * Dashboard: the one-time "levels were rebalanced" note and the level card.
- * Renders nothing until the profile loads, and nothing at all before the
- * XP migration has run.
+ * `initial` = the profile the server already loaded (the dashboard); without
+ * it the profile is fetched here. Renders nothing until the profile is known,
+ * and nothing at all before the XP migration has run.
  */
-export function LevelOverview({ className }: { className?: string }) {
-  const [profile, setProfile] = useState<XpProfile | null>(null);
-  const [notice, setNotice] = useState(false);
+export function LevelOverview({ initial, className }: { initial?: XpProfile | null; className?: string }) {
+  const [profile, setProfile] = useState<XpProfile | null>(initial ?? null);
+  const [notice, setNotice] = useState(initial?.levelsNotice ?? false);
 
   useEffect(() => {
+    if (initial !== undefined) return;
     let cancelled = false;
     fetchMyXpProfile(createClient()).then((p) => {
       if (cancelled || !p) return;
@@ -26,7 +28,7 @@ export function LevelOverview({ className }: { className?: string }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [initial]);
 
   if (!profile) return null;
 

@@ -66,6 +66,42 @@ export function gatedFeatureForPath(pathname: string): Feature | null {
 }
 
 /**
+ * The social layer ships in phases. A phase's UI appears wherever `social`
+ * is on (admins now, everyone once `social` is public) as soon as its entry
+ * here is true — flip it in the commit that ships the phase. The dashboard's
+ * "Share & ask" buttons, "Friends & activity" and "Community" blocks read only
+ * this, so they switch themselves on.
+ */
+export const SOCIAL_PHASES = {
+  /** 1: share a hand, guess mode, your shared hands. */
+  sharing: true,
+  /** 2: public profiles. */
+  profiles: false,
+  /** 3: friends, friend requests, direct messages, invites. */
+  friends: false,
+  /** 4: groups. */
+  groups: false,
+  /** 5: forum, hand of the week. */
+  forum: false,
+  /** 6: growth: challenges. */
+  growth: false,
+} as const satisfies Record<string, boolean>;
+
+export type SocialPhase = keyof typeof SOCIAL_PHASES;
+
+/**
+ * Dev only: `NEXT_PUBLIC_SOCIAL_PHASES_PREVIEW=all` shows every phase's
+ * dashboard UI against fixture data (scripts/dashboard-screens.mjs). Ignored
+ * in production builds.
+ */
+const PREVIEW_ALL_PHASES =
+  process.env.NODE_ENV !== "production" && process.env.NEXT_PUBLIC_SOCIAL_PHASES_PREVIEW === "all";
+
+export function socialPhaseOn(phase: SocialPhase, tier: Tier | string | null | undefined): boolean {
+  return (PREVIEW_ALL_PHASES || SOCIAL_PHASES[phase]) && canUseFeature("social", tier);
+}
+
+/**
  * Where "Start learning"-style buttons point while Learn is not public:
  * the Preflop Trainer (works signed out) — or the hand history when the
  * trainer's own flag is off, so the button never leads to a 404.

@@ -3,7 +3,6 @@ import { getLevelProgress, TIER_STYLES, XP_RULES } from "@/lib/levels";
 import type { XpProfile } from "@/lib/levels/api";
 import { LEVELS } from "@/lib/levels/strings";
 import { cn } from "@/lib/utils";
-import { LevelBadge } from "./LevelBadge";
 
 /**
  * Level, title, progress to the next level and where the XP came from.
@@ -39,7 +38,6 @@ export function LevelCard({ profile, className }: { profile: XpProfile; classNam
           <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/60">{LEVELS.heading}</p>
           <p className={cn("truncate text-xl font-black tracking-tight sm:text-2xl", style.text)}>{p.tier.title}</p>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-            <LevelBadge level={p.level} />
             <span className="tabular-nums">
               {LEVELS.totalXp}: <b className="font-semibold text-foreground">{profile.totalXp.toLocaleString("en-US")}</b>
             </span>

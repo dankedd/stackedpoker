@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useEntitlements } from "@/hooks/useEntitlements";
 import { hasProAccess } from "@/lib/billing/entitlements";
 import { createClient } from "@/lib/supabase/client";
+import { markReviewed } from "@/lib/handHistory/api";
 import { HANDS_PATH } from "@/lib/handHistory/feature";
 import { flopLineLabel, type FlopLine } from "@/lib/handHistory/flopCheck";
 import { fmtBb, fmtNum, fmtPlayedDate } from "@/lib/handHistory/format";
@@ -74,6 +75,7 @@ export function TournamentSummaryView({ id }: { id: string }) {
         if (cancelled) return;
         setTournament(tour);
         if (!tour) return;
+        markReviewed(supabase, { tournament: tour.id });
         void previousScore(supabase, tour.id)
           .then((p) => !cancelled && setPrev(p))
           .catch(() => !cancelled && setPrev(null));

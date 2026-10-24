@@ -3,16 +3,21 @@
 import Link from "next/link";
 import { Compass, X } from "lucide-react";
 import { useOnboarding } from "@/hooks/useOnboarding";
-import { dashboardTipTour, tourDone, TOUR_META, TOURS, tourHref } from "@/lib/onboarding/state";
+import { cn } from "@/lib/utils";
+import { dashboardTipTour, tourDone, TOUR_META, TOURS, tourHref, type Tour } from "@/lib/onboarding/state";
 
-/** Dashboard tip: "Take the Hand Review tour, 2 min", until done or dismissed. */
-export function TourTip() {
+/**
+ * Dashboard tip: "Take the Hand Review tour, 2 min", until done or dismissed.
+ * `only`: show the tip just for that tour, and only while it isn't done.
+ */
+export function TourTip({ only, className = "mb-6" }: { only?: Tour; className?: string }) {
   const ob = useOnboarding();
-  const tour = ob.loaded ? dashboardTipTour(ob.row, ob.signupSource) : null;
+  const next = ob.loaded ? dashboardTipTour(ob.row, ob.signupSource) : null;
+  const tour = next && only ? (tourDone(ob.row, only) ? null : only) : next;
   if (!tour) return null;
   const meta = TOUR_META[tour];
   return (
-    <div className="mb-6 flex items-center gap-3 rounded-xl border border-[#7C5CFF]/30 bg-[#7C5CFF]/[0.07] px-4 py-3 animate-fade-in">
+    <div className={cn(className, "flex items-center gap-3 rounded-xl border border-[#7C5CFF]/30 bg-[#7C5CFF]/[0.07] px-4 py-3 animate-fade-in")}>
       <Compass aria-hidden="true" className="h-4 w-4 shrink-0 text-[#B9A8FF]" />
       <Link href={tourHref(tour)} className="min-w-0 flex-1 text-sm font-medium text-foreground hover:underline">
         Take the {meta.title} tour, {meta.minutes} min

@@ -1,267 +1,193 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import {
-  TrendingUp, BookOpen, BarChart3, ChevronRight,
-  Clock, Settings, Zap,
-} from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/Navbar";
 import { UpgradeBanner } from "@/components/billing/UpgradeBanner";
 import { TourTip } from "@/components/onboarding/TourLinks";
-import { ManageSubscriptionButton } from "@/components/billing/ManageSubscriptionButton";
-import { PlanBadge } from "@/components/layout/PlanBadge";
-import { ContinueLearningCard } from "@/components/dashboard/ContinueLearningCard";
-import { LearningPathSummary } from "@/components/dashboard/LearningPathSummary";
-import { SkillProfileWidget, type SkillProfileData } from "@/components/dashboard/SkillProfileWidget";
-import { PersonalizedActionsWidget } from "@/components/dashboard/PersonalizedActionsWidget";
-import { DailyProgress } from "@/components/retention/DailyProgress";
-import { LevelOverview } from "@/components/levels/LevelOverview";
-// Metadata only — never '@/lib/learn/curriculum'. See scripts/generateCurriculumPublic.ts.
-import { MODULES_BY_SLUG } from "@/lib/learn/curriculumPublic.generated";
-import { isPaidTier, canAccessElite, getSubscription } from "@/lib/entitlements";
-import { cn } from "@/lib/utils";
-import { LEARN_CTA, SECONDARY_CTA, canUseFeature } from "@/lib/features";
-
-// Client component just for the upgrade CTA (needs onClick)
-import { UpgradeCTA } from "./upgrade-cta";
 import { HandlePrompt } from "@/components/social/HandlePrompt";
+import { LevelOverview } from "@/components/levels/LevelOverview";
+import { Block, BlockSkeleton, EmptyState, HeroSkeleton } from "@/components/dashboard/Block";
+import { TodayHero } from "@/components/dashboard/TodayHero";
+import { SkillCard } from "@/components/dashboard/SkillCard";
+import { LeaksCard } from "@/components/dashboard/LeaksCard";
+import { FriendsActivity } from "@/components/dashboard/FriendsActivity";
+import { CommunityBlock } from "@/components/dashboard/CommunityBlock";
+import { DashboardFooter } from "@/components/dashboard/DashboardFooter";
+import { loadDashboard, type DashboardLoad } from "@/lib/dashboard/load";
+import { pickHero } from "@/lib/dashboard/hero";
+import { leakView, planLine, skillView } from "@/lib/dashboard/model";
+import { DASH } from "@/lib/dashboard/strings";
+import { canUseFeature, socialPhaseOn } from "@/lib/features";
+import { LEVELS } from "@/lib/levels/strings";
+import { PREFLOP_TRAINER_PATH } from "@/lib/ranges/feature";
+import { getSiteUrl } from "@/lib/site-url";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+/**
+ * /dashboard — three questions: what do I do today (hero), how am I doing
+ * (level, skill, leaks), what are my friends up to (social blocks, when their
+ * phase is live). Every block loads from one parallel fetch
+ * (lib/dashboard/load.ts) and streams in behind its own skeleton.
+ */
+
+interface Me {
+  name: string;
+  tier: string;
+  handle: string | null;
+  /** Social on and no username yet. */
+  needsHandle: boolean;
+}
+
+async function loadMe(supabase: SupabaseClient, userId: string, email: string | undefined): Promise<Me> {
+  const [base, name, handle] = await Promise.all([
+    supabase.from("profiles").select("username, subscription_tier").eq("id", userId).maybeSingle(),
+    // Separate queries: these columns come from later migrations (display name, social).
+    supabase.from("profiles").select("display_name").eq("id", userId).maybeSingle(),
+    supabase.from("profiles").select("handle").eq("id", userId).maybeSingle(),
+  ]);
+  const tier = (base.data?.subscription_tier as string | undefined) ?? "free";
+  const h = handle.error ? null : ((handle.data?.handle as string | null | undefined) ?? null);
+  return {
+    // Private greeting: the public name when set, else the old username.
+    name: (name.data?.display_name as string | null | undefined) ?? (base.data?.username as string | undefined) ?? email?.split("@")[0] ?? "Player",
+    tier,
+    handle: h,
+    // A failed read (migration not run yet) reads as "has one", so the card never shows by mistake.
+    needsHandle: canUseFeature("social", tier) && !handle.error && !h,
+  };
+}
+
+async function HeroBlock({ load, me }: { load: DashboardLoad; me: Promise<Me> }) {
+  const [data, ent, streak, m] = await Promise.all([load.data, load.entitlements, load.streak, me]);
+  const hero = pickHero({
+    spotsToday: ent?.usage.trainerHandsToday ?? null,
+    dailyLimit: ent?.limits.trainerHandsPerDay ?? null,
+    resetAt: ent?.dailyResetAt ?? null,
+    handsImported: data?.hands.imported ?? 0,
+    last: data?.lastTournament ?? null,
+    now: Date.now(),
+  });
+  return <TodayHero name={m.name} hero={hero} streak={streak} hasTournament={Boolean(data?.lastTournament)} />;
+}
+
+async function HandleBlock({ me }: { me: Promise<Me> }) {
+  return (await me).needsHandle ? <HandlePrompt /> : null;
+}
+
+async function LevelBlock({ load }: { load: DashboardLoad }) {
+  const xp = await load.xp;
+  if (!xp) {
+    return (
+      <Block title={LEVELS.heading}>
+        <EmptyState text={DASH.levelEmpty} cta={LEVELS.train} href={PREFLOP_TRAINER_PATH} />
+      </Block>
+    );
+  }
+  return <LevelOverview initial={xp} />;
+}
+
+async function SkillBlock({ load }: { load: DashboardLoad }) {
+  const data = await load.data;
+  if (!data) return <ErrorBlock title={DASH.skill.heading} />;
+  return <SkillCard view={skillView(data.skill)} />;
+}
+
+async function LeaksBlock({ load, me }: { load: DashboardLoad; me: Promise<Me> }) {
+  const [data, m] = await Promise.all([load.data, me]);
+  if (!data) return <ErrorBlock title={DASH.leaks.heading} />;
+  return <LeaksCard leaks={data.leaks.map(leakView)} hasHands={data.hands.imported > 0 || data.leaks.length > 0} canShare={socialPhaseOn("sharing", m.tier)} />;
+}
+
+async function SocialBlocks({ load, me }: { load: DashboardLoad; me: Promise<Me> }) {
+  const [data, m] = await Promise.all([load.data, me]);
+  const on = (p: Parameters<typeof socialPhaseOn>[0]) => socialPhaseOn(p, m.tier);
+  const social = data?.social;
+  if (!social) return null;
+  const sharing = on("sharing");
+  const friends = on("friends");
+  const community = { forum: on("forum"), groups: on("groups"), growth: on("growth") };
+  const inviteUrl = m.handle ? `${getSiteUrl()}/signup?utm_source=invite&utm_medium=friend&utm_content=${encodeURIComponent(m.handle)}` : null;
+  return (
+    <>
+      {(sharing || friends) && <FriendsActivity social={social} sharing={sharing} friends={friends} inviteUrl={inviteUrl} />}
+      {(community.forum || community.groups || community.growth) && (
+        <CommunityBlock community={social.community ?? {}} {...community} />
+      )}
+    </>
+  );
+}
+
+async function FooterBlock({ load, memberSince }: { load: DashboardLoad; memberSince: string }) {
+  const [data, ent] = await Promise.all([load.data, load.entitlements]);
+  return (
+    <DashboardFooter
+      plan={planLine(ent)}
+      memberSince={memberSince}
+      hands={data ? data.hands.imported : null}
+      tournaments={data ? data.hands.tournaments : null}
+    />
+  );
+}
+
+function ErrorBlock({ title }: { title: string }) {
+  return (
+    <Block title={title}>
+      <EmptyState text={DASH.error} cta={DASH.retry} href="/dashboard" />
+    </Block>
+  );
+}
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("username, subscription_tier, hands_analyzed_count, analyses_limit, subscription_status, stripe_customer_id")
-    .eq("id", user.id)
-    .single();
-
-  const { data: assessmentRow } = await supabase
-    .from("user_skill_assessment")
-    .select("experience_level, recommended_module_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  const recommendedModuleTitle = assessmentRow?.recommended_module_id
-    ? MODULES_BY_SLUG[assessmentRow.recommended_module_id]?.title ?? null
-    : null;
-
-  const skillProfile: SkillProfileData | null = assessmentRow
-    ? {
-        experienceLevel: assessmentRow.experience_level,
-        recommendedModuleTitle,
-      }
-    : null;
-
-  // Separate query: the column comes from supabase_display_name.sql.
-  const { data: nameRow } = await supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle();
-  // Private greeting: the public name when set, else the old username.
-  const displayName = (nameRow?.display_name as string | null | undefined) ?? profile?.username ?? user.email?.split("@")[0] ?? "Player";
-  const handsAnalyzed = profile?.hands_analyzed_count ?? 0;
-  const tier = profile?.subscription_tier ?? "free";
-  // Learn is dev-only for now (lib/features.ts): everyone else gets the trainer and hand history.
-  const learnOn = canUseFeature("learn", tier);
-  // Social layer: ask for a username until one is set. An error (migration
-  // not run yet) reads as "has one", so the card never shows by mistake.
-  let needsHandle = false;
-  if (canUseFeature("social", tier)) {
-    const { data: handleRow, error: handleError } = await supabase.from("profiles").select("handle").eq("id", user.id).maybeSingle();
-    needsHandle = !handleError && !handleRow?.handle;
-  }
-  const subStatus = profile?.subscription_status ?? null;
-  const hasStripeCustomer = !!profile?.stripe_customer_id;
-  const limit = profile?.analyses_limit ?? 3;
-
-  const planColor = canAccessElite(tier) ? "text-amber-400" : isPaidTier(tier) ? "text-violet-400" : "text-muted-foreground";
-  const planSub = tier === "free"
-    ? `${handsAnalyzed}/${limit} free analyses used`
-    : subStatus === "past_due" ? "Payment past due" : "Active";
+  // Everything starts now, in parallel; each block awaits only its part.
+  const load = loadDashboard(supabase);
+  const me = loadMe(supabase, user.id, user.email);
+  const memberSince = new Date(user.created_at).toLocaleDateString("en-GB", { month: "short", year: "numeric" });
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar variant="static" />
 
-      <main className="container mx-auto max-w-6xl px-4 sm:px-6 py-10 page-enter">
-
+      <main className="container mx-auto max-w-5xl space-y-4 px-4 py-4 sm:space-y-5 sm:px-6 sm:py-8 page-enter">
         {/* Success banner (client — reads ?upgraded=1) */}
         <UpgradeBanner />
 
-        {/* "Take the … tour" until both tours are done or the tip is dismissed */}
-        <TourTip />
+        <Suspense fallback={<HeroSkeleton />}>
+          <HeroBlock load={load} me={me} />
+        </Suspense>
 
-        {needsHandle && (
-          <div className="mb-6">
-            <HandlePrompt />
-          </div>
-        )}
+        {/* Hand Review tour, until it's done or dismissed */}
+        <TourTip only="hands" className="" />
 
-        {/* ── Welcome hero ── */}
-        <div className="relative mb-10 overflow-hidden rounded-3xl border border-violet-500/12 bg-gradient-to-br from-violet-950/40 via-background/70 to-blue-950/20 px-8 py-8 sm:px-10 animate-fade-in">
-          <div aria-hidden className="pointer-events-none absolute -top-20 -left-10 h-72 w-72 rounded-full bg-violet-600/12 blur-3xl" />
-          <div aria-hidden className="pointer-events-none absolute -bottom-10 right-0 h-48 w-48 rounded-full bg-blue-500/8 blur-3xl" />
-          <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2.5 mb-2">
-                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-violet-400/60">Dashboard</p>
-                <PlanBadge tier={tier} />
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
-                Welcome back, <span className="bg-gradient-to-r from-violet-400 to-blue-400 bg-clip-text text-transparent">{displayName}</span>
-              </h1>
-              <p className="text-muted-foreground mt-2 leading-relaxed">
-                Pick up where you left off and keep building your poker foundation.
-              </p>
-            </div>
-            <Link
-              href={learnOn ? "/learn" : LEARN_CTA.href}
-              className="group relative overflow-hidden shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-blue-500 text-white text-sm font-semibold shadow-lg shadow-violet-500/25 hover:shadow-violet-500/45 hover:-translate-y-0.5 transition-all duration-200"
-            >
-              <div aria-hidden className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-              <BookOpen className="h-4 w-4" />
-              {learnOn ? "Continue Learning" : LEARN_CTA.label}
-            </Link>
-          </div>
+        <Suspense fallback={null}>
+          <HandleBlock me={me} />
+        </Suspense>
+
+        <div className="grid gap-4 sm:gap-5 md:grid-cols-2">
+          <Suspense fallback={<BlockSkeleton title={LEVELS.heading} rows={3} />}>
+            <LevelBlock load={load} />
+          </Suspense>
+          <Suspense fallback={<BlockSkeleton title={DASH.skill.heading} rows={4} />}>
+            <SkillBlock load={load} />
+          </Suspense>
         </div>
 
-        {/* Day streak + today's trainer spots */}
-        <DailyProgress className="mb-6" />
+        <Suspense fallback={<BlockSkeleton title={DASH.leaks.heading} rows={2} />}>
+          <LeaksBlock load={load} me={me} />
+        </Suspense>
 
-        {/* Level, title and progress; the one-time rebalance note */}
-        <LevelOverview className="mb-6" />
+        <Suspense fallback={null}>
+          <SocialBlocks load={load} me={me} />
+        </Suspense>
 
-        {/* ── Stats grid ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <div className="rounded-2xl border border-border/50 bg-gradient-to-br from-violet-950/30 via-card/70 to-card/60 p-6 space-y-3 card-lift stagger-item" style={{ animationDelay: "60ms" }}>
-            <div className="flex items-center gap-2 text-muted-foreground/70">
-              <BarChart3 className="h-4 w-4" />
-              <span className="text-xs font-semibold uppercase tracking-wider">Hands Analyzed</span>
-            </div>
-            <p className="text-4xl font-black text-violet-400">{handsAnalyzed}</p>
-            <p className="text-xs text-muted-foreground/50">total sessions</p>
-          </div>
-
-          {/* Plan tile — tier-responsive */}
-          <div className={cn(
-            "rounded-2xl border p-6 space-y-3 card-lift stagger-item",
-            canAccessElite(tier) ? "border-amber-500/25 bg-gradient-to-br from-amber-950/30 via-card/70 to-card/60" :
-            isPaidTier(tier)     ? "border-violet-500/25 bg-gradient-to-br from-violet-950/40 via-card/70 to-card/60" :
-            "border-border/50 bg-card/60"
-          )} style={{ animationDelay: "120ms" }}>
-            <div className="flex items-center gap-2 text-muted-foreground/70">
-              <TrendingUp className="h-4 w-4" />
-              <span className="text-xs font-semibold uppercase tracking-wider">Plan</span>
-            </div>
-            <p className={cn("text-4xl font-black", planColor)}>{getSubscription(tier).label}</p>
-            <p className="text-xs text-muted-foreground/50">{planSub}</p>
-          </div>
-
-          <div className="rounded-2xl border border-border/50 bg-card/60 p-6 space-y-3 card-lift stagger-item" style={{ animationDelay: "180ms" }}>
-            <div className="flex items-center gap-2 text-muted-foreground/70">
-              <Clock className="h-4 w-4" />
-              <span className="text-xs font-semibold uppercase tracking-wider">Member since</span>
-            </div>
-            <p className="text-4xl font-black text-muted-foreground/70">
-              {new Date(user.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
-            </p>
-            <p className="text-xs text-muted-foreground/50">account age</p>
-          </div>
-        </div>
-
-        {/* Upgrade / manage strip */}
-        {tier === "free" && (
-          <div className="mb-8 rounded-xl border border-violet-500/20 bg-gradient-to-r from-violet-500/8 to-blue-500/8 px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in">
-            <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-500/20 border border-violet-500/30 shrink-0 mt-0.5">
-                <Zap className="h-4 w-4 text-violet-400" />
-              </div>
-              <div>
-                <p className="font-semibold text-foreground text-sm">Upgrade to Pro</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Unlimited hands, unlimited tournaments with full history, unlimited AI Coach — €7.99/month incl. VAT
-                </p>
-              </div>
-            </div>
-            <UpgradeCTA />
-          </div>
-        )}
-
-        {isPaidTier(tier) && hasStripeCustomer && (
-          <div className="mb-8 flex items-center justify-between rounded-xl border border-border/60 bg-card/40 px-5 py-3.5 animate-fade-in">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Settings className="h-4 w-4" />
-              <span>Manage your {getSubscription(tier).label} subscription, invoices, or payment method</span>
-            </div>
-            <ManageSubscriptionButton size="sm" />
-          </div>
-        )}
-
-        {!learnOn && (
-          <div className="mb-10 grid gap-3 sm:grid-cols-2">
-            {[
-              { ...LEARN_CTA, text: "Drill opens, defenses and push/fold against the trainer's ranges." },
-              { ...SECONDARY_CTA, text: "Replay your tournament hands, check your preflop and see your equity." },
-            ].map((c) => (
-              <Link
-                key={c.href}
-                href={c.href}
-                className="group rounded-2xl border border-violet-500/25 bg-violet-500/[0.06] p-5 transition-colors hover:border-violet-500/50"
-              >
-                <p className="font-semibold text-foreground">{c.label}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{c.text}</p>
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {learnOn && (<>
-        {/* Continue Learning — primary CTA */}
-        <div className="mb-6">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-3">
-            Continue learning
-          </p>
-          <ContinueLearningCard />
-        </div>
-
-        {/* Personalized for the learner's self-reported experience level */}
-        {skillProfile && (
-          <div className="mb-6">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-violet-400/60 mb-3">
-              Recommended for you
-            </p>
-            <PersonalizedActionsWidget
-              level={skillProfile.experienceLevel}
-              recommendedModuleId={assessmentRow?.recommended_module_id ?? null}
-            />
-          </div>
-        )}
-
-        {/* Skill profile — from the onboarding self-assessment */}
-        <div className="mb-6">
-          <SkillProfileWidget data={skillProfile} />
-        </div>
-
-        {/* Your Learning Path */}
-        <div className="mb-10">
-          <LearningPathSummary />
-        </div>
-        </>)}
-
-        {/* Account */}
-        <div className="mb-10">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground/50 mb-4">Account</p>
-          {/* Settings is the only account entry — Hand History pointed at an
-              unreleased feature and was removed, so this is a single column
-              rather than a 2-up row with a hole in it. */}
-          <div className="grid grid-cols-1 gap-3">
-            <Link href="/settings" className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card/40 hover:bg-card/70 hover:border-border/80 px-4 py-3.5 transition-colors">
-              <Settings className="h-4 w-4 text-muted-foreground shrink-0" />
-              <span className="text-sm text-foreground font-medium flex-1">Settings</span>
-              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          </div>
-        </div>
-
+        <Suspense fallback={null}>
+          <FooterBlock load={load} memberSince={memberSince} />
+        </Suspense>
       </main>
     </div>
   );
