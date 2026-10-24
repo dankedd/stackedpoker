@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Eye, EyeOff, AlertCircle, CheckCircle2, Loader2, Spade } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { getSiteUrl } from '@/lib/site-url'
-import { readUtm, track } from '@/lib/metaPixel'
+import { readUtm, track, trackCustom } from '@/lib/metaPixel'
 import { SIGNUP_NOTICE } from '@/lib/lifecycle/strings'
 import { readSignupIntent } from '@/lib/ranges/guestProgress'
 import { Button } from '@/components/ui/button'
@@ -102,7 +102,8 @@ export default function SignupPage() {
       options: {
         data: {
           username: username.trim(),
-          ...(utm ? { signup_utm: utm } : {}),
+          // A visitor who came from a shared hand (/h/[slug]): the slug is utm_content.
+          ...(utm ? { signup_utm: utm.utm_source === 'share' && utm.utm_content ? { ...utm, referred_by_share: utm.utm_content } : utm } : {}),
           ...(intent ? { signup_source: intent.source } : {}),
         },
         emailRedirectTo: `${getSiteUrl(window.location.origin)}/auth/callback${intent ? `?next=${encodeURIComponent(intent.return_to)}` : ''}`,
@@ -118,6 +119,7 @@ export default function SignupPage() {
     // without an error but with no identities: that is not a new account.
     if (data.user?.identities?.length) {
       track('CompleteRegistration', { registration_method: 'email', ...(intent ? { source: intent.source } : {}) })
+      if (utm?.utm_source === 'share') trackCustom('SignupFromShare', { slug: utm.utm_content ?? '' })
     }
     // Credit the signup to a free tool when one was used earlier this
     // session (§ "account created after using tool"). The attribution is a

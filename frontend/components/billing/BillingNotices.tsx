@@ -18,7 +18,7 @@ import { UpgradeButton, UpgradeModal } from "./UpgradeUi";
  * Both banners go straight to Stripe Checkout and can be dismissed for a day.
  */
 
-const HIDDEN_ON = ["/login", "/signup", "/auth", "/onboarding", "/checkout"];
+const HIDDEN_ON = ["/login", "/signup", "/auth", "/onboarding", "/checkout", "/embed"];
 const BANNER_DISMISSED_KEY = "sp_trial_banner_dismissed";
 
 export function BillingNotices() {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { CONSENT_OPEN_EVENT, openConsentSettings, readConsent, writeConsent, type Consent } from "@/lib/metaPixel";
 
 /**
@@ -10,6 +11,9 @@ import { CONSENT_OPEN_EVENT, openConsentSettings, readConsent, writeConsent, typ
  */
 export function ConsentBanner() {
   const [open, setOpen] = useState(false);
+  // Embedded hands (/embed) live inside other sites: no banner there, and
+  // without consent nothing is tracked.
+  const embedded = (usePathname() ?? "").startsWith("/embed/");
 
   useEffect(() => {
     if (readConsent() === null) setOpen(true);
@@ -18,7 +22,7 @@ export function ConsentBanner() {
     return () => window.removeEventListener(CONSENT_OPEN_EVENT, reopen);
   }, []);
 
-  if (!open) return null;
+  if (!open || embedded) return null;
 
   const choose = (value: Consent) => {
     writeConsent(value);

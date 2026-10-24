@@ -277,7 +277,7 @@ export function ReplayTable({ hand, step, fmt }: { hand: ParsedHand; step: Timel
         const label = won ? `+${fmt(won)}` : folded ? t.step.seat.fold : step.seatLabels[p.name];
         const isButton = p.seat === hand.buttonSeat;
         const leftHalf = Math.cos(ang) < -0.05;
-        const name = isHeroSeat ? t.step.hero : p.name;
+        const name = isHeroSeat ? t.step.hero : p.name === p.position ? t.step.villain : p.name;
         const betPos = betPositions.get(p.name);
 
         return (

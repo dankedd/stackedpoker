@@ -85,9 +85,17 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // Apply security headers to all routes
-        source: "/(.*)",
+        // Apply security headers to all routes except the embeddable hands
+        source: "/((?!embed/).*)",
         headers: securityHeaders,
+      },
+      {
+        // /embed/h/[slug] is meant to be iframed by any site: no
+        // X-Frame-Options, and frame-ancestors * instead.
+        source: "/embed/:path*",
+        headers: securityHeaders
+          .filter((h) => h.key !== "X-Frame-Options")
+          .map((h) => (h.key === "Content-Security-Policy" ? { ...h, value: `${h.value}; frame-ancestors *` } : h)),
       },
     ];
   },

@@ -362,6 +362,8 @@ const en = {
     /** Replay table: "Pot 85.1 BB" (everything in the middle and in front of players). */
     potLabel: "Pot",
     hero: "Hero",
+    // Seat label in a shared (anonymised) hand, where every name is the position.
+    villain: "Villain",
     dealer: "Dealer button",
   },
 
