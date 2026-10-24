@@ -74,8 +74,6 @@ export function dummyCandidate(now: number): Candidate {
     weakestWrong: weakestRef ? 5 : null,
     emailsSent: {},
     lastEmailAt: null,
-    plan: "trial",
-    trialEndsAt: new Date(now + 2 * 86_400_000).toISOString(),
   };
 }
 
@@ -153,8 +151,6 @@ export async function sampleCandidate(sb: SupabaseClient, now: number): Promise<
       weakestWrong: weakest?.[1].wrong ?? null,
       emailsSent: {},
       lastEmailAt: null,
-      plan: null,
-      trialEndsAt: null,
     },
   };
 }
@@ -180,8 +176,6 @@ export async function sendTestEmail(
 
   const site = siteUrlForEmails();
   const token = unsubscribeToken(c.userId);
-  // The sample account is rarely on a trial: preview it as two days before the end.
-  if (opts.template === "trial_ending" && !c.trialEndsAt) c.trialEndsAt = new Date(opts.now + 2 * 86_400_000).toISOString();
   const rendered = renderEmail(opts.template, c, {
     siteUrl: site,
     unsubscribeUrl: `${site}/unsubscribe?t=${encodeURIComponent(token)}`,
