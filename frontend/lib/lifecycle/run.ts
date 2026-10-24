@@ -79,7 +79,7 @@ export async function runLifecycleEmails(
       siteUrl: site,
       unsubscribeUrl: `${site}/unsubscribe?t=${encodeURIComponent(token)}`,
       seed: `${c.userId}:${day}`,
-    });
+    }, opts.now);
     row.subject = email.subject;
     row.summary = email.summary;
     if (opts.dry) {

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/Navbar";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import { ManageSubscriptionButton } from "@/components/billing/ManageSubscriptionButton";
+import { Testimonials } from "@/components/home/Testimonials";
 import { PricingCTA } from "./upgrade-cta";
 import { PricingFAQ } from "./faq";
 import {
@@ -29,11 +30,17 @@ export const metadata: Metadata = entryMetadata(staticPageEntry("/pricing")!);
 
 const FREE_FEATURES = [
   `${FREE_LIMITS.trainerHandsPerDay} Preflop Trainer hands per day`,
+  "Flop Equity Trainer (shares the daily hands)",
   `${FREE_LIMITS.tournamentsPerWeek} tournament per week, with full analysis`,
   `${FREE_LIMITS.aiQuestionsPerDay} AI Coach questions per day`,
 ];
 
-const PRO_FEATURES = ["Unlimited hands", "Unlimited tournaments + full history", "Unlimited AI Coach"];
+const PRO_FEATURES = [
+  "Unlimited Preflop and Flop Trainer hands",
+  "Flop Explorer: all 1,755 flops, hand by hand",
+  "Unlimited tournaments + full history",
+  "Unlimited AI Coach",
+];
 
 const ANALYSIS = "Filtering, first-in checks against ranges, pot odds on calls, stars and notes";
 
@@ -148,6 +155,8 @@ export default async function PricingPage({
             ))}
           </ul>
         </section>
+
+        <Testimonials />
 
         <section className="border-t border-white/[0.06] px-4 py-16 sm:py-20">
           <div className="mx-auto max-w-2xl">

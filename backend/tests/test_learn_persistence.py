@@ -10,6 +10,7 @@ two modules issue — it is not a general-purpose PostgREST emulator.
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -269,22 +270,19 @@ class FakeSupabase:
             })
         return True
 
-    # ── Leaderboard ranking RPCs (mirrors supabase_xp_leaderboard_schema.sql) ──
-    # Tie-break: XP DESC, profiles.created_at ASC, user_id ASC — see the SQL
-    # file's own comment for why this exact rule was chosen.
+    # ── Leaderboard ranking RPCs (mirrors supabase_display_name.sql) ──
 
-    def _username(self, user_id: str) -> str | None:
-        for row in self._table("profiles"):
-            if row.get("id") == user_id:
-                return row.get("username")
-        return None
+    def _username(self, user_id: str) -> str:
+        """public_player_name(): display_name, else "Player" + md5 prefix.
+        profiles.username is never read, as in the SQL."""
+        display_name = next((row.get("display_name") for row in self._table("profiles") if row.get("id") == user_id), None)
+        return display_name or f"Player {hashlib.md5(user_id.encode()).hexdigest()[:4]}"
 
     def _row_order_key(self, user_id: str, xp: int) -> tuple:
         """Row ORDER for pagination only — never the displayed rank. XP
-        descending, then username/user_id purely to keep tied rows in a
-        stable, deterministic order across requests."""
-        username = self._username(user_id)
-        return (-xp, username is None, username or "", user_id)
+        descending, then user_id purely to keep tied rows in a stable,
+        deterministic order across requests."""
+        return (-xp, user_id)
 
     def leaderboard_all_time(self, limit: int, offset: int) -> list[dict]:
         eligible = [r for r in self._table("user_skill_progress") if r.get("total_xp", 0) > 0]

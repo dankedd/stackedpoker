@@ -9,7 +9,8 @@ import { LevelUpModal } from "@/components/learn/LevelUpModal";
 import { TrainerLimitGate, useTrainerLimit } from "@/components/preflop-trainer/TrainerLimit";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLearnProgress } from "@/contexts/LearnProgressContext";
-import { useIsMobile } from "@/hooks/useIsMobile";
+import { useIsMobile, useIsPhone } from "@/hooks/useIsMobile";
+import { useScrollToSpot } from "@/hooks/useScrollToSpot";
 import { trackCustom } from "@/lib/metaPixel";
 import { fetchFlopTrainerState, submitAnswer, type AnswerResult, type FlopTrainerState } from "@/lib/flopTrainer/api";
 import { fetchDetail, fetchIndex, fetchSpots } from "@/lib/flopTrainer/data";
@@ -287,6 +288,11 @@ export function FlopTrainer() {
     );
   }, [deal, answer, nut, ready, cbetOn, band, size, detail, guess, entries, allowHand, signedIn, token, sessionId, recordGuestHand, applyServerXpTotal, applyServerUsage, handleServerError]);
 
+  // Phone: "Next flop" sits far below the board — bring the new board back into view.
+  const phone = useIsPhone();
+  const rootRef = useRef<HTMLDivElement>(null);
+  useScrollToSpot(rootRef, deal, { enabled: phone });
+
   const next = useCallback(() => {
     if (entries.length >= SESSION_LENGTH) setShowSummary(true);
     else void dealNext();
@@ -323,7 +329,7 @@ export function FlopTrainer() {
   }
 
   return (
-    <div>
+    <div ref={rootRef} tabIndex={-1} className="scroll-mt-[max(12px,env(safe-area-inset-top))] outline-none [overflow-anchor:none]">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <ChoiceGroup
           toolSlug="flop-trainer"

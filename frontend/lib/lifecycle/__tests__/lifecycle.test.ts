@@ -29,6 +29,8 @@ function cand(over: Partial<Candidate> = {}): Candidate {
     weakestWrong: null,
     emailsSent: {},
     lastEmailAt: null,
+    plan: "free",
+    trialEndsAt: null,
     ...over,
   };
 }
@@ -73,6 +75,22 @@ describe("decide", () => {
     const d = decide(c, NOW);
     expect(d.template).toBeNull();
     expect(d.reason).toMatch(/active again/);
+  });
+
+  it("trial_ending: once, when 60h or less of the trial is left, whatever the activity", () => {
+    const trial = (left: number, over: Partial<Candidate> = {}) =>
+      cand({ plan: "trial", signedUpAt: ago(7 * D - left), trialEndsAt: new Date(NOW + left).toISOString(), activeToday: true, ...over });
+    expect(decide(trial(61 * H), NOW).template).not.toBe("trial_ending");
+    expect(decide(trial(59 * H), NOW).template).toBe("trial_ending");
+    expect(decide(trial(2 * H), NOW).template).toBe("trial_ending");
+    // Ignores the 44h gap of the day-1/3/7 flow.
+    expect(decide(trial(40 * H, { emailsSent: { day3: ago(H) }, lastEmailAt: ago(H) }), NOW).template).toBe("trial_ending");
+    expect(decide(trial(40 * H, { emailsSent: { trial_ending: ago(D) }, lastEmailAt: ago(D) }), NOW).template).not.toBe("trial_ending");
+    expect(decide(trial(-H), NOW).template).not.toBe("trial_ending");
+    // Already upgraded, or never on a trial.
+    expect(decide(trial(40 * H, { plan: "pro" }), NOW).template).not.toBe("trial_ending");
+    expect(decide(trial(40 * H, { plan: "free" }), NOW).template).not.toBe("trial_ending");
+    expect(decide(trial(40 * H, { email: "me@test.com" }), NOW, new Set(["me@test.com"])).template).toBeNull();
   });
 
   it("skips excluded test accounts, case-insensitively", () => {
@@ -180,6 +198,18 @@ describe("templates", () => {
     expect(e.subject).toBe("What was missing?");
     expect(e.text).toMatch(/^Hey, Manuel here/);
     expect(e.text).toContain("40 hands");
+  });
+
+  it("trial_ending links straight to checkout and names the Flop Explorer", () => {
+    const c = cand({ plan: "trial", trialEndsAt: new Date(NOW + 2 * D).toISOString() });
+    const e = renderEmail("trial_ending", c, ctx, NOW);
+    expect(e.subject).toBe("Your Pro trial ends in 2 days");
+    expect(e.text).toContain("https://stackedpokerai.com/checkout?source=trial_ending&utm_source=email&utm_medium=lifecycle&utm_campaign=trial_ending");
+    expect(e.html).toContain("/checkout?source=trial_ending&amp;utm_source=email");
+    expect(e.text).toContain("Keep Pro for €7.99/month");
+    expect(e.text).toContain("Flop Explorer");
+    expect(e.text).toContain("Thursday, October 22");
+    expect(renderEmail("trial_ending", { ...c, trialEndsAt: new Date(NOW + 30 * H).toISOString() }, ctx, NOW).subject).toBe("Your Pro trial ends tomorrow");
   });
 
   it("escapes names", () => {

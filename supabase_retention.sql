@@ -1,9 +1,10 @@
 -- ============================================================
--- Retention: day streaks, lifecycle emails (day 1 / 3 / 7), email opt-out
+-- Retention: day streaks, lifecycle emails (day 1 / 3 / 7, trial ending), email opt-out
 -- Run this in the Supabase SQL Editor. Idempotent: safe to re-run.
 -- Run AFTER:
 --   supabase_schema.sql               (profiles)
 --   supabase_xp_leaderboard_schema.sql (xp_events)
+--   supabase_subscriptions.sql        (effective_plan, subscriptions.trial_ends_at)
 --   supabase_preflop_trainer_xp.sql   (trainer_highscores, trainer_hand_log —
 --                                       re-run it first: it now logs every hand)
 --
@@ -34,12 +35,17 @@ ALTER TABLE public.profiles
 CREATE TABLE IF NOT EXISTS public.email_log (
   id           bigint       GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   user_id      uuid         NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  template     text         NOT NULL CHECK (template IN ('day1', 'day3', 'day7')),
+  template     text         NOT NULL,
   sent_at      timestamptz  NOT NULL DEFAULT now(),
   -- Resend's message id, once the send went through.
   provider_id  text,
   CONSTRAINT email_log_user_template_key UNIQUE (user_id, template)
 );
+
+-- Named, so a re-run can widen it when a template is added.
+ALTER TABLE public.email_log DROP CONSTRAINT IF EXISTS email_log_template_check;
+ALTER TABLE public.email_log ADD CONSTRAINT email_log_template_check
+  CHECK (template IN ('day1', 'day3', 'day7', 'trial_ending'));
 
 ALTER TABLE public.email_log ENABLE ROW LEVEL SECURITY;
 -- No policies: the cron route (service role) is the only reader and writer.
@@ -161,7 +167,10 @@ $$;
 -- for good is filtered out here:
 --   unconfirmed or deleted accounts, @example.invalid (test suites), the
 --   admin/dev account, users who opted out, accounts older than 15 days
---   (the flow ends with day 7).
+--   (the flow ends with day 7; the 7-day trial ends well inside that).
+-- The result columns changed (plan, trial_ends_at), which CREATE OR REPLACE
+-- cannot do — hence the DROP.
+DROP FUNCTION IF EXISTS public.lifecycle_email_candidates(timestamptz);
 CREATE OR REPLACE FUNCTION public.lifecycle_email_candidates(p_now timestamptz DEFAULT now())
 RETURNS TABLE(
   user_id         uuid,
@@ -184,7 +193,10 @@ RETURNS TABLE(
   weakest_hands   integer,
   weakest_wrong   integer,
   emails_sent     jsonb,
-  last_email_at   timestamptz
+  last_email_at   timestamptz,
+  -- effective_plan() at p_now (free | trial | pro) and the reverse-trial end.
+  plan            text,
+  trial_ends_at   timestamptz
 )
 LANGUAGE sql
 STABLE
@@ -221,8 +233,11 @@ AS $$
     wk.total,
     wk.wrong,
     COALESCE(el.sent, '{}'::jsonb),
-    el.last_at
+    el.last_at,
+    public.effective_plan(u.id, p_now),
+    sub.trial_ends_at
   FROM u
+  LEFT JOIN public.subscriptions sub ON sub.user_id = u.id
   LEFT JOIN LATERAL (
     SELECT GREATEST(
       (SELECT max(e.earned_at) FROM public.xp_events e WHERE e.user_id = u.id AND e.earned_at <= p_now),

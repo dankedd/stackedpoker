@@ -5,6 +5,7 @@ import { Hero } from "@/components/home/Hero";
 import { HomeHeader } from "@/components/home/HomeHeader";
 import { Loop } from "@/components/home/Loop";
 import { ReviewShowcase } from "@/components/home/ReviewShowcase";
+import { Testimonials } from "@/components/home/Testimonials";
 import { TrainerShowcase } from "@/components/home/TrainerShowcase";
 import type { TrustItem } from "@/components/home/TrustStrip";
 import { LandingFooter } from "@/components/landing/LandingFooter";
@@ -52,6 +53,7 @@ export default async function HomePage() {
         <TrainerShowcase open={coOpenChart()} defend={bbVsCoChart()} />
         <ProgressSection />
         <LeaderboardSection rows={stats?.top ?? []} />
+        <Testimonials />
         <PricingTeaser />
         <FaqSection />
         <FinalCta />

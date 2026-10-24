@@ -10,6 +10,7 @@ import { parseEntitlements, type Entitlements } from "@/lib/billing/entitlements
 import { cn } from "@/lib/utils";
 import { PokerExperiencePicker } from "./PokerExperiencePicker";
 import { EmailPreferences } from "./EmailPreferences";
+import { DisplayNameForm } from "./DisplayNameForm";
 import { SETTINGS } from "@/lib/lifecycle/strings";
 import { ProductToursCard } from "@/components/onboarding/TourLinks";
 import type { ExperienceLevel } from "@/lib/learn/experienceLevel";
@@ -43,6 +44,11 @@ export default async function SettingsPage() {
   // Separate query: the column comes from supabase_retention.sql.
   const { data: emailRow } = await supabase.from("profiles").select("email_opt_out").eq("id", user.id).maybeSingle();
   const emailOptOut = emailRow?.email_opt_out === true;
+
+  // Separate query: the column comes from supabase_display_name.sql. Until that
+  // has run, the old read-only username row is shown instead of the form.
+  const { data: nameRow, error: nameError } = await supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle();
+  const displayName = (nameRow?.display_name as string | null | undefined) ?? null;
 
   // Plan, limits and usage: the database's own view (my_entitlements()).
   const { data: entRaw } = await supabase.rpc("my_entitlements");
@@ -142,10 +148,14 @@ export default async function SettingsPage() {
             <h2 className="font-semibold text-foreground">Account</h2>
           </div>
           <div className="px-6 py-5 space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Username</span>
-              <span className="font-medium text-foreground">{profile?.username ?? "—"}</span>
-            </div>
+            {nameError ? (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Username</span>
+                <span className="font-medium text-foreground">{profile?.username ?? "—"}</span>
+              </div>
+            ) : (
+              <DisplayNameForm current={displayName} />
+            )}
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Email</span>
               <span className="font-medium text-foreground">{user.email}</span>

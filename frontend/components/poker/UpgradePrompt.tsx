@@ -10,10 +10,40 @@ import type { UpgradeSource } from "@/lib/billing/entitlements";
 export class AlreadySubscribedError extends Error {}
 
 /**
- * Opens Stripe Checkout for Pro in a new tab. `source` is the upgrade moment
- * (hand_limit, upload_limit, …); the server validates it and stores it with
- * the subscription.
+ * Creates a Stripe Checkout session for Pro and returns its URL. `source` is
+ * the upgrade moment (hand_limit, upload_limit, …); the server validates it
+ * and stores it with the subscription.
  */
+export async function requestCheckoutUrl(source: UpgradeSource = "pricing_page"): Promise<string> {
+  const supabase = createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+  if (!token) throw new Error("Not authenticated — please sign in again.");
+
+  const res = await fetch("/api/stripe/create-checkout", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ source }),
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (data.error === "already_subscribed") throw new AlreadySubscribedError(data.message);
+  if (!res.ok || data.error) {
+    throw new Error(data.message ?? data.detail ?? "Failed to start checkout. Please try again.");
+  }
+
+  const url: string | undefined = data.url;
+  if (!url || typeof url !== "string" || !url.startsWith("http")) {
+    throw new Error("Checkout failed — invalid redirect URL.");
+  }
+  rememberCheckoutSource(source);
+  return url;
+}
+
+/** Opens Stripe Checkout for Pro in a new tab (see requestCheckoutUrl). */
 export async function startCheckout(source: UpgradeSource = "pricing_page"): Promise<void> {
   // Open a blank tab NOW, synchronously, while still inside the user-interaction
   // event stack. Popup blockers only fire when window.open() is called after an
@@ -23,32 +53,7 @@ export async function startCheckout(source: UpgradeSource = "pricing_page"): Pro
   const tab = window.open("about:blank", "_blank");
 
   try {
-    const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
-    if (!token) throw new Error("Not authenticated — please sign in again.");
-
-    const res = await fetch("/api/stripe/create-checkout", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ source }),
-    });
-
-    const data = await res.json().catch(() => ({}));
-    if (data.error === "already_subscribed") throw new AlreadySubscribedError(data.message);
-    if (!res.ok || data.error) {
-      throw new Error(data.message ?? data.detail ?? "Failed to start checkout. Please try again.");
-    }
-
-    const url: string | undefined = data.url;
-    if (!url || typeof url !== "string" || !url.startsWith("http")) {
-      throw new Error("Checkout failed — invalid redirect URL.");
-    }
-
-    rememberCheckoutSource(source);
+    const url = await requestCheckoutUrl(source);
     if (tab && !tab.closed) {
       // Navigate the pre-opened tab — original tab stays put
       tab.location.href = url;

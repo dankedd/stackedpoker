@@ -6,9 +6,12 @@
  * chip and card tokens as the Preflop Trainer table.
  *
  * Layout rules (they keep 6-max and 9-max readable on a phone):
- *  - Bets go on the line from the seat to the table centre, at the first spot
- *    that touches no seat box, no cards, no other bet and not the pot — so a
- *    bet never covers a name or a stack (placeBets below, in px).
+ *  - Bets sit ~38% of the way from the seat to the pot, at the free spot
+ *    nearest that point with 16px clear of every seat box, card, the board and
+ *    the pot label (less only when the felt is too small). Hero's cards sit
+ *    between Hero's seat and the pot, so Hero's bet goes above the cards, or
+ *    beside them when there is no room — never on or behind them (placeBets).
+ *  - When a street ends, the bets slide into the pot.
  *  - The action label ("Raise", "Fold", "+12 BB") is a pill on the box's
  *    bottom edge, and the dealer button hangs on the box's corner — neither
  *    takes space on the felt.
@@ -17,7 +20,7 @@
  *    stay readable (WCAG AA) in every state.
  */
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { CardBack } from "@/components/poker/PlayingCard";
 import { CHIP_PALETTE, PokerChip } from "@/components/poker/ChipStack";
 import { FourColorCard } from "@/components/poker/FourColorCard";
@@ -30,11 +33,17 @@ import { cn } from "@/lib/utils";
 /** GGPoker anonymises opponents as short hex hashes ("be4bfd82"). */
 const HASHED_NAME = /^[0-9a-f]{6,10}$/i;
 
-/** Seat box, label pill and card sizes in px (keep in sync with the classes below). */
+/** Seat box, label pill, card and bet-label sizes in px (keep in sync with the classes below). */
 const GEOM = {
-  mobile: { boxW: 72, boxH: 56, pill: 8, heroCards: { w: 70, h: 59 }, cards: { w: 60, h: 40 }, chip: 12, charW: 6.2 },
-  desktop: { boxW: 96, boxH: 62, pill: 9, heroCards: { w: 86, h: 73 }, cards: { w: 86, h: 62 }, chip: 16, charW: 6.8 },
+  mobile: { boxW: 72, boxH: 56, pill: 8, heroCards: { w: 70, h: 59 }, cards: { w: 60, h: 40 }, chip: 12, label: 15, charW: 6.2 },
+  desktop: { boxW: 96, boxH: 62, pill: 9, heroCards: { w: 86, h: 73 }, cards: { w: 86, h: 62 }, chip: 16, label: 16, charW: 6.8 },
 };
+
+/** Where a bet wants to sit: this share of the way from the seat to the pot. */
+const BET_PULL = 0.38;
+/** Room kept between a bet and seats, cards, board and pot; tried in order until one fits. */
+const CLEARANCES = [16, 12, 8, 4, 0];
+const SWEEP_MS = 450;
 
 interface Rect {
   l: number;
@@ -43,6 +52,16 @@ interface Rect {
   b: number;
 }
 const overlaps = (a: Rect, b: Rect) => a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t;
+const grow = (a: Rect, by: number): Rect => ({ l: a.l - by, t: a.t - by, r: a.r + by, b: a.b + by });
+
+interface Point {
+  left: number;
+  top: number;
+}
+interface SweptBet extends Point {
+  name: string;
+  label: string;
+}
 
 export function ReplayTable({ hand, step, fmt }: { hand: ParsedHand; step: TimelineStep; fmt: AmountFormatter }) {
   const mobile = useIsMobile();
@@ -81,7 +100,6 @@ export function ReplayTable({ hand, step, fmt }: { hand: ParsedHand; step: Timel
   const hero = hand.players.find((p) => p.isHero) ?? hand.players[0];
   const rx = mobile ? 39 : 42;
   const ry = mobile ? 39 : 38;
-  const bets = Object.values(step.bets).reduce((a, b) => a + b, 0);
   const onTable = totalOnTable(step);
 
   // Hero sits at the bottom; seats run clockwise from there, like the client.
@@ -91,58 +109,110 @@ export function ReplayTable({ hand, step, fmt }: { hand: ParsedHand; step: Timel
     return { p, ang, xPct: 50 + rx * Math.cos(ang), yPct: 50 + ry * Math.sin(ang) };
   });
 
-  const betPositions = size.w && centre ? placeBets() : new Map<string, { left: number; top: number }>();
+  const betPositions = size.w && centre ? placeBets() : new Map<string, Point>();
+  const potPoint: Point | null = centre ? { left: (centre.l + centre.r) / 2, top: centre.b - 12 } : null;
+
+  // Bets that left the table on this step went into the pot: slide them there
+  // from where they stood. Only going forward — stepping back just redraws.
+  const prevStep = useRef(step);
+  const drawnAt = useRef(betPositions);
+  const [sweep, setSweep] = useState<{ id: number; chips: SweptBet[] } | null>(null);
+  // Declared before the drawnAt update below, so it still sees where the bets stood.
+  useEffect(() => {
+    const prev = prevStep.current;
+    prevStep.current = step;
+    if (prev === step) return;
+    const chips =
+      step.pot > prev.pot
+        ? Object.entries(prev.bets).flatMap(([name, amount]) => {
+            const at = drawnAt.current.get(name);
+            return amount > 0 && !(step.bets[name] > 0) && at ? [{ name, label: fmt(amount), ...at }] : [];
+          })
+        : [];
+    setSweep(chips.length ? { id: Date.now(), chips } : null);
+  }, [step, fmt]);
+  useEffect(() => {
+    drawnAt.current = betPositions;
+  });
 
   /**
-   * Bet positions in px. Each bet walks from its seat toward the table centre
-   * (and a little to either side) and takes the first spot that overlaps no
-   * seat box, label pill, cards, the pot block or a bet placed before it.
+   * Bet positions in px. A bet takes the free spot nearest BET_PULL of the way
+   * from its seat to the pot, keeping the first of CLEARANCES that fits from
+   * every seat box (with its label pill and dealer button), all cards, the
+   * board and pot block, and leaving bets placed before it untouched. A bet
+   * stays in front of its seat and never clearly nearer another seat, so it
+   * never reads as a neighbour's. Hero's cards are in the way of Hero's line, so
+   * Hero aims between the cards and the pot and otherwise sits beside them.
    */
   function placeBets() {
-    const out = new Map<string, { left: number; top: number }>();
-    const obstacles: Rect[] = [];
-    for (const s of seats) {
-      const x = (s.xPct / 100) * size.w;
-      const y = (s.yPct / 100) * size.h;
-      obstacles.push({ l: x - g.boxW / 2, t: y - g.boxH / 2, r: x + g.boxW / 2, b: y + g.boxH / 2 + g.pill });
-      const cards = s.p.isHero ? g.heroCards : g.cards;
-      obstacles.push({ l: x - cards.w / 2, t: y - g.boxH / 2 - cards.h, r: x + cards.w / 2, b: y - g.boxH / 2 });
-    }
-    const pad = 4;
-    obstacles.push({ l: centre!.l - pad, t: centre!.t - pad, r: centre!.r + pad, b: centre!.b + pad });
+    const out = new Map<string, Point>();
+    const fixed: Rect[] = [centre!];
     const cx = (centre!.l + centre!.r) / 2;
     const cy = (centre!.t + centre!.b) / 2;
-
-    for (const s of seats) {
-      const bet = step.bets[s.p.name] ?? 0;
-      if (bet <= 0) continue;
+    const geo = seats.map((s) => {
       const x = (s.xPct / 100) * size.w;
       const y = (s.yPct / 100) * size.h;
-      const halfW = Math.max(g.chip, (fmt(bet).length * g.charW + 12) / 2);
-      const halfH = g.chip + 6;
-      const len = Math.hypot(cx - x, cy - y) || 1;
-      const ux = (cx - x) / len;
-      const uy = (cy - y) / len;
-      const reach = (hw: number, hh: number) =>
-        Math.min(Math.abs(ux) > 1e-6 ? hw / Math.abs(ux) : Infinity, Math.abs(uy) > 1e-6 ? hh / Math.abs(uy) : Infinity);
-      const d0 = reach(g.boxW / 2, g.boxH / 2 + (uy > 0 ? g.pill : 0)) + 4 + reach(halfW, halfH);
-      const rectAt = (px: number, py: number): Rect => ({ l: px - halfW, t: py - halfH, r: px + halfW, b: py + halfH });
+      const btn = s.p.seat === hand.buttonSeat ? 8 : 0;
+      fixed.push({ l: x - g.boxW / 2 - btn, t: y - g.boxH / 2 - btn, r: x + g.boxW / 2 + btn, b: y + g.boxH / 2 + g.pill });
+      const cards = s.p.isHero ? g.heroCards : g.cards;
+      const lift = s.p.isHero ? 3 : 0;
+      // +3px each side: the cards are tilted ±4°, so their corners stick out past their box.
+      const cardRect = { l: x - cards.w / 2 - 3, t: y - g.boxH / 2 - lift - cards.h - 3, r: x + cards.w / 2 + 3, b: y - g.boxH / 2 - lift };
+      fixed.push(cardRect);
+      // Hero's cards stand out more than Hero's box, so they are what a bet should read as near.
+      const anchor = s.p.isHero ? { left: x, top: (cardRect.t + cardRect.b) / 2 } : { left: x, top: y };
+      return { s, x, y, cardRect, anchor };
+    });
+    const placed: Rect[] = [];
+    const spread = Math.max(3, Math.round(g.chip * 0.22));
+    const grid: Point[] = [];
+    for (let top = 4; top < size.h; top += 5) for (let left = 4; left < size.w; left += 5) grid.push({ left, top });
+    const area = (a: Rect, b: Rect) => Math.max(0, Math.min(a.r, b.r) - Math.max(a.l, b.l)) * Math.max(0, Math.min(a.b, b.b) - Math.max(a.t, b.t));
 
-      let best = { left: x + ux * d0, top: y + uy * d0 };
-      search: for (let k = 0; k <= 24; k++) {
-        for (const side of [0, 1, -1, 2, -2, 3, -3]) {
-          const d = d0 + k * 5;
-          const px = x + ux * d - uy * side * 12;
-          const py = y + uy * d + ux * side * 12;
-          const r = rectAt(px, py);
-          if (r.l < 2 || r.r > size.w - 2 || r.t < 2 || r.b > size.h - 2) continue;
-          if (obstacles.some((o) => overlaps(o, r))) continue;
-          best = { left: px, top: py };
-          break search;
+    // Hero first: Hero has the least room, between the cards and the pot.
+    for (const { s, x, y, cardRect, anchor } of [...geo].sort((a, b) => Number(b.s.p.isHero) - Number(a.s.p.isHero))) {
+      const bet = step.bets[s.p.name] ?? 0;
+      if (bet <= 0) continue;
+      const halfW = Math.max(g.chip + spread, fmt(bet).length * g.charW + 12) / 2;
+      const halfH = (g.chip + spread + 2 + g.label) / 2;
+      const rectAt = (p: Point): Rect => ({ l: p.left - halfW, t: p.top - halfH, r: p.left + halfW, b: p.top + halfH });
+      const fits = (p: Point, clear: number) => {
+        const r = rectAt(p);
+        if (r.l < 2 || r.r > size.w - 2 || r.t < 2 || r.b > size.h - 2) return false;
+        const grown = grow(r, clear);
+        return !fixed.some((o) => overlaps(o, grown)) && !placed.some((o) => overlaps(o, grown));
+      };
+
+      // Hero's line runs straight through the cards: aim for the middle of the gap above them.
+      const target = s.p.isHero
+        ? { left: x, top: (cardRect.t + centre!.b) / 2 }
+        : { left: x + (cx - x) * BET_PULL, top: y + (cy - y) * BET_PULL };
+      const d2 = (a: Point, b: Point) => (a.left - b.left) ** 2 + (a.top - b.top) ** 2;
+      const pot = { left: cx, top: cy };
+      const reach = d2({ left: x, top: y }, pot);
+      // In front of the seat (nearer the pot than the seat is) and not clearly nearer another seat
+      // (at most 1.2× as far from this one: a phone needs that little slack).
+      const own = grid
+        .filter((p) => d2(p, pot) < reach && geo.every((o) => o.s === s || d2(p, anchor) < 1.44 * d2(p, o.anchor)))
+        .sort((a, b) => d2(a, target) - d2(b, target));
+
+      let best: Point | undefined;
+      for (const clear of CLEARANCES) {
+        best = own.find((p) => fits(p, clear));
+        if (best) break;
+      }
+      // Nothing free at all (a full table on a phone): the spot that covers the least.
+      if (!best) {
+        let least = Infinity;
+        for (const p of own.slice(0, 600)) {
+          const r = rectAt(p);
+          const cover = fixed.reduce((a, o) => a + area(o, r), 0) + placed.reduce((a, o) => a + area(o, r), 0);
+          if (cover < least) [least, best] = [cover, p];
         }
       }
+      best ??= target;
       out.set(s.p.name, best);
-      obstacles.push(rectAt(best.left, best.top));
+      placed.push(rectAt(best));
     }
     return out;
   }
@@ -169,13 +239,12 @@ export function ReplayTable({ hand, step, fmt }: { hand: ParsedHand; step: Timel
         }}
       />
 
-      {/* Board and pot, centred on the felt. */}
-      {/* Preflop on a phone the pot sits lower, between the bets and Hero's cards. */}
+      {/* Board and pot, centred on the felt; a little higher on a phone, to leave Hero's bet room above Hero's cards. */}
       <div
         ref={centreRef}
         className={cn(
           "absolute left-1/2 z-[1] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1.5",
-          mobile && step.board.length === 0 ? "top-[57%]" : "top-[46%]",
+          mobile ? (step.board.length > 0 ? "top-[41%]" : "top-[42%]") : "top-[46%]",
         )}
       >
         {step.board.length > 0 && (
@@ -185,18 +254,16 @@ export function ReplayTable({ hand, step, fmt }: { hand: ParsedHand; step: Timel
             ))}
           </div>
         )}
-        <div className="flex flex-col items-center whitespace-nowrap rounded-xl bg-black/55 px-2.5 py-1 text-center leading-tight">
-          <p className="text-[13px] font-bold text-white sm:text-sm">
-            {t.step.potLabel} <span className="font-mono">{fmt(onTable)}</span>
-          </p>
-          {bets > 0 && step.pot > 0 && (
-            // Tabular figures rather than monospace: same alignment, a narrower line.
-            <p className="text-[10px] tabular-nums text-emerald-50 sm:text-[11px]">
-              {mobile ? t.step.potSplitShort(fmt(step.pot), fmt(bets)) : t.step.potSplit(fmt(step.pot), fmt(bets))}
-            </p>
-          )}
-        </div>
+        <p className="whitespace-nowrap rounded-xl bg-black/55 px-2.5 py-1 text-center text-[13px] font-bold leading-tight text-white sm:text-sm" data-pot>
+          {t.step.potLabel} <span className="font-mono">{fmt(onTable)}</span>
+        </p>
       </div>
+
+      {sweep &&
+        potPoint &&
+        sweep.chips.map((c) => (
+          <SweepChips key={`${sweep.id}-${c.name}`} label={c.label} from={c} to={potPoint} size={g.chip} />
+        ))}
 
       {seats.map(({ p, ang, xPct, yPct }) => {
         const isHeroSeat = p.isHero;
@@ -327,11 +394,60 @@ export function ReplayTable({ hand, step, fmt }: { hand: ParsedHand; step: Timel
   );
 }
 
+/** A bet from the street that just ended, sliding into the pot and fading out. */
+function SweepChips({ label, from, to, size }: { label: string; from: Point; to: Point; size: number }) {
+  const [moved, setMoved] = useState(false);
+  useEffect(() => {
+    // Two frames: the first paints the chip where the bet stood, the second starts the slide.
+    let inner = 0;
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => setMoved(true));
+    });
+    return () => {
+      cancelAnimationFrame(outer);
+      cancelAnimationFrame(inner);
+    };
+  }, []);
+  const at = moved ? to : from;
+  return (
+    <BetChips
+      label={label}
+      left={at.left}
+      top={at.top}
+      size={size}
+      sweeping
+      className="pointer-events-none motion-reduce:hidden"
+      style={{ opacity: moved ? 0 : 1, transition: `left ${SWEEP_MS}ms ease-in, top ${SWEEP_MS}ms ease-in, opacity ${SWEEP_MS}ms ease-in` }}
+    />
+  );
+}
+
 /** One chip colour for every bet; an all-in is told by the seat's "All-in" label, not by the chip. */
-function BetChips({ label, left, top, size }: { label: string; left: number; top: number; size: number }) {
+function BetChips({
+  label,
+  left,
+  top,
+  size,
+  sweeping,
+  className,
+  style,
+}: {
+  label: string;
+  left: number;
+  top: number;
+  size: number;
+  sweeping?: boolean;
+  className?: string;
+  style?: CSSProperties;
+}) {
   const spread = Math.max(3, Math.round(size * 0.22));
   return (
-    <div className="absolute z-[2] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-[2px]" style={{ left, top }} data-bet>
+    <div
+      className={cn("absolute z-[2] flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-[2px]", className)}
+      style={{ left, top, ...style }}
+      aria-hidden={sweeping || undefined}
+      {...(sweeping ? { "data-sweep": "" } : { "data-bet": "" })}
+    >
       <div className="relative" style={{ width: size + spread, height: size + spread }}>
         <PokerChip tone="bet" sizePx={size} style={{ left: 0, top: spread, opacity: 0.7 }} />
         <PokerChip tone="bet" sizePx={size} style={{ left: spread, top: 0 }} />

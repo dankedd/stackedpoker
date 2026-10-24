@@ -4,8 +4,9 @@ import {
   handLimitReached,
   hasProAccess,
   parseEntitlements,
+  trialDaysLeft,
+  trialEndedRecently,
   trialEndingSoon,
-  trialEndsLabel,
   uploadLimitReached,
 } from "../entitlements";
 import { amsterdamDay, guestHandsToday, nextAmsterdamMidnight, recordGuestDailyHand } from "../guestLimit";
@@ -67,17 +68,36 @@ describe("trial banner window", () => {
   const now = Date.parse("2026-10-13T12:00:00Z");
   const trial = (endsInHours: number) => ent({ plan: "trial", trial_ends_at: new Date(now + endsInHours * 3_600_000).toISOString() });
 
-  it("shows only in the last 48 hours of the trial (day 6 and 7)", () => {
-    expect(trialEndingSoon(trial(49), now)).toBe(false);
-    expect(trialEndingSoon(trial(47), now)).toBe(true);
+  it("shows only in the last 72 hours of the trial", () => {
+    expect(trialEndingSoon(trial(73), now)).toBe(false);
+    expect(trialEndingSoon(trial(71), now)).toBe(true);
     expect(trialEndingSoon(trial(1), now)).toBe(true);
     expect(trialEndingSoon(trial(-1), now)).toBe(false);
     expect(trialEndingSoon(ent({ trial_ends_at: new Date(now + 3_600_000).toISOString() }), now)).toBe(false); // not on trial
   });
 
-  it("says tomorrow on day 6, today on day 7", () => {
-    expect(trialEndsLabel(new Date(now + 30 * 3_600_000).toISOString(), now)).toBe("tomorrow");
-    expect(trialEndsLabel(new Date(now + 5 * 3_600_000).toISOString(), now)).toBe("today");
+  it("counts calendar days: today, tomorrow, in 3 days", () => {
+    expect(trialDaysLeft(new Date(now + 5 * 3_600_000).toISOString(), now)).toBe(0);
+    expect(trialDaysLeft(new Date(now + 30 * 3_600_000).toISOString(), now)).toBe(1);
+    expect(trialDaysLeft(new Date(now + 70 * 3_600_000).toISOString(), now)).toBe(3);
+    expect(trialDaysLeft(new Date(now - 5 * 3_600_000).toISOString(), now)).toBe(0);
+  });
+});
+
+describe("trial ended banner window", () => {
+  const now = Date.parse("2026-10-13T12:00:00Z");
+  const ended = (hoursAgo: number, plan = "free") =>
+    ent({ plan, trial_ended: plan === "free", trial_ends_at: new Date(now - hoursAgo * 3_600_000).toISOString() });
+
+  it("shows on Free for 14 days after the trial", () => {
+    expect(trialEndedRecently(ended(1), now)).toBe(true);
+    expect(trialEndedRecently(ended(14 * 24 - 1), now)).toBe(true);
+    expect(trialEndedRecently(ended(14 * 24 + 1), now)).toBe(false);
+  });
+
+  it("never for Pro, or for accounts that never had a trial", () => {
+    expect(trialEndedRecently(ended(1, "pro"), now)).toBe(false);
+    expect(trialEndedRecently(ent(), now)).toBe(false);
   });
 });
 

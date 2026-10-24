@@ -270,6 +270,9 @@ WHERE a.xp_bonus > 0
 --    materialize/rank the whole table.
 -- ──────────────────────────────────────────────────────────
 
+-- NOTE: the four leaderboard_* functions below are superseded by
+-- supabase_display_name.sql (public names instead of profiles.username).
+-- If you re-run this file, run supabase_display_name.sql again afterwards.
 CREATE OR REPLACE FUNCTION public.leaderboard_all_time(
   p_limit integer DEFAULT 50,
   p_offset integer DEFAULT 0

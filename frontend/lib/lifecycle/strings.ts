@@ -74,6 +74,23 @@ export const EMAIL = {
     ps: "This is the last email of this kind. If you'd still like reminders later, you can turn them on any time.",
   },
 
+  trialEnding: {
+    /** "in 2 days" / "tomorrow" / "today" */
+    when: (days: number) => (days <= 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`),
+    subject: (when: string) => `Your Pro trial ends ${when}`,
+    preheader: (price: string) => `Keep unlimited training and the Flop Explorer for ${price}/month.`,
+    intro: (when: string, date: string) => `Your 7-day Pro trial ends ${when} (${date}). Here's what Pro gives you:`,
+    perks: [
+      "Unlimited Preflop and Flop Trainer hands",
+      "The Flop Explorer: all 1,755 flops, hand by hand",
+      "Unlimited tournament uploads and your full history",
+      "Unlimited AI Coach questions",
+    ],
+    after: "After the trial you move to Free automatically. Your XP, streak and uploads stay, with daily limits on hands and questions.",
+    cta: (price: string) => `Keep Pro for ${price}/month`,
+    fine: "VAT included. Cancel anytime. Payments by Stripe.",
+  },
+
   /** Streak line inside the day-1 and day-3 emails. */
   streak: (streak: number) =>
     streak > 0

@@ -85,3 +85,10 @@ qa-screenshots/*/out/
 
 # Private hand-history exports used by local tests (the repo is public): never commit
 frontend/lib/handHistory/__tests__/fixtures/
+
+# Ad sources, renders and local screenshots: kept out of the public repo
+# (ads/rusty-video/data holds a real hand history)
+ads/
+ads-review/
+screenshots/
+qa-screenshots/*/*.png

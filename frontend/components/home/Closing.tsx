@@ -89,8 +89,8 @@ export function LeaderboardSection({ rows }: { rows: LeaderRow[] }) {
 // ── Pricing teaser ───────────────────────────────────────────────────────────
 
 const TIERS = [
-  { name: "Free", price: "€0", per: "", popular: false, perks: ["50 Preflop Trainer hands a day", "1 tournament a week, with full analysis", "3 AI Coach questions a day"] },
-  { name: "Pro", price: "€7.99", per: "/mo", popular: true, perks: ["Unlimited hands", "Unlimited tournaments + full history", "Unlimited AI Coach", "7 days free for new accounts"] },
+  { name: "Free", price: "€0", per: "", popular: false, perks: ["50 Preflop Trainer hands a day", "Flop Equity Trainer (shares the daily hands)", "1 tournament a week, with full analysis", "3 AI Coach questions a day"] },
+  { name: "Pro", price: "€7.99", per: "/mo", popular: true, perks: ["Unlimited Preflop and Flop Trainer hands", "Flop Explorer: all 1,755 flops", "Unlimited tournaments + full history", "Unlimited AI Coach", "7 days free for new accounts"] },
 ];
 
 export function PricingTeaser() {

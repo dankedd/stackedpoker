@@ -234,12 +234,12 @@ export default function SignupPage() {
                 placeholder="pokerpro99"
                 required
                 minLength={3}
-                maxLength={30}
+                maxLength={20}
                 autoComplete="username"
                 style={{ fontSize: '16px' }}
                 className={INPUT_CLS}
               />
-              <p className="text-xs text-muted-foreground/40">Letters, numbers and underscores only</p>
+              <p className="text-xs text-muted-foreground/40">Shown on the leaderboard · letters, numbers and underscores</p>
             </div>
 
             {/* Password */}

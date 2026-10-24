@@ -9,6 +9,7 @@ a second, independently-computed number.
 
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime, timedelta, timezone
 
 from app.api.routes import leaderboard as leaderboard_module
@@ -22,7 +23,8 @@ def _iso(dt: datetime) -> str:
 
 
 def _seed_user(fake_db, user_id: str, username: str, total_xp: int, created_at: datetime) -> None:
-    fake_db.insert("profiles", {"id": user_id, "username": username, "created_at": _iso(created_at)})
+    # `username` here is the public display name the leaderboard shows.
+    fake_db.insert("profiles", {"id": user_id, "display_name": username, "created_at": _iso(created_at)})
     fake_db.insert("user_skill_progress", {
         "user_id": user_id, "total_xp": total_xp, "level": 1, "streak_days": 0,
     })
@@ -252,7 +254,7 @@ def test_my_rank_24h_correct_and_independent_of_all_time_rank(fake_db):
 
 
 def test_new_user_with_zero_xp_gets_unranked_response_not_an_error(fake_db):
-    fake_db.insert("profiles", {"id": "u-fresh", "username": "Fresh", "created_at": _iso(NOW)})
+    fake_db.insert("profiles", {"id": "u-fresh", "display_name": "Fresh", "created_at": _iso(NOW)})
     resp = run(leaderboard_module.get_my_leaderboard_rank(period="all", current_user={"sub": "u-fresh"}))
     assert resp.rank is None
     assert resp.total_xp == 0
@@ -292,12 +294,32 @@ def test_leaderboard_response_never_exposes_user_id_or_email(fake_db):
     assert set(dumped.keys()) == {"rank", "username", "level", "total_xp", "period_xp", "is_you"}
 
 
-def test_null_username_falls_back_to_player_never_email(fake_db):
-    fake_db.insert("profiles", {"id": "u-noname", "username": None, "created_at": _iso(NOW - timedelta(days=1))})
+def test_no_display_name_falls_back_to_player_code_never_email(fake_db):
+    # A Google signup: profiles.username is the email's local part.
+    fake_db.insert("profiles", {"id": "u-noname", "username": "jane.doe", "display_name": None, "created_at": _iso(NOW - timedelta(days=1))})
     fake_db.insert("user_skill_progress", {"user_id": "u-noname", "total_xp": 400, "level": 1, "streak_days": 0})
+    expected = leaderboard_module.public_player_name(None, "u-noname")
+    assert expected.startswith("Player ") and len(expected) == len("Player 3f9a")
 
     resp = run(leaderboard_module.get_leaderboard(period="all", limit=50, offset=0, current_user={"sub": "u-noname"}))
-    assert resp.rows[0].username == "Player"
+    assert resp.rows[0].username == expected
+    mine = run(leaderboard_module.get_my_leaderboard_rank(period="all", current_user={"sub": "u-noname"}))
+    assert mine.username == expected
+    assert "jane" not in resp.model_dump_json() + mine.model_dump_json()
+
+
+def test_unranked_fallback_never_reads_the_email_derived_username(fake_db):
+    fake_db.insert("profiles", {"id": "u-zero", "username": "jane.doe", "created_at": _iso(NOW)})
+    resp = run(leaderboard_module.get_my_leaderboard_rank(period="24h", current_user={"sub": "u-zero"}))
+    assert resp.rank is None
+    assert resp.username == leaderboard_module.public_player_name(None, "u-zero")
+
+
+def test_public_player_name_matches_the_sql_formula():
+    # SQL: 'Player ' || left(md5(id::text), 4)
+    uid = "00000000-0000-0000-0000-0000000006b1"
+    assert leaderboard_module.public_player_name(None, uid) == "Player " + hashlib.md5(uid.encode()).hexdigest()[:4]
+    assert leaderboard_module.public_player_name("RiverRat", "x") == "RiverRat"
 
 
 def test_is_you_flag_marks_only_the_callers_own_row(fake_db):

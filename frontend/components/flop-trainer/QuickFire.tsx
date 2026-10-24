@@ -8,6 +8,8 @@ import { LevelUpModal } from "@/components/learn/LevelUpModal";
 import { ChoiceGroup } from "@/components/tools/ToolFields";
 import { TrainerLimitGate, useTrainerLimit } from "@/components/preflop-trainer/TrainerLimit";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsPhone } from "@/hooks/useIsMobile";
+import { useScrollToSpot } from "@/hooks/useScrollToSpot";
 import { useLearnProgress } from "@/contexts/LearnProgressContext";
 import { trackCustom } from "@/lib/metaPixel";
 import { fetchFlopTrainerState, submitVersus, type VersusResult } from "@/lib/flopTrainer/api";
@@ -111,6 +113,11 @@ export function QuickFire() {
     [spots, choice, streak],
   );
 
+  // Phone: the result under the boards goes away on "Next pair" — keep the new pair in view.
+  const phone = useIsPhone();
+  const rootRef = useRef<HTMLDivElement>(null);
+  useScrollToSpot(rootRef, pair, { enabled: phone });
+
   const started = useRef(false);
   useEffect(() => {
     if (spots && !started.current) {
@@ -198,7 +205,7 @@ export function QuickFire() {
   const winner = pair && (pair.a.row.equity_ip >= pair.b.row.equity_ip ? "a" : "b");
 
   return (
-    <div>
+    <div ref={rootRef} tabIndex={-1} className="scroll-mt-[max(12px,env(safe-area-inset-top))] outline-none [overflow-anchor:none]">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <ChoiceGroup
           toolSlug="flop-trainer"

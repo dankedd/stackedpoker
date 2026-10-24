@@ -358,9 +358,6 @@ const en = {
     collect: (player: string, amount: string) => `${player} wins ${amount}`,
     /** Replay table: "Pot 85.1 BB" (everything in the middle and in front of players). */
     potLabel: "Pot",
-    /** Under the pot: "0.9 BB in pot + 84.2 BB in bets" (desktop), "0.9 BB + 84.2 BB in bets" (phone). */
-    potSplit: (pot: string, bets: string) => `${pot} in pot + ${bets} in bets`,
-    potSplitShort: (pot: string, bets: string) => `${pot} + ${bets} in bets`,
     hero: "Hero",
     dealer: "Dealer button",
   },

@@ -1,9 +1,11 @@
+import { PRO_PRICE_LABEL } from "@/lib/billing/entitlements";
 import { BRAND, EMAIL } from "./strings";
 import { accuracyPct, firstName, type Candidate, type Template } from "./plan";
 import { spotInfo, teaserSpot } from "./spots";
 
 /**
- * Lifecycle email rendering: subject, HTML and plain text for day1/day3/day7.
+ * Lifecycle email rendering: subject, HTML and plain text for day1/day3/day7
+ * and trial_ending.
  *
  * Email-client HTML: tables and inline styles only (Gmail strips <style> in
  * some views), one 560px column that shrinks on phones, dark colours that
@@ -175,7 +177,49 @@ function day7(c: Candidate, ctx: RenderContext): RenderedEmail {
   return { template: "day7", subject: EMAIL.day7.subject, preheader: EMAIL.day7.preheader, html, text, summary: `founder note, ${c.handsTotal} hands` };
 }
 
-export function renderEmail(template: Template, c: Candidate, ctx: RenderContext): RenderedEmail {
+// ── Trial ending ────────────────────────────────────────────────────────────
+
+/** "Thursday, October 22" in the user's own time zone. */
+function endDate(iso: string, timezone: string): string {
+  const opts: Intl.DateTimeFormatOptions = { weekday: "long", month: "long", day: "numeric" };
+  try {
+    return new Date(iso).toLocaleDateString("en-US", { ...opts, timeZone: timezone });
+  } catch {
+    return new Date(iso).toLocaleDateString("en-US", { ...opts, timeZone: "Europe/Amsterdam" });
+  }
+}
+
+function trialEnding(c: Candidate, ctx: RenderContext, now: number): RenderedEmail {
+  const T = EMAIL.trialEnding;
+  const endsAt = c.trialEndsAt ?? new Date(now + 2 * 86_400_000).toISOString();
+  const when = T.when(Math.round((new Date(endsAt).getTime() - now) / 86_400_000));
+  // Straight into Stripe Checkout for Pro (app/checkout): signs in first if needed.
+  const url = `${ctx.siteUrl}/checkout?source=trial_ending&utm_source=email&utm_medium=lifecycle&utm_campaign=trial_ending`;
+  const subject = T.subject(when);
+  const preheader = T.preheader(PRO_PRICE_LABEL);
+  const intro = T.intro(when, endDate(endsAt, c.timezone));
+  const perks = T.perks
+    .map((perk) => `<div style="padding:3px 0;font:15px/1.5 ${FONT};color:${C.text}"><span style="color:${C.violetSoft}">&#10003;</span>&nbsp; ${escapeHtml(perk)}</div>`)
+    .join("");
+  const html = layout(
+    preheader,
+    p(escapeHtml(EMAIL.greeting(firstName(c.name)))) +
+      p(escapeHtml(intro)) +
+      box(perks) +
+      button(url, T.cta(PRO_PRICE_LABEL)) +
+      p(escapeHtml(T.fine), `color:${C.faint};font-size:13px;margin-top:-8px`) +
+      p(escapeHtml(T.after), `color:${C.muted};font-size:15px`),
+    ctx,
+  );
+  const text =
+    `${EMAIL.greeting(firstName(c.name))}\n\n${intro}\n\n${T.perks.map((x) => `  - ${x}`).join("\n")}\n\n` +
+    `${T.cta(PRO_PRICE_LABEL)}: ${url}\n${T.fine}\n\n${T.after}` +
+    textFooter(ctx);
+  return { template: "trial_ending", subject, preheader, html, text, summary: `trial ends ${when} (${endsAt})` };
+}
+
+export function renderEmail(template: Template, c: Candidate, ctx: RenderContext, now = Date.now()): RenderedEmail {
+  if (template === "trial_ending") return trialEnding(c, ctx, now);
   if (template === "day1") return day1(c, ctx);
   if (template === "day3") return day3(c, ctx);
   return day7(c, ctx);

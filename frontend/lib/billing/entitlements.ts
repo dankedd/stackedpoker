@@ -129,16 +129,32 @@ export function handLimitReached(e: Entitlements | null): boolean {
 // ── Trial ───────────────────────────────────────────────────────────────────
 
 const HOUR = 3_600_000;
+const DAY = 24 * HOUR;
 
-/** "Your Pro trial ends tomorrow" shows on day 6 and 7 (the last 48 hours). */
+/** "Your Pro trial ends in X days" shows in the last 3 days (72 hours) of the trial. */
 export function trialEndingSoon(e: Entitlements | null, now = Date.now()): boolean {
   if (!e || e.plan !== "trial" || !e.trialEndsAt) return false;
   const left = new Date(e.trialEndsAt).getTime() - now;
-  return left > 0 && left <= 48 * HOUR;
+  return left > 0 && left <= 72 * HOUR;
 }
 
-export function trialEndsLabel(trialEndsAt: string, now = Date.now()): "today" | "tomorrow" {
-  return new Date(trialEndsAt).getTime() - now <= 24 * HOUR ? "today" : "tomorrow";
+/** Calendar days (viewer's time zone) until the trial ends: 0 = today, 1 = tomorrow. */
+export function trialDaysLeft(trialEndsAt: string, now = Date.now()): number {
+  const day = (t: number) => {
+    const d = new Date(t);
+    return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY;
+  };
+  return Math.max(0, day(new Date(trialEndsAt).getTime()) - day(now));
+}
+
+/** How long after the trial the "Your Pro trial has ended" banner keeps showing. */
+export const TRIAL_ENDED_BANNER_DAYS = 14;
+
+/** On Free after a trial that ended within the last TRIAL_ENDED_BANNER_DAYS. */
+export function trialEndedRecently(e: Entitlements | null, now = Date.now()): boolean {
+  if (!e || e.plan !== "free" || !e.trialEnded || !e.trialEndsAt) return false;
+  const since = now - new Date(e.trialEndsAt).getTime();
+  return since >= 0 && since <= TRIAL_ENDED_BANNER_DAYS * DAY;
 }
 
 // ── Time formatting ─────────────────────────────────────────────────────────

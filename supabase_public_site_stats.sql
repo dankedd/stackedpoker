@@ -13,6 +13,8 @@
 -- the result for an hour.
 -- ============================================================
 
+-- NOTE: superseded by supabase_display_name.sql (public names instead of
+-- profiles.username). If you re-run this file, run that one again afterwards.
 CREATE OR REPLACE FUNCTION public.public_site_stats()
 RETURNS jsonb
 LANGUAGE sql

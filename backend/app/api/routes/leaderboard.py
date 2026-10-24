@@ -14,11 +14,15 @@ and sorts them in Python.
 
 PRIVACY: raw user_id (the Supabase auth UUID) is used server-side only, to
 mark which row is the caller's own (`is_you`) — it is never included in any
-response. Only the existing public `profiles.username` is exposed.
+response. Only the public name is exposed: the RPCs return
+public_player_name() (supabase_display_name.sql) — the user's display_name,
+else "Player" + 4 hex characters of md5(user id). profiles.username (the
+email's local part for Google signups) is never read here.
 """
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from typing import Literal
 
@@ -105,9 +109,15 @@ class MyRankResponse(BaseModel):
 
 
 def _display_username(raw: str | None) -> str:
-    # Matches the existing fallback convention (UserMenu.tsx's displayName,
-    # handle_new_user()'s trigger default) — never falls back to email.
+    # The RPCs already apply public_player_name(); this only guards a NULL.
+    # Never falls back to email.
     return raw or "Player"
+
+
+def public_player_name(display_name: str | None, user_id: str) -> str:
+    """Mirror of SQL public.public_player_name() (supabase_display_name.sql),
+    for the one path that reads profiles directly."""
+    return display_name or f"Player {hashlib.md5(user_id.encode()).hexdigest()[:4]}"
 
 
 # ── GET /leaderboard — Top-N page, either ranking ─────────────────────────
@@ -185,7 +195,7 @@ async def get_my_leaderboard_rank(
     # can be personalized ("Complete a lesson to join the leaderboard")
     # instead of just hiding the section entirely.
     try:
-        profile_rows = await _supabase_get("profiles", f"id=eq.{user_id}&select=username", settings)
+        profile_rows = await _supabase_get("profiles", f"id=eq.{user_id}&select=display_name", settings)
         skill_rows = await _supabase_get(
             "user_skill_progress", f"user_id=eq.{user_id}&select=total_xp", settings,
         )
@@ -193,7 +203,7 @@ async def get_my_leaderboard_rank(
         logger.error("Leaderboard my-rank fallback DB error user=%s: %s", user_id, e)
         raise HTTPException(status_code=502, detail="Could not load your rank.")
 
-    username = _display_username(profile_rows[0].get("username") if profile_rows else None)
+    username = public_player_name(profile_rows[0].get("display_name") if profile_rows else None, user_id)
     total_xp = skill_rows[0].get("total_xp", 0) if skill_rows else 0
 
     return MyRankResponse(

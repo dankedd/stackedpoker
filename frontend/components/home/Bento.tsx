@@ -9,7 +9,7 @@ import { InView, useCountUp } from "./InView";
 import { Legend, MiniRangeGrid } from "./MiniRangeGrid";
 
 /**
- * "Everything you need, nothing you don't" — six tiles, each with a small
+ * "Everything you need, nothing you don't" — seven tiles, each with a small
  * animation that plays when the tile comes into view (and replays on hover
  * on desktop). Example numbers are labelled as examples.
  */
@@ -41,7 +41,10 @@ export function Bento({ btnOpen }: { btnOpen: HomeChart }) {
         <Tile className="md:col-span-2" title="Bankroll Tracker" text="Sessions, goals and AI insights.">
           <BankrollMini />
         </Tile>
-        <Tile className="md:col-span-6" title="Preflop check" text="Every hand you import is checked against your trainer ranges: too loose, too tight, or the right play.">
+        <Tile className="md:col-span-3" title="Flop Equity Trainer" text="Guess range-vs-range equity and nut advantage on real flops, then see the exact numbers. Pro adds the Flop Explorer: all 1,755 flops, hand by hand.">
+          <FlopMini />
+        </Tile>
+        <Tile className="md:col-span-3" title="Preflop check" text="Every hand you import is checked against your trainer ranges: too loose, too tight, or the right play.">
           <PreflopCheckMini />
         </Tile>
       </div>
@@ -172,6 +175,44 @@ function BankrollMini() {
       <p className="flex items-center gap-2 font-mono text-lg font-bold text-emerald-300 tabular-nums">
         +€{v.toLocaleString("en-US")} <Example />
       </p>
+    </div>
+  );
+}
+
+/** The trainer's question, not an answer: no equity numbers are shown here. */
+function FlopMini() {
+  const flop = ["K♠", "9♥", "4♦"];
+  const red = (c: string) => c.endsWith("♥") || c.endsWith("♦");
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] uppercase tracking-wide text-white/50">BN open · BB call</span>
+        <Example />
+      </div>
+      <div className="flex justify-center gap-1.5" style={{ perspective: 500 }}>
+        {flop.map((c, n) => (
+          <span
+            key={c}
+            className={cn("hp-flip flex h-14 w-10 items-center justify-center rounded-md bg-white text-base font-bold", red(c) ? "text-rose-600" : "text-slate-900")}
+            style={{ ["--hp-i" as string]: n }}
+          >
+            {c}
+          </span>
+        ))}
+      </div>
+      <p className="hp-reveal text-center text-sm text-white/85" style={{ ["--hp-i" as string]: 4 }}>
+        How much equity does BN have vs BB?
+      </p>
+      <p className="hp-reveal text-center text-sm text-white/85" style={{ ["--hp-i" as string]: 5 }}>
+        Who has the nut advantage?
+      </p>
+      <div className="flex justify-center gap-2">
+        {["BN", "BB", "Equal"].map((o, n) => (
+          <span key={o} className="hp-pop rounded-full border border-white/15 bg-white/[0.04] px-3 py-1 text-xs text-white/75" style={{ ["--hp-i" as string]: n + 6 }}>
+            {o}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

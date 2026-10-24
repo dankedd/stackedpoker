@@ -52,7 +52,10 @@ export default async function DashboardPage() {
       }
     : null;
 
-  const displayName = profile?.username ?? user.email?.split("@")[0] ?? "Player";
+  // Separate query: the column comes from supabase_display_name.sql.
+  const { data: nameRow } = await supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle();
+  // Private greeting: the public name when set, else the old username.
+  const displayName = (nameRow?.display_name as string | null | undefined) ?? profile?.username ?? user.email?.split("@")[0] ?? "Player";
   const handsAnalyzed = profile?.hands_analyzed_count ?? 0;
   const tier = profile?.subscription_tier ?? "free";
   // Learn is dev-only for now (lib/features.ts): everyone else gets the trainer and hand history.

@@ -176,3 +176,23 @@ BEGIN
   PERFORM test.eq((SELECT count(*) FROM public.lifecycle_email_candidates('2026-10-20 12:00Z') c WHERE c.email = 'yesterday@test'), 0::bigint, 'opted-out user leaves the candidates');
   PERFORM test.eq((SELECT email_opt_out FROM public.profiles WHERE id = '00000000-0000-0000-0000-0000000005a1'), false, 'other users untouched');
 END $$;
+
+\echo '── retention: trial_ending facts'
+DO $$
+BEGIN
+  -- streak@test is on a trial ending 2026-10-22 12:00Z; lapsed@test upgraded.
+  UPDATE public.subscriptions SET trial_ends_at = '2026-10-22 12:00Z' WHERE user_id = '00000000-0000-0000-0000-0000000005a1';
+  UPDATE public.subscriptions SET trial_ends_at = '2026-10-22 12:00Z', status = 'active' WHERE user_id = '00000000-0000-0000-0000-0000000005a3';
+  PERFORM test.eq((SELECT c.plan FROM public.lifecycle_email_candidates('2026-10-20 12:00Z') c WHERE c.email = 'streak@test'), 'trial', 'trial user: plan trial');
+  PERFORM test.eq((SELECT c.trial_ends_at FROM public.lifecycle_email_candidates('2026-10-20 12:00Z') c WHERE c.email = 'streak@test'), '2026-10-22 12:00Z'::timestamptz, 'trial end passed through');
+  PERFORM test.eq((SELECT c.plan FROM public.lifecycle_email_candidates('2026-10-20 12:00Z') c WHERE c.email = 'lapsed@test'), 'pro', 'upgraded user: plan pro');
+  PERFORM test.eq((SELECT c.plan FROM public.lifecycle_email_candidates('2026-10-23 12:00Z') c WHERE c.email = 'streak@test'), 'free', 'after the trial: plan free');
+  INSERT INTO public.email_log (user_id, template) VALUES ('00000000-0000-0000-0000-0000000005a1', 'trial_ending');
+  PERFORM test.eq((SELECT c.emails_sent ? 'trial_ending' FROM public.lifecycle_email_candidates('2026-10-20 12:00Z') c WHERE c.email = 'streak@test'), true, 'trial_ending is logged');
+  BEGIN
+    INSERT INTO public.email_log (user_id, template) VALUES ('00000000-0000-0000-0000-0000000005a1', 'bogus');
+    RAISE EXCEPTION 'FAIL unknown template accepted';
+  EXCEPTION WHEN check_violation THEN
+    RAISE NOTICE 'ok   unknown templates refused';
+  END;
+END $$;

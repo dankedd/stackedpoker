@@ -10,15 +10,20 @@
  *   day3  from 48 h after signup (until day 7), nothing played for 2+ days
  *   day7  7–15 days after signup, nothing played for 2+ days — the last one
  *
+ * Separately, trial_ending goes to anyone still on the reverse trial whose
+ * trial ends within TRIAL_ENDING_MS (the daily cron makes that "about two
+ * days before"), whatever their activity. It is not part of the day-1/3/7
+ * flow: it ignores the 44 h gap and the "active again" stop.
+ *
  * Each template is sent at most once (email_log's unique constraint is the
  * real guarantee), at least 44 h apart — the cron runs daily, so that is
  * "not on the next run" — and the flow stops for good once the user is
  * active after any email we sent.
  */
 
-export type Template = "day1" | "day3" | "day7";
+export type Template = "day1" | "day3" | "day7" | "trial_ending";
 
-export const TEMPLATES: readonly Template[] = ["day1", "day3", "day7"];
+export const TEMPLATES: readonly Template[] = ["day1", "day3", "day7", "trial_ending"];
 
 export interface Candidate {
   userId: string;
@@ -37,6 +42,9 @@ export interface Candidate {
   weakestWrong: number | null;
   emailsSent: Partial<Record<Template, string>>;
   lastEmailAt: string | null;
+  /** effective_plan(): free | trial | pro. */
+  plan: string | null;
+  trialEndsAt: string | null;
 }
 
 export type Decision = { template: Template; reason: string } | { template: null; reason: string };
@@ -45,11 +53,18 @@ const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 export const MIN_GAP_MS = 44 * HOUR;
 export const INACTIVE_MS = 2 * DAY;
+/** The first daily run with at most this much trial left sends trial_ending. */
+export const TRIAL_ENDING_MS = 60 * HOUR;
 
 const ms = (iso: string) => new Date(iso).getTime();
 
 export function decide(c: Candidate, now: number, excluded: ReadonlySet<string> = new Set()): Decision {
   if (excluded.has(c.email.toLowerCase())) return { template: null, reason: "test account (LIFECYCLE_EXCLUDE_EMAILS)" };
+
+  if (c.plan === "trial" && c.trialEndsAt && !c.emailsSent.trial_ending) {
+    const left = ms(c.trialEndsAt) - now;
+    if (left > 0 && left <= TRIAL_ENDING_MS) return { template: "trial_ending", reason: "trial ends within 60h" };
+  }
   if (c.emailsSent.day7) return { template: null, reason: "flow finished (day7 sent)" };
 
   const lastActive = c.lastActiveAt ? ms(c.lastActiveAt) : null;
@@ -112,6 +127,8 @@ export function parseCandidate(r: Record<string, unknown>): Candidate {
     weakestWrong: intOrNull(r.weakest_wrong),
     emailsSent,
     lastEmailAt: str(r.last_email_at),
+    plan: str(r.plan),
+    trialEndsAt: str(r.trial_ends_at),
   };
 }
 

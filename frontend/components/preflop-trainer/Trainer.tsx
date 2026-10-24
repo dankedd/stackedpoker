@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils";
 import { ACTION_ORDER, HandBreakdown, Pills, SourceLegend, Swatch, TOOL_SLUG, toStrategies } from "./shared";
 import { ActionButtons, HOTKEY, PhoneTable, Table, VERDICT } from "./TrainerTable";
 import { useIsPhone } from "@/hooks/useIsMobile";
+import { useScrollToSpot } from "@/hooks/useScrollToSpot";
 import { useTrainerProgress } from "./useTrainerProgress";
 import { GuestSignup, useGuestSignup } from "./GuestSignup";
 import { TrainerLimitGate, useTrainerLimit } from "./TrainerLimit";
@@ -86,6 +87,9 @@ export function Trainer() {
   const [showFilters, setShowFilters] = useState(false);
   // ≤480px: the calmer phone table, a one-line stats row and the result inline under the table.
   const phone = useIsPhone();
+  // Phone: after "Next hand" the inline result is gone and the page is shorter — bring the table back.
+  const rootRef = useRef<HTMLDivElement>(null);
+  useScrollToSpot(rootRef, deal, { enabled: phone, focusSelector: '[data-tour="trainer-actions"]' });
 
   // Signed in, the streak lives on the server and carries over between sessions.
   const serverStreak = xpState?.streak;
@@ -197,7 +201,7 @@ export function Trainer() {
   const modeOptions: TrainerMode[] = type === "open" ? ["all", "mtt", "pf", "cash"] : ["all", "mtt", "cash"];
 
   return (
-    <div>
+    <div ref={rootRef} tabIndex={-1} className="scroll-mt-[max(12px,env(safe-area-inset-top))] outline-none [overflow-anchor:none]">
       {/* Phone: the filters fold into one summary row so the table is on screen right away. */}
       <button
         type="button"
