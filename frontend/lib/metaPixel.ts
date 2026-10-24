@@ -6,6 +6,8 @@
  * is a no-op without consent, so call sites never need a guard of their own.
  */
 
+import { UTM_COOKIE, UTM_COOKIE_MAX_AGE, decodeUtmCookie, encodeUtmCookie, utmFromUrl, withShareReferral, type Utm as AttributionUtm } from "@/lib/attribution/utm";
+
 export const META_PIXEL_ID = "1410902550592365";
 
 // ── Consent ─────────────────────────────────────────────────────────────────
@@ -109,32 +111,36 @@ export function trackUpgradePromptShown(trigger: string) {
 }
 
 // ── UTM attribution ─────────────────────────────────────────────────────────
+// lib/attribution/utm.ts is the one implementation (also used by the
+// middleware and the OAuth callback). The session copy is what the email
+// signup form reads; the sp_utm cookie survives a Google signup round trip.
 
 const UTM_KEY = "sp_utm";
-const UTM_FIELDS = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term"] as const;
 
-export type Utm = Partial<Record<(typeof UTM_FIELDS)[number] | "landing_path", string>>;
+export type Utm = AttributionUtm;
 
-/** Keeps the first utm_* set of the session (sessionStorage, first-party only). */
+/** Keeps the first utm_* set of the session (sessionStorage) and of the visit (cookie, if the middleware missed it). */
 export function captureUtm() {
   try {
-    if (window.sessionStorage.getItem(UTM_KEY)) return;
-    const q = new URLSearchParams(window.location.search);
-    const utm: Utm = {};
-    for (const f of UTM_FIELDS) {
-      const v = q.get(f);
-      if (v) utm[f] = v.slice(0, 200);
+    const utm = utmFromUrl(window.location.search, window.location.pathname);
+    if (!utm) return;
+    if (!window.sessionStorage.getItem(UTM_KEY)) window.sessionStorage.setItem(UTM_KEY, JSON.stringify(utm));
+    if (!document.cookie.split("; ").some((c) => c.startsWith(`${UTM_COOKIE}=`))) {
+      const secure = window.location.protocol === "https:" ? "; Secure" : "";
+      document.cookie = `${UTM_COOKIE}=${encodeUtmCookie(utm)}; Max-Age=${UTM_COOKIE_MAX_AGE}; Path=/; SameSite=Lax${secure}`;
     }
-    if (!Object.keys(utm).length) return;
-    utm.landing_path = window.location.pathname;
-    window.sessionStorage.setItem(UTM_KEY, JSON.stringify(utm));
   } catch {}
 }
 
+/** The session's first utm_* set, else the visit's first-touch cookie. */
 export function readUtm(): Utm | null {
   try {
     const raw = window.sessionStorage.getItem(UTM_KEY);
-    return raw ? (JSON.parse(raw) as Utm) : null;
+    if (raw) return withShareReferral(JSON.parse(raw) as Utm);
+  } catch {}
+  try {
+    const c = document.cookie.split("; ").find((x) => x.startsWith(`${UTM_COOKIE}=`));
+    return c ? decodeUtmCookie(c.slice(UTM_COOKIE.length + 1)) : null;
   } catch {
     return null;
   }

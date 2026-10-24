@@ -2,6 +2,8 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getSiteUrl } from '@/lib/site-url'
 import { syncOAuthProfile, type ProfilesClient } from '@/lib/auth/profileSync'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { UTM_COOKIE, decodeUtmCookie, oauthSignupMetadata } from '@/lib/attribution/utm'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
@@ -67,6 +69,16 @@ export async function GET(request: NextRequest) {
         const sync = await syncOAuthProfile(supabase as unknown as ProfilesClient, user)
         if (sync.status === 'error') {
           console.error(`[auth/callback] profile ${sync.step} failed: ${sync.error}`)
+        }
+
+        // Google signups can't send signup data through the provider: the
+        // landing page's utm_* (first-party cookie) go into signup_utm here,
+        // for brand-new accounts only. Never blocks the login.
+        const meta = oauthSignupMetadata(user, decodeUtmCookie(request.cookies.get(UTM_COOKIE)?.value))
+        if (meta) {
+          const { error: utmError } = await createAdminClient().auth.admin.updateUserById(user.id, { user_metadata: meta })
+          if (utmError) console.error('[auth/callback] signup_utm write failed:', utmError.message)
+          else successResponse.cookies.set(UTM_COOKIE, '', { maxAge: 0, path: '/' })
         }
       }
 

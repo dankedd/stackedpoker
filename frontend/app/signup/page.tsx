@@ -102,8 +102,8 @@ export default function SignupPage() {
       options: {
         data: {
           username: username.trim(),
-          // A visitor who came from a shared hand (/h/[slug]): the slug is utm_content.
-          ...(utm ? { signup_utm: utm.utm_source === 'share' && utm.utm_content ? { ...utm, referred_by_share: utm.utm_content } : utm } : {}),
+          // Includes referred_by_share for visitors from a shared hand (lib/attribution/utm.ts).
+          ...(utm ? { signup_utm: utm } : {}),
           ...(intent ? { signup_source: intent.source } : {}),
         },
         emailRedirectTo: `${getSiteUrl(window.location.origin)}/auth/callback${intent ? `?next=${encodeURIComponent(intent.return_to)}` : ''}`,

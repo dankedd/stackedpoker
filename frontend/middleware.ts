@@ -4,6 +4,7 @@ import { canAccessPremium, canAccessElite } from '@/lib/entitlements'
 import { isPublicSeoPath } from '@/lib/seo/routes'
 import { canUseFeature, gatedFeatureForPath } from '@/lib/features'
 import { needsChoiceScreen } from '@/lib/onboarding/state'
+import { UTM_COOKIE, UTM_COOKIE_MAX_AGE, encodeUtmCookie, utmFromUrl } from '@/lib/attribution/utm'
 
 // Guest -> /login. Per the membership-system plan, this is now every /learn
 // route too (no more anonymous trial) — see that plan for why.
@@ -42,7 +43,23 @@ const ELITE_PATHS = ['/solver']
 const ONBOARDING_GATED_PATHS = PROTECTED_PATHS
 const ONBOARDING_EXEMPT_PATHS = ['/onboarding']
 
+// First-touch attribution: the first utm_* set a visitor lands with is kept in
+// a first-party cookie, so every signup method (email, Google) can record it
+// (lib/attribution/utm.ts; written to signup_utm by app/auth/callback).
 export async function middleware(request: NextRequest) {
+  const response = await handle(request)
+  if (!request.cookies.has(UTM_COOKIE)) {
+    const utm = utmFromUrl(request.nextUrl.searchParams, request.nextUrl.pathname)
+    if (utm) {
+      response.cookies.set(UTM_COOKIE, encodeUtmCookie(utm), {
+        maxAge: UTM_COOKIE_MAX_AGE, path: '/', sameSite: 'lax', secure: request.nextUrl.protocol === 'https:',
+      })
+    }
+  }
+  return response
+}
+
+async function handle(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
