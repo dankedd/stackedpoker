@@ -36,6 +36,7 @@ import { PreflopBadge } from "./PreflopBadge";
 import { PreflopCheckPanel } from "./PreflopCheckPanel";
 import { NotesPanel, type NotesPanelHandle } from "./NotesPanel";
 import { ReplayTable } from "./ReplayTable";
+import { ShareButton } from "@/components/social/share/ShareButton";
 import { ManualAnalysisNotes } from "./manual/ManualNotes";
 import { ManualHandActions } from "./manual/ManualHandActions";
 
@@ -231,7 +232,10 @@ export function HandReplayer({ id }: { id: string }) {
                 {row.source === "manual" && <ManualHandActions id={row.id} />}
               </div>
             </div>
-            <UnitToggle unit={unit} onChange={changeUnit} />
+            <div className="flex shrink-0 items-center gap-2">
+              <ShareButton handId={row.id} hand={hand} />
+              <UnitToggle unit={unit} onChange={changeUnit} />
+            </div>
           </div>
 
           <ReplayTable hand={hand} step={step} fmt={fmt} />

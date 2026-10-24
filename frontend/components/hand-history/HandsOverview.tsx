@@ -32,6 +32,7 @@ import { t } from "@/lib/handHistory/strings";
 import { useEntitlements } from "@/hooks/useEntitlements";
 import { cn } from "@/lib/utils";
 import { FavoriteStar } from "./FavoriteStar";
+import { ShareButton } from "@/components/social/share/ShareButton";
 import { ManualBadge } from "./manual/ManualNotes";
 import { FiltersBar } from "./HandFilterBar";
 import { MiniCards } from "./MiniCards";
@@ -362,7 +363,12 @@ export function HandList({
                 <td className="whitespace-nowrap px-4 py-2.5 text-right">
                   <ResultBadge bb={r.hero_net_bb} />
                 </td>
-                <td className="px-2 py-2.5">{r.has_note && <NotebookPen aria-label={t.list.hasNote} className="h-4 w-4 text-amber-300" />}</td>
+                <td className="px-2 py-1">
+                  <div className="flex items-center justify-end gap-1">
+                    {r.has_note && <NotebookPen aria-label={t.list.hasNote} className="h-4 w-4 text-amber-300" />}
+                    <ShareButton handId={r.id} compact className="relative z-10 border-transparent opacity-60 group-hover:opacity-100" />
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -394,7 +400,7 @@ export function HandList({
                   <ResultBadge bb={r.hero_net_bb} />
                 </div>
               </div>
-              <div className="mt-2 flex flex-wrap items-center gap-2 pr-9">
+              <div className="mt-2 flex flex-wrap items-center gap-2 pr-20">
                 <span className="w-9 text-xs font-semibold text-violet-300">{r.hero_position ?? "—"}</span>
                 <MiniCards cards={r.hero_cards} />
                 <MiniCards cards={r.board} className="ml-1" />
@@ -409,6 +415,7 @@ export function HandList({
               onToggle={() => onToggleFavorite(r.id)}
               className="absolute bottom-2 right-2"
             />
+            <ShareButton handId={r.id} compact className="absolute bottom-2 right-11 border-transparent" />
           </li>
         ))}
       </ul>
