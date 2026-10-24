@@ -39,7 +39,7 @@ export interface SharedHandPayload {
   visibility: ShareVisibility;
   question: string | null;
   created_at: string;
-  owner: { handle: string | null; name: string; role: string; deleted: boolean };
+  owner: { handle: string | null; name: string; role: string; deleted: boolean; avatar?: string | null; badges?: { id: string; icon: string; title: string }[] };
   is_owner: boolean;
   revoked: boolean;
   hidden: boolean;

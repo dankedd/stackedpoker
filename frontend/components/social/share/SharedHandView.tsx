@@ -23,6 +23,8 @@ import { PreflopBadge } from "@/components/hand-history/PreflopBadge";
 import { PREFLOP_RANGES_ENABLED } from "@/lib/ranges/feature";
 import { FlopSpotPanel, useFlopAnalysis } from "@/components/flop-trainer/FlopSpotPanel";
 import { ReportButton } from "@/components/social/ReportButton";
+import { Avatar } from "@/components/social/Avatar";
+import { UserBadges } from "@/components/social/UserBadges";
 
 const STREET_COLOR: Record<Street, string> = { preflop: "#38BDF8", flop: "#34D399", turn: "#FBBF24", river: "#F87171" };
 const CTA_DISMISS_KEY = "sp_share_cta_dismissed";
@@ -116,9 +118,18 @@ export function SharedHandView({ initial, embed = false }: { initial: SharedHand
 
       <header className="mb-2">
         <h1 className={cn("font-bold text-foreground", embed ? "text-base" : "text-xl sm:text-2xl")}>{question}</h1>
-        <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
-          {SHARED_HAND.sharedBy(ownerName)} · {summary.position} · {fmtBb(summary.stackBb)} · {fmt(hand.smallBlind)}/{fmt(hand.bigBlind)}
-          {hand.ante ? hh.replayer.ante(fmt(hand.ante)) : ""}
+        <p className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground sm:text-sm">
+          <Avatar path={share.owner.avatar} name={share.owner.name} size={20} />
+          {share.owner.handle && !embed ? (
+            <Link href={`/u/${share.owner.handle}`} className="font-medium text-foreground hover:underline">
+              {SHARED_HAND.sharedBy(ownerName)}
+            </Link>
+          ) : (
+            <span>{SHARED_HAND.sharedBy(ownerName)}</span>
+          )}
+          <UserBadges badges={share.owner.badges} />
+          <span>· {summary.position} · {fmtBb(summary.stackBb)} · {fmt(hand.smallBlind)}/{fmt(hand.bigBlind)}
+          {hand.ante ? hh.replayer.ante(fmt(hand.ante)) : ""}</span>
         </p>
       </header>
 
