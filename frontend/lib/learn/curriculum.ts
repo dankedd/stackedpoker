@@ -20064,8 +20064,8 @@ export const LESSONS: Lesson[] = [
       {
         id: 'bg-s5-explain',
         type: 'concept_reveal',
-        concept_title: 'The Book\'s Own Warning',
-        concept_content: "\"I often see players making the mistake of betting large on monotone flops, thinking that they need to protect their good hands... if your bet-size is too large, you force the BB to fold the weak hands that would continue against a smaller bet and will be isolating yourself against the top of their range that will either have you beat or have a ton of equity.\" A big bet here doesn't protect a depolarized range — it isolates that range against exactly the part of the opponent's range it least wants to face.",
+        concept_title: 'A Common Mistake',
+        concept_content: "A common mistake is betting large on monotone flops to protect good hands. Too large a bet makes the BB fold the weak hands that would have continued against a smaller bet, and leaves you isolated against the top of their range — hands that either have you beat or carry a lot of equity. A big bet here doesn't protect a depolarized range — it isolates that range against exactly the part of the opponent's range it least wants to face.",
         /* source: Modern Poker Theory · Michael Acevedo · Overall Flop Metrics — monotone texture (Ch.12 pp.671-672) */ source: { type: 'exact_derived' },
       },
       {

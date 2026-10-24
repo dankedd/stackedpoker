@@ -96,9 +96,11 @@ await go("/hands/example");
 await check(page, "/hands/example");
 
 // ── Hand Review: a hand in the replayer, range editor with every option ─────
-await go("/hands");
+await go("/hands?minPot=0");
+// The list loads after the client knows the user (and may re-check stored hands first).
+await page.waitForSelector('a[href^="/hands/"][href*="-"]', { timeout: 120_000 }).catch(() => {});
 let href = await page.locator('a[href^="/hands/"]').evaluateAll((as) =>
-  as.map((a) => a.getAttribute("href")).find((h) => /^\/hands\/[0-9a-f-]{36}$/.test(h ?? "")),
+  as.map((a) => a.getAttribute("href")).find((h) => /^\/hands\/[0-9a-f-]{36}(\?|$)/.test(h ?? "")),
 );
 if (!href && process.env.E2E_HAND_FILE) {
   await go("/hands/import");
@@ -106,7 +108,7 @@ if (!href && process.env.E2E_HAND_FILE) {
   await page.waitForFunction(() => /import complete|imported|saved/i.test(document.body.innerText), null, { timeout: 120_000 }).catch(() => {});
   await go("/hands");
   href = await page.locator('a[href^="/hands/"]').evaluateAll((as) =>
-    as.map((a) => a.getAttribute("href")).find((h) => /^\/hands\/[0-9a-f-]{36}$/.test(h ?? "")),
+    as.map((a) => a.getAttribute("href")).find((h) => /^\/hands\/[0-9a-f-]{36}(\?|$)/.test(h ?? "")),
   );
 }
 record("a hand to open in the replayer", Boolean(href), href ?? "no hand in this account (set E2E_HAND_FILE)");
