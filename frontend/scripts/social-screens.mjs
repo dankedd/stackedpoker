@@ -18,6 +18,8 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 
+import { installShareFixtures } from "./social-fixtures.mjs";
+
 const require = createRequire(import.meta.url);
 const { chromium, devices } = require("playwright");
 
@@ -93,8 +95,11 @@ const mock = http.createServer(async (req, res) => {
   if (url.pathname.startsWith("/auth/v1/")) return send(200, {});
   const rpc = url.pathname.match(/^\/rest\/v1\/rpc\/(\w+)$/);
   if (rpc) {
+    let body = "";
+    for await (const chunk of req) body += chunk;
+    const args = body ? JSON.parse(body) : Object.fromEntries(url.searchParams);
     const fn = state.rpc[rpc[1]];
-    return fn ? send(200, fn()) : send(404, { code: "PGRST202", message: `function ${rpc[1]} not found` });
+    return fn ? send(200, fn(args) ?? null) : send(404, { code: "PGRST202", message: `function ${rpc[1]} not found` });
   }
   const m = url.pathname.match(/^\/rest\/v1\/(\w+)$/);
   if (!m) return send(404, { message: "not found" });
@@ -123,6 +128,7 @@ export const SCREENS = {
       await page.waitForSelector("article");
     },
   },
+  ...installShareFixtures(state, { uid, ago, userId: USER.id }),
 };
 
 const failures = [];
@@ -137,7 +143,10 @@ const wanted = process.argv.slice(2);
 try {
   for (const [name, screen] of Object.entries(SCREENS)) {
     if (wanted.length && !wanted.includes(name)) continue;
-    for (const vp of [{ tag: "390", device: devices["iPhone 12"], viewport: { width: 390, height: 844 } }, { tag: "desktop", viewport: { width: 1280, height: 860 } }]) {
+    const viewports = [{ tag: "390", device: devices["iPhone 12"], viewport: { width: 390, height: 844 } }, { tag: "desktop", viewport: { width: 1280, height: 860 } }];
+    // raw: an image route (OG), shown at its own size.
+    for (const vp of screen.raw ? [{ tag: "image", viewport: { width: 1200, height: 630 } }] : viewports) {
+      screen.before?.();
       const context = await browser.newContext({ ...(vp.device ?? {}), viewport: vp.viewport, colorScheme: "dark", bypassCSP: true });
       await context.addCookies([
         { name: "sb-localhost-auth-token", value: "base64-" + b64url(JSON.stringify(session)), url: SITE },
@@ -154,7 +163,7 @@ try {
         if (screen.scrollTo) await page.locator(screen.scrollTo).first().scrollIntoViewIfNeeded();
         await page.waitForTimeout(800);
         const tag = `${name} @${vp.tag}`;
-        record(`${tag}: no horizontal page scroll`, await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+        if (!screen.raw) record(`${tag}: no horizontal page scroll`, await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
         await page.screenshot({ path: path.join(OUT, `${name}-${vp.tag}.png`) });
       } catch (e) {
         record(`${name} @${vp.tag}: renders`, false, e.message.split("\n")[0]);
