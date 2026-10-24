@@ -129,7 +129,7 @@ except Exception as e:
 # ── Phase 2-8 routes (optional, non-fatal) ───────────────────────────────
 print("[BOOT] Importing Phase 2-8 routes...")
 try:
-    from app.api.routes import solver_jobs, solver_tree, abstraction, coaching, social, realtime
+    from app.api.routes import solver_jobs, solver_tree, abstraction, coaching, realtime
     app.include_router(solver_jobs.router, prefix="/api")
     app.include_router(solver_tree.router, prefix="/api")
     app.include_router(abstraction.router, prefix="/api")
@@ -137,7 +137,9 @@ try:
     # app/api/routes/ai_coach.py (/api/ai/*) is deliberately NOT mounted: it is
     # unused, unauthenticated, takes user_id from the request, and would let
     # anyone use the LLM outside the AI Coach quota.
-    app.include_router(social.router, prefix="/api")
+    # The in-memory /api/social/* prototype (friends, rooms, challenges,
+    # creators) was removed: unauthenticated, never used by the frontend.
+    # The social layer lives in Supabase (supabase/migrations/*social*).
     app.include_router(realtime.router, prefix="/api")
     print("[BOOT] Phase 2-8 routes registered OK")
 except Exception as e:
