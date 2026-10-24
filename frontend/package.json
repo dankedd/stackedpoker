@@ -12,6 +12,7 @@
     "postbuild": "npm run check:source-refs",
     "check:source-refs": "node scripts/check-no-source-refs.mjs",
     "e2e:source-refs": "node scripts/e2e-no-source-refs.mjs",
+    "e2e:summary-filters": "node scripts/e2e-summary-filters-mobile.mjs",
     "data:client": "node scripts/build-client-data.mjs",
     "seo:validate": "node scripts/run-ts.js scripts/validate-seo.ts",
     "seo:report": "node scripts/run-ts.js scripts/seo-report.ts",
