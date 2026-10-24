@@ -17,6 +17,8 @@ import type { ExperienceLevel } from "@/lib/learn/experienceLevel";
 import { canUseFeature } from "@/lib/features";
 import { HandleForm } from "@/components/social/HandleForm";
 import { AccountDataCard } from "@/components/social/AccountDataCard";
+import { ProfileForm, type ProfileFormValues } from "@/components/social/ProfileForm";
+import { PROFILE_EDIT } from "@/lib/social/strings";
 
 const STATUS_STYLE: Record<string, { icon: React.ReactNode; label: string; color: string }> = {
   active:     { icon: <CheckCircle2 className="h-4 w-4" />, label: "Active",     color: "text-emerald-400" },
@@ -62,7 +64,7 @@ export default async function SettingsPage() {
   // my_social_profile() fails until the migration has run → no form.
   const social = canUseFeature("social", tier);
   const { data: socialRaw } = social ? await supabase.rpc("my_social_profile") : { data: null };
-  const socialProfile = socialRaw as { handle: string | null; next_handle_change_at: string | null } | null;
+  const socialProfile = socialRaw as (ProfileFormValues & { next_handle_change_at: string | null }) | null;
   const plan = ent?.plan ?? "free";
   const status = ent?.subscription.status ?? null;
   const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
@@ -180,6 +182,17 @@ export default async function SettingsPage() {
             </div>
           </div>
         </div>
+
+        {socialProfile && (
+          <div id="profile" className="mt-6 scroll-mt-24 divide-y divide-border/40 rounded-xl border border-border/60 bg-card/60">
+            <div className="px-6 py-4">
+              <h2 className="font-semibold text-foreground">{PROFILE_EDIT.title}</h2>
+            </div>
+            <div className="px-6 py-5">
+              <ProfileForm initial={socialProfile} />
+            </div>
+          </div>
+        )}
 
         {/* Email card */}
         <div className="rounded-xl border border-border/60 bg-card/60 divide-y divide-border/40 mt-6">
