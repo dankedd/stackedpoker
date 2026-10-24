@@ -38,7 +38,7 @@ from app.services import billing
 router = APIRouter(prefix="/stripe", tags=["stripe"])
 logger = logging.getLogger(__name__)
 
-UPGRADE_SOURCES = {"hand_limit", "upload_limit", "ai_limit", "trial_ending", "trial_ended", "pricing_page", "flop_explorer"}
+UPGRADE_SOURCES = {"hand_limit", "upload_limit", "ai_limit", "trial_ending", "trial_ended", "pricing_page", "flop_explorer", "tournament_summary"}
 DEFAULT_SOURCE = "pricing_page"
 
 # Stripe statuses that mean "paying customer" for the legacy profiles mirror.
@@ -155,7 +155,7 @@ def _checkout_failed(reason: str) -> dict:
 # ── Routes ─────────────────────────────────────────────────────────────────────
 
 class _CheckoutRequest(BaseModel):
-    # hand_limit | upload_limit | ai_limit | trial_ending | trial_ended | pricing_page | flop_explorer
+    # hand_limit | upload_limit | ai_limit | trial_ending | trial_ended | pricing_page | flop_explorer | tournament_summary
     source: str | None = None
 
 

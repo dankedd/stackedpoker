@@ -2,10 +2,11 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AlertTriangle, CheckCircle2, ChevronDown, FileArchive, Loader2, Upload } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { createClient } from "@/lib/supabase/client";
-import { HANDS_PATH } from "@/lib/handHistory/feature";
+import { HANDS_PATH, handsSummaryPath } from "@/lib/handHistory/feature";
 import { fmtNum } from "@/lib/handHistory/format";
 import {
   UploadLimitError,
@@ -18,6 +19,7 @@ import {
   type ImportSummary,
 } from "@/lib/handHistory/importer";
 import { t } from "@/lib/handHistory/strings";
+import { findTournamentId } from "@/lib/handHistory/summary/api";
 import { track } from "@/lib/metaPixel";
 import { formatDateTime, uploadLimitReached } from "@/lib/billing/entitlements";
 import { refreshEntitlements, useEntitlements } from "@/hooks/useEntitlements";
@@ -27,13 +29,20 @@ import { PageHeader, SectionNav } from "./SectionNav";
 
 const PHASE_LABEL: Record<ImportProgress["phase"], string> = t.import.phase;
 
+interface SummaryLink {
+  id: string;
+  name: string | null;
+}
+
 export function HandImporter() {
   const { user } = useAuth();
+  const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [progress, setProgress] = useState<ImportProgress | null>(null);
   const [summary, setSummary] = useState<ImportSummary | null>(null);
+  const [summaryLinks, setSummaryLinks] = useState<SummaryLink[]>([]);
   const [error, setError] = useState<string | null>(null);
   // Free plan: 1 new tournament per rolling 7 days (enforced by the database).
   const { entitlements } = useEntitlements();
@@ -51,6 +60,7 @@ export function HandImporter() {
       }
       setError(null);
       setSummary(null);
+      setSummaryLinks([]);
       setTrimmed(null);
       if (uploadLimitReached(entitlements)) {
         setLimitHit({ nextAt: entitlements?.nextUploadAt ?? null });
@@ -66,22 +76,31 @@ export function HandImporter() {
         void logUnsupportedFiles(supabase, user.id, parsed.fileErrors);
         if (!parsed.entries.length) {
           setProgress(null);
-          setSummary({ tournaments: 0, imported: 0, skipped: parsed.duplicatesInUpload, failures: parsed.failures, fileErrors: parsed.fileErrors, importId: null });
+          setSummary({ tournaments: 0, tournamentKeys: [], imported: 0, skipped: parsed.duplicatesInUpload, failures: parsed.failures, fileErrors: parsed.fileErrors, importId: null });
           if (!parsed.failures.length && !parsed.fileErrors.length) setError(t.import.noHandsFound);
           return;
         }
         let toSave = parsed;
+        let wasTrimmed = false;
         if (uploadLimit !== null) {
           const kept = keepLatestTournament(parsed);
           if (kept.skipped > 0) {
             toSave = kept.parsed;
+            wasTrimmed = true;
             setTrimmed({ name: kept.name, skipped: kept.skipped });
           }
         }
         const result = await saveHands(supabase, user.id, files.map((f) => f.name), toSave, setProgress);
-        setSummary(result);
         if (result.imported > 0) track("ViewContent", { content_name: "Hand history upload", num_items: result.tournaments });
         void refreshEntitlements();
+        const links = await summaryLinksFor(supabase, result.tournamentKeys);
+        // One clean tournament: straight to its summary (it shows its own loading state).
+        if (links.length === 1 && !wasTrimmed && !result.failures.length && !result.fileErrors.length) {
+          router.push(handsSummaryPath(links[0].id));
+          return;
+        }
+        setSummaryLinks(links);
+        setSummary(result);
       } catch (e) {
         if (e instanceof UploadLimitError) {
           setProgress(null);
@@ -95,7 +114,7 @@ export function HandImporter() {
         setProgress((p) => (p ? { ...p, phase: "done" } : p));
       }
     },
-    [busy, supabase, user, entitlements, uploadLimit],
+    [busy, supabase, user, entitlements, uploadLimit, router],
   );
 
   const pct = progress && progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
@@ -211,7 +230,7 @@ export function HandImporter() {
         </div>
       )}
 
-      {summary && <Summary summary={summary} />}
+      {summary && <Summary summary={summary} links={summaryLinks} />}
 
       {limitHit && (
         <UpgradeModal
@@ -226,7 +245,18 @@ export function HandImporter() {
   );
 }
 
-function Summary({ summary }: { summary: ImportSummary }) {
+/** hh_tournaments ids of the uploaded tournaments; best effort (no links on failure). */
+async function summaryLinksFor(supabase: ReturnType<typeof createClient>, keys: ImportSummary["tournamentKeys"]): Promise<SummaryLink[]> {
+  const found = await Promise.all(
+    keys.map(async (k) => {
+      const id = await findTournamentId(supabase, k.site, k.tournament_id).catch(() => null);
+      return id ? { id, name: k.name } : null;
+    }),
+  );
+  return found.filter((l): l is SummaryLink => l != null);
+}
+
+function Summary({ summary, links }: { summary: ImportSummary; links: SummaryLink[] }) {
   const problems = summary.failures.length + summary.fileErrors.length;
   return (
     <div className="mt-6 space-y-4" aria-live="polite">
@@ -240,10 +270,37 @@ function Summary({ summary }: { summary: ImportSummary }) {
           <Stat label={t.import.skipped} value={summary.skipped} />
           <Stat label={t.import.errors} value={problems} tone={problems ? "bad" : undefined} />
         </dl>
-        {summary.imported > 0 && (
-          <Link href={HANDS_PATH} className="mt-5 inline-flex rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500">
-            {t.import.viewHands}
-          </Link>
+        <div className="mt-5 flex flex-wrap gap-2">
+          {links.length === 1 && (
+            <Link href={handsSummaryPath(links[0].id)} className="inline-flex rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-500">
+              {t.import.viewSummary}
+            </Link>
+          )}
+          {summary.imported > 0 && (
+            <Link
+              href={HANDS_PATH}
+              className={cn(
+                "inline-flex rounded-xl px-4 py-2 text-sm font-semibold",
+                links.length === 1 ? "border border-border/60 hover:bg-card" : "bg-violet-600 text-white hover:bg-violet-500",
+              )}
+            >
+              {t.import.viewHands}
+            </Link>
+          )}
+        </div>
+        {links.length > 1 && (
+          <div className="mt-4">
+            <p className="mb-1 text-xs font-semibold text-muted-foreground">{t.import.summaries}</p>
+            <ul className="space-y-1 text-sm">
+              {links.map((l) => (
+                <li key={l.id}>
+                  <Link href={handsSummaryPath(l.id)} className="text-violet-300 hover:text-violet-200">
+                    {l.name || t.summary.untitled}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </div>
 

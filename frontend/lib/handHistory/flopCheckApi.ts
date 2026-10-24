@@ -85,15 +85,21 @@ const BATCH = 40;
  * Re-checks hands whose stored flop check is from another version, has none
  * yet, or was "not analysed yet" (a spot loaded since gets graded). Only
  * hands with a flop. Needs a signed-in token for Hero's hand position.
+ * `tournament` limits it to one tournament (the tournament summary).
  */
-export async function refreshFlopChecks(supabase: SupabaseClient, token: string, onProgress?: (done: number) => void): Promise<number> {
+export async function refreshFlopChecks(
+  supabase: SupabaseClient,
+  token: string,
+  onProgress?: (done: number) => void,
+  tournament?: { site: string; tournamentId: string },
+): Promise<number> {
   let done = 0;
   let after = "00000000-0000-0000-0000-000000000000";
   // Keyset paging by id: "not analysed yet" hands still match the filter after their update.
   for (;;) {
-    const { data, error } = await supabase
-      .from("hh_hands")
-      .select("id, raw_text, source, data")
+    let q = supabase.from("hh_hands").select("id, raw_text, source, data");
+    if (tournament) q = q.eq("site", tournament.site).eq("tournament_id", tournament.tournamentId);
+    const { data, error } = await q
       .neq("board", "{}")
       .or(`flop_version.is.null,flop_version.neq.${FLOP_CHECK_VERSION},flop_detail->>reason.eq.not_analysed`)
       .gt("id", after)

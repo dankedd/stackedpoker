@@ -6,7 +6,10 @@
  * `Strings`) plus a way to pick it. Numbers and dates use LOCALE.
  */
 
+import { PRO_PRICE_LABEL } from "@/lib/billing/entitlements";
 import type { PreflopVerdict } from "./preflop/types";
+import type { ScoreLabelKey } from "./summary/config";
+import type { FlopRecommendation, SummaryFilter } from "./summary/compute";
 import type { Street } from "./types";
 
 export const LOCALE = "en-US";
@@ -596,6 +599,8 @@ const en = {
     skipped: "Skipped (duplicates)",
     errors: "Errors",
     viewHands: "View your hands",
+    viewSummary: "View tournament summary",
+    summaries: "Tournament summaries",
     unreadableFiles: "Files that couldn't be read",
     failedHands: (n: number) => `${n} ${plural(n, "hand", "hands")} couldn't be processed`,
     unknownHand: "unknown hand",
@@ -608,6 +613,62 @@ const en = {
     onlyLatestImported: (name: string, skipped: number) =>
       `Free includes 1 tournament per week, so we imported the most recent one${name ? ` (${name})` : ""} and skipped ${skipped} ${plural(skipped, "other", "others")}.`,
     importAllWithPro: "Import all of them with Pro",
+  },
+
+  // ── Tournament summary ────────────────────────────────────────────────────
+  summary: {
+    title: "Tournament summary",
+    untitled: "Tournament",
+    meta: (hands: string, date: string) => `${hands} hands · ${date}`,
+    loading: "Loading summary…",
+    notFound: "This tournament isn't available. On the Free plan only your latest tournament is visible.",
+    failed: "The summary couldn't be computed. Please try again.",
+    retry: "Try again",
+    stage: {
+      preflop: "Checking preflop decisions",
+      flop: (n: number) => (n ? `Checking flop decisions… ${n} hands` : "Checking flop decisions"),
+      saving: "Saving summary",
+    },
+    preliminary: "Preflop only so far: the flop is still being checked.",
+    // Score
+    scoreName: "Stacked score",
+    scoreInfoLabel: "How the Stacked score works",
+    scoreInfo:
+      "The share of graded hands you played in line with the charts, out of 100. Each mistake is weighted by how far your action was from the chart's frequency: folding a hand the chart always raises costs more than a close mix. It's based on chart frequencies, not EV, so it doesn't measure big blinds lost.",
+    scoreLabel: { solid: "Solid", decent: "Decent", leaky: "Leaky", puntProne: "Punt-prone" } satisfies Record<ScoreLabelKey, string>,
+    noScore: (min: number) => `Not enough graded hands for a score (needs ${min}).`,
+    graded: (n: number) => `${n} graded ${plural(n, "hand", "hands")}`,
+    previous: (score: number, name: string) => `Previous tournament${name ? ` (${name})` : ""}: ${score}`,
+    noPrevious: "This is your first scored tournament.",
+    // Mistakes
+    misplayed: (x: number, y: number) => `${x} of ${y} ${plural(y, "hand", "hands")} misplayed`,
+    smallCount: (n: number) => `${n} small ${plural(n, "mistake", "mistakes")}`,
+    bigCount: (n: number) => `${n} big ${plural(n, "mistake", "mistakes")}`,
+    showMisplayed: "Show misplayed hands, biggest mistake first",
+    // Filters
+    filtersLabel: "Hand filters",
+    filter: { misplayed: "Misplayed", tight: "Tight", loose: "Loose", mixed: "Mixed", big: "Big pots" } satisfies Record<SummaryFilter, string>,
+    filterHint: {
+      misplayed: "Every hand with a mistake, biggest mistake first.",
+      tight: "You folded or played tighter than the recommended range.",
+      loose: "You played, called or raised wider than the recommended range.",
+      mixed: "Spots where the recommended strategy mixes several actions: more than one choice is fine.",
+      big: (bb: number, pct: number) => `Your biggest pots: ${bb}bb or more, or your top ${pct}% by pot size.`,
+    },
+    empty: "No hands in this group.",
+    you: "You",
+    recommended: "Recommended",
+    notGraded: "Not graded",
+    potBb: (bb: string) => `${bb}bb pot`,
+    mistake: { small: "Small mistake", big: "Big mistake" },
+    openHand: "Open hand analysis",
+    flopRec: { check: "check", bet: "bet", bet_small: "bet small", bet_big: "bet big", call: "call", fold: "fold" } satisfies Record<FlopRecommendation, string>,
+    // Free vs Pro
+    seeAllWithPro: (n: number, what: string) => `See all ${n} ${what} hands with Pro – ${PRO_PRICE_LABEL}/mo`,
+    filterWord: { misplayed: "misplayed", tight: "tight", loose: "loose", mixed: "mixed", big: "big-pot" } satisfies Record<SummaryFilter, string>,
+    historyTitle: "Score history",
+    historyLocked: "Track your score across every tournament with Pro.",
+    viewAllHands: "View all hands of this tournament",
   },
 
   /** Import pipeline, zip reader and parser errors (also stored in hh_imports.failures). */
@@ -647,7 +708,7 @@ const en = {
       unknown: "Unknown error.",
       notSetUp: "The database isn't set up for hand history yet (supabase_hand_history.sql hasn't been run).",
       missingUpdate:
-        "The database is missing a hand history update (run supabase_hand_history_involved.sql, supabase_hand_history_preflop.sql, supabase_hand_history_favorites.sql, supabase_hand_history_english.sql, supabase_hand_history_coach.sql, supabase_hand_history_cards.sql and supabase_hand_history_preflop_defense.sql).",
+        "The database is missing a hand history update (run supabase_hand_history_involved.sql, supabase_hand_history_preflop.sql, supabase_hand_history_favorites.sql, supabase_hand_history_english.sql, supabase_hand_history_coach.sql, supabase_hand_history_cards.sql, supabase_hand_history_preflop_defense.sql and supabase_hand_history_summary.sql).",
       noPermission: "Permission denied. Sign in again and retry.",
       offline: "Can't reach the server. Check your connection and try again.",
       generic: (msg: string) => `Database error: ${msg}`,

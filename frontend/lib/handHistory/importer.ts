@@ -51,6 +51,8 @@ export interface ParseOutcome {
 
 export interface ImportSummary {
   tournaments: number;
+  /** The tournaments in this upload (for the tournament summary links). */
+  tournamentKeys: { site: string; tournament_id: string; name: string | null }[];
   imported: number;
   skipped: number;
   failures: ParseFailure[];
@@ -269,7 +271,7 @@ export async function saveHands(
     .eq("id", importId);
 
   onProgress?.({ phase: "done", done: total, total });
-  return { tournaments: tournaments.size, imported, skipped, failures, fileErrors: parsed.fileErrors, importId };
+  return { tournaments: tournaments.size, tournamentKeys: [...tournaments.values()], imported, skipped, failures, fileErrors: parsed.fileErrors, importId };
 }
 
 async function insertBatch(supabase: SupabaseClient, rows: unknown[]) {

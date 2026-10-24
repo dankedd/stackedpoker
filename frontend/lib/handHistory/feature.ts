@@ -13,3 +13,5 @@ export const HANDS_IMPORT_PATH = "/hands/import";
 /** Enter a hand by hand; the list of manual hands is HANDS_PATH + "?manual=1". */
 export const HANDS_MANUAL_PATH = "/hands/manual";
 export const HANDS_MANUAL_LIST = `${HANDS_PATH}?manual=1`;
+/** Tournament summary (Stacked score); `id` is hh_tournaments.id. */
+export const handsSummaryPath = (id: string) => `${HANDS_PATH}/summary/${id}`;
