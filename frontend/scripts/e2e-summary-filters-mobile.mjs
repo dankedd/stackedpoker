@@ -3,7 +3,8 @@
  * Mobile check for the tournament summary filters (/hands/summary/[id]): at
  * 375 and 390 px with touch, every filter chip must be on top (nothing
  * covering it), at least 44 px tall, reachable by horizontal scroll, and a
- * tap must switch the hand list and bring it into view.
+ * tap must switch the hand list and bring it into view. Also opens the
+ * "Filters" bottom sheet on /hands and checks it sits on the screen.
  *
  * Runs against a tiny in-process stand-in for Supabase (auth + the few
  * queries the page makes), so no account or real data is needed. Start the
@@ -180,6 +181,29 @@ try {
       record(`${tag} ${f}: first row visible after tap`, row.onTop, row.onTop ? "" : `hit ${row.what}`);
     }
     await page.screenshot({ path: path.join(OUT, `summary-filters-${width}.png`) });
+
+    // /hands: the "Filters" bottom sheet must sit on the screen, not at the
+    // bottom of a long page (a transformed ancestor captures position:fixed).
+    await page.goto(new URL("/hands?minPot=0", SITE).href, { waitUntil: "load", timeout: 180_000 });
+    await page.addStyleTag({ content: "nextjs-portal,[data-nextjs-toast]{display:none!important}" }).catch(() => {});
+    const open = page.locator('[data-filter="mobile-sheet"]');
+    await page.waitForFunction(() => {
+      const b = document.querySelector('[data-filter="mobile-sheet"]');
+      return !!b && Object.keys(b).some((k) => k.startsWith("__reactProps"));
+    }, null, { timeout: 120_000 });
+    await page.evaluate(() => {
+      document.querySelector(".page-enter").style.paddingBottom = "4000px"; // a long hand list
+      document.querySelector('[data-filter="mobile-sheet"]').scrollIntoView({ block: "center" });
+    });
+    await open.tap();
+    await page.waitForTimeout(600);
+    const sheet = await page.evaluate(() => {
+      const d = document.querySelector('[role="dialog"][aria-modal="true"]');
+      if (!d) return null;
+      const r = d.lastElementChild.getBoundingClientRect();
+      return { top: Math.round(r.top), bottom: Math.round(r.bottom), vh: window.innerHeight };
+    });
+    record(`${tag} /hands: filter sheet opens on screen`, !!sheet && sheet.top >= 0 && Math.abs(sheet.bottom - sheet.vh) <= 1, sheet ? `panel ${sheet.top}–${sheet.bottom} of ${sheet.vh}` : "no sheet");
     await context.close();
   }
 } finally {

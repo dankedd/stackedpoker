@@ -405,7 +405,9 @@
 
 @keyframes page-enter {
   from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  /* `none`, not translateY(0): with `forwards` a kept transform makes this the
+     containing block of every position:fixed descendant (sheets, modals). */
+  to   { opacity: 1; transform: none; }
 }
 
 .page-enter {

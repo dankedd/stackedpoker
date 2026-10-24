@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ArrowDownUp, Check, ChevronDown, NotebookPen, SlidersHorizontal, Star, Trophy, X } from "lucide-react";
 import { DEFAULT_MIN_POT_BB, isTargeted, SORT_LABELS, type HandQueryState, type SortKey } from "@/lib/handHistory/filters";
 import { PRESETS, activeChips, activeCount, clearAll, restoreDefaults, withoutFavorites, type StatePatch } from "@/lib/handHistory/filterUi";
@@ -495,7 +496,9 @@ function MobileSheet({ onClose, doneLabel, children }: { onClose: () => void; do
       document.body.style.overflow = prev;
     };
   }, [onClose]);
-  return (
+  // Portalled: inside a transformed ancestor (.page-enter) `fixed` would pin
+  // the sheet to the bottom of the whole page instead of the screen.
+  return createPortal(
     <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label={t.filterBar.mobileFilters(0)}>
       <button type="button" aria-label={t.filterBar.close} onClick={onClose} className="absolute inset-0 bg-black/60 animate-fade-in" />
       <div className="absolute inset-x-0 bottom-0 flex max-h-[85vh] flex-col rounded-t-2xl border-t border-white/10 bg-[#0B1120] shadow-2xl animate-fade-in">
@@ -512,6 +515,7 @@ function MobileSheet({ onClose, doneLabel, children }: { onClose: () => void; do
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
