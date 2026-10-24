@@ -17,6 +17,7 @@
 -- path: 3–20 characters, letters/digits/_ . - (starting with a letter or
 -- digit), not reserved, no profanity, not the user's own email local part,
 -- unique ignoring case. Users set it in Settings via set_my_display_name().
+-- The word lists live in moderation_wordlist() (shared with social posts).
 -- A username typed on the email signup form becomes the display name when it
 -- passes the same rules (Google signups start without one).
 --
@@ -34,10 +35,37 @@ ALTER TABLE public.profiles
 CREATE UNIQUE INDEX IF NOT EXISTS profiles_display_name_lower_key
   ON public.profiles (lower(display_name));
 
+-- ── Word lists ─────────────────────────────────────────────────────────────
+-- The ONE place the reserved and profane words live. Used by
+-- display_name_problem() below and, for posts/messages/handles, by
+-- social_text_problem() and handle_problem()
+-- (supabase/migrations/20261024_02_social_foundation.sql).
+--   *_parts  blocked anywhere in a (leetspeak-folded) word
+--   *_whole  blocked only as the whole word (too short to match inside others)
+--   hate     never allowed, not even masked
+--   mild     names: refused; free text: masked with asterisks
+CREATE OR REPLACE FUNCTION public.moderation_wordlist(p_kind text)
+RETURNS text[]
+LANGUAGE sql
+IMMUTABLE
+AS $$
+  SELECT CASE p_kind
+    WHEN 'reserved_parts' THEN ARRAY['admin', 'stackedpoker', 'support', 'moderator', 'official', 'helpdesk', 'customerservice']
+    WHEN 'reserved_whole' THEN ARRAY['mod', 'mods', 'root', 'system', 'owner', 'staff', 'team', 'help', 'info', 'billing',
+                                     'stacked', 'stackedpokerai', 'player', 'guest', 'anonymous', 'unknown', 'null',
+                                     'undefined', 'deleted', 'you', 'coach', 'aicoach', 'bot']
+    WHEN 'hate_parts'     THEN ARRAY['nigger', 'nigga', 'faggot', 'retard', 'nazi', 'hitler', 'kanker']
+    WHEN 'hate_whole'     THEN ARRAY['fag', 'rape', 'rapist']
+    WHEN 'mild_parts'     THEN ARRAY['fuck', 'fuk', 'shit', 'cunt', 'whore', 'bitch', 'slut', 'porn', 'pussy',
+                                     'asshole', 'bastard', 'hoer']
+    WHEN 'mild_whole'     THEN ARRAY['ass', 'cock', 'dick', 'penis', 'vagina', 'tits', 'kut', 'lul', 'tering']
+    ELSE ARRAY[]::text[]
+  END;
+$$;
+
 -- ── Rules ──────────────────────────────────────────────────────────────────
 -- NULL = fine. Otherwise the problem code the Settings form maps to a message
 -- (frontend/lib/profile/strings.ts): length | characters | reserved | profanity.
--- The word lists live here and only here.
 CREATE OR REPLACE FUNCTION public.display_name_problem(p_name text)
 RETURNS text
 LANGUAGE plpgsql
@@ -48,16 +76,6 @@ DECLARE
   v_lower text := lower(p_name);
   -- Leetspeak folded and separators dropped: "St4cked_P0ker" → "stackedpoker".
   v_flat  text := regexp_replace(translate(lower(p_name), '013457', 'oieast'), '[^a-z0-9]', '', 'g');
-  -- Blocked anywhere in the name.
-  reserved_parts  text[] := ARRAY['admin', 'stackedpoker', 'support', 'moderator', 'official', 'helpdesk', 'customerservice'];
-  -- Blocked only as the whole name (too short to match inside other words).
-  reserved_whole  text[] := ARRAY['mod', 'mods', 'root', 'system', 'owner', 'staff', 'team', 'help', 'info', 'billing',
-                                  'stacked', 'stackedpokerai', 'player', 'guest', 'anonymous', 'unknown', 'null',
-                                  'undefined', 'deleted', 'you', 'coach', 'aicoach', 'bot'];
-  profane_parts   text[] := ARRAY['fuck', 'fuk', 'shit', 'cunt', 'nigger', 'nigga', 'faggot', 'whore', 'bitch',
-                                  'slut', 'retard', 'porn', 'pussy', 'asshole', 'bastard', 'nazi', 'hitler',
-                                  'kanker', 'hoer'];
-  profane_whole   text[] := ARRAY['ass', 'cock', 'dick', 'fag', 'rape', 'rapist', 'penis', 'vagina', 'tits', 'kut', 'lul', 'tering'];
   w text;
 BEGIN
   IF p_name IS NULL THEN RETURN NULL; END IF;
@@ -66,13 +84,15 @@ BEGIN
 
   -- "Player 3f9a" is what users without a name are shown as.
   IF v_lower ~ '^player[_.-]?[0-9a-f]*$' THEN RETURN 'reserved'; END IF;
-  IF v_flat = ANY (reserved_whole) THEN RETURN 'reserved'; END IF;
-  FOREACH w IN ARRAY reserved_parts LOOP
+  IF v_flat = ANY (public.moderation_wordlist('reserved_whole')) THEN RETURN 'reserved'; END IF;
+  FOREACH w IN ARRAY public.moderation_wordlist('reserved_parts') LOOP
     IF position(w IN v_flat) > 0 THEN RETURN 'reserved'; END IF;
   END LOOP;
 
-  IF v_flat = ANY (profane_whole) THEN RETURN 'profanity'; END IF;
-  FOREACH w IN ARRAY profane_parts LOOP
+  IF v_flat = ANY (public.moderation_wordlist('hate_whole') || public.moderation_wordlist('mild_whole')) THEN
+    RETURN 'profanity';
+  END IF;
+  FOREACH w IN ARRAY public.moderation_wordlist('hate_parts') || public.moderation_wordlist('mild_parts') LOOP
     IF position(w IN v_flat) > 0 THEN RETURN 'profanity'; END IF;
   END LOOP;
 
@@ -304,6 +324,7 @@ $$;
 
 -- ── Grants ─────────────────────────────────────────────────────────────────
 
+REVOKE ALL ON FUNCTION public.moderation_wordlist(text)           FROM public, anon, authenticated;
 REVOKE ALL ON FUNCTION public.display_name_problem(text)          FROM public, anon, authenticated;
 REVOKE ALL ON FUNCTION public.profiles_display_name_guard()       FROM public, anon, authenticated;
 REVOKE ALL ON FUNCTION public.set_my_display_name(text)           FROM public, anon;
