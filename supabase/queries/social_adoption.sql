@@ -29,3 +29,13 @@ SELECT
   (SELECT count(*) FROM public.hand_guesses WHERE created_at > now() - interval '7 days') AS votes_7d,
   (SELECT count(*) FROM public.hand_guesses WHERE user_id IS NULL)                        AS votes_signed_out,
   (SELECT count(*) FROM auth.users WHERE raw_user_meta_data -> 'signup_utm' ? 'referred_by_share') AS signups_from_shares;
+
+-- ── Phase 2: profiles, skill stats, badges ─────────────────────────────────
+SELECT
+  (SELECT count(*) FROM public.profiles WHERE handle IS NOT NULL AND (bio IS NOT NULL OR avatar_path IS NOT NULL OR cardinality(sites) > 0)) AS profiles_filled_in,
+  (SELECT count(*) FROM public.profiles WHERE avatar_path IS NOT NULL)                                AS with_photo,
+  (SELECT count(*) FILTER (WHERE profile_visibility = 'public')  FROM public.profiles WHERE handle IS NOT NULL) AS profile_public,
+  (SELECT count(*) FILTER (WHERE profile_visibility = 'friends') FROM public.profiles WHERE handle IS NOT NULL) AS profile_friends,
+  (SELECT count(*) FILTER (WHERE profile_visibility = 'private') FROM public.profiles WHERE handle IS NOT NULL) AS profile_private,
+  (SELECT count(*) FROM public.user_skill_stats WHERE refreshed_at > now() - interval '7 days')      AS stats_fresh_7d,
+  (SELECT jsonb_object_agg(achievement_id, n) FROM (SELECT achievement_id, count(*) AS n FROM public.user_achievements GROUP BY 1) b) AS badges_awarded;

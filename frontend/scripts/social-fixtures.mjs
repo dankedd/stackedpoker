@@ -149,3 +149,64 @@ export function installShareFixtures(state, { uid, ago, userId }) {
     "og-guess": { path: "/h/Guess01/opengraph-image", ready: "img", raw: true, before: () => { voted = null; } },
   };
 }
+
+// ── Phase 2: profiles & skill stats ────────────────────────────────────────
+
+const win = (all, d30, p30) => ({ all, d30, p30, d90: all, p90: [0, 0] });
+
+export function installProfileFixtures(state, { uid, ago, userId }) {
+  const stats = {
+    v: 1, computed_at: ago(0.2),
+    preflop: {
+      overall: win([412, 331], [160, 133], [140, 108]),
+      opens: win([210, 189], [80, 73], [70, 62]),
+      defense: win([150, 108], [60, 47], [55, 36]),
+      pushfold: win([52, 34], [20, 13], [15, 10]),
+    },
+    flop_review: { all: { n: 64, good: 35, ok: 17, questionable: 12 }, windows: { overall: win([64, 52], [25, 21], [20, 15]) } },
+    flop_trainer: { overall: win([118, 91], [40, 33], [38, 27]) },
+    weakest_texture: { category: "monotone", n: 22, ok: 11 },
+    trainer: { spots: 530, accuracy: [530, 422], current_streak: 7, best_streak: 31 },
+    day_streak: 12,
+  };
+  const badges = [
+    { id: "founding_member", icon: "⭐", title: "Founding member", description: "One of the first 500 Stacked Poker players", tier: "platinum", earned_at: ago(800) },
+    { id: "flop_master", icon: "🃏", title: "Flop master", description: "80%+ good answers on 50 flops", tier: "gold", earned_at: ago(100) },
+    { id: "streak_7", icon: "🔥", title: "Week Warrior", description: "7-day streak", tier: "silver", earned_at: ago(50) },
+    { id: "spots_100", icon: "💯", title: "100 spots", description: "Trained 100 spots", tier: "bronze", earned_at: ago(300) },
+    { id: "first_share", icon: "🔗", title: "First share", description: "Shared a hand for the first time", tier: "bronze", earned_at: ago(3) },
+  ];
+  const profile = {
+    id: userId, handle: "riverrat", name: "RiverRat", role: "admin", avatar: null, visible: true, is_owner: false,
+    bio: "MTT reg, mostly $11–$55 on GG. Working on my BB defense.", sites: ["ggpoker", "pokerstars", "live"],
+    member_since: "2026-03-14T10:00:00Z", profile_visibility: "public", stats_visibility: "public", stats_visible: true,
+    stats, stats_refreshed_at: ago(0.2), badges,
+    shares: [
+      { slug: "Guess01", question: "Flop check-raise at 25 BB. Call, shove or fold?", created_at: ago(3), guess_mode: true, position: "BTN", hero_cards: ["Ah", "Qd"], board: [] },
+      { slug: "Link001", question: "Hero call on a wet river?", created_at: ago(40), guess_mode: false, position: "BB", hero_cards: ["Jh", "Ts"], board: ["9h", "8h", "2c", "Kd", "3h"] },
+    ],
+  };
+  Object.assign(state.rpc, {
+    get_profile: ({ p_handle }) => {
+      const h = String(p_handle).replace(/^@/, "").toLowerCase();
+      if (h === "riverrat") return profile;
+      if (h === "new_grinder") return { ...profile, id: uid(802), handle: "new_grinder", name: "Player 77c1", bio: null, sites: [], badges: [], shares: [],
+        stats: { ...stats, preflop: { overall: win([12, 9], [12, 9], [0, 0]), opens: win([8, 6], [8, 6], [0, 0]) }, flop_review: {}, flop_trainer: {}, weakest_texture: null, trainer: { spots: 12, accuracy: [12, 9], current_streak: 2, best_streak: 4 }, day_streak: 1 } };
+      if (h === "quiet_shark") return { id: uid(801), handle: "quiet_shark", name: "QuietShark", role: "user", avatar: null, visible: false, profile_visibility: "friends", badges: [badges[0]], banned: false };
+      return null;
+    },
+    refresh_profile_stats: () => false,
+    update_my_profile: () => ({ ok: true }),
+  });
+  return {
+    profile: { path: "/u/riverrat", ready: "[data-skill-card]" },
+    "profile-new": { path: "/u/new_grinder", ready: "[data-skill-card]" },
+    "profile-hidden": { path: "/u/quiet_shark", ready: "[data-profile-header]" },
+    "settings-profile": {
+      path: "/settings", ready: "[data-profile-form]", scrollTo: "#profile",
+      before: () => {
+        state.handle = "riverrat";
+      },
+    },
+  };
+}

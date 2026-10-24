@@ -18,7 +18,7 @@ import fs from "node:fs";
 import http from "node:http";
 import path from "node:path";
 
-import { installShareFixtures } from "./social-fixtures.mjs";
+import { installProfileFixtures, installShareFixtures } from "./social-fixtures.mjs";
 
 const require = createRequire(import.meta.url);
 const { chromium, devices } = require("playwright");
@@ -54,7 +54,7 @@ export const state = {
       usage: { trainer_hands_today: 0, ai_questions_today: 0, tournaments_this_week: 0 },
     }),
     my_social_profile: () => ({
-      id: USER.id, handle: state.handle, name: "RiverRat", next_handle_change_at: null, bio: null, sites: [],
+      id: USER.id, handle: state.handle, name: "RiverRat", next_handle_change_at: null, bio: "MTT reg, mostly $11–$55 on GG.", sites: ["ggpoker", "live"], avatar: null,
       profile_visibility: "friends", stats_visibility: "friends", role: "admin", banned_until: null, ban_reason: null,
     }),
     suggest_my_handle: () => "riverrat",
@@ -129,6 +129,7 @@ export const SCREENS = {
     },
   },
   ...installShareFixtures(state, { uid, ago, userId: USER.id }),
+  ...installProfileFixtures(state, { uid, ago, userId: USER.id }),
 };
 
 const failures = [];
