@@ -36,8 +36,6 @@ export interface VillainRange {
   position: string | null;
   /** Short name of the range used, e.g. "HJ shove vs LJ-open · 15 BB". */
   label: string;
-  /** Book page and Hand Range of the chart, when one was used. */
-  source: { page: number; hr: string } | null;
   range: WeightedRange;
   /** Set when the range is an approximation; shown as a warning. */
   approximation: string | null;
@@ -125,7 +123,6 @@ function openRange(hand: ParsedHand, villain: string, key: RangeActionKey): Omit
     villain,
     position: pos,
     label: `${displayPos(pos)} ${what} · ${found.ref.bucket} BB`,
-    source: { page: found.ref.page, hr: found.ref.hr },
     range,
   };
 }
@@ -165,7 +162,7 @@ export function villainRange(hand: ParsedHand, villain: string): VillainRange | 
     if (!open) {
       const all: WeightedRange = {};
       for (const h of ALL_HANDS) all[h] = 1;
-      return { villain, position: pos, label: t.range.allHands, source: null, range: all, approximation: t.range.approxNoRange(why) };
+      return { villain, position: pos, label: t.range.allHands, range: all, approximation: t.range.approxNoRange(why) };
     }
     return { ...open, approximation: t.range.approxOpen(why) };
   };
@@ -241,7 +238,6 @@ function fromDefense(
     position: pos,
     // Name the chart actually used, even when it stands in for another spot.
     label: `${displayPos(c.hero)} ${what(c)} · ${c.stack} BB`,
-    source: { page: c.page, hr: `Hand Range ${c.n}` },
     range: chartRange(c.grid, c.actions, key),
     approximation,
   };
@@ -253,7 +249,6 @@ export interface RangePreset {
   id: string;
   group: string;
   label: string;
-  source: string;
   range: WeightedRange;
 }
 
@@ -268,10 +263,9 @@ export function rangePresets(pos: string | null): RangePreset[] {
     for (const c of MTT_OPEN_CHARTS.filter((x) => x.pos === pos).sort((a, b) => a.stack - b.stack)) {
       for (const a of c.actions.filter((x) => x.key !== "fold")) {
         out.push({
-          id: `open-${c.page}-${a.key}`,
+          id: `${c.id}-${a.key}`,
           group: t.range.groupOpen,
           label: `${displayPos(pos)} open ${word[a.key]} · ${c.stack} BB`,
-          source: `${c.hr} · p. ${c.page}`,
           range: chartRange(c.grid, c.actions, a.key),
         });
       }
@@ -281,7 +275,7 @@ export function rangePresets(pos: string | null): RangePreset[] {
       for (let s = 2; s <= 10; s++) {
         const range: WeightedRange = {};
         for (const [h, cell] of Object.entries(pf.grid)) if (shouldPush(cell, s)) range[h] = 1;
-        out.push({ id: `pf-${pf.page}-${s}`, group: t.range.groupPushFold, label: `${displayPos(pos)} push · ${s} BB`, source: `${pf.hr} · p. ${pf.page}`, range });
+        out.push({ id: `${pf.id}-${s}`, group: t.range.groupPushFold, label: `${displayPos(pos)} push · ${s} BB`, range });
       }
     }
   }
@@ -289,10 +283,9 @@ export function rangePresets(pos: string | null): RangePreset[] {
     for (const a of c.actions.filter((x) => x.key !== "fold")) {
       const spotWord = c.spot === "open" ? `vs ${displayPos(c.vil)}-open` : c.spot === "push" ? `vs ${displayPos(c.vil)}-shove` : c.spot === "4bet" ? `vs 4-bet ${displayPos(c.vil)}` : c.spot === "limp" ? `vs ${displayPos(c.vil)}-limp` : `vs ${displayPos(c.vil)} limp/raise`;
       out.push({
-        id: `def-${c.n}-${a.key}`,
+        id: `${c.id}-${a.key}`,
         group: t.range.groupVsAction,
         label: `${displayPos(c.hero)} ${a.label.toLowerCase()} ${spotWord} · ${c.stack} BB`,
-        source: `Hand Range ${c.n} · p. ${c.page}`,
         range: chartRange(c.grid, c.actions, a.key),
       });
     }

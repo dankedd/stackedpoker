@@ -7,7 +7,7 @@ import { PokerRangeGrid } from "@/components/learn/visuals/PokerRangeGrid";
 import { ChartPanel } from "@/components/preflop-trainer/shared";
 import { DEFENSE_CHARTS, MTT_OPEN_CHARTS, PUSH_FOLD_CHARTS } from "@/lib/ranges/data";
 import { PREFLOP_RANGES_ENABLED, PREFLOP_TRAINER_PATH } from "@/lib/ranges/feature";
-import { cardsFor, displayPos, pushValue } from "@/lib/ranges/logic";
+import { cardsFor, chartName, displayPos, pushValue } from "@/lib/ranges/logic";
 import { chartHrefForDeal, trainerQuery } from "@/lib/ranges/urlState";
 import { fmtNum } from "@/lib/handHistory/format";
 import { describeCheck, scenarioFor, type PreflopCheck, type RangeRef } from "@/lib/handHistory/preflop";
@@ -104,11 +104,11 @@ function TrainLinks({ check }: { check: PreflopCheck }) {
 }
 
 function DefenseChartView({ refInfo, hand }: { refInfo: RangeRef; hand: string }) {
-  const chart = DEFENSE_CHARTS.find((c) => c.n === refInfo.n && c.group === (refInfo.group ?? "mtt"));
+  const chart = DEFENSE_CHARTS.find((c) => c.id === refInfo.chart);
   if (!chart) return null;
   return (
     <ChartPanel
-      heading={`${chart.title}${chart.group === "mtt" && !/\d+bb/.test(chart.title) ? ` · ${chart.stack}bb` : ""}`}
+      heading={chartName(chart)}
       grid={chart.grid}
       actions={chart.actions}
       highlight={hand}
@@ -143,9 +143,6 @@ function PushFoldChart({ position, bucket, hand }: { position: string; bucket: n
         <h3 className="text-base font-semibold text-foreground">
           {displayPos(chart.pos)} · push/fold {bucket}bb
         </h3>
-        <p>
-          {chart.hr} · p. {chart.page}
-        </p>
         <p>
           {t.preflop.pushFoldNote(hand, values[hand] ?? 0)}
         </p>

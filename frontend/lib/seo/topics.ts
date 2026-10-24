@@ -216,7 +216,7 @@ export const TOPICS: TopicDefinition[] = [
     clusterId: "preflop",
     priority: "medium",
     language: "en",
-    rationale: "Narrower than 3-betting; the book's own material is an 'Overcalling' section rather than a squeeze chart, so the source is thin.",
+    rationale: "Narrower than 3-betting; the source's own material is an 'Overcalling' section rather than a squeeze chart, so the source is thin.",
   },
   {
     id: "continuation-bet",

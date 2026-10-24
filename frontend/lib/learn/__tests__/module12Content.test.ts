@@ -40,10 +40,9 @@ const VALID_TYPES: SourceEvidenceType[] = ['exact_derived', 'source_reconstructe
 
 describe('Module 12 content sources carry a valid, non-empty classification', () => {
   for (const [name, source] of Object.entries({ HAND_RANGE_337_340_SOURCE, TOY_GAMES_A_TO_E_SOURCE })) {
-    it(`${name} has a valid type + non-empty section`, () => {
+    it(`${name} has a valid type and ships nothing else`, () => {
       expect(VALID_TYPES).toContain(source.type)
-      expect(source.section.length).toBeGreaterThan(0)
-      expect(source.book).toBe('Modern Poker Theory')
+      expect(Object.keys(source)).toEqual(['type'])
     })
   }
 })
@@ -164,7 +163,7 @@ describe('Toy Games A-E — every Equity Bucket distribution sums to 100', () =>
 describe('SPR_TABLE_90 — the four SPR bands (Ch.10 pp.609-610)', () => {
   it('has a valid source classification', () => {
     expect(['exact_derived', 'source_reconstructed', 'pedagogical_model']).toContain(SPR_TABLE_90_SOURCE.type)
-    expect(SPR_TABLE_90_SOURCE.book).toBe('Modern Poker Theory')
+    expect(Object.keys(SPR_TABLE_90_SOURCE)).toEqual(['type'])
   })
 
   it('is exactly the four book-cited bands, in ascending-SPR order, each non-empty', () => {

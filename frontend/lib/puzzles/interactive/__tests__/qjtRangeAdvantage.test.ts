@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { PUZZLES } from '../data'
 import { SOURCES } from '../sources'
+import { SOURCE_CITATIONS } from '../sourceCitations'
 
 /**
  * Content tests for the Q♥J♥T♥ puzzle.
@@ -31,10 +32,10 @@ describe('Q♥J♥T♥ puzzle — range advantage is not a bet-size', () => {
     expect(flop.board).toEqual(['Qh', 'Jh', 'Th'])
     // Monotone: one suit across all three cards.
     expect(new Set(flop.board.map((c) => c[1])).size).toBe(1)
-    expect(SOURCES['ex2.heading-high-freq-small-size'].quote).toBe(
+    expect(SOURCE_CITATIONS['ex2.heading-high-freq-small-size'].quote).toBe(
       'High c-bet % and small bet-size: BB vs UTG on Q♥J♥T♥ (40bb)'
     )
-    expect(SOURCES['ex2.heading-high-freq-small-size'].page).toBe(684)
+    expect(SOURCE_CITATIONS['ex2.heading-high-freq-small-size'].page).toBe(684)
   })
 
   it('plays one flop decision only, and says why it stops', () => {
@@ -50,9 +51,9 @@ describe('Q♥J♥T♥ puzzle — range advantage is not a bet-size', () => {
     // Both 'mistake' grades have to be the source contradicting the action
     // rather than our preference: p.686 simplifies this flop to min-bet 100%,
     // and p.685-686 says betting big makes the BB's life easier.
-    expect(SOURCES['ex2.min-bet-100-no-ev-loss'].quote).toContain('min-bet 100% with no EV loss')
-    expect(SOURCES['ex2.big-bet-helps-bb'].quote).toContain('making the BB’s life easier')
-    expect(SOURCES['ex2.big-bet-helps-bb'].quote).toContain('bets the minimum')
+    expect(SOURCE_CITATIONS['ex2.min-bet-100-no-ev-loss'].quote).toContain('min-bet 100% with no EV loss')
+    expect(SOURCE_CITATIONS['ex2.big-bet-helps-bb'].quote).toContain('making the BB’s life easier')
+    expect(SOURCE_CITATIONS['ex2.big-bet-helps-bb'].quote).toContain('bets the minimum')
   })
 
   it('carries the action only on the buttons — no sizes in bb', () => {
@@ -75,7 +76,7 @@ describe('Q♥J♥T♥ puzzle — range advantage is not a bet-size', () => {
     expect(SOURCES['texture.qxx-category-average'].scope).toMatch(
       /NOT the c-bet frequency for Q♥J♥T♥/
     )
-    expect(SOURCES['texture.qxx-category-average'].page).toBe(661)
+    expect(SOURCE_CITATIONS['texture.qxx-category-average'].page).toBe(661)
 
     const prose = [
       puzzle.description,
@@ -119,8 +120,8 @@ describe('Q♥J♥T♥ puzzle — range advantage is not a bet-size', () => {
     // and the moment they read as printed figures the citation is a lie.
     expect(SOURCES['ex2.utg-equity-derived'].derivation).toBe('exact_derived')
     expect(SOURCES['ex2.utg-equity-derived'].scope).toMatch(/sum to 100%/)
-    expect(SOURCES['ex2.bb-36-equity'].quote).toContain('only 36% equity')
-    expect(SOURCES['ex2.bb-36-equity'].quote).toContain('38.26%')
+    expect(SOURCE_CITATIONS['ex2.bb-36-equity'].quote).toContain('only 36% equity')
+    expect(SOURCE_CITATIONS['ex2.bb-36-equity'].quote).toContain('38.26%')
 
     const split = puzzle.ranges.find((r) => r.id === 'flop-equity-split')!
     expect(split.bars).toEqual([
@@ -132,8 +133,8 @@ describe('Q♥J♥T♥ puzzle — range advantage is not a bet-size', () => {
   it('proves the point with the contrast the book itself sets up', () => {
     // The lesson only lands if MORE range advantage goes with the BIGGER bet:
     // 72% on A♥Q♦3♠ where UTG bets big, 64% here where it bets the minimum.
-    expect(SOURCES['ex1.aq3-high-freq-big-size'].quote).toContain('72% equity')
-    expect(SOURCES['ex1.aq3-high-freq-big-size'].quote).toContain('capturing 85% of the pot')
+    expect(SOURCE_CITATIONS['ex1.aq3-high-freq-big-size'].quote).toContain('72% equity')
+    expect(SOURCE_CITATIONS['ex1.aq3-high-freq-big-size'].quote).toContain('capturing 85% of the pot')
     expect(SOURCES['ex1.aq3-high-freq-big-size'].scope).toMatch(
       /none of its figures describe Q♥J♥T♥/
     )
@@ -159,13 +160,13 @@ describe('Q♥J♥T♥ puzzle — range advantage is not a bet-size', () => {
     for (const id of ['texture.monotone-most-cbet-smallest-size', 'texture.straights-reduce-cbet']) {
       expect(SOURCES[id].scope, `${id} must name its stack depths`).toMatch(/20bb\/30bb\/40bb/)
     }
-    expect(SOURCES['texture.monotone-betting-big-mistake'].page).toBe(672)
+    expect(SOURCE_CITATIONS['texture.monotone-betting-big-mistake'].page).toBe(672)
   })
 
   it('shows the passage verbatim, with its pages', () => {
     const passage = flop.theory.find((t) => t.id === 'the-passage')!
     expect(passage.body).toContain('UTG has a substantial range advantage')
     expect(passage.body).toContain('lure the BB in with many weak hands that UTG dominates')
-    expect(passage.body).toMatch(/pp\.685-686/)
+    expect(passage.body).not.toMatch(/pp?\.\s?\d/)
   })
 })

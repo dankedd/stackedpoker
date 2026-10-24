@@ -115,7 +115,7 @@ export const BB_FOUR_DEFENCES_25BB: InteractivePuzzle = {
           tableAction: { label: 'Calls', betBb: 2 },
           verdict: 'defensible',
           shortWhy:
-            'Calling is the biggest branch of the whole strategy — 65.9% — so it is never absurd. But the class the source names for this hand is the all-in branch, and the book prints no per-combo split that would put this pair in the 65.9%.',
+            'Calling is the biggest branch of the whole strategy — 65.9% — so it is never absurd. But the class the source names for this hand is the all-in branch, and the source prints no per-combo split that would put this pair in the 65.9%.',
           sources: ['preflop.bb-vs-bn-25bb-chart', 'bb25.pairs-and-axo-jam'],
         },
         {
@@ -144,24 +144,24 @@ export const BB_FOUR_DEFENCES_25BB: InteractivePuzzle = {
       ],
       bestOptionId: 'all-in',
       explanation:
-        'All-in. **Why:** the book states the composition of the all-in branch in words — “Pocket pairs and Axo really like getting all-in. As the opener’s range widens, the weaker pairs and Ax get to shove” (p.386) — and 8♠8♦ is a pocket pair facing the widest opener at the table, which is the end of that sentence the pairs are pushed towards. **Range theory:** at 25bb the big blind against a button min-raise plays four branches, not two: all-in 11.4%, non-all-in 3-bet 8.2%, call 65.9%, fold 14.6% (Hand Range 159, p.387). Those are four separate numbers for four separate actions, and the two raising branches hold different hands — the non-all-in 3-bet is polarized and made of “JJ+, the strongest Axs, some of the best premium suited connectors, and a small frequency of offsuit hands with a blocker” (p.386), which a middle pair does not belong to. **Sizing and frequency:** the all-in is for your 25bb stack, and 11.4% is the frequency of the whole range, not of this hand — the exact combo frequency is not specified in the source. **Supporting passage:** p.386, “Pocket pairs and Axo really like getting all-in”, together with Hand Range 159 on p.387.',
+        'All-in. **Why:** the source states the composition of the all-in branch in words — “Pocket pairs and Axo really like getting all-in. As the opener’s range widens, the weaker pairs and Ax get to shove” — and 8♠8♦ is a pocket pair facing the widest opener at the table, which is the end of that sentence the pairs are pushed towards. **Range theory:** at 25bb the big blind against a button min-raise plays four branches, not two: all-in 11.4%, non-all-in 3-bet 8.2%, call 65.9%, fold 14.6%. Those are four separate numbers for four separate actions, and the two raising branches hold different hands — the non-all-in 3-bet is polarized and made of “JJ+, the strongest Axs, some of the best premium suited connectors, and a small frequency of offsuit hands with a blocker”, which a middle pair does not belong to. **Sizing and frequency:** the all-in is for your 25bb stack, and 11.4% is the frequency of the whole range, not of this hand — the exact combo frequency is not specified in the source. **Supporting passage:**, “Pocket pairs and Axo really like getting all-in”, together with the chart.',
       unsourced: [
         {
           question: 'How often exactly does 8♠8♦ shove here?',
           answer:
-            'Exact combo frequency is not specified in the source. Hand Range 159 is printed as a colour-coded chart image, and the only figures printed in text are the four whole-range aggregates — all-in 11.4%, 3-bet 8.2%, call 65.9%, fold 14.6%. What the source does state in words is the class this hand belongs to: pocket pairs are named as hands that really like getting all-in. Unlike the book’s 100bb BB vs BN chart, no reviewed extraction of this 25bb chart exists in this repo either, so there is no per-hand number to quote from any source.',
+            'Exact combo frequency is not specified in the source. The chart is printed as a colour-coded chart image, and the only figures printed in text are the four whole-range aggregates — all-in 11.4%, 3-bet 8.2%, call 65.9%, fold 14.6%. What the source does state in words is the class this hand belongs to: pocket pairs are named as hands that really like getting all-in. Unlike the source’s 100bb BB vs BN chart, no reviewed extraction of this 25bb chart exists in this repo either, so there is no per-hand number to quote from any source.',
           nearestSources: ['bb25.pairs-and-axo-jam', 'preflop.bb-vs-bn-25bb-chart'],
         },
         {
           question: 'If you took the 3-bet branch, what would you raise to?',
           answer:
-            'The source does not give a non-all-in 3-bet size for the big blind against a button min-raise at 25bb. It names the branch, gives its frequency (8.2%) and lists the hand types in it, but prints no sizing — which is why the 3-bet option puts no chip amount on the felt. The book does state 3-bet sizes for other spots at this depth, so this is a gap on these two pages rather than a habit of the book, and it is left open here instead of being filled with a plausible number.',
+            'The source does not give a non-all-in 3-bet size for the big blind against a button min-raise at 25bb. It names the branch, gives its frequency (8.2%) and lists the hand types in it, but prints no sizing — which is why the 3-bet option puts no chip amount on the felt. The source does state 3-bet sizes for other spots at this depth, so this is a gap on these two pages rather than a habit of the source, and it is left open here instead of being filled with a plausible number.',
           nearestSources: ['preflop.bb-3bet-composition-25bb', 'preflop.bb-vs-bn-25bb-chart'],
         },
         {
           question: 'Where do the antes in the pot come from?',
           answer:
-            'From the book’s stated MTT game, not from p.386. Modern Poker Theory says its MTT equilibrium strategies were solved “for 9-max tables with a 12.5% ante” at the opening of Ch.7 (p.293); the defence chapter that contains Hand Range 159 does not restate it. A 12.5% ante from nine seats is 1.125bb, which the book’s own pot arithmetic confirms — it prints the pre-action pot for that game as 2.625bb (p.163). So the 4.6bb here is 2 from the button, your posted 1, the folded small blind’s 0.5, and 1.125 in antes; your call is 1 because you are already in for 1.',
+            'From the source’s stated MTT game, not. The source says its MTT equilibrium strategies were solved “for 9-max tables with a 12.5% ante” at the opening; the defence chapter that contains the chart does not restate it. A 12.5% ante from nine seats is 1.125bb, which the source’s own pot arithmetic confirms — it prints the pre-action pot for that game as 2.625bb. So the 4.6bb here is 2 from the button, your posted 1, the folded small blind’s 0.5, and 1.125 in antes; your call is 1 because you are already in for 1.',
           nearestSources: ['mtt.solver-environment', 'mtt.ante-pot-size'],
         },
       ],
@@ -174,7 +174,7 @@ export const BB_FOUR_DEFENCES_25BB: InteractivePuzzle = {
           exhibit: {
             caption: 'BB vs a BN min-raise, 25bb',
             scope:
-              'Whole-range percentages printed with Hand Range 159 for BB vs BN, 9-max MTT, 25bb effective. These describe the entire range at once — they are not the frequency of any individual hand, and the two raising branches are separate numbers that the book never adds together.',
+              'Whole-range percentages printed with the chart for BB vs BN, 9-max MTT, 25bb effective. These describe the entire range at once — they are not the frequency of any individual hand, and the two raising branches are separate numbers that the source never adds together.',
             rows: [
               { label: 'Call', value: '65.9%', pct: 65.9, note: 'the biggest branch of the strategy' },
               { label: 'Fold', value: '14.6%', pct: 14.6 },
@@ -189,7 +189,7 @@ export const BB_FOUR_DEFENCES_25BB: InteractivePuzzle = {
               sources: ['preflop.bb-vs-bn-25bb-chart', 'bb25.fold-range-grows'],
             },
             {
-              text: 'Both raising branches exist at the same time and are counted separately: 8.2% goes in without being all-in, 11.4% goes all-in. The book never adds them, and neither should you — they are the two ends of a split, not one range with two sizings.',
+              text: 'Both raising branches exist at the same time and are counted separately: 8.2% goes in without being all-in, 11.4% goes all-in. The source never adds them, and neither should you — they are the two ends of a split, not one range with two sizings.',
               sources: ['preflop.bb-vs-bn-25bb-chart', 'bb25.four-branch-strategy'],
             },
             {
@@ -219,7 +219,7 @@ export const BB_FOUR_DEFENCES_25BB: InteractivePuzzle = {
                 label: 'Fold vs UTG',
                 value: '27.2%',
                 pct: 27.2,
-                note: 'the same section writes this as “up to 28% vs EP” a paragraph later — both figures are the book’s own',
+                note: 'the same section writes this as “up to 28% vs EP” a paragraph later — both figures are the source’s own',
               },
               { label: 'Average fold vs a min-raise', value: '22.54%', pct: 22.54 },
             ],
@@ -246,7 +246,7 @@ export const BB_FOUR_DEFENCES_25BB: InteractivePuzzle = {
           id: 'which-hands-where',
           title: 'Which hands the source sends to which branch',
           body:
-            'This is what makes the answer sourceable at all: the book does not leave the two raising branches to inference. It names the hand classes that want to be all-in, and then separately enumerates what the non-all-in 3-bet is made of. The hero hand in this puzzle is a middle pocket pair precisely because those two statements point in opposite directions for it.',
+            'This is what makes the answer sourceable at all: the source does not leave the two raising branches to inference. It names the hand classes that want to be all-in, and then separately enumerates what the non-all-in 3-bet is made. The hero hand in this puzzle is a middle pocket pair precisely because those two statements point in opposite directions for it.',
           bullets: [
             {
               text: 'All-in: “Pocket pairs and Axo really like getting all-in. As the opener’s range widens, the weaker pairs and Ax get to shove.” A pocket pair is named, and the widening clause points at the button — the widest opener the big blind faces.',
@@ -263,9 +263,9 @@ export const BB_FOUR_DEFENCES_25BB: InteractivePuzzle = {
           ],
           unsourced: [
             {
-              question: 'Does the book say which pocket pairs shove and which just call?',
+              question: 'Does the source say which pocket pairs shove and which just call?',
               answer:
-                'No. It names the class — pocket pairs — and states a direction, that the weaker pairs get to shove as the opener’s range widens. It does not print a cut-off, and it does not say what any individual pair does. The hand-by-hand detail is left in the chart image. So this puzzle asserts membership of the class the book names, and stops there.',
+                'No. It names the class — pocket pairs — and states a direction, that the weaker pairs get to shove as the opener’s range widens. It does not print a cut-off, and it does not say what any individual pair does. The hand-by-hand detail is left in the chart image. So this puzzle asserts membership of the class the source names, and stops there.',
               nearestSources: ['bb25.pairs-and-axo-jam', 'preflop.bb-vs-bn-25bb-chart'],
             },
           ],
@@ -284,7 +284,7 @@ export const BB_FOUR_DEFENCES_25BB: InteractivePuzzle = {
       kind: 'composition',
       seat: 'hero',
       description:
-        'The whole-range strategy printed with Hand Range 159. Four branches, four separate percentages — the all-in and the non-all-in 3-bet are shown apart because that is how the source prints them, and adding them would produce a figure the book never states.',
+        'The whole-range strategy printed with the chart. Four branches, four separate percentages — the all-in and the non-all-in 3-bet are shown apart because that is how the source prints them, and adding them would produce a figure the source never states.',
       bars: [
         { label: 'Call', pct: 65.9, note: 'the biggest branch' },
         { label: 'Fold', pct: 14.6, note: 'the smallest fold branch vs any opener at 25bb' },
@@ -295,7 +295,7 @@ export const BB_FOUR_DEFENCES_25BB: InteractivePuzzle = {
         {
           question: 'Can you show the 13×13 grid for this range?',
           answer:
-            'Not from what the book prints in text. Hand Range 159 is a colour-coded chart image, and the only numbers printed with it are these four aggregates. This repo holds a reviewed reconstruction of the book’s 100bb BB vs BN chart, but nothing for this 25bb one — and a 100bb chart is a different solution to a different game, so it cannot stand in. The puzzle therefore teaches from the aggregates and the hand classes the source names in words, and claims no per-combo frequency.',
+            'Not from what the source prints in text. The chart is a colour-coded chart image, and the only numbers printed with it are these four aggregates. This repo holds a reviewed reconstruction of the source’s 100bb BB vs BN chart, but nothing for this 25bb one — and a 100bb chart is a different solution to a different game, so it cannot stand. The puzzle therefore teaches from the aggregates and the hand classes the source names in words, and claims no per-combo frequency.',
           nearestSources: ['preflop.bb-vs-bn-25bb-chart', 'bb25.pairs-and-axo-jam'],
         },
       ],
@@ -347,5 +347,5 @@ export const BB_FOUR_DEFENCES_25BB: InteractivePuzzle = {
   xp: 30,
 
   endsEarlyBecause:
-    'This is a preflop question and the source answers it preflop. Hand Range 159 and the prose on p.386 state what the big blind does against a button min-raise at 25bb; they say nothing about how 8♠8♦ plays a flop from here, and the all-in branch the source names for this hand has no flop to play. The hand stops where the evidence does.',
+    'This is a preflop question and the source answers it preflop. The chart and the prose state what the big blind does against a button min-raise at 25bb; they say nothing about how 8♠8♦ plays a flop from here, and the all-in branch the source names for this hand has no flop to play. The hand stops where the evidence does.',
 }

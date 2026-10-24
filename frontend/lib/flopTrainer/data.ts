@@ -15,7 +15,7 @@ const PAGE = 1000; // PostgREST's default row cap
 export async function fetchSpots(): Promise<FlopSpot[]> {
   const { data, error } = await createClient()
     .from("flop_spots")
-    .select("spot_id,spot_type,ip,oop,stack_bb,action,ip_range_pct,oop_range_pct,source_pages")
+    .select("spot_id,spot_type,ip,oop,stack_bb,action,ip_range_pct,oop_range_pct")
     .in("spot_id", TRAINER_SPOT_IDS);
   if (error) throw error;
   const rows = (data ?? []) as FlopSpot[];

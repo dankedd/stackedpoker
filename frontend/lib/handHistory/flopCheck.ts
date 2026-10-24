@@ -77,7 +77,7 @@ export interface FlopCheck {
   /** Short reason for not_evaluated. */
   reason?: "lead" | "no_decision" | "hero_not_in_pot" | "no_hand_data" | "not_analysed";
   /** The c-bet guideline used (IP raiser, villain checked). */
-  advice?: Pick<CbetAdvice, "size" | "band" | "bands" | "source" | "strategy" | "pages">;
+  advice?: Pick<CbetAdvice, "size" | "band" | "bands" | "source" | "strategy">;
   hand?: HandPositionLite;
   /** 1–2 sentences, own words. */
   explain: string;
@@ -198,7 +198,7 @@ export function gradeFlop({ match, line, row, hand, names }: FlopCheckInput): Fl
   const ipCbetSpot = match.heroIsPfr && match.heroSide === "ip" && match.spot.pot === "srp";
   if (ipCbetSpot && (line.kind === "cbet" || line.kind === "check")) {
     const a = cbetAdvice(match.spotId, match.flop, row.buckets_ip, row.buckets_oop, row.texture);
-    const advice = { size: a.size, band: a.band, bands: a.bands, source: a.source, strategy: a.strategy, pages: a.pages };
+    const advice = { size: a.size, band: a.band, bands: a.bands, source: a.source, strategy: a.strategy };
     if (a.source === "book" && a.strategy) {
       const s = a.strategy;
       const small = (s.bet_1_3 ?? 0) + (s.bet_min ?? 0);

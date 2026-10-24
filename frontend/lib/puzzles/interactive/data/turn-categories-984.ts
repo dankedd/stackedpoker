@@ -88,7 +88,7 @@ export const TURN_CATEGORIES_984: InteractivePuzzle = {
   topic: 'Board Reading',
   difficulty: 'beginner',
   description:
-    'One flop, three possible turns, and no hand to play. Before any decision on the turn there is a reading — the book gives you six groups to make it with, and this puzzle only asks you to make it.',
+    'One flop, three possible turns, and no hand to play. Before any decision on the turn there is a reading — the source gives you six groups to make it with, and this puzzle only asks you to make it.',
 
   setup: {
     format: '40bb effective',
@@ -102,7 +102,7 @@ export const TURN_CATEGORIES_984: InteractivePuzzle = {
   },
 
   readsTheBoardOnly:
-    'The book puts classification before strategy: with 49 possible turn cards per flop it groups them precisely so that a player does not have to solve each one. Dealing you a hand would invert that order — you would start working out what you wanted to do and stop looking at what the card did. So there is no hand, and no action to choose.',
+    'The source puts classification before strategy: with 49 possible turn cards per flop it groups them precisely so that a player does not have to solve each one. Dealing you a hand would invert that order — you would start working out what you wanted to do and stop looking at what the card did. So there is no hand, and no action to choose.',
 
   comparesAlternativeBoards:
     'The three decisions are not one hand advancing. They are the same flop with three different turn cards dealt in its place, so each can be read on its own terms.',
@@ -127,7 +127,7 @@ export const TURN_CATEGORIES_984: InteractivePuzzle = {
           label: 'Overcard',
           verdict: 'mistake',
           shortWhy:
-            'The book’s overcard group is "turn cards higher than top pair". Top pair on 9♥8♥4♦ is a pair of nines, and a nine is not higher than a nine — it is exactly equal to it.',
+            'The source’s overcard group is "turn cards higher than top pair". Top pair on 9♥8♥4♦ is a pair of nines, and a nine is not higher than a nine — it is exactly equal to it.',
           sources: ['turn.categories'],
         },
         {
@@ -143,7 +143,7 @@ export const TURN_CATEGORIES_984: InteractivePuzzle = {
           label: 'Pairs the board',
           verdict: 'best',
           shortWhy:
-            'The board is 9-8-4 and the turn is a second nine. That is the book’s first group, word for word: "Paired Board: Turn cards that pair the board."',
+            'The board is 9-8-4 and the turn is a second nine. That is the source’s first group, word for word: "Paired Board: Turn cards that pair the board."',
           sources: ['turn.categories'],
         },
         {
@@ -151,23 +151,23 @@ export const TURN_CATEGORIES_984: InteractivePuzzle = {
           label: 'Completes an OESD',
           verdict: 'mistake',
           shortWhy:
-            'The straight group is for cards that fill an open-ender. A nine pairs the board rather than extending it — the cards the book names as completing straights on this flop are the 7, 6 and 5.',
+            'The straight group is for cards that fill an open-ender. A nine pairs the board rather than extending it — the cards the source names as completing straights on this flop are the 7, 6 and 5.',
           sources: ['turn.categories', 'ex3.turn-donk-best-cards'],
         },
       ],
       bestOptionId: 'paired',
       explanation:
-        'Paired board. The test is mechanical and it is the first one on the book’s list: does the turn pair a card already on the flop? A second nine does, so the reading is finished before any judgement is involved — which is the whole reason the groups exist. It is worth noticing what the 9♠ is NOT, because two of the wrong answers are the two commonest misreads. It is not an overcard: that group is defined as cards higher than top pair, and a nine ties top pair rather than beating it. And it is not a brick: bricks are the cards that connect with nothing, and this one connects with the top of the board.',
+        'Paired board. The test is mechanical and it is the first one on the source’s list: does the turn pair a card already on the flop? A second nine does, so the reading is finished before any judgement is involved — which is the whole reason the groups exist. It is worth noticing what the 9♠ is NOT, because two of the wrong answers are the two commonest misreads. It is not an overcard: that group is defined as cards higher than top pair, and a nine ties top pair rather than beating it. And it is not a brick: bricks are the cards that connect with nothing, and this one connects with the top of the board.',
       unsourced: [noFrequencyNote('9♠')],
       theory: [
         {
           id: 'why-groups-9s',
           title: 'Why you group the card before you play it',
           body:
-            'There are 49 possible turn cards for every single flop, and each one changes the two ranges in play. The book’s response to that number is not to study 49 cards — it is to sort them, exactly as it earlier sorted flops, so that the reading is a lookup rather than a fresh problem every time. Six groups: paired board, flush, straight, ace, overcard, brick. Every turn decision you will ever make starts by putting the card in one of them.',
+            'There are 49 possible turn cards for every single flop, and each one changes the two ranges in play. The source’s response to that number is not to study 49 cards — it is to sort them, exactly as it earlier sorted flops, so that the reading is a lookup rather than a fresh problem every time. Six groups: paired board, flush, straight, ace, overcard, brick. Every turn decision you will ever make starts by putting the card in one of them.',
           bullets: [
             {
-              text: 'The book’s own reason for grouping: studying each individual turn for every single flop would be highly inefficient, so it creates turn groupings the same way it created flop groupings.',
+              text: 'The source’s own reason for grouping: studying each individual turn for every single flop would be highly inefficient, so it creates turn groupings the same way it created flop groupings.',
               sources: ['turn.why-groups'],
             },
             {
@@ -175,7 +175,7 @@ export const TURN_CATEGORIES_984: InteractivePuzzle = {
               sources: ['turn.categories'],
             },
             {
-              text: 'On this specific board, after the flop checks through, the book puts a nine pairing the board among the good turns for the out-of-position player — along with an 8 or a 4 doing the same, low cards that complete straights, and hearts.',
+              text: 'On this specific board, after the flop checks through, the source puts a nine pairing the board among the good turns for the out-of-position player — along with an 8 or a 4 doing the same, low cards that complete straights, and hearts.',
               sources: ['turn.984-good-cards-xx', 'turn.984-xx-setup'],
             },
           ],
@@ -188,7 +188,7 @@ export const TURN_CATEGORIES_984: InteractivePuzzle = {
             'Classifying a card and knowing who it favours are two different steps, and the second one always needs a board and two ranges — the group alone never carries it. For this exact spot the source does state it: on 9♥8♥4♦, after the flop checked through, a 9, 8 or 4 pairing the board is a good turn for the out-of-position player, which here is you in the big blind. Note the scope carefully. That is a statement about these two ranges on this board on this line, not a claim that paired boards favour the out-of-position player generally.',
           bullets: [
             {
-              text: 'The setup being described is the book’s own worked example: the big blind against an UTG open at 40bb, first to act on the turn after the flop checked back.',
+              text: 'The setup being described is the source’s own worked example: the big blind against an UTG open at 40bb, first to act on the turn after the flop checked back.',
               sources: ['turn.984-xx-setup'],
             },
             {
@@ -228,7 +228,7 @@ export const TURN_CATEGORIES_984: InteractivePuzzle = {
           label: 'Completes a flush',
           verdict: 'best',
           shortWhy:
-            'The flop was two-tone with two hearts. The 2♥ is the third, so every hand holding two hearts now has a flush — and the book’s test for this group is the suit, never the rank: "Flush: Turn cards that complete a flush."',
+            'The flop was two-tone with two hearts. The 2♥ is the third, so every hand holding two hearts now has a flush — and the source’s test for this group is the suit, never the rank: "Flush: Turn cards that complete a flush."',
           sources: ['turn.categories'],
         },
         {
@@ -250,7 +250,7 @@ export const TURN_CATEGORIES_984: InteractivePuzzle = {
       ],
       bestOptionId: 'flush',
       explanation:
-        'Completes a flush. This is the card that catches people, and the reason is that ranks are easy to read and suits are easy to skip. The 2♥ is the lowest card in the deck and it changes nothing about straights, nothing about pairs and nothing about high cards — so it feels like a blank. It is not, because the flop was two-tone: two hearts on the flop plus one on the turn is three, and three is the number that makes a flush possible. A two-tone flop has exactly nine cards in the deck that do this, and their ranks are irrelevant. The book’s definition of the group is one line long and contains no rank at all: "Turn cards that complete a flush."',
+        'Completes a flush. This is the card that catches people, and the reason is that ranks are easy to read and suits are easy to skip. The 2♥ is the lowest card in the deck and it changes nothing about straights, nothing about pairs and nothing about high cards — so it feels like a blank. It is not, because the flop was two-tone: two hearts on the flop plus one on the turn is three, and three is the number that makes a flush possible. A two-tone flop has exactly nine cards in the deck that do this, and their ranks are irrelevant. The source’s definition of the group is one line long and contains no rank at all: "Turn cards that complete a flush."',
       unsourced: [noFrequencyNote('2♥')],
       theory: [
         {
@@ -321,7 +321,7 @@ export const TURN_CATEGORIES_984: InteractivePuzzle = {
           label: 'Brick',
           verdict: 'mistake',
           shortWhy:
-            'A brick connects with the board in no meaningful way. This card lands in two of the book’s six groups at once, which is the opposite of that.',
+            'A brick connects with the board in no meaningful way. This card lands in two of the source’s six groups at once, which is the opposite of that.',
           sources: ['turn.categories'],
         },
         {
@@ -329,7 +329,7 @@ export const TURN_CATEGORIES_984: InteractivePuzzle = {
           label: 'Ace',
           verdict: 'best',
           shortWhy:
-            'The book gives the ace a group of its own rather than filing it under overcards: "The ace is a special card and it often has a significant effect." When an ace turns, that is the reading.',
+            'The source gives the ace a group of its own rather than filing it under overcards: "The ace is a special card and it often has a significant effect." When an ace turns, that is the reading.',
           sources: ['turn.categories'],
         },
         {
@@ -337,7 +337,7 @@ export const TURN_CATEGORIES_984: InteractivePuzzle = {
           label: 'Completes a flush',
           verdict: 'mistake',
           shortWhy:
-            'Hearts are the suit to watch on 9♥8♥4♦, and this ace is a club — the only club on the board. It does not even bring a backdoor flush draw, which is the sub-division the book applies to cards in the overcard group.',
+            'Hearts are the suit to watch on 9♥8♥4♦, and this ace is a club — the only club on the board. It does not even bring a backdoor flush draw, which is the sub-division the source applies to cards in the overcard group.',
           sources: ['turn.categories', 'turn.category-subdivision'],
         },
         {
@@ -345,13 +345,13 @@ export const TURN_CATEGORIES_984: InteractivePuzzle = {
           label: 'Overcard',
           verdict: 'defensible',
           shortWhy:
-            'True, and not the primary reading. An ace is higher than top pair, so it is in the overcard group too — the book says a turn card can be in "one or more" groups. But it also gives the ace its own group precisely because it is not just another overcard.',
+            'True, and not the primary reading. An ace is higher than top pair, so it is in the overcard group too — the source says a turn card can be in "one or more" groups. But it also gives the ace its own group precisely because it is not just another overcard.',
           sources: ['turn.categories', 'turn.why-groups'],
         },
       ],
       bestOptionId: 'ace',
       explanation:
-        'Ace. This is the one card in the deck the book pulls out of the ordinary ranking and names on its own: it is higher than top pair, so it is genuinely an overcard, and the book still gives it a separate group because of how much it tends to move things. Which is the second lesson of this puzzle. The groups are not mutually exclusive — the source says most turn cards can be categorised as being in "one or more" of them — so "overcard" is not wrong here, it is incomplete. Reading the A♣ as merely a high card is how you end up treating it like a K♣ or a Q♣, and the book is telling you not to. The one thing this ace does not do is anything with suits: it is a club on a board whose only relevant suit is hearts.',
+        'Ace. This is the one card in the deck the source pulls out of the ordinary ranking and names on its own: it is higher than top pair, so it is genuinely an overcard, and the source still gives it a separate group because of how much it tends to move things. Which is the second lesson of this puzzle. The groups are not mutually exclusive — the source says most turn cards can be categorised as being in "one or more" of them — so "overcard" is not wrong here, it is incomplete. Reading the A♣ as merely a high card is how you end up treating it like a K♣ or a Q♣, and the source is telling you not to. The one thing this ace does not do is anything with suits: it is a club on a board whose only relevant suit is hearts.',
       unsourced: [noFrequencyNote('A♣')],
       theory: [
         {
@@ -379,7 +379,7 @@ export const TURN_CATEGORIES_984: InteractivePuzzle = {
           id: 'whose-range-ac',
           title: 'Whose range does it help?',
           body:
-            'This is the card where the two players’ fortunes separate most sharply on this board, and it is the one direction in the p.763 sentence that points away from the big blind. Overcards that don’t complete many straights — and the aces in particular — are good for the in-position player, here UTG. An ace fits that description exactly on 9-8-4: it completes no straight at all, since neither A-2-3-4-5 nor A-K-Q-J-T is close to being on the board.',
+            'This is the card where the two players’ fortunes separate most sharply on this board, and it is the one direction in the sentence that points away from the big blind. Overcards that don’t complete many straights — and the aces in particular — are good for the in-position player, here UTG. An ace fits that description exactly on 9-8-4: it completes no straight at all, since neither A-2-3-4-5 nor A-K-Q-J-T is close to being on the board.',
           exhibit: {
             caption: 'The best and worst single turn cards for the big blind on 9♥8♥4♦',
             scope:
@@ -398,7 +398,7 @@ export const TURN_CATEGORIES_984: InteractivePuzzle = {
               sources: ['turn.984-good-cards-xx'],
             },
             {
-              text: 'The book states the mechanism on this same board one line later in the chapter — the worst cards for the out-of-position player are the ones that connect well with the in-position range, which it names as aces, high cards, and diamonds that would give a backdoor flush draw. That sentence is measured after the flop went check / c-bet / call rather than checking through, so take it as the reason rather than as a number for this node.',
+              text: 'The source states the mechanism on this same board one line later in the chapter — the worst cards for the out-of-position player are the ones that connect well with the in-position range, which it names as aces, high cards, and diamonds that would give a backdoor flush draw. That sentence is measured after the flop went check / c-bet / call rather than checking through, so take it as the reason rather than as a number for this node.',
               sources: ['ex3.turn-donk-best-cards'],
             },
           ],
@@ -406,7 +406,7 @@ export const TURN_CATEGORIES_984: InteractivePuzzle = {
             {
               question: 'Is an ace always the worst turn card?',
               answer:
-                'No. The 25.8% figure is the big blind’s EV on this board, at this depth, after this line — the book gives it as the worst card in that specific heatmap. On a board where the ace fits the out-of-position range better, it would not be. The reason an ace gets its own group is that it is unusually likely to matter, not that it always matters in the same direction.',
+                'No. The 25.8% figure is the big blind’s EV on this board, at this depth, after this line — the source gives it as the worst card in that specific heatmap. On a board where the ace fits the out-of-position range better, it would not be. The reason an ace gets its own group is that it is unusually likely to matter, not that it always matters in the same direction.',
               nearestSources: ['turn.984-worst-card-xx', 'turn.categories'],
             },
           ],
@@ -425,7 +425,7 @@ export const TURN_CATEGORIES_984: InteractivePuzzle = {
   headlineSources: ['turn.categories', 'turn.why-groups'],
   takeaways: [
     {
-      text: 'There are 49 possible turn cards for every flop, and each one moves both ranges. The book’s answer is not to solve them one at a time but to group them — the same move it made with flops.',
+      text: 'There are 49 possible turn cards for every flop, and each one moves both ranges. The source’s answer is not to solve them one at a time but to group them — the same move it made with flops.',
       sources: ['turn.why-groups'],
     },
     {
@@ -433,7 +433,7 @@ export const TURN_CATEGORIES_984: InteractivePuzzle = {
       sources: ['turn.categories'],
     },
     {
-      text: 'A card can sit in more than one group — the source says "one or more". An ace on 9♥8♥4♦ is both an ace and an overcard, and the book still lists the ace separately because of how much it tends to change.',
+      text: 'A card can sit in more than one group — the source says "one or more". An ace on 9♥8♥4♦ is both an ace and an overcard, and the source still lists the ace separately because of how much it tends to change.',
       sources: ['turn.why-groups', 'turn.categories'],
     },
     {

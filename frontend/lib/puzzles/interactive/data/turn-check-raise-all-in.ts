@@ -129,24 +129,24 @@ export const TURN_CHECK_RAISE_ALL_IN: InteractivePuzzle = {
       ],
       bestOptionId: 'check-raise-all-in',
       explanation:
-        'Check-raise all-in. The book describes the hands that check-raise this node in one sentence, and it is a description of your hand: the weaker check-raising hands are semi-bluffs that will have the equity to call an all-in bet and thus be committed. J♥T♥ is a flush draw plus an open-ender — it is not raising because it is strong, it is raising because it cannot be pushed off the pot. And the size follows from the stack rather than from taste: on average OOP check-raises the turn 14% of the time and is mostly going all-in, because a smaller raise size would commit too many chips. Once a raise leaves you unable to fold to the jam behind it, the smaller raise is not a cheaper version of the shove. It is the shove, with the fold equity removed.',
+        'Check-raise all-in. The source describes the hands that check-raise this node in one sentence, and it is a description of your hand: the weaker check-raising hands are semi-bluffs that will have the equity to call an all-in bet and thus be committed. J♥T♥ is a flush draw plus an open-ender — it is not raising because it is strong, it is raising because it cannot be pushed off the pot. And the size follows from the stack rather than from taste: on average OOP check-raises the turn 14% of the time and is mostly going all-in, because a smaller raise size would commit too many chips. Once a raise leaves you unable to fold to the jam behind it, the smaller raise is not a cheaper version of the shove. It is the shove, with the fold equity removed.',
       unsourced: [
         {
           question: 'How often does J♥T♥ specifically check-raise this turn?',
           answer:
-            'Exact combo frequency is not specified in the source. The 14% check-raise and the over-40% fold are whole-range averages at this node, printed as averages across turn cards — not frequencies for any one holding. There is a trap worth naming: the book DOES print a per-combo figure for this exact hand one street earlier, where J♥T♥ is check-raised about a third of the time on the flop. That is the flop node, before UTG had barrelled again and before both ranges had split several more times. Carrying it onto the turn would produce a number that looks perfectly cited and is not in the book.',
+            'Exact combo frequency is not specified in the source. The 14% check-raise and the over-40% fold are whole-range averages at this node, printed as averages across turn cards — not frequencies for any one holding. There is a trap worth naming: the source DOES print a per-combo figure for this exact hand one street earlier, where J♥T♥ is check-raised about a third of the time on the flop. That is the flop node, before UTG had barrelled again and before both ranges had split several more times. Carrying it onto the turn would produce a number that looks perfectly cited and is not in the source.',
           nearestSources: ['ex3.turn-xr-all-in', 'ex3.flop-combo-draws-jhth'],
         },
         {
           question: 'Is the 2♦ specifically a card the big blind should be checking?',
           answer:
-            'The book prints equity and EV heatmaps for every turn card at this node, but it states its strategy figures — the 14%, the over-40%, the equity and realization numbers — as averages across turn cards. So this puzzle does not argue the check from the card. Your check is given to you as history, and the question asked is the one the source actually answers: what does OOP do facing the second barrel. For what it is worth about the card itself, the book’s list of the worst turn cards to lead on this board includes diamonds that hand UTG a backdoor flush draw, which the 2♦ does; it also lists blank low cards among the best. That tension is genuinely unresolved in the text and is not resolved here.',
+            'The source prints equity and EV heatmaps for every turn card at this node, but it states its strategy figures — the 14%, the over-40%, the equity and realization numbers — as averages across turn cards. So this puzzle does not argue the check from the card. Your check is given to you as history, and the question asked is the one the source actually answers: what does OOP do facing the second barrel. For what it is worth about the card itself, the source’s list of the worst turn cards to lead on this board includes diamonds that hand UTG a backdoor flush draw, which the 2♦ does; it also lists blank low cards among the best. That tension is genuinely unresolved in the text and is not resolved here.',
           nearestSources: ['ex3.turn-donk-best-cards', 'ex3.turn-second-barrel-oop'],
         },
         {
           question: 'Where do the bet-sizes in this hand come from?',
           answer:
-            'The 2/3-pot flop and turn c-bets are the book’s own: this is Flop Strategy Example 3 — "BB vs 2/3-pot c-bet" — and the turn node is labelled x/b/c/x/b67 in the source’s own table titles. The 2.5bb preflop open is not from these pages. The book’s recommended opening sizes (pp.179-180) are given for a 100bb 6-max cash game and do not cover a 40bb MTT open from UTG, so 2.5bb is an implementation decision, consistent with the other puzzles on this board.',
+            'The 2/3-pot flop and turn c-bets are the source’s own: this is Flop Strategy Example 3 — "BB vs 2/3-pot c-bet" — and the turn node is labelled x/b/c/x/b67 in the source’s own table titles. The 2.5bb preflop open is not from these pages. The source’s recommended opening sizes are given for a 100bb 6-max cash game and do not cover a 40bb MTT open from UTG, so 2.5bb is an implementation decision, consistent with the other puzzles on this board.',
           nearestSources: ['ex3.utg-cbet-big', 'ex3.turn-xr-all-in'],
         },
       ],
@@ -159,7 +159,7 @@ export const TURN_CHECK_RAISE_ALL_IN: InteractivePuzzle = {
           exhibit: {
             caption: 'What is left behind after a raise that is not all-in',
             scope:
-              'The 14% and the preference for all-in are the source’s (p.777). The bb amounts and equity figures in this table are NOT in the book — they are arithmetic from this puzzle’s own 40bb money model, shown only to make the source’s stated reason concrete.',
+              'The 14% and the preference for all-in are the source’s. The bb amounts and equity figures in this table are NOT in the source — they are arithmetic from this puzzle’s own 40bb money model, shown only to make the source’s stated reason concrete.',
             rows: [
               { label: 'Pot you are raising into', value: '21.5bb', note: '12.9 pot plus UTG’s 8.6 barrel' },
               { label: 'Your stack behind the bet', value: '33.8bb', note: 'the whole of the raise available to you' },
@@ -191,9 +191,9 @@ export const TURN_CHECK_RAISE_ALL_IN: InteractivePuzzle = {
           ],
           unsourced: [
             {
-              question: 'Does the book print a raise size to compare against?',
+              question: 'Does the source print a raise size to compare against?',
               answer:
-                'No. It prints one instruction — mostly all-in — and the reason for it. The 20bb raise in the table above is an illustration chosen by us to show what "commit too many chips" means at this stack depth; the book neither recommends it nor prices it. The direction of the argument is the source’s; the numbers attached to it are ours.',
+                'No. It prints one instruction — mostly all-in — and the reason for it. The 20bb raise in the table above is an illustration chosen by us to show what "commit too many chips" means at this stack depth; the source neither recommends it nor prices it. The direction of the argument is the source’s; the numbers attached to it are ours.',
               nearestSources: ['ex3.turn-xr-all-in'],
             },
           ],
@@ -238,7 +238,7 @@ export const TURN_CHECK_RAISE_ALL_IN: InteractivePuzzle = {
           id: 'the-two-frequencies',
           title: 'The two numbers, and exactly what they are numbers about',
           body:
-            'Facing this bet, the range does three things: it folds over 40% of the time, it check-raises 14% of the time — almost always all-in — and it check-calls the remainder. Both printed figures are whole-range averages across turn cards. Neither one tells you how often any single hand takes any single action, and the book prints no per-combo frequency at this node for any holding. What it gives instead is a description of who is in the raising range, which is the actually usable instruction: the weaker part of it is semi-bluffs with enough equity that an all-in cannot fold them.',
+            'Facing this bet, the range does three things: it folds over 40% of the time, it check-raises 14% of the time — almost always all-in — and it check-calls the remainder. Both printed figures are whole-range averages across turn cards. Neither one tells you how often any single hand takes any single action, and the source prints no per-combo frequency at this node for any holding. What it gives instead is a description of who is in the raising range, which is the actually usable instruction: the weaker part of it is semi-bluffs with enough equity that an all-in cannot fold them.',
           exhibit: {
             caption: 'OOP’s response to a 2/3-pot turn c-bet after checking twice',
             scope:
@@ -343,7 +343,7 @@ export const TURN_CHECK_RAISE_ALL_IN: InteractivePuzzle = {
   ],
 
   endsEarlyBecause:
-    'The hand stops on the turn because the source does. Modern Poker Theory solves this line branch by branch — the flop c-bet and call, the turn check, then OOP’s response to the second barrel (pp.775-778) — and then the book moves to the river chapter, which works in abstract models rather than solutions for this board and never returns to it. There is no printed river strategy for what happens after this check-raise, and building one would mean inventing solver output.',
+    'The hand stops on the turn because the source does. The source solves this line branch by branch — the flop c-bet and call, the turn check, then OOP’s response to the second barrel — and then the source moves to the river chapter, which works in abstract models rather than solutions for this board and never returns to it. There is no printed river strategy for what happens after this check-raise, and building one would mean inventing solver output.',
 
   xp: 75,
 }

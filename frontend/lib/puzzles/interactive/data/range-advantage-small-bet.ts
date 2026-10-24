@@ -53,7 +53,7 @@ export const RANGE_ADVANTAGE_SMALL_BET: InteractivePuzzle = {
   topic: 'C-bet Sizing',
   difficulty: 'advanced',
   description:
-    'You hold the range advantage on this flop and the book wants you betting at a high frequency. It also wants you betting the minimum. Those two sentences are not in tension — they are two different decisions.',
+    'You hold the range advantage on this flop and the source wants you betting at a high frequency. It also wants you betting the minimum. Those two sentences are not in tension — they are two different decisions.',
 
   setup: {
     format: '40bb effective',
@@ -118,7 +118,7 @@ export const RANGE_ADVANTAGE_SMALL_BET: InteractivePuzzle = {
           tableAction: { label: 'Bets', betBb: 1 },
           verdict: 'best',
           shortWhy:
-            'The book files this flop under "high c-bet % and small bet-size", and states that the strategy here simplifies to min-bet 100% with no EV loss. The minimum lures the big blind in with weak hands you dominate instead of folding them out.',
+            'The source files this flop under "high c-bet % and small bet-size", and states that the strategy here simplifies to min-bet 100% with no EV loss. The minimum lures the big blind in with weak hands you dominate instead of folding them out.',
           sources: [
             'ex2.heading-high-freq-small-size',
             'ex2.min-bet-100-no-ev-loss',
@@ -142,12 +142,12 @@ export const RANGE_ADVANTAGE_SMALL_BET: InteractivePuzzle = {
       ],
       bestOptionId: 'min-bet',
       explanation:
-        'Min-bet. The range advantage is real and it is the reason you are betting at all — the book says UTG "would like to c-bet at a high frequency" here, and on this board checking back almost never happens at equilibrium. But the advantage does not set the size; the big blind’s range shape does. Their range is too polarized: many hands that simply could not continue against a big bet, and at the same time many strong hands that would be delighted to. Bet big and you do their work for them — they fold the weak half correctly and you are left playing a 37.5bb stack against the top of their range on a monotone board where every straight is in. Bet the minimum and the weak hands you dominate come along, which keeps their range wide on the turn and river. The author’s verdict on this flop is that the whole strategy can be simplified to min-bet 100% with no EV loss, so this is not a hand-reading exercise — it is the range’s answer, and A♠Q♦ is in the range.',
+        'Min-bet. The range advantage is real and it is the reason you are betting at all — the source says UTG "would like to c-bet at a high frequency" here, and on this board checking back almost never happens at equilibrium. But the advantage does not set the size; the big blind’s range shape does. Their range is too polarized: many hands that simply could not continue against a big bet, and at the same time many strong hands that would be delighted to. Bet big and you do their work for them — they fold the weak half correctly and you are left playing a 37.5bb stack against the top of their range on a monotone board where every straight is. Bet the minimum and the weak hands you dominate come along, which keeps their range wide on the turn and river. The source’s verdict on this flop is that the whole strategy can be simplified to min-bet 100% with no EV loss, so this is not a hand-reading exercise — it is the range’s answer, and A♠Q♦ is in the range.',
       unsourced: [
         {
           question: 'How often does UTG actually c-bet this flop?',
           answer:
-            'An exact c-bet frequency for this flop is not specified in the source. Table 114 prints UTG’s c-betting breakdown for Q♥J♥T♥ as a table image, and no percentage from it appears in the running text. What the book does state in words is that the frequency is high, that checking back almost never happens here at equilibrium, and that the strategy can be simplified to min-bet 100% with no EV loss. The two nearby figures that look like answers are not: the 85% printed for Qxx flops is a rank-category average across every Qxx board — connected and disconnected, monotone and rainbow — taken from a separate aggregate of 20bb/30bb/40bb MTT-range solutions, and a different cut of that same aggregate puts flops with three possible straights, which this one has, in the group checked 31% of the time. Two averages from the same foreign dataset, pointing opposite ways. Neither is this board’s number, and this puzzle claims neither.',
+            'An exact c-bet frequency for this flop is not specified in the source. The table prints UTG’s c-betting breakdown for Q♥J♥T♥ as a table image, and no percentage from it appears in the running text. What the source does state in words is that the frequency is high, that checking back almost never happens here at equilibrium, and that the strategy can be simplified to min-bet 100% with no EV loss. The two nearby figures that look like answers are not: the 85% printed for Qxx flops is a rank-category average across every Qxx board — connected and disconnected, monotone and rainbow — taken from a separate aggregate of 20bb/30bb/40bb MTT-range solutions, and a different cut of that same aggregate puts flops with three possible straights, which this one has, in the group checked 31% of the time. Two averages from the same foreign dataset, pointing opposite ways. Neither is this board’s number, and this puzzle claims neither.',
           nearestSources: [
             'ex2.table-114',
             'ex2.min-bet-100-no-ev-loss',
@@ -164,9 +164,9 @@ export const RANGE_ADVANTAGE_SMALL_BET: InteractivePuzzle = {
           nearestSources: ['ex2.table-114', 'ex2.min-bet-100-no-ev-loss'],
         },
         {
-          question: 'Is the min-bet really 1bb, and is "18% of the pot" the book’s figure?',
+          question: 'Is the min-bet really 1bb, and is "18% of the pot" the source’s figure?',
           answer:
-            'The minimum is 1bb because the big blind is 1bb — that is the rules of poker, not solver output. The book names this sizing "min-bet" and analyses the big blind’s response to it under exactly that name. The 18% is our arithmetic: 1bb into 5.5bb. And the 5.5bb pot depends on a 2.5bb open, which the book does not print for this example — the open size is an implementation decision, as in the other puzzles in this set. Change the open and the pot fraction changes; the minimum does not.',
+            'The minimum is 1bb because the big blind is 1bb — that is the rules of poker, not solver output. The source names this sizing "min-bet" and analyses the big blind’s response to it under exactly that name. The 18% is our arithmetic: 1bb into 5.5bb. And the 5.5bb pot depends on a 2.5bb open, which the source does not print for this example — the open size is an implementation decision, as in the other puzzles in this set. Change the open and the pot fraction changes; the minimum does not.',
           nearestSources: ['ex2.min-bet-100-no-ev-loss', 'ex2.bb-36-equity'],
         },
       ],
@@ -175,11 +175,11 @@ export const RANGE_ADVANTAGE_SMALL_BET: InteractivePuzzle = {
           id: 'range-theory',
           title: 'What the range advantage does, and what it does not do',
           body:
-            'A range advantage is a statement about equity: your range beats theirs more often than not. Here it is substantial — the book prints the big blind at 36% equity on this flop, so yours is 64%, and you capture 72% of the pot against their 28%. That is what buys you a high betting frequency. It buys you nothing at all about size, because size is decided by the SHAPE of the range you are betting into, not by how far ahead you are. And the big blind’s shape on Q♥J♥T♥ is the awkward one: polarized. Many hands too weak to continue against a big bet, and at the same time many hands strong enough to welcome one. A big bet sorts that range for them, cleanly, in their favour. The minimum refuses to sort it.',
+            'A range advantage is a statement about equity: your range beats theirs more often than not. Here it is substantial — the source prints the big blind at 36% equity on this flop, so yours is 64%, and you capture 72% of the pot against their 28%. That is what buys you a high betting frequency. It buys you nothing at all about size, because size is decided by the SHAPE of the range you are betting into, not by how far ahead you are. And the big blind’s shape on Q♥J♥T♥ is the awkward one: polarized. Many hands too weak to continue against a big bet, and at the same time many hands strong enough to welcome one. A big bet sorts that range for them, cleanly, in their favour. The minimum refuses to sort it.',
           exhibit: {
             caption: 'Range vs range on Q♥J♥T♥',
             scope:
-              'BB vs UTG on Q♥J♥T♥ at 40bb. The book prints only the BB’s side (36% equity, 79% equity realization, 28% of the pot captured, against UTG’s flop min-bet); UTG’s figures are those subtracted from 100%.',
+              'BB vs UTG on Q♥J♥T♥ at 40bb. The source prints only the BB’s side (36% equity, 79% equity realization, 28% of the pot captured, against UTG’s flop min-bet); UTG’s figures are those subtracted from 100%.',
             rows: [
               { label: 'UTG equity', value: '64%', pct: 64, note: 'derived: 100% − the printed 36%' },
               { label: 'BB equity', value: '36%', pct: 36, note: 'printed — "a substantial equity disadvantage"' },
@@ -190,11 +190,11 @@ export const RANGE_ADVANTAGE_SMALL_BET: InteractivePuzzle = {
           },
           bullets: [
             {
-              text: 'The book’s own words for the mechanism: UTG has a substantial range advantage and would like to c-bet at a high frequency, "but the BB’s range is too polarized, with many hands that would not be able to continue on the flop if UTG used a big bet-size. At the same time, BB has many strong hands that will be happy to continue vs a big bet-size."',
+              text: 'The source’s own words for the mechanism: UTG has a substantial range advantage and would like to c-bet at a high frequency, "but the BB’s range is too polarized, with many hands that would not be able to continue on the flop if UTG used a big bet-size. At the same time, BB has many strong hands that will be happy to continue vs a big bet-size."',
               sources: ['ex2.range-advantage-but-small'],
             },
             {
-              text: 'Two of those phrases are equity buckets, and the book defines them precisely: strong hands have 75% equity or more against the opposing range, good hands 50-75%, weak hands 33-50%, and trash under 33%. "Polarized with many strong hands" means both ends of that scale are stocked at once — which is what makes one size unable to serve both purposes.',
+              text: 'Two of those phrases are equity buckets, and the source defines them precisely: strong hands have 75% equity or more against the opposing range, good hands 50-75%, weak hands 33-50%, and trash under 33%. "Polarized with many strong hands" means both ends of that scale are stocked at once — which is what makes one size unable to serve both purposes.',
               sources: ['eqb.definitions'],
             },
             {
@@ -202,7 +202,7 @@ export const RANGE_ADVANTAGE_SMALL_BET: InteractivePuzzle = {
               sources: ['texture.monotone-most-cbet-smallest-size'],
             },
             {
-              text: 'The same range shape is why the big blind checks here rather than leading: the book notes that monotone flops get donked a lot less frequently than rainbow or two-tone ones.',
+              text: 'The same range shape is why the big blind checks here rather than leading: the source notes that monotone flops get donked a lot less frequently than rainbow or two-tone ones.',
               sources: ['family.high-donk-flops'],
             },
           ],
@@ -210,7 +210,7 @@ export const RANGE_ADVANTAGE_SMALL_BET: InteractivePuzzle = {
             {
               question: 'What is the actual bucket breakdown of each range on this flop?',
               answer:
-                'Not available in the text. Diagram 60 carries the equity buckets for this example as an image, and no bucket percentage for Q♥J♥T♥ appears in the prose. So "polarized", "many strong hands" and "many hands that could not continue" are quoted as the book’s words, with the bucket definitions supplied only as the vocabulary those words belong to. No percentage is invented to stand behind them.',
+                'Not available in the text. The diagram carries the equity buckets for this example as an image, and no bucket percentage for Q♥J♥T♥ appears in the prose. So "polarized", "many strong hands" and "many hands that could not continue" are quoted as the source’s words, with the bucket definitions supplied only as the vocabulary those words belong to. No percentage is invented to stand behind them.',
               nearestSources: ['ex2.range-advantage-but-small', 'eqb.definitions'],
             },
           ],
@@ -220,11 +220,11 @@ export const RANGE_ADVANTAGE_SMALL_BET: InteractivePuzzle = {
           id: 'frequency-and-size',
           title: 'Frequency and size are two dials, and this flop turns them opposite ways',
           body:
-            'The book does not treat "how often" and "how much" as one decision — it names its six IP c-bet examples on a grid of the two, and Q♥J♥T♥ and A♥Q♦3♠ sit in the same frequency cell with opposite size cells. Read the equities across those two boards and the intuition being corrected falls apart: you have MORE range advantage on A♥Q♦3♠, where you bet big, than on Q♥J♥T♥, where you bet the minimum. If size tracked advantage, that ordering would be impossible. What actually changes between them is the defender: on A♥Q♦3♠ the big blind has no nutted hands, because they would have 3-bet aces and queens preflop, so a big bet is unanswerable. On Q♥J♥T♥ the board has handed them flushes, straights and sets. Same seat, same stack, same high frequency, opposite size — because the question a bet-size answers is "what does their range look like", not "how far ahead am I".',
+            'The source does not treat "how often" and "how much" as one decision — it names its six IP c-bet examples on a grid of the two, and Q♥J♥T♥ and A♥Q♦3♠ sit in the same frequency cell with opposite size cells. Read the equities across those two boards and the intuition being corrected falls apart: you have MORE range advantage on A♥Q♦3♠, where you bet big, than on Q♥J♥T♥, where you bet the minimum. If size tracked advantage, that ordering would be impossible. What actually changes between them is the defender: on A♥Q♦3♠ the big blind has no nutted hands, because they would have 3-bet aces and queens preflop, so a big bet is unanswerable. On Q♥J♥T♥ the board has handed them flushes, straights and sets. Same seat, same stack, same high frequency, opposite size — because the question a bet-size answers is "what does their range look like", not "how far ahead am I".',
           exhibit: {
             caption: 'Two flops, the same frequency cell, opposite size cells',
             scope:
-              'The book’s Flop Strategy Examples 1 and 2 — BB vs UTG at 40bb on each board. Two specific 40bb solves, not category averages. The Q♥J♥T♥ equity and pot share are the complements of the printed BB figures.',
+              'The source’s Flop Strategy Examples 1 and 2 — BB vs UTG at 40bb on each board. Two specific 40bb solves, not category averages. The Q♥J♥T♥ equity and pot share are the complements of the printed BB figures.',
             rows: [
               {
                 label: 'A♥Q♦3♠ — UTG equity',
@@ -256,7 +256,7 @@ export const RANGE_ADVANTAGE_SMALL_BET: InteractivePuzzle = {
               sources: ['ex2.bb-36-equity', 'ex2.big-bet-helps-bb'],
             },
             {
-              text: 'The general rule behind the specific solve: on monotone flops the book says the strategy can be simplified to 1/3-pot or min-bets without a significant EV loss, and that smaller sizes are preferred because they fold out the terrible-equity hands without overcommitting your good-but-not-great ones.',
+              text: 'The general rule behind the specific solve: on monotone flops the source says the strategy can be simplified to 1/3-pot or min-bets without a significant EV loss, and that smaller sizes are preferred because they fold out the terrible-equity hands without overcommitting your good-but-not-great ones.',
               sources: ['texture.monotone-simplify-min-bet', 'texture.monotone-most-cbet-smallest-size'],
             },
             {
@@ -270,18 +270,18 @@ export const RANGE_ADVANTAGE_SMALL_BET: InteractivePuzzle = {
           id: 'the-passage',
           title: 'The passage this puzzle is built on',
           body:
-            '“On Q♥J♥T♥, UTG has a substantial range advantage, so they would like to c-bet at a high frequency, but the BB’s range is too polarized, with many hands that would not be able to continue on the flop if UTG used a big bet-size. At the same time, BB has many strong hands that will be happy to continue vs a big bet-size. So, by betting big UTG would be making the BB’s life easier, allowing them to correctly fold weak hands and continue with a very strong range. If instead, UTG bets the minimum, this will lure the BB in with many weak hands that UTG dominates, keeping their range wider on future streets.” — Modern Poker Theory, pp.685-686. The sentence beginning "So, by betting big" starts at the foot of p.685 and completes on p.686.',
+            '“On Q♥J♥T♥, UTG has a substantial range advantage, so they would like to c-bet at a high frequency, but the BB’s range is too polarized, with many hands that would not be able to continue on the flop if UTG used a big bet-size. At the same time, BB has many strong hands that will be happy to continue vs a big bet-size. So, by betting big UTG would be making the BB’s life easier, allowing them to correctly fold weak hands and continue with a very strong range. If instead, UTG bets the minimum, this will lure the BB in with many weak hands that UTG dominates, keeping their range wider on future streets.”',
           bullets: [
             {
-              text: 'The example’s own heading, on p.684: "Flop Strategy Example 2 — High c-bet % and small bet-size: BB vs UTG on Q♥J♥T♥ (40bb)". Both halves of that title are load-bearing, and they are independent claims.',
+              text: 'The example’s own heading: "Flop Strategy Example 2 — High c-bet % and small bet-size: BB vs UTG on Q♥J♥T♥ (40bb)". Both halves of that title are load-bearing, and they are independent claims.',
               sources: ['ex2.heading-high-freq-small-size'],
             },
             {
-              text: 'The verdict, on p.686: "The strategy on this flop can be simplified to min-bet 100% with no EV loss."',
+              text: 'The verdict: "The strategy on this flop can be simplified to min-bet 100% with no EV loss."',
               sources: ['ex2.min-bet-100-no-ev-loss'],
             },
             {
-              text: 'And the corroboration from the turn chapter, p.750: "Checking back almost never happens at equilibrium on A♠Q♦3♠ and Q♥J♥T♥." That is the closest the book comes to a frequency for this flop, and it is a sentence rather than a number.',
+              text: 'And the corroboration from the turn chapter: "Checking back almost never happens at equilibrium on A♠Q♦3♠ and Q♥J♥T♥." That is the closest the source comes to a frequency for this flop, and it is a sentence rather than a number.',
               sources: ['ex2.ip-almost-never-checks-back'],
             },
           ],
@@ -301,12 +301,12 @@ export const RANGE_ADVANTAGE_SMALL_BET: InteractivePuzzle = {
       seat: 'villain',
       headline: '49.1%',
       description:
-        'The range that arrives on this flop opposite you. Against an UTG open at 40bb the book prints call 49.1%, 3-bet 5.8% and fold 45% — and the 3-bet number is why the calling range is capped in a way that matters here: some of the hands that would most enjoy a big bet have already been raised preflop.',
+        'The range that arrives on this flop opposite you. Against an UTG open at 40bb the source prints call 49.1%, 3-bet 5.8% and fold 45% — and the 3-bet number is why the calling range is capped in a way that matters here: some of the hands that would most enjoy a big bet have already been raised preflop.',
       unsourced: [
         {
           question: 'Which hands make up the 49.1%?',
           answer:
-            'The per-hand chart is printed as an image and the book states only the aggregates, so no per-combo composition can be given for it. This puzzle does not need one: the flop argument is made entirely from the shape of the range the book describes on the flop itself, not from a list of the hands that got there.',
+            'The per-hand chart is printed as an image and the source states only the aggregates, so no per-combo composition can be given for it. This puzzle does not need one: the flop argument is made entirely from the shape of the range the source describes on the flop itself, not from a list of the hands that got there.',
           nearestSources: ['ex3.preflop-bb-vs-utg-40bb'],
         },
       ],
@@ -318,7 +318,7 @@ export const RANGE_ADVANTAGE_SMALL_BET: InteractivePuzzle = {
       kind: 'composition',
       seat: 'both',
       description:
-        'Not a hand-strength composition — a range-versus-range equity split, which is the only quantified thing the book prints about this flop. It is the size of the range advantage this puzzle is about, and the whole lesson is that this number does not choose your bet-size. Only the big blind’s 36% is printed; 64% is its complement.',
+        'Not a hand-strength composition — a range-versus-range equity split, which is the only quantified thing the source prints about this flop. It is the size of the range advantage this puzzle is about, and the whole lesson is that this number does not choose your bet-size. Only the big blind’s 36% is printed; 64% is its complement.',
       bars: [
         { label: 'UTG equity', pct: 64, note: 'derived from the printed 36%' },
         { label: 'BB equity', pct: 36, note: 'printed — a substantial equity disadvantage' },
@@ -327,7 +327,7 @@ export const RANGE_ADVANTAGE_SMALL_BET: InteractivePuzzle = {
         {
           question: 'Where is the equity-bucket breakdown for each range?',
           answer:
-            'Printed as an image only. Diagram 60 carries the buckets for this example and Table 114 carries UTG’s strategy breakdown; neither is reproduced in the text, so no strong/good/weak/trash percentage exists to show for this flop. The bar above is the equity split, which is a different and much coarser thing — it is shown because it is what the source actually states.',
+            'Printed as an image only. The diagram carries the buckets for this example and the table carries UTG’s strategy breakdown; neither is reproduced in the text, so no strong/good/weak/trash percentage exists to show for this flop. The bar above is the equity split, which is a different and much coarser thing — it is shown because it is what the source actually states.',
           nearestSources: ['ex2.bb-36-equity', 'ex2.table-114', 'eqb.definitions'],
         },
       ],
@@ -343,7 +343,7 @@ export const RANGE_ADVANTAGE_SMALL_BET: InteractivePuzzle = {
       sources: ['ex2.range-advantage-but-small', 'ex2.big-bet-helps-bb'],
     },
     {
-      text: 'Frequency and size are separate decisions. The book files this flop as "high c-bet % and small bet-size" and A♥Q♦3♠ as "high c-bet % and big bet-size" — and UTG has MORE equity on the big-bet board, 72% against 64%.',
+      text: 'Frequency and size are separate decisions. The source files this flop as "high c-bet % and small bet-size" and A♥Q♦3♠ as "high c-bet % and big bet-size" — and UTG has MORE equity on the big-bet board, 72% against 64%.',
       sources: ['ex2.heading-high-freq-small-size', 'ex1.aq3-high-freq-big-size', 'ex2.utg-equity-derived'],
     },
     {
@@ -357,7 +357,7 @@ export const RANGE_ADVANTAGE_SMALL_BET: InteractivePuzzle = {
   ],
 
   endsEarlyBecause:
-    'This puzzle isolates one distinction — range advantage sets frequency, the opponent’s range shape sets size — and a second street would necessarily add a second idea. The source is also split here rather than continuous: p.684-686 gives UTG’s flop strategy on Q♥J♥T♥ and p.739-741 gives the big blind’s response to the min-bet, but no turn or river strategy is printed for the line where UTG min-bets and the big blind calls. The hand stops where the evidence stops.',
+    'This puzzle isolates one distinction — range advantage sets frequency, the opponent’s range shape sets size — and a second street would necessarily add a second idea. The source is also split here rather than continuous: it gives UTG’s flop strategy on Q♥J♥T♥ and the source gives the big blind’s response to the min-bet, but no turn or river strategy is printed for the line where UTG min-bets and the big blind calls. The hand stops where the evidence stops.',
 
   xp: 75,
 }

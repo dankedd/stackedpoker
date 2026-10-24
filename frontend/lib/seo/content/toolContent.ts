@@ -10,7 +10,6 @@ import {
 import { RFI_DEEP } from "@/lib/learn/preflopBaselines";
 import {
   BB_DEFENSE_COMPLETE_100BB,
-  BB_DEFENSE_COMPLETE_100BB_PROVENANCE,
 } from "@/lib/learn/bbDefenseComplete";
 import { POSITIONS, positionById } from "@/lib/tools/positions";
 import { analyzeHand } from "@/lib/tools/handAnalysis/analyze";
@@ -212,7 +211,6 @@ export function startingHandExamples(): ArticleSection {
 
   const matchup = "BB_vs_BTN" as const;
   const chart = BB_DEFENSE_COMPLETE_100BB[matchup];
-  const provenance = BB_DEFENSE_COMPLETE_100BB_PROVENANCE[matchup];
   const defendRows = ["A5s", "KQo", "72o"]
     .filter((hand) => chart[hand])
     .map((hand) => {

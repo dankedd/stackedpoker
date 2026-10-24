@@ -32,7 +32,6 @@ import {
 import {
   PUSH_FOLD_ITERATION, PUSH_FOLD_SOURCE, INDIFFERENCE_EXAMPLE,
   CLAIRVOYANCE_GAME, HALF_POT_ALPHA_MDF_EXAMPLE, PRESSURE_GAME_DEFAULT,
-  MPT_SOURCE, MPT_AUTHOR,
 } from './gameTheoryContent'
 import {
   CAPPED_NOT_CONDENSED_EXAMPLE, RANGE_MIRROR, PROTECTION_SURGERY_BOARD,
@@ -402,8 +401,8 @@ export const LEARNING_MODULES: LearningModule[] = [
     learningObjectives: [
       'State the formal definitions of bet-size, minbet, minraise, overbet, c-bet, and donk bet, and explain why a strategy must fix a finite menu of sizes before any specific hand is considered',
       'Compute, from any stated bet-size, the pot odds it offers, the resulting Alpha, the MDF it implies, and the value:bluff ratio a polarized range needs — as one connected cascade, not four separate facts',
-      'Explain, using the book\'s own [0-1] Toy Game evidence, why a strategy abandons a bet-size entirely the instant it can be safely raised, rather than simply using it less often',
-      'State the book\'s own quantified EV cost of simplifying to a single bet-size, and identify the specific, nameable exceptions (the all-in size, low SPR) where that default stops applying',
+      'Explain, using the source\'s own [0-1] Toy Game evidence, why a strategy abandons a bet-size entirely the instant it can be safely raised, rather than simply using it less often',
+      'State the source\'s own quantified EV cost of simplifying to a single bet-size, and identify the specific, nameable exceptions (the all-in size, low SPR) where that default stops applying',
       'Predict a strategy\'s sizing direction — from pure-check to all-in-dominant — directly from a range\'s polarization relative to its opponent\'s, without needing raw equity numbers',
     ],
     difficulty: 'intermediate',
@@ -4486,7 +4485,7 @@ export const LESSONS: Lesson[] = [
     transformTargetStackBB: 15,
     understandTitle: 'Cutoff: Widens Steadily With Depth',
     understandContent:
-      'The Cutoff is different from every position you’ve seen so far: instead of peaking around 25bb and flattening or receding, CO keeps widening steadily as stacks get deeper (similar to the Button) — averaging 33.69% VPIP overall. Below 10bb it’s push/fold; min-raises appear at 12bb, and the all-in frequency shrinks steadily to 0% by 20bb. The book’s own methodology stops modeling limping from the Cutoff onward: with only the Button and two blinds left to act, a pure raise/fold strategy is both simpler and consistent with how modern games are actually played.',
+      'The Cutoff is different from every position you’ve seen so far: instead of peaking around 25bb and flattening or receding, CO keeps widening steadily as stacks get deeper (similar to the Button) — averaging 33.69% VPIP overall. Below 10bb it’s push/fold; min-raises appear at 12bb, and the all-in frequency shrinks steadily to 0% by 20bb. The source’s own methodology stops modeling limping from the Cutoff onward: with only the Button and two blinds left to act, a pure raise/fold strategy is both simpler and consistent with how modern games are actually played.',
     predictHands: ['AA', 'J6s', 'Q9o', '32o'],
     comparePrompt: 'True or false: like UTG and the middle-position seats, CO’s opening frequency peaks around 25bb and then flattens or recedes.',
     compareOptions: [
@@ -4671,7 +4670,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['sb_first_in'],
         concept_title: 'Small Blind Mastery, Reviewed',
         concept_content:
-          'SB is the one position where limping is a real, book-supported weapon at every depth — not a leak. Its action set genuinely changes shape with stack depth (jam/limp/fold shallow, raise/limp/fold deep) rather than just widening, and by 60bb nearly the entire range is a genuine mix rather than a clean answer. You can now reconstruct SB’s baseline strategy at any of the four canonical depths and recognize exactly where its boundary hands sit.',
+          'SB is the one position where limping is a real, source-supported weapon at every depth — not a leak. Its action set genuinely changes shape with stack depth (jam/limp/fold shallow, raise/limp/fold deep) rather than just widening, and by 60bb nearly the entire range is a genuine mix rather than a clean answer. You can now reconstruct SB’s baseline strategy at any of the four canonical depths and recognize exactly where its boundary hands sit.',
         xp: 10,
       },
     ],
@@ -6199,12 +6198,7 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN calls'],
         hero_hand: ['Kd', 'Qc'],
-        source: {
-          book: 'Modern Poker Theory',
-          author: 'Michael Acevedo',
-          section: 'Overcalling (Theoretical Considerations, responding to an open raise); Small Blind defence vs a CO open',
-          type: 'source_reconstructed',
-        },
+        /* source: Modern Poker Theory · Michael Acevedo · Overcalling (Theoretical Considerations, responding to an open raise); Small Blind defence vs a CO open */ source: { type: 'source_reconstructed' },
         // NO `range_reveal_direction` here — deliberately.
         //
         // This previously showed CO's OPENING RANGE, which answers "what does CO
@@ -6284,12 +6278,7 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         action_before_hero: ['UTG folds', 'HJ folds', 'CO raises to 2.3bb', 'BTN calls'],
         hero_hand: ['7h', '6h'],
-        source: {
-          book: 'Modern Poker Theory',
-          author: 'Michael Acevedo',
-          section: 'Overcalling (Theoretical Considerations, responding to an open raise); Small Blind defence vs a CO open',
-          type: 'source_reconstructed',
-        },
+        /* source: Modern Poker Theory · Michael Acevedo · Overcalling (Theoretical Considerations, responding to an open raise); Small Blind defence vs a CO open */ source: { type: 'source_reconstructed' },
         // Same fix as sqz-s5b, same reason — this also showed CO's OPENING RANGE
         // after a question about what HERO does. The answer key here was already
         // right (fold default, overcall defensible, squeeze a mistake); only the
@@ -8381,7 +8370,7 @@ export const LESSONS: Lesson[] = [
         options: [
           {
             id: '3bet', label: '3-BET', quality: 'perfect',
-            feedback: "Correct. Against LJ's wider, weaker opening range, KJs clears the bar for HJ's polarized 3-bet range — real blocker value against LJ's continuing hands, plenty of playability, and much less domination risk than the same hand would face 3-betting into UTG's tighter range. Modern Poker Theory states this directly: HJ 3-bets its highest frequency against any early opener here — 7.4% vs LJ, compared to just 5.2% vs UTG.",
+            feedback: "Correct. Against LJ's wider, weaker opening range, KJs clears the bar for HJ's polarized 3-bet range — real blocker value against LJ's continuing hands, plenty of playability, and much less domination risk than the same hand would face 3-betting into UTG's tighter range. The source states this directly: HJ 3-bets its highest frequency against any early opener here — 7.4% vs LJ, compared to just 5.2% vs UTG.",
           },
           {
             id: 'call', label: 'CALL', quality: 'mistake',
@@ -8408,7 +8397,7 @@ export const LESSONS: Lesson[] = [
         options: [
           {
             id: 'lj', label: 'Scenario A — vs the LJ open', quality: 'perfect',
-            feedback: 'Correct. LJ and UTG are both "early position," but they are not the same range — LJ opens wider and weaker. Modern Poker Theory states HJ 3-bets its highest frequency of any early-position matchup against LJ specifically (7.4%), more than against UTG (5.2%).',
+            feedback: 'Correct. LJ and UTG are both "early position," but they are not the same range — LJ opens wider and weaker. The source states HJ 3-bets its highest frequency of any early-position matchup against LJ specifically (7.4%), more than against UTG (5.2%).',
           },
           {
             id: 'utg', label: 'Scenario B — vs the UTG open', quality: 'mistake',
@@ -9094,7 +9083,7 @@ export const LESSONS: Lesson[] = [
         action_before_hero: ['UTG folds', 'HJ folds', 'CO folds', 'BTN raises to 2.2bb', 'SB folds'],
         hero_hand: ['7s', '6s'],
         options: [
-          { id: 'call', label: 'Call', quality: 'perfect', feedback: "Correct — 76s stays a call at 100bb too, same as at 60bb. Modern Poker Theory's own solved BB-vs-BTN diagram keeps suited connectors like this firmly in the calling group at this depth; BB's 3-betting range here is a linear, top-of-range bucket (big pairs, strong broadways) that a speculative connector like 76s doesn't qualify for on raw value." },
+          { id: 'call', label: 'Call', quality: 'perfect', feedback: "Correct — 76s stays a call at 100bb too, same as at 60bb. The source's own solved BB-vs-BTN diagram keeps suited connectors like this firmly in the calling group at this depth; BB's 3-betting range here is a linear, top-of-range bucket (big pairs, strong broadways) that a speculative connector like 76s doesn't qualify for on raw value." },
           { id: '3bet', label: '3-Bet', quality: 'mistake', feedback: "76s doesn't carry the raw value to sit in BB's linear 3-betting range against BTN — that range is reserved for the top of the range, not a speculative suited connector, at either 60bb or 100bb." },
           { id: 'fold', label: 'Fold', quality: 'mistake', feedback: 'This is far too tight against one of the widest opens at the table, with a hand that flops well and blocks BTN\'s continuing range.' },
         ],
@@ -12467,12 +12456,7 @@ export const LESSONS: Lesson[] = [
         id: 'cna-s7b',
         type: 'decision_spot',
         concept_ids: ['range_advantage', 'flop_range_strategy'],
-        source: {
-          book: 'Modern Poker Theory',
-          section: 'Chapter 12, The Flop Continuation-bet (C-bet) — Diagram 25 / Table 100-101',
-          example: 'A76r vs 654r, BB vs BN, 20-40bb effective',
-          type: 'source_reconstructed',
-        },
+        /* source: Modern Poker Theory · Chapter 12, The Flop Continuation-bet (C-bet) — Diagram 25 / Table 100-101 · A76r vs 654r, BB vs BN, 20-40bb effective */ source: { type: 'source_reconstructed' },
         narrative:
           'Predict before you look at the reasoning. Same preflop line both times: BTN opens, BB calls, BTN is in position — this time at 30bb effective, matching the exact stack depths (20-40bb) the numbers below were computed at. BB checks to BTN on the flop.',
         decision_spot_question: 'On which flop does BTN (the preflop raiser) c-bet more often?',
@@ -12634,11 +12618,7 @@ export const LESSONS: Lesson[] = [
         id: 'rtb-s6b',
         type: 'board_rank_sort',
         concept_ids: ['flop_range_strategy', 'range_advantage'],
-        source: {
-          book: 'Modern Poker Theory',
-          section: 'This lesson\'s own board-classification reasoning (rtb-s3 through rtb-s6), applied to rank four boards head-to-head',
-          type: 'pedagogical_model',
-        },
+        /* source: Modern Poker Theory · This lesson\'s own board-classification reasoning (rtb-s3 through rtb-s6), applied to rank four boards head-to-head */ source: { type: 'pedagogical_model' },
         narrative:
           'Predict before revealing. Cash game, 100bb effective. BTN opens, BB calls, BTN is in position on every board below — the same four boards from this lesson, now ranked head-to-head. Order these from bets most to bets least.',
         table_size: 6,
@@ -12839,12 +12819,7 @@ export const LESSONS: Lesson[] = [
         id: 'ran-s8',
         type: 'range_distribution',
         concept_ids: ['range_composition', 'strong_hand_density'],
-        source: {
-          book: 'Modern Poker Theory',
-          section: 'Chapter 12, The Flop Continuation-bet — "The Way Ahead or Way Behind Situation"',
-          example: 'A♠T♥T♦, BB vs UTG, 30bb effective',
-          type: 'exact_derived',
-        },
+        /* source: Modern Poker Theory · Chapter 12, The Flop Continuation-bet — "The Way Ahead or Way Behind Situation" · A♠T♥T♦, BB vs UTG, 30bb effective */ source: { type: 'exact_derived' },
         narrative:
           'A single hand this time, not an average. Tournament, 30bb effective. UTG opens, BB calls, UTG is in position. Board: A♠T♥T♦ — trips on the flop. BB checks to UTG.',
         table_size: 6,
@@ -13007,12 +12982,7 @@ export const LESSONS: Lesson[] = [
         id: 'hfc-s6b',
         type: 'decision_spot',
         concept_ids: ['cbet_frequency', 'range_advantage'],
-        source: {
-          book: 'Modern Poker Theory',
-          section: 'Chapter 12, The Flop Continuation-bet — IP C-bet Examples 1 & 3 (Diagram 58/Table 113, Diagram 61/Table 115)',
-          example: 'A♥Q♦3♠ vs 9♥8♥4♦, BB vs UTG, 40bb effective',
-          type: 'exact_derived',
-        },
+        /* source: Modern Poker Theory · Chapter 12, The Flop Continuation-bet — IP C-bet Examples 1 & 3 (Diagram 58/Table 113, Diagram 61/Table 115) · A♥Q♦3♠ vs 9♥8♥4♦, BB vs UTG, 40bb effective */ source: { type: 'exact_derived' },
         narrative:
           'Predict before you look at the reasoning. Tournament, 40bb effective, both times. UTG opens, BB calls, UTG is in position. BB checks to UTG on the flop.',
         decision_spot_question: 'On which of these two boards can UTG profitably bet literally 100% of the range?',
@@ -13146,12 +13116,7 @@ export const LESSONS: Lesson[] = [
         id: 'csd-s4b',
         type: 'decision_spot',
         concept_ids: ['range_advantage', 'strong_hand_density'],
-        source: {
-          book: 'Modern Poker Theory',
-          section: 'Chapter 12, The Flop Continuation-bet — IP C-bet Example 4 (Diagram 63/64, Table 116)',
-          example: 'J♠6♥6♦, BTN ("BN" in the book) vs BB, 40bb effective',
-          type: 'exact_derived',
-        },
+        /* source: Modern Poker Theory · Chapter 12, The Flop Continuation-bet — IP C-bet Example 4 (Diagram 63/64, Table 116) · J♠6♥6♦, BTN ("BN" in the book) vs BB, 40bb effective */ source: { type: 'exact_derived' },
         narrative:
           'Tournament, 40bb effective. BTN opens, BB calls, BTN is in position. Board: J♠6♥6♦ — a paired board where BB actually flops trip sixes in real volume.',
         table_size: 6,
@@ -13289,11 +13254,7 @@ export const LESSONS: Lesson[] = [
         id: 'sbb-s4b',
         type: 'decision_spot',
         concept_ids: ['cbet_sizing', 'polarization_advantage'],
-        source: {
-          book: 'Modern Poker Theory',
-          section: 'Chapter 12, The Flop Continuation-bet — Flop C-betting by Texture (Diagrams 52-55, Table 112)',
-          type: 'source_reconstructed',
-        },
+        /* source: Modern Poker Theory · Chapter 12, The Flop Continuation-bet — Flop C-betting by Texture (Diagrams 52-55, Table 112) */ source: { type: 'source_reconstructed' },
         narrative:
           'Predict before you look at the reasoning. Cash game, 100bb effective. BTN opens, BB calls, BTN is in position, both times. Same three ranks both boards — only the suits differ.',
         decision_spot_question: 'Same connectivity, same ranks — which board calls for the BIGGER c-bet size?',
@@ -13589,12 +13550,7 @@ export const LESSONS: Lesson[] = [
         id: 'sbb-s13',
         type: 'cbet_frequency_size',
         concept_ids: ['cbet_frequency', 'cbet_sizing', 'polarization_advantage', 'threebet_pot_cbet'],
-        source: {
-          book: 'Modern Poker Theory',
-          section: 'Chapter 12, The Flop Continuation-bet — C-betting in 3-bet Pots (IP 3-bet Strategy Overview)',
-          example: 'Middle, straight-draw-heavy boards in 3-bet pots',
-          type: 'source_reconstructed',
-        },
+        /* source: Modern Poker Theory · Chapter 12, The Flop Continuation-bet — C-betting in 3-bet Pots (IP 3-bet Strategy Overview) · Middle, straight-draw-heavy boards in 3-bet pots */ source: { type: 'source_reconstructed' },
         narrative: 'Cash game, 100bb effective. HJ opens, Hero (BTN) 3-bets, HJ calls. Hero is the preflop aggressor and in position. Board: 8♦7♣6♠.',
         table_size: 6,
         hero_position: 'BTN',
@@ -13626,12 +13582,7 @@ export const LESSONS: Lesson[] = [
         id: 'sbb-s14',
         type: 'cbet_frequency_size',
         concept_ids: ['cbet_frequency', 'cbet_sizing', 'range_advantage'],
-        source: {
-          book: 'Modern Poker Theory',
-          section: 'Chapter 12, The Flop Continuation-bet — IP C-bet Example 2 (Diagram 59-60, Table 114)',
-          example: 'Q♥J♥T♥, BB vs UTG, 40bb effective',
-          type: 'exact_derived',
-        },
+        /* source: Modern Poker Theory · Chapter 12, The Flop Continuation-bet — IP C-bet Example 2 (Diagram 59-60, Table 114) · Q♥J♥T♥, BB vs UTG, 40bb effective */ source: { type: 'exact_derived' },
         narrative: 'Tournament, 40bb effective. UTG opens, BB calls, UTG is in position. Board: Q♥J♥T♥.',
         table_size: 6,
         hero_position: 'UTG',
@@ -13704,12 +13655,7 @@ export const LESSONS: Lesson[] = [
         id: 'sbb-s16',
         type: 'cbet_frequency_size',
         concept_ids: ['cbet_frequency', 'cbet_sizing', 'polarization_advantage'],
-        source: {
-          book: 'Modern Poker Theory',
-          section: 'Chapter 12, The Flop Continuation-bet — IP C-bet Example 5 (Diagram 65-66, Table 117)',
-          example: '8♥6♦2♠, BN vs BB, 40bb effective',
-          type: 'exact_derived',
-        },
+        /* source: Modern Poker Theory · Chapter 12, The Flop Continuation-bet — IP C-bet Example 5 (Diagram 65-66, Table 117) · 8♥6♦2♠, BN vs BB, 40bb effective */ source: { type: 'exact_derived' },
         narrative: 'Tournament, 40bb effective. BTN opens, BB calls, BTN is in position. Board: 8♥6♦2♠.',
         table_size: 6,
         hero_position: 'BTN',
@@ -13745,12 +13691,7 @@ export const LESSONS: Lesson[] = [
         id: 'sbb-s17',
         type: 'cbet_frequency_size',
         concept_ids: ['cbet_frequency', 'cbet_sizing', 'polarization_advantage', 'threebet_pot_cbet'],
-        source: {
-          book: 'Modern Poker Theory',
-          section: 'Chapter 12, The Flop Continuation-bet — C-betting in 3-bet Pots',
-          example: 'Trips and rainbow paired flops, 3-bet pot',
-          type: 'source_reconstructed',
-        },
+        /* source: Modern Poker Theory · Chapter 12, The Flop Continuation-bet — C-betting in 3-bet Pots · Trips and rainbow paired flops, 3-bet pot */ source: { type: 'source_reconstructed' },
         narrative: 'Cash game, 100bb effective. CO opens, Hero (BTN) 3-bets, CO calls. Hero is the preflop aggressor and in position. Board: 9♠9♦4♣.',
         table_size: 6,
         hero_position: 'BTN',
@@ -13887,12 +13828,7 @@ export const LESSONS: Lesson[] = [
         id: 'wdm-s3b',
         type: 'decision_spot',
         concept_ids: ['cbet_hand_selection', 'range_protection'],
-        source: {
-          book: 'Modern Poker Theory',
-          section: 'Chapter 12, The Flop Continuation-bet — Flop Strategy Example 6 (Table 118)',
-          example: '5♥5♦4♥, UTG, 40bb effective',
-          type: 'exact_derived',
-        },
+        /* source: Modern Poker Theory · Chapter 12, The Flop Continuation-bet — Flop Strategy Example 6 (Table 118) · 5♥5♦4♥, UTG, 40bb effective */ source: { type: 'exact_derived' },
         narrative:
           'Not a rule of thumb — the exact frequencies. Tournament, 40bb effective. UTG opens, BB calls, UTG is in position. Board: 5♥5♦4♥. UTG\'s overpairs get c-bet at these exact frequencies: TT 76%, JJ 64%, QQ 50%, KK 40%, AA only 22%.',
         table_size: 6,
@@ -14024,12 +13960,7 @@ export const LESSONS: Lesson[] = [
         id: 'pce-s3b',
         type: 'decision_spot',
         concept_ids: ['position_postflop', 'ip_cbet', 'oop_cbet'],
-        source: {
-          book: 'Modern Poker Theory',
-          section: 'Chapter 12, The Flop Continuation-bet — C-betting in 3-bet Pots, OOP 3-bet Strategy Overview (Diagram 87)',
-          example: 'Axx boards, 3-bet pot, 40bb effective — same board family used in hfc-s3',
-          type: 'source_reconstructed',
-        },
+        /* source: Modern Poker Theory · Chapter 12, The Flop Continuation-bet — C-betting in 3-bet Pots, OOP 3-bet Strategy Overview (Diagram 87) · Axx boards, 3-bet pot, 40bb effective — same board family used in hfc-s3 */ source: { type: 'source_reconstructed' },
         narrative:
           'Predict before you look at the reasoning. Tournament, 40bb effective, 3-bet pot both times. Same Axx-type board (A♠9♦3♣, the board from Lesson 4), a similar equity distribution for the 3-bettor either way — only whether Hero is IP or OOP changes.',
         decision_spot_question: 'Which Hero c-bets this Axx board MORE often: the one in position, or the one out of position?',
@@ -14333,11 +14264,7 @@ export const LESSONS: Lesson[] = [
         id: 'cdl-s7c',
         type: 'decision_spot',
         concept_ids: ['position_postflop', 'oop_cbet'],
-        source: {
-          book: 'Modern Poker Theory',
-          section: 'Chapter 12, The Flop Continuation-bet — OOP 3-bet Strategy Overview (Diagram 87), reviewing Lesson 8',
-          type: 'source_reconstructed',
-        },
+        /* source: Modern Poker Theory · Chapter 12, The Flop Continuation-bet — OOP 3-bet Strategy Overview (Diagram 87), reviewing Lesson 8 */ source: { type: 'source_reconstructed' },
         narrative:
           'Recall Lesson 8: on Axx boards in 3-bet pots, Hero actually c-bets MORE often OUT of position (77%) than in position (53%) — despite a similar equity distribution either way.',
         decision_spot_question: 'What made that possible, given IP is usually the one betting more in this module?',
@@ -14527,13 +14454,13 @@ export const LESSONS: Lesson[] = [
           label: 'CO',
           range: ILLUSTRATIVE_OPENER_RANGE,
           frequencyMap: ILLUSTRATIVE_OPENER_FREQUENCY,
-          source_note: 'Real, book-transcribed 40bb 9-max CO opening range (Modern Poker Theory, Hand Range 118, p.334).',
+          source_note: 'Real, source-transcribed 40bb 9-max CO opening range.',
         },
         range_collision_b: {
           label: 'BB',
           range: ILLUSTRATIVE_CALLER_RANGE,
           frequencyMap: ILLUSTRATIVE_CALLER_FREQUENCY,
-          source_note: 'Illustrative — widened from the real 100bb-cash BB-vs-CO calling range to approximate the book\'s cited ≈56.8% MTT figure. Not the book\'s own chart.',
+          source_note: 'Illustrative — widened from the real 100bb-cash BB-vs-CO calling range to approximate the source\'s cited ≈56.8% MTT figure. Not the source\'s own chart.',
         },
         range_collision_preflop_equity: { a: LESSON1_SCENARIO.preflopEquity.co, b: LESSON1_SCENARIO.preflopEquity.bb },
         range_collision_postflop_equity: { a: LESSON1_SCENARIO.postflopEquity.co, b: LESSON1_SCENARIO.postflopEquity.bb },
@@ -14994,7 +14921,7 @@ export const LESSONS: Lesson[] = [
         id: 'xr-s5',
         type: 'decision_spot',
         concept_ids: ['range_composition'],
-        narrative: `A top-pair holding averages ≈${A76R_SCENARIO.ipTopPairAvgEquity}% equity on A76r, but only ≈${CS_654R_SCENARIO.ipTopPairAvgEquity}% on 654r — a real, book-cited drop for the exact same hand CLASS.`,
+        narrative: `A top-pair holding averages ≈${A76R_SCENARIO.ipTopPairAvgEquity}% equity on A76r, but only ≈${CS_654R_SCENARIO.ipTopPairAvgEquity}% on 654r — a real, source-cited drop for the exact same hand CLASS.`,
         decision_spot_question: 'What does this tell you about calling a hand class "strong" in the abstract, without naming a board?',
         options: [
           {
@@ -15678,7 +15605,7 @@ export const LESSONS: Lesson[] = [
           { term: 'Offsuit (e.g. AKo)', description: '12 combinations — every suit mismatch.' },
           { term: 'Every starting hand', description: '78 pair + 312 suited + 936 offsuit = 1,326 total combinations.' },
         ],
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Hand Ranges as Combinations', type: 'exact_derived' },
+        /* source: Modern Poker Theory · Michael Acevedo · Hand Ranges as Combinations */ source: { type: 'exact_derived' },
       },
       {
         id: 'fhtc-s2',
@@ -15729,7 +15656,7 @@ export const LESSONS: Lesson[] = [
           'The A♠ pairs with each of the other three aces, so it removes exactly 3 combos and no more. The half that survives — A♥A♦, A♥A♣, A♦A♣ — is built entirely from cards nobody can see yet.',
         combo_removal_takeaway:
           'Holding one card of a rank does not delete the hand class — it deletes the specific combinations built from that exact card. Always count combos, never hand names.',
-        source: { book: 'Modern Poker Theory', section: 'Hand Ranges as Combinations', type: 'exact_derived' },
+        /* source: Modern Poker Theory · Hand Ranges as Combinations */ source: { type: 'exact_derived' },
         xp: 15,
       },
       {
@@ -15781,7 +15708,7 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 76,
         action_before_hero: ['HJ raises to 2.5bb', 'Hero calls'],
         postflop_action: [],
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Hand Ranges as Combinations', example: 'HJ Open vs BB Call — A♣J♥9♥ Flop', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Hand Ranges as Combinations · HJ Open vs BB Call — A♣J♥9♥ Flop */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'fhr-s2',
@@ -15792,12 +15719,12 @@ export const LESSONS: Lesson[] = [
         combo_removal_subject: 'JJ',
         combo_removal_board_cards: ['Jh'],
         combo_removal_prompt: 'Tap every JJ combination the J♥ on the flop makes impossible.',
-        combo_removal_explanation: "The J♥ is on the board, so only J♠/J♦/J♣ remain to pair up — 3 of the 6 JJ combinations survive. The book notes 99 works out identically for the same reason (the 9♥ is also on board).",
+        combo_removal_explanation: "The J♥ is on the board, so only J♠/J♦/J♣ remain to pair up — 3 of the 6 JJ combinations survive. The source notes 99 works out identically for the same reason (the 9♥ is also on board).",
         combo_removal_partial_credit_note:
           'The J♥ pairs with each of the other three jacks — 3 combos impossible, 3 still live. If the count was right but the specific tiles were wrong, that is reading the grid by rank when removal only ever works suit by suit.',
         combo_removal_takeaway:
           'A card removes combinations identically whether it is in your hand or lying on the board. The deck does not care where it went — only that it is gone.',
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Hand Ranges as Combinations', example: 'HJ Open vs BB Call — A♣J♥9♥ Flop', type: 'exact_derived' },
+        /* source: Modern Poker Theory · Michael Acevedo · Hand Ranges as Combinations · HJ Open vs BB Call — A♣J♥9♥ Flop */ source: { type: 'exact_derived' },
         xp: 15,
       },
       {
@@ -15814,7 +15741,7 @@ export const LESSONS: Lesson[] = [
           'The 3♦ pairs with 3♠, 3♥ and 3♣ — 3 gone, 3 left. Identical arithmetic to the ace exercise, which is the point: the rank never changes the mechanic.',
         combo_removal_takeaway:
           'Your own cards block your opponent exactly as hard as the board does. Every card you hold is a card they cannot have.',
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Hand Ranges as Combinations', example: 'HJ Open vs BB Call — A♣J♥9♥ Flop', type: 'exact_derived' },
+        /* source: Modern Poker Theory · Michael Acevedo · Hand Ranges as Combinations · HJ Open vs BB Call — A♣J♥9♥ Flop */ source: { type: 'exact_derived' },
         xp: 15,
       },
       {
@@ -15832,7 +15759,7 @@ export const LESSONS: Lesson[] = [
           'With two aces already accounted for, A♠A♥ is the only combination left standing. A near-miss here almost always means counting the board\'s ace or Hero\'s ace, but not both at once.',
         combo_removal_takeaway:
           'Removal stacks. Two known cards of the same rank leave a pocket pair with almost nothing — which is why "they could still have aces" is usually far less true than it feels.',
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Hand Ranges as Combinations', example: 'HJ Open vs BB Call — A♣J♥9♥ Flop', type: 'exact_derived' },
+        /* source: Modern Poker Theory · Michael Acevedo · Hand Ranges as Combinations · HJ Open vs BB Call — A♣J♥9♥ Flop */ source: { type: 'exact_derived' },
         xp: 20,
       },
       {
@@ -15840,7 +15767,7 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_title: 'One Flop, One Range, Many Removals',
         concept_content: "On this exact flop, Villain's made-hand range totals 157 combos once every hand-class is worked through this same way — sets, two pair, top pair and more. You just did it for three classes: JJ and 99 each drop from 6 to 3 combos (the board's J♥/9♥), 33 drops from 6 to 3 (Hero's own 3♦), and AA — hit from both sides at once — collapses from 6 to just 1 (A♠A♥). Nothing here was guessed; every number came directly from which specific cards are already gone.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Hand Ranges as Combinations', example: 'HJ Open vs BB Call — A♣J♥9♥ Flop', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Hand Ranges as Combinations · HJ Open vs BB Call — A♣J♥9♥ Flop */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'trar-s1',
@@ -15854,7 +15781,7 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         action_before_hero: ['UTG folds', 'UTG+1 folds', 'LJ folds', 'HJ folds', 'CO folds', 'BTN folds', 'SB raises to 3bb'],
         visual: 'table',
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Exploitative 3-betting', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Exploitative 3-betting */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'trar-s2',
@@ -15883,7 +15810,7 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_title: "Villain's Defending Range",
         concept_content: "Facing a 3-bet here, Villain's SB defending range comes out to 350 combinations.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Exploitative 3-betting', example: 'SB Defense vs BB (350 combos)', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Exploitative 3-betting · SB Defense vs BB (350 combos) */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'trar-s3b',
@@ -15905,7 +15832,7 @@ export const LESSONS: Lesson[] = [
             feedback: "That's exactly what this threshold avoids needing — it's the combo count where the bluff shows a profit no matter what happens after a call. At 350 combos, Villain is still continuing with too many for that to be true yet.",
           },
         ],
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Exploitative 3-betting', example: 'SB Defense vs BB (350 combos)', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Exploitative 3-betting · SB Defense vs BB (350 combos) */ source: { type: 'source_reconstructed' },
         xp: 15,
       },
       {
@@ -15951,7 +15878,7 @@ export const LESSONS: Lesson[] = [
           { term: 'Named blocked classes alone (AK, KK, K6s-KQs, KTo-KQo)', description: '86 raw combos → 63 remain once K♦ is removed — 23 of the total reduction, computed directly from the cards.' },
         ],
         concept_note: "The 23-combo figure only covers the classes named explicitly above — the full 350-combo range isn't itemized card-by-card here, so it isn't expected to exactly equal the 26-combo total reduction across the full range.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Exploitative 3-betting', example: 'SB Defense vs BB (350 combos)', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Exploitative 3-betting · SB Defense vs BB (350 combos) */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'trar-s6b',
@@ -15973,7 +15900,7 @@ export const LESSONS: Lesson[] = [
             feedback: 'The threshold is about HOW MANY combos Villain continues with, not whether they continue at all — 324 combos is still a real, wide continuing range, just narrow enough to fall under the line.',
           },
         ],
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Exploitative 3-betting', example: 'SB Defense vs BB (350 combos)', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Exploitative 3-betting · SB Defense vs BB (350 combos) */ source: { type: 'source_reconstructed' },
         xp: 15,
       },
       {
@@ -16002,7 +15929,7 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_title: 'Block Value, Block Bluffs',
         concept_content: "On the river, every bluff-catcher shows down exactly the same way — but they are not strategically equal. What separates them is which part of the opponent's betting range your own cards happen to touch. Block the hands they bet for VALUE, and calling gets better. Block the hands they bet as BLUFFS, and calling gets worse. The rest of this lesson is about learning to tell which one is actually happening in your own hand.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'River Calling Strategies — Blockers', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · River Calling Strategies — Blockers */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'btv-s1',
@@ -16020,7 +15947,7 @@ export const LESSONS: Lesson[] = [
         table_size: 6,
         pot_bb: 20,
         postflop_action: ['BTN bets 20bb'],
-        source: { book: 'Modern Poker Theory', section: 'River Calling Strategies — Blockers', type: 'pedagogical_model' },
+        /* source: Modern Poker Theory · River Calling Strategies — Blockers */ source: { type: 'pedagogical_model' },
       },
       {
         id: 'btv-s2',
@@ -16099,7 +16026,7 @@ export const LESSONS: Lesson[] = [
         concept_content: "Same river: A♥9♦4♣2♠7♥. Villain's range is unchanged too — AA and 94s as value, 76s and 65s as bluffs. This time, compare two different kickers for Hero's ace.",
         board: ['Ah', '9d', '4c', '2s', '7h'],
         street: 'river',
-        source: { book: 'Modern Poker Theory', section: 'River Calling Strategies — Blockers', type: 'pedagogical_model' },
+        /* source: Modern Poker Theory · River Calling Strategies — Blockers */ source: { type: 'pedagogical_model' },
       },
       {
         id: 'ltba-s2',
@@ -16172,7 +16099,7 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 40,
         table_size: 6,
         postflop_action: ['BTN bets 20bb'],
-        source: { book: 'Modern Poker Theory', section: 'River Calling Strategies — Blockers', type: 'pedagogical_model' },
+        /* source: Modern Poker Theory · River Calling Strategies — Blockers */ source: { type: 'pedagogical_model' },
       },
       {
         id: 'btv-rd2',
@@ -16223,7 +16150,7 @@ export const LESSONS: Lesson[] = [
           },
           {
             id: 'fold', label: 'Fold — the extra blocked bluff flips this to a fold', quality: 'mistake',
-            feedback: "The book only states a DIRECTION here — blocking a bluff makes calling worse — never a specific number that would flip a call into a fold. On these facts alone, this is still a call, just a worse one.",
+            feedback: "The source only states a DIRECTION here — blocking a bluff makes calling worse — never a specific number that would flip a call into a fold. On these facts alone, this is still a call, just a worse one.",
           },
           {
             id: 'call_same', label: 'Call — exactly as good as A♣T♦', quality: 'mistake',
@@ -16238,7 +16165,7 @@ export const LESSONS: Lesson[] = [
         concept_title: 'Two Directions, One Mechanism',
         concept_content: "Block the hands an opponent bets for VALUE, and calling gets better — fewer of those value combos can exist. Block the hands they bet as BLUFFS instead, and calling gets worse, even holding the exact same made hand. Your own two cards decide which of these is happening, one combo at a time.",
         concept_note: 'No specific calling or folding frequency was ever claimed in this lesson — only the direction each kind of blocker pushes the decision.',
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'River Calling Strategies', example: 'Blockers', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · River Calling Strategies · Blockers */ source: { type: 'source_reconstructed' },
       },
     ],
   },
@@ -16262,7 +16189,7 @@ export const LESSONS: Lesson[] = [
         concept_content: "Same river, same range: A♥9♦4♣2♠7♥, Villain's AA and 94s as value, 76s and 65s as bluffs. Every hand below is top pair aces — identical showdown strength. Only the kicker changes.",
         board: ['Ah', '9d', '4c', '2s', '7h'],
         street: 'river',
-        source: { book: 'Modern Poker Theory', section: 'River Calling Strategies — Blockers', type: 'pedagogical_model' },
+        /* source: Modern Poker Theory · River Calling Strategies — Blockers */ source: { type: 'pedagogical_model' },
       },
       {
         id: 'ssdc-s2',
@@ -16310,7 +16237,7 @@ export const LESSONS: Lesson[] = [
           },
         ],
         concept_note: "The ranking never turns on showdown strength — all three are top pair aces. It turns entirely on which of Villain's bluff combos each kicker happens to remove: none, one, or two.",
-        source: { book: 'Modern Poker Theory', section: 'River Calling Strategies — Blockers', type: 'pedagogical_model' },
+        /* source: Modern Poker Theory · River Calling Strategies — Blockers */ source: { type: 'pedagogical_model' },
       },
       {
         id: 'ssdc-s4',
@@ -16364,7 +16291,7 @@ export const LESSONS: Lesson[] = [
         pot_bb: 100,
         effective_stack_bb: 500,
         street: 'river',
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Blocker Effects', example: 'Blocker Example 1', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Blocker Effects · Blocker Example 1 */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'tnb-s2',
@@ -16377,7 +16304,7 @@ export const LESSONS: Lesson[] = [
           { term: 'Non-flush blockers — 6 combos', description: '76, 75, 74, 65, 64, 54 — no heart at all.' },
         ],
         concept_note: "51 combos total in Hero's range.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Blocker Effects', example: 'Blocker Example 1', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Blocker Effects · Blocker Example 1 */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'tnb-s3',
@@ -16396,7 +16323,7 @@ export const LESSONS: Lesson[] = [
           "Expecting a big card to reach into several tiers is a sound instinct — most cards do exactly that, because a tier is named for its HIGH card and so every rank also sits as the low card of every tier above it. The ace is the one exception: nothing outranks it, so there is no tier above for it to appear in.",
         flush_pyramid_takeaway:
           "What makes a blocker strong is not the rank on the card — it is whether the combos it removes were the ones that could actually beat you. The ace matters here because the one tier it empties is the only tier that had Hero drawing dead.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Blocker Effects', example: 'Blocker Example 1', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Blocker Effects · Blocker Example 1 */ source: { type: 'source_reconstructed' },
         xp: 20,
       },
       {
@@ -16405,7 +16332,7 @@ export const LESSONS: Lesson[] = [
         concept_title: 'Zero Traps',
         concept_content: "This is similar to a polarized-range-vs-bluff-catchers model: Hero is either the nuts or a bluff, with far more bluffs than value combos to bet them all. In this specific model, when Hero holds the nut flush OR the nut blocker, Villain's range contains zero traps — no flush Villain could have that beats Hero's polarized betting range, since Villain's own nut flush requires the very ace Hero is already holding. For this reason, the nut-flush blocker is the preferred bluffing class in this model.",
         concept_note: 'That conclusion is scoped to this exact board and range — not a universal claim that nut blockers are always the best bluffs. The next lesson shows exactly when that stops being true.',
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Blocker Effects', example: 'Blocker Example 1', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Blocker Effects · Blocker Example 1 */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'tnb-s5',
@@ -16451,7 +16378,7 @@ export const LESSONS: Lesson[] = [
         concept_content: "Same Blocker Effects board: 8♥3♥3♣2♥2♦. Same Villain pyramid — 45 flush combos, still split 9/8/7/6/5/4/3/2/1 by strength. This time, Hero's betting range does NOT include the nut blocker. Just nut flush (9), lower flush blocker (24), and non-flush blockers (6) — 39 combos total.",
         board: ['8h', '3h', '3c', '2h', '2d'],
         street: 'river',
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Blocker Effects', example: 'Blocker Example 2', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Blocker Effects · Blocker Example 2 */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'bnag-s2',
@@ -16470,7 +16397,7 @@ export const LESSONS: Lesson[] = [
           "Reading K♥ as \"the king lives in the K-high tier\" is the natural first pass, and it is genuinely right — that tier really is wiped out. The step it skips is that every card also appears as the LOW card of every tier above its own, which is the only reason K♥ reaches the nut tier at all.",
         flush_pyramid_takeaway:
           "A blocker is only worth something if it removes the combinations you actually need your opponent NOT to have. Count what a card removes tier by tier before calling it a good blocker — never by which tier it appears to belong to.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Blocker Effects', example: 'Blocker Example 2', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Blocker Effects · Blocker Example 2 */ source: { type: 'source_reconstructed' },
         xp: 20,
       },
       {
@@ -16479,7 +16406,7 @@ export const LESSONS: Lesson[] = [
         concept_title: 'The Trap Survives — Almost Intact',
         concept_content: "Last lesson, Hero's ace of hearts removed all 9 of Villain's nut-flush combos — zero traps. Here, Hero's king of hearts removes the entire K-high tier (all 8 of those combos) — but because tiers are defined by their high card, it also happens to remove exactly 1 of the 9 nut-flush combos: the specific A♥K♥. The other 8 nut-flush combos are completely untouched. Without the actual nut blocker, Hero removes almost none of Villain's trap — 8 out of 9 times, the real nuts are still sitting there.",
         concept_note: "This is worth sitting with: a card can partially touch more than one tier at once. What made the ace special in the last lesson wasn't that it 'only' affected one tier — it's that it emptied the ONE tier that mattered completely.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Blocker Effects', example: 'Blocker Example 2', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Blocker Effects · Blocker Example 2 */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'bnag-s4',
@@ -16508,7 +16435,7 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_title: 'Blocker Value Depends on the Range',
         concept_content: "A card is never inherently a good or bad blocker. Its value depends entirely on which combinations it removes AND what those specific combinations were going to do in the game tree. The nut blocker was uniquely powerful last lesson because it removed Villain's ONLY trap. Take that exact card out of Hero's range, and even a real flush blocker like K♥ does nothing to the hand that actually mattered.",
-        source: { book: 'Modern Poker Theory', section: 'Blocker Effects', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Blocker Effects */ source: { type: 'source_reconstructed' },
       },
     ],
   },
@@ -16578,7 +16505,7 @@ export const LESSONS: Lesson[] = [
         concept_title: 'Blocking Value vs Blocking Bluffs, As a Caller',
         concept_content: 'The general river principle, now from the calling side: a card that blocks the hands Villain bets for VALUE makes you a better caller. A card that blocks the hands Villain bets as BLUFFS makes you a worse one — even with identical showdown strength. When a hand blocks both value and bluffs at once, the two effects can cancel out, and the decision needs another factor entirely to break the tie.',
         concept_note: 'No calling frequency is claimed anywhere in this lesson — only which direction each kind of blocker pushes the decision.',
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'River Calling Strategies', example: 'Blockers', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · River Calling Strategies · Blockers */ source: { type: 'source_reconstructed' },
       },
     ],
   },
@@ -16665,7 +16592,7 @@ export const LESSONS: Lesson[] = [
           "The count is the same three tiles per class, so a near-miss here is a suit-reading slip rather than a counting one. What the two classes do not share is the FRACTION: a paired class contains its rank twice, so one card of that rank reaches half of it, while an unpaired class contains that rank once, so the same card reaches a quarter of it — 3 of 12 offsuit, or 1 of 4 had the class been suited.",
         combo_removal_takeaway:
           'Removal only means something as a fraction of the class it lands on. One held card halves a pocket pair and trims a quarter off an unpaired class, so the same blocker does very different amounts of work depending on the shape of what it touches.',
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Hand Ranges as Combinations', type: 'exact_derived' },
+        /* source: Modern Poker Theory · Michael Acevedo · Hand Ranges as Combinations */ source: { type: 'exact_derived' },
         xp: 15,
       },
       {
@@ -16700,7 +16627,7 @@ export const LESSONS: Lesson[] = [
         // Villain's CONTINUING range". This step transplants that same
         // continuing-range test onto a river bluff, which is why it is labelled
         // a model rather than a reconstruction of the book's own example.
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Exploitative 3-betting', example: "Blocker to Villain's continuing range (p.214)", type: 'pedagogical_model' },
+        /* source: Modern Poker Theory · Michael Acevedo · Exploitative 3-betting · Blocker to Villain's continuing range (p.214) */ source: { type: 'pedagogical_model' },
         xp: 15,
       },
       {
@@ -16730,7 +16657,7 @@ export const LESSONS: Lesson[] = [
           "Q♥T♦ is the hand this question turns on, and it is the one a bluff-count habit gets wrong: it removes a bluff, so the rule built earlier in this module says demote it. What actually settles the order is the fraction each side loses — half the value against a twelfth of the bluffs — and not the number of tiles removed.",
         board_rank_sort_takeaway:
           'Net a mixed blocker by proportion, never by combo count. A card that deletes half of a 6-combo value class and one combo of a 12-combo bluff pool has helped you as a caller, even though it blocked a bluff.',
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'River Calling Strategies', example: 'Blockers', type: 'pedagogical_model' },
+        /* source: Modern Poker Theory · Michael Acevedo · River Calling Strategies · Blockers */ source: { type: 'pedagogical_model' },
         xp: 15,
       },
       {
@@ -16773,7 +16700,7 @@ export const LESSONS: Lesson[] = [
         // the frequency a caller must win at to be indifferent "is the exact
         // same number as his pot odds." Villain's range is a stated premise, so
         // the step is a model; everything computed on top of it is arithmetic.
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Minimum Defense Frequency', example: 'Calling indifference equals pot odds (p.102)', type: 'pedagogical_model' },
+        /* source: Modern Poker Theory · Michael Acevedo · Minimum Defense Frequency · Calling indifference equals pot odds (p.102) */ source: { type: 'pedagogical_model' },
         xp: 15,
       },
       {
@@ -16816,7 +16743,7 @@ export const LESSONS: Lesson[] = [
         effective_stack_bb: 100,
         action_before_hero: ['UTG folds', 'UTG+1 folds', 'LJ folds', 'HJ folds', 'CO folds', 'BTN folds', 'SB raises to 3bb'],
         visual: 'table',
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Exploitative 3-betting', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Exploitative 3-betting */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'bl-s2',
@@ -16860,7 +16787,7 @@ export const LESSONS: Lesson[] = [
         concept_content: 'Preflop blockers reduce a defending range. Postflop, on a monotone-heavy board, a blocker can remove an opponent\'s entire ability to have the nuts. Different hand this time, same river board as the Nut Blocker lesson: 8♥3♥3♣2♥2♦.',
         board: ['8h', '3h', '3c', '2h', '2d'],
         street: 'river',
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Blocker Effects', example: 'Blocker Example 1', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Blocker Effects · Blocker Example 1 */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'bl-s5',
@@ -16879,7 +16806,7 @@ export const LESSONS: Lesson[] = [
           "If you marked extra tiers, you were applying the right general rule — most cards DO touch several tiers, because each one also sits as the low card of every tier above its own. The ace is the single card that rule cannot apply to.",
         flush_pyramid_takeaway:
           'Ask what a card removes, not how big it is. A blocker earns its value only when the combos it deletes are the ones that were going to beat you.',
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Blocker Effects', example: 'Blocker Example 1', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Blocker Effects · Blocker Example 1 */ source: { type: 'source_reconstructed' },
         xp: 20,
       },
       {
@@ -17014,7 +16941,7 @@ export const LESSONS: Lesson[] = [
         id: 'ymcm-s4',
         type: 'concept_reveal',
         concept_ids: ['strategy_interdependence'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'The Core Concepts', type: 'source_reconstructed' },
+        /* source: MPT_SOURCE · MPT_AUTHOR · The Core Concepts */ source: { type: 'source_reconstructed' },
         concept_title: 'Now the vocabulary',
         concept_content: "You just built the four ideas this whole module rests on — here's what we call them.",
         concept_structured_items: [
@@ -17052,7 +16979,7 @@ export const LESSONS: Lesson[] = [
         id: 'fbr-s1',
         type: 'concept_reveal',
         concept_ids: ['maximally_exploitative_strategy'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Maximally Exploitative Strategy (MES)', type: 'source_reconstructed' },
+        /* source: MPT_SOURCE · MPT_AUTHOR · Maximally Exploitative Strategy (MES) */ source: { type: 'source_reconstructed' },
         concept_title: 'Maximally Exploitative Strategy',
         // First paragraph is the hinge of the lesson: it carries the learner
         // from "strategies depend on each other" (steps 1-5) into "so name the
@@ -17154,7 +17081,7 @@ export const LESSONS: Lesson[] = [
         id: 'ehc-s1',
         type: 'concept_reveal',
         concept_ids: ['counter_exploitation'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Counter Exploitation', type: 'source_reconstructed' },
+        /* source: MPT_SOURCE · MPT_AUTHOR · Counter Exploitation */ source: { type: 'source_reconstructed' },
         concept_title: 'Counter-Exploitation',
         concept_content: "The warning here: chasing the Maximally Exploitative Strategy can expose Hero to an even larger counter-exploit. An MES is only maximally profitable against the EXACT strategy it was built for. The moment that opponent adjusts, your \"maximally exploitative\" play can become a liability — because you're now the one with a fixed, exploitable pattern.",
         xp: 10,
@@ -17378,7 +17305,7 @@ export const LESSONS: Lesson[] = [
         id: 'npi-s5',
         type: 'concept_reveal',
         concept_ids: ['nash_equilibrium_source'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'The Nash Equilibrium', type: 'source_reconstructed' },
+        /* source: MPT_SOURCE · MPT_AUTHOR · The Nash Equilibrium */ source: { type: 'source_reconstructed' },
         concept_title: 'EQUILIBRIUM',
         concept_content: "B can't improve either — with Hero never betting, there's no decision for Villain to face, so no calling frequency beats any other. Neither player can improve by changing strategy alone. That's Nash equilibrium, precisely defined:",
         concept_structured_items: [
@@ -17461,7 +17388,7 @@ export const LESSONS: Lesson[] = [
         id: 'mti-s3',
         type: 'concept_reveal',
         concept_ids: ['indifference_principle'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'The Indifference Principle', type: 'source_reconstructed' },
+        /* source: MPT_SOURCE · MPT_AUTHOR · The Indifference Principle */ source: { type: 'source_reconstructed' },
         concept_title: 'INDIFFERENCE',
         concept_content: "At 50% calling, Push and Fold earn exactly the same. That's not a coincidence you found by chance — it's the Indifference Principle: if a player uses multiple actions with the SAME hand at equilibrium with nonzero frequencies, those actions must have equal EV. And critically — it's the OPPONENT'S strategy that makes those two actions equal. Change Villain's calling frequency even slightly, and one action becomes clearly better, and the mix stops making sense.",
         xp: 12,
@@ -17673,7 +17600,7 @@ export const LESSONS: Lesson[] = [
         id: 'hmd-s3',
         type: 'concept_reveal',
         concept_ids: ['alpha_mdf_derivation'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Minimum Defense Frequency', type: 'source_reconstructed' },
+        /* source: MPT_SOURCE · MPT_AUTHOR · Minimum Defense Frequency */ source: { type: 'source_reconstructed' },
         concept_title: 'ALPHA and MDF',
         concept_content: "You just found it: at exactly 50% folding, a zero-equity bluff breaks even. That break-even fold frequency is called Alpha. For a bet the same size as the pot: Alpha = bet ÷ (pot + bet) = $100 ÷ $200 = 50%. Defend LESS than (1 − Alpha) and bluffing becomes automatically profitable — so the defender's Minimum Defense Frequency is MDF = 1 − Alpha = 50%. That's exactly KK's equilibrium calling frequency from the Clairvoyance Game — not a coincidence: MDF IS the equilibrium continuing frequency against a zero-equity bluff.",
         xp: 15,
@@ -18048,7 +17975,7 @@ export const LESSONS: Lesson[] = [
         id: 'wwb-s1',
         type: 'concept_reveal',
         concept_ids: ['informational_advantage'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Theory of Betting', type: 'exact_derived' },
+        /* source: MPT_SOURCE · MPT_AUTHOR · Theory of Betting */ source: { type: 'exact_derived' },
         concept_title: 'Not "value bet" or "bluff"',
         concept_content: "Every earlier module has asked you to label a bet as either \"for value\" or \"as a bluff.\" Those labels describe what happened once the hand was over — not why the bet was correct in the first place. If you bet and get called by worse, you happened to be value-betting. If you bet and a better hand folds, you happened to be bluffing. Neither label was available to you at the moment you decided to bet, because you don't know your opponent's hand when you act. \"Bet good hands, check bad hands\" doesn't explain why betting works — it just relabels the fact that you bet.",
         narrative: "So what is the real reason to bet? It reduces to two ideas: leveraging the fact that you know your own exact cards while your opponent only knows your range, and realizing (or denying) equity.",
@@ -18058,7 +17985,7 @@ export const LESSONS: Lesson[] = [
         id: 'wwb-s2',
         type: 'concept_reveal',
         concept_ids: ['informational_advantage'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'The Clairvoyance Toy Game (recalled from Module 10)', type: 'exact_derived' },
+        /* source: MPT_SOURCE · MPT_AUTHOR · The Clairvoyance Toy Game (recalled from Module 10) */ source: { type: 'exact_derived' },
         concept_title: 'Recall: the Clairvoyance Game',
         concept_content: "You already solved this in Module 10 — recalled here, not re-derived. Pot $100, stacks $100. P1 holds AA or QQ, 50/50. P2 holds KK always. Both players are clairvoyant: they know each other's exact strategy. At equilibrium, P1 bets AA 100% of the time and bluffs QQ 50% of the time; P2 calls with KK 50% of the time. The result: P1's EV is $75, P2's EV is only $25 — even though P2 knows P1's entire strategy in advance.",
         concept_note: 'How is P1 profiting from a strategy P2 already knows in full? That gap — between knowing the RANGE and knowing the exact HAND — is what this lesson is about.',
@@ -18068,7 +17995,7 @@ export const LESSONS: Lesson[] = [
         id: 'wwb-s3',
         type: 'decision_spot',
         concept_ids: ['informational_advantage'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Theory of Betting — informational advantage', type: 'exact_derived' },
+        /* source: MPT_SOURCE · MPT_AUTHOR · Theory of Betting — informational advantage */ source: { type: 'exact_derived' },
         narrative: 'Imagine a variant of this exact game where both players\' hole cards are fully visible to each other — same ranges, same pot, same stacks, nothing hidden.',
         decision_spot_question: "What would P1's EV become if both hands were visible?",
         options: [
@@ -18124,7 +18051,7 @@ export const LESSONS: Lesson[] = [
         id: 'wwb-s4',
         type: 'clairvoyance_lab',
         concept_ids: ['informational_advantage'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Theory of Betting — hidden vs. face-up comparison', type: 'exact_derived' },
+        /* source: MPT_SOURCE · MPT_AUTHOR · Theory of Betting — hidden vs. face-up comparison */ source: { type: 'exact_derived' },
         narrative: "Here's the same game, both versions, side by side.",
         clairvoyance_lab_mode: 'face_up_compare',
         clairvoyance_lab_prompt: 'Hidden information vs. full information — same ranges, same pot, same stacks.',
@@ -18219,7 +18146,7 @@ export const LESSONS: Lesson[] = [
         id: 'srtf-s1',
         type: 'concept_reveal',
         concept_ids: ['relative_range_shape'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Range Morphology (recalled from Module 4)', type: 'exact_derived' },
+        /* source: MPT_SOURCE · MPT_AUTHOR · Range Morphology (recalled from Module 4) */ source: { type: 'exact_derived' },
         concept_title: 'Quick recall',
         concept_content: "Fast recap, not a re-teach. LINEAR = built top-down by strength, no gaps. POLARIZED = strong value hands and weak bluffs, with a hole in the middle. CONDENSED (depolarized) = the opposite — top and bottom removed, only the middle left. CAPPED = missing its strongest possible hands. UNCAPPED = has all of them.",
         narrative: 'This lesson is about to challenge something you probably assumed while learning those five labels — that a range HAS one of these shapes, the way a card has a rank.',
@@ -18328,7 +18255,7 @@ export const LESSONS: Lesson[] = [
             feedback: "Look again at both range_xray panels — Hero's Strong percentage is the exact same number both times. Nothing in Hero's own range moved. What changed was only the opponent it was being measured against.",
           },
         ],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Ch.13, "the same range is polarized vs. one opponent, condensed vs. another"', type: 'source_reconstructed' },
+        /* source: MPT_SOURCE · MPT_AUTHOR · Ch.13, "the same range is polarized vs. one opponent, condensed vs. another" */ source: { type: 'source_reconstructed' },
         remediation_ladder: [
           {
             id: 'srtf-s5-remediate-1',
@@ -18404,7 +18331,7 @@ export const LESSONS: Lesson[] = [
         id: 'cbe-s1',
         type: 'concept_reveal',
         concept_ids: ['range_composition'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Theory of Betting — range composition beats raw equity', type: 'exact_derived' },
+        /* source: MPT_SOURCE · MPT_AUTHOR · Theory of Betting — range composition beats raw equity */ source: { type: 'exact_derived' },
         concept_title: 'The precise tool for "relative"',
         concept_content: "Lesson 2 showed shape is relative — but so far that's only been judged loosely, by overall impression. This lesson uses the exact instrument you already built in Modules 7-8: the Equity Bucket (Strong ≥75%, Good 50-75%, Weak 33-50%, Trash <33% hand-vs-range equity). The claim this lesson proves: two ranges can have nearly identical raw equity, and yet want completely different strategies — because raw equity is an AVERAGE, and the same average can be built from very different underlying distributions.",
         xp: 8,
@@ -18435,7 +18362,7 @@ export const LESSONS: Lesson[] = [
         id: 'cbe-s3',
         type: 'range_xray',
         concept_ids: ['range_composition'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: A76R_SCENARIO.source.note, type: 'source_reconstructed' },
+        /* source: MPT_SOURCE · MPT_AUTHOR · A76R_SCENARIO.source.note */ source: { type: 'source_reconstructed' },
         board: A76R_SCENARIO.board,
         range_xray_board: A76R_SCENARIO.board,
         range_xray_entries: [
@@ -18491,7 +18418,7 @@ export const LESSONS: Lesson[] = [
         id: 'cbe-s5',
         type: 'range_xray',
         concept_ids: ['range_composition'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: CS_654R_SCENARIO.source.note, type: 'source_reconstructed' },
+        /* source: MPT_SOURCE · MPT_AUTHOR · CS_654R_SCENARIO.source.note */ source: { type: 'source_reconstructed' },
         board: CS_654R_SCENARIO.board,
         range_xray_board: CS_654R_SCENARIO.board,
         range_xray_entries: [
@@ -18571,8 +18498,8 @@ export const LESSONS: Lesson[] = [
         id: 'cbe-ex1',
         type: 'decision_spot',
         concept_ids: ['range_composition'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Ch.11, "The Value of Donk Betting", p.635 — A76r c-betting frequency', type: 'exact_derived' },
-        narrative: `Exercise 1. Back to A76r: IP is ${A76R_SCENARIO.strongBucket.ip}% Strong, BB is only ${A76R_SCENARIO.strongBucket.bb}% Strong (raw equity ${A76R_SCENARIO.equity.ip}/${A76R_SCENARIO.equity.bb}). The book states IP's real GTO frequency here is to continuation-bet 100% of their range, every single time.`,
+        /* source: MPT_SOURCE · MPT_AUTHOR · Ch.11, "The Value of Donk Betting", p.635 — A76r c-betting frequency */ source: { type: 'exact_derived' },
+        narrative: `Exercise 1. Back to A76r: IP is ${A76R_SCENARIO.strongBucket.ip}% Strong, BB is only ${A76R_SCENARIO.strongBucket.bb}% Strong (raw equity ${A76R_SCENARIO.equity.ip}/${A76R_SCENARIO.equity.bb}). The source states IP's real GTO frequency here is to continuation-bet 100% of their range, every single time.`,
         decision_spot_question: 'Why does the composition support betting 100% of the range, rather than something more moderate?',
         options: [
           {
@@ -18608,15 +18535,15 @@ export const LESSONS: Lesson[] = [
         id: 'cbe-ex2',
         type: 'decision_spot',
         concept_ids: ['range_composition'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Ch.11, "The Value of Donk Betting", p.634 — IP\'s Ax equity on A76r vs 654r', type: 'exact_derived' },
-        narrative: `Exercise 2. IP holds AJo on two separate hands. On A76r, AJo IS top pair, top kicker — part of the book's own "any Ax averages ${A76R_SCENARIO.ipTopPairAvgEquity}% equity" figure. On 654r, the identical AJo has no pair at all — just ace-high, part of the book's own "Ax averages ${CS_654R_SCENARIO.ipAxAvgEquity}% equity, effectively turning them into weak hands" figure.`,
+        /* source: MPT_SOURCE · MPT_AUTHOR · Ch.11, "The Value of Donk Betting", p.634 — IP\'s Ax equity on A76r vs 654r */ source: { type: 'exact_derived' },
+        narrative: `Exercise 2. IP holds AJo on two separate hands. On A76r, AJo IS top pair, top kicker — part of the source's own "any Ax averages ${A76R_SCENARIO.ipTopPairAvgEquity}% equity" figure. On 654r, the identical AJo has no pair at all — just ace-high, part of the source's own "Ax averages ${CS_654R_SCENARIO.ipAxAvgEquity}% equity, effectively turning them into weak hands" figure.`,
         decision_spot_question: 'The preflop hand never changed. Why did its performance change so drastically between the two boards?',
         options: [
           {
             id: 'board_defines_class',
             label: 'The board — not the starting hand — determines what hand-class AJo actually becomes on that runout',
             quality: 'perfect',
-            feedback: `Exactly — this is composition thinking applied to a single combo instead of a whole range. "AJo" was never a fixed asset with a fixed value; A76r turns it into a made hand with real showdown value (${A76R_SCENARIO.ipTopPairAvgEquity}% average equity), while 654r leaves it completely unpaired, pushing it into the range's weak tier (${CS_654R_SCENARIO.ipAxAvgEquity}% average equity) — the book's own words, "effectively turning them into weak hands."`,
+            feedback: `Exactly — this is composition thinking applied to a single combo instead of a whole range. "AJo" was never a fixed asset with a fixed value; A76r turns it into a made hand with real showdown value (${A76R_SCENARIO.ipTopPairAvgEquity}% average equity), while 654r leaves it completely unpaired, pushing it into the range's weak tier (${CS_654R_SCENARIO.ipAxAvgEquity}% average equity) — the source's own words, "effectively turning them into weak hands."`,
           },
           {
             id: 'weak_preflop_hand',
@@ -18645,7 +18572,7 @@ export const LESSONS: Lesson[] = [
         id: 'cbe-ex3',
         type: 'decision_spot',
         concept_ids: ['range_composition'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Ch.11, "The Value of Donk Betting", p.634 — BB\'s bucket shift on 654r vs A76r', type: 'exact_derived' },
+        /* source: MPT_SOURCE · MPT_AUTHOR · Ch.11, "The Value of Donk Betting", p.634 — BB\'s bucket shift on 654r vs A76r */ source: { type: 'exact_derived' },
         narrative: `Exercise 3 (the hardest). A player looks only at 654r's raw equity split — BB ${CS_654R_SCENARIO.equity.bb}%, IP ${CS_654R_SCENARIO.equity.ip}% — and concludes: "It's basically a coinflip, so neither range has a real edge here — strategy should be symmetric."`,
         decision_spot_question: "What's wrong with this conclusion?",
         options: [
@@ -18706,7 +18633,7 @@ export const LESSONS: Lesson[] = [
         id: 'bhj-s1',
         type: 'concept_reveal',
         concept_ids: ['bluff_to_value_ratio'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Alpha / MDF (recalled from Module 10)', type: 'exact_derived' },
+        /* source: MPT_SOURCE · MPT_AUTHOR · Alpha / MDF (recalled from Module 10) */ source: { type: 'exact_derived' },
         concept_title: 'The same formula, a new job',
         concept_content: "You already know Alpha = bet ÷ (bet + pot), and MDF = 1 − Alpha, from Module 10. This lesson doesn't re-derive that formula — it changes what you use it FOR. Instead of asking \"does this one bluff break even,\" you're going to use it to build an entire betting range: fix a bet-size, and Alpha tells you exactly what fraction of your ENTIRE betting range must be bluffs for your value hands to stay believable.",
         narrative: "Bet only your nuts, with zero bluffs, and your opponent can simply fold everything that isn't already beating you — you extract nothing beyond what a walk-up call would have given you. Bluff too often relative to what your bet-size supports, and your opponent's defense becomes profitable. The correct amount sits in between, and it's exact.",
@@ -18718,7 +18645,7 @@ export const LESSONS: Lesson[] = [
         concept_ids: ['bluff_to_value_ratio'],
         source: HALF_POT_ALPHA_MDF_EXAMPLE.source,
         concept_title: "A Half-Pot Example",
-        concept_content: `A half-pot river bet with a polarized range: Alpha = ${HALF_POT_ALPHA_MDF_EXAMPLE.alphaPct}%, MDF = ${HALF_POT_ALPHA_MDF_EXAMPLE.mdfPct}%. The book states the resulting betting range directly: ${HALF_POT_ALPHA_MDF_EXAMPLE.valuePct}% value hands and ${HALF_POT_ALPHA_MDF_EXAMPLE.bluffPct}% bluffs (3-to-1). Notice this is a claim about the RESULTING COMPOSITION of the whole betting range — a separate (related) number from Alpha itself, not simply Alpha restated.`,
+        concept_content: `A half-pot river bet with a polarized range: Alpha = ${HALF_POT_ALPHA_MDF_EXAMPLE.alphaPct}%, MDF = ${HALF_POT_ALPHA_MDF_EXAMPLE.mdfPct}%. The source states the resulting betting range directly: ${HALF_POT_ALPHA_MDF_EXAMPLE.valuePct}% value hands and ${HALF_POT_ALPHA_MDF_EXAMPLE.bluffPct}% bluffs (3-to-1). Notice this is a claim about the RESULTING COMPOSITION of the whole betting range — a separate (related) number from Alpha itself, not simply Alpha restated.`,
         concept_note: 'Keep this distinction precise: Alpha is a property of the bet-size. The value-to-bluff RATIO is what that Alpha, combined with your specific value-combo count, actually requires your range to look like.',
         xp: 8,
       },
@@ -18795,7 +18722,7 @@ export const LESSONS: Lesson[] = [
         id: 'bhj-s5',
         type: 'concept_reveal',
         concept_ids: ['bluff_to_value_ratio'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Alpha and MDF Revisited — the flop/river caveat', type: 'exact_derived' },
+        /* source: MPT_SOURCE · MPT_AUTHOR · Alpha and MDF Revisited — the flop/river caveat */ source: { type: 'exact_derived' },
         concept_title: 'Where this stops being exact',
         concept_content: "Alpha and MDF are derived from an EV equation that makes two assumptions: a checked-back hand's EV is exactly 0, and a called bluff always loses everything. On the RIVER, both are literally true — no more cards to come. On the FLOP (and to a lesser extent the turn), neither holds up cleanly: a checked-back hand often retains real equity to improve, and a flop \"bluff\" — a hand with a gutshot, a backdoor flush draw — often keeps a genuine chance to win even when called.",
         concept_note: "Even respected coaches make this mistake: treating \"my bet only needs to work X% of the time\" as automatically sound, without checking whether the underlying zero-EV assumptions actually hold on this street.",
@@ -18884,7 +18811,7 @@ export const LESSONS: Lesson[] = [
         id: 'ptcr-s1',
         type: 'concept_reveal',
         concept_ids: ['protected_checking_range'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Strategic Actions — Checking (IP vs. OOP asymmetry)', type: 'exact_derived' },
+        /* source: MPT_SOURCE · MPT_AUTHOR · Strategic Actions — Checking (IP vs. OOP asymmetry) */ source: { type: 'exact_derived' },
         concept_title: 'Checking is not "whatever is left over"',
         concept_content: "Every lesson so far looked at the hands you bet. This lesson asks what happens to the hands you don't. The tempting, wrong answer: checking is just the residue of deciding what to bet — everything below the value/bluff threshold. Checking in position and out of position are fundamentally different actions. Checking IP immediately, unconditionally realizes your hand's equity — the action is over. Checking OOP settles nothing: you'll often face a bet next, and now YOU have to decide whether to fold, call, or raise.",
         narrative: "Because of this, IP's checking-back range only needs to be balanced on the AVERAGE turn card. OOP's checking range has to be balanced on the FLOP ITSELF, at the moment of the check — a much stricter requirement.",
@@ -18894,7 +18821,7 @@ export const LESSONS: Lesson[] = [
         id: 'ptcr-s2',
         type: 'concept_reveal',
         concept_ids: ['protected_checking_range'],
-        source: { book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Donk betting / C-bet defense — the "capped and unbalanced" leak', type: 'exact_derived' },
+        /* source: MPT_SOURCE · MPT_AUTHOR · Donk betting / C-bet defense — the "capped and unbalanced" leak */ source: { type: 'exact_derived' },
         concept_title: 'What "capped and unbalanced" means in practice',
         concept_content: "A checking range that never contains a genuinely strong hand — every strong hand having been peeled off into the betting range — becomes capped and unbalanced. An aware opponent who notices this can attack every check you make without fear, because the threat of a trap has been removed. The fix: deliberately hold back a MODEST fraction of your strong hands, checked on purpose, so the range as a whole can't be safely attacked. This costs a little on THIS street, and buys protection across every street still to come.",
         concept_note: "Modest is the key word — this is not \"check most of your strong hands.\" A small, deliberate minority is enough to remove the capped label; checking back too many creates the opposite problem, a betting range too thin to be credible.",
@@ -19029,9 +18956,9 @@ export const LESSONS: Lesson[] = [
         id: 'bsis-s1',
         type: 'concept_reveal',
         concept_title: 'The Menu, Not the Number',
-        concept_content: "No-Limit Hold'em lets you bet any amount from one chip to your whole stack — \"the ability to bet any amount... at any given point\" is what separates NLH from every other structured variant. Follow that freedom through: if bet-size is truly continuous, there's no finite decision tree for a single hand — between any two sizes there's always another size in between. No solver, and no strategy, can compute across infinitely many branches. So every real strategy secretly does the same thing first: it picks a small, finite list of sizes and agrees, in advance, never to use anything outside it. The book's glossary calls this an action abstraction — \"a situation where some of the actions in the real game are assumed to not be usable.\" A solver doesn't discover the \"correct\" size out of infinite possibilities; a human hands it a short list, and it only ever chooses among those.",
+        concept_content: "No-Limit Hold'em lets you bet any amount from one chip to your whole stack — \"the ability to bet any amount... at any given point\" is what separates NLH from every other structured variant. Follow that freedom through: if bet-size is truly continuous, there's no finite decision tree for a single hand — between any two sizes there's always another size in between. No solver, and no strategy, can compute across infinitely many branches. So every real strategy secretly does the same thing first: it picks a small, finite list of sizes and agrees, in advance, never to use anything outside it. The source's glossary calls this an action abstraction — \"a situation where some of the actions in the real game are assumed to not be usable.\" A solver doesn't discover the \"correct\" size out of infinite possibilities; a human hands it a short list, and it only ever chooses among those.",
         concept_note: "The direct consequence: you don't choose a bet-size for a hand. You decide, in advance, which small menu your strategy uses in this spot — only afterward does a specific hand get assigned to one of the entries already on it.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.1 Glossary pp.19-23; Ch.10 p.599', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Ch.1 Glossary pp.19-23; Ch.10 p.599 */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'bsis-s2',
@@ -19047,7 +18974,7 @@ export const LESSONS: Lesson[] = [
           { term: 'Slow play / trap', description: 'Playing a premium holding passively, hoping to induce a value-bet or bluff from a worse hand.' },
         ],
         concept_note: "This module uses every one of these definitions precisely, with no looser paraphrase substituted in their place.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.1 Glossary p.22', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Ch.1 Glossary p.22 */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'bsis-s3',
@@ -19177,7 +19104,7 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_title: 'One Fact, Four Angles',
         concept_content: "Every bet-size you could choose comes bundled with four numbers: the pot odds it offers, the percentage of the time it needs to work (Alpha), the minimum percentage of their range Villain must continue with (MDF), and — for a polarized range — the value:bluff ratio it needs to stay unexploitable. These aren't four separate facts to memorize. They're one fact, computed from one input, viewed four ways. Computing a pot-size BET is trivial: normalize the pot, multiply by the fraction, that's your bet. A pot-size RAISE is trickier and where players get it wrong constantly — three steps, always in this order: (1) match the bet you're facing, (2) recompute the pot including your OWN call, (3) add your target fraction of that new total on top. Skipping step 2 — forgetting your own call belongs in the pot before sizing the raise — produces a raise smaller than a true pot-size raise every time.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.10 pp.600-602', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Ch.10 pp.600-602 */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'wsby-s2',
@@ -19190,7 +19117,7 @@ export const LESSONS: Lesson[] = [
           { term: 'Value:bluff ratio', description: '75/25, a 3-to-1 ratio — the bluff share of the range IS the Alpha number. Same fact as 33.3% Alpha, restated as a ratio.' },
         ],
         concept_note: "Bet bigger and every number tightens (higher pot odds offered, higher Alpha required, lower MDF demanded, a stricter value:bluff ratio). Bet smaller and every number loosens. This is the mechanism behind Lesson 1's claim: a bigger size isn't just 'more of the same bet' — it demands a different range composition.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.2, Table 14, pp.135-136', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Ch.2, Table 14, pp.135-136 */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'wsby-s3',
@@ -19213,7 +19140,7 @@ export const LESSONS: Lesson[] = [
         options: [
           {
             id: 'correct', label: '25% pot odds, 33.3% Alpha, 66.7% MDF, roughly 2:1 value:bluff', quality: 'perfect',
-            feedback: "Correct. Pot odds = 40 ÷ (80+40+40) = 25%. Alpha = 40 ÷ (80+40) = 33.3% — the bet ÷ (bet+pot) formula, NOT bet÷pot. MDF = 1 − 33.3% = 66.7%. Value:bluff ratio = 66.7% : 33.3% ≈ 2:1. Same underlying relationship as the book's own half-pot example, just different starting numbers.",
+            feedback: "Correct. Pot odds = 40 ÷ (80+40+40) = 25%. Alpha = 40 ÷ (80+40) = 33.3% — the bet ÷ (bet+pot) formula, NOT bet÷pot. MDF = 1 − 33.3% = 66.7%. Value:bluff ratio = 66.7%: 33.3% ≈ 2:1. Same underlying relationship as the source's own half-pot example, just different starting numbers.",
           },
           {
             id: 'alpha_as_bet_over_pot', label: '25% pot odds, 50% Alpha, 50% MDF, 1:1 value:bluff', quality: 'mistake',
@@ -19321,8 +19248,8 @@ export const LESSONS: Lesson[] = [
         id: 'osrfa-s1',
         type: 'concept_reveal',
         concept_title: 'The [0-1] Toy Game',
-        concept_content: "Lesson 1 established that a strategy commits to a small menu of sizes in advance. It never asked how many entries that menu should have. In the book's [0-1] Toy Game, both players are dealt a random real number between 0 and 1 — infinitely many possible \"hands.\" With no cost to using more sizes, the theoretically optimal strategy uses infinitely many bet-sizes, one scaled to each value-hand's exact strength. But real poker has neither infinite hands nor zero cost to using more sizes. To test this against something closer to real poker, the book rebuilds it in a solver with a genuine, finite 10-combo range (AA down through 55, no card-removal effects) and three available sizes: full-pot, two-thirds-pot, one-third-pot, at SPR 2. The real question: given a small, finite range and menu, does the solver actually use every size, or collapse toward fewer?",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.10 pp.603-604', type: 'source_reconstructed' },
+        concept_content: "Lesson 1 established that a strategy commits to a small menu of sizes in advance. It never asked how many entries that menu should have. In the source's [0-1] Toy Game, both players are dealt a random real number between 0 and 1 — infinitely many possible \"hands.\" With no cost to using more sizes, the theoretically optimal strategy uses infinitely many bet-sizes, one scaled to each value-hand's exact strength. But real poker has neither infinite hands nor zero cost to using more sizes. To test this against something closer to real poker, the source rebuilds it in a solver with a genuine, finite 10-combo range (AA down through 55, no card-removal effects) and three available sizes: full-pot, two-thirds-pot, one-third-pot, at SPR 2. The real question: given a small, finite range and menu, does the solver actually use every size, or collapse toward fewer?",
+        /* source: Modern Poker Theory · Michael Acevedo · Ch.10 pp.603-604 */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'osrfa-s2',
@@ -19335,13 +19262,13 @@ export const LESSONS: Lesson[] = [
           { term: 'JJ through 77', description: 'Checked entirely — the middle of the range.' },
         ],
         concept_note: 'This strategy captures 56.11% of the pot for Hero. When nothing punishes a strategy for splitting into multiple sizes, a genuine, hand-strength-scaled split is exactly what a GTO strategy produces.',
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.10 pp.604-605, Table 89', example: 'Hand Range 337', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Ch.10 pp.604-605, Table 89 · Hand Range 337 */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'osrfa-s3',
         type: 'range_compression_toggle',
         concept_ids: ['size_abandonment_mechanism'],
-        narrative: "You're about to run the book's own experiment. Ten hands, three possible sizes: what happens to the menu when Villain gets the ability to check-raise it? You're currently viewing Example A (no raise threat). Predict before you toggle.",
+        narrative: "You're about to run the source's own experiment. Ten hands, three possible sizes: what happens to the menu when Villain gets the ability to check-raise it? You're currently viewing Example A (no raise threat). Predict before you toggle.",
         range_compression_toggle_pool: HAND_RANGE_POOL,
         range_compression_toggle_states: [RANGE_COMPRESSION_STATES[0], RANGE_COMPRESSION_STATES[1], RANGE_COMPRESSION_STATES[2]].map((s) => ({
           id: s.id, label: s.label, strategyMap: s.strategies, evLabel: s.ev_label,
@@ -19467,17 +19394,17 @@ export const LESSONS: Lesson[] = [
         id: 'tscos-s1',
         type: 'concept_reveal',
         concept_title: 'How Much Does Splitting Actually Buy?',
-        concept_content: "Lesson 3 proved multi-size splitting is real — Example A beat Example C by a real EV margin. This lesson measures that margin precisely. Table 91 simplifies the [0-1] Toy Game's multi-size strategy at each tested SPR down to just its most-used size, and measures the loss: the average EV loss across all tested SPRs is only 0.21% of the pot. A second, independent test — a full BB-vs-BN simulation across all 1,755 strategically distinct flops, comparing a rich four-size c-bet menu against one-third-pot everywhere — lands on a strikingly similar number: 0.14% of the pot (0.9bb/100), assuming PERFECT play from both sides. Real opponents play imperfectly and systematically overfold to small bets specifically — meaning the practical case for simplification is, if anything, stronger than the bare number suggests. The book's own words: \"Splitting your range into different bet-sizes gives away information that your opponents could leverage against you... For this reason we don't have to worry about optimal play containing infinite bet-sizes.\"",
+        concept_content: "Lesson 3 proved multi-size splitting is real — Example A beat Example C by a real EV margin. This lesson measures that margin precisely. The table simplifies the [0-1] Toy Game's multi-size strategy at each tested SPR down to just its most-used size, and measures the loss: the average EV loss across all tested SPRs is only 0.21% of the pot. A second, independent test — a full BB-vs-BN simulation across all 1,755 strategically distinct flops, comparing a rich four-size c-bet menu against one-third-pot everywhere — lands on a strikingly similar number: 0.14% of the pot (0.9bb/100), assuming PERFECT play from both sides. Real opponents play imperfectly and systematically overfold to small bets specifically — meaning the practical case for simplification is, if anything, stronger than the bare number suggests. The source's own words: \"Splitting your range into different bet-sizes gives away information that your opponents could leverage against you... For this reason we don't have to worry about optimal play containing infinite bet-sizes.\"",
         concept_note: "This is why two c-bet sizes (one-third-pot and two-thirds-pot) covers the overwhelming majority of practical situations, and a single one-third-pot-everywhere strategy is explicitly validated as workable against a real population — not a compromise you settle for, but a well-reasoned simplification with a small, known cost.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.10, Table 91 p.610; Table 95 p.620; pp.610-611, 621', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Ch.10, Table 91 p.610; Table 95 p.620; pp.610-611, 621 */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'tscos-s2',
         type: 'concept_reveal',
         concept_title: 'The All-In Exception, and Its SPR Bands',
-        concept_content: "The book gives exactly one clean, structural exception to \"default toward fewer sizes.\" Example D adds an all-in option to the pot-size bet: AA goes all-in 42% of the time (balanced by 55 bluffing 26%), while KK bets pot-size 100% (balanced by AA 58% and 55 74%). Why does all-in survive raise pressure when one-third-pot didn't? \"All-in is a special bet-size because it limits Villain's options to only call and fold\" — it's structurally IMMUNE to the exact mechanism (raise exposure) that collapsed every other size in Lesson 3. But even this exception is conditional on SPR: at SPR 3, the all-in option stops being used at all.",
+        concept_content: "The source gives exactly one clean, structural exception to \"default toward fewer sizes.\" Example D adds an all-in option to the pot-size bet: AA goes all-in 42% of the time (balanced by 55 bluffing 26%), while KK bets pot-size 100% (balanced by AA 58% and 55 74%). Why does all-in survive raise pressure when one-third-pot didn't? \"All-in is a special bet-size because it limits Villain's options to only call and fold\" — it's structurally IMMUNE to the exact mechanism (raise exposure) that collapsed every other size in Lesson 3. But even this exception is conditional on SPR: at SPR 3, the all-in option stops being used at all.",
         concept_structured_items: SPR_TABLE_90.map((b) => ({ term: b.sprRange, description: `${b.band} — ${b.description}` })),
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.10 pp.607-610, Table 90', example: 'Hand Range 340', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Ch.10 pp.607-610, Table 90 · Hand Range 340 */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'tscos-s3',
@@ -19492,7 +19419,7 @@ export const LESSONS: Lesson[] = [
         options: [
           {
             id: 'right_band', label: '0.1%-0.5% of the pot', quality: 'perfect',
-            feedback: "You landed in the right neighborhood — and that's worth pausing on, because this is genuinely a small number. Multi-size splitting is real and provable (Lesson 3), but its EV value, honestly measured, turns out to be modest. The book's own figures: 0.21% (single-street toy game, averaged across SPRs) and 0.14% / 0.9bb-100 (the full 1,755-flop simulation). Tap through the states above — Example D adds the one structural exception: the all-in size, which survives raise pressure by removing Villain's ability to raise at all.",
+            feedback: "You landed in the right neighborhood — and that's worth pausing, because this is genuinely a small number. Multi-size splitting is real and provable (Lesson 3), but its EV value, honestly measured, turns out to be modest. The source's own figures: 0.21% (single-street toy game, averaged across SPRs) and 0.14% / 0.9bb-100 (the full 1,755-flop simulation). Tap through the states above — Example D adds the one structural exception: the all-in size, which survives raise pressure by removing Villain's ability to raise at all.",
           },
           {
             id: 'over_2', label: 'More than 2% of the pot', quality: 'mistake',
@@ -19500,7 +19427,7 @@ export const LESSONS: Lesson[] = [
           },
           {
             id: 'under_01', label: 'Under 0.1% of the pot', quality: 'mistake',
-            feedback: "Close, but the real number (0.21% single-street, 0.14%/0.9bb-100 across the full 1,755-flop simulation) is a bit higher than that — small, but not negligible at the margins. Lesson 8 will show the book explicitly recommending a SECOND c-bet size specifically because certain board differences are large enough to be worth capturing, even though the average cost of ignoring them is small.",
+            feedback: "Close, but the real number (0.21% single-street, 0.14%/0.9bb-100 across the full 1,755-flop simulation) is a bit higher than that — small, but not negligible at the margins. Lesson 8 will show the source explicitly recommending a SECOND c-bet size specifically because certain board differences are large enough to be worth capturing, even though the average cost of ignoring them is small.",
           },
         ],
         xp: 20,
@@ -19542,7 +19469,7 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['one_size_fits_board_caveat'],
         narrative: "Table 90, SPR 1 or below.",
-        decision_spot_question: 'What does the book say the optimal bet-sizing strategy looks like here, and why?',
+        decision_spot_question: 'What does the source say the optimal bet-sizing strategy looks like here, and why?',
         options: [
           {
             id: 'all_in_only', label: 'Simply all-in', quality: 'perfect',
@@ -19609,22 +19536,22 @@ export const LESSONS: Lesson[] = [
         id: 'wyrsp-s1',
         type: 'concept_reveal',
         concept_title: 'One Curve, Five Points',
-        concept_content: "Lesson 4 asked what determines the DIRECTION a strategy's sizing should lean. The answer is Module 11's central claim — range shape is relative, not fixed — pointed directly at bet-size for the first time. The book's experiment: board and SPR held fixed (SPR 4), five sizes always available (30/60/90/120%-pot, all-in), and the ONE thing varied across five trials is Hero's polarization relative to Villain's. Toy Game A (Hero QQ-66 vs. Villain's full AA-44 — a BIG disadvantage): Hero checks 100%, full stop — not timid betting, no betting at all. Toy Game B (a SLIGHT disadvantage): Hero bets only ~15%, exclusively at 60%-pot. Toy Game C (parity): the range splits between 90%-pot and 120%-pot — but all-in remains completely unused, even at parity. Toy Game D (a SLIGHT advantage): all-in finally appears, but 120%-pot is still the dominant size. Toy Game E (a BIG advantage): all-in becomes overwhelmingly dominant.",
+        concept_content: "Lesson 4 asked what determines the DIRECTION a strategy's sizing should lean. The answer is Module 11's central claim — range shape is relative, not fixed — pointed directly at bet-size for the first time. The source's experiment: board and SPR held fixed (SPR 4), five sizes always available (30/60/90/120%-pot, all-in), and the ONE thing varied across five trials is Hero's polarization relative to Villain's. Toy Game A (Hero QQ-66 vs. Villain's full AA-44 — a BIG disadvantage): Hero checks 100%, full stop — not timid betting, no betting at all. Toy Game B (a SLIGHT disadvantage): Hero bets only ~15%, exclusively at 60%-pot. Toy Game C (parity): the range splits between 90%-pot and 120%-pot — but all-in remains completely unused, even at parity. Toy Game D (a SLIGHT advantage): all-in finally appears, but 120%-pot is still the dominant size. Toy Game E (a BIG advantage): all-in becomes overwhelmingly dominant.",
         concept_note: "Read this as one continuous curve, not five disconnected facts: as Hero's polarization advantage grows, both betting FREQUENCY and preferred SIZE climb together, smoothly, the whole way. A modest edge earns a modest sizing lean — only a genuinely large edge earns the genuinely large, all-in-dominant response.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.10, Table 92, pp.615-617', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Ch.10, Table 92, pp.615-617 */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'wyrsp-s2',
         type: 'concept_reveal',
         concept_title: 'Multi-Street Sharpening, and Range Merging',
-        concept_content: "Replay the same five scenarios across two streets, and the single-street result sharpens: \"even a slight polarization disadvantage is enough to stop Hero from doing any betting at all\" — where the single-street version still allowed a modest 15% frequency, the multi-street version collapses it to zero. Why sharper? Checking preserves Hero's ability to reach the river with their ENTIRE original range intact — a bigger prize than a single street's caution buys, since betting even a little forces some hands to fold to a check-raise \"along the way,\" and a multi-street game has more \"along the way\" for that cost to happen during. At multi-street PARITY, something new appears: Hero bets the SMALLEST size (30%-pot) with a deliberately MERGED range — blending what would be separate top-and-bottom groups into one betting group. Why merge instead of polarize? Because polarizing too aggressively here leaves Hero's checking range capped (missing its own strongest hands) right before Villain's river bet can attack that exact weakness. The book's own summary: \"The more polarized Hero's range is compared to Villain's range, the more they are incentivized to use bigger bet-sizes... all-in bets are rarely used on early streets unless stacks are shallow.\"",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.10, Tables 93-94, pp.617-619', type: 'source_reconstructed' },
+        concept_content: "Replay the same five scenarios across two streets, and the single-street result sharpens: \"even a slight polarization disadvantage is enough to stop Hero from doing any betting at all\" — where the single-street version still allowed a modest 15% frequency, the multi-street version collapses it to zero. Why sharper? Checking preserves Hero's ability to reach the river with their ENTIRE original range intact — a bigger prize than a single street's caution buys, since betting even a little forces some hands to fold to a check-raise \"along the way,\" and a multi-street game has more \"along the way\" for that cost to happen during. At multi-street PARITY, something new appears: Hero bets the SMALLEST size (30%-pot) with a deliberately MERGED range — blending what would be separate top-and-bottom groups into one betting group. Why merge instead of polarize? Because polarizing too aggressively here leaves Hero's checking range capped (missing its own strongest hands) right before Villain's river bet can attack that exact weakness. The source's own summary: \"The more polarized Hero's range is compared to Villain's range, the more they are incentivized to use bigger bet-sizes... all-in bets are rarely used on early streets unless stacks are shallow.\"",
+        /* source: Modern Poker Theory · Michael Acevedo · Ch.10, Tables 93-94, pp.617-619 */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'wyrsp-s3',
         type: 'range_distribution',
         concept_ids: ['polarization_sizing_direction'],
-        narrative: 'Toy Game A\'s setup, shown only as Equity Bucket compositions — no raw equity numbers. Predict the sizing direction before revealing the book\'s result.',
+        narrative: 'Toy Game A\'s setup, shown only as Equity Bucket compositions — no raw equity numbers. Predict the sizing direction before revealing the source\'s result.',
         range_distribution_mode: 'predict',
         range_distribution_hero: { label: TOY_GAME_A.hero.label, strong: TOY_GAME_A.hero.strong, good: TOY_GAME_A.hero.good, weak: TOY_GAME_A.hero.weak, trash: TOY_GAME_A.hero.trash },
         range_distribution_villain: { label: TOY_GAME_A.villain.label, strong: TOY_GAME_A.villain.strong, good: TOY_GAME_A.villain.good, weak: TOY_GAME_A.villain.weak, trash: TOY_GAME_A.villain.trash },
@@ -19636,7 +19563,7 @@ export const LESSONS: Lesson[] = [
           },
           {
             id: 'small_infrequent', label: 'Small, infrequent betting', quality: 'mistake',
-            feedback: "Reasonable instinct, but the real answer is more extreme: 100% checking, not a reduced betting frequency. At the far ends of this spectrum, the book's results tend to be more absolute than a 'dial it down a bit' intuition predicts — a big disadvantage isn't a reason to bet less, it's a reason not to bet.",
+            feedback: "Reasonable instinct, but the real answer is more extreme: 100% checking, not a reduced betting frequency. At the far ends of this spectrum, the source's results tend to be more absolute than a 'dial it down a bit' intuition predicts — a big disadvantage isn't a reason to bet less, it's a reason not to bet.",
           },
           {
             id: 'moderate_split', label: 'A moderate split between two mid-sized bets', quality: 'mistake',
@@ -19760,9 +19687,9 @@ export const LESSONS: Lesson[] = [
         id: 'gomp-s1',
         type: 'concept_reveal',
         concept_title: 'Geometric Bet-Sizing',
-        concept_content: "Lesson 5 traced sizing to Toy Game E's large advantage, converging toward all-in-dominant — but that described one moment, not several consecutive streets where stacks are too deep for one bet to cover them all. For the idealized case (a perfectly polarized range facing a pure bluff-catcher, the Clairvoyance Toy Game extended across multiple streets), the EV-maximizing structure has a name: geometric bet-sizing — bet the SAME fraction of the pot on every remaining street, chosen so the final street's bet is exactly all-in. Final Pot = Starting Pot × R^(Streets), where R is the pot's constant growth rate per street. The book states this proof is beyond its own scope, attributing it to Bill Chen and Jerrod Ankenman's The Mathematics of Poker — this lesson teaches the formula and its application, not a re-derivation of why it holds.",
+        concept_content: "Lesson 5 traced sizing to Toy Game E's large advantage, converging toward all-in-dominant — but that described one moment, not several consecutive streets where stacks are too deep for one bet to cover them all. For the idealized case (a perfectly polarized range facing a pure bluff-catcher, the Clairvoyance Toy Game extended across multiple streets), the EV-maximizing structure has a name: geometric bet-sizing — bet the SAME fraction of the pot on every remaining street, chosen so the final street's bet is exactly all-in. Final Pot = Starting Pot × R^(Streets), where R is the pot's constant growth rate per street. The source states this proof is beyond its own scope, attributing it to Bill Chen and Jerrod Ankenman's The Mathematics of Poker — this lesson teaches the formula and its application, not a re-derivation of why it holds.",
         concept_note: "Solving for R: R = (Final Pot ÷ Starting Pot)^(1 ÷ Streets). Converting R into an actual bet-fraction uses a second relationship: both players contribute a bet-sized amount each street, so pot_new = pot_old × (1 + 2×bet-fraction). Setting that equal to R and solving: bet-fraction = (R − 1) ÷ 2.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.10 pp.612-613', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Ch.10 pp.612-613 */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'gomp-s2',
@@ -19775,13 +19702,13 @@ export const LESSONS: Lesson[] = [
           { term: 'Street by street', description: 'Flop: $70 → bet ≈$72 → pot ≈$214. Turn: $214 → bet ≈$220 → pot ≈$654. River: $654 → bet ≈$674 — within a few dollars of Villain\'s entire remaining stack. The growth rate is chosen, by construction, to land exactly there.' },
         ],
         concept_note: "\"Implementing the geometrical bet-size when stacks are very deep results in very large bets (often these are overbets)\" — this is not a quirk of these specific numbers. Deeper effective stacks relative to the starting pot systematically produce bigger growth rates and bigger bet-fractions.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Ch.10 pp.613-614', example: 'Live cash game, SB $1,900 vs BB $1,000', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Ch.10 pp.613-614 · Live cash game, SB $1,900 vs BB $1,000 */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'gomp-s3',
         type: 'geometric_bet_ladder',
         concept_ids: ['geometric_sizing_formula'],
-        narrative: "Reconstruct the book's own worked example yourself: compute R, then the bet-fraction, and watch the three-rung Growth Ladder populate.",
+        narrative: "Reconstruct the source's own worked example yourself: compute R, then the bet-fraction, and watch the three-rung Growth Ladder populate.",
         geometric_ladder_prompt: 'Starting pot $70, effective stack $965, 3 streets. Compute R, then the bet-fraction.',
         geometric_ladder_starting_pot: 70,
         geometric_ladder_effective_stack: 965,
@@ -19795,7 +19722,7 @@ export const LESSONS: Lesson[] = [
             narrative: "Round-number version, chosen so the root step is unambiguous: starting pot $10, final pot $80, 3 streets.",
             decision_spot_question: 'First compute 80 ÷ 10. Then take the cube root of that result. What is R?',
             options: [
-              { id: 'two', label: 'R = 2 (cube root of 8)', quality: 'perfect', feedback: "Correct — 80÷10=8, and the cube root of 8 is exactly 2. Go back and reapply this two-step process (divide, then take the 1/streets root) to the book's own $70/$2,000/3-street numbers." },
+              { id: 'two', label: 'R = 2 (cube root of 8)', quality: 'perfect', feedback: "Correct — 80÷10=8, and the cube root of 8 is exactly 2. Go back and reapply this two-step process (divide, then take the 1/streets root) to the source's own $70/$2,000/3-street numbers." },
               { id: 'eight', label: 'R = 8 (stopping at the division)', quality: 'mistake', feedback: "8 is the TOTAL growth needed across all three streets combined — not the per-street rate. You still need the cube root of it: the cube root of 8 is 2, so R = 2, not 8." },
             ],
             xp: 8,
@@ -19807,15 +19734,15 @@ export const LESSONS: Lesson[] = [
         type: 'decision_spot',
         concept_ids: ['geometric_sizing_formula'],
         narrative: "The geometric bet-size is a precise, computable number.",
-        decision_spot_question: "Citing the book's own stated reason, why shouldn't this formula be treated as the literal correct bet-size to use in a real hand?",
+        decision_spot_question: "Citing the source's own stated reason, why shouldn't this formula be treated as the literal correct bet-size to use in a real hand?",
         options: [
           {
             id: 'never_perfectly_polarized', label: 'Real ranges are never perfectly polarized against a pure bluff-catcher — the exact idealized matchup the formula assumes', quality: 'perfect',
-            feedback: "Correct. The book states this directly: this matchup \"will never be the case in real poker.\" Real ranges always contain some partial-equity hands and some traps. The formula is a theoretical ceiling and a directional compass — bigger advantage, deeper stacks, more streets → bigger, more overbet-leaning sizing — not a number to play exactly as computed.",
+            feedback: "Correct. The source states this directly: this matchup \"will never be the case in real poker.\" Real ranges always contain some partial-equity hands and some traps. The formula is a theoretical ceiling and a directional compass — bigger advantage, deeper stacks, more streets → bigger, more overbet-leaning sizing — not a number to play exactly as computed.",
           },
           {
             id: 'too_complicated', label: "It's too mathematically complex to use reliably at the table", quality: 'mistake',
-            feedback: "Complexity isn't the book's stated reason. The actual reason is structural: the formula's entire derivation assumes a perfectly polarized range facing a pure bluff-catcher, a matchup real poker never produces exactly.",
+            feedback: "Complexity isn't the source's stated reason. The actual reason is structural: the formula's entire derivation assumes a perfectly polarized range facing a pure bluff-catcher, a matchup real poker never produces exactly.",
           },
         ],
         xp: 18,
@@ -19891,7 +19818,7 @@ export const LESSONS: Lesson[] = [
         concept_title: 'The J22 Sizing Mistake',
         concept_content: `BB, 30bb effective, calls a UTG min-raise. Flop J♠2♥2♦ — a paired board. UTG's correct GTO play when checked to is min-bet, 100% of range, for an EV of ${J22_SIZING_MISTAKE.correct.ev}. Why min-bet? Paired boards polarize the checking range around whether it holds a matching card — a cheap bet already extracts the maximum this specific gap allows. Now watch UTG reach for a bigger, more "standard-feeling" 2/3-pot instead, same range, same frequency. An aware BB shifts to a check-raise-only response, and UTG's EV drops to ${J22_SIZING_MISTAKE.wrongSizeUnchangedFrequency.ev} — a swing of six EV units from ONE decision, nothing else changed.`,
         concept_note: `If UTG then corrects FREQUENCY to the new 2/3-pot equilibrium (c-betting only 42.45% instead of 100%), EV partially recovers — to ${J22_SIZING_MISTAKE.wrongSizeCorrectedFrequency.ev}. Partially, not fully. Even the best possible frequency correction at the wrong size still falls short of what the originally correct size would have produced.`,
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Overall Flop Metrics — J♠2♥2♦ (Ch.10 p.620)', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Overall Flop Metrics — J♠2♥2♦ (Ch.10 p.620) */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'wsrc-s2',
@@ -19949,7 +19876,7 @@ export const LESSONS: Lesson[] = [
         concept_title: 'The Reverse-Linear Pattern',
         concept_content: `A different kind of mistake: assuming every hand WITHIN a hand class should be treated identically. On 6♠5♥4♦, BB-vs-UTG, 30bb, look at the Ace-high class in BB's donk-betting range: A9s and AQs. Naive intuition says the stronger kicker (AQs) should bet at least as often. The actual result is the precise opposite: A9s bets ${REVERSE_LINEAR_654R.weakerCombo.betFrequency}% of the time; AQs bets only ${REVERSE_LINEAR_654R.strongerCombo.betFrequency}%.`,
         concept_note: "AQs has real showdown value here and wants POT CONTROL — keep the pot small, reach a cheap showdown, protect that value. A9s has little showdown value; its worth comes almost entirely from FOLD EQUITY, which only betting provides. A hand that needs fold equity to realize its value bets, and bets often, precisely because checking forfeits the only real source of that hand's worth.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Donk-betting Ranges — 6♠5♥4♦ (Ch.11 p.642)', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Donk-betting Ranges — 6♠5♥4♦ (Ch.11 p.642) */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'wsrc-s5',
@@ -20055,9 +19982,9 @@ export const LESSONS: Lesson[] = [
         id: 'bg-s1',
         type: 'concept_reveal',
         concept_title: 'One Sentence, Applied to Every Board',
-        concept_content: "Lesson 5 proved, in the abstract, that relative polarization alone drives a range's sizing direction. Lesson 7 showed you two isolated, real-board instances of getting that wrong. This lesson does what neither could alone: it walks the book's own board-by-board evidence — structure, texture, donk-bet tiers, and a light turn confirmation — so the principle stops being something you can only apply to boards a lesson already handed you.",
+        concept_content: "Lesson 5 proved, in the abstract, that relative polarization alone drives a range's sizing direction. Lesson 7 showed you two isolated, real-board instances of getting that wrong. This lesson does what neither could alone: it walks the source's own board-by-board evidence — structure, texture, donk-bet tiers, and a light turn confirmation — so the principle stops being something you can only apply to boards a lesson already handed you.",
         concept_note: "Anchor everything that follows to one causal statement: \"the more strong hands your range has compared to your opponent's, the more frequently you can bet... [this] also allows the use [of] bigger bet-sizes more frequently.\" Every board below is that one sentence, applied to a specific structural or textural difference.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Overall Flop Metrics (Ch.12 p.660)', type: 'source_reconstructed' },
+        /* source: Modern Poker Theory · Michael Acevedo · Overall Flop Metrics (Ch.12 p.660) */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'bg-s2',
@@ -20068,8 +19995,8 @@ export const LESSONS: Lesson[] = [
         narrative: `Structure, category 1 of 3: ${BOARD_GALLERY[0].label}. IP captures an average of 81% of the pot on this texture — the largest range-advantage gap of any structural category.`,
         decision_spot_question: 'Given how large that gap is, does IP\'s typical sizing here go all the way to the extreme (overbet-heavy), or does it stay more moderate?',
         options: [
-          { id: 'moderate', label: 'Stays moderate — 1/3-pot remains the single most-used size even here', quality: 'perfect', feedback: `Correct. Even the largest structural advantage in the book's evidence set doesn't automatically demand the biggest possible size — Lesson 5's Toy Game D already prepared you for this: a strong edge earns a scaled response, not an automatic leap to the extreme.` },
-          { id: 'extreme', label: 'Goes to the extreme — the biggest edge should draw the biggest possible size', quality: 'mistake', feedback: `Not on trips specifically — 1/3-pot remains the single most frequently used size overall, even with the largest structural edge in the book's evidence. "Biggest edge" doesn't automatically mean "biggest size"; Lesson 5's Toy Game D already showed a strong-but-not-maximal edge earns a scaled, not extreme, response.` },
+          { id: 'moderate', label: 'Stays moderate — 1/3-pot remains the single most-used size even here', quality: 'perfect', feedback: `Correct. Even the largest structural advantage in the source's evidence set doesn't automatically demand the biggest possible size — Lesson 5's Toy Game D already prepared you for this: a strong edge earns a scaled response, not an automatic leap to the extreme.` },
+          { id: 'extreme', label: 'Goes to the extreme — the biggest edge should draw the biggest possible size', quality: 'mistake', feedback: `Not on trips specifically — 1/3-pot remains the single most frequently used size overall, even with the largest structural edge in the source's evidence. "Biggest edge" doesn't automatically mean "biggest size"; Lesson 5's Toy Game D already showed a strong-but-not-maximal edge earns a scaled, not extreme, response.` },
         ],
         xp: 14,
       },
@@ -20139,7 +20066,7 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_title: 'The Book\'s Own Warning',
         concept_content: "\"I often see players making the mistake of betting large on monotone flops, thinking that they need to protect their good hands... if your bet-size is too large, you force the BB to fold the weak hands that would continue against a smaller bet and will be isolating yourself against the top of their range that will either have you beat or have a ton of equity.\" A big bet here doesn't protect a depolarized range — it isolates that range against exactly the part of the opponent's range it least wants to face.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'Overall Flop Metrics — monotone texture (Ch.12 pp.671-672)', type: 'exact_derived' },
+        /* source: Modern Poker Theory · Michael Acevedo · Overall Flop Metrics — monotone texture (Ch.12 pp.671-672) */ source: { type: 'exact_derived' },
       },
       {
         id: 'bg-s6',
@@ -20221,7 +20148,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'What is the recommended OOP strategy on this tier, and at what EV cost relative to donk-betting some of the time?',
         options: [
           { id: 'check_100', label: 'Check 100% of the time — near-zero EV cost to removing the donk-bet option entirely', quality: 'perfect', feedback: "Correct — this is the real-board analogue of Toy Game A's pure-check result (Lesson 5). When one side's advantage is large enough, the disadvantaged side's best response really is a single simple action, not an elaborate mixed strategy — and most flops fall into exactly this tier." },
-          { id: 'small_donk', label: 'A small, low-frequency donk-bet — some pressure is still better than none', quality: 'mistake', feedback: "The book's evidence recommends checking 100% here, with near-zero EV cost to removing the donk-bet option entirely — IP's advantage is simply too large to profitably split at all. This is the real-board version of Toy Game A's pure-check result, not a case for a small mixed donk." },
+          { id: 'small_donk', label: 'A small, low-frequency donk-bet — some pressure is still better than none', quality: 'mistake', feedback: "The source's evidence recommends checking 100% here, with near-zero EV cost to removing the donk-bet option entirely — IP's advantage is simply too large to profitably split at all. This is the real-board version of Toy Game A's pure-check result, not a case for a small mixed donk." },
         ],
         xp: 16,
       },
@@ -20290,15 +20217,15 @@ export const LESSONS: Lesson[] = [
         type: 'concept_reveal',
         concept_title: 'Why the River Is Different',
         concept_content: "Every lesson before this one reasoned under some degree of future uncertainty — more cards to come, ranges that might still shift shape. The river removes all of that at once: no more cards means every hand's equity against a specific opponent hand is fixed at exactly 100% or exactly 0%, no draws, no partial outs. A hand's equity against an entire range is simply the fraction of that range it currently beats (plus half of any tie). This is exactly what turns river sizing into genuine calculation instead of a judgment call — this lesson hands you three such calculations.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'River Calling Strategies (Ch.14 p.779)', type: 'exact_derived' },
+        /* source: Modern Poker Theory · Michael Acevedo · River Calling Strategies (Ch.14 p.779) */ source: { type: 'exact_derived' },
       },
       {
         id: 'rsc-s2',
         type: 'concept_reveal',
         concept_title: 'Question 1 — The Minimum Bet That Denies Everything',
         concept_content: "P1 holds a polarized range, mostly nuts. P2's live equity against that range is EQ. Normalize the pot to 1. If P1 bets B and P2 calls, the final pot is 1 + 2B. P2's EV from calling is EQ×(1 + 2B) − B. Setting this to exactly zero (the break-even boundary — the minimum bet that fully denies) and solving for B gives the formula: B (minimum) = EQ ÷ (1 − 2×EQ).",
-        concept_note: "Check it against the book's own two cited results. At 10% equity: 0.10 ÷ (1 − 0.20) = 0.125 — a 12.5%-of-pot bet. At 40% equity: 0.40 ÷ (1 − 0.80) = 2.0 — a full 2x-pot overbet, still enough to force a complete fold. As EQ climbs toward 50%, the denominator shrinks toward zero and the required bet grows explosively — because at exactly 50% equity, P2 is a genuine coinflip, and no finite bet-size can ever force a break-even opponent to correctly fold.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'River Calling Strategies — minimum bet-size to deny equity (Ch.14 pp.786-789)', type: 'exact_derived' },
+        concept_note: "Check it against the source's own two cited results. At 10% equity: 0.10 ÷ (1 − 0.20) = 0.125 — a 12.5%-of-pot bet. At 40% equity: 0.40 ÷ (1 − 0.80) = 2.0 — a full 2x-pot overbet, still enough to force a complete fold. As EQ climbs toward 50%, the denominator shrinks toward zero and the required bet grows explosively — because at exactly 50% equity, P2 is a genuine coinflip, and no finite bet-size can ever force a break-even opponent to correctly fold.",
+        /* source: Modern Poker Theory · Michael Acevedo · River Calling Strategies — minimum bet-size to deny equity (Ch.14 pp.786-789) */ source: { type: 'exact_derived' },
       },
       {
         id: 'rsc-s3',
@@ -20328,8 +20255,8 @@ export const LESSONS: Lesson[] = [
         id: 'rsc-s5',
         type: 'concept_reveal',
         concept_title: 'The Mirror Case: More Air Than Nuts',
-        concept_content: "What if P1's polarized range is the other way around — say only 10% nuts, 90% air? No bet-size, however large, can force a full fold here: P1 simply doesn't have enough nutted combos for the minimum-denial logic to apply. P1 falls back to Lesson 2's Alpha-frequency logic instead — bet the nuts, add bluffs only up to the frequency that keeps P2 correctly indifferent, give up with the rest. And the sizing incentive still runs one clean direction: bet as LARGE as possible, since a bigger size lets more bluff combos fit at the correct ratio. In the book's own worked pot-size-all-in example, this produces a 15% total betting frequency (10% value, 5% air, a 2-to-1 ratio) for a total EV of 15% of the pot.",
-        source: { book: 'Modern Poker Theory', author: 'Michael Acevedo', section: 'River Calling Strategies — the "more air than nuts" case (Ch.14 pp.789-790)', type: 'source_reconstructed' },
+        concept_content: "What if P1's polarized range is the other way around — say only 10% nuts, 90% air? No bet-size, however large, can force a full fold here: P1 simply doesn't have enough nutted combos for the minimum-denial logic to apply. P1 falls back to Lesson 2's Alpha-frequency logic instead — bet the nuts, add bluffs only up to the frequency that keeps P2 correctly indifferent, give up with the rest. And the sizing incentive still runs one clean direction: bet as LARGE as possible, since a bigger size lets more bluff combos fit at the correct ratio. In the source's own worked pot-size-all-in example, this produces a 15% total betting frequency (10% value, 5% air, a 2-to-1 ratio) for a total EV of 15% of the pot.",
+        /* source: Modern Poker Theory · Michael Acevedo · River Calling Strategies — the "more air than nuts" case (Ch.14 pp.789-790) */ source: { type: 'source_reconstructed' },
       },
       {
         id: 'rsc-s6',
@@ -20373,7 +20300,7 @@ export const LESSONS: Lesson[] = [
         id: 'rsc-s7-explain',
         type: 'concept_reveal',
         concept_title: 'The Mechanism, Named Precisely',
-        concept_content: "\"Going all-in for a massive overbet when your opponent can have traps is a substantial mistake and will lose you a lot of EV.\" Once bet-size grows large enough to threaten all-in but stops short of it, P2 gains a check-raise option they didn't have before — and if P2 has real traps, that raise is a genuinely polarized re-raise, not a bluff-catcher's desperate move. P1's own value bets, which looked safely ahead of a pure bluff-catching range, get flipped into bluff-catchers themselves. The book's own practical heuristic: \"Just having 10-20% traps in your range is enough\" to meaningfully discourage overbetting at most stack depths — a remarkably small percentage does most of the work.",
+        concept_content: "\"Going all-in for a massive overbet when your opponent can have traps is a substantial mistake and will lose you a lot of EV.\" Once bet-size grows large enough to threaten all-in but stops short of it, P2 gains a check-raise option they didn't have before — and if P2 has real traps, that raise is a genuinely polarized re-raise, not a bluff-catcher's desperate move. P1's own value bets, which looked safely ahead of a pure bluff-catching range, get flipped into bluff-catchers themselves. The source's own practical heuristic: \"Just having 10-20% traps in your range is enough\" to meaningfully discourage overbetting at most stack depths — a remarkably small percentage does most of the work.",
         source: RIVER_MODEL_SOURCE,
       },
       {
@@ -20396,7 +20323,7 @@ export const LESSONS: Lesson[] = [
         decision_spot_question: 'Without knowing the exact new optimal size, predict its DIRECTION relative to the 10%-trap case.',
         options: [
           { id: 'smaller_further', label: 'Continues shrinking, further than the 10%-to-20% case', quality: 'perfect', feedback: 'Correct — the relationship this lesson established (more traps → smaller optimal size) is a continuous trend, not a fact only true between 10% and 20%. You don\'t need the exact new number to predict the direction confidently; the mechanism (more traps, more check-raise danger at smaller sizes) keeps applying as trap percentage keeps rising.' },
-          { id: 'reverses', label: 'The trend reverses — past some point, more traps should mean a bigger optimal size again', quality: 'mistake', feedback: 'Nothing in the book\'s evidence, or the underlying mechanism, suggests a reversal. More traps consistently means the check-raise threat bites at a smaller bet-size — the trend keeps going in the same direction (shrinking) as trap percentage keeps rising, not reversing.' },
+          { id: 'reverses', label: 'The trend reverses — past some point, more traps should mean a bigger optimal size again', quality: 'mistake', feedback: 'Nothing in the source\'s evidence, or the underlying mechanism, suggests a reversal. More traps consistently means the check-raise threat bites at a smaller bet-size — the trend keeps going in the same direction (shrinking) as trap percentage keeps rising, not reversing.' },
         ],
         xp: 18,
       },

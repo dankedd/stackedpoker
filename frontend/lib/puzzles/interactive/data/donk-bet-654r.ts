@@ -103,7 +103,7 @@ export const DONK_BET_654R: InteractivePuzzle = {
           tableAction: { label: 'Folds' },
           verdict: 'mistake',
           shortWhy:
-            'Far too tight. At this exact depth the book has the big blind continuing with a 64% range against the button — a suited connector sits comfortably inside a range that wide.',
+            'Far too tight. At this exact depth the source has the big blind continuing with a 64% range against the button — a suited connector sits comfortably inside a range that wide.',
           sources: ['preflop.bn-open-bb-call-30bb', 'preflop.bb-call-composition-100bb'],
         },
         {
@@ -113,7 +113,7 @@ export const DONK_BET_654R: InteractivePuzzle = {
           tableAction: { label: 'Calls', betBb: 2.5 },
           verdict: 'best',
           shortWhy:
-            'This is the book’s own reference spot: a 49% button open met by a 64% big blind calling range at 30bb, and suited connectors are named as part of what the big blind calls against a button.',
+            'This is the source’s own reference spot: a 49% button open met by a 64% big blind calling range at 30bb, and suited connectors are named as part of what the big blind calls against a button.',
           sources: ['preflop.bn-open-bb-call-30bb', 'preflop.bb-call-composition-100bb'],
         },
         {
@@ -129,10 +129,10 @@ export const DONK_BET_654R: InteractivePuzzle = {
       ],
       bestOptionId: 'call',
       explanation:
-        'Call. The book builds its whole 654r analysis on this precise preflop setup — the button opening a standard GTO 49% range at 30bb, the big blind defending with a standard 64% calling range. A 64% range is most suited hands, offsuit aces, connectors and broadways; 7♠6♠ is squarely inside it. The 3-betting range at these depths is polarized around hands 7♠6♠ is not among, and folding a suited connector to a button open at 30bb throws away a defend the solver takes.',
+        'Call. The source builds its whole 654r analysis on this precise preflop setup — the button opening a standard GTO 49% range at 30bb, the big blind defending with a standard 64% calling range. A 64% range is most suited hands, offsuit aces, connectors and broadways; 7♠6♠ is squarely inside it. The 3-betting range at these depths is polarized around hands 7♠6♠ is not among, and folding a suited connector to a button open at 30bb throws away a defend the solver takes.',
       unsourced: [
         {
-          question: 'Does the book print a per-hand chart for BB vs BN at 30bb?',
+          question: 'Does the source print a per-hand chart for BB vs BN at 30bb?',
           answer:
             'No. It prints the 64% aggregate for this spot in prose, and full per-hand charts at 25bb (call 65.9%) and 40bb (call 58.6%) — but nothing at 30bb. This puzzle does not interpolate between those two charts, because a hand-by-hand range invented between two printed ones is invented solver output.',
           nearestSources: ['preflop.bb-vs-bn-25bb-chart', 'preflop.bb-vs-bn-40bb-chart'],
@@ -140,7 +140,7 @@ export const DONK_BET_654R: InteractivePuzzle = {
         {
           question: 'Where does the 2.5bb open size come from, and why does the pot read 5.5bb?',
           answer:
-            'From this implementation, not the book. The source states the flop pot for this spot is 5.6bb but never states the preflop open size behind it. A 2.5bb open is the standard size closest to reproducing that pot: 2.5 from the button, 2.5 from you, plus the folded small blind’s 0.5 makes 5.5bb. The table shows 5.5 because that is what the action on screen actually adds up to — inventing an open size that hit 5.6 exactly, or printing a pot the visible chips contradict, would both be worse than a transparent 0.1bb gap. Bet sizings are quarter and two-thirds of the displayed pot.',
+            'From this implementation, not the source. The source states the flop pot for this spot is 5.6bb but never states the preflop open size behind it. A 2.5bb open is the standard size closest to reproducing that pot: 2.5 from the button, 2.5 from you, plus the folded small blind’s 0.5 makes 5.5bb. The table shows 5.5 because that is what the action on screen actually adds up to — inventing an open size that hit 5.6 exactly, or printing a pot the visible chips contradict, would both be worse than a transparent 0.1bb gap. Bet sizings are quarter and two-thirds of the displayed pot.',
           nearestSources: ['value.table-104'],
         },
       ],
@@ -208,7 +208,7 @@ export const DONK_BET_654R: InteractivePuzzle = {
           tableAction: { label: 'Bets', betBb: 1.4 },
           verdict: 'best',
           shortWhy:
-            'On high-donk boards at 30-40bb the book has the big blind betting good hands 64% of the time, and 1/4-pot is the most used size. Top pair with an open-ender is the part of that bucket that bets most often.',
+            'On high-donk boards at 30-40bb the source has the big blind betting good hands 64% of the time, and 1/4-pot is the most used size. Top pair with an open-ender is the part of that bucket that bets most often.',
           sources: ['family.high-donk-bucket-frequencies', 'example.654r-utg-top-pair', 'sizing.stack-depth'],
         },
         {
@@ -234,12 +234,12 @@ export const DONK_BET_654R: InteractivePuzzle = {
       ],
       bestOptionId: 'donk-25',
       explanation:
-        'Lead small. 7♠6♠ is top pair with an open-ended straight draw — a good hand, not a strong one, since the straights on this flop are 32, 87 and 73. At 30-40bb on high-donk-frequency boards the book bets good hands 64% of the time, and the most used size by a distance is 1/4-pot. On 654r specifically it adds that among top pairs, the ones with the highest kickers and the ones with an open-ender bet at the highest frequency — which is exactly this hand. The small size is also what lets you call a raise and see a turn instead of committing the stack on the flop.',
+        'Lead small. 7♠6♠ is top pair with an open-ended straight draw — a good hand, not a strong one, since the straights on this flop are 32, 87 and 73. At 30-40bb on high-donk-frequency boards the source bets good hands 64% of the time, and the most used size by a distance is 1/4-pot. On 654r specifically it adds that among top pairs, the ones with the highest kickers and the ones with an open-ender bet at the highest frequency — which is exactly this hand. The small size is also what lets you call a raise and see a turn instead of committing the stack on the flop.',
       unsourced: [
         {
           question: 'How often exactly does 7♠6♠ lead here?',
           answer:
-            'The book does not provide an exact frequency for this specific combo. It gives frequencies by equity bucket, not by hand, and its only per-category walkthrough of 654r is a BB vs UTG simulation rather than the BB vs BN spot you are in. What can be said from the source is the direction: this hand sits in the bucket that bets 64%, in the sub-group the source singles out as betting most often within it.',
+            'The source does not provide an exact frequency for this specific combo. It gives frequencies by equity bucket, not by hand, and its only per-category walkthrough of 654r is a BB vs UTG simulation rather than the BB vs BN spot you are. What can be said from the source is the direction: this hand sits in the bucket that bets 64%, in the sub-group the source singles out as betting most often within it.',
           nearestSources: ['family.high-donk-bucket-frequencies', 'example.654r-utg-top-pair'],
         },
       ],
@@ -281,7 +281,7 @@ export const DONK_BET_654R: InteractivePuzzle = {
               sources: ['donk.654r-ip-raise-frequency'],
             },
             {
-              text: 'The overall shape is the big blind polarized against a depolarized button, with half the button’s range weak — the book compares it to the Clairvoyance Toy game, where the polarized player is the one who wants to bet.',
+              text: 'The overall shape is the big blind polarized against a depolarized button, with half the button’s range weak — the source compares it to the Clairvoyance Toy game, where the polarized player is the one who wants to bet.',
               sources: ['family.high-donk-polarity'],
             },
           ],
@@ -410,12 +410,12 @@ export const DONK_BET_654R: InteractivePuzzle = {
       kind: 'aggregate',
       seat: 'villain',
       description:
-        'The standard GTO button opening range the book uses for this 30bb spot. It is a whole-range percentage, stated in prose — the source does not print a hand-by-hand chart of it at this depth.',
+        'The standard GTO button opening range the source uses for this 30bb spot. It is a whole-range percentage, stated in prose — the source does not print a hand-by-hand chart of it at this depth.',
       unsourced: [
         {
           question: 'Can you show the 13×13 grid for this range?',
           answer:
-            'Not from this source. Modern Poker Theory prints per-hand button and big blind charts at other stack depths, but for the 30bb BB vs BN configuration it gives the 49% and 64% aggregates only. Drawing a grid would mean choosing which specific hands are in it, and that choice would be ours, not the book’s.',
+            'Not from this source. The source prints per-hand button and big blind charts at other stack depths, but for the 30bb BB vs BN configuration it gives the 49% and 64% aggregates only. Drawing a grid would mean choosing which specific hands are in it, and that choice would be ours, not the source’s.',
           nearestSources: ['preflop.bb-vs-bn-25bb-chart', 'preflop.bb-vs-bn-40bb-chart'],
         },
       ],
@@ -428,7 +428,7 @@ export const DONK_BET_654R: InteractivePuzzle = {
       kind: 'aggregate',
       seat: 'hero',
       description:
-        'What the big blind continues with against that 49% open at 30bb. The book describes a defence this wide against a button as most suited hands, offsuit aces, connectors and broadways — which is where 7♠6♠ enters the hand.',
+        'What the big blind continues with against that 49% open at 30bb. The source describes a defence this wide against a button as most suited hands, offsuit aces, connectors and broadways — which is where 7♠6♠ enters the hand.',
       unsourced: [
         {
           question: 'Is that composition specific to 30bb?',
@@ -445,7 +445,7 @@ export const DONK_BET_654R: InteractivePuzzle = {
       kind: 'composition',
       seat: 'hero',
       description:
-        'How the big blind’s calling range breaks down by equity bucket once this flop lands. This is the postflop range data the book does print for 654r, and it is what actually drives the decision — more than raw equity does.',
+        'How the big blind’s calling range breaks down by equity bucket once this flop lands. This is the postflop range data the source does print for 654r, and it is what actually drives the decision — more than raw equity does.',
       bars: [
         { label: 'Strong', pct: 7 },
         { label: 'Good', pct: 40, note: 'top pair and better-but-not-nutted; 7♠6♠ is here' },
@@ -460,7 +460,7 @@ export const DONK_BET_654R: InteractivePuzzle = {
       kind: 'composition',
       seat: 'villain',
       description:
-        'The two figures the source prints for the button’s range on this flop. They come from two different tables and do not form a complete four-bucket partition — shown side by side rather than as one distribution, because that is how the book gives them.',
+        'The two figures the source prints for the button’s range on this flop. They come from two different tables and do not form a complete four-bucket partition — shown side by side rather than as one distribution, because that is how the source gives them.',
       bars: [
         { label: 'Strong', pct: 4, note: 'BB vs IP buckets on 654r, averaged over 20/30/40bb' },
         { label: 'Weak', pct: 51, note: 'BB vs BN 30bb simulation, from the button’s perspective' },
@@ -469,7 +469,7 @@ export const DONK_BET_654R: InteractivePuzzle = {
         {
           question: 'What about the button’s good and trash hands?',
           answer:
-            'The source does not print a complete four-bucket breakdown for the button on this flop. Filling in the remaining 45% would mean splitting a number the book never split.',
+            'The source does not print a complete four-bucket breakdown for the button on this flop. Filling in the remaining 45% would mean splitting a number the source never split.',
           nearestSources: ['buckets.654r', 'position.654r-bn-weak-hands'],
         },
       ],
@@ -499,5 +499,5 @@ export const DONK_BET_654R: InteractivePuzzle = {
   xp: 50,
 
   endsEarlyBecause:
-    'The book’s 654r analysis is a flop analysis. It gives no turn or river strategy for this BB vs BN spot, so the hand stops at the decision the source can actually answer rather than inventing one.',
+    'The source’s 654r analysis is a flop analysis. It gives no turn or river strategy for this BB vs BN spot, so the hand stops at the decision the source can actually answer rather than inventing one.',
 }

@@ -83,7 +83,7 @@ export const DONK_BET_BANDS: InteractivePuzzle = {
   topic: 'Board Reading',
   difficulty: 'advanced',
   description:
-    'Three flops, no hand. Every flop in hold’em falls into one of four donk-bet frequency bands, and you can read which one from the board alone — its rank, the straights it makes, and its suits. All three flops here are ones the book names individually; classifying a flop it does not name is a judgement, and this puzzle says where that line falls.',
+    'Three flops, no hand. Every flop in hold’em falls into one of four donk-bet frequency bands, and you can read which one from the board alone — its rank, the straights it makes, and its suits. All three flops here are ones the source names individually; classifying a flop it does not name is a judgement, and this puzzle says where that line falls.',
 
   setup: {
     format: '20-40bb aggregate',
@@ -143,7 +143,7 @@ export const DONK_BET_BANDS: InteractivePuzzle = {
           label: BAND_LABEL.low,
           verdict: 'mistake',
           shortWhy:
-            'The closest miss on the board. The low band does contain one ace family — ALL, an ace with two LOW cards — but this is not it: under the book’s own rank letters a 7 and a 6 are Mid cards, so A76 is an ace with two mid cards, and the general statement about AXX flops applies.',
+            'The closest miss on the board. The low band does contain one ace family — ALL, an ace with two LOW cards — but this is not it: under the source’s own rank letters a 7 and a 6 are Mid cards, so A76 is an ace with two mid cards, and the general statement about AXX flops applies.',
           sources: ['bands.low-flops', 'bands.rank-letters', 'contrast.no-donk-flops'],
         },
         {
@@ -157,12 +157,12 @@ export const DONK_BET_BANDS: InteractivePuzzle = {
       ],
       bestOptionId: 'none',
       explanation:
-        'None — 0-10%, and A76r is the flop the chapter uses to show why. Take the readings in order. Rank: a flop’s rank is its highest card, so this is A-x-x; the 7 and the 6 do not set it. Straights: zero, because no five-card run contains an ace alongside a 7 and a 6. Texture: rainbow, which raises the donk frequency inside a family but cannot move a board between families. That lands it in the group the book names as bad donk betting flops — trips, monotone, high card paired, disconnected two-tone, HXX and AXX. The range theory behind it is what the ace does to the two players. IP has 62% equity here against the big blind’s 38%, and the strong hands split 8% to the big blind against a staggering 31% for IP, because every Ax that IP holds is a top pair averaging 85% equity against the big blind’s range. A range that strong does not fold to a lead and raises one often, so leading only forces the big blind’s own money in with hands that would rather see a cheap turn. The book tests every way of splitting and finds all of them worse: IP gets to c-bet 100% of their range here, and it works better for the big blind to not split their range and simply check 100%. Across the whole no-donk band the big blind averages 39% equity, under-realizes it at 76% EQR for 30% of the pot, and donks about 1% of the time.',
+        'None — 0-10%, and A76r is the flop the chapter uses to show why. Take the readings in order. Rank: a flop’s rank is its highest card, so this is A-x-x; the 7 and the 6 do not set it. Straights: zero, because no five-card run contains an ace alongside a 7 and a 6. Texture: rainbow, which raises the donk frequency inside a family but cannot move a board between families. That lands it in the group the source names as bad donk betting flops — trips, monotone, high card paired, disconnected two-tone, HXX and AXX. The range theory behind it is what the ace does to the two players. IP has 62% equity here against the big blind’s 38%, and the strong hands split 8% to the big blind against a staggering 31% for IP, because every Ax that IP holds is a top pair averaging 85% equity against the big blind’s range. A range that strong does not fold to a lead and raises one often, so leading only forces the big blind’s own money in with hands that would rather see a cheap turn. The source tests every way of splitting and finds all of them worse: IP gets to c-bet 100% of their range here, and it works better for the big blind to not split their range and simply check 100%. Across the whole no-donk band the big blind averages 39% equity, under-realizes it at 76% EQR for 30% of the pot, and donks about 1% of the time.',
       unsourced: [
         {
           question: 'How firm is a band classification?',
           answer:
-            'Graded DERIVED. Band membership is exact for a flop the source names individually or that matches a named subfamily — and all three flops in this puzzle are named individually, which is why they were chosen. For any flop outside those lists, putting it in a band is a judgement rather than a transcription: the book prints the bands as counts, descriptions and subfamily lists, never as an enumeration of all 1,755 distinct flops. Where the lists disagree with each other, this puzzle says so instead of picking a side.',
+            'Graded DERIVED. Band membership is exact for a flop the source names individually or that matches a named subfamily — and all three flops in this puzzle are named individually, which is why they were chosen. For any flop outside those lists, putting it in a band is a judgement rather than a transcription: the source prints the bands as counts, descriptions and subfamily lists, never as an enumeration of all 1,755 distinct flops. Where the lists disagree with each other, this puzzle says so instead of picking a side.',
           nearestSources: [
             'family.high-donk-flops',
             'bands.mid-flops',
@@ -173,7 +173,7 @@ export const DONK_BET_BANDS: InteractivePuzzle = {
         {
           question: 'Is every ace-high flop in the no-donk band?',
           answer:
-            'No, and the two lists genuinely disagree. The no-donk group is described as including AXX flops (p.648), while the low band separately names ALL — an ace with two low cards — among its unpaired subfamilies (p.645). A76 is not ALL: under the book’s rank letters the 7 and the 6 are Mid cards, so this is an ace with two mid cards and the general AXX statement is the one that reaches it. For an ace-high flop that the two lists really do dispute, the source does not settle it, and neither does this puzzle.',
+            'No, and the two lists genuinely disagree. The no-donk group is described as including AXX flops, while the low band separately names ALL — an ace with two low cards — among its unpaired subfamilies. A76 is not ALL: under the source’s rank letters the 7 and the 6 are Mid cards, so this is an ace with two mid cards and the general AXX statement is the one that reaches it. For an ace-high flop that the two lists really do dispute, the source does not settle it, and neither does this puzzle.',
           nearestSources: ['contrast.no-donk-flops', 'bands.low-flops', 'bands.rank-letters'],
         },
       ],
@@ -182,14 +182,14 @@ export const DONK_BET_BANDS: InteractivePuzzle = {
           id: 'three-readings',
           title: 'Read the board in three passes',
           body:
-            'There are 1,755 strategically distinct flops and nobody can study them one at a time. The book’s answer is to classify: flops that share common characteristics tend to be played in a similar fashion, so three readings of the board — taken in this order — put a flop into a band before anyone has been dealt a hand. Every one of the three is a fact about the cards. None of them requires knowing a position, a stack depth or a holding.',
+            'There are 1,755 strategically distinct flops and nobody can study them one at a time. The source’s answer is to classify: flops that share common characteristics tend to be played in a similar fashion, so three readings of the board — taken in this order — put a flop into a band before anyone has been dealt a hand. Every one of the three is a fact about the cards. None of them requires knowing a position, a stack depth or a holding.',
           bullets: [
             {
               text: 'Rank first, and it decides the most. A flop’s rank is its highest card — Kxx means a king and two cards a king or lower. The donk-bet bands are indexed by it: the high band is 7-x-x and 6-x-x, while an ace or a broadway on top sends a board to the other end of the scale.',
               sources: ['bands.flop-rank', 'family.high-donk-flops', 'contrast.no-donk-flops'],
             },
             {
-              text: 'Then count the flopped straights: how many two-card holdings make a straight using all three board cards. The book counts them on worked examples — zero on AQ7, one on KT9 (QJ), two on 875 (96 and 64), three on JT9 (KQ, Q8 and 87).',
+              text: 'Then count the flopped straights: how many two-card holdings make a straight using all three board cards. The source counts them on worked examples — zero on AQ7, one on KT9 (QJ), two on 875 (96 and 64), three on JT9 (KQ, Q8 and 87).',
               sources: ['bands.straight-count'],
             },
             {
@@ -297,7 +297,7 @@ export const DONK_BET_BANDS: InteractivePuzzle = {
           label: BAND_LABEL.high,
           verdict: 'best',
           shortWhy:
-            'Right, and by the widest margin available. Rank 6-x-x, three flopped straights, rainbow — the high band’s description clause by clause. The book also prints this flop by name: on average it is the highest frequency donk betting flop there is, at 67%.',
+            'Right, and by the widest margin available. Rank 6-x-x, three flopped straights, rainbow — the high band’s description clause by clause. The source also prints this flop by name: on average it is the highest frequency donk betting flop there is, at 67%.',
           sources: ['family.high-donk-flops', 'donk.654r-is-highest', 'example.654r-utg-straights'],
         },
         {
@@ -305,7 +305,7 @@ export const DONK_BET_BANDS: InteractivePuzzle = {
           label: BAND_LABEL.mid,
           verdict: 'mistake',
           shortWhy:
-            'One band too low, and a reasonable miss: 654 is a 6LL flop, and 6LL does appear in the mid band’s subfamilies. But a subfamily is the coarser statement, and the book names this individual flop as the highest-frequency donk bet in the game.',
+            'One band too low, and a reasonable miss: 654 is a 6LL flop, and 6LL does appear in the mid band’s subfamilies. But a subfamily is the coarser statement, and the source names this individual flop as the highest-frequency donk bet in the game.',
           sources: ['bands.mid-flops', 'donk.654r-is-highest'],
         },
         {
@@ -327,12 +327,12 @@ export const DONK_BET_BANDS: InteractivePuzzle = {
       ],
       bestOptionId: 'high',
       explanation:
-        'High — 50% and up. Rank: the highest card is a 6, so this is 6-x-x, one of the two ranks the high band is built from. Straights: three of them — 32, 87 and 73, each using all three board cards — and the band’s description is one to three, with a higher count pushing the frequency up and the bet-size down. Texture: rainbow, which the book says is donked more often than two-tone and far more often than monotone. All three readings agree, and the source removes the last doubt by naming the flop directly: on average, the highest frequency donk betting flop is 654r, at 67%. The range theory is a shape worth learning to recognise. On these boards the big blind’s range is more polarized than IP’s and holds the advantage in both strong and good hands, while half of IP’s range is weak hands that would rather check behind and see a free turn — a structure the book compares to the Clairvoyance Toy game, with the depolarized player sitting out of the betting lead. So the big blind leads, denying IP that free card and forcing money in from hands that did not want to put it in. Across the band that comes to 50% average equity, over-realized at 103% EQR for 52% of the pot. It also survives the change of opener: these boards are donked 67% of the time against UTG and 53% against the button, and both are inside the band.',
+        'High — 50% and up. Rank: the highest card is a 6, so this is 6-x-x, one of the two ranks the high band is built. Straights: three of them — 32, 87 and 73, each using all three board cards — and the band’s description is one to three, with a higher count pushing the frequency up and the bet-size down. Texture: rainbow, which the source says is donked more often than two-tone and far more often than monotone. All three readings agree, and the source removes the last doubt by naming the flop directly: on average, the highest frequency donk betting flop is 654r, at 67%. The range theory is a shape worth learning to recognise. On these boards the big blind’s range is more polarized than IP’s and holds the advantage in both strong and good hands, while half of IP’s range is weak hands that would rather check behind and see a free turn — a structure the source compares to the Clairvoyance Toy game, with the depolarized player sitting out of the betting lead. So the big blind leads, denying IP that free card and forcing money in from hands that did not want to put it. Across the band that comes to 50% average equity, over-realized at 103% EQR for 52% of the pot. It also survives the change of opener: these boards are donked 67% of the time against UTG and 53% against the button, and both are inside the band.',
       unsourced: [
         {
           question: 'Which 34 flops are in the high band?',
           answer:
-            'The book does not list them. It states there are about 34, describes them as ranks 7-x-x and 6-x-x with one to three possible flopped straights, and prints a table of their averaged statistics — but no enumeration appears in the text. So a flop can be checked against the description, which this one matches on every clause while also being named individually. A flop that matches the description only loosely is a judgement the source does not make for you.',
+            'The source does not list them. It states there are about 34, describes them as ranks 7-x-x and 6-x-x with one to three possible flopped straights, and prints a table of their averaged statistics — but no enumeration appears in the text. So a flop can be checked against the description, which this one matches on every clause while also being named individually. A flop that matches the description only loosely is a judgement the source does not make for you.',
           nearestSources: ['family.high-donk-flops', 'donk.654r-is-highest'],
         },
       ],
@@ -361,7 +361,7 @@ export const DONK_BET_BANDS: InteractivePuzzle = {
           },
           bullets: [
             {
-              text: 'The shape, stated: the big blind’s range is more polarized than IP’s and has the advantage in both strong and good hands, while 50% of IP’s range is weak. The book names the resemblance outright — this is the Clairvoyance Toy game with IP holding the depolarized range, which is what makes the big blind want to take the betting lead.',
+              text: 'The shape, stated: the big blind’s range is more polarized than IP’s and has the advantage in both strong and good hands, while 50% of IP’s range is weak. The source names the resemblance outright — this is the Clairvoyance Toy game with IP holding the depolarized range, which is what makes the big blind want to take the betting lead.',
               sources: ['family.high-donk-polarity'],
             },
             {
@@ -386,7 +386,7 @@ export const DONK_BET_BANDS: InteractivePuzzle = {
             'The high band’s description does not stop at rank. The straight count is doing work inside it, and the direction is stated: the higher the number of flopped straights, the smaller the donk bet-size and the higher the donk bet frequency used. Three is the maximum a flop can have, and this board has it.',
           bullets: [
             {
-              text: 'The book’s own enumeration of the straights on 654 is 32, 87 and 73. Note what is not on that list: 76 is top pair plus an open-ender here, not a straight.',
+              text: 'The source’s own enumeration of the straights on 654 is 32, 87 and 73. Note what is not on that list: 76 is top pair plus an open-ender here, not a straight.',
               sources: ['example.654r-utg-straights'],
             },
             {
@@ -402,7 +402,7 @@ export const DONK_BET_BANDS: InteractivePuzzle = {
             {
               question: 'Why do more flopped straights mean a smaller bet?',
               answer:
-                'The source states the relationship and not the reason. What it prints is the direction — the higher the number of flopped straights, the smaller the donk bet-size and the higher the donk bet frequency used — and it prints that inside the description of the high band rather than as a general law. Any causal story past that point would be ours, not the book’s.',
+                'The source states the relationship and not the reason. What it prints is the direction — the higher the number of flopped straights, the smaller the donk bet-size and the higher the donk bet frequency used — and it prints that inside the description of the high band rather than as a general law. Any causal story past that point would be ours, not the source’s.',
               nearestSources: ['family.high-donk-flops'],
             },
           ],
@@ -435,7 +435,7 @@ export const DONK_BET_BANDS: InteractivePuzzle = {
           label: BAND_LABEL.high,
           verdict: 'mistake',
           shortWhy:
-            'It has the rank and it has the straights — 7-x-x with two of them — but not the suits. Rainbow flops are donked at a higher frequency than two-tone, and monotone flops a lot less frequently. The book puts 764 one band down.',
+            'It has the rank and it has the straights — 7-x-x with two of them — but not the suits. Rainbow flops are donked at a higher frequency than two-tone, and monotone flops a lot less frequently. The source puts 764 one band down.',
           sources: ['family.high-donk-flops', 'bands.mid-flops'],
         },
         {
@@ -459,18 +459,18 @@ export const DONK_BET_BANDS: InteractivePuzzle = {
           label: BAND_LABEL.none,
           verdict: 'mistake',
           shortWhy:
-            'The natural guess, because monotone sits on the no-donk list. This is the exception the book carves out by name — the one monotone flop that still gets donked 25-50% of the time.',
+            'The natural guess, because monotone sits on the no-donk list. This is the exception the source carves out by name — the one monotone flop that still gets donked 25-50% of the time.',
           sources: ['contrast.no-donk-flops', 'bands.mid-flops'],
         },
       ],
       bestOptionId: 'mid',
       explanation:
-        'Mid — 25-50%, and this is the flop that shows how much the suits are worth. The rank and the straights read almost like the last board: 7-x-x is the other high-band rank, and there are two flopped straights here, 35 and 58, inside the band’s one-to-three. What differs is the texture. Rainbow flops are donked at a higher frequency than two-tone flops and, in general, monotone flops get donked a lot less frequently — so a board carrying the high band’s skeleton in a single suit lands a band below it. You do not have to infer that here, because the source says it about this exact flop: of the roughly 100 flops donked 25-50% of the time, the only monotone one is 764. Read the other way round, the same sentence is just as useful — monotone is otherwise a no-donk texture, and 764 is the single monotone board the book pulls out of that group. The range theory is the high band with the edges filed off. Equities run very close, IP holding a slight advantage at 52% to 48%, and the big blind’s range is still the more polarized one, with the bulk of it strong, good and trash hands while IP still holds a lot of weak hands that benefit from playing passively and seeing free cards. The betting range is built from the same hand types as on the high-donk boards, bet at a lower frequency, with everything checked more often so the checking range stays protected. Against either opener that comes to roughly 35% — the same versus UTG as versus the button, because the equity distribution barely changes between them.',
+        'Mid — 25-50%, and this is the flop that shows how much the suits are worth. The rank and the straights read almost like the last board: 7-x-x is the other high-band rank, and there are two flopped straights here, 35 and 58, inside the band’s one-to-three. What differs is the texture. Rainbow flops are donked at a higher frequency than two-tone flops, in general, monotone flops get donked a lot less frequently — so a board carrying the high band’s skeleton in a single suit lands a band below it. You do not have to infer that here, because the source says it about this exact flop: of the roughly 100 flops donked 25-50% of the time, the only monotone one is 764. Read the other way round, the same sentence is just as useful — monotone is otherwise a no-donk texture, and 764 is the single monotone board the source pulls out of that group. The range theory is the high band with the edges filed off. Equities run very close, IP holding a slight advantage at 52% to 48%, and the big blind’s range is still the more polarized one, with the bulk of it strong, good and trash hands while IP still holds a lot of weak hands that benefit from playing passively and seeing free cards. The betting range is built from the same hand types as on the high-donk boards, bet at a lower frequency, with everything checked more often so the checking range stays protected. Against either opener that comes to roughly 35% — the same versus UTG as versus the button, because the equity distribution barely changes between them.',
       unsourced: [
         {
           question: 'Would 764 RAINBOW also be a mid-band flop?',
           answer:
-            'The source does not say, and this puzzle will not guess. 764 rainbow is a 7ML flop, and 7ML is listed as a subfamily in both the mid band (p.642) and the low band (p.645) — as are 8MM, 8ML, 8LL, 7LL, 6LL and 5LL. The lists overlap because the bands are drawn across individual flops while the text reports them as families, so an unpaired flop that only matches a subfamily cannot be pinned to one band from what is printed. What is pinned is 764 monotone, which the mid band names on its own.',
+            'The source does not say, and this puzzle will not guess. 764 rainbow is a 7ML flop, and 7ML is listed as a subfamily in both the mid band and the low band — as are 8MM, 8ML, 8LL, 7LL, 6LL and 5LL. The lists overlap because the bands are drawn across individual flops while the text reports them as families, so an unpaired flop that only matches a subfamily cannot be pinned to one band from what is printed. What is pinned is 764 monotone, which the mid band names on its own.',
           nearestSources: ['bands.mid-flops', 'bands.low-flops'],
         },
       ],
@@ -494,7 +494,7 @@ export const DONK_BET_BANDS: InteractivePuzzle = {
               sources: ['contrast.no-donk-flops'],
             },
             {
-              text: 'So monotone pulls hard in one direction, and 764 is where the book stops it by name. That is worth holding onto as a pair: the general rule about monotone, and the single flop that is stated to escape it.',
+              text: 'So monotone pulls hard in one direction, and 764 is where the source stops it by name. That is worth holding onto as a pair: the general rule about monotone, and the single flop that is stated to escape it.',
               sources: ['bands.mid-flops'],
             },
           ],
@@ -577,7 +577,7 @@ export const DONK_BET_BANDS: InteractivePuzzle = {
             {
               question: 'Why is Low never the correct answer in this puzzle?',
               answer:
-                'Because no flop can be put into it beyond doubt from what the book prints. The low band is given entirely as subfamilies, and seven of its unpaired subfamilies — 8MM, 8ML, 8LL, 7ML, 7LL, 6LL and 5LL — are exactly the seven the mid band also lists. Not one individual flop is named in the low band anywhere. Choosing a board to represent it would therefore have meant deciding, on our own authority, which side of that overlap it fell on — which is the kind of judgement this puzzle exists to keep separate from the source. So Low stays an answer you must be able to recognise and, on these three flops, must be able to rule out.',
+                'Because no flop can be put into it beyond doubt from what the source prints. The low band is given entirely as subfamilies, and seven of its unpaired subfamilies — 8MM, 8ML, 8LL, 7ML, 7LL, 6LL and 5LL — are exactly the seven the mid band also lists. Not one individual flop is named in the low band anywhere. Choosing a board to represent it would therefore have meant deciding, on our own authority, which side of that overlap it fell on — which is the kind of judgement this puzzle exists to keep separate from the source. So Low stays an answer you must be able to recognise, on these three flops, must be able to rule out.',
               nearestSources: ['bands.low-flops', 'bands.mid-flops'],
             },
           ],
@@ -605,9 +605,9 @@ export const DONK_BET_BANDS: InteractivePuzzle = {
       ],
       unsourced: [
         {
-          question: 'Are those four percentages printed in the book?',
+          question: 'Are those four percentages printed in the source?',
           answer:
-            'No — the counts are, the percentages are arithmetic on them. The source prints “about 34”, “about 100” and “approximately 181” flops for the three donking bands, and 1,755 strategically distinct flops in hold’em overall. Dividing gives 1.9%, 5.7% and 10.3%; the fourth bar is the remainder, 1,440 flops, which the book itself describes only as “the vast majority”. The counts are exact transcription and the percentages are an exact derivation from them — no band was estimated to make the bars add up.',
+            'No — the counts are, the percentages are arithmetic on them. The source prints “about 34”, “about 100” and “approximately 181” flops for the three donking bands, and 1,755 strategically distinct flops in hold’em overall. Dividing gives 1.9%, 5.7% and 10.3%; the fourth bar is the remainder, 1,440 flops, which the source itself describes only as “the vast majority”. The counts are exact transcription and the percentages are an exact derivation from them — no band was estimated to make the bars add up.',
           nearestSources: [
             'family.high-donk-flops',
             'bands.mid-flops',
@@ -647,7 +647,7 @@ export const DONK_BET_BANDS: InteractivePuzzle = {
         {
           question: 'Do the bands hold at 100bb, or against a cutoff?',
           answer:
-            'Not stated. The dataset is 20bb, 30bb and 40bb with the button and UTG as the two openers, and the book’s claim about other positions is only that their strategies fall somewhere in between — it gives no figures for them. On stack depth the nearest thing to an answer is that the low band’s donk frequency is barely affected by depth across the three that were solved (p.647); nothing is printed about 100bb. Every figure in this puzzle is inside that dataset, and none should be carried outside it.',
+            'Not stated. The dataset is 20bb, 30bb and 40bb with the button and UTG as the two openers, and the source’s claim about other positions is only that their strategies fall somewhere in between — it gives no figures for them. On stack depth the nearest thing to an answer is that the low band’s donk frequency is barely affected by depth across the three that were solved; nothing is printed about 100bb. Every figure in this puzzle is inside that dataset, and none should be carried outside it.',
           nearestSources: ['bands.dataset', 'bands.low-polarity'],
         },
       ],
@@ -690,5 +690,5 @@ export const DONK_BET_BANDS: InteractivePuzzle = {
   xp: 60,
 
   endsEarlyBecause:
-    'There is no hand to play, and the source’s bands are a flop classification rather than a line. The chapter closes by telling the reader to run sample flops from each donk bet frequency group through a solver themselves in order to learn how to react to flop raises and how to follow through on future streets (p.649) — so no turn, no river, and no action is claimed here beyond the reading.',
+    'There is no hand to play, and the source’s bands are a flop classification rather than a line. The chapter closes by telling the reader to run sample flops from each donk bet frequency group through a solver themselves in order to learn how to react to flop raises and how to follow through on future streets — so no turn, no river, and no action is claimed here beyond the reading.',
 }

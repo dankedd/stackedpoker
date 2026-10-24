@@ -101,7 +101,7 @@ export const BB_DEFENDS_WIDE_VS_BTN: InteractivePuzzle = {
           verdict: 'mistake',
           shortWhy:
             'Folding is a real branch here — 43.2% of hands — but not with this one. The source names offsuit Ax as part of what the big blind CALLS against a button, so this hand is on the other side of that split.',
-          sources: ['bb100.hr82-aggregates', 'bb100.linear-3bet'],
+          sources: ['bb100.bb-vs-btn-aggregates', 'bb100.linear-3bet'],
         },
         {
           id: 'call',
@@ -111,7 +111,7 @@ export const BB_DEFENDS_WIDE_VS_BTN: InteractivePuzzle = {
           verdict: 'best',
           shortWhy:
             'Calling is the biggest branch of the strategy against a button open — 43.4% of hands — and the source names offsuit Ax among what the big blind calls with. Against any other position it can call nowhere near this wide.',
-          sources: ['bb100.hr82-aggregates', 'bb100.linear-3bet', 'bb100.why-bb-calls-wider'],
+          sources: ['bb100.bb-vs-btn-aggregates', 'bb100.linear-3bet', 'bb100.why-bb-calls-wider'],
         },
         {
           id: 'three-bet',
@@ -121,24 +121,24 @@ export const BB_DEFENDS_WIDE_VS_BTN: InteractivePuzzle = {
           verdict: 'mistake',
           shortWhy:
             'The 13.4% 3-betting range is described as very linear — strength-ordered from the top down, with no bluff slot at the bottom for a hand like this. The same sentence puts offsuit Ax in the calling range instead.',
-          sources: ['bb100.hr82-aggregates', 'bb100.linear-3bet'],
+          sources: ['bb100.bb-vs-btn-aggregates', 'bb100.linear-3bet'],
         },
       ],
       bestOptionId: 'call',
       explanation:
-        'Call. Against a button open the big blind calls 43.4% of its hands, 3-bets 13.4% and folds 43.2% (Hand Range 82, p.244) — and the source names the calling range as “most suited hands, offsuit Ax, connectors and broadways” (p.243). A♥7♣ is an offsuit ace, so it enters the pot as a member of a class the book names by name. The reason the defence is this wide has nothing to do with your two cards: “The BN range is wide enough that now the BB can call many more hands compared to all the other positions, as the BN’s ability to barrel and overbet very aggressively is downgraded due to the strong hands being diluted” (p.243). 3-betting is unsupported because that 13.4% range is very linear — top-down by strength — and folding gives up a hand the same sentence assigns to the calling range.',
+        'Call. Against a button open the big blind calls 43.4% of its hands, 3-bets 13.4% and folds 43.2% — and the source names the calling range as “most suited hands, offsuit Ax, connectors and broadways”. A♥7♣ is an offsuit ace, so it enters the pot as a member of a class the source names by name. The reason the defence is this wide has nothing to do with your two cards: “The BN range is wide enough that now the BB can call many more hands compared to all the other positions, as the BN’s ability to barrel and overbet very aggressively is downgraded due to the strong hands being diluted”. 3-betting is unsupported because that 13.4% range is very linear — top-down by strength — and folding gives up a hand the same sentence assigns to the calling range.',
       unsourced: [
         {
           question: 'How often exactly does A♥7♣ call here?',
           answer:
-            'Exact combo frequency is not specified in the source. Hand Range 82 is printed as a colour-coded chart image; the only figures printed in text are the whole-range aggregates — 3-bet 13.4%, call 43.4%, fold 43.2%. What the source does state in words is the class this hand belongs to: offsuit Ax is named as part of the calling range. (A reviewed pixel reconstruction of this exact chart does exist in this repo, lib/learn/bbDefenseComplete.ts — but a measurement of an image is not a figure the book prints, so no per-combo number is quoted here.)',
-          nearestSources: ['bb100.hr82-aggregates', 'bb100.linear-3bet'],
+            'Exact combo frequency is not specified in the source. The chart is printed as a colour-coded chart image; the only figures printed in text are the whole-range aggregates — 3-bet 13.4%, call 43.4%, fold 43.2%. What the source does state in words is the class this hand belongs to: offsuit Ax is named as part of the calling range. (A reviewed pixel reconstruction of this exact chart does exist in this repo, lib/learn/bbDefenseComplete.ts — but a measurement of an image is not a figure the source prints, so no per-combo number is quoted here.)',
+          nearestSources: ['bb100.bb-vs-btn-aggregates', 'bb100.linear-3bet'],
         },
         {
           question: 'Where do the 2.5bb open and the 10bb 3-bet size come from?',
           answer:
-            'From the book’s game assumptions, not from the passages this puzzle cites. Modern Poker Theory states the bet-sizes its 100bb solutions were run at — 2.5bb opens from the button, 10bb for an out-of-position 3-bet — on pp.179-180, recorded in this repo’s chart provenance for Hand Range 82. They are shown so the money on the felt adds up, and named here because they sit outside pp.243-244 and Ch.12. The 4bb pot is 2.5 from the button plus your posted 1 plus the folded small blind’s 0.5, and your call is 1.5 because you are already in for 1.',
-          nearestSources: ['bb100.hr82-aggregates'],
+            'From the source’s game assumptions, not from the passages this puzzle cites. The source states the bet-sizes its 100bb solutions were run at — 2.5bb opens from the button, 10bb for an out-of-position 3-bet — recorded in this repo’s chart provenance for the chart. They are shown so the money on the felt adds up, and named here because they sit outside. The 4bb pot is 2.5 from the button plus your posted 1 plus the folded small blind’s 0.5, and your call is 1.5 because you are already in for 1.',
+          nearestSources: ['bb100.bb-vs-btn-aggregates'],
         },
       ],
       theory: [
@@ -150,13 +150,13 @@ export const BB_DEFENDS_WIDE_VS_BTN: InteractivePuzzle = {
           exhibit: {
             caption: 'BB defence against a button open, 100bb',
             scope:
-              'Whole-range percentages printed with Hand Range 82 for BB vs BN, 6-max cash, 100bb effective. These describe the entire range at once — they are not the frequency of any individual hand.',
+              'Whole-range percentages printed with the chart for BB vs BN, 6-max cash, 100bb effective. These describe the entire range at once — they are not the frequency of any individual hand.',
             rows: [
               { label: 'Call', value: '43.4%', pct: 43.4, note: 'the biggest branch of the strategy' },
               { label: 'Fold', value: '43.2%', pct: 43.2 },
               { label: '3-bet', value: '13.4%', pct: 13.4 },
             ],
-            sources: ['bb100.hr82-aggregates'],
+            sources: ['bb100.bb-vs-btn-aggregates'],
           },
           bullets: [
             {
@@ -169,17 +169,17 @@ export const BB_DEFENDS_WIDE_VS_BTN: InteractivePuzzle = {
             },
             {
               text: 'Wide is still not “any two cards”: 43.2% of the big blind’s hands are folded even against this, the widest open it faces.',
-              sources: ['bb100.hr82-aggregates'],
+              sources: ['bb100.bb-vs-btn-aggregates'],
             },
           ],
-          sources: ['bb100.why-bb-calls-wider', 'bb100.hr82-aggregates'],
+          sources: ['bb100.why-bb-calls-wider', 'bb100.bb-vs-btn-aggregates'],
         },
 
         {
           id: 'what-goes-where',
           title: 'Which hands the source puts in which range',
           body:
-            'The book does not leave the composition of the two continuing ranges to inference. It names the shape of the 3-betting range and then lists the hand types that call — which is exactly why the hero hand in this puzzle is an offsuit ace and not something the source never mentions.',
+            'The source does not leave the composition of the two continuing ranges to inference. It names the shape of the 3-betting range and then lists the hand types that call — which is exactly why the hero hand in this puzzle is an offsuit ace and not something the source never mentions.',
           bullets: [
             {
               text: '3-bet: “a very linear range” — strength-ordered from the top down. A linear range has no bluff slot at its bottom, which is where a hand like A7 offsuit would have to fit.',
@@ -190,16 +190,16 @@ export const BB_DEFENDS_WIDE_VS_BTN: InteractivePuzzle = {
               sources: ['bb100.linear-3bet'],
             },
             {
-              text: 'Those two clauses come from one sentence about one chart. They are what makes the answer here sourceable at all — the chart’s per-hand colours are not printed as text anywhere in the book.',
-              sources: ['bb100.linear-3bet', 'bb100.hr82-aggregates'],
+              text: 'Those two clauses come from one sentence about one chart. They are what makes the answer here sourceable at all — the chart’s per-hand colours are not printed as text anywhere in the source.',
+              sources: ['bb100.linear-3bet', 'bb100.bb-vs-btn-aggregates'],
             },
           ],
           unsourced: [
             {
-              question: 'Does the book say which offsuit aces call and which fold?',
+              question: 'Does the source say which offsuit aces call and which fold?',
               answer:
-                'No. It names the class — offsuit Ax — and leaves the hand-by-hand detail to the chart image. Exact combo frequency is not specified in the source, so this puzzle asserts membership of the class the book names and stops there.',
-              nearestSources: ['bb100.linear-3bet', 'bb100.hr82-aggregates'],
+                'No. It names the class — offsuit Ax — and leaves the hand-by-hand detail to the chart image. Exact combo frequency is not specified in the source, so this puzzle asserts membership of the class the source names and stops there.',
+              nearestSources: ['bb100.linear-3bet', 'bb100.bb-vs-btn-aggregates'],
             },
           ],
           sources: ['bb100.linear-3bet'],
@@ -209,11 +209,11 @@ export const BB_DEFENDS_WIDE_VS_BTN: InteractivePuzzle = {
           id: 'wide-is-not-winning',
           title: 'Defending wide is not the same as being the favourite',
           body:
-            'It is easy to read a 43.4% calling range as the big blind taking control of the pot. It is not. The wide defence is a response to the button’s range being diluted; the button still has the position, and Chapter 12 puts numbers on what position is worth across the whole game.',
+            'It is easy to read a 43.4% calling range as the big blind taking control of the pot. It is not. The wide defence is a response to the button’s range being diluted; the button still has the position, and the source puts numbers on what position is worth across the whole game.',
           exhibit: {
             caption: 'The positional picture',
             scope:
-              'Ch.12, pp.656-657 — aggregated from thousands of GTO solutions at 20bb/30bb/40bb using MTT starting ranges (p.655), NOT the 100bb cash configuration of Hand Range 82. Read for the DIRECTION position pushes things, not as a number for this spot.',
+              'Aggregated from thousands of GTO solutions at 20bb/30bb/40bb using MTT starting ranges, NOT the 100bb cash configuration of the chart. Read for the DIRECTION position pushes things, not as a number for this spot.',
             rows: [
               { label: 'Overall range advantage', value: 'In position' },
               { label: 'BN equity over-realization', value: '15%', pct: 15 },
@@ -237,9 +237,9 @@ export const BB_DEFENDS_WIDE_VS_BTN: InteractivePuzzle = {
           ],
           unsourced: [
             {
-              question: 'Does the book itself frame wide defence as damage limitation?',
+              question: 'Does the source itself frame wide defence as damage limitation?',
               answer:
-                'Not in the passages used here. What the source states is the two facts, separately: the big blind can call many more hands against a button because the button’s strong hands are diluted (p.243), and in position holds the overall range advantage while both the button and UTG over-realize their equity by 15% (pp.656-657). Reading the first as damage limitation against the second is this puzzle’s framing, not the book’s sentence — and the second comes from a different set of simulations besides.',
+                'Not in the passages used here. What the source states is the two facts, separately: the big blind can call many more hands against a button because the button’s strong hands are diluted, and in position holds the overall range advantage while both the button and UTG over-realize their equity by 15%. Reading the first as damage limitation against the second is this puzzle’s framing, not the source’s sentence — and the second comes from a different set of simulations besides.',
               nearestSources: ['bb100.why-bb-calls-wider', 'position.ip-range-advantage', 'position.ch12-sim-scope'],
             },
           ],
@@ -258,7 +258,7 @@ export const BB_DEFENDS_WIDE_VS_BTN: InteractivePuzzle = {
       kind: 'composition',
       seat: 'hero',
       description:
-        'The whole-range strategy printed with Hand Range 82 at 100bb. Calling is the largest branch, and the source names its contents as most suited hands, offsuit Ax, connectors and broadways — which is where A♥7♣ enters the hand.',
+        'The whole-range strategy printed with the chart at 100bb. Calling is the largest branch, and the source names its contents as most suited hands, offsuit Ax, connectors and broadways — which is where A♥7♣ enters the hand.',
       bars: [
         { label: 'Call', pct: 43.4, note: 'most suited hands, offsuit Ax, connectors, broadways' },
         { label: 'Fold', pct: 43.2 },
@@ -268,11 +268,11 @@ export const BB_DEFENDS_WIDE_VS_BTN: InteractivePuzzle = {
         {
           question: 'Can you show the 13×13 grid for this range?',
           answer:
-            'Not from what the book prints in text. Hand Range 82 is a colour-coded chart image, and the only numbers printed with it are these three aggregates. This repo does hold a reviewed pixel reconstruction of this exact chart (lib/learn/bbDefenseComplete.ts, BB_vs_BTN at 100bb), but that is a documented measurement of an image rather than a figure the source states — so this puzzle teaches from the aggregates and the named hand classes, and claims no per-combo frequency.',
-          nearestSources: ['bb100.hr82-aggregates', 'bb100.linear-3bet'],
+            'Not from what the source prints in text. The chart is a colour-coded chart image, and the only numbers printed with it are these three aggregates. This repo does hold a reviewed pixel reconstruction of this exact chart (lib/learn/bbDefenseComplete.ts, BB_vs_BTN at 100bb), but that is a documented measurement of an image rather than a figure the source states — so this puzzle teaches from the aggregates and the named hand classes, and claims no per-combo frequency.',
+          nearestSources: ['bb100.bb-vs-btn-aggregates', 'bb100.linear-3bet'],
         },
       ],
-      sources: ['bb100.hr82-aggregates', 'bb100.linear-3bet'],
+      sources: ['bb100.bb-vs-btn-aggregates', 'bb100.linear-3bet'],
     },
     {
       id: 'btn-position-edge',
@@ -281,12 +281,12 @@ export const BB_DEFENDS_WIDE_VS_BTN: InteractivePuzzle = {
       kind: 'aggregate',
       seat: 'villain',
       description:
-        'What the button keeps even when the big blind defends this wide. Chapter 12 states that IP has the overall range advantage, and that both the button and UTG over-realize their equity by 15% — though from a different set of simulations than Hand Range 82, so read it for direction rather than as a measurement of this spot.',
+        'What the button keeps even when the big blind defends this wide. The source states that IP has the overall range advantage, and that both the button and UTG over-realize their equity by 15% — though from a different set of simulations than the chart, so read it for direction rather than as a measurement of this spot.',
       unsourced: [
         {
           question: 'What percentage of hands does the button actually open here?',
           answer:
-            'Not stated in the passages this puzzle uses. p.243 says only that the button’s range is “wide enough” that the big blind can call many more hands than against any other position. There IS a tempting number nearby — p.657 calls the button’s range “~44%” against UTG’s “~15%” — but p.655 states that whole section is aggregated from 20bb/30bb/40bb solutions using MTT starting ranges, so it is not the 100bb cash opening range for this hand. The argument here rests on the button’s range being wide, not on how wide exactly.',
+            'Not stated in the passages this puzzle uses. The source says only that the button’s range is “wide enough” that the big blind can call many more hands than against any other position. There IS a tempting number nearby — the source calls the button’s range “~44%” against UTG’s “~15%” — but the source states that whole section is aggregated from 20bb/30bb/40bb solutions using MTT starting ranges, so it is not the 100bb cash opening range for this hand. The argument here rests on the button’s range being wide, not on how wide exactly.',
           nearestSources: ['bb100.why-bb-calls-wider', 'position.ip-range-advantage', 'position.ch12-sim-scope'],
         },
       ],
@@ -297,11 +297,11 @@ export const BB_DEFENDS_WIDE_VS_BTN: InteractivePuzzle = {
   /* ══════════════════════════════════════════════════════════════════════ */
 
   takeawayHeadline: 'The big blind defends widest against the button because the button opens widest.',
-  headlineSources: ['bb100.why-bb-calls-wider', 'bb100.hr82-aggregates'],
+  headlineSources: ['bb100.why-bb-calls-wider', 'bb100.bb-vs-btn-aggregates'],
   takeaways: [
     {
       text: 'Against a button open the big blind calls 43.4%, folds 43.2% and 3-bets 13.4% — calling is the biggest branch of the strategy.',
-      sources: ['bb100.hr82-aggregates'],
+      sources: ['bb100.bb-vs-btn-aggregates'],
     },
     {
       text: 'The reason is the button’s range, not your cards: a wide open dilutes the strong hands, which downgrades the button’s ability to barrel and overbet aggressively, so the big blind can call many more hands than against any other position.',
@@ -312,7 +312,7 @@ export const BB_DEFENDS_WIDE_VS_BTN: InteractivePuzzle = {
       sources: ['bb100.linear-3bet'],
     },
     {
-      text: 'Calling wide is not the big blind taking over: IP still has the overall range advantage, and the button over-realizes its equity by 15% — a figure from the book’s 20-40bb aggregate, cited for its direction rather than as a number for this spot.',
+      text: 'Calling wide is not the big blind taking over: IP still has the overall range advantage, and the button over-realizes its equity by 15% — a figure from the source’s 20-40bb aggregate, cited for its direction rather than as a number for this spot.',
       sources: ['position.ip-range-advantage', 'position.ip-over-realizes', 'position.ch12-sim-scope'],
     },
   ],
@@ -320,5 +320,5 @@ export const BB_DEFENDS_WIDE_VS_BTN: InteractivePuzzle = {
   xp: 30,
 
   endsEarlyBecause:
-    'This is a preflop question and the source answers it preflop. Hand Range 82 and the prose on p.243 state what the big blind does against a button open; they say nothing about how A♥7♣ plays on a flop, so the hand stops where the evidence does rather than continuing into a street the source has not solved for it.',
+    'This is a preflop question and the source answers it preflop. The chart and the prose state what the big blind does against a button open; they say nothing about how A♥7♣ plays on a flop, so the hand stops where the evidence does rather than continuing into a street the source has not solved for it.',
 }

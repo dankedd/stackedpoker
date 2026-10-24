@@ -171,12 +171,8 @@ export type SourceEvidenceType = 'exact_derived' | 'source_reconstructed' | 'ped
  *  and similar on-screen captions for the human-facing version. This is what a
  *  content audit (e.g. section 39/40-style theory QA) walks to verify claims. */
 export interface LessonSource {
-  book: string
-  author?: string
-  /** Book section/theme this step's claim comes from, e.g. "Blocker Effects". */
-  section: string
-  /** Named example within that section, e.g. "Blocker Example 1", when applicable. */
-  example?: string
+  /** The work, section and example a claim comes from are written as a comment
+   *  next to each `source` (never as values: the site never names the source). */
   type: SourceEvidenceType
 }
 

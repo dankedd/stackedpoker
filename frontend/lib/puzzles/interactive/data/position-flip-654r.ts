@@ -63,7 +63,7 @@ export const POSITION_FLIP_654R: InteractivePuzzle = {
   topic: 'Position',
   difficulty: 'advanced',
   description:
-    'The book takes the button’s range, leaves it completely unchanged, and makes it act first on the flop. Nothing about the cards moves. Everything about the strategy does — and the gap between the two is what position is worth.',
+    'The source takes the button’s range, leaves it completely unchanged, and makes it act first on the flop. Nothing about the cards moves. Everything about the strategy does — and the gap between the two is what position is worth.',
 
   setup: {
     format: '30bb effective',
@@ -73,7 +73,7 @@ export const POSITION_FLIP_654R: InteractivePuzzle = {
     heroCards: ['Ac', 'Qd'],
     effectiveStackBb: 30,
     gameNotes:
-      'MODIFIED SIMULATION. Preflop is real: you opened the button, the big blind called. On the flop the book flips who acts first while both players keep their original ranges — so you hold the button’s 49% range with no position. This cannot happen at a table; it is the book’s own thought experiment, built to price position with range held constant. A♣Q♦ is illustrative only — the question is about the range.',
+      'MODIFIED SIMULATION. Preflop is real: you opened the button, the big blind called. On the flop the source flips who acts first while both players keep their original ranges — so you hold the button’s 49% range with no position. This cannot happen at a table; it is the source’s own thought experiment, built to price position with range held constant. A♣Q♦ is illustrative only — the question is about the range.',
   },
 
   /* ══════════════════════════════════════════════════════════════════════ */
@@ -96,7 +96,7 @@ export const POSITION_FLIP_654R: InteractivePuzzle = {
         { street: 'flop', actor: '', text: 'Positions flipped — you are first to act' },
       ],
       situation:
-        'You opened the button with a standard 49% range and the big blind called with a standard 64% range. The flop is 6♣ 5♦ 4♠ — rainbow. Now the book flips the experiment: both players keep the exact ranges they just built, but you are the one who has to act first. This is a modified simulation, not a seat you can be dealt — it exists so the effect of position can be measured with the ranges held still.',
+        'You opened the button with a standard 49% range and the big blind called with a standard 64% range. The flop is 6♣ 5♦ 4♠ — rainbow. Now the source flips the experiment: both players keep the exact ranges they just built, but you are the one who has to act first. This is a modified simulation, not a seat you can be dealt — it exists so the effect of position can be measured with the ranges held still.',
       actionBeforeHero: ['UTG folds', 'HJ folds', 'CO folds', 'Hero raises to 2.5bb', 'SB folds', 'BB calls'],
       postflopAction: [],
       question: 'You hold the button’s range, but you are out of position. What is your action?',
@@ -118,7 +118,7 @@ export const POSITION_FLIP_654R: InteractivePuzzle = {
           tableAction: { label: 'Bets', betBb: 6.9 },
           verdict: 'defensible',
           shortWhy:
-            'The right size, at the wrong frequency. When this range does bet out of position, 125% is the size the book names as most used — but the total betting frequency is 9.23%, so this is the minority branch by a wide margin.',
+            'The right size, at the wrong frequency. When this range does bet out of position, 125% is the size the source names as most used — but the total betting frequency is 9.23%, so this is the minority branch by a wide margin.',
           sources: ['flip.654r-oop-frequency', 'flip.two-street-game'],
         },
         {
@@ -128,24 +128,24 @@ export const POSITION_FLIP_654R: InteractivePuzzle = {
           tableAction: { label: 'Bets', betBb: 3.7 },
           verdict: 'mistake',
           shortWhy:
-            'The size that loses its job when position goes. The book says the 67% size is used more often in position because it sets up an effective triple barrel — and that out of position parts of this range only want a two-street game, going all-in on the turn instead. It names the 125% overbet as the most used size here, not this one.',
+            'The size that loses its job when position goes. The source says the 67% size is used more often in position because it sets up an effective triple barrel — and that out of position parts of this range only want a two-street game, going all-in on the turn instead. It names the 125% overbet as the most used size here, not this one.',
           sources: ['flip.two-street-game', 'flip.654r-oop-frequency', 'flip.experiment-definition'],
         },
       ],
       bestOptionId: 'check',
       explanation:
-        'Check. On p.652 the book prints both halves of this comparison one sentence apart, for the same range on the same flop: “with position, Hero can only bet about 48% of the time after the BB checks. When Hero is OOP with the BN’s range on this flop, the total betting frequency drops down to 9.23% and the most used bet-size is the 125% overbet.” Betting is not deleted — it is compressed into roughly a tenth of the range, and when it does happen it comes as an overbet rather than the two-thirds size that works in position. So checking is the answer at frequency, and the 125% overbet is the size to reach for on the rare occasions you are not checking.',
+        'Check. the source prints both halves of this comparison one sentence apart, for the same range on the same flop: “with position, Hero can only bet about 48% of the time after the BB checks. When Hero is OOP with the BN’s range on this flop, the total betting frequency drops down to 9.23% and the most used bet-size is the 125% overbet.” Betting is not deleted — it is compressed into roughly a tenth of the range, and when it does happen it comes as an overbet rather than the two-thirds size that works in position. So checking is the answer at frequency, and the 125% overbet is the size to reach for on the rare occasions you are not checking.',
       unsourced: [
         {
           question: 'How often exactly does A♣Q♦ check here?',
           answer:
-            'The book does not say. 9.23% is a whole-range betting frequency for the flipped solve; the source prints no per-combo frequencies for this node, and no strong/good/weak/trash split of it either. A♣Q♦ is shown only as a concrete member of the 51% of this range the book calls weak on this flop — every ace in the button’s range averages 49% equity on 654r. The answer would be the same with any two cards, because the question is about the range.',
+            'The source does not say. 9.23% is a whole-range betting frequency for the flipped solve; the source prints no per-combo frequencies for this node, and no strong/good/weak/trash split of it either. A♣Q♦ is shown only as a concrete member of the 51% of this range the source calls weak on this flop — every ace in the button’s range averages 49% equity on 654r. The answer would be the same with any two cards, because the question is about the range.',
           nearestSources: ['flip.654r-oop-frequency', 'position.654r-bn-weak-hands', 'buckets.654r-ax-devalued'],
         },
         {
-          question: 'Why does the pot read 5.5bb when the book prints 5.6bb?',
+          question: 'Why does the pot read 5.5bb when the source prints 5.6bb?',
           answer:
-            'Because the book states the flop pot for this spot without ever stating the preflop open size behind it. A 2.5bb open is the standard size closest to reproducing it: 2.5 from you, 2.5 called, plus the folded small blind’s 0.5 makes 5.5bb, which is what the chips on the felt actually add up to. Inventing a 2.55bb open to hit 5.6 exactly would be worse than a disclosed 0.1bb gap. The two bet-sizes offered are two-thirds and 125% of the displayed pot.',
+            'Because the source states the flop pot for this spot without ever stating the preflop open size behind it. A 2.5bb open is the standard size closest to reproducing it: 2.5 from you, 2.5 called, plus the folded small blind’s 0.5 makes 5.5bb, which is what the chips on the felt actually add up to. Inventing a 2.55bb open to hit 5.6 exactly would be worse than a disclosed 0.1bb gap. The two bet-sizes offered are two-thirds and 125% of the displayed pot.',
           nearestSources: ['value.table-104', 'flip.experiment-definition'],
         },
       ],
@@ -154,7 +154,7 @@ export const POSITION_FLIP_654R: InteractivePuzzle = {
           id: 'the-experiment',
           title: 'What this experiment is — and what it is not',
           body:
-            'Two things normally change at once when you compare a button to a blind: the seat and the range. That makes the effect of position impossible to read off a normal solve. So the book removes one of the two variables. It runs the real preflop — button opens 49%, big blind calls 64% — and then re-solves the flop with the players’ positions swapped and their ranges untouched. Hero ends up out of position holding the button’s range. No table can deal that. It is a measuring instrument, and the number it produces is the price of the seat.',
+            'Two things normally change at once when you compare a button to a blind: the seat and the range. That makes the effect of position impossible to read off a normal solve. So the source removes one of the two variables. It runs the real preflop — button opens 49%, big blind calls 64% — and then re-solves the flop with the players’ positions swapped and their ranges untouched. Hero ends up out of position holding the button’s range. No table can deal that. It is a measuring instrument, and the number it produces is the price of the seat.',
           exhibit: {
             caption: 'The button’s 49% range on 654r — the same range, priced twice',
             scope:
@@ -169,7 +169,7 @@ export const POSITION_FLIP_654R: InteractivePuzzle = {
           },
           bullets: [
             {
-              text: 'The book’s own definition: “Modified solution where the players’ ranges are flipped, so now OOP has the BN range and the IP Player has the BB range.” The same paragraph fixes the three flop bet-sizes available to both players at 1.25-pot, 2/3-pot and 1/4-pot — which is where the answer choices above come from.',
+              text: 'The source’s own definition: “Modified solution where the players’ ranges are flipped, so now OOP has the BN range and the IP Player has the BB range.” The same paragraph fixes the three flop bet-sizes available to both players at 1.25-pot, 2/3-pot and 1/4-pot — which is where the answer choices above come.',
               sources: ['flip.experiment-definition'],
             },
             {
@@ -187,7 +187,7 @@ export const POSITION_FLIP_654R: InteractivePuzzle = {
           ],
           unsourced: [
             {
-              question: 'Does the book give the flipped strategy broken down by hand strength?',
+              question: 'Does the source give the flipped strategy broken down by hand strength?',
               answer:
                 'No. For this node it prints the total betting frequency, the most used size, and the fact that weak hands make up 51% of the range. There is no strong/good/weak/trash betting split for the flipped solve, and no per-combo figures — so this puzzle states the aggregate and stops there.',
               nearestSources: ['flip.654r-oop-frequency', 'position.654r-bn-weak-hands'],
@@ -200,7 +200,7 @@ export const POSITION_FLIP_654R: InteractivePuzzle = {
           id: 'why-the-frequency-collapses',
           title: 'Why the betting frequency collapses',
           body:
-            'The mechanism the book gives is not "out of position is bad" — it is specific, and it runs through the checking range. In position, a weak hand can check behind and be guaranteed a turn card. Out of position, checking guarantees nothing: the player behind gets to bet, and hands that badly wanted a free card are forced to give up their equity. The only defence is to keep enough strong hands in the checking range to check-raise with, which is what makes the opponent bet less often. Those strong hands are exactly the ones that would otherwise have been betting — so protecting the check is paid for out of the betting frequency.',
+            'The mechanism the source gives is not "out of position is bad" — it is specific, and it runs through the checking range. In position, a weak hand can check behind and be guaranteed a turn card. Out of position, checking guarantees nothing: the player behind gets to bet, and hands that badly wanted a free card are forced to give up their equity. The only defence is to keep enough strong hands in the checking range to check-raise with, which is what makes the opponent bet less often. Those strong hands are exactly the ones that would otherwise have been betting — so protecting the check is paid for out of the betting frequency.',
           exhibit: {
             caption: 'What the button’s range looks like on 6♣5♦4♠',
             scope:
@@ -241,7 +241,7 @@ export const POSITION_FLIP_654R: InteractivePuzzle = {
           exhibit: {
             caption: 'Cost of moving the same range out of position',
             scope:
-              'The MODIFIED "positions flipped" solve at 30bb, measured against the real solve where the same range plays in position. Both rows are the book’s figures for Hero, whose range is the 49% BN opening range in every case.',
+              'The MODIFIED "positions flipped" solve at 30bb, measured against the real solve where the same range plays in position. Both rows are the source’s figures for Hero, whose range is the 49% BN opening range in every case.',
             rows: [
               { label: 'EQR on 654r, in position', value: '100%', pct: 100 },
               { label: 'EQR on 654r, out of position', value: '79%', pct: 79 },
@@ -266,7 +266,7 @@ export const POSITION_FLIP_654R: InteractivePuzzle = {
               sources: ['flip.654r-oop-eqr', 'flip.a76r-oop-cost', 'position.654r-ip-cbet'],
             },
             {
-              text: 'A third experiment brackets the number: deal both players the identical range, and the in-position player still captures 5% more of the pot than their equity (110% EQR) while the out-of-position player realizes 90%. Across sample flops the book puts the value of position at 5-10% of the pot.',
+              text: 'A third experiment brackets the number: deal both players the identical range, and the in-position player still captures 5% more of the pot than their equity (110% EQR) while the out-of-position player realizes 90%. Across sample flops the source puts the value of position at 5-10% of the pot.',
               sources: ['flip.value-of-position-general'],
             },
           ],
@@ -286,12 +286,12 @@ export const POSITION_FLIP_654R: InteractivePuzzle = {
       kind: 'aggregate',
       seat: 'hero',
       description:
-        'The standard GTO button opening range the book uses for this 30bb spot. In the flipped simulation this is still your range — completely unchanged from the real preflop — you are simply playing it from the wrong side of the table.',
+        'The standard GTO button opening range the source uses for this 30bb spot. In the flipped simulation this is still your range — completely unchanged from the real preflop — you are simply playing it from the wrong side of the table.',
       unsourced: [
         {
           question: 'Can you show the 13×13 grid for this range?',
           answer:
-            'Not from this source. Modern Poker Theory gives the 49% and 64% aggregates in prose for the 30bb BB vs BN configuration and prints no hand-by-hand chart of it at that depth. Drawing a grid would mean choosing which specific hands are in it, and that choice would be ours, not the book’s.',
+            'Not from this source. The source gives the 49% and 64% aggregates in prose for the 30bb BB vs BN configuration and prints no hand-by-hand chart of it at that depth. Drawing a grid would mean choosing which specific hands are in it, and that choice would be ours, not the source’s.',
           nearestSources: ['preflop.bb-vs-bn-25bb-chart', 'preflop.bb-vs-bn-40bb-chart'],
         },
       ],
@@ -313,7 +313,7 @@ export const POSITION_FLIP_654R: InteractivePuzzle = {
       kind: 'composition',
       seat: 'hero',
       description:
-        'The two figures the book prints for the button’s range on this flop. They come from different tables and do not form a complete four-bucket partition, so they are shown side by side rather than as one distribution — which is exactly how the source gives them.',
+        'The two figures the source prints for the button’s range on this flop. They come from different tables and do not form a complete four-bucket partition, so they are shown side by side rather than as one distribution — which is exactly how the source gives them.',
       bars: [
         { label: 'Weak', pct: 51, note: 'stated for Hero’s range in this section — the hands that most want position' },
         { label: 'Strong', pct: 4, note: 'BB vs IP buckets on 654r, averaged over 20/30/40bb' },
@@ -322,7 +322,7 @@ export const POSITION_FLIP_654R: InteractivePuzzle = {
         {
           question: 'What about the button’s good and trash hands?',
           answer:
-            'The source does not print a complete four-bucket breakdown for the button on this flop, and prints none at all for the flipped solve. Filling in the remaining 45% would mean splitting a number the book never split.',
+            'The source does not print a complete four-bucket breakdown for the button on this flop, and prints none at all for the flipped solve. Filling in the remaining 45% would mean splitting a number the source never split.',
           nearestSources: ['position.654r-bn-weak-hands', 'buckets.654r'],
         },
       ],
@@ -351,7 +351,7 @@ export const POSITION_FLIP_654R: InteractivePuzzle = {
   headlineSources: ['position.654r-ip-cbet', 'flip.654r-oop-frequency'],
   takeaways: [
     {
-      text: 'The book measures position by holding the range still. It flips who acts first on the flop, changes nothing else, and reads off the difference — a modified simulation, not a spot you can be dealt.',
+      text: 'The source measures position by holding the range still. It flips who acts first on the flop, changes nothing else, and reads off the difference — a modified simulation, not a spot you can be dealt.',
       sources: ['flip.experiment-definition', 'flip.hero-oop-with-bn-range'],
     },
     {
@@ -371,5 +371,5 @@ export const POSITION_FLIP_654R: InteractivePuzzle = {
   xp: 45,
 
   endsEarlyBecause:
-    'The flipped simulation is a flop experiment. The book reports the flop betting frequency, the sizing and the equity-realization cost, and says only that Hero aims to play a two-street game and go all-in on the turn at a reasonably high frequency — that is not a turn strategy, so the hand stops where the measurement stops.',
+    'The flipped simulation is a flop experiment. The source reports the flop betting frequency, the sizing and the equity-realization cost, and says only that Hero aims to play a two-street game and go all-in on the turn at a reasonably high frequency — that is not a turn strategy, so the hand stops where the measurement stops.',
 }

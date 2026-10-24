@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { BookOpen, ChevronDown, HelpCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { DERIVATION_LABEL, citation, derivationNote, source } from '@/lib/puzzles/interactive/sources'
+import { DERIVATION_LABEL, derivationNote, source } from '@/lib/puzzles/interactive/sources'
 import type { SourceId, UnsourcedNote } from '@/lib/puzzles/interactive/types'
 
 /**
@@ -13,7 +13,7 @@ import type { SourceId, UnsourcedNote } from '@/lib/puzzles/interactive/types'
  * the thing a learner most needs to see is not that a citation exists but what
  * it covers — a frequency measured in a BB vs UTG simulation is a different
  * claim from the same number measured against a button. So the expanded state
- * leads with `scope`, then the derivation, then the page.
+ * shows `scope`, then the derivation. It never names the work, page or quote.
  *
  * `UnsourcedPanel` is its counterpart and is styled to be at least as visible.
  * "The book does not answer this" is content here, not an apology.
@@ -42,14 +42,10 @@ export function SourceChips({ ids, className }: { ids: SourceId[]; className?: s
             const ref = source(id)
             return (
               <li key={id} className="text-[11px] leading-relaxed">
-                <p className="font-semibold text-slate-200">{citation(ref)}</p>
-                <p className="mt-1 text-slate-400">
+                <p className="text-slate-400">
                   <span className="font-semibold text-slate-300">Covers: </span>
                   {ref.scope}
                 </p>
-                {ref.quote && (
-                  <p className="mt-1 border-l-2 border-violet-500/30 pl-2 italic text-slate-400">“{ref.quote}”</p>
-                )}
                 <p className="mt-1 text-[10px] uppercase tracking-wider text-slate-600">
                   {DERIVATION_LABEL[ref.derivation]} — {derivationNote(ref.derivation)}
                 </p>

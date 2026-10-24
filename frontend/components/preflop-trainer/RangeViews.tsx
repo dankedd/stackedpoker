@@ -279,9 +279,6 @@ export function PushFoldView({
         <aside className="space-y-4 rounded-xl border border-border/60 bg-background/40 p-4">
           <div>
             <h3 className="text-lg font-semibold tracking-tight text-foreground">{displayPos(chart.pos)} · shove ≤10bb</h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {chart.hr} · p. {chart.page}
-            </p>
           </div>
           <p className="text-xs leading-relaxed text-muted-foreground">
             Each number is the <b className="text-foreground">largest</b> stack (in bb) at which the hand is still

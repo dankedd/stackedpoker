@@ -2341,8 +2341,8 @@ export const LEARNING_MODULES: LearningModule[] = [
     "learningObjectives": [
       "State the formal definitions of bet-size, minbet, minraise, overbet, c-bet, and donk bet, and explain why a strategy must fix a finite menu of sizes before any specific hand is considered",
       "Compute, from any stated bet-size, the pot odds it offers, the resulting Alpha, the MDF it implies, and the value:bluff ratio a polarized range needs — as one connected cascade, not four separate facts",
-      "Explain, using the book's own [0-1] Toy Game evidence, why a strategy abandons a bet-size entirely the instant it can be safely raised, rather than simply using it less often",
-      "State the book's own quantified EV cost of simplifying to a single bet-size, and identify the specific, nameable exceptions (the all-in size, low SPR) where that default stops applying",
+      "Explain, using the source's own [0-1] Toy Game evidence, why a strategy abandons a bet-size entirely the instant it can be safely raised, rather than simply using it less often",
+      "State the source's own quantified EV cost of simplifying to a single bet-size, and identify the specific, nameable exceptions (the all-in size, low SPR) where that default stops applying",
       "Predict a strategy's sizing direction — from pure-check to all-in-dominant — directly from a range's polarization relative to its opponent's, without needing raw equity numbers"
     ],
     "difficulty": "intermediate",

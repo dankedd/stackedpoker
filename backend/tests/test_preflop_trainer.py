@@ -16,7 +16,7 @@ import pytest
 from fastapi import HTTPException
 
 from app.api.routes import preflop_trainer as route
-from app.engines.preflop_trainer import ChartRef, InvalidHand, grade_hand
+from app.engines.preflop_trainer import ChartRef, InvalidHand, chart_for, grade_hand
 from app.engines.preflop_trainer.grading import DATA_DIR, frequencies, grade_frequencies, push_value
 
 FRONTEND_DATA = Path(__file__).resolve().parents[2] / "frontend" / "data" / "ranges"
@@ -32,8 +32,14 @@ def _defense(pred):
 
 @pytest.mark.parametrize("name", ["open", "pushfold", "defense"])
 def test_backend_charts_match_frontend(name):
-    """The server must grade against exactly the charts the browser shows."""
-    assert (DATA_DIR / f"{name}.json").read_bytes() == (FRONTEND_DATA / f"{name}.json").read_bytes()
+    """The server must grade against exactly the charts the browser shows.
+
+    The browser's copy is this one minus the source fields
+    (frontend/scripts/build-range-data.mjs)."""
+    source_fields = {"page", "hr", "n", "title"}
+    ours = json.loads((DATA_DIR / f"{name}.json").read_text(encoding="utf-8"))
+    theirs = json.loads((FRONTEND_DATA / f"{name}.json").read_text(encoding="utf-8"))
+    assert [{k: v for k, v in c.items() if k not in source_fields} for c in ours] == theirs
 
 
 # ── Grading (mirrors frontend/lib/ranges/__tests__/logic.test.ts) ─────────────
@@ -91,6 +97,16 @@ def test_invalid_requests(ref, hand, action):
         grade_hand(ref, hand, action)
 
 
+def test_chart_ids_and_legacy_numbers_resolve_to_the_same_chart():
+    for name, key in (("open", "page"), ("pushfold", "page"), ("defense", "n")):
+        for c in json.loads((DATA_DIR / f"{name}.json").read_text(encoding="utf-8")):
+            assert chart_for(ChartRef(name, c["id"])) is chart_for(ChartRef(name, c[key]))
+
+
+def test_endpoint_accepts_a_chart_id():
+    assert route.HandRequest(kind="open", chart_id="open_mtt_bn_25", hand="AA", action="raise").chart_id == "open_mtt_bn_25"
+
+
 def test_every_row_sums_to_one():
     for name, key in (("open", "page"), ("defense", "n")):
         for c in json.loads((DATA_DIR / f"{name}.json").read_text(encoding="utf-8")):
@@ -137,7 +153,8 @@ def test_endpoint_sends_the_servers_verdict(fake_rpc):
     res = asyncio.run(route.record_hand(body, current_user=USER))
     fn, args = fake_rpc[0]
     assert fn == "record_preflop_trainer_hand"
-    assert args == {"p_user_id": USER["sub"], "p_verdict": "correct", "p_hand_ref": "open:327::AA"}
+    # A legacy numeric id is logged as the chart's id.
+    assert args == {"p_user_id": USER["sub"], "p_verdict": "correct", "p_hand_ref": "open:open_mtt_bn_25::AA"}
     assert res.verdict == "correct" and res.xp_awarded == 4 and res.total_xp == 499
     assert res.leveled_up is False
 

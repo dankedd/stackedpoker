@@ -158,11 +158,22 @@ def test_state_endpoint(fake_db):
 # ── C-bet question ────────────────────────────────────────────────────────────
 
 
-@pytest.mark.parametrize("copy", ["data/mpt/cbet_profiles.json", "frontend/lib/flopTrainer/cbetProfiles.json"])
-def test_cbet_profiles_match_every_copy(copy):
-    """The browser and the source data must hold exactly what the server grades with."""
-    path = Path(__file__).resolve().parents[2] / copy
-    assert json.loads(path.read_text(encoding="utf-8")) == cbet_data()
+def _without(value, keys):
+    if isinstance(value, list):
+        return [_without(v, keys) for v in value]
+    if isinstance(value, dict):
+        return {k: _without(v, keys) for k, v in value.items() if k not in keys}
+    return value
+
+
+def test_cbet_profiles_match_every_copy():
+    """The browser and the source data must hold exactly what the server grades with.
+
+    The browser's copy leaves out the source fields (frontend/scripts/build-client-data.mjs)."""
+    root = Path(__file__).resolve().parents[2]
+    assert json.loads((root / "data/mpt/cbet_profiles.json").read_text(encoding="utf-8")) == cbet_data()
+    browser = json.loads((root / "frontend/lib/flopTrainer/cbetProfiles.json").read_text(encoding="utf-8"))
+    assert browser == _without(cbet_data(), {"source", "note", "size_rules_note", "page", "pages", "book_flop"})
 
 
 def test_book_flops_use_the_printed_strategy():
@@ -205,6 +216,7 @@ def test_endpoint_adds_cbet_points(fake_db):
     args = fake_db[-1][1]
     # AcQd3h UTG is a book flop (p.684): 2/3 pot 84.6% -> high / big.
     assert res.cbet["band_ok"] and not res.cbet["size_ok"] and res.cbet["advice"]["source"] == "book"
+    assert "pages" not in res.cbet["advice"]  # page numbers never reach the browser
     assert args["p_points"] == 4 and args["p_cbet_band"] == "high" and args["p_cbet_size_ok"] is False
 
 

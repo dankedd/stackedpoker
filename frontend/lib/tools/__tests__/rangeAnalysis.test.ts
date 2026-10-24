@@ -19,7 +19,7 @@ import {
   RANGE_PRESETS,
   unavailableReason,
 } from "../handAnalysis/rangePresets";
-import { citation, derivationNote, isExecutable, sourceStatusOf } from "../handAnalysis/rangeSource";
+import { derivationNote, isExecutable, sourceStatusOf } from "../handAnalysis/rangeSource";
 import { handFromSavedRow, type SavedHandRow } from "../handAnalysis/savedHands";
 import type { HandInput } from "../handAnalysis/types";
 
@@ -60,9 +60,6 @@ function rangeSpot(overrides: Partial<HandInput> = {}): HandInput {
 describe("only reviewed ranges are executable", () => {
   it("maps the existing derivation vocabulary onto executability", () => {
     const provenance = (derivation: ChartProvenance["derivation"]): ChartProvenance => ({
-      source: "x",
-      page: 1,
-      figure: "y",
       gameAssumptions: "z",
       derivation,
       bookAggregate: { threeBet: 1, call: 1, fold: 98 },
@@ -90,11 +87,8 @@ describe("only reviewed ranges are executable", () => {
 
   it("BUILD GATE — every preset carries full attribution", () => {
     for (const preset of RANGE_PRESETS) {
-      expect(preset.provenance.source, preset.id).toMatch(/Modern Poker Theory/);
-      expect(preset.provenance.page, preset.id).toBeGreaterThan(0);
-      expect(preset.provenance.figure, preset.id).toMatch(/Hand Range \d+/);
       expect(preset.provenance.gameAssumptions, preset.id).toBeTruthy();
-      expect(citation(preset.provenance), preset.id).toContain("p.");
+      expect(JSON.stringify(preset), preset.id).not.toMatch(/Modern Poker Theory|Acevedo|Hand Range|\bp\.\s?\d/);
       expect(derivationNote(preset.provenance), preset.id).toBeTruthy();
       expect(preset.assumptions.length, preset.id).toBeGreaterThanOrEqual(3);
     }
@@ -338,7 +332,7 @@ describe("known hand, range, and neither are three different results", () => {
     expect(analysis.verdict).toMatch(/-against-the-range$/);
     expect(analysis.conditional).toBeTruthy();
     expect(analysis.conditional!.presetId).toBe("bb-called-vs-btn");
-    expect(analysis.conditional!.citation).toMatch(/Modern Poker Theory/);
+    expect(JSON.stringify(analysis.conditional)).not.toMatch(/Modern Poker Theory|Hand Range|\bp\.\s?\d/);
     expect(analysis.calculations.some((c) => c.id === "equity-vs-range")).toBe(true);
     expect(analysis.calculations.some((c) => c.id === "range-combos")).toBe(true);
   });
@@ -507,7 +501,7 @@ describe("the selected range survives every round trip", () => {
     const context = buildCoachHandContext(input, analysis, "/tools/poker-hand-analyzer?x=1");
     expect(context.hand.villainRangePresetId).toBe("bb-called-vs-btn");
     expect(context.analysis.conditional).toBeTruthy();
-    expect(context.analysis.conditional!.citation).toMatch(/p\.\d+/);
+    expect(JSON.stringify(context.analysis.conditional)).not.toMatch(/\bp\.\s?\d/);
     expect(context.analysis.verdict).toContain("against-the-range");
     expect(context.returnPath).toBeTruthy();
   });
@@ -565,9 +559,9 @@ describe("the widget presents a range as an assumption", () => {
     expect(WIDGET).toContain("I don't know — use a reviewed range");
   });
 
-  it("shows the source next to every option", () => {
-    expect(WIDGET).toContain("preset.provenance.figure");
-    expect(WIDGET).toContain("preset.provenance.page");
+  it("never names the source next to an option", () => {
+    expect(WIDGET).not.toContain("provenance.figure");
+    expect(WIDGET).not.toContain("provenance.page");
   });
 
   it("labels the result conditional, above everything but the verdict", () => {

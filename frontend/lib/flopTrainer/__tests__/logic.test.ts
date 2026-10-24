@@ -111,7 +111,6 @@ describe("cards and text", () => {
     action: "BN opens 2.3x, folds to BB, BB calls",
     ip_range_pct: 50.8,
     oop_range_pct: 59.1,
-    source_pages: [329, 397],
   };
 
   it("names the spot", () => {

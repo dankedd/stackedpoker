@@ -106,10 +106,9 @@ export interface RangeRef {
   position: string;
   /** Stack bucket in BB the effective stack was rounded to. */
   bucket: number;
-  page: number;
-  hr: string;
-  /** Defense charts: the chart's Hand Range number, villain position, chart spot and group. */
-  n?: number;
+  /** Chart id (lib/ranges/types.ts). Checks stored before ids existed lack it and are re-checked. */
+  chart?: string;
+  /** Defense charts: villain position, chart spot and group. */
   vil?: string;
   spot?: DefenseSpot;
   group?: "mtt" | "cash";

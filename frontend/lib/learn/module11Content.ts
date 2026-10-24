@@ -38,17 +38,10 @@
 import type { LessonSource } from './types'
 // Reused directly from Module 10's own constants — never re-declared, so the book/author
 // string can't silently drift between the two content files.
-import { MPT_SOURCE, MPT_AUTHOR } from './gameTheoryContent'
 
 // ── Lesson 2 — "The Same Range, Two Faces" ────────────────────────────────────
 
-export const CAPPED_NOT_CONDENSED_SOURCE: LessonSource = {
-  book: MPT_SOURCE,
-  author: MPT_AUTHOR,
-  section: 'Range Morphology — Capped/Uncapped Range',
-  example: '543 flop counter-example',
-  type: 'exact_derived',
-}
+export const CAPPED_NOT_CONDENSED_SOURCE: LessonSource = /* book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Range Morphology — Capped/Uncapped Range', example: '543 flop counter-example' */ { type: 'exact_derived' }
 
 /** Ch.1 p.83's own counter-example: a capped range is not necessarily condensed.
  *  On a low, connected board a range can be missing its structural nuts (capped)
@@ -66,12 +59,7 @@ export const CAPPED_NOT_CONDENSED_EXAMPLE = {
   source: CAPPED_NOT_CONDENSED_SOURCE,
 }
 
-export const RANGE_MIRROR_SOURCE: LessonSource = {
-  book: MPT_SOURCE,
-  author: MPT_AUTHOR,
-  section: 'Range shape is relative, not intrinsic (Ch.13 p.750\'s checking-back principle, illustrated)',
-  type: 'pedagogical_model',
-}
+export const RANGE_MIRROR_SOURCE: LessonSource = /* book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Range shape is relative, not intrinsic (illustrated)' */ { type: 'pedagogical_model' }
 
 /** The center range never changes across the exercise — only which opponent it's being
  *  compared against does. Percentages are an original, illustrative construction (no
@@ -100,12 +88,7 @@ export const RANGE_MIRROR = {
 
 // ── Lesson 5 — "Protect the Checking Range" ───────────────────────────────────
 
-export const PROTECTION_SURGERY_SOURCE: LessonSource = {
-  book: MPT_SOURCE,
-  author: MPT_AUTHOR,
-  section: 'Protected Checking Range (Ch.10 pp.596-597; Ch.11 pp.641,645; Ch.12 pp.680-682,693,695)',
-  type: 'pedagogical_model',
-}
+export const PROTECTION_SURGERY_SOURCE: LessonSource = /* book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Protected Checking Range' */ { type: 'pedagogical_model' }
 
 /** A small, single-street illustrative board — NOT one of Ch.12's five fully-worked
  *  examples (those are reserved, full-fidelity, for the Lesson 8/10 capstone reuse).

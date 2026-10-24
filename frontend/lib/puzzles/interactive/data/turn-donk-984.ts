@@ -53,7 +53,7 @@ export const TURN_DONK_984: InteractivePuzzle = {
   topic: 'Turn Play',
   difficulty: 'advanced',
   description:
-    'A full hand on the board the book works through in most depth. You play a passive flop on purpose, then the single best card in the deck arrives — and the plan you deferred becomes the plan you execute.',
+    'A full hand on the board the source works through in most depth. You play a passive flop on purpose, then the single best card in the deck arrives — and the plan you deferred becomes the plan you execute.',
 
   setup: {
     format: '40bb effective',
@@ -105,7 +105,7 @@ export const TURN_DONK_984: InteractivePuzzle = {
           tableAction: { label: 'Calls', betBb: 2.5 },
           verdict: 'best',
           shortWhy:
-            'The book calls 49.1% of hands here, and its own flop analysis of this spot goes on to discuss what the big blind does holding an open-ender — so hands of exactly this shape are in the calling range by the source’s own account.',
+            'The source calls 49.1% of hands here, and its own flop analysis of this spot goes on to discuss what the big blind does holding an open-ender — so hands of exactly this shape are in the calling range by the source’s own account.',
           sources: ['ex3.preflop-bb-vs-utg-40bb', 'ex3.oesd-check-call'],
         },
         {
@@ -121,12 +121,12 @@ export const TURN_DONK_984: InteractivePuzzle = {
       ],
       bestOptionId: 'call',
       explanation:
-        'Call. Against an UTG open at 40bb the book has the big blind calling 49.1%, 3-betting only 5.8% and folding 45%. 7♠6♠ is a suited connector getting a good price closing the action — and the strongest evidence it belongs here is that the book’s own flop walkthrough of this very spot spends time on what the big blind does with an open-ended straight draw. Those hands have to come from somewhere, and this is where.',
+        'Call. Against an UTG open at 40bb the source has the big blind calling 49.1%, 3-betting only 5.8% and folding 45%. 7♠6♠ is a suited connector getting a good price closing the action — and the strongest evidence it belongs here is that the source’s own flop walkthrough of this very spot spends time on what the big blind does with an open-ended straight draw. Those hands have to come from somewhere, and this is where.',
       unsourced: [
         {
           question: 'Is 7♠6♠ specifically in the 49.1%?',
           answer:
-            'The chart is printed as a per-hand image the book states only in aggregate, so no per-combo confirmation exists in the text. What can be said is indirect but concrete: the flop breakdown for this exact matchup and board discusses the big blind’s open-enders as a live category, which requires hands like this to be in the preflop calling range.',
+            'The chart is printed as a per-hand image the source states only in aggregate, so no per-combo confirmation exists in the text. What can be said is indirect but concrete: the flop breakdown for this exact matchup and board discusses the big blind’s open-enders as a live category, which requires hands like this to be in the preflop calling range.',
           nearestSources: ['ex3.preflop-bb-vs-utg-40bb', 'ex3.oesd-check-call'],
         },
       ],
@@ -135,7 +135,7 @@ export const TURN_DONK_984: InteractivePuzzle = {
           id: 'pf-utg',
           title: 'Defending against the tightest range at the table',
           body:
-            'UTG opens the narrowest range of any seat, and that shapes everything downstream: fewer trash hands to attack, more strong hands to run into. The book’s response is not to fold more preflop — the price closing the action is still good — but to keep the 3-betting frequency low and plan to play a careful postflop hand.',
+            'UTG opens the narrowest range of any seat, and that shapes everything downstream: fewer trash hands to attack, more strong hands to run into. The source’s response is not to fold more preflop — the price closing the action is still good — but to keep the 3-betting frequency low and plan to play a careful postflop hand.',
           exhibit: {
             caption: 'BB vs UTG, 40bb effective',
             scope: 'The printed action frequencies for this seat and stack depth. Whole-range figures, not per-hand.',
@@ -148,7 +148,7 @@ export const TURN_DONK_984: InteractivePuzzle = {
           },
           bullets: [
             {
-              text: 'Against an early-position opener the book’s instruction is to defend tighter, use better hands as bluffs, and keep the 3-betting frequency low — the value range shrinks to TT+ and AK against UTG.',
+              text: 'Against an early-position opener the source’s instruction is to defend tighter, use better hands as bluffs, and keep the 3-betting frequency low — the value range shrinks to TT+ and AK against UTG.',
               sources: ['preflop.bb-3bet-value-40bb'],
             },
           ],
@@ -197,7 +197,7 @@ export const TURN_DONK_984: InteractivePuzzle = {
           tableAction: { label: 'Calls', betBb: 3.7 },
           verdict: 'best',
           shortWhy:
-            'Exactly the plan the book describes: the big blind has almost no strong hands here, raises only about 4%, and deliberately waits until the turn to split its range rather than give away information now.',
+            'Exactly the plan the source describes: the big blind has almost no strong hands here, raises only about 4%, and deliberately waits until the turn to split its range rather than give away information now.',
           sources: ['ex3.oesd-check-call', 'ex3.bb-few-strong-hands', 'ex3.bb-compensates-on-turn'],
         },
         {
@@ -207,19 +207,19 @@ export const TURN_DONK_984: InteractivePuzzle = {
           tableAction: { label: 'Raises to', betBb: 12 },
           verdict: 'mistake',
           shortWhy:
-            'Against this bet-size the big blind’s check-raise frequency is only about 4%, precisely because the range holds so few strong hands. Raising a draw here spends the information advantage the book says to keep.',
+            'Against this bet-size the big blind’s check-raise frequency is only about 4%, precisely because the range holds so few strong hands. Raising a draw here spends the information advantage the source says to keep.',
           sources: ['ex3.bb-few-strong-hands'],
         },
       ],
       bestOptionId: 'call',
       explanation:
-        'Call. The book answers this hand class directly for this board and this bet-size: open-enders are check-called every time. It also says why raising is wrong, and the reason is not timidity — your draw has good equity against the range that is c-betting, but it is too weak against the range that would three-bet the flop, where it runs into overpairs and flush draws. Calling is reinforced by the shape of your whole range: with only about 4% strong hands the big blind raises about 4% and waits for the turn to split, keeping its information advantage. You are not calling and hoping. You are calling with a specific card in mind.',
+        'Call. The source answers this hand class directly for this board and this bet-size: open-enders are check-called every time. It also says why raising is wrong, and the reason is not timidity — your draw has good equity against the range that is c-betting, but it is too weak against the range that would three-bet the flop, where it runs into overpairs and flush draws. Calling is reinforced by the shape of your whole range: with only about 4% strong hands the big blind raises about 4% and waits for the turn to split, keeping its information advantage. You are not calling and hoping. You are calling with a specific card in mind.',
       theory: [
         {
           id: 'flop-passive-on-purpose',
           title: 'Why the passive line is the plan, not the surrender',
           body:
-            'It feels weak to call a big bet with no pair. It is not — it is the book’s stated strategy for this board, and the reason is structural rather than about your hand. The big blind arrives on 9♥8♥4♦ with almost nothing genuinely strong, which is exactly why UTG is allowed to use a large size. Splitting into a raising range now would announce the few good hands you do have.',
+            'It feels weak to call a big bet with no pair. It is not — it is the source’s stated strategy for this board, and the reason is structural rather than about your hand. The big blind arrives on 9♥8♥4♦ with almost nothing genuinely strong, which is exactly why UTG is allowed to use a large size. Splitting into a raising range now would announce the few good hands you do have.',
           exhibit: {
             caption: 'BB’s position on 9♥8♥4♦ facing a 2/3-pot c-bet',
             scope: 'BB vs UTG on 9♥8♥4♦ at 40bb, facing a 2/3-pot c-bet. Printed for this exact node.',
@@ -289,7 +289,7 @@ export const TURN_DONK_984: InteractivePuzzle = {
           tableAction: { label: 'Bets', betBb: 4.3 },
           verdict: 'defensible',
           shortWhy:
-            'Leading is right, and the source does not print a bet-size for this node — so this is not a wrong answer in substance. It sits below the "aggressive" the book uses to describe the strategy on these runouts.',
+            'Leading is right, and the source does not print a bet-size for this node — so this is not a wrong answer in substance. It sits below the "aggressive" the source uses to describe the strategy on these runouts.',
           sources: ['ex3.turn-donk-best-cards', 'ex3.bb-compensates-on-turn'],
         },
         {
@@ -299,18 +299,18 @@ export const TURN_DONK_984: InteractivePuzzle = {
           tableAction: { label: 'Bets', betBb: 8.6 },
           verdict: 'best',
           shortWhy:
-            'Lead, and lead big. The book names cards that complete straights among the best to donk, calls offsuit 5s the single best turn card for you here, and describes the strategy on these runouts as aggressive.',
+            'Lead, and lead big. The source names cards that complete straights among the best to donk, calls offsuit 5s the single best turn card for you here, and describes the strategy on these runouts as aggressive.',
           sources: ['ex3.turn-donk-best-cards', 'ex3.turn-best-card-is-five', 'ex3.bb-compensates-on-turn'],
         },
       ],
       bestOptionId: 'bet-67',
       explanation:
-        'Bet. This is the deferred plan arriving on schedule. The book lists the cards the big blind most wants to lead on this board — the 9, 8 and 4 that pair it, and the 7, 6 and 5 that complete straights — and then names offsuit 5s as literally the best turn card in the deck for you, by EV. It is also the card that turns your draw into the nuts. Checking here is the one clearly wrong answer, because after two checks UTG c-bets over 65% of the time with a polarization advantage and you have given away the street you were waiting for.',
+        'Bet. This is the deferred plan arriving on schedule. The source lists the cards the big blind most wants to lead on this board — the 9, 8 and 4 that pair it, and the 7, 6 and 5 that complete straights — and then names offsuit 5s as literally the best turn card in the deck for you, by EV. It is also the card that turns your draw into the nuts. Checking here is the one clearly wrong answer, because after two checks UTG c-bets over 65% of the time with a polarization advantage and you have given away the street you were waiting for.',
       unsourced: [
         {
-          question: 'Does the book give a bet-size for this exact turn lead?',
+          question: 'Does the source give a bet-size for this exact turn lead?',
           answer:
-            'No. It names which turn cards the big blind should lead and describes the strategy as aggressive, but prints no sizing for this node. Both bet options here are therefore correct in substance — the choice between them is graded on the book’s word "aggressive", which is our reading of a qualitative term, not a printed frequency.',
+            'No. It names which turn cards the big blind should lead and describes the strategy as aggressive, but prints no sizing for this node. Both bet options here are therefore correct in substance — the choice between them is graded on the source’s word "aggressive", which is our reading of a qualitative term, not a printed frequency.',
           nearestSources: ['ex3.turn-donk-best-cards', 'ex3.bb-compensates-on-turn'],
         },
       ],
@@ -319,7 +319,7 @@ export const TURN_DONK_984: InteractivePuzzle = {
           id: 'turn-why-five',
           title: 'Why the 5 and not just any card',
           body:
-            'Turn cards are not interchangeable, and the book classifies them: cards that pair the board, complete a flush, complete an open-ender, bring an ace, bring an overcard, or brick. On this board the cards that complete straights are among the best for you and the ace and high cards are among the worst — because those are the cards that connect with UTG’s range rather than yours.',
+            'Turn cards are not interchangeable, and the source classifies them: cards that pair the board, complete a flush, complete an open-ender, bring an ace, bring an overcard, or brick. On this board the cards that complete straights are among the best for you and the ace and high cards are among the worst — because those are the cards that connect with UTG’s range rather than yours.',
           exhibit: {
             caption: 'Turn cards on 9♥8♥4♦ after the flop went check / bet / call',
             scope: 'BB vs UTG on 9♥8♥4♦ at 40bb, after x/b/c. Printed as best/worst card families and average equities.',
@@ -343,7 +343,7 @@ export const TURN_DONK_984: InteractivePuzzle = {
               sources: ['ex3.ip-punishes-a-check'],
             },
             {
-              text: 'The book’s own turn classification puts this card in the "completes an OESD" family — the category built for exactly this moment.',
+              text: 'The source’s own turn classification puts this card in the "completes an OESD" family — the category built for exactly this moment.',
               sources: ['turn.categories'],
             },
           ],
@@ -385,7 +385,7 @@ export const TURN_DONK_984: InteractivePuzzle = {
           tableAction: { label: 'Checks' },
           verdict: 'mistake',
           shortWhy:
-            'You hold the nuts on a card that changed nothing. In the book’s river model the polarized player always puts the money in with their nut hands — checking here gives up the whole value of the street.',
+            'You hold the nuts on a card that changed nothing. In the source’s river model the polarized player always puts the money in with their nut hands — checking here gives up the whole value of the street.',
           sources: ['river.polar-jams-nuts'],
         },
         {
@@ -405,18 +405,18 @@ export const TURN_DONK_984: InteractivePuzzle = {
           tableAction: { label: 'All-in', betBb: 25.2 },
           verdict: 'best',
           shortWhy:
-            'You arrive with a polarized range against a capped caller and you hold the top of it. The book’s river model is unambiguous about that structure: the polar player goes all-in with their nut hands.',
+            'You arrive with a polarized range against a capped caller and you hold the top of it. The source’s river model is unambiguous about that structure: the polar player goes all-in with their nut hands.',
           sources: ['river.polar-jams-nuts'],
         },
       ],
       bestOptionId: 'all-in',
       explanation:
-        'Get it in. The river is the one street where the book gives a clean general answer, because hand values are fixed and the situation reduces to a shape: a polarized bettor against a range of bluff-catchers. You led the turn on a card that gave you value hands and bluffs; UTG called and by doing so capped their range. You now hold the top of your own range on a brick. The model says the polar player goes all-in with their nut hands and with Alpha% of their bluffs — and the larger the bet, the smaller the fraction of their range your opponent is required to defend.',
+        'Get it. The river is the one street where the source gives a clean general answer, because hand values are fixed and the situation reduces to a shape: a polarized bettor against a range of bluff-catchers. You led the turn on a card that gave you value hands and bluffs; UTG called and by doing so capped their range. You now hold the top of your own range on a brick. The model says the polar player goes all-in with their nut hands and with Alpha% of their bluffs — and the larger the bet, the smaller the fraction of their range your opponent is required to defend.',
       unsourced: [
         {
           question: 'Did a solver actually solve this river?',
           answer:
-            'Not in this book. The river chapter deliberately works in abstract models rather than board-by-board solutions, because on the river hand values are fixed and situations can be classified by structure instead. So the reasoning here is the book’s polar-versus-bluff-catcher model applied to a spot whose structure matches it — a model, correctly applied, rather than a printed frequency for this node. No percentage is claimed for 7♠6♠ on this runout.',
+            'Not in this book. The river chapter deliberately works in abstract models rather than board-by-board solutions, because on the river hand values are fixed and situations can be classified by structure instead. So the reasoning here is the source’s polar-versus-bluff-catcher model applied to a spot whose structure matches it — a model, correctly applied, rather than a printed frequency for this node. No percentage is claimed for 7♠6♠ on this runout.',
           nearestSources: ['river.polar-jams-nuts', 'river.defend-1-alpha'],
         },
       ],
@@ -425,7 +425,7 @@ export const TURN_DONK_984: InteractivePuzzle = {
           id: 'river-polar',
           title: 'Why the river is the simplest street',
           body:
-            'By the river there are no cards to come, so every hand is either ahead or behind — no equity, just a ranking. That is what lets the book stop solving individual boards and start classifying situations. If you can recognise the shape as polarized against bluff-catchers, you already know both strategies without solving anything.',
+            'By the river there are no cards to come, so every hand is either ahead or behind — no equity, just a ranking. That is what lets the source stop solving individual boards and start classifying situations. If you can recognise the shape as polarized against bluff-catchers, you already know both strategies without solving anything.',
           exhibit: {
             caption: 'Bet size and the defence it demands',
             scope:
@@ -466,12 +466,12 @@ export const TURN_DONK_984: InteractivePuzzle = {
       seat: 'hero',
       headline: '49.1%',
       description:
-        'What the big blind continues with against an UTG open at 40bb. The book prints call 49.1%, 3-bet 5.8% and fold 45% for this exact seat and stack depth.',
+        'What the big blind continues with against an UTG open at 40bb. The source prints call 49.1%, 3-bet 5.8% and fold 45% for this exact seat and stack depth.',
       unsourced: [
         {
           question: 'Can you show which hands make up the 49.1%?',
           answer:
-            'Not from the text. The per-hand chart is an image; only the aggregate is stated. Your hand is marked on the grid below as a location, not as a claimed frequency — the book supports that 7♠6♠-shaped hands are in this range, because its own flop analysis of this spot discusses the big blind’s open-enders.',
+            'Not from the text. The per-hand chart is an image; only the aggregate is stated. Your hand is marked on the grid below as a location, not as a claimed frequency — the source supports that 7♠6♠-shaped hands are in this range, because its own flop analysis of this spot discusses the big blind’s open-enders.',
           nearestSources: ['ex3.preflop-bb-vs-utg-40bb', 'ex3.oesd-check-call'],
         },
       ],
@@ -486,7 +486,7 @@ export const TURN_DONK_984: InteractivePuzzle = {
         'The single number that explains the whole flop. With this little at the top of its range, the big blind cannot build a raising range without giving itself away — so it calls, and waits.',
       bars: [
         { label: 'Strong', pct: 4, note: 'which is why the check-raise frequency is also about 4%' },
-        { label: 'Everything else', pct: 96, note: 'the book does not break the remainder into buckets for this node' },
+        { label: 'Everything else', pct: 96, note: 'the source does not break the remainder into buckets for this node' },
       ],
       sources: ['ex3.bb-few-strong-hands'],
     },
@@ -496,16 +496,16 @@ export const TURN_DONK_984: InteractivePuzzle = {
       kind: 'composition',
       seat: 'both',
       description:
-        'Not a hand range but a card range — the book’s ranking of which turn cards the big blind wants to see on this board. The 5 you were dealt is at the very top of it.',
+        'Not a hand range but a card range — the source’s ranking of which turn cards the big blind wants to see on this board. The 5 you were dealt is at the very top of it.',
       bars: [
         { label: 'Board pairs and straight completers', pct: 55, note: '9, 8, 4, 7, 6, 5 — the cards to lead' },
         { label: 'Aces, high cards, diamonds', pct: 45, note: 'the cards that connect with UTG instead' },
       ],
       unsourced: [
         {
-          question: 'Are those split percentages from the book?',
+          question: 'Are those split percentages from the source?',
           answer:
-            'No — the bar widths are only a visual grouping of the two named families. The book lists which cards fall in each group and names the best and worst single cards, but prints no percentage split between the groups. The card lists are exact; the proportions are presentation.',
+            'No — the bar widths are only a visual grouping of the two named families. The source lists which cards fall in each group and names the best and worst single cards, but prints no percentage split between the groups. The card lists are exact; the proportions are presentation.',
           nearestSources: ['ex3.turn-donk-best-cards', 'ex3.turn-best-card-is-five'],
         },
       ],
@@ -522,7 +522,7 @@ export const TURN_DONK_984: InteractivePuzzle = {
       sources: ['ex3.bb-few-strong-hands'],
     },
     {
-      text: 'The book names the payoff explicitly: the big blind compensates for that flop passivity with an aggressive turn donking strategy on favourable runouts.',
+      text: 'The source names the payoff explicitly: the big blind compensates for that flop passivity with an aggressive turn donking strategy on favourable runouts.',
       sources: ['ex3.bb-compensates-on-turn'],
     },
     {

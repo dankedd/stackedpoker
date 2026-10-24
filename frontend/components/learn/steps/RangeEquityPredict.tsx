@@ -105,7 +105,7 @@ export function RangeEquityPredict({ step, onAnswer, disabled = false }: RangeEq
       ) : (
         <div className="rounded-2xl border border-border/40 bg-card/60 p-5 space-y-3 animate-in fade-in duration-300">
           <p className="text-center text-xs font-semibold text-muted-foreground/60">
-            Your estimate <span className="text-foreground font-bold">{aLabel} {value}%</span> vs. the book&apos;s figure{' '}
+            Your estimate <span className="text-foreground font-bold">{aLabel} {value}%</span> vs. the source&apos;s figure{' '}
             <span className="text-foreground font-bold">{aLabel} {correct}%</span>
             {' — '}
             {delta <= 3 ? 'right on the money.' : `off by ${delta} points.`}

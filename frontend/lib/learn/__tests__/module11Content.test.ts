@@ -21,10 +21,9 @@ describe('Every Module 11 content constant carries a valid, non-empty source cla
     RANGE_MIRROR,
     PROTECTION_SURGERY_BOARD,
   })) {
-    it(`${name}.source has a valid type + non-empty section`, () => {
+    it(`${name}.source has a valid type and ships nothing else`, () => {
       expect(VALID_TYPES).toContain(entry.source.type)
-      expect(entry.source.section.length).toBeGreaterThan(0)
-      expect(entry.source.book).toBe('Modern Poker Theory')
+      expect(Object.keys(entry.source)).toEqual(['type'])
     })
   }
 })

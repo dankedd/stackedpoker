@@ -31,7 +31,7 @@ describe("cbetAdvice", () => {
   });
 
   it("grades band and size separately", () => {
-    const advice: CbetAdvice = { band: "mid", bands: ["mid", "low"], size: "big", source: "profile", pages: [675, 677] };
+    const advice: CbetAdvice = { band: "mid", bands: ["mid", "low"], size: "big", source: "profile" };
     expect(gradeCbet("low", "big", advice)).toEqual({ bandOk: true, sizeOk: true, points: 2 });
     expect(gradeCbet("high", "big", advice).points).toBe(1);
   });

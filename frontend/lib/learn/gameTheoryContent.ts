@@ -24,8 +24,9 @@
 
 import type { LessonSource } from './types'
 
-export const MPT_SOURCE = 'Modern Poker Theory' as const
-export const MPT_AUTHOR = 'Michael Acevedo' as const
+// In the `source` comments below and in curriculum.ts / module1xContent.ts,
+// MPT_SOURCE and MPT_AUTHOR mean Modern Poker Theory by Michael Acevedo. They are
+// comments, not values: the site never names the source.
 
 // ── The heads-up push/fold Strategy Loop (Lesson 10.3) ────────────────────────
 //
@@ -94,13 +95,7 @@ export const PUSH_FOLD_ITERATION: PushFoldIterationStep[] = [
   },
 ]
 
-export const PUSH_FOLD_SOURCE: LessonSource = {
-  book: MPT_SOURCE,
-  author: MPT_AUTHOR,
-  section: 'The Nash Equilibrium — heads-up push/fold iteration example',
-  example: 'Table 9',
-  type: 'source_reconstructed',
-}
+export const PUSH_FOLD_SOURCE: LessonSource = /* book: MPT_SOURCE, author: MPT_AUTHOR, section: 'The Nash Equilibrium — heads-up push/fold iteration example', example: 'Table 9' */ { type: 'source_reconstructed' }
 
 // ── The Indifference Principle worked example (Lesson 10.5) ───────────────────
 
@@ -140,13 +135,7 @@ export const INDIFFERENCE_EXAMPLE: {
     freqA: 0.39,
     freqB: 0.61,
   },
-  source: {
-    book: MPT_SOURCE,
-    author: MPT_AUTHOR,
-    section: 'The Indifference Principle — heads-up push/fold equilibrium',
-    example: '43s / Q6s boundary hands, Table 9',
-    type: 'source_reconstructed',
-  },
+  /* source: MPT_SOURCE · MPT_AUTHOR · The Indifference Principle — heads-up push/fold equilibrium · 43s / Q6s boundary hands, Table 9 */ source: { type: 'source_reconstructed' },
 }
 
 // ── The Clairvoyance Toy Game (Lessons 10.6-10.7) ──────────────────────────────
@@ -162,12 +151,7 @@ export const CLAIRVOYANCE_GAME = {
   p2Hand: 'KK',
   /** Combo-derived prior — AA and QQ each have 6 unblocked combos on this board (no ace or queen is on the board), so the 50/50 weighting is EXACT_DERIVED from the stated range, not assumed. */
   probAA: 0.5,
-  source: {
-    book: MPT_SOURCE,
-    author: MPT_AUTHOR,
-    section: 'The Clairvoyance Toy Game',
-    type: 'source_reconstructed' as const,
-  } satisfies LessonSource,
+  source: /* book: MPT_SOURCE, author: MPT_AUTHOR, section: 'The Clairvoyance Toy Game' */ { type: 'source_reconstructed' as const } satisfies LessonSource,
 }
 
 // ── Alpha / MDF worked example (Lesson 10.7) ───────────────────────────────────
@@ -179,12 +163,7 @@ export const HALF_POT_ALPHA_MDF_EXAMPLE = {
   mdfPct: 66.67,
   valuePct: 75,
   bluffPct: 25,
-  source: {
-    book: MPT_SOURCE,
-    author: MPT_AUTHOR,
-    section: 'Minimum Defense Frequency — half-pot river bet example',
-    type: 'source_reconstructed' as const,
-  } satisfies LessonSource,
+  source: /* book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Minimum Defense Frequency — half-pot river bet example' */ { type: 'source_reconstructed' as const } satisfies LessonSource,
 }
 
 // ── The generic "Pressure Game" — pedagogical toy model (Lessons 10.1-10.5) ──
@@ -203,9 +182,5 @@ export const PRESSURE_GAME_DEFAULT = {
   bet: 100,
   equityWhenCalled: 0,
   equityWhenChecked: 0,
-  source: {
-    book: MPT_SOURCE,
-    section: 'Maximally Exploitative Strategy / Counter-Exploitation — teaching model',
-    type: 'pedagogical_model' as const,
-  } satisfies LessonSource,
+  source: /* book: MPT_SOURCE, section: 'Maximally Exploitative Strategy / Counter-Exploitation — teaching model' */ { type: 'pedagogical_model' as const } satisfies LessonSource,
 }

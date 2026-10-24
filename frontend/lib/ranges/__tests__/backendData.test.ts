@@ -2,13 +2,17 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { handRefFor } from "../api";
+import { DEFENSE_CHARTS, OPEN_CHARTS, PUSH_FOLD_CHARTS } from "../data";
 import { newDeal, type Rng } from "../logic";
 
 /**
  * The server re-grades every trainer hand for XP against its own copy of the
  * charts (backend/app/engines/preflop_trainer/data). If the two copies drift,
- * the browser and the server disagree on what was correct.
+ * the browser and the server disagree on what was correct. The browser's copy
+ * is the server's minus the source fields (scripts/build-range-data.mjs).
  */
+
+const SOURCE_FIELDS = ["page", "hr", "n", "title"];
 
 const FRONTEND = resolve(__dirname, "../../../data/ranges");
 const BACKEND = resolve(__dirname, "../../../../backend/app/engines/preflop_trainer/data");
@@ -22,10 +26,17 @@ function seeded(seed: number): Rng {
 }
 
 describe("backend chart copy", () => {
-  it.each(["open", "pushfold", "defense"])("%s.json is byte-identical", (name) => {
-    expect(readFileSync(resolve(BACKEND, `${name}.json`)).equals(readFileSync(resolve(FRONTEND, `${name}.json`)))).toBe(
-      true,
-    );
+  it.each(["open", "pushfold", "defense"])("%s.json is the server's copy without source fields", (name) => {
+    const server = JSON.parse(readFileSync(resolve(BACKEND, `${name}.json`), "utf8")) as Record<string, unknown>[];
+    const client = JSON.parse(readFileSync(resolve(FRONTEND, `${name}.json`), "utf8"));
+    expect(client).toEqual(server.map((c) => Object.fromEntries(Object.entries(c).filter(([k]) => !SOURCE_FIELDS.includes(k)))));
+  });
+
+  it("ships no source field to the browser", () => {
+    for (const c of [...OPEN_CHARTS, ...PUSH_FOLD_CHARTS, ...DEFENSE_CHARTS]) {
+      for (const k of SOURCE_FIELDS) expect(c, `${c.id}.${k}`).not.toHaveProperty(k);
+      expect(c.id).toMatch(/^[a-z0-9_]+$/);
+    }
   });
 });
 
@@ -43,7 +54,7 @@ describe("handRefFor", () => {
       } else {
         expect(ref.stack).toBeNull();
       }
-      expect(Number.isInteger(ref.chart_id)).toBe(true);
+      expect(ref.chart_id).toMatch(/^(open|push|def)_[a-z0-9_]+$/);
     }
     expect(seen).toEqual(new Set(["open", "pushfold", "defense"]));
   });

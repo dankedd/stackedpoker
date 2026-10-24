@@ -134,7 +134,7 @@ export const MIN_BET_DEFENCE_QJT: InteractivePuzzle = {
       ],
       bestOptionId: 'call',
       explanation:
-        'Call. A♠T♦ is bottom pair with a higher kicker, and Modern Poker Theory’s breakdown for this board against this bet-size states the rule outright: “Bottom pair with a higher kicker is always called” (p.741). It is the kicker doing the work, not the pair — the same bullet has weak bottom pairs T8-T2 “almost always folded”. What licenses a call this thin is the price. A min-bet of 1bb into 5.5bb means risking 1 to win 6.5, about 13% pot odds, and Alpha — b ÷ (b + pot), how often a bluff has to work to break even — is only about 15%, so 1 − Alpha is about 85% (p.108). That 85% is the frame, not the answer: the same chapter says MDF “does not take equities and range distribution into account” and that “basing your entire strategy on MDF will be highly detrimental” (p.726). The solved node lands lower and still very wide — the big blind folds 38.26%, x/c 43% and x/r 18% — and it does that while holding only 36% equity and realizing 79% of it (p.739). Raising is not this hand’s job: the 18% raising branch is filled by flushes, sets, two pair, some straights, combo draws and weak flush draws. Folding gives up a hand the source says is never folded here.',
+        'Call. A♠T♦ is bottom pair with a higher kicker, and the source’s breakdown for this board against this bet-size states the rule outright: “Bottom pair with a higher kicker is always called”. It is the kicker doing the work, not the pair — the same bullet has weak bottom pairs T8-T2 “almost always folded”. What licenses a call this thin is the price. A min-bet of 1bb into 5.5bb means risking 1 to win 6.5, about 13% pot odds, and Alpha — b ÷ (b + pot), how often a bluff has to work to break even — is only about 15%, so 1 − Alpha is about 85%. That 85% is the frame, not the answer: the same chapter says MDF “does not take equities and range distribution into account” and that “basing your entire strategy on MDF will be highly detrimental”. The solved node lands lower and still very wide — the big blind folds 38.26%, x/c 43% and x/r 18% — and it does that while holding only 36% equity and realizing 79% of it. Raising is not this hand’s job: the 18% raising branch is filled by flushes, sets, two pair, some straights, combo draws and weak flush draws. Folding gives up a hand the source says is never folded here.',
       unsourced: [
         {
           question: 'How often exactly does A♠T♦ call here?',
@@ -145,7 +145,7 @@ export const MIN_BET_DEFENCE_QJT: InteractivePuzzle = {
         {
           question: 'Where do the 2.5bb open, the 5.5bb pot and the 1bb bet come from?',
           answer:
-            'From this puzzle’s table assumptions, not from pp.739-741. The source gives the seats, the 40bb depth and the bet-size by NAME — “min-bet” — and prints no pot for this node. The 2.5bb open and the 5.5bb flop pot are this repo’s convention, carried over from the other 40bb puzzles so the felt adds up; 1bb is simply the smallest legal bet when the big blind is 1. So read the three pot-relative numbers on this page — 13% pot odds, ~15% Alpha, ~85% MDF — as arithmetic on an assumed pot, and the 36%, 38.26%, 43% and 18% as the book’s own figures for this exact node. For the same reason no check-raise size appears on the felt: the source prints none here.',
+            'From this puzzle’s table assumptions, not. The source gives the seats, the 40bb depth and the bet-size by NAME — “min-bet” — and prints no pot for this node. The 2.5bb open and the 5.5bb flop pot are this repo’s convention, carried over from the other 40bb puzzles so the felt adds up; 1bb is simply the smallest legal bet when the big blind is 1. So read the three pot-relative numbers on this page — 13% pot odds, ~15% Alpha, ~85% MDF — as arithmetic on an assumed pot, and the 36%, 38.26%, 43% and 18% as the source’s own figures for this exact node. For the same reason no check-raise size appears on the felt: the source prints none here.',
           nearestSources: ['ex2.bb-36-equity', 'qjtdef.alpha-mdf'],
         },
       ],
@@ -158,7 +158,7 @@ export const MIN_BET_DEFENCE_QJT: InteractivePuzzle = {
           exhibit: {
             caption: 'The price of 1bb into 5.5bb',
             scope:
-              'Arithmetic only, applied to this puzzle’s assumed 5.5bb pot and 1bb min-bet. The formula is the book’s (p.108); the pot is this puzzle’s table convention, because pp.739-741 print no pot for this node. None of these are solved frequencies.',
+              'Arithmetic only, applied to this puzzle’s assumed 5.5bb pot and 1bb min-bet. The formula is the source’s; the pot is this puzzle’s table convention, because the source print no pot for this node. None of these are solved frequencies.',
             rows: [
               { label: 'You risk', value: '1bb to win 6.5bb', note: 'the 5.5bb pot plus the bet' },
               { label: 'Pot odds', value: '13%', pct: 13, note: 'equity needed to break even on the call' },
@@ -177,7 +177,7 @@ export const MIN_BET_DEFENCE_QJT: InteractivePuzzle = {
               sources: ['qjtdef.alpha-mdf'],
             },
             {
-              text: 'The book refuses that number as a strategy in the same chapter this spot comes from: MDF “does not take equities and range distribution into account”, and “basing your entire strategy on MDF will be highly detrimental”.',
+              text: 'The source refuses that number as a strategy in the same chapter this spot comes: MDF “does not take equities and range distribution into account”, and “basing your entire strategy on MDF will be highly detrimental”.',
               sources: ['qjtdef.mdf-ignores-equities'],
             },
             {
@@ -189,7 +189,7 @@ export const MIN_BET_DEFENCE_QJT: InteractivePuzzle = {
             {
               question: 'So should you defend 85%?',
               answer:
-                'No, and the book gives the real number for this node rather than leaving it open: the big blind folds 38.26% against the flop min-bet, x/c 43% and x/r 18%. That is far wider than most players defend and still nowhere near 85%. Treat MDF as the thing that tells you the answer must be large — the solve is what tells you how large, and the gap between the two is exactly what p.726 is warning about.',
+                'No, and the source gives the real number for this node rather than leaving it open: the big blind folds 38.26% against the flop min-bet, x/c 43% and x/r 18%. That is far wider than most players defend and still nowhere near 85%. Treat MDF as the thing that tells you the answer must be large — the solve is what tells you how large, and the gap between the two is exactly what is warning about.',
               nearestSources: ['ex2.bb-36-equity', 'qjtdef.mdf-ignores-equities'],
             },
           ],
@@ -200,7 +200,7 @@ export const MIN_BET_DEFENCE_QJT: InteractivePuzzle = {
           id: 'how-wide-the-bb-actually-goes',
           title: 'How wide the big blind actually goes',
           body:
-            'This is one of the few nodes where the book prints the defender’s whole-range answer directly, and it is worth reading against the intuition it contradicts. Q♥J♥T♥ is about as frightening a flop as the big blind can face out of position: monotone, every straight already made, and a substantial equity disadvantage. The defence is still wide, because a min-bet is what is being defended against.',
+            'This is one of the few nodes where the source prints the defender’s whole-range answer directly, and it is worth reading against the intuition it contradicts. Q♥J♥T♥ is about as frightening a flop as the big blind can face out of position: monotone, every straight already made, and a substantial equity disadvantage. The defence is still wide, because a min-bet is what is being defended against.',
           exhibit: {
             caption: 'BB strategy vs UTG’s min-bet on Q♥J♥T♥',
             scope:
@@ -218,7 +218,7 @@ export const MIN_BET_DEFENCE_QJT: InteractivePuzzle = {
               sources: ['ex2.bb-36-equity'],
             },
             {
-              text: 'The 18% and 43% are the book’s own rounding of the 61.74% that a 38.26% fold leaves behind. Read the three figures as the shape of the strategy rather than to two decimal places.',
+              text: 'The 18% and 43% are the source’s own rounding of the 61.74% that a 38.26% fold leaves behind. Read the three figures as the shape of the strategy rather than to two decimal places.',
               sources: ['ex2.bb-36-equity'],
             },
             {
@@ -228,7 +228,7 @@ export const MIN_BET_DEFENCE_QJT: InteractivePuzzle = {
           ],
           unsourced: [
             {
-              question: 'Does the book give a fold/call/raise number for every hand class?',
+              question: 'Does the source give a fold/call/raise number for every hand class?',
               answer:
                 'No — only for some, and only in words. Table 123 itself is a table image. The running text beneath it prints check-raise frequencies for a few classes (flushes about 1/3 or about 88%, straights about 20%, sets about 22%, two pair about 17%, combo draws about 1/3), pure rules for others (“always called”, “always folded”, “100% call strategy”), and for top pair it prints no strategy figure at all — just an equity number and a judgement.',
               nearestSources: ['qjtdef.table-123', 'qjtdef.made-hands-xr', 'qjtdef.top-pair-44'],
@@ -245,7 +245,7 @@ export const MIN_BET_DEFENCE_QJT: InteractivePuzzle = {
           exhibit: {
             caption: 'Where the source puts each class on Q♥J♥T♥ vs a min-bet',
             scope:
-              'The hand-class bullets printed beneath Table 123 — BB vs UTG on Q♥J♥T♥ at 40bb, facing a MIN-BET. Board-specific and size-specific: the book prints a separate breakdown for every flop and every size it studies, and they disagree with each other.',
+              'The hand-class bullets printed beneath the table — BB vs UTG on Q♥J♥T♥ at 40bb, facing a MIN-BET. Board-specific and size-specific: the source prints a separate breakdown for every flop and every size it studies, and they disagree with each other.',
             rows: [
               { label: 'Straight flush', value: 'Mostly slowplayed' },
               { label: 'Flushes', value: 'x/r most of the time' },
@@ -301,7 +301,7 @@ export const MIN_BET_DEFENCE_QJT: InteractivePuzzle = {
             {
               question: 'Do these rules hold on other boards, or against bigger bets?',
               answer:
-                'No, and the book is unusually direct about it — it prints a separate breakdown for each flop AND each bet-size, and they contradict one another. The open-enders here “will only continue if they are drawing to the nut straight”; in the very next example, on 9♥8♥4♦ against a 2/3-pot c-bet, “OESD are x/c every time” (p.744). Nothing on this page is a general rule about bottom pair, gutshots or open-enders. It is a rule about Q♥J♥T♥ against a min-bet.',
+                'No, and the source is unusually direct about it — it prints a separate breakdown for each flop AND each bet-size, and they contradict one another. The open-enders here “will only continue if they are drawing to the nut straight”; in the very next example, on 9♥8♥4♦ against a 2/3-pot c-bet, “OESD are x/c every time”. Nothing on this page is a general rule about bottom pair, gutshots or open-enders. It is a rule about Q♥J♥T♥ against a min-bet.',
               nearestSources: ['qjtdef.oesd', 'qjtdef.table-123', 'qjtdef.min-bet-pot-odds'],
             },
           ],
@@ -312,11 +312,11 @@ export const MIN_BET_DEFENCE_QJT: InteractivePuzzle = {
           id: 'even-top-pair-is-weak',
           title: 'Even top pair is only a “weak hand” here',
           body:
-            'The book has a fixed vocabulary for how good a hand is, and it is not about the hand: equity buckets are hand-versus-RANGE equity, so the same two cards move between buckets as the board and the ranges change. Applying that vocabulary to Q♥J♥T♥ does something startling to a holding most players would call strong — and it is the cleanest way to see why the price, not the hand, is what decides this spot.',
+            'The source has a fixed vocabulary for how good a hand is, and it is not about the hand: equity buckets are hand-versus-RANGE equity, so the same two cards move between buckets as the board and the ranges change. Applying that vocabulary to Q♥J♥T♥ does something startling to a holding most players would call strong — and it is the cleanest way to see why the price, not the hand, is what decides this spot.',
           exhibit: {
             caption: 'The equity buckets, and where top pair lands on this board',
             scope:
-              'The four bucket definitions are general (p.596). The 44% is the book’s figure for top pair on Q♥J♥T♥ specifically (p.741). Placing the second inside the first is arithmetic on two printed numbers, not a solved output — and 44% is an equity, never a strategy frequency.',
+              'The four bucket definitions are general. The 44% is the source’s figure for top pair on Q♥J♥T♥ specifically. Placing the second inside the first is arithmetic on two printed numbers, not a solved output — and 44% is an equity, never a strategy frequency.',
             rows: [
               { label: 'Strong hands', value: '≥ 75% equity' },
               { label: 'Good hands', value: '50% – 75%' },
@@ -332,7 +332,7 @@ export const MIN_BET_DEFENCE_QJT: InteractivePuzzle = {
               sources: ['qjtdef.top-pair-44'],
             },
             {
-              text: '44% falls inside the weak bucket by the book’s own definition — at least 33%, below 50%. The buckets are explicitly relative: a hand’s value “is not static but instead dynamic, relative to the ranges in play and the board type”.',
+              text: '44% falls inside the weak bucket by the source’s own definition — at least 33%, below 50%. The buckets are explicitly relative: a hand’s value “is not static but instead dynamic, relative to the ranges in play and the board type”.',
               sources: ['eqb.definitions', 'qjtdef.top-pair-44'],
             },
             {
@@ -363,7 +363,7 @@ export const MIN_BET_DEFENCE_QJT: InteractivePuzzle = {
       kind: 'composition',
       seat: 'hero',
       description:
-        'The whole-range answer the book prints for this exact node: 40bb, BB vs UTG, monotone Q♥J♥T♥, facing a flop min-bet. Roughly 61% of the range continues. This is the strategy against the min-bet only — the book solves and prints each bet-size separately.',
+        'The whole-range answer the source prints for this exact node: 40bb, BB vs UTG, monotone Q♥J♥T♥, facing a flop min-bet. Roughly 61% of the range continues. This is the strategy against the min-bet only — the source solves and prints each bet-size separately.',
       bars: [
         { label: 'Check-call', pct: 43, note: 'the largest branch' },
         { label: 'Fold', pct: 38.26 },
@@ -373,7 +373,7 @@ export const MIN_BET_DEFENCE_QJT: InteractivePuzzle = {
         {
           question: 'Can you show the per-hand chart behind these three numbers?',
           answer:
-            'Not from what the book prints in text. Table 123 is a table image, and the running text beneath it describes the strategy by hand CLASS — some with a frequency, some as a flat rule, and top pair with no strategy figure at all. This puzzle teaches from those class statements and claims no per-combo number for any holding.',
+            'Not from what the source prints in text. The table is a table image, and the running text beneath it describes the strategy by hand CLASS — some with a frequency, some as a flat rule, and top pair with no strategy figure at all. This puzzle teaches from those class statements and claims no per-combo number for any holding.',
           nearestSources: ['qjtdef.table-123', 'ex2.bb-36-equity'],
         },
       ],
@@ -389,9 +389,9 @@ export const MIN_BET_DEFENCE_QJT: InteractivePuzzle = {
         'What the big blind is defending with. The source calls this “a substantial equity disadvantage”: 36% equity, only 79% of it realized, capturing 28% of the pot. The wide continue is not a claim to be ahead — it is what a 1bb bet makes correct even from behind.',
       unsourced: [
         {
-          question: 'Does the book give the big blind’s equity-bucket split on this flop?',
+          question: 'Does the source give the big blind’s equity-bucket split on this flop?',
           answer:
-            'Not for Q♥J♥T♥. The 36% figure is a range-versus-range equity, not a bucket breakdown, and the only per-class equity printed for this board is top pair’s 44%. The bucket definitions used elsewhere in this puzzle are the general ones from p.596, applied to that single printed figure and to nothing else.',
+            'Not for Q♥J♥T♥. The 36% figure is a range-versus-range equity, not a bucket breakdown, and the only per-class equity printed for this board is top pair’s 44%. The bucket definitions used elsewhere in this puzzle are the general ones, applied to that single printed figure and to nothing else.',
           nearestSources: ['ex2.bb-36-equity', 'qjtdef.top-pair-44', 'eqb.definitions'],
         },
       ],
@@ -410,7 +410,7 @@ export const MIN_BET_DEFENCE_QJT: InteractivePuzzle = {
       sources: ['qjtdef.alpha-mdf'],
     },
     {
-      text: 'Do not stop at MDF. The book says it “does not take equities and range distribution into account” and that basing a strategy on it “will be highly detrimental”. On this node the big blind actually folds 38.26%, check-calls 43% and check-raises 18% — very wide, and not 85% wide.',
+      text: 'Do not stop at MDF. The source says it “does not take equities and range distribution into account” and that basing a strategy on it “will be highly detrimental”. On this node the big blind actually folds 38.26%, check-calls 43% and check-raises 18% — very wide, and not 85% wide.',
       sources: ['qjtdef.mdf-ignores-equities', 'ex2.bb-36-equity'],
     },
     {
@@ -418,7 +418,7 @@ export const MIN_BET_DEFENCE_QJT: InteractivePuzzle = {
       sources: ['qjtdef.bottom-pair', 'qjtdef.middle-pair', 'qjtdef.folds'],
     },
     {
-      text: 'The roster is board-specific and size-specific. Open-enders here continue only when drawing to the nut straight; on the very next flop the book studies, open-enders check-call every time. Carry the method across boards, never the list.',
+      text: 'The roster is board-specific and size-specific. Open-enders here continue only when drawing to the nut straight; on the very next flop the source studies, open-enders check-call every time. Carry the method across boards, never the list.',
       sources: ['qjtdef.oesd', 'qjtdef.min-bet-pot-odds'],
     },
   ],
@@ -426,5 +426,5 @@ export const MIN_BET_DEFENCE_QJT: InteractivePuzzle = {
   xp: 35,
 
   endsEarlyBecause:
-    'This puzzle teaches one idea — what a min-bet’s price does to the flop continuing range — and pp.739-741 is where the source answers it, as a flop node. The book does carry Q♥J♥T♥ into its turn chapter (pp.750-751), but nothing there is a rule for bottom pair with a higher kicker after it calls, so playing the hand on would mean teaching a second idea from evidence this puzzle has not laid out. It stops where the breakdown does.',
+    'This puzzle teaches one idea — what a min-bet’s price does to the flop continuing range — and the source is where the source answers it, as a flop node. The source does carry Q♥J♥T♥ into its turn chapter, but nothing there is a rule for bottom pair with a higher kicker after it calls, so playing the hand on would mean teaching a second idea from evidence this puzzle has not laid out. It stops where the breakdown does.',
 }

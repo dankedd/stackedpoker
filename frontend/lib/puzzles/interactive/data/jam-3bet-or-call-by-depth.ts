@@ -174,18 +174,18 @@ export const JAM_3BET_OR_CALL_BY_DEPTH: InteractivePuzzle = {
       ],
       bestOptionId: 'all-in-15',
       explanation:
-        'All-in. Against a button open at 15bb the big blind jams 18%, calls 58.2% and folds 23.8% (Hand Range 155, p.382) — three branches, and a non-all-in 3-bet is not among them: “At this stack depth, the BB is too shallow to have a non-all-in 3-betting range” (p.381). So the real question is not whether 9♠9♦ is strong enough to raise, but which of the two raises exists, and only one does. The same page says who takes it: “The solver likes going all-in pre-flop at this stack depth with hands that are ahead of the opener’s range but have bad post-flop equity realization… Most pocket pairs make great rejamming hands except AA and KK, which get slowplayed vs LP.” 99 is a pocket pair, and it is not one of the named exceptions. The jam also works: after a 2bb open at this depth the button folds to a big-blind rejam 57.4% of the time and calls 42.6% (Hand Range 267, p.516).',
+        'All-in. Against a button open at 15bb the big blind jams 18%, calls 58.2% and folds 23.8% — three branches, and a non-all-in 3-bet is not among them: “At this stack depth, the BB is too shallow to have a non-all-in 3-betting range”. So the real question is not whether 9♠9♦ is strong enough to raise, but which of the two raises exists, and only one does. The same page says who takes it: “The solver likes going all-in pre-flop at this stack depth with hands that are ahead of the opener’s range but have bad post-flop equity realization… Most pocket pairs make great rejamming hands except AA and KK, which get slowplayed vs LP.” 99 is a pocket pair, and it is not one of the named exceptions. The jam also works: after a 2bb open at this depth the button folds to a big-blind rejam 57.4% of the time and calls 42.6%.',
       unsourced: [
         {
           question: 'What size would the 3-bet be, if you took it?',
           answer:
-            'The source prints none, because at 15bb there is no such branch to size. That is not a gap in the book — it is the strategy. Hand Range 155 has exactly three actions, and p.381 states the reason: the big blind is too shallow at this depth to have a non-all-in 3-betting range. The button on screen therefore carries no amount, which is the honest rendering of an action the solver does not price.',
+            'The source prints none, because at 15bb there is no such branch to size. That is not a gap in the source — it is the strategy. The chart has exactly three actions, and the source states the reason: the big blind is too shallow at this depth to have a non-all-in 3-betting range. The button on screen therefore carries no amount, which is the honest rendering of an action the solver does not price.',
           nearestSources: ['depth.15bb-no-non-allin-3bet', 'depth.bb-vs-bn-15bb-chart'],
         },
         {
           question: 'Where do the 2bb open and the 4.625bb pot come from?',
           answer:
-            'The 2bb open is printed in the node where the button answers this jam: “BN 15bb (2x vs BB All-in)” (Hand Range 267, p.516) — the opener’s branch of the same 15bb solution. Ch.8’s prose around Hand Range 155 never restates the size, though it does confirm the shape, measuring the big blind’s fold “vs a min-raise” (p.381). The pot is the book’s own tournament arithmetic: p.293 states the MTT strategies were solved “for 9-max tables with a 12.5% ante”, so nine antes put 1.125bb in before any card is played, and 1.125 + 0.5 from the folded small blind + your 1 + the button’s 2 = 4.625bb. Your call is 1bb, not 2, because you are already in for the blind.',
+            'The 2bb open is printed in the node where the button answers this jam: “BN 15bb (2x vs BB All-in)” — the opener’s branch of the same 15bb solution. The source prose around the chart never restates the size, though it does confirm the shape, measuring the big blind’s fold “vs a min-raise”. The pot is the source’s own tournament arithmetic: it states the MTT strategies were solved “for 9-max tables with a 12.5% ante”, so nine antes put 1.125bb in before any card is played, and 1.125 + 0.5 from the folded small blind + your 1 + the button’s 2 = 4.625bb. Your call is 1bb, not 2, because you are already in for the blind.',
           nearestSources: ['depth.bn-response-to-15bb-jam', 'mtt.solver-environment', 'mtt.ante-pot-size'],
         },
       ],
@@ -198,12 +198,12 @@ export const JAM_3BET_OR_CALL_BY_DEPTH: InteractivePuzzle = {
           exhibit: {
             caption: 'BB defence against a button min-raise, 15bb',
             scope:
-              'Whole-range percentages printed with Hand Range 155 for BB vs BN at 15bb, 9-max MTT with a 12.5% ante. They describe the entire range at once and are not the frequency of any individual hand.',
+              'Whole-range percentages printed with the chart for BB vs BN at 15bb, 9-max MTT with a 12.5% ante. They describe the entire range at once and are not the frequency of any individual hand.',
             rows: [
               { label: 'Call', value: '58.2%', pct: 58.2, note: 'the biggest branch' },
               { label: 'Fold', value: '23.8%', pct: 23.8 },
               { label: 'All-in', value: '18%', pct: 18, note: 'the only raise available' },
-              { label: '3-bet (non-all-in)', value: 'no such branch', note: 'not printed — see p.381' },
+              { label: '3-bet (non-all-in)', value: 'no such branch', note: 'not printed —' },
             ],
             sources: ['depth.bb-vs-bn-15bb-chart', 'depth.15bb-no-non-allin-3bet'],
           },
@@ -239,7 +239,7 @@ export const JAM_3BET_OR_CALL_BY_DEPTH: InteractivePuzzle = {
               sources: ['depth.15bb-who-jams'],
             },
             {
-              text: 'The book states the class again at the next depth up, plainly: “Pocket pairs and Axo really like getting all-in.” That sentence is from the 25bb section, so read it for the hand class it names, not as a frequency at 15bb.',
+              text: 'The source states the class again at the next depth up, plainly: “Pocket pairs and Axo really like getting all-in.” That sentence is from the 25bb section, so read it for the hand class it names, not as a frequency at 15bb.',
               sources: ['bb25.pairs-and-axo-jam'],
             },
             {
@@ -251,7 +251,7 @@ export const JAM_3BET_OR_CALL_BY_DEPTH: InteractivePuzzle = {
             {
               question: 'How often exactly does 9♠9♦ jam here?',
               answer:
-                'Exact combo frequency is not specified in the source. Hand Range 155 is a colour-coded chart image, and the only figures printed in text are the three whole-range aggregates — 18% / 58.2% / 23.8%. What the book states in words is the class: most pocket pairs rejam, with AA and KK named as the exceptions against late position. This puzzle asserts membership of that class and stops there.',
+                'Exact combo frequency is not specified in the source. The chart is a colour-coded chart image, and the only figures printed in text are the three whole-range aggregates — 18% / 58.2% / 23.8%. What the source states in words is the class: most pocket pairs rejam, with AA and KK named as the exceptions against late position. This puzzle asserts membership of that class and stops there.',
               nearestSources: ['depth.bb-vs-bn-15bb-chart', 'depth.15bb-who-jams'],
             },
           ],
@@ -342,12 +342,12 @@ export const JAM_3BET_OR_CALL_BY_DEPTH: InteractivePuzzle = {
       ],
       bestOptionId: 'three-bet-40',
       explanation:
-        '3-bet. Nothing about the hand changed and nothing about the opponent changed — the stack did, and the strategy has a fourth branch now. Against a button open at 40bb the big blind 3-bets 14.1%, jams 3%, calls 58.6% and folds 24.2% (Hand Range 167, p.396). Compare the raises: the all-in that was 18% and the only raise available at 15bb is now 3% and the smallest branch of four, while the 3-bet that did not exist at all is the biggest raise in the strategy. The source gives the reason plainly: “With 40bb, the BB is now too deep to 3-bet all-in against most positions. In fact, the earlier the opener’s position, the less often the BB can rejam all-in due to the lack of pre-flop fold equity vs narrow ranges” (p.395). And it puts this exact hand in the new branch: the 3-betting value range against a button is “99+, ATs+, and AJ+” (p.395), of which 99 is the bottom card. Note what a 3-bet is risking rather than winning outright — the button’s only counter-raise at this depth is all-in (p.545), which it takes 8.8% of the time, calling 45.4% and folding 45.7% (Hand Range 297, p.548).',
+        '3-bet. Nothing about the hand changed and nothing about the opponent changed — the stack did, and the strategy has a fourth branch now. Against a button open at 40bb the big blind 3-bets 14.1%, jams 3%, calls 58.6% and folds 24.2%. Compare the raises: the all-in that was 18% and the only raise available at 15bb is now 3% and the smallest branch of four, while the 3-bet that did not exist at all is the biggest raise in the strategy. The source gives the reason plainly: “With 40bb, the BB is now too deep to 3-bet all-in against most positions. In fact, the earlier the opener’s position, the less often the BB can rejam all-in due to the lack of pre-flop fold equity vs narrow ranges”. And it puts this exact hand in the new branch: the 3-betting value range against a button is “99+, ATs+, and AJ+”, of which 99 is the bottom card. Note what a 3-bet is risking rather than winning outright — the button’s only counter-raise at this depth is all-in, which it takes 8.8% of the time, calling 45.4% and folding 45.7%.',
       unsourced: [
         {
           question: 'What would the answer be at 30bb, halfway between?',
           answer:
-            'Not specified in the source. The defence chapter solves four depths and states them: “the specific strategy recommended by solvers for all positions at stacks depths of 15bb, 25bb, 40bb and 60bb” (p.360). 30bb is not one of them, so there is no chart to read. Nor can one be read off by splitting the difference: on the 3-bet branch alone the printed values go 0% at 15bb, 8.2% at 25bb and 14.1% at 40bb, and a midpoint between the last two would be a number the book never solved for. What the source does support is the direction — as stacks deepen, the all-in branch shrinks and the non-all-in 3-bet grows.',
+            'Not specified in the source. The defence chapter solves four depths and states them: “the specific strategy recommended by solvers for all positions at stacks depths of 15bb, 25bb, 40bb and 60bb”. 30bb is not one of them, so there is no chart to read. Nor can one be read off by splitting the difference: on the 3-bet branch alone the printed values go 0% at 15bb, 8.2% at 25bb and 14.1% at 40bb, and a midpoint between the last two would be a number the source never solved for. What the source does support is the direction — as stacks deepen, the all-in branch shrinks and the non-all-in 3-bet grows.',
           nearestSources: [
             'defence.chapter-depths',
             'depth.bb-vs-bn-15bb-chart',
@@ -358,7 +358,7 @@ export const JAM_3BET_OR_CALL_BY_DEPTH: InteractivePuzzle = {
         {
           question: 'Where do the 2.3bb open and the 8.05bb 3-bet come from?',
           answer:
-            'Both from the label of the node where the button responds to this exact 3-bet: “BN 40bb (2.3x vs BB 3.5x 3-bet)” (Hand Range 297, p.548) — the opener’s branch of the same 40bb solution. Ch.8’s prose around Hand Range 167 restates neither size. In this book’s notation an opening “x” is big blinds while a 3-bet or 4-bet “x” multiplies the bet it faces, so 3.5x over a 2.3bb open is 8.05bb; the felt rounds that to 8.1 for display. The pot is 1.125bb of antes + the folded small blind’s 0.5 + your 1 + the button’s 2.3 = 4.925bb, and your call is 1.3bb because you are already in for the blind.',
+            'Both from the label of the node where the button responds to this exact 3-bet: “BN 40bb (2.3x vs BB 3.5x 3-bet)” — the opener’s branch of the same 40bb solution. The source prose around the chart restates neither size. In this the source’s notation an opening “x” is big blinds while a 3-bet or 4-bet “x” multiplies the bet it faces, so 3.5x over a 2.3bb open is 8.05bb; the felt rounds that to 8.1 for display. The pot is 1.125bb of antes + the folded small blind’s 0.5 + your 1 + the button’s 2.3 = 4.925bb, and your call is 1.3bb because you are already in for the blind.',
           nearestSources: ['depth.bn-response-to-40bb-3bet', 'mtt.solver-environment', 'mtt.ante-pot-size'],
         },
       ],
@@ -371,7 +371,7 @@ export const JAM_3BET_OR_CALL_BY_DEPTH: InteractivePuzzle = {
           exhibit: {
             caption: 'BB vs a button open — the two depths compared',
             scope:
-              'Whole-range aggregates printed with Hand Range 155 (15bb, p.382) and Hand Range 167 (40bb, p.396), both BB vs BN in a 9-max MTT with a 12.5% ante. Two separate solutions of the same matchup, not one range changing — and neither figure is the frequency of any individual hand.',
+              'Whole-range aggregates printed with the chart (15bb) and the chart (40bb), both BB vs BN in a 9-max MTT with a 12.5% ante. Two separate solutions of the same matchup, not one range changing — and neither figure is the frequency of any individual hand.',
             rows: [
               { label: 'All-in — 15bb', value: '18%', pct: 18, note: 'the only raise there is' },
               { label: 'All-in — 40bb', value: '3%', pct: 3, note: 'now the smallest of four branches' },
@@ -424,9 +424,9 @@ export const JAM_3BET_OR_CALL_BY_DEPTH: InteractivePuzzle = {
           ],
           unsourced: [
             {
-              question: 'Does the book say 9♠9♦ specifically 3-bets rather than calls here?',
+              question: 'Does the source say 9♠9♦ specifically 3-bets rather than calls here?',
               answer:
-                'It names the class boundary, not the combo. p.395 prints the value range as “99+, ATs+, and AJ+” against a button, which places 99 in the 3-betting range at its lower edge; the per-hand colours of Hand Range 167 are a chart image and appear nowhere in text. So exact combo frequency is not specified in the source, and a threshold hand is precisely where a real solver output is most likely to be mixed. This puzzle asserts the boundary the book prints and claims no frequency for the hand.',
+                'It names the class boundary, not the combo. The source prints the value range as “99+, ATs+, and AJ+” against a button, which places 99 in the 3-betting range at its lower edge; the per-hand colours of the chart are a chart image and appear nowhere in text. So exact combo frequency is not specified in the source, and a threshold hand is precisely where a real solver output is most likely to be mixed. This puzzle asserts the boundary the source prints and claims no frequency for the hand.',
               nearestSources: ['preflop.bb-3bet-value-40bb', 'preflop.bb-vs-bn-40bb-chart'],
             },
           ],
@@ -445,7 +445,7 @@ export const JAM_3BET_OR_CALL_BY_DEPTH: InteractivePuzzle = {
       kind: 'composition',
       seat: 'hero',
       description:
-        'The whole-range strategy printed with Hand Range 155. Three branches, and the missing fourth is the point: the book states that at this depth the big blind is too shallow to have a non-all-in 3-betting range at all.',
+        'The whole-range strategy printed with the chart. Three branches, and the missing fourth is the point: the source states that at this depth the big blind is too shallow to have a non-all-in 3-betting range at all.',
       bars: [
         { label: 'Call', pct: 58.2 },
         { label: 'Fold', pct: 23.8 },
@@ -456,7 +456,7 @@ export const JAM_3BET_OR_CALL_BY_DEPTH: InteractivePuzzle = {
         {
           question: 'Can you show the 13×13 grid for this range?',
           answer:
-            'Not from what the book prints in text. Hand Range 155 is a colour-coded chart image and the only figures printed with it are these aggregates. The repo’s one extracted per-hand BB-vs-BN chart (lib/learn/bbDefenseComplete.ts) is 100bb and says in its own file comment that it must not be reused at another stack depth — which is exactly the mistake this puzzle is about. So the explorer shows the aggregates and the hand classes the book names in words.',
+            'Not from what the source prints in text. The chart is a colour-coded chart image and the only figures printed with it are these aggregates. The repo’s one extracted per-hand BB-vs-BN chart (lib/learn/bbDefenseComplete.ts) is 100bb and says in its own file comment that it must not be reused at another stack depth — which is exactly the mistake this puzzle is about. So the explorer shows the aggregates and the hand classes the source names in words.',
           nearestSources: ['depth.bb-vs-bn-15bb-chart', 'depth.15bb-who-jams'],
         },
       ],
@@ -468,7 +468,7 @@ export const JAM_3BET_OR_CALL_BY_DEPTH: InteractivePuzzle = {
       kind: 'composition',
       seat: 'hero',
       description:
-        'The same matchup solved 25bb deeper (Hand Range 167). Calling and folding are within half a point of their 15bb values; the entire change is that the all-in has collapsed to 3% and a non-all-in 3-bet worth 14.1% has appeared.',
+        'The same matchup solved 25bb deeper. Calling and folding are within half a point of their 15bb values; the entire change is that the all-in has collapsed to 3% and a non-all-in 3-bet worth 14.1% has appeared.',
       bars: [
         { label: 'Call', pct: 58.6, note: '58.2% at 15bb — essentially unmoved' },
         { label: 'Fold', pct: 24.2, note: '23.8% at 15bb — essentially unmoved' },
@@ -479,7 +479,7 @@ export const JAM_3BET_OR_CALL_BY_DEPTH: InteractivePuzzle = {
         {
           question: 'What does this matchup look like at 30bb?',
           answer:
-            'Not specified in the source. The defence chapter solves 15bb, 25bb, 40bb and 60bb (p.360), and 30bb is not among them. The nearest printed rungs are 25bb — all-in 11.4%, 3-bet 8.2%, call 65.9%, fold 14.6% — and this 40bb chart; interpolating between them would produce solver output the book never generated. The trend across the four depths the book does solve is the safe reading: the all-in branch shrinks and the non-all-in 3-bet grows as stacks deepen.',
+            'Not specified in the source. The defence chapter solves 15bb, 25bb, 40bb and 60bb, and 30bb is not among them. The nearest printed rungs are 25bb — all-in 11.4%, 3-bet 8.2%, call 65.9%, fold 14.6% — and this 40bb chart; interpolating between them would produce solver output the source never generated. The trend across the four depths the source does solve is the safe reading: the all-in branch shrinks and the non-all-in 3-bet grows as stacks deepen.',
           nearestSources: [
             'defence.chapter-depths',
             'preflop.bb-vs-bn-25bb-chart',
@@ -558,5 +558,5 @@ export const JAM_3BET_OR_CALL_BY_DEPTH: InteractivePuzzle = {
   xp: 45,
 
   endsEarlyBecause:
-    'Both decisions are preflop because the source answers a preflop question here: Hand Ranges 155 and 167 state what the big blind does against a button open at each depth, and the prose on pp.381 and 395 states why the two answers differ. Neither says how 9♠9♦ then plays a flop at either stack size, so the hand stops where the evidence does. The second decision is a fresh hand rather than a continuation of the first — same seat, same cards, same opponent, different stack — which is what makes the comparison a controlled one.',
+    'Both decisions are preflop because the source answers a preflop question here: The charts state what the big blind does against a button open at each depth, and the prose and 395 states why the two answers differ. Neither says how 9♠9♦ then plays a flop at either stack size, so the hand stops where the evidence does. The second decision is a fresh hand rather than a continuation of the first — same seat, same cards, same opponent, different stack — which is what makes the comparison a controlled one.',
 }

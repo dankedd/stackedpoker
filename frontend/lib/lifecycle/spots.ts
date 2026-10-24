@@ -63,23 +63,23 @@ export interface SpotInfo {
 /** Turns trainer_hand_log's "kind:chart_id" (weakest_ref) into a label and a trainer filter. */
 export function spotInfo(ref: string | null): SpotInfo | null {
   if (!ref) return null;
-  const [kind, idRaw] = ref.split(":");
-  const id = Number(idRaw);
-  if (!Number.isFinite(id)) return null;
+  // Refs logged before chart ids existed carry a number; they resolve to nothing.
+  const [kind, id] = ref.split(":");
+  if (!id) return null;
   const q = (type: TrainerType, game: TrainerMode) => trainerQuery({ type, game, fewerFolds: true });
 
   if (kind === "pushfold") {
-    const c = PUSH_FOLD_CHARTS.find((x) => x.page === id);
+    const c = PUSH_FOLD_CHARTS.find((x) => x.id === id);
     return c ? { label: `${displayPos(c.pos)} push/fold (≤10bb)`, query: q("open", "pf") } : null;
   }
   if (kind === "open") {
-    const c = OPEN_CHARTS.find((x) => x.page === id);
+    const c = OPEN_CHARTS.find((x) => x.id === id);
     return c
       ? { label: `${displayPos(c.pos)} open at ${c.stack}bb${c.group === "cash" ? " (cash)" : ""}`, query: q("open", c.group) }
       : null;
   }
   if (kind === "defense") {
-    const c = DEFENSE_CHARTS.find((x) => x.n === id);
+    const c = DEFENSE_CHARTS.find((x) => x.id === id);
     if (!c) return null;
     const vs = { open: "open", push: "shove", limp: "limp", "4bet": "4-bet", lr: "limp-raise" }[c.spot];
     return {

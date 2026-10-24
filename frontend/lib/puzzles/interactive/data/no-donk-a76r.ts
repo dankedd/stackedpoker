@@ -112,7 +112,7 @@ export const NO_DONK_A76R: InteractivePuzzle = {
           tableAction: { label: 'Bets', betBb: 1.4 },
           verdict: 'mistake',
           shortWhy:
-            'This is the size the book measures, and it measures it going badly: the button raises a 1/4-pot lead 53% of the time on A76r, against 20% on 654r. Locking the big blind into leading top pair or better here drops its total EV from 25 to 13.',
+            'This is the size the source measures, and it measures it going badly: the button raises a 1/4-pot lead 53% of the time on A76r, against 20% on 654r. Locking the big blind into leading top pair or better here drops its total EV from 25 to 13.',
           sources: ['donk.654r-ip-raise-frequency', 'a76r.top-pair-lock-ev', 'a76r.donk-reverses-eqr'],
         },
         {
@@ -128,7 +128,7 @@ export const NO_DONK_A76R: InteractivePuzzle = {
       ],
       bestOptionId: 'check',
       explanation:
-        'Check. This is the flop the chapter uses as its counter-example, and the recommendation is unusually blunt: “it works better for OOP to not split their range and simply check 100% on A76r” (p.635). The reason is not that your hand is weak — it is that the ace belongs to the button. On A76r the button holds 31% strong hands to your 8%, because its top pairs (any Ax) average 85% equity against your range (p.634). Leading into that reverses the whole point of leading: “a donk bet can get raised with such a high frequency that the effect would be reversed. It would be the BB who is forced to continue putting more money into the pot with hands that would rather see a cheap turn card or fold” (p.634). And checking costs you nothing, because “A76r is so good for IP that they get to c-bet 100% of their range… the BB doesn’t need to lead out with their strongest hands to get value as IP will keep putting money into the pot with their entire range when checked to” (p.635).',
+        'Check. This is the flop the chapter uses as its counter-example, and the recommendation is unusually blunt: “it works better for OOP to not split their range and simply check 100% on A76r”. The reason is not that your hand is weak — it is that the ace belongs to the button. On A76r the button holds 31% strong hands to your 8%, because its top pairs (any Ax) average 85% equity against your range. Leading into that reverses the whole point of leading: “a donk bet can get raised with such a high frequency that the effect would be reversed. It would be the BB who is forced to continue putting more money into the pot with hands that would rather see a cheap turn card or fold”. And checking costs you nothing, because “A76r is so good for IP that they get to c-bet 100% of their range… the BB doesn’t need to lead out with their strongest hands to get value as IP will keep putting money into the pot with their entire range when checked to”.',
       unsourced: [
         {
           question: 'How often exactly does A♥5♥ check here?',
@@ -137,7 +137,7 @@ export const NO_DONK_A76R: InteractivePuzzle = {
           nearestSources: ['a76r.check-100', 'a76r.donk-option-worthless', 'a76r.top-pair-lock-ev'],
         },
         {
-          question: 'Does the book show A♥5♥ specifically calling preflop at 30bb?',
+          question: 'Does the source show A♥5♥ specifically calling preflop at 30bb?',
           answer:
             'Not hand by hand. For this exact configuration it prints the aggregates only — a 49% button open met by a 64% big blind call at 30bb — and its per-hand BB vs BN charts are at 25bb and 40bb, with nothing at 30bb. This puzzle claims class membership and stops there: the composition of a big blind calling range against a button is described as most suited hands, offsuit aces, connectors and broadways, and a suited ace is one of those. Interpolating a 30bb chart between the printed 25bb and 40bb ones would be invented solver output.',
           nearestSources: [
@@ -150,7 +150,7 @@ export const NO_DONK_A76R: InteractivePuzzle = {
         {
           question: 'Where does the 2.5bb open come from, and why does the pot read 5.5bb?',
           answer:
-            'From this implementation, not the book. The source never prints an open size for these simulations. It does print 5.6bb as the flop pot for this same BB vs BN 30bb configuration when it measures 654r, and prints no pot at all for A76r. A 2.5bb open is the standard size closest to reproducing that pot: 2.5 from the button, 2.5 from you, plus the folded small blind’s 0.5 makes 5.5bb. The felt shows 5.5 because that is what the visible action adds up to — the 0.1bb gap is disclosed rather than closed by inventing a 2.55bb open. Both bet sizes offered are quarter- and two-thirds-pot of the displayed number, and 1/4-pot is the size the source’s A76r raise frequency is measured against.',
+            'From this implementation, not the source. The source never prints an open size for these simulations. It does print 5.6bb as the flop pot for this same BB vs BN 30bb configuration when it measures 654r, and prints no pot at all for A76r. A 2.5bb open is the standard size closest to reproducing that pot: 2.5 from the button, 2.5 from you, plus the folded small blind’s 0.5 makes 5.5bb. The felt shows 5.5 because that is what the visible action adds up to — the 0.1bb gap is disclosed rather than closed by inventing a 2.55bb open. Both bet sizes offered are quarter- and two-thirds-pot of the displayed number, and 1/4-pot is the size the source’s A76r raise frequency is measured against.',
           nearestSources: ['value.table-104', 'donk.654r-ip-raise-frequency'],
         },
       ],
@@ -163,10 +163,10 @@ export const NO_DONK_A76R: InteractivePuzzle = {
           exhibit: {
             caption: 'Range shape on A76r',
             scope:
-              'Equity is range-vs-range on this flop (p.633). The bucket percentages are the BB vs IP distribution on A76r averaged over 20bb/30bb/40bb stacks (Diagram 25). The 85% is IP’s top pairs against the BB’s RANGE — not the equity of any single holding.',
+              'Equity is range-vs-range on this flop. The bucket percentages are the BB vs IP distribution on A76r averaged over 20bb/30bb/40bb stacks. The 85% is IP’s top pairs against the BB’s RANGE — not the equity of any single holding.',
             rows: [
               { label: 'BB equity vs BN equity', value: '38% vs 62%' },
-              { label: 'BN strong hands', value: '31%', pct: 31, note: 'a “staggering” 31%, in the book’s own word' },
+              { label: 'BN strong hands', value: '31%', pct: 31, note: 'a “staggering” 31%, in the source’s own word' },
               { label: 'BB strong hands', value: '8%', pct: 8, note: 'on 654r the same figure is 7% against IP’s 4%' },
               { label: 'BB good hands', value: '17%', pct: 17, note: 'rises to 40% on 654r' },
               { label: 'BB trash hands', value: '49%', pct: 49, note: 'falls to 18% on 654r' },
@@ -188,7 +188,7 @@ export const NO_DONK_A76R: InteractivePuzzle = {
               sources: ['a76r.bb-good-and-trash', 'a76r.check-100'],
             },
             {
-              text: 'The book says which factor dominates: range composition is even more important than raw equity, which is why the 38%-vs-62% split is the smaller half of this answer.',
+              text: 'The source says which factor dominates: range composition is even more important than raw equity, which is why the 38%-vs-62% split is the smaller half of this answer.',
               sources: ['contrast.a76r', 'a76r.buckets'],
             },
           ],
@@ -196,7 +196,7 @@ export const NO_DONK_A76R: InteractivePuzzle = {
             {
               question: 'What is A♥5♥ itself worth on this flop?',
               answer:
-                'The source does not print it. It prints 85% for IP’s top pairs against the BB’s range and “about 65%” for a top pair on 654 — no equity figure for the BB’s own top pair on A76r, and no figure for any specific combo. So this puzzle argues from the range structure the book does print, and makes no claim about how your two cards fare in isolation.',
+                'The source does not print it. It prints 85% for IP’s top pairs against the BB’s range and “about 65%” for a top pair on 654 — no equity figure for the BB’s own top pair on A76r, and no figure for any specific combo. So this puzzle argues from the range structure the source does print, and makes no claim about how your two cards fare in isolation.',
               nearestSources: ['a76r.buckets'],
             },
           ],
@@ -211,7 +211,7 @@ export const NO_DONK_A76R: InteractivePuzzle = {
           exhibit: {
             caption: 'The response to a 1/4-pot lead',
             scope:
-              'IP’s raising frequency against a donk bet of 1/4-pot, printed for both flops in the same sentence (p.634). The c-bet figure is BB vs BN on A76r at 30bb (Table 101) — this puzzle’s exact spot. The 84% is the average IP c-bet frequency across ALL flops.',
+              'IP’s raising frequency against a donk bet of 1/4-pot, printed for both flops in the same sentence. The c-bet figure is BB vs BN on A76r at 30bb — this puzzle’s exact spot. The 84% is the average IP c-bet frequency across ALL flops.',
             rows: [
               { label: 'IP raises your 1/4-pot lead, A76r', value: '53%', pct: 53 },
               { label: 'IP raises your 1/4-pot lead, 654r', value: '20%', pct: 20 },
@@ -253,12 +253,12 @@ export const NO_DONK_A76R: InteractivePuzzle = {
           exhibit: {
             caption: 'Locking in the lead, and removing it',
             scope:
-              'Both rows are BB vs BN on A76r at 30bb — this puzzle’s exact spot. The first compares the GTO solution with a forced strategy that donks every top pair or better (Table 101, p.635); the second removes the donk option entirely (p.650).',
+              'Both rows are BB vs BN on A76r at 30bb — this puzzle’s exact spot. The first compares the GTO solution with a forced strategy that donks every top pair or better; the second removes the donk option entirely.',
             rows: [
               {
                 label: 'Total EV: GTO → forced to donk top pair or better',
                 value: '25 → 13',
-                note: 'share of the pot — the source prints the BB’s A76r EV out of position as 25% on p.652, which is where the GTO figure of 25 comes from',
+                note: 'share of the pot — the source prints the BB’s A76r EV out of position as 25%, which is where the GTO figure of 25 comes from',
               },
               { label: 'How much of your range that forced lead is', value: '10%', pct: 10 },
               { label: 'EV after checking, in that forced strategy', value: '5.6' },
@@ -268,7 +268,7 @@ export const NO_DONK_A76R: InteractivePuzzle = {
           },
           bullets: [
             {
-              text: 'The forced strategy is “highly exploitable” in the book’s words, and it is the natural human one: donk every time you have top pair or better, which is 10% of your range on this flop.',
+              text: 'The forced strategy is “highly exploitable” in the source’s words, and it is the natural human one: donk every time you have top pair or better, which is 10% of your range on this flop.',
               sources: ['a76r.top-pair-lock-ev'],
             },
             {
@@ -288,13 +288,13 @@ export const NO_DONK_A76R: InteractivePuzzle = {
             {
               question: 'What unit are 25 and 13 in?',
               answer:
-                'The prose does not say, and Table 101’s own column headers are printed as an image this repo has not extracted. The unit is established by cross-check rather than assumed: p.652 gives the big blind’s A76r EV out of position as 25% of the pot in the same matchup at the same stack depth, which matches Table 101’s GTO figure exactly. Read as shares of the pot, the forced lead costs roughly half of what the big blind was capturing. No other quantity in this puzzle depends on that reading.',
+                'The prose does not say, and the table’s own column headers are printed as an image this repo has not extracted. The unit is established by cross-check rather than assumed: the source gives the big blind’s A76r EV out of position as 25% of the pot in the same matchup at the same stack depth, which matches the table’s GTO figure exactly. Read as shares of the pot, the forced lead costs roughly half of what the big blind was capturing. No other quantity in this puzzle depends on that reading.',
               nearestSources: ['a76r.top-pair-lock-ev', 'a76r.bb-ev-share-of-pot'],
             },
             {
-              question: 'Does the book give a 2/3-pot raise frequency for A76r?',
+              question: 'Does the source give a 2/3-pot raise frequency for A76r?',
               answer:
-                'No. Every response frequency it prints for this flop is measured against a 1/4-pot donk bet — 53% raises — so the puzzle grades the larger lead on the recommendation the source does make (check 100%) and on the range structure behind it, without inventing a raise frequency for a size the book did not test here.',
+                'No. Every response frequency it prints for this flop is measured against a 1/4-pot donk bet — 53% raises — so the puzzle grades the larger lead on the recommendation the source does make (check 100%) and on the range structure behind it, without inventing a raise frequency for a size the source did not test here.',
               nearestSources: ['donk.654r-ip-raise-frequency', 'a76r.check-100'],
             },
           ],
@@ -319,7 +319,7 @@ export const NO_DONK_A76R: InteractivePuzzle = {
         {
           question: 'Can you show the 13×13 grid for this range?',
           answer:
-            'Not from this source at this depth. It prints the 49% and 64% aggregates for the 30bb BB vs BN configuration in prose, and per-hand charts at 25bb (call 65.9%) and 40bb (call 58.6%) — nothing at 30bb. Drawing a grid between the two printed ones would mean choosing which specific hands are in it, and that choice would be ours, not the book’s. The “suited hands, offsuit Ax, connectors and broadways” description is written about the 100bb chart and is cited for shape only, never for a frequency at 30bb.',
+            'Not from this source at this depth. It prints the 49% and 64% aggregates for the 30bb BB vs BN configuration in prose, and per-hand charts at 25bb (call 65.9%) and 40bb (call 58.6%) — nothing at 30bb. Drawing a grid between the two printed ones would mean choosing which specific hands are in it, and that choice would be ours, not the source’s. The “suited hands, offsuit Ax, connectors and broadways” description is written about the 100bb chart and is cited for shape only, never for a frequency at 30bb.',
           nearestSources: ['preflop.bb-vs-bn-25bb-chart', 'preflop.bb-vs-bn-40bb-chart', 'preflop.bb-call-composition-100bb'],
         },
       ],
@@ -342,7 +342,7 @@ export const NO_DONK_A76R: InteractivePuzzle = {
         {
           question: 'Which bucket is top pair with a five kicker in?',
           answer:
-            'The source does not say for A76r. It defines the four buckets by equity in Chapter 10 and prints the resulting distribution, but it does not assign this holding to one, and it prints no equity figure for the big blind’s top pair on this flop. The argument here does not need it: the recommendation is a 100% check, and the strategy that leads top pair or better is measured losing EV as a strategy.',
+            'The source does not say for A76r. It defines the four buckets by equity and prints the resulting distribution, but it does not assign this holding to one, and it prints no equity figure for the big blind’s top pair on this flop. The argument here does not need it: the recommendation is a 100% check, and the strategy that leads top pair or better is measured losing EV as a strategy.',
           nearestSources: ['a76r.buckets', 'a76r.top-pair-lock-ev', 'a76r.check-100'],
         },
       ],
@@ -362,7 +362,7 @@ export const NO_DONK_A76R: InteractivePuzzle = {
         {
           question: 'What about the button’s good, weak and trash hands?',
           answer:
-            'The source does not print a complete four-bucket breakdown for the button on A76r. The remaining 69% is left unsplit here, because splitting a number the book never split is exactly the kind of plausible invention this puzzle exists to avoid. What it does print about the rest of that range is a strategy rather than a composition: on this flop the button c-bets 100% of the time and does not worry about being check-raised.',
+            'The source does not print a complete four-bucket breakdown for the button on A76r. The remaining 69% is left unsplit here, because splitting a number the source never split is exactly the kind of plausible invention this puzzle exists to avoid. What it does print about the rest of that range is a strategy rather than a composition: on this flop the button c-bets 100% of the time and does not worry about being check-raised.',
           nearestSources: ['a76r.buckets', 'a76r.ip-cbets-100'],
         },
       ],
@@ -388,7 +388,7 @@ export const NO_DONK_A76R: InteractivePuzzle = {
       sources: ['a76r.ip-cbets-100'],
     },
     {
-      text: 'The book measures the temptation: forcing the big blind to donk every top pair or better — 10% of the range — cuts total EV from 25 to 13 and leaves the checking range unprotected. Remove the leading option from this flop entirely and overall EV is unchanged.',
+      text: 'The source measures the temptation: forcing the big blind to donk every top pair or better — 10% of the range — cuts total EV from 25 to 13 and leaves the checking range unprotected. Remove the leading option from this flop entirely and overall EV is unchanged.',
       sources: ['a76r.top-pair-lock-ev', 'a76r.donk-option-worthless'],
     },
   ],

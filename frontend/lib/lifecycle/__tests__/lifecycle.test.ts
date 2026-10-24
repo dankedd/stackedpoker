@@ -139,11 +139,11 @@ describe("spots", () => {
   });
 
   it("labels every chart the trainer can log", () => {
-    for (const c of PUSH_FOLD_CHARTS) expect(spotInfo(`pushfold:${c.page}`)?.label).toMatch(/push\/fold/);
-    for (const c of OPEN_CHARTS) expect(spotInfo(`open:${c.page}`)?.label).toMatch(/open at \d+bb/);
-    for (const c of DEFENSE_CHARTS) expect(spotInfo(`defense:${c.n}`)?.label).toMatch(/ vs /);
-    expect(spotInfo("open:99999")).toBeNull();
-    expect(spotInfo("pushfold:" + PUSH_FOLD_CHARTS[0].page)?.query).toBe("?type=open&game=pf");
+    for (const c of PUSH_FOLD_CHARTS) expect(spotInfo(`pushfold:${c.id}`)?.label).toMatch(/push\/fold/);
+    for (const c of OPEN_CHARTS) expect(spotInfo(`open:${c.id}`)?.label).toMatch(/open at \d+bb/);
+    for (const c of DEFENSE_CHARTS) expect(spotInfo(`defense:${c.id}`)?.label).toMatch(/ vs /);
+    expect(spotInfo("open:99999")).toBeNull(); // a ref logged before chart ids existed
+    expect(spotInfo("pushfold:" + PUSH_FOLD_CHARTS[0].id)?.query).toBe("?type=open&game=pf");
   });
 });
 
@@ -162,7 +162,7 @@ describe("templates", () => {
   });
 
   it("day3 shows hands, accuracy and the weakest spot with its trainer filter", () => {
-    const ref = `pushfold:${PUSH_FOLD_CHARTS[0].page}`;
+    const ref = `pushfold:${PUSH_FOLD_CHARTS[0].id}`;
     const e = renderEmail("day3", cand({ streak: 0, weakestRef: ref, weakestHands: 6, weakestWrong: 4 }), ctx);
     expect(e.subject).toMatch(/^Your weakest spot: .+ push\/fold/);
     expect(e.text).toContain("Hands answered: 40");

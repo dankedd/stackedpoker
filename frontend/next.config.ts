@@ -79,6 +79,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: process.env.DOCKER_BUILD ? "standalone" : undefined,
+  // A second build directory lets a production build run beside `next dev`.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
 
   async headers() {
     return [

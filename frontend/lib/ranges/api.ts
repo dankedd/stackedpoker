@@ -34,15 +34,16 @@ export interface HandXpResult extends TrainerXpState {
 
 export interface HandRef {
   kind: "open" | "pushfold" | "defense";
-  chart_id: number;
+  /** Chart id, e.g. "open_mtt_lj_25". */
+  chart_id: string;
   stack: number | null;
 }
 
 /** How the server identifies the chart a dealt hand was graded against. */
 export function handRefFor(deal: Deal): HandRef {
-  if (deal.type === "def") return { kind: "defense", chart_id: deal.chart.n, stack: null };
-  if (deal.kind === "pf") return { kind: "pushfold", chart_id: deal.chart.page, stack: deal.stack };
-  return { kind: "open", chart_id: deal.chart.page, stack: null };
+  if (deal.type === "def") return { kind: "defense", chart_id: deal.chart.id, stack: null };
+  if (deal.kind === "pf") return { kind: "pushfold", chart_id: deal.chart.id, stack: deal.stack };
+  return { kind: "open", chart_id: deal.chart.id, stack: null };
 }
 
 async function call<T>(path: string, token: string, init?: RequestInit): Promise<T> {

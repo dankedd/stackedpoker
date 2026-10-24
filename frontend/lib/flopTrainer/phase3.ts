@@ -3,7 +3,8 @@
  * texture tracking and the explorer's flop handling.
  *
  * The c-bet advice mirrors backend/app/flop_equity/grading.py cbet_advice —
- * same data file (cbetProfiles.json, a byte-for-byte copy checked by the
+ * same data (cbetProfiles.json: data/mpt/cbet_profiles.json without its
+ * source fields, written by scripts/build-client-data.mjs and checked by the
  * backend tests), same rules. Signed in, the server's verdict is the one
  * that counts.
  */
@@ -39,7 +40,6 @@ export interface CbetAdvice {
   source: "book" | "profile";
   /** The book's printed strategy for this flop (source "book" only). */
   strategy?: BookStrategy;
-  pages: number[];
   distance?: number;
   /** The texture rule that forced a small size, if any. */
   rule?: string;
@@ -48,7 +48,6 @@ export interface CbetAdvice {
 interface Profile {
   band: Band;
   size: Size;
-  page: number;
   ip: number[];
   oop: number[];
 }
@@ -56,7 +55,6 @@ interface Profile {
 interface SizeRule {
   texture: string;
   size: Size;
-  pages: number[];
   also_band?: Band;
 }
 
@@ -73,7 +71,7 @@ export function cbetAdvice(spotId: string, flop: string, ip: Buckets, oop: Bucke
     const big = (s.bet_2_3 ?? 0) + (s.bet_1_2 ?? 0);
     const small = (s.bet_1_3 ?? 0) + (s.bet_min ?? 0);
     const band = bandOf(100 - (s.check ?? 0));
-    return { size: big > small ? "big" : "small", band, bands: [band], source: "book", strategy: s, pages: book.pages };
+    return { size: big > small ? "big" : "small", band, bands: [band], source: "book", strategy: s };
   }
   const rule = RULES.find((r) => texture.includes(r.texture));
   const v = [...ORDER.map((k) => ip[k]), ...ORDER.map((k) => oop[k])];
@@ -88,7 +86,6 @@ export function cbetAdvice(spotId: string, flop: string, ip: Buckets, oop: Bucke
     band: best.p.band,
     bands: BANDS.filter((b) => bands.has(b)),
     source: "profile",
-    pages: [...new Set([675, best.p.page, ...(rule?.pages ?? [])])].sort((a, b) => a - b),
     distance: Math.round(best.d * 10) / 10,
     ...(rule ? { rule: rule.texture } : {}),
   };

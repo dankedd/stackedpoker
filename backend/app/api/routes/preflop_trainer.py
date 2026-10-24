@@ -26,7 +26,7 @@ from pydantic import BaseModel, Field
 
 from app.config import get_settings
 from app.engines.learn.xp_calculator import level_for_xp
-from app.engines.preflop_trainer import ChartRef, InvalidHand, grade_hand
+from app.engines.preflop_trainer import ChartRef, InvalidHand, chart_for, grade_hand
 from app.middleware.auth import get_current_user
 from app.services import billing
 
@@ -53,8 +53,8 @@ async def _rpc(fn_name: str, args: dict, settings) -> dict:
 
 class HandRequest(BaseModel):
     kind: Literal["open", "pushfold", "defense"]
-    #: Book page for open/push-fold charts, Hand Range number for defense charts.
-    chart_id: int = Field(ge=1)
+    #: Chart id ("open_mtt_lj_25"); a legacy number from an older client also resolves.
+    chart_id: str | int
     stack: int | None = Field(default=None, ge=1, le=100)
     hand: str = Field(min_length=2, max_length=3)
     action: Literal["fold", "limp", "call", "raise", "allin"]
@@ -115,7 +115,8 @@ async def record_hand(body: HandRequest, current_user: dict = Depends(get_curren
             detail={"code": "TRAINER_DAILY_LIMIT_REACHED", "used": usage.used, "limit": usage.limit, "reset_at": usage.reset_at},
         )
 
-    hand_ref = f"{body.kind}:{body.chart_id}:{body.stack or ''}:{body.hand}"
+    # Always log the chart id, also for a legacy number (lifecycle emails resolve ids).
+    hand_ref = f"{body.kind}:{chart_for(ChartRef(body.kind, body.chart_id))['id']}:{body.stack or ''}:{body.hand}"
     try:
         row = await _rpc(
             "record_preflop_trainer_hand",

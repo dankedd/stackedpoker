@@ -83,7 +83,7 @@ export function scenarioFor(detail: PreflopDetail): Scenario | null {
   const r = detail.range;
   if (!r) return null;
   if (r.kind === "defense") {
-    const chart = DEFENSE_CHARTS.find((c) => c.n === r.n && c.group === (r.group ?? "mtt"));
+    const chart = DEFENSE_CHARTS.find((c) => c.id === r.chart);
     return chart ? { type: "def", kind: "freq", chart, stack: chart.stack, fmt: chart.group, hero: chart.hero, vil: chart.vil, spot: chart.spot } : null;
   }
   if (r.kind === "pushfold") {

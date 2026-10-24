@@ -71,14 +71,14 @@ export function lookupRfi(spot: PreflopSpot): LookupResult {
   if (best.kind === "pushfold" && pf) {
     return {
       ok: true,
-      ref: { kind: "pushfold", position, bucket: best.stack, page: pf.page, hr: pf.hr },
+      ref: { kind: "pushfold", position, bucket: best.stack, chart: pf.id },
       scenario: { type: "open", kind: "pf", chart: pf, stack: best.stack, fmt: "mtt", hero: position, w: 1 },
     };
   }
   const chart = open.find((c) => c.stack === best.stack)!;
   return {
     ok: true,
-    ref: { kind: "open", position, bucket: chart.stack, page: chart.page, hr: chart.hr },
+    ref: { kind: "open", position, bucket: chart.stack, chart: chart.id },
     scenario: { type: "open", kind: "freq", chart, stack: chart.stack, fmt: "mtt", hero: position },
   };
 }
@@ -133,7 +133,7 @@ export function lookupDefense(spot: PreflopSpot, group: "mtt" | "cash"): LookupR
 
   return {
     ok: true,
-    ref: { kind: "defense", position: hero, bucket: chart.stack, page: chart.page, hr: `Hand Range ${chart.n}`, n: chart.n, vil, spot: chart.spot, group, size: chart.size },
+    ref: { kind: "defense", position: hero, bucket: chart.stack, chart: chart.id, vil, spot: chart.spot, group, size: chart.size },
     scenario: { type: "def", kind: "freq", chart, stack: chart.stack, fmt: group, hero, vil, spot: chart.spot },
   };
 }

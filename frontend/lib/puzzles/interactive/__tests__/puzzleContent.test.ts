@@ -1,7 +1,10 @@
+import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { PUZZLES, getPuzzle } from '../data'
 import { DONK_BET_654R } from '../data/donk-bet-654r'
 import { SOURCES } from '../sources'
+import { SOURCE_CITATIONS } from '../sourceCitations'
 import { validatePuzzle } from '../validate'
 import { STREET_ORDER } from '../types'
 import type { InteractivePuzzle, SourceId } from '../types'
@@ -84,10 +87,34 @@ describe('source registry', () => {
   it('every source carries a page, a locator and a scope', () => {
     for (const [id, ref] of Object.entries(SOURCES)) {
       expect(ref.id, `${id} id mismatch`).toBe(id)
-      expect(ref.page, `${id} page`).toBeGreaterThan(0)
-      expect(ref.locator.trim().length, `${id} locator`).toBeGreaterThan(0)
+      expect(SOURCE_CITATIONS[id]?.page, `${id} page`).toBeGreaterThan(0)
+      expect(SOURCE_CITATIONS[id].locator.trim().length, `${id} locator`).toBeGreaterThan(0)
       expect(ref.scope.trim().length, `${id} scope`).toBeGreaterThan(0)
     }
+    expect(Object.keys(SOURCE_CITATIONS).sort()).toEqual(Object.keys(SOURCES).sort())
+  })
+
+  it('nothing the site renders names the source (work, author, chapter, page, diagram, hand range)', () => {
+    const shown = JSON.stringify([SOURCES, PUZZLES])
+    const hit = shown.match(/hand ranges?\s*\d|\bHR ?\d|\bp\. ?\d|\bpages? \d|modern poker theory|acevedo|\bchapter \d|\bdiagram \d|\bthe book\b/i)
+    expect(hit?.[0], hit ? shown.slice(Math.max(0, hit.index! - 80), hit.index! + 80) : '').toBeUndefined()
+  })
+
+  it('only tests import the citation file (it must never ship)', () => {
+    const root = resolve(__dirname, '../../../..')
+    const importers: string[] = []
+    const walk = (dir: string) => {
+      for (const name of readdirSync(dir)) {
+        const p = join(dir, name)
+        if (statSync(p).isDirectory()) {
+          if (!['node_modules', '__tests__', '.next', '.next-guard'].includes(name) && !name.startsWith('.')) walk(p)
+        } else if (/\.(ts|tsx)$/.test(name) && /from ['"][^'"]*sourceCitations['"]/.test(readFileSync(p, 'utf8'))) {
+          importers.push(p)
+        }
+      }
+    }
+    for (const d of ['app', 'components', 'lib']) walk(join(root, d))
+    expect(importers).toEqual([])
   })
 
   it('marks the BB vs UTG walkthrough as UTG-scoped so it cannot be read as BB vs BN', () => {
@@ -113,8 +140,8 @@ describe('654r puzzle — poker content', () => {
     // and what the Learn tables render. The book writes the seat as "BN".
     expect(puzzle.setup.villainSeat).toBe('BTN')
     expect(puzzle.setup.effectiveStackBb).toBe(30)
-    expect(SOURCES['preflop.bn-open-bb-call-30bb'].quote).toContain('49% opening range')
-    expect(SOURCES['preflop.bn-open-bb-call-30bb'].quote).toContain('64% GTO range')
+    expect(SOURCE_CITATIONS['preflop.bn-open-bb-call-30bb'].quote).toContain('49% opening range')
+    expect(SOURCE_CITATIONS['preflop.bn-open-bb-call-30bb'].quote).toContain('64% GTO range')
   })
 
   it('deals 7♠6♠ on a 654 rainbow flop', () => {
@@ -140,8 +167,8 @@ describe('654r puzzle — poker content', () => {
     expect(prose).not.toMatch(/\bflops? a straight\b/i)
     expect(flop.situation).toMatch(/top pair/i)
     expect(flop.situation).toMatch(/open-ended straight draw/i)
-    expect(SOURCES['example.654r-utg-straights'].quote).toContain('32')
-    expect(SOURCES['example.654r-utg-straights'].quote).toContain('87')
+    expect(SOURCE_CITATIONS['example.654r-utg-straights'].quote).toContain('32')
+    expect(SOURCE_CITATIONS['example.654r-utg-straights'].quote).toContain('87')
   })
 
   it('answers the flop with the small lead the source prefers at this depth', () => {
@@ -300,15 +327,15 @@ describe('BB vs BN puzzle — one preflop idea, and no more evidence than exists
     // the book prints in words — the chart itself is an image.
     expect(puzzle.setup.heroCards).toEqual(['Ah', '7c'])
     expect(preflop.situation).toMatch(/offsuit ace/i)
-    expect(SOURCES['bb100.linear-3bet'].quote).toContain('offsuit Ax')
-    expect(SOURCES['bb100.linear-3bet'].quote).toContain('very linear')
+    expect(SOURCE_CITATIONS['bb100.linear-3bet'].quote).toContain('offsuit Ax')
+    expect(SOURCE_CITATIONS['bb100.linear-3bet'].quote).toContain('very linear')
   })
 
   it('answers Call, with folding and 3-betting both unsupported', () => {
     expect(preflop.bestOptionId).toBe('call')
     expect(preflop.options.find((o) => o.id === 'fold')!.verdict).toBe('mistake')
     expect(preflop.options.find((o) => o.id === 'three-bet')!.verdict).toBe('mistake')
-    expect(SOURCES['bb100.hr82-aggregates'].quote).toContain('Call 43.4%')
+    expect(SOURCE_CITATIONS['bb100.bb-vs-btn-aggregates'].quote).toContain('Call 43.4%')
   })
 
   it('states no frequency for the specific combo', () => {
@@ -327,7 +354,7 @@ describe('BB vs BN puzzle — one preflop idea, and no more evidence than exists
   })
 
   it('discloses that the bet-sizes come from the book’s game assumptions, not these pages', () => {
-    expect((preflop.unsourced ?? []).some((n) => /179-180/.test(n.answer))).toBe(true)
+    expect((preflop.unsourced ?? []).some((n) => /game assumptions/.test(n.answer))).toBe(true)
   })
 
   it('keeps the Ch.12 figures scoped to their own 20-40bb MTT-range simulations', () => {
@@ -338,7 +365,7 @@ describe('BB vs BN puzzle — one preflop idea, and no more evidence than exists
       expect(SOURCES[id].scope, `${id} must name its stack depths`).toMatch(/20bb\/30bb\/40bb/)
       expect(SOURCES[id].scope, `${id} must name MTT ranges`).toMatch(/MTT/)
     }
-    expect(SOURCES['position.ch12-sim-scope'].quote).toContain('MTT starting ranges')
+    expect(SOURCE_CITATIONS['position.ch12-sim-scope'].quote).toContain('MTT starting ranges')
     // And the puzzle must say so where a reader would otherwise reach for it.
     const btnRange = puzzle.ranges.find((r) => r.seat === 'villain')!
     expect((btnRange.unsourced ?? []).some((n) => /44%/.test(n.answer))).toBe(true)
@@ -356,7 +383,7 @@ describe('J66 puzzle — one sizing idea, and 72% kept at range level', () => {
     expect(flop.board).toEqual(['Js', '6h', '6d'])
     // The board must actually be paired — the entire lesson is about that pair.
     expect(new Set(flop.board.map((c) => c[0])).size).toBe(2)
-    expect(SOURCES['ex4.j66-headline'].quote).toContain('J♠6♥6♦ (40bbs)')
+    expect(SOURCE_CITATIONS['ex4.j66-headline'].quote).toContain('J♠6♥6♦ (40bbs)')
   })
 
   it('is flop-only, in position, after the big blind checks', () => {
@@ -374,14 +401,14 @@ describe('J66 puzzle — one sizing idea, and 72% kept at range level', () => {
     expect(flop.options.find((o) => o.id === 'check')!.verdict).toBe('defensible')
     // "the BN cannot use a large sizing" is as explicit as the book gets.
     expect(flop.options.find((o) => o.id === 'bet-two-thirds')!.verdict).toBe('mistake')
-    expect(SOURCES['ex4.j66-cbet-72'].quote).toContain('cannot use a large sizing')
-    expect(SOURCES['ex4.paired-boards-min-bet'].quote).toContain('frequently min-bet')
+    expect(SOURCE_CITATIONS['ex4.j66-cbet-72'].quote).toContain('cannot use a large sizing')
+    expect(SOURCE_CITATIONS['ex4.paired-boards-min-bet'].quote).toContain('frequently min-bet')
   })
 
   it('uses both sides of the range comparison the source prints', () => {
     // This spot is unusual in the chapter: the book gives BB and BN figures for
     // the same flop, and the argument only works if both are used.
-    const quote = SOURCES['ex4.j66-range-comparison'].quote!
+    const quote = SOURCE_CITATIONS['ex4.j66-range-comparison'].quote!
     expect(quote).toContain('14%')
     expect(quote).toContain('23%')
     expect(quote).toContain('8.9%')
@@ -424,7 +451,7 @@ describe('J66 puzzle — one sizing idea, and 72% kept at range level', () => {
       ...flop.theory.flatMap((t) => t.unsourced ?? []),
       ...puzzle.ranges.flatMap((r) => r.unsourced ?? []),
     ]
-    expect(notes.some((n) => /691-692|Table 116/.test(n.answer))).toBe(true)
+    expect(notes.some((n) => /do not say/.test(n.answer))).toBe(true)
     expect(notes.some((n) => /per-hand|per-class|hand class/i.test(n.answer))).toBe(true)
     expect(puzzle.ranges.every((r) => r.kind !== 'grid')).toBe(true)
   })
@@ -438,7 +465,7 @@ describe('J66 puzzle — one sizing idea, and 72% kept at range level', () => {
     // The hard constraint on this puzzle: two pages, no borrowing from the
     // surrounding chapter however well the numbers there would fit.
     for (const id of allSourceIds(puzzle)) {
-      expect([690, 663], `${id} is p.${SOURCES[id].page}`).toContain(SOURCES[id].page)
+      expect([690, 663], `${id} is p.${SOURCE_CITATIONS[id].page}`).toContain(SOURCE_CITATIONS[id].page)
     }
   })
 
@@ -464,8 +491,8 @@ describe('984 puzzle — a complete four-street hand', () => {
   })
 
   it('picks the turn card the source names as the best in the deck', () => {
-    expect(SOURCES['ex3.turn-best-card-is-five'].quote).toMatch(/best cards are offsuit 5s/)
-    expect(SOURCES['ex3.turn-donk-best-cards'].quote).toMatch(/7, 6, 5 that complete straights/)
+    expect(SOURCE_CITATIONS['ex3.turn-best-card-is-five'].quote).toMatch(/best cards are offsuit 5s/)
+    expect(SOURCE_CITATIONS['ex3.turn-donk-best-cards'].quote).toMatch(/7, 6, 5 that complete straights/)
   })
 
   it('makes the straight on the turn, not the flop', () => {
@@ -507,14 +534,14 @@ describe('A♥Q♦3♠ puzzle — a range result that must never be read as a ha
     expect(flop.board).toEqual(['Ah', 'Qd', '3s'])
     // Rainbow, so no flush draw is available to either range.
     expect(new Set(flop.board.map((c) => c[1])).size).toBe(3)
-    expect(SOURCES['aq3.example-header'].quote).toContain('A♥Q♦3♠')
-    expect(SOURCES['aq3.example-header'].quote).toContain('40bb')
+    expect(SOURCE_CITATIONS['aq3.example-header'].quote).toContain('A♥Q♦3♠')
+    expect(SOURCE_CITATIONS['aq3.example-header'].quote).toContain('40bb')
   })
 
   it('answers with the 2/3-pot bet the source says costs nothing to standardise on', () => {
     expect(flop.bestOptionId).toBe('bet-two-thirds')
     expect(flop.options.map((o) => o.label)).toEqual(['Check', 'Bet 1/3 pot', 'Bet 2/3 pot'])
-    expect(SOURCES['aq3.simplification-ev'].quote).toContain('2/3-pot bet-size retains all of IP’s EV')
+    expect(SOURCE_CITATIONS['aq3.simplification-ev'].quote).toContain('2/3-pot bet-size retains all of IP’s EV')
   })
 
   it('grades the small bet defensible and the check a mistake', () => {
@@ -524,7 +551,7 @@ describe('A♥Q♦3♠ puzzle — a range result that must never be read as a ha
     // c-bet at 2/3 retains ALL of IP's EV, so a checking range recovers nothing.
     expect(flop.options.find((o) => o.id === 'bet-third')!.verdict).toBe('defensible')
     expect(flop.options.find((o) => o.id === 'check')!.verdict).toBe('mistake')
-    expect(SOURCES['cbet.default-third-pot'].quote).toContain('default to c-betting 1/3-')
+    expect(SOURCE_CITATIONS['cbet.default-third-pot'].quote).toContain('default to c-betting 1/3-')
   })
 
   it('never attaches the 1.07% / 6.6bb/100 figure to the hero hand', () => {
@@ -568,7 +595,7 @@ describe('A♥Q♦3♠ puzzle — a range result that must never be read as a ha
     // evidence of value, and the source says in the same sentence that it isn't.
     const block = flop.theory.find((t) => t.id === 'used-is-not-profitable')!
     expect(block.body).toMatch(/14\.45%/)
-    expect(SOURCES['aq3.simplification-ev'].quote).toContain('does not generate any extra EV')
+    expect(SOURCE_CITATIONS['aq3.simplification-ev'].quote).toContain('does not generate any extra EV')
   })
 
   it('keeps the two board-family aggregates out of this flop’s numbers', () => {
@@ -576,7 +603,7 @@ describe('A♥Q♦3♠ puzzle — a range result that must never be read as a ha
     // cited for direction and neither may be presented as an AQ3♠ measurement.
     expect(SOURCES['cbet.axx-96'].scope).toMatch(/ALL Axx flops/)
     expect(SOURCES['cbet.axx-96'].scope).toMatch(/not a measurement of A♥Q♦3♠/)
-    expect(SOURCES['cbet.check-back-costs'].scope).toMatch(/whole Ch.12 dataset/)
+    expect(SOURCES['cbet.check-back-costs'].scope).toMatch(/whole dataset/)
     expect(SOURCES['cbet.check-back-costs'].scope).toMatch(/not a figure for A♥Q♦3♠/)
   })
 
@@ -586,7 +613,7 @@ describe('A♥Q♦3♠ puzzle — a range result that must never be read as a ha
     const bb = puzzle.ranges.find((r) => r.id === 'bb-range-aq3')!
     expect(bb.bars!.map((b) => b.pct)).toEqual([70, 10])
     expect((bb.unsourced ?? []).some((n) => /80%/.test(n.question))).toBe(true)
-    expect(SOURCES['aq3.bb-trash-16-equity'].quote).toContain('70% trash hands and 10% weak hands')
+    expect(SOURCE_CITATIONS['aq3.bb-trash-16-equity'].quote).toContain('70% trash hands and 10% weak hands')
   })
 
   it('is flop-only, with the pot the preflop action adds up to', () => {
@@ -653,7 +680,7 @@ describe('position-flip puzzle — the book’s own modified simulation, labelle
     const villain = puzzle.ranges.find((r) => r.id === 'villain-bb-range')!
     expect(hero.headline).toBe('49%')
     expect(villain.headline).toBe('64%')
-    expect(SOURCES['flip.hero-oop-with-bn-range'].quote).toContain('keep their original ranges')
+    expect(SOURCE_CITATIONS['flip.hero-oop-with-bn-range'].quote).toContain('keep their original ranges')
   })
 
   it('keeps 48% and 9.23% as the same range priced twice, never as two strategies', () => {
@@ -665,8 +692,8 @@ describe('position-flip puzzle — the book’s own modified simulation, labelle
     // error this exhibit exists to prevent.
     expect(exhibit.scope).toMatch(/48%/)
     expect(exhibit.scope).toMatch(/9\.23%/)
-    expect(SOURCES['position.654r-ip-cbet'].quote).toContain('48% of the time')
-    expect(SOURCES['flip.654r-oop-frequency'].quote).toContain('9.23%')
+    expect(SOURCE_CITATIONS['position.654r-ip-cbet'].quote).toContain('48% of the time')
+    expect(SOURCE_CITATIONS['flip.654r-oop-frequency'].quote).toContain('9.23%')
     expect(SOURCES['flip.654r-oop-frequency'].scope).toMatch(/NOT how often a button c-bets/i)
   })
 
@@ -680,7 +707,7 @@ describe('position-flip puzzle — the book’s own modified simulation, labelle
     expect(flop.explanation).toMatch(/9\.23%/)
     expect(flop.explanation).toMatch(/48%/)
     expect(flop.explanation).toMatch(/125%/)
-    expect(SOURCES['flip.two-street-game'].quote).toContain('triple barrel')
+    expect(SOURCE_CITATIONS['flip.two-street-game'].quote).toContain('triple barrel')
   })
 
   it('states the cost of the seat in pot share, on both boards', () => {
@@ -690,15 +717,15 @@ describe('position-flip puzzle — the book’s own modified simulation, labelle
     expect(values).toContain('9.7% of the pot')
     expect(values).toContain('68.3%')
     expect(values).toContain('6.7% of the pot')
-    expect(SOURCES['flip.654r-oop-eqr'].quote).toContain('from 100% to 79%')
-    expect(SOURCES['flip.a76r-oop-cost'].quote).toContain('68.3%')
+    expect(SOURCE_CITATIONS['flip.654r-oop-eqr'].quote).toContain('from 100% to 79%')
+    expect(SOURCE_CITATIONS['flip.a76r-oop-cost'].quote).toContain('68.3%')
   })
 
   it('gives no per-combo frequency, and says the hand is illustrative', () => {
     // The source prints one aggregate for this node. Turning it into a figure
     // for AQo would be invented solver output.
     const notes = [...(flop.unsourced ?? []), ...flop.theory.flatMap((t) => t.unsourced ?? [])]
-    expect(notes.some((n) => /The book does not say/i.test(n.answer))).toBe(true)
+    expect(notes.some((n) => /The source does not say/i.test(n.answer))).toBe(true)
     expect(notes.some((n) => /no per-combo frequencies/i.test(n.answer))).toBe(true)
     expect(puzzle.setup.gameNotes).toMatch(/illustrative/i)
     expect(puzzle.ranges.every((r) => r.kind !== 'grid')).toBe(true)
@@ -742,7 +769,7 @@ describe('top-card puzzle — two flops, one hand, one variable', () => {
 
   it('transcribes the top-card ranking exactly as the source prints it', () => {
     for (const fragment of ['222', '96%', '93%', '88%', '85%', '62%']) {
-      expect(SOURCES['cbet.by-top-card'].quote, `missing ${fragment}`).toContain(fragment)
+      expect(SOURCE_CITATIONS['cbet.by-top-card'].quote, `missing ${fragment}`).toContain(fragment)
     }
     const table = axx.theory.find((t) => t.id === 'the-ranking')!.exhibit!
     expect(table.rows.map((r) => r.value)).toEqual(['100%', '96%', '93%', '88%', '85%', '62%'])
@@ -798,7 +825,7 @@ describe('top-card puzzle — two flops, one hand, one variable', () => {
     const notes = puzzle.decisions.flatMap((d) => d.theory.flatMap((t) => t.unsourced ?? []))
     const claim = notes.find((n) => /best single predictor/i.test(n.question))!
     expect(claim.answer).toMatch(/never says so/i)
-    expect(SOURCES['cbet.straights-favor-bb'].quote).toContain('c-bet frequency decreases')
+    expect(SOURCE_CITATIONS['cbet.straights-favor-bb'].quote).toContain('c-bet frequency decreases')
   })
 
   it('keeps the Ch.12 blend visible: 96% averages two different openers', () => {
@@ -806,7 +833,7 @@ describe('top-card puzzle — two flops, one hand, one variable', () => {
     // the button's own Axx figure is not the printed 96%.
     const note = (axx.unsourced ?? []).find((n) => /button’s number/i.test(n.question))!
     expect(note.answer).toMatch(/MTT starting ranges/)
-    expect(SOURCES['cbet.range-strength-drives-frequency'].quote).toMatch(/UTG’s c-bet frequency and bet-sizes are bigger/)
+    expect(SOURCE_CITATIONS['cbet.range-strength-drives-frequency'].quote).toMatch(/UTG’s c-bet frequency and bet-sizes are bigger/)
   })
 })
 
@@ -836,7 +863,7 @@ describe('turn check-raise puzzle — one node, two whole-range numbers', () => 
 
   it('deals a semi-bluff the source names by name at the flop node it passed through', () => {
     expect(puzzle.setup.heroCards).toEqual(['Jh', 'Th'])
-    expect(SOURCES['ex3.flop-combo-draws-jhth'].quote).toContain('J♥T♥')
+    expect(SOURCE_CITATIONS['ex3.flop-combo-draws-jhth'].quote).toContain('J♥T♥')
     // And it must be described as a draw, never as a made hand.
     expect(turn.situation).toMatch(/flush draw/i)
     expect(turn.situation).toMatch(/open-ended straight draw/i)
@@ -857,9 +884,9 @@ describe('turn check-raise puzzle — one node, two whole-range numbers', () => 
     for (const id of ['ex3.turn-second-barrel-oop', 'ex3.turn-xr-all-in']) {
       expect(SOURCES[id].scope, `${id} must say the figures are whole-range`).toMatch(/WHOLE-RANGE/)
     }
-    expect(SOURCES['ex3.turn-second-barrel-oop'].quote).toContain('over 40% vs a turn c-bet')
-    expect(SOURCES['ex3.turn-xr-all-in'].quote).toContain('x/r the turn 14% of the time')
-    expect(SOURCES['ex3.turn-xr-all-in'].quote).toContain('smaller raise size would commit too many chips')
+    expect(SOURCE_CITATIONS['ex3.turn-second-barrel-oop'].quote).toContain('over 40% vs a turn c-bet')
+    expect(SOURCE_CITATIONS['ex3.turn-xr-all-in'].quote).toContain('x/r the turn 14% of the time')
+    expect(SOURCE_CITATIONS['ex3.turn-xr-all-in'].quote).toContain('smaller raise size would commit too many chips')
   })
 
   it('shows the check-call share as a residual ceiling, not a solved frequency', () => {
@@ -875,7 +902,7 @@ describe('turn check-raise puzzle — one node, two whole-range numbers', () => 
 
   it('labels the commitment arithmetic as ours, not the book’s', () => {
     const block = turn.theory.find((t) => t.id === 'why-the-raise-is-all-in')!
-    expect(block.exhibit!.scope).toMatch(/NOT in the book/)
+    expect(block.exhibit!.scope).toMatch(/NOT in the source/)
     expect((block.unsourced ?? []).some((n) => /raise size to compare/i.test(n.question))).toBe(true)
   })
 
@@ -926,8 +953,8 @@ describe('25bb four-branch puzzle — the jam is a branch, not a panic', () => {
       label: 'All-in',
       betBb: 25,
     })
-    expect(SOURCES['preflop.bb-vs-bn-25bb-chart'].quote).toContain('All-in 11.4%')
-    expect(SOURCES['preflop.bb-vs-bn-25bb-chart'].quote).toContain('3-bet 8.2%')
+    expect(SOURCE_CITATIONS['preflop.bb-vs-bn-25bb-chart'].quote).toContain('All-in 11.4%')
+    expect(SOURCE_CITATIONS['preflop.bb-vs-bn-25bb-chart'].quote).toContain('3-bet 8.2%')
   })
 
   it('never adds the two raising branches into one number', () => {
@@ -958,8 +985,8 @@ describe('25bb four-branch puzzle — the jam is a branch, not a panic', () => {
     // in none of the four groups the non-all-in 3-bet is made of.
     expect(puzzle.setup.heroCards).toEqual(['8s', '8d'])
     expect(preflop.situation).toMatch(/pocket pair/i)
-    expect(SOURCES['bb25.pairs-and-axo-jam'].quote).toContain('Pocket pairs and Axo really like getting all-in')
-    expect(SOURCES['preflop.bb-3bet-composition-25bb'].quote).toContain('JJ+')
+    expect(SOURCE_CITATIONS['bb25.pairs-and-axo-jam'].quote).toContain('Pocket pairs and Axo really like getting all-in')
+    expect(SOURCE_CITATIONS['preflop.bb-3bet-composition-25bb'].quote).toContain('JJ+')
   })
 
   it('states no frequency for the specific combo', () => {
@@ -987,8 +1014,8 @@ describe('25bb four-branch puzzle — the jam is a branch, not a panic', () => {
   })
 
   it('discloses that the ante comes from Ch.7, not from the defence chapter', () => {
-    expect((preflop.unsourced ?? []).some((n) => /293/.test(n.answer))).toBe(true)
-    expect(SOURCES['mtt.solver-environment'].quote).toContain('9-max tables with a 12.5% ante')
+    expect(SOURCE_CITATIONS['mtt.solver-environment'].page).toBe(293)
+    expect(SOURCE_CITATIONS['mtt.solver-environment'].quote).toContain('9-max tables with a 12.5% ante')
     expect(SOURCES['mtt.solver-environment'].scope).toMatch(/Ch\.8|defence chapter/i)
   })
 
@@ -997,12 +1024,12 @@ describe('25bb four-branch puzzle — the jam is a branch, not a panic', () => {
     // one page earlier (All-in 18% / Call 58.2% / Fold 23.8%) has no non-all-in
     // 3-bet branch at all, so borrowing from it would delete this puzzle's idea.
     for (const id of allSourceIds(puzzle)) {
-      const ref = SOURCES[id]
+      const ref = SOURCE_CITATIONS[id]
       if (ref.page === 293 || ref.page === 163 || ref.page === 360) continue // game setup, not strategy
       expect(ref.page, `${id} is outside the 25bb section`).toBeGreaterThanOrEqual(386)
       expect(ref.page, `${id} is outside the 25bb section`).toBeLessThanOrEqual(387)
     }
-    expect(SOURCES['defence.chapter-depths'].quote).toContain('15bb, 25bb, 40bb and 60bb')
+    expect(SOURCE_CITATIONS['defence.chapter-depths'].quote).toContain('15bb, 25bb, 40bb and 60bb')
   })
 })
 
@@ -1050,7 +1077,7 @@ describe('A76r puzzle — the mirror of 654r, and the numbers that must not swap
     expect(flop.options[0].id).toBe('check')
     expect(flop.options.find((o) => o.id === 'donk-25')!.verdict).toBe('mistake')
     expect(flop.options.find((o) => o.id === 'donk-67')!.verdict).toBe('mistake')
-    expect(SOURCES['a76r.check-100'].quote).toContain('simply check 100% on A76r')
+    expect(SOURCE_CITATIONS['a76r.check-100'].quote).toContain('simply check 100% on A76r')
   })
 
   it('labels the 0.3% as the cross-simulation average it is, wherever it appears', () => {
@@ -1061,8 +1088,8 @@ describe('A76r puzzle — the mirror of 654r, and the numbers that must not swap
     expect(mentions.length).toBeGreaterThan(0)
     for (const m of mentions) expect(m, `unlabelled 0.3%: "${m}"`).toMatch(/average/i)
     expect(SOURCES['donk.654r-is-highest'].scope).toMatch(/Average across the BB vs BN and BB vs UTG/i)
-    expect(SOURCES['a76r.donk-option-worthless'].quote).toContain('0.4%')
-    expect(SOURCES['a76r.donk-option-worthless'].page).toBe(650)
+    expect(SOURCE_CITATIONS['a76r.donk-option-worthless'].quote).toContain('0.4%')
+    expect(SOURCE_CITATIONS['a76r.donk-option-worthless'].page).toBe(650)
   })
 
   it('states no per-combo frequency for the hero hand', () => {
@@ -1072,7 +1099,7 @@ describe('A76r puzzle — the mirror of 654r, and the numbers that must not swap
   })
 
   it('keeps the 31%-vs-8% strong-hand gap as the centre of the explanation', () => {
-    expect(SOURCES['a76r.buckets'].quote).toContain('8% strong hands and IP has a staggering 31%')
+    expect(SOURCE_CITATIONS['a76r.buckets'].quote).toContain('8% strong hands and IP has a staggering 31%')
     const rangeBlock = flop.theory.find((t) => t.id === 'whose-board-is-this')!
     const rows = rangeBlock.exhibit!.rows
     expect(rows.find((r) => r.label.includes('BN strong'))!.value).toBe('31%')
@@ -1080,7 +1107,7 @@ describe('A76r puzzle — the mirror of 654r, and the numbers that must not swap
   })
 
   it('scopes the 53% raise frequency to the 1/4-pot lead it was measured against', () => {
-    expect(SOURCES['donk.654r-ip-raise-frequency'].quote).toContain('1/4-pot')
+    expect(SOURCE_CITATIONS['donk.654r-ip-raise-frequency'].quote).toContain('1/4-pot')
     for (const s of prose.filter((s) => s.includes('53%'))) {
       expect(s, `unscoped 53%: "${s}"`).toMatch(/1\/4-pot|quarter/i)
     }
@@ -1094,9 +1121,9 @@ describe('A76r puzzle — the mirror of 654r, and the numbers that must not swap
     // against p.652's "25% when OOP", not assumed. Claiming "% of the pot" with
     // no note would be presenting an inference as a transcription.
     const notes = flop.theory.flatMap((t) => t.unsourced ?? [])
-    expect(notes.some((n) => /unit/i.test(n.question) && /652/.test(n.answer))).toBe(true)
-    expect(SOURCES['a76r.top-pair-lock-ev'].quote).toContain('reduces from 25 to 13')
-    expect(SOURCES['a76r.bb-ev-share-of-pot'].quote).toContain('25% when OOP')
+    expect(notes.some((n) => /unit/i.test(n.question) && /25% of the pot/.test(n.answer))).toBe(true)
+    expect(SOURCE_CITATIONS['a76r.top-pair-lock-ev'].quote).toContain('reduces from 25 to 13')
+    expect(SOURCE_CITATIONS['a76r.bb-ev-share-of-pot'].quote).toContain('25% when OOP')
   })
 
   it('never turns the 85% into an equity figure for the hero hand', () => {
@@ -1165,7 +1192,7 @@ describe('connected-boards puzzle — one effect, two flops, and no number', () 
       const ranks = board.map((c) => RANK.indexOf(c[0])).sort((a, b) => a - b)
       expect(ranks[2] - ranks[0], `${board.join('')} must allow no flopped straight`).toBeGreaterThan(4)
     }
-    expect(SOURCES['cbet.oesd-subcategory'].quote).toContain('Within the flops with zero possible straights')
+    expect(SOURCE_CITATIONS['cbet.oesd-subcategory'].quote).toContain('Within the flops with zero possible straights')
   })
 
   it('enumerates the three open-enders instead of asserting a bucket the book never counted', () => {
@@ -1175,7 +1202,7 @@ describe('connected-boards puzzle — one effect, two flops, and no number', () 
     for (const draw of ['J-T', 'T-7', '7-6']) {
       expect(prose(threeOesds), `the ${draw} open-ender is not shown`).toContain(draw)
     }
-    expect(SOURCES['flops.oesd-subcategory-limits'].quote).toContain('only focus on the number of straights')
+    expect(SOURCE_CITATIONS['flops.oesd-subcategory-limits'].quote).toContain('only focus on the number of straights')
   })
 
   it('states no c-bet frequency for any straight-count bucket', () => {
@@ -1191,8 +1218,8 @@ describe('connected-boards puzzle — one effect, two flops, and no number', () 
     }
     // And the one place the book DOES print per-bucket figures is cited without
     // a quote, so the chip UI cannot render those numbers onto the screen.
-    expect(SOURCES['cbet.straight-count-figures-elsewhere'].quote).toBeUndefined()
-    expect(SOURCES['cbet.straight-count-figures-elsewhere'].page).toBe(673)
+    expect(SOURCE_CITATIONS['cbet.straight-count-figures-elsewhere'].quote).toBeUndefined()
+    expect(SOURCE_CITATIONS['cbet.straight-count-figures-elsewhere'].page).toBe(673)
   })
 
   it('declares its own source strength as DERIVED where the learner reads it', () => {
@@ -1212,8 +1239,8 @@ describe('connected-boards puzzle — one effect, two flops, and no number', () 
     expect(threeOesds.bestOptionId).toBe('bet-67')
     expect(noStraights.options.find((o) => o.id === 'check')!.verdict).toBe('mistake')
     expect(threeOesds.options.find((o) => o.id === 'check')!.verdict).toBe('defensible')
-    expect(SOURCES['cbet.three-oesd-lowest'].quote).toContain('lowest c-bet frequency')
-    expect(SOURCES['cbet.three-oesd-lowest'].quote).toContain('larger bet-sizes')
+    expect(SOURCE_CITATIONS['cbet.three-oesd-lowest'].quote).toContain('lowest c-bet frequency')
+    expect(SOURCE_CITATIONS['cbet.three-oesd-lowest'].quote).toContain('larger bet-sizes')
   })
 
   it('keeps the Ch.12 dataset boundary on the passages it leans on', () => {
@@ -1221,7 +1248,7 @@ describe('connected-boards puzzle — one effect, two flops, and no number', () 
     // so neither ref may read as a solved answer for one 30bb cash spot.
     for (const id of ['cbet.straights-favor-bb', 'cbet.three-oesd-lowest']) {
       expect(SOURCES[id].scope, `${id} must name its stack depths`).toMatch(/20bb\/30bb\/40bb/)
-      expect(SOURCES[id].page).toBe(661)
+      expect(SOURCE_CITATIONS[id].page).toBe(661)
     }
   })
 
@@ -1303,21 +1330,21 @@ describe('turn categories puzzle — a board read, with nothing else attached', 
     for (const id of ['turn.984-good-cards-xx', 'turn.984-worst-card-xx', 'turn.984-xx-setup']) {
       expect(SOURCES[id].scope, `${id} must name the x/x line`).toMatch(/x\/x|checked through/)
     }
-    expect(SOURCES['turn.984-good-cards-xx'].quote).toContain('good turns for OOP')
-    expect(SOURCES['turn.984-good-cards-xx'].quote).toContain('particularly the aces, are good for IP')
+    expect(SOURCE_CITATIONS['turn.984-good-cards-xx'].quote).toContain('good turns for OOP')
+    expect(SOURCE_CITATIONS['turn.984-good-cards-xx'].quote).toContain('particularly the aces, are good for IP')
     expect(SOURCES['ex3.turn-donk-best-cards'].scope).toMatch(/x\/b\/c|c-bet and call|c-bet \/ call/)
   })
 
   it('cites the six groups verbatim and the "one or more" overlap', () => {
-    const q = SOURCES['turn.categories'].quote!
+    const q = SOURCE_CITATIONS['turn.categories'].quote!
     for (const group of ['Paired Board', 'Flush', 'Straight', 'Ace', 'Overcard', 'Brick/Blank']) {
       expect(q, `the six-group list must contain "${group}"`).toContain(group)
     }
-    expect(SOURCES['turn.categories'].page).toBe(760)
-    expect(SOURCES['turn.why-groups'].page).toBe(759)
-    expect(SOURCES['turn.why-groups'].quote).toContain('49 possible turn cards')
-    expect(SOURCES['turn.why-groups'].quote).toContain('one or more of the following groups')
-    expect(SOURCES['turn.category-subdivision'].quote).toContain('backdoor flush draw')
+    expect(SOURCE_CITATIONS['turn.categories'].page).toBe(760)
+    expect(SOURCE_CITATIONS['turn.why-groups'].page).toBe(759)
+    expect(SOURCE_CITATIONS['turn.why-groups'].quote).toContain('49 possible turn cards')
+    expect(SOURCE_CITATIONS['turn.why-groups'].quote).toContain('one or more of the following groups')
+    expect(SOURCE_CITATIONS['turn.category-subdivision'].quote).toContain('backdoor flush draw')
   })
 
   it('stops at the reading and explains that there is nothing to play', () => {
@@ -1346,7 +1373,7 @@ describe('862r puzzle — frequency and size are separate dials', () => {
     expect(flop.board).toEqual(['8h', '6d', '2s'])
     // Rainbow: three distinct suits, so no flush or backdoor flush exists here.
     expect(new Set(flop.board.map((c) => c[1])).size).toBe(3)
-    expect(SOURCES['ex5.low-freq-big-size'].quote).toContain('Low c-bet % and big bet-size')
+    expect(SOURCE_CITATIONS['ex5.low-freq-big-size'].quote).toContain('Low c-bet % and big bet-size')
   })
 
   it('answers with the big size, and grades the small size as the wrong dial', () => {
@@ -1362,15 +1389,15 @@ describe('862r puzzle — frequency and size are separate dials', () => {
     expect(flop.explanation).toMatch(/low c-bet|frequency/i)
     // The source's own sentence carries both clauses; losing either one turns
     // this puzzle back into the single-dial instinct it exists to break.
-    expect(SOURCES['ex5.range-distribution'].quote).toContain('big bet-size')
-    expect(SOURCES['ex5.range-distribution'].quote).toContain('low c-bet frequency')
+    expect(SOURCE_CITATIONS['ex5.range-distribution'].quote).toContain('big bet-size')
+    expect(SOURCE_CITATIONS['ex5.range-distribution'].quote).toContain('low c-bet frequency')
   })
 
   it('never presents 62% as this flop’s c-bet frequency', () => {
     // p.661's 62% is the 6xx CATEGORY average. 8♥6♦2♠ is an 8xx flop, and no
     // 8xx figure is printed anywhere — Diagram 44 is an image. Attaching 62%
     // to this board would be the single easiest fabrication in the chapter.
-    expect(SOURCES['cbet.by-top-card'].quote).toContain('6xx being the lowest at only 62%')
+    expect(SOURCE_CITATIONS['cbet.by-top-card'].quote).toContain('6xx being the lowest at only 62%')
     expect(SOURCES['cbet.by-top-card'].scope).toMatch(/AVERAGE over every flop/)
     expect(prose).toMatch(/8xx/)
     expect(prose).toMatch(/NOT a 6xx flop|not a 6xx flop/)
@@ -1388,8 +1415,8 @@ describe('862r puzzle — frequency and size are separate dials', () => {
 
   it('places A6 in the good bucket on the source’s authority, not ours', () => {
     expect(puzzle.setup.heroCards).toEqual(['As', '6c'])
-    expect(SOURCES['ex5.middle-pair-a6'].quote).toContain('A6 and K6 are mostly c-bet')
-    expect(SOURCES['eqb.definitions'].quote).toContain('greater or equal to 50% but lower than 75%')
+    expect(SOURCE_CITATIONS['ex5.middle-pair-a6'].quote).toContain('A6 and K6 are mostly c-bet')
+    expect(SOURCE_CITATIONS['eqb.definitions'].quote).toContain('greater or equal to 50% but lower than 75%')
     // "Mostly c-bet" is a direction. No invented per-combo frequency.
     expect(prose).not.toMatch(/A6 (?:is )?(?:c-)?bets? \d+%/i)
   })
@@ -1445,16 +1472,16 @@ describe('two-depths puzzle — the stack decides, and the 3-bet branch is genui
     // card of the 40bb 3-betting value range vs the BN. A hand that only one of
     // those passages reached would make one of the two answers unsourceable.
     expect(puzzle.setup.heroCards).toEqual(['9s', '9d'])
-    expect(SOURCES['depth.15bb-who-jams'].quote).toContain('Most pocket pairs make great rejamming hands')
-    expect(SOURCES['depth.15bb-who-jams'].quote).toContain('except AA and KK')
-    expect(SOURCES['preflop.bb-3bet-value-40bb'].quote).toContain('99+, ATs+, and AJ+')
+    expect(SOURCE_CITATIONS['depth.15bb-who-jams'].quote).toContain('Most pocket pairs make great rejamming hands')
+    expect(SOURCE_CITATIONS['depth.15bb-who-jams'].quote).toContain('except AA and KK')
+    expect(SOURCE_CITATIONS['preflop.bb-3bet-value-40bb'].quote).toContain('99+, ATs+, and AJ+')
   })
 
   it('jams at 15bb and 3-bets at 40bb', () => {
     expect(shallow.bestOptionId).toBe('all-in-15')
     expect(deep.bestOptionId).toBe('three-bet-40')
-    expect(SOURCES['depth.bb-vs-bn-15bb-chart'].quote).toContain('All-in 18%')
-    expect(SOURCES['preflop.bb-vs-bn-40bb-chart'].quote).toContain('3-bet 14.1%')
+    expect(SOURCE_CITATIONS['depth.bb-vs-bn-15bb-chart'].quote).toContain('All-in 18%')
+    expect(SOURCE_CITATIONS['preflop.bb-vs-bn-40bb-chart'].quote).toContain('3-bet 14.1%')
   })
 
   it('offers a 3-bet at 15bb and answers it with the branch’s absence', () => {
@@ -1463,7 +1490,7 @@ describe('two-depths puzzle — the stack decides, and the 3-bet branch is genui
     // is on screen so the learner meets the gap rather than never seeing it.
     const threeBet = shallow.options.find((o) => o.id === 'three-bet-15')!
     expect(threeBet.verdict).toBe('mistake')
-    expect(SOURCES['depth.15bb-no-non-allin-3bet'].quote).toContain(
+    expect(SOURCE_CITATIONS['depth.15bb-no-non-allin-3bet'].quote).toContain(
       'too shallow to have a non-all-in 3-betting range'
     )
     expect(threeBet.shortWhy).toMatch(/too shallow to have a non-all-in 3-betting range/)
@@ -1483,21 +1510,21 @@ describe('two-depths puzzle — the stack decides, and the 3-bet branch is genui
     // Stamping it "incorrect" would contradict Hand Range 167 two lines later.
     // The lesson survives on 18% → 3% without a red mark.
     expect(deep.options.find((o) => o.id === 'all-in-40')!.verdict).toBe('defensible')
-    expect(SOURCES['preflop.bb-vs-bn-40bb-chart'].quote).toContain('All-in 3%')
-    expect(SOURCES['bb40.no-rejam-vs-ep'].quote).toContain('too deep to 3-bet all-in')
+    expect(SOURCE_CITATIONS['preflop.bb-vs-bn-40bb-chart'].quote).toContain('All-in 3%')
+    expect(SOURCE_CITATIONS['bb40.no-rejam-vs-ep'].quote).toContain('too deep to 3-bet all-in')
   })
 
   it('names fold equity as the mechanism, with the button’s own numbers', () => {
     expect(prose).toMatch(/fold equity/i)
-    expect(SOURCES['depth.bn-response-to-15bb-jam'].quote).toContain('Fold 57.4%')
-    expect(SOURCES['depth.only-4bet-is-all-in'].quote).toContain('only 4-bet-size is all-in')
+    expect(SOURCE_CITATIONS['depth.bn-response-to-15bb-jam'].quote).toContain('Fold 57.4%')
+    expect(SOURCE_CITATIONS['depth.only-4bet-is-all-in'].quote).toContain('only 4-bet-size is all-in')
   })
 
   it('states outright that no 30bb figure exists, and interpolates nothing', () => {
     // The brief's live trap: 30bb sits between two printed charts whose 3-bet
     // branches are 8.2% and 14.1%, and a midpoint would be invented output.
     expect(notes.some((n) => /30bb/.test(n.question) && /Not specified in the source/.test(n.answer))).toBe(true)
-    expect(SOURCES['defence.chapter-depths'].quote).toContain('15bb, 25bb, 40bb and 60bb')
+    expect(SOURCE_CITATIONS['defence.chapter-depths'].quote).toContain('15bb, 25bb, 40bb and 60bb')
     // No 30bb number may appear as a frequency anywhere in the puzzle.
     const everything = [prose, ...notes.map((n) => `${n.question} ${n.answer}`)].join(' ')
     expect(everything).not.toMatch(/at 30bb,? (?:the BB )?(?:3-bets|jams|calls|folds) \d/i)
@@ -1506,8 +1533,8 @@ describe('two-depths puzzle — the stack decides, and the 3-bet branch is genui
   it('sources both bet-sizes from the opener’s branch of the same solution', () => {
     // Ch.8's prose restates neither open size. Both come from the nodes where
     // the button answers — which is why those labels are quoted verbatim.
-    expect(SOURCES['depth.bn-response-to-15bb-jam'].quote).toContain('BN 15bb (2x vs BB All-in)')
-    expect(SOURCES['depth.bn-response-to-40bb-3bet'].quote).toContain('BN 40bb (2.3x vs BB 3.5x 3-bet)')
+    expect(SOURCE_CITATIONS['depth.bn-response-to-15bb-jam'].quote).toContain('BN 15bb (2x vs BB All-in)')
+    expect(SOURCE_CITATIONS['depth.bn-response-to-40bb-3bet'].quote).toContain('BN 40bb (2.3x vs BB 3.5x 3-bet)')
     expect(shallow.facingBetBb).toBe(2)
     expect(deep.facingBetBb).toBe(2.3)
     // 3.5x over a 2.3bb open. A 3-bet "x" multiplies the bet it faces.
@@ -1520,7 +1547,7 @@ describe('two-depths puzzle — the stack decides, and the 3-bet branch is genui
     // pots by 1.125bb and misprice the defence this puzzle is about.
     expect(puzzle.setup.tableSize).toBe(9)
     expect(puzzle.setup.anteBb).toBe(0.125)
-    expect(SOURCES['mtt.solver-environment'].quote).toContain('9-max tables with a 12.5% ante')
+    expect(SOURCE_CITATIONS['mtt.solver-environment'].quote).toContain('9-max tables with a 12.5% ante')
     // 1.125 antes + 0.5 folded SB + 1 your blind + the open.
     expect(shallow.potBb).toBeCloseTo(4.625, 3)
     expect(deep.potBb).toBeCloseTo(4.925, 3)
@@ -1570,8 +1597,8 @@ describe('MDF puzzle — arithmetic about a bet, not advice about a range', () =
     // the book's example, not a dramatic choice — swapping it for a hand the
     // page does not name would leave the fold instruction uncited.
     expect(puzzle.setup.heroCards).toEqual(['9h', '6h'])
-    expect(SOURCES['mdf.aq3r-fold-these-hands'].quote).toContain('96s with a BDFD')
-    expect(SOURCES['mdf.aq3r-fold-these-hands'].quote).toContain('you should simply fold')
+    expect(SOURCE_CITATIONS['mdf.aq3r-fold-these-hands'].quote).toContain('96s with a BDFD')
+    expect(SOURCE_CITATIONS['mdf.aq3r-fold-these-hands'].quote).toContain('you should simply fold')
     expect(flop.situation).toMatch(/backdoor flush/i)
     // No pair, no straight draw: claiming either would move the hand out of the
     // trash bucket the whole argument rests on.
@@ -1586,7 +1613,7 @@ describe('MDF puzzle — arithmetic about a bet, not advice about a range', () =
     expect(flop.bestOptionId).toBe('fold')
     expect(flop.options.find((o) => o.id === 'call')!.verdict).toBe('mistake')
     expect(flop.options.find((o) => o.id === 'check-raise')!.verdict).toBe('mistake')
-    expect(SOURCES['mdf.aq3r-raising-worse'].quote).toContain('Raising would be even worse')
+    expect(SOURCE_CITATIONS['mdf.aq3r-raising-worse'].quote).toContain('Raising would be even worse')
   })
 
   it('never calls MDF wrong arithmetic — only arithmetic about the wrong thing', () => {
@@ -1600,28 +1627,28 @@ describe('MDF puzzle — arithmetic about a bet, not advice about a range', () =
   })
 
   it('derives Alpha for a 1/3-pot bet from the book’s own formula', () => {
-    expect(SOURCES['mdf.alpha-definition'].quote).toContain('b/(b + p)')
+    expect(SOURCE_CITATIONS['mdf.alpha-definition'].quote).toContain('b/(b + p)')
     expect(SOURCES['mdf.alpha-one-third-derived'].derivation).toBe('exact_derived')
     expect(SOURCES['mdf.alpha-one-third-derived'].scope).toContain('0.33/(0.33 + 1) = 25%')
     // The book prints the resulting 75% itself, so the derivation is checkable.
-    expect(SOURCES['mdf.one-third-pot-is-75'].quote).toContain('75% of the time')
+    expect(SOURCE_CITATIONS['mdf.one-third-pot-is-75'].quote).toContain('75% of the time')
     expect(SOURCES['mdf.one-third-pot-is-75'].derivation).toBe('exact_transcription')
   })
 
   it('cites the book’s own account of what MDF assumes', () => {
     // Without pp.602-603 the "wrong question" claim would be this file's
     // opinion. With them it is the author's stated position.
-    const revisited = SOURCES['mdf.limits-ev-assumptions']
+    const revisited = SOURCE_CITATIONS['mdf.limits-ev-assumptions']
     expect(revisited.page).toBe(602)
     expect(revisited.quote).toContain('EV of checking back your hand is 0')
-    expect(SOURCES['mdf.limits-rough-guide'].quote).toContain('cannot build your core strategy')
+    expect(SOURCE_CITATIONS['mdf.limits-rough-guide'].quote).toContain('cannot build your core strategy')
   })
 
   it('grounds "your range cannot supply 75%" in the printed composition', () => {
-    expect(SOURCES['aq3.bb-trash-16-equity'].quote).toContain('70% trash hands and 10% weak hands')
-    expect(SOURCES['aq3.bb-trash-16-equity'].quote).toContain('16% equity')
+    expect(SOURCE_CITATIONS['aq3.bb-trash-16-equity'].quote).toContain('70% trash hands and 10% weak hands')
+    expect(SOURCE_CITATIONS['aq3.bb-trash-16-equity'].quote).toContain('16% equity')
     // Trash is a definition, not a vibe: under 33% hand-vs-range equity.
-    expect(SOURCES['eqb.definitions'].quote).toMatch(/Trash Hands.*lower than 33%/)
+    expect(SOURCE_CITATIONS['eqb.definitions'].quote).toMatch(/Trash Hands.*lower than 33%/)
     expect(prose).toMatch(/70% trash/i)
   })
 
@@ -1640,7 +1667,7 @@ describe('MDF puzzle — arithmetic about a bet, not advice about a range', () =
       // Every mention must say it does not travel.
       expect(note.answer).toMatch(/one (flop|node)|this one node|1\/3-pot bet/i)
     }
-    expect(SOURCES['aq3.bb-defends-42'].quote).toContain('folding 58% and defending only 42%')
+    expect(SOURCE_CITATIONS['aq3.bb-defends-42'].quote).toContain('folding 58% and defending only 42%')
     // And it must never be phrased as a rule to follow.
     expect(prose).not.toMatch(/defend 42%/i)
   })
@@ -1676,8 +1703,8 @@ describe('554hh puzzle — a depolarized range, read from what the book prints',
     expect(flop.board).toEqual(['5h', '5d', '4h'])
     // The board must actually be paired — the texture rule depends on it.
     expect(new Set(flop.board.map((c) => c[0])).size).toBe(2)
-    expect(SOURCES['ex6.example-header'].quote).toContain('5♥5♦4♥ (40bbs)')
-    expect(SOURCES['ex6.example-header'].quote).toContain('Low c-bet %')
+    expect(SOURCE_CITATIONS['ex6.example-header'].quote).toContain('5♥5♦4♥ (40bbs)')
+    expect(SOURCE_CITATIONS['ex6.example-header'].quote).toContain('Low c-bet %')
   })
 
   it('is flop-only, in position, after the big blind checks', () => {
@@ -1695,8 +1722,8 @@ describe('554hh puzzle — a depolarized range, read from what the book prints',
     // back" is ONE sentence (p.697). Dealing 88 and answering "check" would
     // contradict the source; dealing a gutshot is what makes the answer citable.
     expect(puzzle.setup.heroCards).toEqual(['8s', '7s'])
-    expect(SOURCES['ex6.good-hands-gutshots-check'].quote).toContain('gutshots mostly like to check back')
-    expect(SOURCES['ex6.good-hands-gutshots-check'].quote).toContain('Mid pairs 66-99 are c-bet almost 100%')
+    expect(SOURCE_CITATIONS['ex6.good-hands-gutshots-check'].quote).toContain('gutshots mostly like to check back')
+    expect(SOURCE_CITATIONS['ex6.good-hands-gutshots-check'].quote).toContain('Mid pairs 66-99 are c-bet almost 100%')
     // No spade on the board, so the suit carries no flush equity — Table 118
     // scores flush draws and combo draws on their own separate rows.
     expect(flop.board.some((c) => c[1] === 's')).toBe(false)
@@ -1705,8 +1732,8 @@ describe('554hh puzzle — a depolarized range, read from what the book prints',
   })
 
   it('places the hand in the Good bucket using the printed equity and the p.596 definition', () => {
-    expect(SOURCES['ex6.table118-gutshot'].quote).toContain('Equity 58%')
-    expect(SOURCES['eqb.definitions'].page).toBe(596)
+    expect(SOURCE_CITATIONS['ex6.table118-gutshot'].quote).toContain('Equity 58%')
+    expect(SOURCE_CITATIONS['eqb.definitions'].page).toBe(596)
     expect(flop.situation).toMatch(/58%/)
     expect(flop.situation).toMatch(/50%/)
     expect(flop.situation).toMatch(/75%/)
@@ -1720,16 +1747,16 @@ describe('554hh puzzle — a depolarized range, read from what the book prints',
     expect(flop.options.find((o) => o.id === 'min-bet')!.verdict).toBe('defensible')
     // 0.4% for this class, 0.5% range-wide, and "no significant range advantage".
     expect(flop.options.find((o) => o.id === 'bet-two-thirds')!.verdict).toBe('mistake')
-    expect(SOURCES['ex4.paired-boards-min-bet'].quote).toContain('frequently min-bet')
-    expect(SOURCES['ex6.depolarized-distribution'].quote).toContain('doesn’t have a significant range advantage')
+    expect(SOURCE_CITATIONS['ex4.paired-boards-min-bet'].quote).toContain('frequently min-bet')
+    expect(SOURCE_CITATIONS['ex6.depolarized-distribution'].quote).toContain('doesn’t have a significant range advantage')
   })
 
   it('explains "depolarized" in bucket terms, with both pies from Diagram 67', () => {
     for (const fragment of ['Strong 10%', 'Good 57%', 'Weak 24%', 'Trash 9%']) {
-      expect(SOURCES['ex6.bn-eqb-554'].quote, `missing ${fragment}`).toContain(fragment)
+      expect(SOURCE_CITATIONS['ex6.bn-eqb-554'].quote, `missing ${fragment}`).toContain(fragment)
     }
-    expect(SOURCES['ex6.bb-eqb-554'].quote).toContain('Trash 35%')
-    expect(SOURCES['ex6.depolarized-definition'].quote).toContain('middle equity hands')
+    expect(SOURCE_CITATIONS['ex6.bb-eqb-554'].quote).toContain('Trash 35%')
+    expect(SOURCE_CITATIONS['ex6.depolarized-definition'].quote).toContain('middle equity hands')
     const hero = puzzle.ranges.find((r) => r.id === 'bn-buckets-554')!
     const villain = puzzle.ranges.find((r) => r.id === 'bb-buckets-554')!
     expect(hero.bars!.map((b) => b.pct)).toEqual([10, 57, 24, 9])
@@ -1745,7 +1772,7 @@ describe('554hh puzzle — a depolarized range, read from what the book prints',
     // so the failure mode here is UNDER-claiming: writing "not specified in the
     // source" over figures the book prints on p.696 and p.697.
     for (const fragment of ['Check 40.6%', 'C-bet Min 22.8%', 'C-bet 1/3 35.3%', 'C-bet 2/3 0.5%']) {
-      expect(SOURCES['ex6.table118-full-range'].quote, `missing ${fragment}`).toContain(fragment)
+      expect(SOURCE_CITATIONS['ex6.table118-full-range'].quote, `missing ${fragment}`).toContain(fragment)
     }
     const prose = [
       flop.explanation,
@@ -1807,7 +1834,7 @@ describe('554hh puzzle — a depolarized range, read from what the book prints',
       .flatMap((t) => t.unsourced ?? [])
       .find((n) => /low.*c-bet frequency/i.test(n.question))
     expect(lowNote, 'no note defends calling the frequency low').toBeDefined()
-    expect(lowNote!.answer).toMatch(/Diagram 44/)
+    expect(lowNote!.answer).toMatch(/5XX flops as a class/)
     expect(lowNote!.answer).toMatch(/No comparison is made here/i)
   })
 
@@ -1817,8 +1844,8 @@ describe('554hh puzzle — a depolarized range, read from what the book prints',
     // p.655 appear only inside notes that decline to use their numbers; p.175 is
     // the disclosure of this repo's open-size assumption.
     for (const id of allSourceIds(puzzle)) {
-      expect([78, 175, 596, 655, 661, 663, 695, 696, 697, 698], `${id} is p.${SOURCES[id].page}`).toContain(
-        SOURCES[id].page
+      expect([78, 175, 596, 655, 661, 663, 695, 696, 697, 698], `${id} is p.${SOURCE_CITATIONS[id].page}`).toContain(
+        SOURCE_CITATIONS[id].page
       )
     }
   })
@@ -1888,9 +1915,9 @@ describe('river structure puzzle — the model applied, never a board solved', (
     expect(prose).toContain('10 / (10 + 20)')
     expect(prose).toMatch(/1-Alpha/)
     // 33/67 is exactly what the book prints for a half-pot river bet.
-    expect(SOURCES['alpha.half-pot-river-example'].quote).toContain('33% (Alpha)')
-    expect(SOURCES['alpha.half-pot-river-example'].quote).toContain('67% (1-Alpha)')
-    expect(SOURCES['alpha.formula'].quote).toContain('b/(b + p)')
+    expect(SOURCE_CITATIONS['alpha.half-pot-river-example'].quote).toContain('33% (Alpha)')
+    expect(SOURCE_CITATIONS['alpha.half-pot-river-example'].quote).toContain('67% (1-Alpha)')
+    expect(SOURCE_CITATIONS['alpha.formula'].quote).toContain('b/(b + p)')
   })
 
   it('states plainly that the source gives a model, not a solved board', () => {
@@ -1905,8 +1932,8 @@ describe('river structure puzzle — the model applied, never a board solved', (
         'The reasoning here is that model applied to a matching structure.'
     )
     // And the chapter's own words for what it produces must be what backs it.
-    expect(SOURCES['ch14.abstract-models-are-heuristics'].quote).toContain('generate heuristics')
-    expect(SOURCES['ch14.structure-not-history'].quote).toContain('the overall same structure')
+    expect(SOURCE_CITATIONS['ch14.abstract-models-are-heuristics'].quote).toContain('generate heuristics')
+    expect(SOURCE_CITATIONS['ch14.structure-not-history'].quote).toContain('the overall same structure')
     // The teaching prose may not invoke a solver at all: the word belongs only
     // where the puzzle is denying that one ran on this board.
     const teaching = [
@@ -1936,7 +1963,7 @@ describe('river structure puzzle — the model applied, never a board solved', (
     expect(range.description).toMatch(/ASSUMPTION/)
     expect((range.unsourced ?? []).map((n) => n.answer).join(' ')).toMatch(/from the bet-size, not from the board/i)
     // And the condition that voids the whole answer must be carried too.
-    expect(SOURCES['ch14.value-range-starting-point'].quote).toContain(
+    expect(SOURCE_CITATIONS['ch14.value-range-starting-point'].quote).toContain(
       'Never call with bluff-catchers if the Villain doesn’t have enough bluffs'
     )
   })
@@ -1951,16 +1978,16 @@ describe('river structure puzzle — the model applied, never a board solved', (
     expect(note).toBeDefined()
     expect(note!.answer).toMatch(/derivation, not a quotation|this puzzle’s reasoning/i)
     // The blocker rule it leans on is the book's, in both directions.
-    expect(SOURCES['river.blockers'].quote).toContain('block the opponent’s value range, call more often')
-    expect(SOURCES['river.blockers'].quote).toContain('block the opponent’s bluffing range, fold more often')
-    expect(SOURCES['ch14.no-blockers-irrelevant'].quote).toContain('no blockers')
+    expect(SOURCE_CITATIONS['river.blockers'].quote).toContain('block the opponent’s value range, call more often')
+    expect(SOURCE_CITATIONS['river.blockers'].quote).toContain('block the opponent’s bluffing range, fold more often')
+    expect(SOURCE_CITATIONS['ch14.no-blockers-irrelevant'].quote).toContain('no blockers')
   })
 
   it('keeps every Chapter 14 citation scoped as an abstract model', () => {
     const ch14 = Object.values(SOURCES).filter((s) => s.id.startsWith('ch14.'))
     expect(ch14.length).toBeGreaterThan(5)
     for (const ref of ch14) {
-      expect(ref.page).toBeGreaterThan(0)
+      expect(SOURCE_CITATIONS[ref.id].page).toBeGreaterThan(0)
       expect(ref.scope.trim().length).toBeGreaterThan(0)
       // None of them may be scoped to a real board — the chapter has none.
       expect(ref.scope).not.toMatch(/9♠6♠2♥|on this board/i)
@@ -2018,7 +2045,7 @@ describe('donk-bet bands puzzle — classifying a flop from the board alone', ()
     // board must never quietly acquire a second suit.
     expect(m764.board).toEqual(['7d', '6d', '4d'])
     expect(new Set(m764.board.map((c) => c[1])).size).toBe(1)
-    expect(SOURCES['bands.mid-flops'].quote).toContain('The only monotone flop is 764')
+    expect(SOURCE_CITATIONS['bands.mid-flops'].quote).toContain('The only monotone flop is 764')
   })
 
   it('answers None, High, Mid — in that order', () => {
@@ -2058,7 +2085,7 @@ describe('donk-bet bands puzzle — classifying a flop from the board alone', ()
     // Guard the guard: a rewrite that stopped naming the flops would make the
     // loop above pass by never running.
     expect(checked, 'no sentence names a flop while discussing donking').toBeGreaterThan(3)
-    expect(SOURCES['donk.654r-is-highest'].quote).toContain('highest frequency donk betting flop is 654r (67%)')
+    expect(SOURCE_CITATIONS['donk.654r-is-highest'].quote).toContain('highest frequency donk betting flop is 654r (67%)')
   })
 
   it('declares the classification DERIVED, and says what that qualifies', () => {
@@ -2079,8 +2106,8 @@ describe('donk-bet bands puzzle — classifying a flop from the board alone', ()
     // the book does not make.
     expect(puzzle.decisions.every((d) => d.bestOptionId !== 'low')).toBe(true)
     for (const family of ['8MM', '8ML', '8LL', '7ML', '7LL', '6LL', '5LL']) {
-      expect(SOURCES['bands.mid-flops'].quote, `mid band must list ${family}`).toContain(family)
-      expect(SOURCES['bands.low-flops'].quote, `low band must list ${family}`).toContain(family)
+      expect(SOURCE_CITATIONS['bands.mid-flops'].quote, `mid band must list ${family}`).toContain(family)
+      expect(SOURCE_CITATIONS['bands.low-flops'].quote, `low band must list ${family}`).toContain(family)
     }
     const text = prose(puzzle)
     expect(text).toMatch(/never the right one|never needed/i)
@@ -2092,13 +2119,13 @@ describe('donk-bet bands puzzle — classifying a flop from the board alone', ()
     // aggregated simulation. Mixing them is how a board reading silently
     // acquires a stack depth and an opponent it never had.
     for (const id of ['bands.flop-rank', 'bands.flop-textures', 'bands.straight-count', 'bands.rank-letters']) {
-      expect(SOURCES[id].page).toBeLessThan(631)
+      expect(SOURCE_CITATIONS[id].page).toBeLessThan(631)
       expect(SOURCES[id].scope, `${id} must not claim a matchup`).not.toMatch(/BB vs|30bb|40bb/)
     }
     for (const id of ['bands.mid-frequency', 'bands.low-frequency', 'bands.none-metrics']) {
       expect(SOURCES[id].scope, `${id} must scope itself to a band, not a flop`).toMatch(/band|group|whole/i)
     }
-    expect(SOURCES['bands.dataset'].quote).toContain('20bb, 30bb and 40bb')
+    expect(SOURCE_CITATIONS['bands.dataset'].quote).toContain('20bb, 30bb and 40bb')
   })
 
   it('labels the band-size percentages as arithmetic on printed counts', () => {
@@ -2116,8 +2143,8 @@ describe('donk-bet bands puzzle — classifying a flop from the board alone', ()
     expect(a76r.explanation).toContain('A-x-x')
     // 654 makes exactly the three straights the book enumerates.
     expect(r654.explanation).toContain('32, 87 and 73')
-    expect(SOURCES['example.654r-utg-straights'].quote).toContain('32')
-    expect(SOURCES['example.654r-utg-straights'].quote).toContain('73')
+    expect(SOURCE_CITATIONS['example.654r-utg-straights'].quote).toContain('32')
+    expect(SOURCE_CITATIONS['example.654r-utg-straights'].quote).toContain('73')
     // 764 makes two: 35 and 58. Claiming three would restore the high band's
     // description and make the monotone argument unnecessary.
     expect(m764.explanation).toContain('35 and 58')
@@ -2143,7 +2170,7 @@ describe('source scoping — corrections that must not regress', () => {
     const ref = SOURCES['ex3.oesd-check-call']
     expect(ref).toBeDefined()
     expect(ref.scope).toMatch(/9♥8♥4♦/)
-    expect(ref.quote).toMatch(/x\/c every time/)
+    expect(SOURCE_CITATIONS['ex3.oesd-check-call'].quote).toMatch(/x\/c every time/)
   })
 
   it('never justifies the 984 flop call with the Q♥J♥T♥ rule', () => {

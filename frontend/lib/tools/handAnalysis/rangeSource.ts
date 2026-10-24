@@ -42,11 +42,6 @@ export function isExecutable(status: RangeSourceStatus): boolean {
   return status === "reviewed";
 }
 
-/** One line of attribution, built from the existing provenance record. */
-export function citation(provenance: ChartProvenance): string {
-  return `${provenance.figure} — ${provenance.source}, p.${provenance.page}.`;
-}
-
 /**
  * How the numbers were obtained, in a sentence a reader can weigh.
  *
@@ -58,11 +53,11 @@ export function citation(provenance: ChartProvenance): string {
 export function derivationNote(provenance: ChartProvenance): string {
   switch (provenance.derivation) {
     case "exact_transcription":
-      return "Copied verbatim from a table in the source.";
+      return "Copied exactly from a published solver-based chart.";
     case "exact_derived":
-      return "Computed from the source's own numbers by unambiguous arithmetic.";
+      return "Computed from a published solver-based chart's own numbers by unambiguous arithmetic.";
     case "reconstructed":
-      return "Read from the source's own chart diagram by documented pixel measurement, then cross-validated against the aggregate percentage the source prints under that chart.";
+      return "Read from a published solver-based chart by documented pixel measurement, then cross-checked against the chart's own stated action percentages.";
     case "pedagogical_model":
       return "A teaching simplification, not solver output — not used for calculation.";
   }

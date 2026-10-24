@@ -40,17 +40,10 @@ import type { LessonSource } from './types'
 import type { RangeStrategyMap } from './rangeStrategy'
 // Reused directly from Module 10's own constants — never re-declared, so the book/author
 // string can't silently drift between content files (matches module11Content.ts's own precedent).
-import { MPT_SOURCE, MPT_AUTHOR } from './gameTheoryContent'
 
 // ── Lessons 3-4 — "One Size Rarely Fits All" / "The Small Cost of Simplifying" ────────────────
 
-export const HAND_RANGE_337_340_SOURCE: LessonSource = {
-  book: MPT_SOURCE,
-  author: MPT_AUTHOR,
-  section: 'Splitting Your Range Into Multiple Bet-sizes — the [0-1] Toy Game (Ch.10 pp.603-609)',
-  example: 'Hand Range 337-340',
-  type: 'source_reconstructed',
-}
+export const HAND_RANGE_337_340_SOURCE: LessonSource = /* book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Splitting Your Range Into Multiple Bet-sizes — the [0-1] Toy Game', example: 'The chart' */ { type: 'source_reconstructed' }
 
 /** The fixed 10-combo pool every Example A-D uses: AA down through 55, no suits shared, on a
  *  blank board chosen so no card-removal effects influence the results (p.603-604). */
@@ -139,13 +132,7 @@ export const RANGE_COMPRESSION_STATES = [
 
 // ── Lesson 4 — SPR bands (Table 90) ───────────────────────────────────────────────────────────
 
-export const SPR_TABLE_90_SOURCE: LessonSource = {
-  book: MPT_SOURCE,
-  author: MPT_AUTHOR,
-  section: 'Splitting Your Range Into Multiple Bet-sizes — Table 90 (Ch.10 pp.609-610)',
-  example: 'Table 90',
-  type: 'source_reconstructed',
-}
+export const SPR_TABLE_90_SOURCE: LessonSource = /* book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Splitting Your Range Into Multiple Bet-sizes — the table', example: 'Table 90' */ { type: 'source_reconstructed' }
 
 /** The book's own four SPR-band descriptions (p.609-610) — exact quoted bands, not interpolated. */
 export const SPR_TABLE_90: { id: string; sprRange: string; band: string; description: string }[] = [
@@ -157,12 +144,7 @@ export const SPR_TABLE_90: { id: string; sprRange: string; band: string; descrip
 
 // ── Lesson 5 — "Why Your Range Shape Picks Your Bet Size" ────────────────────────────────────
 
-export const TOY_GAMES_A_TO_E_SOURCE: LessonSource = {
-  book: MPT_SOURCE,
-  author: MPT_AUTHOR,
-  section: 'Range Polarization Effect — the [0-1] Toy Game A-E (Ch.10 pp.615-618, Table 92)',
-  type: 'source_reconstructed',
-}
+export const TOY_GAMES_A_TO_E_SOURCE: LessonSource = /* book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Range Polarization Effect — the [0-1] Toy Game A-E' */ { type: 'source_reconstructed' }
 
 interface EqbDist { label: string; strong: number; good: number; weak: number; trash: number }
 
@@ -199,12 +181,7 @@ export const TOY_GAMES_A_TO_E = [TOY_GAME_A, TOY_GAME_B, TOY_GAME_C, TOY_GAME_D,
 
 // ── Lesson 7 — "Wrong Size, Real Cost" ────────────────────────────────────────────────────────
 
-export const J22_SIZING_MISTAKE_SOURCE: LessonSource = {
-  book: MPT_SOURCE,
-  author: MPT_AUTHOR,
-  section: 'Overall Flop Metrics — the J♠2♥2♦ c-bet-sizing example (Ch.10 p.620)',
-  type: 'source_reconstructed',
-}
+export const J22_SIZING_MISTAKE_SOURCE: LessonSource = /* book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Overall Flop Metrics — the J♠2♥2♦ c-bet-sizing example' */ { type: 'source_reconstructed' }
 
 /** BB vs UTG, 30bb, flop J♠2♥2♦, x/b. Three exact, book-quoted EV figures for UTG's c-bet:
  *  correct (min-bet, full frequency) vs. the wrong-size mistake, unchanged vs. corrected frequency. */
@@ -215,12 +192,7 @@ export const J22_SIZING_MISTAKE = {
   wrongSizeCorrectedFrequency: { label: '2/3-pot, corrected to 42.45% frequency', ev: 74.10 },
 }
 
-export const REVERSE_LINEAR_654R_SOURCE: LessonSource = {
-  book: MPT_SOURCE,
-  author: MPT_AUTHOR,
-  section: 'Donk-betting Ranges — the 6♠5♥4♦ Ace-high reverse-linear example (Ch.11 p.642)',
-  type: 'source_reconstructed',
-}
+export const REVERSE_LINEAR_654R_SOURCE: LessonSource = /* book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Donk-betting Ranges — the 6♠5♥4♦ Ace-high reverse-linear example' */ { type: 'source_reconstructed' }
 
 /** BB-vs-UTG donk-betting range on 6♠5♥4♦, 30bb. The weaker Ace-high combo (A9s) bets far MORE
  *  often than the stronger one (AQs) — showdown-value-rich hands want pot control; fold-equity-
@@ -243,12 +215,7 @@ export const REVERSE_LINEAR_654R = {
 // decision_spot's qualitative predict-then-justify pattern instead (see curriculum.ts's Lesson 8
 // authoring note for the full, disclosed reasoning behind this component choice).
 
-export const BOARD_GALLERY_SOURCE: LessonSource = {
-  book: MPT_SOURCE,
-  author: MPT_AUTHOR,
-  section: 'Overall Flop Metrics (Ch.12 pp.655-674); Donk-betting Ranges (Ch.11 pp.631-651); Turn Play (Ch.13 pp.749-756)',
-  type: 'source_reconstructed',
-}
+export const BOARD_GALLERY_SOURCE: LessonSource = /* book: MPT_SOURCE, author: MPT_AUTHOR, section: 'Overall Flop Metrics; Donk-betting Ranges; Turn Play' */ { type: 'source_reconstructed' }
 
 export const BOARD_GALLERY: {
   id: string
@@ -265,7 +232,7 @@ export const BOARD_GALLERY: {
   {
     id: 'trips', category: 'structure', label: 'Trips (e.g. 8♠8♥8♦)', board: ['8s', '8h', '8d'],
     direction: 'large', preferredSize: 'Bigger on lower trips; 1/3-pot still most frequent overall',
-    evidence: 'The best flops in the book\'s evidence set for IP, who captures an average of 81% of the pot — the largest range-advantage gap of any structural category.',
+    evidence: 'The best flops in the source\'s evidence set for IP, who captures an average of 81% of the pot — the largest range-advantage gap of any structural category.',
   },
   {
     id: 'paired', category: 'structure', label: 'Paired (e.g. J♠2♥2♦)', board: ['Js', '2h', '2d'],
@@ -327,13 +294,7 @@ export const BOARD_GALLERY: {
 
 // ── Lesson 9 — "The River's Blunt Instruments" ────────────────────────────────────────────────
 
-export const TRAP_CURVE_DATA_SOURCE: LessonSource = {
-  book: MPT_SOURCE,
-  author: MPT_AUTHOR,
-  section: 'River Calling Strategies — Diagrams 132-133, the polarized-vs-bluff-catcher-with-traps model (Ch.14 pp.791-793)',
-  example: 'Diagrams 132-133',
-  type: 'source_reconstructed',
-}
+export const TRAP_CURVE_DATA_SOURCE: LessonSource = /* book: MPT_SOURCE, author: MPT_AUTHOR, section: 'River Calling Strategies — the diagrams, the polarized-vs-bluff-catcher-with-traps model', example: 'Diagrams 132-133' */ { type: 'source_reconstructed' }
 
 /** Diagrams 132/133's own cited anchor points ONLY — never interpolated between them. At 0%
  *  traps, EV rises smoothly and caps near 90-95% of the pot by 4x-10x pot. At 10% traps, EV
@@ -360,21 +321,11 @@ export const TRAP_CURVE_DATA = {
   },
 }
 
-export const RIVER_MODEL_SOURCE: LessonSource = {
-  book: MPT_SOURCE,
-  author: MPT_AUTHOR,
-  section: 'River Calling Strategies — minimum bet-size to deny equity (Ch.14 pp.786-789)',
-  type: 'source_reconstructed',
-}
+export const RIVER_MODEL_SOURCE: LessonSource = /* book: MPT_SOURCE, author: MPT_AUTHOR, section: 'River Calling Strategies — minimum bet-size to deny equity' */ { type: 'source_reconstructed' }
 
 // ── Lesson 10 — Capstone ──────────────────────────────────────────────────────────────────────
 
-export const CAPSTONE_SCENARIO_SOURCE: LessonSource = {
-  book: MPT_SOURCE,
-  author: MPT_AUTHOR,
-  section: "Module 12's own synthesis scenario — not a book-cited hand",
-  type: 'pedagogical_model',
-}
+export const CAPSTONE_SCENARIO_SOURCE: LessonSource = /* book: MPT_SOURCE, author: MPT_AUTHOR, section: "Module 12's own synthesis scenario — not a source-cited hand" */ { type: 'pedagogical_model' }
 
 /** BB vs CO, 25bb — a stack depth Module 12 has not used anywhere else, chosen deliberately so no
  *  prior lesson's specific numbers can be recalled and reused without genuine re-reasoning.

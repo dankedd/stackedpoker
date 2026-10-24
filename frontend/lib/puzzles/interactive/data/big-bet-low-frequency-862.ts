@@ -57,7 +57,7 @@ export const BIG_BET_LOW_FREQUENCY_862: InteractivePuzzle = {
   topic: 'Flop C-betting',
   difficulty: 'advanced',
   description:
-    'How often you bet and how much you bet are two separate decisions. This is the board where the book sets one of them high and the other one low — and getting it right means resisting the instinct to move both dials together.',
+    'How often you bet and how much you bet are two separate decisions. This is the board where the source sets one of them high and the other one low — and getting it right means resisting the instinct to move both dials together.',
 
   setup: {
     format: '40bb effective',
@@ -133,30 +133,30 @@ export const BIG_BET_LOW_FREQUENCY_862: InteractivePuzzle = {
           tableAction: { label: 'Bets', betBb: 3.7 },
           verdict: 'best',
           shortWhy:
-            'Both dials set correctly. This board is the book’s worked example of a LOW c-bet frequency with a BIG bet-size, and A6 is one of the hands it names as mostly c-bet — so when you do bet, you bet big, and most of the rest of your range still checks.',
+            'Both dials set correctly. This board is the source’s worked example of a LOW c-bet frequency with a BIG bet-size, and A6 is one of the hands it names as mostly c-bet — so when you do bet, you bet big, and most of the rest of your range still checks.',
           sources: ['ex5.low-freq-big-size', 'ex5.range-distribution', 'ex5.middle-pair-a6'],
         },
       ],
       bestOptionId: 'bet-two-thirds',
       explanation:
-        'Bet 2/3 pot — and notice that this is two answers, not one. SIZE: the big blind has few strong hands on 862r compared to you, and the source says that is exactly what incentivizes the button to use a big bet-size; small bets belong to depolarized ranges, which this is not. FREQUENCY: the same paragraph says the button also holds many good and weak hands that would rather play a small pot and take a free turn, which is what drags the overall c-bet frequency down — the book’s own heading for this spot is "Low c-bet % and big bet-size". A♠6♣ is one of the hands that does bet: the source files "the strongest middle pairs such as A6 and K6" under good hands and says they are mostly c-bet, while the weaker middle pairs check back. You are the exception inside a checking-heavy strategy, and the exception bets big.',
+        'Bet 2/3 pot — and notice that this is two answers, not one. SIZE: the big blind has few strong hands on 862r compared to you, and the source says that is exactly what incentivizes the button to use a big bet-size; small bets belong to depolarized ranges, which this is not. FREQUENCY: the same paragraph says the button also holds many good and weak hands that would rather play a small pot and take a free turn, which is what drags the overall c-bet frequency down — the source’s own heading for this spot is "Low c-bet % and big bet-size". A♠6♣ is one of the hands that does bet: the source files "the strongest middle pairs such as A6 and K6" under good hands and says they are mostly c-bet, while the weaker middle pairs check back. You are the exception inside a checking-heavy strategy, and the exception bets big.',
       unsourced: [
         {
           question: 'How often exactly does the button c-bet this flop?',
           answer:
-            'Not specified in the source. The heading calls it a "low c-bet %" and Diagram 65 shows it as a picture; no percentage for 8♥6♦2♠ appears anywhere in the text. Two numeric frequencies ARE printed for this board — the big blind check-raises about 8%, and the button answers a check-raise by folding 43% / calling 34% / jamming 23% — but the c-bet split itself is not one of them, and interpolating it from the top-card averages would be inventing solver output.',
+            'Not specified in the source. The heading calls it a "low c-bet %" and the diagram shows it as a picture; no percentage for 8♥6♦2♠ appears anywhere in the text. Two numeric frequencies ARE printed for this board — the big blind check-raises about 8%, and the button answers a check-raise by folding 43% / calling 34% / jamming 23% — but the c-bet split itself is not one of them, and interpolating it from the top-card averages would be inventing solver output.',
           nearestSources: ['ex5.low-freq-big-size', 'ex5.xr-frequency', 'ex5.bn-vs-xr-response'],
         },
         {
           question: 'Does the source give an exact frequency for A6 specifically?',
           answer:
-            'No. It says the strongest middle pairs "are mostly c-bet" — a direction, not a number. What can be stated is the placement: the book puts A6 by name in the good-hands bucket for this exact board and matchup, and within that bucket on the c-betting side rather than the checking side.',
+            'No. It says the strongest middle pairs "are mostly c-bet" — a direction, not a number. What can be stated is the placement: the source puts A6 by name in the good-hands bucket for this exact board and matchup, and within that bucket on the c-betting side rather than the checking side.',
           nearestSources: ['ex5.middle-pair-a6', 'eqb.definitions'],
         },
         {
           question: 'Where do the 2.5bb open and the two bet sizes come from?',
           answer:
-            'From this implementation. The book’s 40bb MTT simulations never print an open size, so 2.5bb is used here for consistency with the other puzzles — 2.5 from you, 2.5 called, plus the folded small blind’s 0.5 makes the 5.5bb pot on the felt. The 1/3-pot and 2/3-pot options are the two c-bet sizes this chapter’s own examples are discussed in (p.683 compares "c-bet 100% for 1/3-pot bet-size" against "the 2/3-pot bet-size"); the book does not print a bet-size in bb for this node.',
+            'From this implementation. The source’s 40bb MTT simulations never print an open size, so 2.5bb is used here for consistency with the other puzzles — 2.5 from you, 2.5 called, plus the folded small blind’s 0.5 makes the 5.5bb pot on the felt. The 1/3-pot and 2/3-pot options are the two c-bet sizes this chapter’s own examples are discussed; the source does not print a bet-size in bb for this node.',
           nearestSources: ['cbet.example-matrix'],
         },
       ],
@@ -165,9 +165,9 @@ export const BIG_BET_LOW_FREQUENCY_862: InteractivePuzzle = {
           id: 'two-dials',
           title: 'Two dials, not one',
           body:
-            'The instinct almost everyone brings to a c-bet decision is that frequency and size move together: strong range, so bet often and bet big; weak range, so bet rarely and bet small. The book takes that instinct apart deliberately. Its six worked IP c-bet examples are laid out as a grid over the two axes, and every combination gets its own board. Your flop is the low-frequency, big-size cell — the one the single-dial instinct cannot produce.',
+            'The instinct almost everyone brings to a c-bet decision is that frequency and size move together: strong range, so bet often and bet big; weak range, so bet rarely and bet small. The source takes that instinct apart deliberately. Its six worked IP c-bet examples are laid out as a grid over the two axes, and every combination gets its own board. Your flop is the low-frequency, big-size cell — the one the single-dial instinct cannot produce.',
           exhibit: {
-            caption: 'The book’s six IP c-bet examples, by frequency and by size',
+            caption: 'The source’s six IP c-bet examples, by frequency and by size',
             scope:
               'All six examples are 40bb single-raised pots, IP c-betting the flop after the BB checks. Cited for the SECTION’S OWN ORGANISATION — the headings vary the two axes independently. No frequency or size percentage is printed in these headings.',
             rows: [
@@ -234,7 +234,7 @@ export const BIG_BET_LOW_FREQUENCY_862: InteractivePuzzle = {
             'The same sentence that argues for the big size argues against betting often, and it is worth reading it as two clauses rather than one: the big blind has few strong hands (so bet big), HOWEVER the button also has many good and weak hands that benefit from playing a small pot and taking a free turn card (so bet rarely). Both halves come from the same range comparison. Nothing about the board is contradictory — the two questions simply have different answers.',
           bullets: [
             {
-              text: 'The book’s own summary: "the BN also has many good and weak hands that benefit from playing a small pot and taking a free turn card. These range distributions results in a more polarized big bet-size with a low c-bet frequency."',
+              text: 'The source’s own summary: "the BN also has many good and weak hands that benefit from playing a small pot and taking a free turn card. These range distributions results in a more polarized big bet-size with a low c-bet frequency."',
               sources: ['ex5.range-distribution'],
             },
             {
@@ -257,7 +257,7 @@ export const BIG_BET_LOW_FREQUENCY_862: InteractivePuzzle = {
           exhibit: {
             caption: 'Average c-bet frequency by the flop’s top card',
             scope:
-              'Ch.12 aggregate over thousands of GTO solutions at 20bb, 30bb and 40bb with MTT starting ranges. Each row is the AVERAGE over every flop in that top-card category — not a figure for any one board, and not a figure for 8♥6♦2♠, which is an 8xx flop and has no printed number of its own.',
+              'The source aggregate over thousands of GTO solutions at 20bb, 30bb and 40bb with MTT starting ranges. Each row is the AVERAGE over every flop in that top-card category — not a figure for any one board, and not a figure for 8♥6♦2♠, which is an 8xx flop and has no printed number of its own.',
             rows: [
               { label: '2xx (only 222)', value: '100%', pct: 100 },
               { label: 'Axx', value: '96%', pct: 96 },
@@ -286,7 +286,7 @@ export const BIG_BET_LOW_FREQUENCY_862: InteractivePuzzle = {
             {
               question: 'What is the 8xx average, then?',
               answer:
-                'Not specified in the source. The prose on p.661 names 2xx, Axx, 3xx, Kxx, Qxx, Txx and 6xx and stops there; the full picture is Diagram 44, which is an image with no transcribable values. Reading an 8xx number off "somewhere between 85% and 62%" would be a guess with a citation stapled to it.',
+                'Not specified in the source. The prose names 2xx, Axx, 3xx, Kxx, Qxx, Txx and 6xx and stops there; the full picture is the diagram, which is an image with no transcribable values. Reading an 8xx number off "somewhere between 85% and 62%" would be a guess with a citation stapled to it.',
               nearestSources: ['cbet.by-top-card'],
             },
           ],
@@ -366,7 +366,7 @@ export const BIG_BET_LOW_FREQUENCY_862: InteractivePuzzle = {
         {
           question: 'Is this the exact preflop range behind Flop Strategy Example 5?',
           answer:
-            'The book does not say. Hand Range 167 is a 40bb BB vs BN chart, and Example 5 is a 40bb BB vs BN simulation, so it is the closest printed range to this spot — but the flop example never states which preflop ranges produced it. Shown for the shape of the matchup, not as the solver input.',
+            'The source does not say. The chart is a 40bb BB vs BN chart, and Example 5 is a 40bb BB vs BN simulation, so it is the closest printed range to this spot — but the flop example never states which preflop ranges produced it. Shown for the shape of the matchup, not as the solver input.',
           nearestSources: ['preflop.bb-vs-bn-40bb-chart', 'ex5.low-freq-big-size'],
         },
       ],
@@ -438,5 +438,5 @@ export const BIG_BET_LOW_FREQUENCY_862: InteractivePuzzle = {
   xp: 60,
 
   endsEarlyBecause:
-    'Flop Strategy Example 5 is a flop analysis and the book does not carry it further — when the turn chapter picks the examples back up it states that it continues with Examples 1, 2, 3 and 4 only (p.748). The one node past this decision that the source does solve, the response to a check-raise, is shown in the theory rather than played out, because reaching it would mean choosing the big blind’s action for them.',
+    'Flop Strategy Example 5 is a flop analysis and the source does not carry it further — when the turn chapter picks the examples back up it states that it continues with Examples 1, 2, 3 and 4 only. The one node past this decision that the source does solve, the response to a check-raise, is shown in the theory rather than played out, because reaching it would mean choosing the big blind’s action for them.',
 }

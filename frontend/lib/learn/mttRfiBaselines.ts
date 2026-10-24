@@ -34,20 +34,13 @@ export interface MttRfiCell {
   actions: MttRfiActionFrequencies
 }
 
-export interface MttRfiSourceRef {
-  book: 'Modern Poker Theory'
-  chapterNo: 7
-  handRangeNo: number
-  page: number
-}
-
 export interface MttRfiChart {
   key: string
   position: MttPosition
   positionKey: MttPositionKey
   stackBB: MttStackBB
   cells: MttRfiCell[]
-  sourceRef: MttRfiSourceRef
+  // The chart's source (chapter, hand-range number, page) is a comment on each entry.
 }
 
 export const POSITION_KEY_TO_LABEL: Record<MttPositionKey, MttPosition> = {
@@ -99,7 +92,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '77', actions: { raise: 1 } },
       { hand: '66', actions: { raise: 0.15, fold: 0.85 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 136, page: 357 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 136, page: 357 }
   },
   UTG_RFI_25BB: {
     key: 'UTG_RFI_25BB',
@@ -151,7 +144,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '76s', actions: { raise: 0.25, fold: 0.75 } },
       { hand: '66', actions: { raise: 1 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 137, page: 358 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 137, page: 358 }
   },
   UTG_RFI_40BB: {
     key: 'UTG_RFI_40BB',
@@ -204,7 +197,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '65o', actions: { raise: 0.1, fold: 0.9 } },
       { hand: '55', actions: { raise: 0.1, fold: 0.9 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 138, page: 359 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 138, page: 359 }
   },
   UTG_RFI_60BB: {
     key: 'UTG_RFI_60BB',
@@ -256,7 +249,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '54o', actions: { raise: 0.1, fold: 0.9 } },
       { hand: '44', actions: { raise: 0.25, fold: 0.75 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 139, page: 360 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 139, page: 360 }
   },
   UTG1_RFI_15BB: {
     key: 'UTG1_RFI_15BB',
@@ -302,7 +295,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '77', actions: { raise: 0.85, jam: 0.15 } },
       { hand: '66', actions: { raise: 0.85, fold: 0.15 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 132, page: 352 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 132, page: 352 }
   },
   UTG1_RFI_25BB: {
     key: 'UTG1_RFI_25BB',
@@ -358,7 +351,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '66', actions: { raise: 1 } },
       { hand: '55', actions: { raise: 0.4, fold: 0.6 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 133, page: 353 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 133, page: 353 }
   },
   UTG1_RFI_40BB: {
     key: 'UTG1_RFI_40BB',
@@ -415,7 +408,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '65o', actions: { raise: 0.1, fold: 0.9 } },
       { hand: '55', actions: { raise: 0.5, fold: 0.5 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 134, page: 354 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 134, page: 354 }
   },
   UTG1_RFI_60BB: {
     key: 'UTG1_RFI_60BB',
@@ -468,7 +461,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '43o', actions: { raise: 0.1, fold: 0.9 } },
       { hand: '33', actions: { raise: 0.25, fold: 0.75 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 135, page: 355 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 135, page: 355 }
   },
   UTG2_RFI_15BB: {
     key: 'UTG2_RFI_15BB',
@@ -517,7 +510,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '66', actions: { raise: 0.65, jam: 0.35 } },
       { hand: '55', actions: { raise: 0.2, fold: 0.8 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 128, page: 347 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 128, page: 347 }
   },
   UTG2_RFI_25BB: {
     key: 'UTG2_RFI_25BB',
@@ -579,7 +572,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '65o', actions: { raise: 0.1, fold: 0.9 } },
       { hand: '55', actions: { raise: 0.75, fold: 0.25 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 129, page: 348 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 129, page: 348 }
   },
   UTG2_RFI_40BB: {
     key: 'UTG2_RFI_40BB',
@@ -642,7 +635,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '65o', actions: { raise: 0.1, fold: 0.9 } },
       { hand: '55', actions: { raise: 1 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 130, page: 349 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 130, page: 349 }
   },
   UTG2_RFI_60BB: {
     key: 'UTG2_RFI_60BB',
@@ -701,7 +694,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '43o', actions: { raise: 0.1, fold: 0.9 } },
       { hand: '33', actions: { raise: 0.25, fold: 0.75 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 131, page: 350 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 131, page: 350 }
   },
   LJ_RFI_15BB: {
     key: 'LJ_RFI_15BB',
@@ -756,7 +749,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '66', actions: { raise: 0.35, jam: 0.65 } },
       { hand: '55', actions: { raise: 0.25, jam: 0.75 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 124, page: 342 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 124, page: 342 }
   },
   LJ_RFI_25BB: {
     key: 'LJ_RFI_25BB',
@@ -824,7 +817,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '54o', actions: { raise: 0.1, fold: 0.9 } },
       { hand: '44', actions: { raise: 0.1, fold: 0.9 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 125, page: 343 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 125, page: 343 }
   },
   LJ_RFI_40BB: {
     key: 'LJ_RFI_40BB',
@@ -894,7 +887,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '54o', actions: { raise: 0.1, fold: 0.9 } },
       { hand: '44', actions: { raise: 0.35, fold: 0.65 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 126, page: 344 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 126, page: 344 }
   },
   LJ_RFI_60BB: {
     key: 'LJ_RFI_60BB',
@@ -960,7 +953,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '43o', actions: { raise: 0.1, fold: 0.9 } },
       { hand: '33', actions: { raise: 1 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 127, page: 345 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 127, page: 345 }
   },
   HJ_RFI_15BB: {
     key: 'HJ_RFI_15BB',
@@ -1020,7 +1013,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '44', actions: { jam: 1 } },
       { hand: '33', actions: { jam: 0.65, fold: 0.35 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 120, page: 337 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 120, page: 337 }
   },
   HJ_RFI_25BB: {
     key: 'HJ_RFI_25BB',
@@ -1096,7 +1089,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '54o', actions: { raise: 0.1, fold: 0.9 } },
       { hand: '44', actions: { raise: 0.65, fold: 0.35 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 121, page: 338 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 121, page: 338 }
   },
   HJ_RFI_40BB: {
     key: 'HJ_RFI_40BB',
@@ -1176,7 +1169,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '44', actions: { raise: 1 } },
       { hand: '33', actions: { raise: 0.5, fold: 0.5 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 122, page: 339 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 122, page: 339 }
   },
   HJ_RFI_60BB: {
     key: 'HJ_RFI_60BB',
@@ -1249,7 +1242,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '33', actions: { raise: 1 } },
       { hand: '22', actions: { raise: 0.65, fold: 0.35 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 123, page: 340 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 123, page: 340 }
   },
   CO_RFI_15BB: {
     key: 'CO_RFI_15BB',
@@ -1320,7 +1313,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '33', actions: { jam: 1 } },
       { hand: '22', actions: { jam: 1 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 116, page: 332 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 116, page: 332 }
   },
   CO_RFI_25BB: {
     key: 'CO_RFI_25BB',
@@ -1406,7 +1399,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '54s', actions: { raise: 0.15, fold: 0.85 } },
       { hand: '44', actions: { raise: 1 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 117, page: 333 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 117, page: 333 }
   },
   CO_RFI_40BB: {
     key: 'CO_RFI_40BB',
@@ -1497,7 +1490,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '33', actions: { raise: 1 } },
       { hand: '22', actions: { raise: 0.15, fold: 0.85 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 118, page: 334 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 118, page: 334 }
   },
   CO_RFI_60BB: {
     key: 'CO_RFI_60BB',
@@ -1586,7 +1579,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '33', actions: { raise: 1 } },
       { hand: '22', actions: { raise: 1 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 119, page: 335 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 119, page: 335 }
   },
   BTN_RFI_15BB: {
     key: 'BTN_RFI_15BB',
@@ -1677,7 +1670,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '33', actions: { jam: 1 } },
       { hand: '22', actions: { jam: 1 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 112, page: 326 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 112, page: 326 }
   },
   BTN_RFI_25BB: {
     key: 'BTN_RFI_25BB',
@@ -1783,7 +1776,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '44', actions: { raise: 1 } },
       { hand: '33', actions: { raise: 0.5, fold: 0.5 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 113, page: 327 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 113, page: 327 }
   },
   BTN_RFI_40BB: {
     key: 'BTN_RFI_40BB',
@@ -1898,7 +1891,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '33', actions: { raise: 1 } },
       { hand: '22', actions: { raise: 1 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 114, page: 329 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 114, page: 329 }
   },
   BTN_RFI_60BB: {
     key: 'BTN_RFI_60BB',
@@ -2019,7 +2012,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '33', actions: { raise: 1 } },
       { hand: '22', actions: { raise: 1 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 115, page: 330 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 115, page: 330 }
   },
   SB_RFI_15BB: {
     key: 'SB_RFI_15BB',
@@ -2184,7 +2177,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '32s', actions: { limp: 1 } },
       { hand: '22', actions: { jam: 1 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 96, page: 307 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 96, page: 307 }
   },
   SB_RFI_25BB: {
     key: 'SB_RFI_25BB',
@@ -2345,7 +2338,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '32s', actions: { raise: 0.4, limp: 0.6 } },
       { hand: '22', actions: { jam: 1 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 99, page: 310 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 99, page: 310 }
   },
   SB_RFI_40BB: {
     key: 'SB_RFI_40BB',
@@ -2504,7 +2497,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '32s', actions: { limp: 1 } },
       { hand: '22', actions: { raise: 0.15, limp: 0.85 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 103, page: 314 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 103, page: 314 }
   },
   SB_RFI_60BB: {
     key: 'SB_RFI_60BB',
@@ -2672,7 +2665,7 @@ export const MTT_RFI_CHARTS: Record<string, MttRfiChart> = {
       { hand: '32o', actions: { limp: 0.1, fold: 0.9 } },
       { hand: '22', actions: { limp: 1 } },
     ],
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 106, page: 317 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: 106, page: 317 }
   },
 }
 

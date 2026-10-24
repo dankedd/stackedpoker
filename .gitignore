@@ -11,6 +11,7 @@
 # ── Node / Frontend ──────────────────────────────────────────────────────────
 node_modules/
 .next/
+.next-*/
 .vercel/
 out/
 dist/

@@ -104,7 +104,7 @@ export const CBET_BY_TOP_CARD: InteractivePuzzle = {
           tableAction: { label: 'Checks' },
           verdict: 'mistake',
           shortWhy:
-            'This is the group the book has the preflop raiser betting most often outside of 222: Axx flops are c-bet 96% of the time, which leaves checking about 4%. Giving up the betting lead here is close to abandoning the strategy, not choosing a smaller branch of it.',
+            'This is the group the source has the preflop raiser betting most often outside of 222: Axx flops are c-bet 96% of the time, which leaves checking about 4%. Giving up the betting lead here is close to abandoning the strategy, not choosing a smaller branch of it.',
           sources: ['cbet.by-top-card', 'cbet.check-share-derived', 'cbet.checking-back-costs-ip'],
         },
         {
@@ -124,24 +124,24 @@ export const CBET_BY_TOP_CARD: InteractivePuzzle = {
           tableAction: { label: 'Bets', betBb: 3.7 },
           verdict: 'defensible',
           shortWhy:
-            'Also a bet, and the source does not rank it against the small one: p.661 sorts c-bet FREQUENCY by the flop’s highest card and prints no size split for these categories. Graded below the small bet by the format, not by the book.',
+            'Also a bet, and the source does not rank it against the small one: it sorts c-bet FREQUENCY by the flop’s highest card and prints no size split for these categories. Graded below the small bet by the format, not by the source.',
           sources: ['cbet.by-top-card', 'cbet.sizes-by-stack-depth'],
         },
       ],
       bestOptionId: 'bet-small',
       explanation:
-        'Bet. Sort every flop by its highest card and the book prints an ordering: 222 is c-bet 100% of the time, Axx flops 96%, 3xx 93%, Kxx 88%, Qxx and Txx 85%, and middle and low flops lowest of all (p.661). An ace-high flop is at the top of that list, so betting is what the strategy does here almost without exception — the 4% that is left over is what checking gets. Note what that figure is and is not: it is the average across every flop with an ace as its highest card, describing the preflop raiser’s whole range at that node. It is not a number for A♠8♦3♣ specifically, and it is not a number for K♣J♦. Your hand missing is not the question this page answers.',
+        'Bet. Sort every flop by its highest card and the source prints an ordering: 222 is c-bet 100% of the time, Axx flops 96%, 3xx 93%, Kxx 88%, Qxx and Txx 85%, and middle and low flops lowest of all. An ace-high flop is at the top of that list, so betting is what the strategy does here almost without exception — the 4% that is left over is what checking gets. Note what that figure is and is not: it is the average across every flop with an ace as its highest card, describing the preflop raiser’s whole range at that node. It is not a number for A♠8♦3♣ specifically, and it is not a number for K♣J♦. Your hand missing is not the question this page answers.',
       unsourced: [
         {
-          question: 'Does the book say whether to bet small or big on an Axx flop?',
+          question: 'Does the source say whether to bet small or big on an Axx flop?',
           answer:
-            'No. p.661 ranks c-bet FREQUENCY by the flop’s highest card and prints no sizing split for those categories, so this puzzle does not invent one. The two bet buttons are graded apart only because the format requires a single key — treat them as one answer. The nearest thing the book says about size is a different variable entirely: bigger sizes are used less often when stacks are shallower and become more relevant when stacks are deeper (p.660). That is about stack depth, not about the top card, and it is not the basis for the key here.',
+            'No. The source ranks c-bet FREQUENCY by the flop’s highest card and prints no sizing split for those categories, so this puzzle does not invent one. The two bet buttons are graded apart only because the format requires a single key — treat them as one answer. The nearest thing the source says about size is a different variable entirely: bigger sizes are used less often when stacks are shallower and become more relevant when stacks are deeper. That is about stack depth, not about the top card, and it is not the basis for the key here.',
           nearestSources: ['cbet.by-top-card', 'cbet.sizes-by-stack-depth'],
         },
         {
           question: 'Is 96% the button’s number, or an average of two different openers?',
           answer:
-            'An average. The whole section is aggregated from thousands of solutions at 20bb/30bb/40bb with MTT starting ranges, blended across the BN and UTG openers (p.655) — and the book states that UTG c-bets more often than the BN, because UTG’s range is stronger (p.659). So the button’s own frequency on ace-high flops sits somewhere below the blended 96%, and the book never splits the top-card table by opener. What survives that caveat is the ordering, which is what this puzzle teaches.',
+            'An average. The whole section is aggregated from thousands of solutions at 20bb/30bb/40bb with MTT starting ranges, blended across the BN and UTG openers — and the source states that UTG c-bets more often than the BN, because UTG’s range is stronger. So the button’s own frequency on ace-high flops sits somewhere below the blended 96%, and the source never splits the top-card table by opener. What survives that caveat is the ordering, which is what this puzzle teaches.',
           nearestSources: ['position.ch12-sim-scope', 'cbet.range-strength-drives-frequency', 'cbet.by-top-card'],
         },
       ],
@@ -150,11 +150,11 @@ export const CBET_BY_TOP_CARD: InteractivePuzzle = {
           id: 'the-ranking',
           title: 'Every flop, sorted by its highest card',
           body:
-            'This is the whole lesson in one exhibit. The book takes every flop, groups them by the biggest card on the board, and prints how often the preflop raiser c-bets each group after the big blind checks. The spread runs from 100% down to 62% — a huge range for a single feature you can read off the felt in a fraction of a second, before you have thought about your own two cards at all.',
+            'This is the whole lesson in one exhibit. The source takes every flop, groups them by the biggest card on the board, and prints how often the preflop raiser c-bets each group after the big blind checks. The spread runs from 100% down to 62% — a huge range for a single feature you can read off the felt in a fraction of a second, before you have thought about your own two cards at all.',
           exhibit: {
             caption: 'IP c-bet frequency by the flop’s highest card',
             scope:
-              'Category AVERAGES over every flop sharing that highest card. Aggregated from thousands of GTO solutions at 20bb/30bb/40bb with MTT starting ranges, blended over the BN and UTG openers, measured at IP’s decision after the BB checks (pp.655-656). Not the frequency for one flop, and not the frequency for one hand.',
+              'Category AVERAGES over every flop sharing that highest card. Aggregated from thousands of GTO solutions at 20bb/30bb/40bb with MTT starting ranges, blended over the BN and UTG openers, measured at IP’s decision after the BB checks. Not the frequency for one flop, and not the frequency for one hand.',
             rows: [
               { label: '2xx (222 only)', value: '100%', pct: 100 },
               { label: 'Axx', value: '96%', pct: 96, note: 'this board' },
@@ -183,7 +183,7 @@ export const CBET_BY_TOP_CARD: InteractivePuzzle = {
             {
               question: 'Is the top card the best single predictor of c-bet frequency?',
               answer:
-                'The book never says so, and this puzzle does not claim it. Modern Poker Theory sorts the same flops several ways in the same few pages — by how many straights are possible, by how many open-ended draws they allow, by structure such as trips and paired boards — and it never ranks those features against one another. What it does print is this one ordering by highest card, and the spread it produces is wide: 100% down to 62%. That is the claim being taught here, and no more than it.',
+                'The source never says so, and this puzzle does not claim it. The source sorts the same flops several ways in the same few pages — by how many straights are possible, by how many open-ended draws they allow, by structure such as trips and paired boards — and it never ranks those features against one another. What it does print is this one ordering by highest card, and the spread it produces is wide: 100% down to 62%. That is the claim being taught here, and no more than it.',
               nearestSources: ['cbet.by-top-card', 'cbet.straights-favor-bb'],
             },
           ],
@@ -194,11 +194,11 @@ export const CBET_BY_TOP_CARD: InteractivePuzzle = {
           id: 'why-betting-is-the-default',
           title: 'Why the preflop raiser is betting in the first place',
           body:
-            'Before the board even matters, the default in this seat is aggression, and the book puts a price on abandoning it: an in-position player who simply checks back every flop loses 26bb/100. That is the baseline the top-card ranking modulates. The question a flop answers is not whether to c-bet as a policy — it is how much of your range keeps doing it here.',
+            'Before the board even matters, the default in this seat is aggression, and the source puts a price on abandoning it: an in-position player who simply checks back every flop loses 26bb/100. That is the baseline the top-card ranking modulates. The question a flop answers is not whether to c-bet as a policy — it is how much of your range keeps doing it here.',
           exhibit: {
             caption: 'What position is worth after the big blind checks',
             scope:
-              'Ch.12, pp.655-657 — the same 20bb/30bb/40bb aggregate with MTT starting ranges. Whole-strategy figures for the in-position player, not figures for one board or one hand.',
+              'The same 20bb/30bb/40bb aggregate with MTT starting ranges. Whole-strategy figures for the in-position player, not figures for one board or one hand.',
             rows: [
               { label: 'EV lost by always checking back', value: '26bb/100' },
               { label: 'IP equity over-realization', value: '15%', pct: 15, note: 'both the BN and UTG' },
@@ -216,11 +216,11 @@ export const CBET_BY_TOP_CARD: InteractivePuzzle = {
               sources: ['position.ip-range-advantage', 'position.ip-over-realizes'],
             },
             {
-              text: 'And range strength is doing the rest. The book states the mechanism plainly — UTG c-bets more often than the button because UTG’s range is stronger, and in general the more strong hands your range has compared to your opponent’s, the more frequently you can bet.',
+              text: 'And range strength is doing the rest. The source states the mechanism plainly — UTG c-bets more often than the button because UTG’s range is stronger, and in general the more strong hands your range has compared to your opponent’s, the more frequently you can bet.',
               sources: ['cbet.range-strength-drives-frequency'],
             },
             {
-              text: 'Mind the scope on the 15%: it comes from the book’s 20bb/30bb/40bb aggregate with MTT starting ranges, so read it for the direction position pushes things rather than as a measurement of this exact spot.',
+              text: 'Mind the scope on the 15%: it comes from the source’s 20bb/30bb/40bb aggregate with MTT starting ranges, so read it for the direction position pushes things rather than as a measurement of this exact spot.',
               sources: ['position.ch12-sim-scope'],
             },
           ],
@@ -257,7 +257,7 @@ export const CBET_BY_TOP_CARD: InteractivePuzzle = {
           tableAction: { label: 'Bets', betBb: 1.8 },
           verdict: 'best',
           shortWhy:
-            'Still a bet, but by a much smaller margin: 6xx is the lowest-betting group in the book’s list at 62%. Betting remains the majority strategy — it is checking that has gone from a rounding error to more than a third of it. As on the previous board, the source ranks frequency here, not size.',
+            'Still a bet, but by a much smaller margin: 6xx is the lowest-betting group in the source’s list at 62%. Betting remains the majority strategy — it is checking that has gone from a rounding error to more than a third of it. As on the previous board, the source ranks frequency here, not size.',
           sources: ['cbet.by-top-card', 'cbet.check-share-derived', 'cbet.sizes-by-stack-depth'],
         },
         {
@@ -267,7 +267,7 @@ export const CBET_BY_TOP_CARD: InteractivePuzzle = {
           tableAction: { label: 'Bets', betBb: 3.7 },
           verdict: 'defensible',
           shortWhy:
-            'Betting is right; the size is not what p.661 ranks. The top-card table sorts c-bet frequency and prints no sizing split for these categories, so this is scored below the small bet by the format rather than by the book.',
+            'Betting is right; the size is not what ranks. The top-card table sorts c-bet frequency and prints no sizing split for these categories, so this is scored below the small bet by the format rather than by the source.',
           sources: ['cbet.by-top-card', 'cbet.sizes-by-stack-depth'],
         },
         {
@@ -283,12 +283,12 @@ export const CBET_BY_TOP_CARD: InteractivePuzzle = {
       ],
       bestOptionId: 'bet-small',
       explanation:
-        'Bet — but only just, and that is the point. 6xx is the lowest-betting group the book lists, at 62%, against 96% for the ace-high flop you just played. Nothing about your holding changed: K♣J♦ missed both boards identically. What changed is the top card, and with it the checking share of the strategy — from 4% to 38%, close to ten times more. So checking is graded here as a real branch rather than a mistake, because on this board it is one. If you want the mechanism the book gives for the low end of the table, it is the big blind’s connectors: the big blind holds more offsuit connectors than the preflop raiser, so flops that allow more straights favour them, and c-bet frequency falls as more straights become possible.',
+        'Bet — but only just, and that is the point. 6xx is the lowest-betting group the source lists, at 62%, against 96% for the ace-high flop you just played. Nothing about your holding changed: K♣J♦ missed both boards identically. What changed is the top card, and with it the checking share of the strategy — from 4% to 38%, close to ten times more. So checking is graded here as a real branch rather than a mistake, because on this board it is one. If you want the mechanism the source gives for the low end of the table, it is the big blind’s connectors: the big blind holds more offsuit connectors than the preflop raiser, so flops that allow more straights favour them, and c-bet frequency falls as more straights become possible.',
       unsourced: [
         {
           question: 'Is 62% the frequency for 6♠4♦2♣ specifically?',
           answer:
-            'No. It is the average across every flop whose highest card is a six, and the book prints no figure for an individual flop in this table — nor for an individual hand on one. Two things are worth knowing about this particular board. Every unpaired 6xx flop allows at least one straight, and 6-4-2 allows exactly one (5-3), which is the fewest available; and the book states separately that c-bet frequency falls as more straights are possible. So a straight-heavy 6xx flop would sit below the 62% average and this one plausibly above it — but the book gives no number for either, so none is claimed.',
+            'No. It is the average across every flop whose highest card is a six, and the source prints no figure for an individual flop in this table — nor for an individual hand on one. Two things are worth knowing about this particular board. Every unpaired 6xx flop allows at least one straight, and 6-4-2 allows exactly one (5-3), which is the fewest available; and the source states separately that c-bet frequency falls as more straights are possible. So a straight-heavy 6xx flop would sit below the 62% average and this one plausibly above it — but the source gives no number for either, so none is claimed.',
           nearestSources: ['cbet.by-top-card', 'cbet.straights-favor-bb'],
         },
         {
@@ -307,7 +307,7 @@ export const CBET_BY_TOP_CARD: InteractivePuzzle = {
           exhibit: {
             caption: 'The two boards you just played',
             scope:
-              'Category averages for the Axx and 6xx groups (p.661) with their arithmetic complements. Same 20bb/30bb/40bb MTT-range aggregate, blended over BN and UTG openers, measured after the BB checks. Neither row is a figure for A♠8♦3♣, for 6♠4♦2♣, or for K♣J♦ on either.',
+              'Category averages for the Axx and 6xx groups with their arithmetic complements. Same 20bb/30bb/40bb MTT-range aggregate, blended over BN and UTG openers, measured after the BB checks. Neither row is a figure for A♠8♦3♣, for 6♠4♦2♣, or for K♣J♦ on either.',
             rows: [
               { label: 'Axx — c-bet', value: '96%', pct: 96 },
               { label: 'Axx — check', value: '4%', pct: 4, note: '100% − 96%' },
@@ -318,7 +318,7 @@ export const CBET_BY_TOP_CARD: InteractivePuzzle = {
           },
           bullets: [
             {
-              text: 'The book’s own words for the bottom of the list: “middle and low flops are c-bet at the lowest frequencies, with 6xx being the lowest at only 62%.”',
+              text: 'The source’s own words for the bottom of the list: “middle and low flops are c-bet at the lowest frequencies, with 6xx being the lowest at only 62%.”',
               sources: ['cbet.by-top-card'],
             },
             {
@@ -334,7 +334,7 @@ export const CBET_BY_TOP_CARD: InteractivePuzzle = {
             {
               question: 'So is the top card just standing in for how many straights are possible?',
               answer:
-                'Partly, and the book does not resolve how much. It sorts the same flops by both features in the same few pages — by highest card and by number of possible straights — without ranking one against the other or separating their effects. The two overlap here by construction: every unpaired 6xx flop allows at least one straight, while the ace-high board you just played allows none. This puzzle teaches the ordering the source prints and names the overlap rather than resolving it.',
+                'Partly, and the source does not resolve how much. It sorts the same flops by both features in the same few pages — by highest card and by number of possible straights — without ranking one against the other or separating their effects. The two overlap here by construction: every unpaired 6xx flop allows at least one straight, while the ace-high board you just played allows none. This puzzle teaches the ordering the source prints and names the overlap rather than resolving it.',
               nearestSources: ['cbet.by-top-card', 'cbet.straights-favor-bb'],
             },
           ],
@@ -364,7 +364,7 @@ export const CBET_BY_TOP_CARD: InteractivePuzzle = {
             {
               question: 'How often should K♣J♦ specifically bet on either of these flops?',
               answer:
-                'The source does not provide an exact frequency for this hand on either board. The top-card table is a range-wide figure by construction, and the book prints no per-hand breakdown attached to it. What can honestly be carried away is the ordering and its size: ace-high flops sit near the top of the list at 96%, six-high flops at the bottom at 62%, and that gap is a property of the board rather than of your holding.',
+                'The source does not provide an exact frequency for this hand on either board. The top-card table is a range-wide figure by construction, and the source prints no per-hand breakdown attached to it. What can honestly be carried away is the ordering and its size: ace-high flops sit near the top of the list at 96%, six-high flops at the bottom at 62%, and that gap is a property of the board rather than of your holding.',
               nearestSources: ['cbet.by-top-card', 'cbet.check-share-derived'],
             },
           ],
@@ -384,12 +384,12 @@ export const CBET_BY_TOP_CARD: InteractivePuzzle = {
       kind: 'aggregate',
       seat: 'hero',
       description:
-        'The node every figure in this puzzle describes. The book measures the preflop raiser’s flop strategy from exactly this point — in position, after the big blind has checked — and reports that IP holds the overall range advantage and over-realizes its equity by 15%. That is the standing edge the top-card ranking then modulates board by board.',
+        'The node every figure in this puzzle describes. The source measures the preflop raiser’s flop strategy from exactly this point — in position, after the big blind has checked — and reports that IP holds the overall range advantage and over-realizes its equity by 15%. That is the standing edge the top-card ranking then modulates board by board.',
       unsourced: [
         {
           question: 'What percentage of hands is the button actually opening here?',
           answer:
-            'Not stated for this spot. There is a tempting number in the same pages — p.657 contrasts UTG’s “~15% range” with the BN’s “~44% range” — but p.655 states the whole section is aggregated from 20bb/30bb/40bb solutions using MTT starting ranges, so those are the opening ranges of that dataset rather than a cash configuration. No per-hand chart is claimed here either: the top-card figures are range-wide frequencies, and the book prints no grid alongside them.',
+            'Not stated for this spot. There is a tempting number in the same pages — the source contrasts UTG’s “~15% range” with the BN’s “~44% range” — but the source states the whole section is aggregated from 20bb/30bb/40bb solutions using MTT starting ranges, so those are the opening ranges of that dataset rather than a cash configuration. No per-hand chart is claimed here either: the top-card figures are range-wide frequencies, and the source prints no grid alongside them.',
           nearestSources: ['position.ip-range-advantage', 'position.ch12-sim-scope', 'cbet.by-top-card'],
         },
       ],
@@ -404,7 +404,7 @@ export const CBET_BY_TOP_CARD: InteractivePuzzle = {
   headlineSources: ['cbet.by-top-card'],
   takeaways: [
     {
-      text: 'The book prints one ordering by top card: 222 is c-bet 100% of the time, Axx 96%, 3xx 93%, Kxx 88%, Qxx and Txx 85%, and 6xx lowest of all at 62%.',
+      text: 'The source prints one ordering by top card: 222 is c-bet 100% of the time, Axx 96%, 3xx 93%, Kxx 88%, Qxx and Txx 85%, and 6xx lowest of all at 62%.',
       sources: ['cbet.by-top-card'],
     },
     {
@@ -416,7 +416,7 @@ export const CBET_BY_TOP_CARD: InteractivePuzzle = {
       sources: ['cbet.by-top-card'],
     },
     {
-      text: 'Every one of those percentages is a category average over all flops with that top card, describing the whole in-position range after the big blind checks. It is not a figure for one flop, not a figure for one hand, and the book prints no sizing split for these categories.',
+      text: 'Every one of those percentages is a category average over all flops with that top card, describing the whole in-position range after the big blind checks. It is not a figure for one flop, not a figure for one hand, and the source prints no sizing split for these categories.',
       sources: ['cbet.by-top-card', 'cbet.analysis-after-bb-checks', 'cbet.sizes-by-stack-depth'],
     },
     {
@@ -431,5 +431,5 @@ export const CBET_BY_TOP_CARD: InteractivePuzzle = {
     'The two decisions are the same hand dealt two different flops, not one hand advancing. That is the whole design: the source ranks c-bet frequency by the flop’s highest card, so the only way to show the effect honestly is to hold the seats, the stack, the pot, the preflop action and Hero’s two cards fixed and change nothing but the three cards on the felt. The second board replaces the first rather than extending it, and the decision says so in its own opening line.',
 
   endsEarlyBecause:
-    'The ranking this puzzle teaches is a flop statistic and nothing else. p.661 sorts flops by their highest card and reports how often the preflop raiser c-bets each group after the big blind checks; it prints no turn or river continuation for those categories, so the hand stops where the evidence does rather than playing on into streets the source has not solved. The second decision is not a later street either — it is the same hand dealt a different flop, so that the board is the only variable that moves.',
+    'The ranking this puzzle teaches is a flop statistic and nothing else. The source sorts flops by their highest card and reports how often the preflop raiser c-bets each group after the big blind checks; it prints no turn or river continuation for those categories, so the hand stops where the evidence does rather than playing on into streets the source has not solved. The second decision is not a later street either — it is the same hand dealt a different flop, so that the board is the only variable that moves.',
 }

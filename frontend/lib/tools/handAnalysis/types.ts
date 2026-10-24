@@ -104,8 +104,6 @@ export type Verdict =
 export interface ConditionalRange {
   presetId: string;
   presetLabel: string;
-  /** "Hand Range 82: BB vs BN Open — Modern Poker Theory (Acevedo, 2019), p.243." */
-  citation: string;
   /** How the chart's numbers were obtained, in a sentence. */
   derivationNote: string;
   /** Everything the reader is taking on by selecting it. */

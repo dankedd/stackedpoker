@@ -22,8 +22,9 @@ class InvalidHand(ValueError):
 @dataclass(frozen=True)
 class ChartRef:
     kind: ChartKind
-    #: Book page for open and push/fold charts; Hand Range number for defense charts.
-    chart_id: int
+    #: Chart id ("open_mtt_lj_25"). Clients from before ids existed send the
+    #: legacy number (page for open/push-fold, n for defense); both resolve.
+    chart_id: str | int
     #: Stack in bb — only meaningful for push/fold, where one chart covers 2–10bb.
     stack: int | None = None
 
@@ -37,15 +38,19 @@ class GradeResult:
 
 
 @lru_cache(maxsize=1)
-def _charts() -> dict[str, dict[int, dict]]:
-    def load(name: str) -> list[dict]:
-        return json.loads((DATA_DIR / f"{name}.json").read_text(encoding="utf-8"))
+def _charts() -> dict[str, dict[str | int, dict]]:
+    def load(name: str, legacy: str) -> dict[str | int, dict]:
+        charts = json.loads((DATA_DIR / f"{name}.json").read_text(encoding="utf-8"))
+        return {**{c[legacy]: c for c in charts}, **{c["id"]: c for c in charts}}
 
-    return {
-        "open": {c["page"]: c for c in load("open")},
-        "pushfold": {c["page"]: c for c in load("pushfold")},
-        "defense": {c["n"]: c for c in load("defense")},
-    }
+    return {"open": load("open", "page"), "pushfold": load("pushfold", "page"), "defense": load("defense", "n")}
+
+
+def chart_for(ref: ChartRef) -> dict:
+    chart = _charts()[ref.kind].get(ref.chart_id)
+    if chart is None:
+        raise InvalidHand(f"unknown {ref.kind} chart {ref.chart_id}")
+    return chart
 
 
 def push_value(cell: list[str]) -> int:
@@ -57,9 +62,7 @@ def push_value(cell: list[str]) -> int:
 
 
 def frequencies(ref: ChartRef, hand: str) -> dict[str, float]:
-    chart = _charts()[ref.kind].get(ref.chart_id)
-    if chart is None:
-        raise InvalidHand(f"unknown {ref.kind} chart {ref.chart_id}")
+    chart = chart_for(ref)
     if hand not in chart["grid"]:
         raise InvalidHand(f"unknown hand {hand!r}")
 

@@ -254,8 +254,8 @@ describe('Module 10 — data authenticity: every step carries a classified sourc
     for (const step of allModule10Steps()) {
       if (step.source) {
         expect(valid.has(step.source.type)).toBe(true)
-        expect(step.source.book.length).toBeGreaterThan(0)
-        expect(step.source.section.length).toBeGreaterThan(0)
+        // Work and section are a comment next to the step; only the type ships.
+        expect(Object.keys(step.source)).toEqual(['type'])
       }
     }
   })

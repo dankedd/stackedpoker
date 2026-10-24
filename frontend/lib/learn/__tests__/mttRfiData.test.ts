@@ -3,6 +3,8 @@
  * independent of any curriculum wiring. See mttRfiBaselines.ts's header for provenance
  * (Michael Acevedo, "Modern Poker Theory", Ch. 7) and extraction methodology.
  */
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, it, expect } from 'vitest'
 import { MTT_RFI_CHARTS, MTT_RFI_CHART_KEYS, type MttAction } from '../mttRfiBaselines'
 import { expandHandClass } from '../combos'
@@ -66,21 +68,23 @@ describe('MTT_RFI_CHARTS — action frequencies are valid', () => {
 })
 
 describe('MTT_RFI_CHARTS — provenance', () => {
+  // Each chart's citation is a `// sourceRef: {…}` comment: documented, never shipped.
+  const file = readFileSync(resolve(__dirname, '../mttRfiBaselines.ts'), 'utf8')
+  const handRangeOf = (key: string) =>
+    Number(file.split(`key: '${key}'`)[1].match(/\/\/ sourceRef: \{ book: 'Modern Poker Theory', chapterNo: 7, handRangeNo: (\d+), page: \d+ \}/)?.[1])
   for (const [key, chart] of Object.entries(MTT_RFI_CHARTS)) {
-    it(`${key}: has a complete sourceRef`, () => {
-      expect(chart.sourceRef.book).toBe('Modern Poker Theory')
-      expect(chart.sourceRef.chapterNo).toBe(7)
-      expect(typeof chart.sourceRef.handRangeNo).toBe('number')
-      expect(chart.sourceRef.handRangeNo).toBeGreaterThan(0)
+    it(`${key}: has a complete source comment and no shipped sourceRef`, () => {
+      expect(handRangeOf(key)).toBeGreaterThan(0)
+      expect(Object.keys(chart)).not.toContain('sourceRef')
       expect(chart.key).toBe(key)
     })
   }
 
   it('every chart has a unique handRangeNo (no two canonical keys cite the same source chart)', () => {
     const seen = new Set<number>()
-    for (const [key, chart] of Object.entries(MTT_RFI_CHARTS)) {
-      expect(seen.has(chart.sourceRef.handRangeNo), `${key}: duplicate handRangeNo`).toBe(false)
-      seen.add(chart.sourceRef.handRangeNo)
+    for (const key of Object.keys(MTT_RFI_CHARTS)) {
+      expect(seen.has(handRangeOf(key)), `${key}: duplicate handRangeNo`).toBe(false)
+      seen.add(handRangeOf(key))
     }
   })
 })

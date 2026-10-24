@@ -20,5 +20,3 @@ export const DEFENSE_CHARTS = defenseJson as unknown as DefenseChart[];
 
 export const MTT_OPEN_CHARTS = OPEN_CHARTS.filter((c) => c.group === "mtt");
 export const CASH_OPEN_CHARTS = OPEN_CHARTS.filter((c) => c.group === "cash");
-
-export { SOURCE_CREDIT } from "./credit";

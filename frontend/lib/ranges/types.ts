@@ -24,12 +24,11 @@ export interface ChartAction<K extends RangeActionKey = RangeActionKey> {
 
 /** First-in (open) chart. `grid[hand][i]` is the 0–1 frequency of `actions[i]`. */
 export interface OpenChart {
-  page: number;
+  /** Stable chart id, e.g. "open_mtt_lj_25" (scripts/build-range-data.mjs). */
+  id: string;
   group: "mtt" | "cash";
   pos: string;
   stack: number;
-  /** Source label, e.g. "Hand Range 112". */
-  hr: string;
   actions: ChartAction<OpenActionKey>[];
   grid: Record<HandClass, number[]>;
 }
@@ -39,9 +38,9 @@ export interface OpenChart {
  * see `pushValue` in ./logic for how that becomes a max shove stack.
  */
 export interface PushFoldChart {
-  page: number;
+  /** Stable chart id, e.g. "push_sb". */
+  id: string;
   pos: string;
-  hr: string;
   grid: Record<HandClass, [string, string]>;
 }
 
@@ -52,16 +51,14 @@ export type DefenseSpot = "open" | "push" | "limp" | "4bet" | "lr";
  * spot (e.g. it is not in the 3-bet range that got 4-bet) — that is NOT fold.
  */
 export interface DefenseChart {
-  /** Hand Range number. */
-  n: number;
-  page: number;
+  /** Stable chart id, e.g. "def_mtt_bb_vs_bn_open_25". */
+  id: string;
   group: "mtt" | "cash";
   hero: string;
   vil: string;
   stack: number;
   spot: DefenseSpot;
   size: string | null;
-  title: string;
   actions: ChartAction<DefenseActionKey>[];
   grid: Record<HandClass, number[] | null>;
 }

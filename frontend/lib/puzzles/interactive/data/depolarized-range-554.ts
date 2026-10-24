@@ -106,7 +106,7 @@ export const DEPOLARIZED_RANGE_554: InteractivePuzzle = {
         { street: 'flop', actor: 'BB', text: 'Checks' },
       ],
       situation:
-        'The flop is 5♥ 5♦ 4♥ and the big blind checks to you. You hold 8♠7♠: no pair, and no flush equity at all — the board has no spade, so the suit does nothing. What you have is a gutshot. Only a 6 makes your straight. The book puts a hand like this in its GOOD equity bucket on this board: Table 118 prints 58% hand-vs-range equity for gutshots here, which is at or above the 50% floor for Good and below the 75% floor for Strong (p.596). You are last to act with 37.5bb behind and 5.5bb in the middle.',
+        'The flop is 5♥ 5♦ 4♥ and the big blind checks to you. You hold 8♠7♠: no pair, and no flush equity at all — the board has no spade, so the suit does nothing. What you have is a gutshot. Only a 6 makes your straight. The source puts a hand like this in its GOOD equity bucket on this board: The table prints 58% hand-vs-range equity for gutshots here, which is at or above the 50% floor for Good and below the 75% floor for Strong. You are last to act with 37.5bb behind and 5.5bb in the middle.',
       question: 'What is your action?',
       options: [
         {
@@ -126,7 +126,7 @@ export const DEPOLARIZED_RANGE_554: InteractivePuzzle = {
           tableAction: { label: 'Bets', betBb: 1 },
           verdict: 'defensible',
           shortWhy:
-            'A real branch, and the right kind of bet: 21.3% of gutshots min-bet on this flop, and the book says paired boards should frequently be min-bet. It is simply the minority line — checking is used two and a half times more often with this hand class.',
+            'A real branch, and the right kind of bet: 21.3% of gutshots min-bet on this flop, and the source says paired boards should frequently be min-bet. It is simply the minority line — checking is used two and a half times more often with this hand class.',
           sources: ['ex6.table118-gutshot', 'ex4.paired-boards-min-bet', 'ex6.small-bets-when-depolarized'],
         },
         {
@@ -147,12 +147,12 @@ export const DEPOLARIZED_RANGE_554: InteractivePuzzle = {
       ],
       bestOptionId: 'check',
       explanation:
-        'Check. (1) The action: checking back is the majority line for this hand — 52.7% of the gutshots in the button’s range check on this flop, against 25.2% at 1/3-pot, 21.3% min-bet and 0.4% at 2/3 (Table 118, p.697) — and the prose states it directly: “gutshots mostly like to check back” (p.697). (2) Why: not because 8♠7♠ is weak. It is a Good hand by the book’s own measure, 58% hand-vs-range equity, which is ≥50% and <75% (p.596) — and that is precisely the kind of hand p.696 says “will benefit from checking back the flop”. Its EQR of 98% says the same thing from the other side: in position, a free card lets this hand realize essentially all of its equity. (3) The range theory: 57% of the button’s range on this flop sits in that same Good bucket, with only 10% Strong and 9% Trash (Diagram 67, p.696). A range with its top and bottom thin and its middle heavy is what the book calls depolarized (p.78) — and “most of the BN range is made of good hands, giving a depolarized distribution that will result in a low c-bet frequency” (p.696). Your hand is not an exception to that range; it is a typical member of it. (4) Sizing and frequency: the book prints both. Across the whole range the button checks 40.6% of the flop, min-bets 22.8%, bets 1/3-pot 35.3%, and uses 2/3-pot 0.5% of the time (Table 118 Full Range row, p.697); by bucket, the Good hands check 45% (Diagram 68, p.696). The reason the big size is missing is stated as a rule on p.663: “small bets are preferred when IP’s range has this type of depolarized distribution with the bulk of hands being good, but not great, and a low frequency of trash and weak hands.” (5) The passage this all rests on, p.696: “On this flop, the BN doesn’t have a significant range advantage, hence the preference for the smaller bet-sizes. In fact, most of the BN range is made of good hands, giving a depolarized distribution that will result in a low c-bet frequency, as many good and weak hands in the BN’s range will benefit from checking back the flop.”',
+        'Check. (1) The action: checking back is the majority line for this hand — 52.7% of the gutshots in the button’s range check on this flop, against 25.2% at 1/3-pot, 21.3% min-bet and 0.4% at 2/3 — and the prose states it directly: “gutshots mostly like to check back”. (2) Why: not because 8♠7♠ is weak. It is a Good hand by the source’s own measure, 58% hand-vs-range equity, which is ≥50% and <75% — and that is precisely the kind of hand says “will benefit from checking back the flop”. Its EQR of 98% says the same thing from the other side: in position, a free card lets this hand realize essentially all of its equity. (3) The range theory: 57% of the button’s range on this flop sits in that same Good bucket, with only 10% Strong and 9% Trash. A range with its top and bottom thin and its middle heavy is what the source calls depolarized — and “most of the BN range is made of good hands, giving a depolarized distribution that will result in a low c-bet frequency”. Your hand is not an exception to that range; it is a typical member of it. (4) Sizing and frequency: the source prints both. Across the whole range the button checks 40.6% of the flop, min-bets 22.8%, bets 1/3-pot 35.3%, and uses 2/3-pot 0.5% of the time; by bucket, the Good hands check 45%. The reason the big size is missing is stated as a rule: “small bets are preferred when IP’s range has this type of depolarized distribution with the bulk of hands being good, but not great, and a low frequency of trash and weak hands.” (5) The passage this all rests: “On this flop, the BN doesn’t have a significant range advantage, hence the preference for the smaller bet-sizes. In fact, most of the BN range is made of good hands, giving a depolarized distribution that will result in a low c-bet frequency, as many good and weak hands in the BN’s range will benefit from checking back the flop.”',
       unsourced: [
         {
           question: 'How often exactly does 8♠7♠ check here?',
           answer:
-            'The source does not say, and this is the one figure on the page that is genuinely missing. What Table 118 prints is the GUTSHOT CLASS — every gutshot combo in the button’s range averaged together, 5.7% of that range — so 52.7% is the class’s checking frequency, not this combo’s. The 58% equity is a class average too. The book prints no combo-by-combo chart for this flop, and interpolating one from the class row would be invented solver output.',
+            'The source does not say, and this is the one figure on the page that is genuinely missing. What the table prints is the GUTSHOT CLASS — every gutshot combo in the button’s range averaged together, 5.7% of that range — so 52.7% is the class’s checking frequency, not this combo’s. The 58% equity is a class average too. The source prints no combo-by-combo chart for this flop, and interpolating one from the class row would be invented solver output.',
           nearestSources: ['ex6.table118-gutshot', 'ex6.good-hands-gutshots-check'],
         },
         {
@@ -164,7 +164,7 @@ export const DEPOLARIZED_RANGE_554: InteractivePuzzle = {
         {
           question: 'Where do the 2.5bb open and the 5.5bb pot come from?',
           answer:
-            'From this implementation, not from these pages. Modern Poker Theory prints no preflop open size for the 40bb MTT simulations behind this chapter — its general pre-flop sizing guidance (p.175) is explicitly not the size those solutions were run at. A 2.5bb open is the standing assumption across this puzzle set, so the flop pot on screen is 2.5 opened plus 2.5 called plus the folded small blind’s 0.5 = 5.5bb, the min-bet is 1bb and the 2/3 bet is 3.7bb. Nothing in the answer depends on those numbers; the bucket data and the frequencies are the book’s.',
+            'From this implementation, not from these pages. The source prints no preflop open size for the 40bb MTT simulations behind this chapter — its general pre-flop sizing guidance is explicitly not the size those solutions were run. A 2.5bb open is the standing assumption across this puzzle set, so the flop pot on screen is 2.5 opened plus 2.5 called plus the folded small blind’s 0.5 = 5.5bb, the min-bet is 1bb and the 2/3 bet is 3.7bb. Nothing in the answer depends on those numbers; the bucket data and the frequencies are the source’s.',
           nearestSources: ['preflop.sizing-guidelines', 'ex6.example-header'],
         },
       ],
@@ -177,7 +177,7 @@ export const DEPOLARIZED_RANGE_554: InteractivePuzzle = {
           exhibit: {
             caption: 'Both ranges on 5♥5♦4♥, by equity bucket',
             scope:
-              'Diagram 67 (p.696), BB vs BN at 40bb — the printed data labels on the two pies. Whole-range percentages: 57% is the share of the button’s range sitting in the Good bucket, not how often any hand does anything.',
+              'The diagram, BB vs BN at 40bb — the printed data labels on the two pies. Whole-range percentages: 57% is the share of the button’s range sitting in the Good bucket, not how often any hand does anything.',
             rows: [
               { label: 'BN — Strong (75%+)', value: '10%', pct: 10 },
               { label: 'BN — Good (50-75%)', value: '57%', pct: 57, note: 'the bulk of the range' },
@@ -192,7 +192,7 @@ export const DEPOLARIZED_RANGE_554: InteractivePuzzle = {
           },
           bullets: [
             {
-              text: 'The bucket boundaries are the book’s, and they are about hand-vs-RANGE equity: Strong is 75%+, Good is 50% to 75%, Weak is 33% to 50%, Trash is under 33%. A hand’s bucket therefore moves with the board and with the ranges in play — it is not a property of the two cards.',
+              text: 'The bucket boundaries are the source’s, and they are about hand-vs-RANGE equity: Strong is 75%+, Good is 50% to 75%, Weak is 33% to 50%, Trash is under 33%. A hand’s bucket therefore moves with the board and with the ranges in play — it is not a property of the two cards.',
               sources: ['eqb.definitions'],
             },
             {
@@ -211,11 +211,11 @@ export const DEPOLARIZED_RANGE_554: InteractivePuzzle = {
           id: 'rarely-and-small',
           title: 'Why that shape bets rarely, and bets small',
           body:
-            'Two consequences follow from the profile, and the book states both. Rarely: a hand that is merely good has more to gain from seeing a free card in position than from charging a range that folds its trash anyway — “many good and weak hands in the BN’s range will benefit from checking back the flop.” Small: a big bet needs a polarized range behind it, with enough strong hands to make the size credible and enough trash to want the folds. This range has 10% and 9% of those. So the sizes that survive are the small ones.',
+            'Two consequences follow from the profile, and the source states both. Rarely: a hand that is merely good has more to gain from seeing a free card in position than from charging a range that folds its trash anyway — “many good and weak hands in the BN’s range will benefit from checking back the flop.” Small: a big bet needs a polarized range behind it, with enough strong hands to make the size credible and enough trash to want the folds. This range has 10% and 9% of those. So the sizes that survive are the small ones.',
           exhibit: {
             caption: 'How often each equity bucket checks back on this flop',
             scope:
-              'Diagram 68, "IP Cbet Frequency by EQB" (p.696) — the button’s strategy on 5♥5♦4♥ at 40bb, averaged within each bucket. Bucket averages, never a single hand. Only the Bet 1/3, Bet MIN and Check segments carry printed labels in this diagram; the two big sizes are read from Table 118 instead.',
+              'The diagram, "IP Cbet Frequency by EQB" — the button’s strategy on 5♥5♦4♥ at 40bb, averaged within each bucket. Bucket averages, never a single hand. Only the Bet 1/3, Bet MIN and Check segments carry printed labels in this diagram; the two big sizes are read from the table instead.',
             rows: [
               { label: 'Strong', value: '28%', pct: 28, note: 'trapping — 41% bet 1/3, 29% min' },
               { label: 'Good', value: '45%', pct: 45, note: 'the largest single branch — 31% bet 1/3, 23% min' },
@@ -238,7 +238,7 @@ export const DEPOLARIZED_RANGE_554: InteractivePuzzle = {
               sources: ['ex6.cbet-by-eqb-554', 'ex6.depolarized-distribution'],
             },
             {
-              text: 'The paired board is doing part of the work: “paired boards should be frequently min-bet.” The book also gives the big blind’s side of it on this particular flop — unlike on J66, most of what would be its trash now holds a flush draw, an open-ender or a gutshot, and “this makes the BN c-bet the flop less frequently on 5♥5♦4♥”.',
+              text: 'The paired board is doing part of the work: “paired boards should be frequently min-bet.” The source also gives the big blind’s side of it on this particular flop — unlike on J66, most of what would be its trash now holds a flush draw, an open-ender or a gutshot, and “this makes the BN c-bet the flop less frequently on 5♥5♦4♥”.',
               sources: ['ex4.paired-boards-min-bet', 'ex6.bb-less-polarized-lowers-cbet'],
             },
           ],
@@ -246,13 +246,13 @@ export const DEPOLARIZED_RANGE_554: InteractivePuzzle = {
             {
               question: 'Is 59.4% really a “low” c-bet frequency?',
               answer:
-                'That is the book’s own label, not this puzzle’s: the example is titled “Low c-bet % and small bet-size” (p.695). No baseline for comparison is printed alongside it. Chapter 12 does print a c-bet split for 5XX flops as a class (Diagram 44, p.661), but that is an average over every flop whose highest card is a five, blended across button and UTG openers — a different measurement from this flop’s own Table 118, and the subject of a different puzzle. No comparison is made here; the figures quoted are the ones printed for 5♥5♦4♥.',
+                'That is the source’s own label, not this puzzle’s: the example is titled “Low c-bet % and small bet-size”. No baseline for comparison is printed alongside it. The source does print a c-bet split for 5XX flops as a class, but that is an average over every flop whose highest card is a five, blended across button and UTG openers — a different measurement from this flop’s own table, and the subject of a different puzzle. No comparison is made here; the figures quoted are the ones printed for 5♥5♦4♥.',
               nearestSources: ['ex6.example-header', 'cbet.by-top-card', 'position.ch12-sim-scope'],
             },
             {
               question: 'The prose says good hands are c-bet ~59%, but the chart adds up to ~55%. Which is it?',
               answer:
-                'Both are printed and neither is adjusted here. p.697 states “Good hands are c-bet ~59% of the time”; Diagram 68’s labelled Good-bucket segments are 31% at 1/3-pot, 23% min-bet and 45% checking, which leaves ~55% betting. The gap is about four points and the source does not reconcile it. It changes nothing about the answer — under either reading, checking is the largest single branch for the bucket, and for gutshots specifically Table 118 puts it at 52.7%.',
+                'Both are printed and neither is adjusted here. The source states “Good hands are c-bet ~59% of the time”; the diagram’s labelled Good-bucket segments are 31% at 1/3-pot, 23% min-bet and 45% checking, which leaves ~55% betting. The gap is about four points and the source does not reconcile it. It changes nothing about the answer — under either reading, checking is the largest single branch for the bucket, and for gutshots specifically the table puts it at 52.7%.',
               nearestSources: ['ex6.good-hands-gutshots-check', 'ex6.cbet-by-eqb-554', 'ex6.table118-gutshot'],
             },
           ],
@@ -263,11 +263,11 @@ export const DEPOLARIZED_RANGE_554: InteractivePuzzle = {
           id: 'this-hand-inside-the-bucket',
           title: 'Your hand, inside that bucket',
           body:
-            'A range-level fact only helps if you can place your own hand in it. 8♠7♠ on 5♥5♦4♥ has no pair and no flush equity — the board has no spade — so what it holds is a gutshot to a 6, and the book scores that class at 58% equity against the big blind’s range. Above 50%, below 75%: Good. Not a hand looking for folds, not a hand needing protection, and not a hand that minds a free card. It is a typical member of the 57%, and it plays like one.',
+            'A range-level fact only helps if you can place your own hand in it. 8♠7♠ on 5♥5♦4♥ has no pair and no flush equity — the board has no spade — so what it holds is a gutshot to a 6, and the source scores that class at 58% equity against the big blind’s range. Above 50%, below 75%: Good. Not a hand looking for folds, not a hand needing protection, and not a hand that minds a free card. It is a typical member of the 57%, and it plays like one.',
           exhibit: {
             caption: 'What the button does with a gutshot on 5♥5♦4♥',
             scope:
-              'Table 118 (p.697), the Gutshot row — every gutshot combo in the button’s range averaged together, 5.7% of that range. A class frequency, not a frequency for 8♠7♠. The table is captioned “UTG C-betting Range Breakdown” but belongs to a BB vs BN example; see the note below.',
+              'The table, the Gutshot row — every gutshot combo in the button’s range averaged together, 5.7% of that range. A class frequency, not a frequency for 8♠7♠. The table is captioned “UTG C-betting Range Breakdown” but belongs to a BB vs BN example; see the note below.',
             rows: [
               { label: 'Check', value: '52.7%', pct: 52.7, note: 'the majority line' },
               { label: 'Bet 1/3 pot', value: '25.2%', pct: 25.2, note: 'the most-used bet-size' },
@@ -295,7 +295,7 @@ export const DEPOLARIZED_RANGE_554: InteractivePuzzle = {
             {
               question: 'Table 118 is captioned “UTG”. Is this really the button’s table?',
               answer:
-                'It is, and the caption is the odd one out. The example this table belongs to is headed “BB vs BN on 5♥5♦4♥ (40bbs)” (p.695), Diagram 67’s caption on the facing page says BB vs BN, and p.698 reads “the BN’s GTO strategy vs a flop x/r” directly off this table. The table immediately before it, Table 117, is the BN’s breakdown on 8♥6♦2♠ — so “UTG” in 118’s caption reads as a carried-over misprint rather than a different simulation. This puzzle uses it as the BN table on the strength of the example it sits inside, and states the discrepancy rather than hiding it. If you prefer to distrust the table entirely, the answer does not change: the p.697 prose gives gutshots a check-back without any table at all.',
+                'It is, and the caption is the odd one out. The example this table belongs to is headed “BB vs BN on 5♥5♦4♥ (40bbs)”, the diagram’s caption on the facing page says BB vs BN, and the source reads “the BN’s GTO strategy vs a flop x/r” directly off this table. The table immediately before it, the table, is the BN’s breakdown on 8♥6♦2♠ — so “UTG” in 118’s caption reads as a carried-over misprint rather than a different simulation. This puzzle uses it as the BN table on the strength of the example it sits inside, and states the discrepancy rather than hiding it. If you prefer to distrust the table entirely, the answer does not change: the prose gives gutshots a check-back without any table at all.',
               nearestSources: ['ex6.example-header', 'ex6.table118-gutshot', 'ex6.good-hands-gutshots-check'],
             },
           ],
@@ -326,7 +326,7 @@ export const DEPOLARIZED_RANGE_554: InteractivePuzzle = {
         {
           question: 'Can you show the 13×13 grid behind these buckets?',
           answer:
-            'No — the book prints no per-hand chart for this flop. What it prints is this bucket split (Diagram 67), the strategy split by bucket (Diagram 68) and a per-hand-CLASS table with thirteen rows (Table 118). That is unusually rich for a single flop, and it still stops short of a combo-by-combo grid; drawing one would mean inventing solver output.',
+            'No — the source prints no per-hand chart for this flop. What it prints is this bucket split, the strategy split by bucket and a per-hand-CLASS table with thirteen rows. That is unusually rich for a single flop, and it still stops short of a combo-by-combo grid; drawing one would mean inventing solver output.',
           nearestSources: ['ex6.bn-eqb-554', 'ex6.cbet-by-eqb-554', 'ex6.table118-gutshot'],
         },
       ],
@@ -339,7 +339,7 @@ export const DEPOLARIZED_RANGE_554: InteractivePuzzle = {
       kind: 'composition',
       seat: 'villain',
       description:
-        'The other pie in Diagram 67, and the reason the button’s edge is slim. The big blind’s weight sits at the ends — 8% strong, 35% trash — so the button holds 55% equity to its 45%: an advantage, but not the significant one that would justify a large bet.',
+        'The other pie in the diagram, and the reason the button’s edge is slim. The big blind’s weight sits at the ends — 8% strong, 35% trash — so the button holds 55% equity to its 45%: an advantage, but not the significant one that would justify a large bet.',
       bars: [
         { label: 'Strong (75%+)', pct: 8 },
         { label: 'Good (50-75%)', pct: 24 },
@@ -376,5 +376,5 @@ export const DEPOLARIZED_RANGE_554: InteractivePuzzle = {
   xp: 55,
 
   endsEarlyBecause:
-    'Flop only, because that is the decision the source solves. Flop Strategy Example 6 (pp.695-698) prints the button’s flop equity buckets, its c-bet split by bucket, a per-class table for this flop and its response to a 25%-pot check-raise. It prints nothing about how 8♠7♠ plays on a turn, so the hand stops where the evidence does rather than continuing into a street the book has not solved for it.',
+    'Flop only, because that is the decision the source solves. Flop Strategy Example 6 prints the button’s flop equity buckets, its c-bet split by bucket, a per-class table for this flop and its response to a 25%-pot check-raise. It prints nothing about how 8♠7♠ plays on a turn, so the hand stops where the evidence does rather than continuing into a street the source has not solved for it.',
 }

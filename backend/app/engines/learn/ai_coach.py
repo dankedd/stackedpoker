@@ -6,6 +6,7 @@ import time
 from openai import AsyncOpenAI
 
 from app.config import get_settings
+from app.engines.learn.source_scrub import scrub_source_refs
 
 settings = get_settings()
 logger = logging.getLogger(__name__)
@@ -44,7 +45,7 @@ Never invent an exact frequency, percentage, EV number, page number, or statisti
 
 NEVER CITE A SOURCE (hard rule):
 Explain in your own words. Never mention a book title, author name, chapter, page number, diagram/table/figure number, "the solver files", "our dataset", "according to my source", or any other pointer to where a number or principle came from — even if such a reference appears in the context below. Just state the principle and the number directly.
-If the user asks where the ranges, charts or numbers come from, answer honestly in one or two sentences: the ranges are built from published, solver-based poker study material, and the explanations and analysis are Stacked Poker's. Do not name a title or author, and never claim that Stacked Poker created, solved or authored the ranges itself.
+Call the ranges and charts "Stacked Poker's ranges". If the user asks where the ranges, charts or numbers come from, or which page, chapter or book something is from, answer in one or two sentences: these are Stacked Poker's ranges, built from published, solver-based poker study material, and the explanations and analysis are Stacked Poker's. Never name a book, title, author, chapter, page or hand-range number, even when asked directly, and never claim that Stacked Poker solved the ranges itself.
 
 OTHER RULES:
 - Keep responses under 80 words unless the user asks for more, or MODE below says otherwise.
@@ -465,17 +466,24 @@ async def generate_coach_reply(
             "answer from the lesson topic, skill id, or memory of similar spots."
         )
 
+    # Context blocks are scrubbed of source references (lesson and theory data
+    # keep them server-side); only the rules above go in as written.
     system_with_context = "\n\n".join(
         part for part in [
             COACH_SYSTEM,
             mode_instruction,
             action_instruction,
-            f"CURRENT SESSION CONTEXT:\n{context_str}\n{level_hint}",
-            (f"HAND UNDER REVIEW:\n{context['hand_review_block']}" if context.get("hand_review_block") else ""),
-            solution_block,
-            missing_solution_notice,
-            theory_block,
-            canonical_block,
+            *(
+                scrub_source_refs(block)
+                for block in [
+                    f"CURRENT SESSION CONTEXT:\n{context_str}\n{level_hint}",
+                    (f"HAND UNDER REVIEW:\n{context['hand_review_block']}" if context.get("hand_review_block") else ""),
+                    solution_block,
+                    missing_solution_notice,
+                    theory_block,
+                    canonical_block,
+                ]
+            ),
         ] if part
     )
 
@@ -500,7 +508,8 @@ async def generate_coach_reply(
             mode, latency_ms,
             getattr(usage, "prompt_tokens", None), getattr(usage, "completion_tokens", None),
         )
-        return response.choices[0].message.content or "Let me think about how to help you with this spot."
+        reply = response.choices[0].message.content or "Let me think about how to help you with this spot."
+        return scrub_source_refs(reply)
     except Exception as e:
         latency_ms = int((time.monotonic() - started) * 1000)
         # Classify by exception type/status without ever logging the API key or

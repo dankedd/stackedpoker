@@ -4,6 +4,8 @@
  * wiring. See that file's header for provenance (Michael Acevedo, "Modern Poker
  * Theory", Ch. 5, Hand Range 66, p.228) and extraction methodology.
  */
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, it, expect } from 'vitest'
 import {
   CASH_100BB_OPEN_RESPONSE_CHARTS,
@@ -53,11 +55,10 @@ describe('CASH_100BB_OPEN_RESPONSE_CHARTS — structural integrity', () => {
       }
     })
 
-    it(`${key}: has a complete sourceRef citing Modern Poker Theory Chapter 5`, () => {
-      expect(chart.sourceRef.book).toBe('Modern Poker Theory')
-      expect(chart.sourceRef.chapterNo).toBe(5)
-      expect(typeof chart.sourceRef.handRangeNo).toBe('number')
-      expect(chart.sourceRef.handRangeNo).toBeGreaterThan(0)
+    it(`${key}: cites Modern Poker Theory Chapter 5 in a comment, not in the shipped object`, () => {
+      const file = readFileSync(resolve(__dirname, '../cash100bbOpenResponseBaselines.ts'), 'utf8')
+      expect(file.split(`key: '${key}'`)[1]).toMatch(/\/\/ sourceRef: \{ book: 'Modern Poker Theory', chapterNo: 5, handRangeNo: \d+, page: \d+ \}/)
+      expect(Object.keys(chart)).not.toContain('sourceRef')
       expect(chart.key).toBe(key)
     })
 

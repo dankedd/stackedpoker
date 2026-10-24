@@ -1,14 +1,4 @@
 {
- "source": {
-  "book": "Modern Poker Theory (Michael Acevedo)",
-  "section": "Developing IP C-betting Strategies, Diagrams 56 and 57",
-  "pages": [
-   675,
-   677,
-   679
-  ]
- },
- "note": "Average Equity Buckets (percent of range) of IP and the BB on flops grouped by IP's c-bet frequency (high 80%+, mid 60-80%, low under 60%, p.675) and preferred size (big = 1/2 or 2/3 pot, small = min-bet or 1/3 pot). Read from the pie charts; aggregated over 20-40bb MTT simulations.",
  "bands": {
   "high": "80%+",
   "mid": "60-80%",
@@ -28,7 +18,6 @@
   {
    "band": "high",
    "size": "big",
-   "page": 677,
    "ip": [
     37,
     38,
@@ -45,7 +34,6 @@
   {
    "band": "mid",
    "size": "big",
-   "page": 677,
    "ip": [
     19,
     41,
@@ -62,7 +50,6 @@
   {
    "band": "low",
    "size": "big",
-   "page": 677,
    "ip": [
     12,
     42,
@@ -79,7 +66,6 @@
   {
    "band": "high",
    "size": "small",
-   "page": 679,
    "ip": [
     26,
     45,
@@ -96,7 +82,6 @@
   {
    "band": "mid",
    "size": "small",
-   "page": 679,
    "ip": [
     20,
     45,
@@ -113,7 +98,6 @@
   {
    "band": "low",
    "size": "small",
-   "page": 679,
    "ip": [
     14,
     47,
@@ -138,11 +122,6 @@
   {
    "spot_id": "srp_bb_vs_utg_40",
    "flop": "AcQd3h",
-   "book_flop": "AhQd3s",
-   "pages": [
-    684,
-    685
-   ],
    "strategy": {
     "bet_2_3": 84.6,
     "bet_1_2": 8.8,
@@ -154,15 +133,10 @@
   {
    "spot_id": "srp_bb_vs_utg_40",
    "flop": "QcJcTc",
-   "book_flop": "QhJhTh",
-   "pages": [
-    686,
-    687
-   ],
    "strategy": {
     "bet_2_3": 0.4,
     "bet_1_2": 0.4,
-    "bet_1_3": 2.0,
+    "bet_1_3": 2,
     "bet_min": 96.7,
     "check": 0.6
    }
@@ -170,16 +144,10 @@
   {
    "spot_id": "srp_bb_vs_utg_40",
    "flop": "9c8c4d",
-   "book_flop": "9h8h4d",
-   "pages": [
-    688,
-    689,
-    690
-   ],
    "strategy": {
     "bet_2_3": 64.3,
     "bet_1_2": 1.7,
-    "bet_1_3": 1.0,
+    "bet_1_3": 1,
     "bet_min": 1.8,
     "check": 31.1
    }
@@ -187,11 +155,6 @@
   {
    "spot_id": "srp_bb_vs_bn_40",
    "flop": "Jc6d6h",
-   "book_flop": "Js6h6d",
-   "pages": [
-    691,
-    692
-   ],
    "strategy": {
     "bet_min": 72,
     "check": 28
@@ -200,29 +163,17 @@
   {
    "spot_id": "srp_bb_vs_bn_40",
    "flop": "8c6d2h",
-   "book_flop": "8h6d2s",
-   "pages": [
-    693,
-    694,
-    695
-   ],
    "strategy": {
     "bet_2_3": 48.6,
     "bet_1_2": 2.5,
     "bet_1_3": 3.1,
-    "bet_min": 3.0,
+    "bet_min": 3,
     "check": 42.8
    }
   },
   {
    "spot_id": "srp_bb_vs_bn_40",
    "flop": "5c5d4c",
-   "book_flop": "5h5d4h",
-   "pages": [
-    696,
-    697,
-    698
-   ],
    "strategy": {
     "bet_2_3": 0.5,
     "bet_1_2": 0.8,
@@ -236,31 +187,18 @@
   {
    "texture": "trips",
    "size": "small",
-   "pages": [
-    667
-   ],
    "why": "1/3 pot is the most used size on trips flops"
   },
   {
    "texture": "paired",
    "size": "small",
-   "pages": [
-    663,
-    667
-   ],
    "why": "min-bets (1/3 pot on AAM, AAL, LLL) are preferred on paired flops; 2/3 pot is never used"
   },
   {
    "texture": "monotone",
    "size": "small",
-   "pages": [
-    671,
-    672,
-    673
-   ],
    "why": "smaller sizes are preferred on monotone flops (1/3 pot or min-bets lose little EV), and monotone is the most c-bet texture",
    "also_band": "high"
   }
- ],
- "size_rules_note": "On these textures only the small-size profiles are compared; the frequency band still comes from the closest profile. Monotone also accepts the high band: the book calls it the most c-bet texture (p.671), which the bucket profiles alone do not show."
+ ]
 }

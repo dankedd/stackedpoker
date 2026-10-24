@@ -2166,7 +2166,7 @@ function evalUnilateralDeviationTest(step: LessonStep, response: unknown): EvalC
         quality: 'perfect',
         score: 100,
         feedback: truth === 'no_improvement'
-          ? `Correct — ${noImprovementWhy}. This is exactly Acevedo's Nash-equilibrium test: no profitable unilateral deviation.`
+          ? `Correct — ${noImprovementWhy}. This is exactly the source's Nash-equilibrium test: no profitable unilateral deviation.`
           : `Correct — this player CAN improve alone here (best alternative gains $${test.gain.toFixed(2)}), which means this is NOT an equilibrium yet.`,
         ev_loss_bb: 0,
       }

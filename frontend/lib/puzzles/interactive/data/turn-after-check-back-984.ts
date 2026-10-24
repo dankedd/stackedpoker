@@ -132,7 +132,7 @@ export const TURN_AFTER_CHECK_BACK_984: InteractivePuzzle = {
           tableAction: { label: 'Bets', betBb: 1.8 },
           verdict: 'best',
           shortWhy:
-            'Bet — the ranges inverted when the flop checked through, and the 5♠ is in the group the book names as good turns for you: low cards that complete straights. The size is our reading, not a printed split: 1/3-pot is one of the three sizes the solution uses at this decision point, and on this board specifically the book says the bet-size is smaller than on the more polarized J♠6♥6♦.',
+            'Bet — the ranges inverted when the flop checked through, and the 5♠ is in the group the source names as good turns for you: low cards that complete straights. The size is our reading, not a printed split: 1/3-pot is one of the three sizes the solution uses at this decision point, and on this board specifically the source says the bet-size is smaller than on the more polarized J♠6♥6♦.',
           sources: ['xx.ranges-invert', 'turn.984-good-cards-xx', 'xx.oop-turn-bet-sizes', 'xx.984-condensed-vs-j66'],
         },
         {
@@ -142,30 +142,30 @@ export const TURN_AFTER_CHECK_BACK_984: InteractivePuzzle = {
           tableAction: { label: 'Bets', betBb: 3.7 },
           verdict: 'defensible',
           shortWhy:
-            'Betting is right, and 2/3-pot is a real size at this node — the solution uses three. It is graded below the small size only because the book, comparing this board with J♠6♥6♦, says out-of-position’s betting frequency and bet-size are smaller here. No split between the sizes is printed, so this is a reading, not a correction.',
+            'Betting is right, and 2/3-pot is a real size at this node — the solution uses three. It is graded below the small size only because the source, comparing this board with J♠6♥6♦, says out-of-position’s betting frequency and bet-size are smaller here. No split between the sizes is printed, so this is a reading, not a correction.',
           sources: ['xx.oop-turn-bet-sizes', 'xx.984-condensed-vs-j66'],
         },
       ],
       bestOptionId: 'bet-33',
       explanation:
-        'Bet, small. WHY: nothing about your cards changed when UTG checked, but everything about the two ranges did. Their checking-back range is capped and a lot more depolarized than their c-betting range, because they would have c-bet most of their strong hands on the flop — on this exact board the source has UTG checking back AA, top set and middle set only about 8% of the time. Yours is untouched: with no donk-betting range on this flop you arrive on the turn with exactly the range you called the pre-flop raise with, which is wide compared to theirs and still uncapped. THE RANGE THEORY: capped and depolarized on one side, wide and uncapped on the other, is the reverse of how the flop was set up, and the book states the consequence in one sentence — "The way the ranges are constructed is somewhat reverse of the flop situation, making OOP’s range more polarized than IP’s and IP’s range more condensed than OOP’s. This range distribution generally results in OOP developing a turn betting strategy" (p.749). THE CARD: the 5♠ belongs to the first family the book names as good turns for you here — low cards that complete straights — and among those, offsuit 5s are the best turn card in the deck for the big blind on this board. SIZING AND FREQUENCY: on 9♥8♥4♦ out-of-position has the polarization advantage on many turn cards, resulting in a high betting frequency (p.761). A bet-size for this node is not specified in the source; the small size is graded best as our reading of p.752, where the book says the bet-size on this board is smaller than on J♠6♥6♦ because the betting range here is more condensed.',
+        'Bet, small. WHY: nothing about your cards changed when UTG checked, but everything about the two ranges did. Their checking-back range is capped and a lot more depolarized than their c-betting range, because they would have c-bet most of their strong hands on the flop — on this exact board the source has UTG checking back AA, top set and middle set only about 8% of the time. Yours is untouched: with no donk-betting range on this flop you arrive on the turn with exactly the range you called the pre-flop raise with, which is wide compared to theirs and still uncapped. THE RANGE THEORY: capped and depolarized on one side, wide and uncapped on the other, is the reverse of how the flop was set up, and the source states the consequence in one sentence — "The way the ranges are constructed is somewhat reverse of the flop situation, making OOP’s range more polarized than IP’s and IP’s range more condensed than OOP’s. This range distribution generally results in OOP developing a turn betting strategy". THE CARD: the 5♠ belongs to the first family the source names as good turns for you here — low cards that complete straights — and among those, offsuit 5s are the best turn card in the deck for the big blind on this board. SIZING AND FREQUENCY: on 9♥8♥4♦ out-of-position has the polarization advantage on many turn cards, resulting in a high betting frequency. A bet-size for this node is not specified in the source; the small size is graded best as our reading, where the source says the bet-size on this board is smaller than on J♠6♥6♦ because the betting range here is more condensed.',
       unsourced: [
         {
-          question: 'Does the book give a bet-size for this turn lead?',
+          question: 'Does the source give a bet-size for this turn lead?',
           answer:
-            'A bet-size for this node is not specified in the source. What is printed is that the solution has three sizes available at out-of-position’s first turn action — 1.2x-pot, 2/3-pot and 1/3-pot (p.751) — and, for this board compared with J♠6♥6♦, that the betting frequency and bet-size are smaller here because the betting range is more condensed (p.752). Grading 1/3-pot above 2/3-pot is our reading of those two sentences, not a frequency the book prints. Both bet options are correct in substance; only the check contradicts the source.',
+            'A bet-size for this node is not specified in the source. What is printed is that the solution has three sizes available at out-of-position’s first turn action — 1.2x-pot, 2/3-pot and 1/3-pot —, for this board compared with J♠6♥6♦, that the betting frequency and bet-size are smaller here because the betting range is more condensed. Grading 1/3-pot above 2/3-pot is our reading of those two sentences, not a frequency the source prints. Both bet options are correct in substance; only the check contradicts the source.',
           nearestSources: ['xx.oop-turn-bet-sizes', 'xx.984-condensed-vs-j66', 'xx.984-polarization-advantage'],
         },
         {
           question: 'Is 64.17% what my set of fives is worth?',
           answer:
-            'No, and this is the easiest number in the chapter to misread. The 25.8% and 64.17% figures are the EV of the big blind’s WHOLE RANGE, expressed as a share of the pot, on that turn card — what every hand you could hold is worth on average once the 5 or the ace lands. They say nothing about one holding. The book prints no EV for 5♦5♣ on this runout, and neither does this puzzle.',
+            'No, and this is the easiest number in the chapter to misread. The 25.8% and 64.17% figures are the EV of the big blind’s WHOLE RANGE, expressed as a share of the pot, on that turn card — what every hand you could hold is worth on average once the 5 or the ace lands. They say nothing about one holding. The source prints no EV for 5♦5♣ on this runout, and neither does this puzzle.',
           nearestSources: ['turn.984-worst-card-xx'],
         },
         {
           question: 'Is 5♦5♣ specifically inside the 49.1% the big blind calls with?',
           answer:
-            'No per-combo confirmation exists in the text. The chart for BB vs UTG at 40bb is printed as an image and only the aggregate — call 49.1%, 3-bet 5.8%, fold 45% — is stated in words. The bucket label on this hand has the same status: "strong" is the book’s definition (hand vs range equity of 75% or more) applied by us to a set on this runout, not a figure read off a table.',
+            'No per-combo confirmation exists in the text. The chart for BB vs UTG at 40bb is printed as an image and only the aggregate — call 49.1%, 3-bet 5.8%, fold 45% — is stated in words. The bucket label on this hand has the same status: "strong" is the source’s definition (hand vs range equity of 75% or more) applied by us to a set on this runout, not a figure read off a table.',
           nearestSources: ['ex3.preflop-bb-vs-utg-40bb', 'eqb.definitions'],
         },
       ],
@@ -210,7 +210,7 @@ export const TURN_AFTER_CHECK_BACK_984: InteractivePuzzle = {
               sources: ['xx.oop-range-uncapped'],
             },
             {
-              text: 'Put together, the shapes have traded places: yours is now the more polarized range and theirs the more condensed one, which is the reverse of the flop. The book’s conclusion is that out-of-position develops a turn betting strategy.',
+              text: 'Put together, the shapes have traded places: yours is now the more polarized range and theirs the more condensed one, which is the reverse of the flop. The source’s conclusion is that out-of-position develops a turn betting strategy.',
               sources: ['xx.ranges-invert'],
             },
           ],
@@ -220,11 +220,11 @@ export const TURN_AFTER_CHECK_BACK_984: InteractivePuzzle = {
           id: 'why-this-card',
           title: 'Why the 5♠ and not just any turn',
           body:
-            'The inversion gives you a betting strategy; the card decides how hard you use it. On this board the book sorts the turns into families and says plainly which side each favours — and the 5♠ sits in the family at the top of that list, low cards that complete straights. Among them, offsuit 5s are the best card in the deck for the big blind here. The figures below are the swing that classification is worth to your whole range.',
+            'The inversion gives you a betting strategy; the card decides how hard you use it. On this board the source sorts the turns into families and says plainly which side each favours — and the 5♠ sits in the family at the top of that list, low cards that complete straights. Among them, offsuit 5s are the best card in the deck for the big blind here. The figures below are the swing that classification is worth to your whole range.',
           exhibit: {
             caption: 'What the turn card is worth to the big blind’s range',
             scope:
-              'BB vs UTG on 9♥8♥4♦ at 40bb, turn, after the flop CHECKED THROUGH (x/x) — not the x/b/c line, which the book solves separately with its own tables. Every figure is the EV of OOP’s WHOLE RANGE as a share of the pot on that card. None of them is the EV of a hand.',
+              'BB vs UTG on 9♥8♥4♦ at 40bb, turn, after the flop CHECKED THROUGH (x/x) — not the x/b/c line, which the source solves separately with its own tables. Every figure is the EV of OOP’s WHOLE RANGE as a share of the pot on that card. None of them is the EV of a hand.',
             rows: [
               {
                 label: 'Average turn card — EV, share of pot',
@@ -257,11 +257,11 @@ export const TURN_AFTER_CHECK_BACK_984: InteractivePuzzle = {
               sources: ['xx.984-polarization-advantage'],
             },
             {
-              text: 'In the book’s own turn-grouping scheme this card is a "Straight" — a turn that completes an OESD. That is the classification; what it is worth here comes from this board’s tables, not from the category.',
+              text: 'In the source’s own turn-grouping scheme this card is a "Straight" — a turn that completes an OESD. That is the classification; what it is worth here comes from this board’s tables, not from the category.',
               sources: ['turn.categories'],
             },
             {
-              text: 'One check on the size: in-position is not helpless on this board. The book raises a 1/3-pot bet 19% of the time here, precisely because out-of-position’s betting range is more condensed than on a board like J♠6♥6♦ and in-position keeps more strong hands.',
+              text: 'One check on the size: in-position is not helpless on this board. The source raises a 1/3-pot bet 19% of the time here, precisely because out-of-position’s betting range is more condensed than on a board like J♠6♥6♦ and in-position keeps more strong hands.',
               sources: ['xx.984-condensed-vs-j66'],
             },
           ],
@@ -281,7 +281,7 @@ export const TURN_AFTER_CHECK_BACK_984: InteractivePuzzle = {
       seat: 'hero',
       headline: '49.1%',
       description:
-        'There is nothing to compute. The source says that with no donk-betting range on the flop you arrive on the turn holding exactly the range you called the pre-flop raise with — and for BB vs UTG at 40bb that range is the 49.1% the book prints. Wide compared to theirs, and untouched by any filter, which is what "still uncapped" means.',
+        'There is nothing to compute. The source says that with no donk-betting range on the flop you arrive on the turn holding exactly the range you called the pre-flop raise with — and for BB vs UTG at 40bb that range is the 49.1% the source prints. Wide compared to theirs, and untouched by any filter, which is what "still uncapped" means.',
       unsourced: [
         {
           question: 'Which hands make up the 49.1%?',
@@ -307,7 +307,7 @@ export const TURN_AFTER_CHECK_BACK_984: InteractivePuzzle = {
         {
           question: 'What are the rest of the percentages?',
           answer:
-            'Not printed. The book describes the other classes in words — middle pairs mostly checked, combo draws and flush draws mostly c-bet, weaker draws such as OESD mostly checked — without attaching a number to them, and it prints no bucket breakdown of the checking-back range as a whole. These two figures are the only ones stated for this flop, which is why the bars do not add to 100.',
+            'Not printed. The source describes the other classes in words — middle pairs mostly checked, combo draws and flush draws mostly c-bet, weaker draws such as OESD mostly checked — without attaching a number to them, and it prints no bucket breakdown of the checking-back range as a whole. These two figures are the only ones stated for this flop, which is why the bars do not add to 100.',
           nearestSources: ['ex3.utg-checkback-composition', 'xx.ip-checkback-capped'],
         },
       ],
@@ -328,7 +328,7 @@ export const TURN_AFTER_CHECK_BACK_984: InteractivePuzzle = {
       sources: ['xx.oop-range-uncapped'],
     },
     {
-      text: 'That is the reverse of the flop — out-of-position is now the more polarized range and in-position the more condensed one — and the book’s conclusion is that out-of-position develops a turn betting strategy. On 9♥8♥4♦ that shows up as a polarization advantage on many turn cards and a high betting frequency.',
+      text: 'That is the reverse of the flop — out-of-position is now the more polarized range and in-position the more condensed one — and the source’s conclusion is that out-of-position develops a turn betting strategy. On 9♥8♥4♦ that shows up as a polarization advantage on many turn cards and a high betting frequency.',
       sources: ['xx.ranges-invert', 'xx.984-polarization-advantage'],
     },
     {

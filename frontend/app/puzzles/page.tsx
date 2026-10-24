@@ -9,7 +9,7 @@ import { DIFFICULTY_LABEL, puzzleStreets, STREET_LABEL } from '@/lib/puzzles/int
 export const metadata: Metadata = {
   title: 'Poker Puzzles — Play a hand, learn why | Stacked',
   description:
-    'Play real poker hands one decision at a time. Every answer is explained from Modern Poker Theory, with the ranges, frequencies and page references behind it.',
+    'Play real poker hands one decision at a time. Every answer is explained with the ranges and frequencies behind it.',
 }
 
 export default function PuzzlesPage() {
@@ -24,7 +24,7 @@ export default function PuzzlesPage() {
         </p>
         <p className="mt-4 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[12px] text-slate-400">
           <BookOpen className="h-3.5 w-3.5 shrink-0 text-violet-400" aria-hidden />
-          Every frequency and range cites Modern Poker Theory by page.
+          Every frequency and range says exactly which spot it was measured in.
         </p>
       </header>
 

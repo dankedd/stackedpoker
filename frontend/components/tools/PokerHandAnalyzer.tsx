@@ -985,10 +985,6 @@ function RangeSelector({
                   <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
                     {preset.description}
                   </span>
-                  <span className="mt-1 block text-[11px] text-muted-foreground/70">
-                    {preset.provenance.figure} — {preset.provenance.source}, p.
-                    {preset.provenance.page}
-                  </span>
                 </button>
               );
             })}

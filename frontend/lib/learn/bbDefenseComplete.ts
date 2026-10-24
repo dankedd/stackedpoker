@@ -95,10 +95,11 @@ import type { RangeStrategyMap } from './rangeStrategy'
 
 export type BBOpenDefenseMatchup = 'BB_vs_UTG' | 'BB_vs_HJ' | 'BB_vs_CO' | 'BB_vs_BTN' | 'BB_vs_SB'
 
+/**
+ * Source of each chart (kept out of the runtime object so it never ships to
+ * the browser): written as a comment above each entry below.
+ */
 export interface ChartProvenance {
-  source: string
-  page: number
-  figure: string
   gameAssumptions: string
   /** 'exact_transcription' = copied verbatim from a text table in the source.
    *  'exact_derived' = computed from source numbers via unambiguous arithmetic.
@@ -112,41 +113,31 @@ export interface ChartProvenance {
 
 export const BB_DEFENSE_COMPLETE_100BB_PROVENANCE: Record<BBOpenDefenseMatchup, ChartProvenance> = {
   BB_vs_UTG: {
-    source: 'Modern Poker Theory (Acevedo, 2019)',
-    page: 238,
-    figure: 'Hand Range 76: BB vs LJ Open',
+    // Hand Range 76: BB vs LJ Open — Modern Poker Theory (Acevedo, 2019), p.238
     gameAssumptions: '6-max cash, 100bb effective, LJ opens 2.5bb, no ante',
     derivation: 'reconstructed',
     bookAggregate: { threeBet: 5.8, call: 22.8, fold: 71.2 },
   },
   BB_vs_HJ: {
-    source: 'Modern Poker Theory (Acevedo, 2019)',
-    page: 240,
-    figure: 'Hand Range 78: BB vs HJ Open',
+    // Hand Range 78: BB vs HJ Open — Modern Poker Theory (Acevedo, 2019), p.240
     gameAssumptions: '6-max cash, 100bb effective, HJ opens 2.5bb, no ante',
     derivation: 'reconstructed',
     bookAggregate: { threeBet: 7.6, call: 23.9, fold: 68.5 },
   },
   BB_vs_CO: {
-    source: 'Modern Poker Theory (Acevedo, 2019)',
-    page: 242,
-    figure: 'Hand Range 80: BB vs CO Open',
+    // Hand Range 80: BB vs CO Open — Modern Poker Theory (Acevedo, 2019), p.242
     gameAssumptions: '6-max cash, 100bb effective, CO opens 2.5bb, no ante',
     derivation: 'reconstructed',
     bookAggregate: { threeBet: 9.7, call: 25.7, fold: 64.6 },
   },
   BB_vs_BTN: {
-    source: 'Modern Poker Theory (Acevedo, 2019)',
-    page: 244,
-    figure: 'Hand Range 82: BB vs BN Open',
+    // Hand Range 82: BB vs BN Open — Modern Poker Theory (Acevedo, 2019), p.244
     gameAssumptions: '6-max cash, 100bb effective, BN opens 2.5bb, no ante',
     derivation: 'reconstructed',
     bookAggregate: { threeBet: 13.4, call: 43.4, fold: 43.2 },
   },
   BB_vs_SB: {
-    source: 'Modern Poker Theory (Acevedo, 2019)',
-    page: 246,
-    figure: 'Hand Range 84: BB vs SB Open',
+    // Hand Range 84: BB vs SB Open — Modern Poker Theory (Acevedo, 2019), p.246
     gameAssumptions: '6-max cash, 100bb effective, SB opens 3bb, no ante',
     derivation: 'reconstructed',
     bookAggregate: { threeBet: 16.3, call: 48.3, fold: 35.4 },

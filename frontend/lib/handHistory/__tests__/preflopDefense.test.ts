@@ -91,7 +91,7 @@ function freqsOf(c: DefenseChart, h: string) {
 }
 function pick(c: DefenseChart, test: (f: Partial<Record<RangeActionKey, number>>) => boolean, exclude: string[] = []): string {
   const h = ALL_HANDS.find((x) => c.grid[x] && !exclude.includes(x) && test(freqsOf(c, x)));
-  if (!h) throw new Error(`no hand in HR ${c.n} fits`);
+  if (!h) throw new Error(`no hand in ${c.id} fits`);
   return h;
 }
 /** Two real cards for a hand class. */
@@ -130,7 +130,7 @@ describe("defense check — vs open (GGPoker)", () => {
 
   it("grades against the matching chart (BB vs BN, 25bb)", () => {
     const d = detail(vsBtnOpen(pureCall, "Hero: calls 1,000"));
-    expect(d.range).toMatchObject({ kind: "defense", n: BB_VS_BN.n, page: BB_VS_BN.page, bucket: 25, vil: "BN", spot: "open" });
+    expect(d.range).toMatchObject({ kind: "defense", chart: BB_VS_BN.id, bucket: 25, vil: "BN", spot: "open" });
   });
 
   it("correct / too_tight / wrong_action for a pure call", () => {
@@ -154,7 +154,7 @@ describe("defense check — vs open (GGPoker)", () => {
     const big = findSpots(vsBtnOpen(pureCall, "Hero: calls 2,000", 3000))[0];
     expect(small.villain!.sizeBb).toBe(2);
     expect(big.villain!.sizeBb).toBe(3);
-    expect(detail(vsBtnOpen(pureCall, "Hero: calls 2,000", 3000)).range!.n).toBe(BB_VS_BN.n);
+    expect(detail(vsBtnOpen(pureCall, "Hero: calls 2,000", 3000)).range!.chart).toBe(BB_VS_BN.id);
     expect(describeCheck(checkPreflop(vsBtnOpen(pureCall, "Hero: calls 2,000", 3000))!).title).toBe("Facing a BTN open (3bb) · 25bb · BB");
   });
 
@@ -167,7 +167,7 @@ describe("defense check — vs open (GGPoker)", () => {
     const sb = DEFENSE_CHARTS.find((c) => c.group === "mtt" && c.spot === "open" && c.hero === "BB" && c.vil === "SB" && c.stack === 25)!;
     const h = pick(sb, (f) => (f.call ?? 0) >= 0.99);
     const hand = gg({ heroSeat: 2, cards: cards(h), actions: [...folds([3, 4, 5, 6, 7, 8]), "S1: raises 2,300 to 3,300", "Hero: calls 2,300"] });
-    expect(detail(hand).range).toMatchObject({ n: sb.n, size: sb.size });
+    expect(detail(hand).range).toMatchObject({ chart: sb.id, size: sb.size });
     expect(verdict(hand)).toBe("correct");
   });
 
@@ -193,7 +193,7 @@ describe("defense check — vs open (PokerStars, big-blind ante)", () => {
     const hand = ps({ heroSeat: 2, cards: cards(h), actions: [...folds([3, 4, 5, 6, 7, 8]), "S9: raises 1000 to 2000", "S1: folds", "Hero: folds"] });
     const c = checkPreflop(hand)!;
     expect(c.detail.spot.kind).toBe("vs_open");
-    expect(c.detail.range!.n).toBe(BB_VS_BN.n);
+    expect(c.detail.range!.chart).toBe(BB_VS_BN.id);
     expect(c.verdict).toBe("too_tight");
   });
 });
@@ -209,7 +209,7 @@ describe("defense check — vs push", () => {
     const d = detail(sbShove(call, "Hero: calls 23,875 and is all-in"));
     expect(d.spot.kind).toBe("vs_push");
     expect(d.spot.villain!.allIn).toBe(true);
-    expect(d.range).toMatchObject({ n: BB_VS_SB_PUSH25.n, spot: "push" });
+    expect(d.range).toMatchObject({ chart: BB_VS_SB_PUSH25.id, spot: "push" });
   });
 
   it("correct call, too_tight fold, too_loose call", () => {
@@ -222,7 +222,7 @@ describe("defense check — vs push", () => {
   it("short-stack shove-as-open from the SB at 15bb → the 15bb push chart", () => {
     const h = pick(BB_VS_SB_PUSH15, (f) => (f.call ?? 0) >= 0.99);
     const hand = gg({ heroSeat: 2, cards: cards(h), stacks: { 1: 15_000 }, actions: [...folds([3, 4, 5, 6, 7, 8]), "S1: raises 13,875 to 14,875 and is all-in", "Hero: calls 13,875"] });
-    expect(detail(hand).range).toMatchObject({ n: BB_VS_SB_PUSH15.n, bucket: 15 });
+    expect(detail(hand).range).toMatchObject({ chart: BB_VS_SB_PUSH15.id, bucket: 15 });
     expect(verdict(hand)).toBe("correct");
   });
 
@@ -253,7 +253,7 @@ describe("defense check — vs limp / limp-raise (BB vs SB)", () => {
     const c = checkPreflop(limp(h, "Hero: checks"))!;
     expect(c.detail.spot).toMatchObject({ kind: "vs_limp", action: "call" });
     expect(c.detail.spot.villain!.sizeBb).toBe(1);
-    expect(c.detail.range!.n).toBe(BB_VS_SB_LIMP.n);
+    expect(c.detail.range!.chart).toBe(BB_VS_SB_LIMP.id);
     expect(c.verdict).toBe("correct");
     expect(describeCheck(c).hero).toBe("You checked → Correct.");
   });
@@ -274,7 +274,7 @@ describe("defense check — vs limp / limp-raise (BB vs SB)", () => {
     // Calling the jam with a hand the limp-raise chart folds: that decision is the hand's verdict.
     const c = checkPreflop(hand)!;
     expect(c.detail.spot.kind).toBe("vs_limp_raise");
-    expect(c.detail.range!.n).toBe(BB_VS_SB_LR.n);
+    expect(c.detail.range!.chart).toBe(BB_VS_SB_LR.id);
     expect(c.verdict).toBe("too_loose");
     expect(c.detail.also).toMatchObject({ kind: "vs_limp" });
   });
@@ -308,7 +308,7 @@ describe("defense check — vs 4-bet", () => {
     const c = checkPreflop(fourBet(h, "Hero: folds"))!;
     expect(c.verdict).toBe("too_tight");
     expect(c.detail.spot.kind).toBe("vs_4bet");
-    expect(c.detail.range!.n).toBe(BB_VS_BN_4BET.n);
+    expect(c.detail.range!.chart).toBe(BB_VS_BN_4BET.id);
     expect(c.detail.also!.kind).toBe("vs_open");
   });
 

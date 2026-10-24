@@ -5,6 +5,8 @@
  * extraction/validation methodology (pixel-read diagram images, 8% noise
  * floor, cross-checked against the book's own stated chart aggregates).
  */
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, it, expect } from 'vitest'
 import {
   BB_DEFENSE_COMPLETE_100BB,
@@ -142,12 +144,15 @@ describe('BB_DEFENSE_COMPLETE_100BB — combo-weighted aggregate matches the boo
 })
 
 describe('BB_DEFENSE_COMPLETE_100BB_PROVENANCE — every chart traceable to a real page/figure', () => {
+  // The citation is a comment on each entry: documented in the repo, never shipped.
+  const file = readFileSync(resolve(__dirname, '../bbDefenseComplete.ts'), 'utf8')
   for (const matchup of MATCHUPS) {
-    it(`${matchup} cites Modern Poker Theory with a page and figure reference`, () => {
+    it(`${matchup} cites Modern Poker Theory with a page and figure reference (as a comment only)`, () => {
       const prov = BB_DEFENSE_COMPLETE_100BB_PROVENANCE[matchup]
-      expect(prov.source).toMatch(/Modern Poker Theory/)
-      expect(prov.page).toBeGreaterThan(0)
-      expect(prov.figure).toMatch(/Hand Range \d+/)
+      const entry = file.split('BB_DEFENSE_COMPLETE_100BB_PROVENANCE')[1].split(`${matchup}: {`)[1].split('}')[0]
+      expect(entry).toMatch(/\/\/ Hand Range \d+: .* — Modern Poker Theory \(Acevedo, 2019\), p\.\d+/)
+      expect(Object.keys(prov)).not.toContain('source')
+      expect(Object.keys(prov)).not.toContain('page')
       expect(prov.derivation).toBe('reconstructed')
     })
   }

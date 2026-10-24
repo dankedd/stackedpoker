@@ -111,7 +111,7 @@ export const MIN_BET_PAIRED_J66: InteractivePuzzle = {
           tableAction: { label: 'Bets', betBb: 1 },
           verdict: 'best',
           shortWhy:
-            'The book’s own heading for this node is “small bet-size”, and its rule for the texture is that paired boards should be frequently min-bet. The big blind holds more trip sixes than you do — 8.9% against 5% — so a large bet is not available. But 52% of the big blind’s range is trash that struggles against even a min-bet, so the smallest bet on the menu still does the whole job.',
+            'The source’s own heading for this node is “small bet-size”, and its rule for the texture is that paired boards should be frequently min-bet. The big blind holds more trip sixes than you do — 8.9% against 5% — so a large bet is not available. But 52% of the big blind’s range is trash that struggles against even a min-bet, so the smallest bet on the menu still does the whole job.',
           sources: ['ex4.j66-headline', 'ex4.j66-range-comparison', 'ex4.j66-cbet-72', 'ex4.paired-boards-min-bet'],
         },
         {
@@ -127,18 +127,18 @@ export const MIN_BET_PAIRED_J66: InteractivePuzzle = {
       ],
       bestOptionId: 'min-bet',
       explanation:
-        'Min-bet. The book titles this exact node “Mid c-bet % and small bet-size: BB vs BN on J♠6♥6♦ (40bbs)” (p.690), and states the texture rule behind it plainly: “Clearly, paired boards should be frequently min-bet” (p.663). The reason is a two-sided range fact the source gives in full here — the big blind’s range is very polar, with 14% strong hands against the button’s 23%, “not too far away”, and more importantly 8.9% trip sixes against the button’s 5%. The out-of-position player holds more of the board’s best hand than you do, so the big bet is off the table. What is still on the table is a tiny one: 52% of the big blind’s range is trash that “will struggle to continue against even a min-bet”. Those two facts together are what let the button run a 72% overall c-bet frequency on this flop — the frequency of the whole range, not of A♥Q♣. Checking is the other 28% and is not a blunder; betting 2/3 pot is, because the source says the button cannot size up here.',
+        'Min-bet. The source titles this exact node “Mid c-bet % and small bet-size: BB vs BN on J♠6♥6♦ (40bbs)”, and states the texture rule behind it plainly: “Clearly, paired boards should be frequently min-bet”. The reason is a two-sided range fact the source gives in full here — the big blind’s range is very polar, with 14% strong hands against the button’s 23%, “not too far away”, and more importantly 8.9% trip sixes against the button’s 5%. The out-of-position player holds more of the board’s best hand than you do, so the big bet is off the table. What is still on the table is a tiny one: 52% of the big blind’s range is trash that “will struggle to continue against even a min-bet”. Those two facts together are what let the button run a 72% overall c-bet frequency on this flop — the frequency of the whole range, not of A♥Q♣. Checking is the other 28% and is not a blunder; betting 2/3 pot is, because the source says the button cannot size up here.',
       unsourced: [
         {
           question: 'How often should A♥Q♣ specifically bet on this flop?',
           answer:
-            'The pages this puzzle teaches from do not say. 72% is stated as the button’s overall c-bet frequency — one number for the entire range — and the other percentages on p.690 (14, 23, 8.9, 5, 52) are range compositions, not frequencies of any action. No per-hand figure appears on that page for either player. The book does print a hand-class breakdown for the button on this board a page later (Table 116, pp.691-692); it is deliberately out of scope for this puzzle, which teaches the sizing idea only, and nothing from it is quoted or approximated anywhere here.',
+            'The pages this puzzle teaches from do not say. 72% is stated as the button’s overall c-bet frequency — one number for the entire range — and the other percentages (14, 23, 8.9, 5, 52) are range compositions, not frequencies of any action. No per-hand figure appears on that page for either player. The source does print a hand-class breakdown for the button on this board a page later; it is deliberately out of scope for this puzzle, which teaches the sizing idea only, and nothing from it is quoted or approximated anywhere here.',
           nearestSources: ['ex4.j66-cbet-72', 'ex4.j66-range-comparison'],
         },
         {
           question: 'Where do the 2.5bb open and the 5.5bb pot come from?',
           answer:
-            'From this repo’s game assumptions, not from the cited passages. p.690 gives the seats, the flop and the 40bb stack depth and no bet-sizes at all, so the 2.5bb button open is carried over from the convention the other puzzles in this set use. The pot follows from it: 2.5 opened, 2.5 called, plus the folded small blind’s 0.5 makes 5.5bb, which puts a min-bet of 1bb at about 18% of the pot and a 2/3-pot bet at 3.7bb. The argument on this page does not depend on those numbers — it depends on which sizing is large and which is small.',
+            'From this repo’s game assumptions, not from the cited passages. The source gives the seats, the flop and the 40bb stack depth and no bet-sizes at all, so the 2.5bb button open is carried over from the convention the other puzzles in this set use. The pot follows from it: 2.5 opened, 2.5 called, plus the folded small blind’s 0.5 makes 5.5bb, which puts a min-bet of 1bb at about 18% of the pot and a 2/3-pot bet at 3.7bb. The argument on this page does not depend on those numbers — it depends on which sizing is large and which is small.',
           nearestSources: ['ex4.j66-headline'],
         },
       ],
@@ -162,7 +162,7 @@ export const MIN_BET_PAIRED_J66: InteractivePuzzle = {
               sources: ['ex4.why-paired-boards-small'],
             },
             {
-              text: 'The book’s own one-line label for this node says both halves out loud before any analysis begins: “Mid c-bet % and small bet-size: BB vs BN on J♠6♥6♦ (40bbs)”.',
+              text: 'The source’s own one-line label for this node says both halves out loud before any analysis begins: “Mid c-bet % and small bet-size: BB vs BN on J♠6♥6♦ (40bbs)”.',
               sources: ['ex4.j66-headline'],
             },
           ],
@@ -171,7 +171,7 @@ export const MIN_BET_PAIRED_J66: InteractivePuzzle = {
 
         {
           id: 'both-sides-of-the-same-flop',
-          title: 'Both sides of the same flop — the rare case where the book prints them',
+          title: 'Both sides of the same flop — the rare case where the source prints them',
           body:
             'Most worked examples in this chapter describe one player’s range. This one describes both, and the comparison is what the sizing decision actually rests on. Read the strong-hand line first: 14% for the big blind against 23% for the button. The button is ahead — but only by nine points, and the source’s own word for the gap is that the two are “not too far away”. Then read the trips line, which reverses it: 8.9% for the big blind against 5% for the button. On the one hand class this board is built around, the player who has to act first has nearly twice as much of it as the player with position. That single reversal is what removes the large bet-size from the menu, and it is why a range advantage in aggregate does not automatically license a big bet.',
           exhibit: {
@@ -203,7 +203,7 @@ export const MIN_BET_PAIRED_J66: InteractivePuzzle = {
               sources: ['ex4.j66-range-comparison'],
             },
             {
-              text: 'The conclusion the book draws from it is the ceiling on your bet: “For this reason, the BN cannot use a large sizing.” The reason named is the trips, not the equity.',
+              text: 'The conclusion the source draws from it is the ceiling on your bet: “For this reason, the BN cannot use a large sizing.” The reason named is the trips, not the equity.',
               sources: ['ex4.j66-cbet-72'],
             },
             {
@@ -225,7 +225,7 @@ export const MIN_BET_PAIRED_J66: InteractivePuzzle = {
               'BN vs BB on J♠6♥6♦ at 40bb effective, after the BB checks. Both figures describe the BN’s ENTIRE range at once. Neither is the frequency of A♥Q♣ or of any other single hand, and the page prints no split of the 72% across bet-sizes. The 72% is printed in the source; the 28% is its complement.',
             rows: [
               { label: 'C-bets (overall, whole range)', value: '72%', pct: 72, note: 'the source calls this a high overall c-bet frequency' },
-              { label: 'Does not bet', value: '28%', pct: 28, note: '100 − 72; the book prints the 72%' },
+              { label: 'Does not bet', value: '28%', pct: 28, note: '100 − 72; the source prints the 72%' },
             ],
             sources: ['ex4.j66-cbet-72', 'ex4.j66-check-28'],
           },
@@ -235,7 +235,7 @@ export const MIN_BET_PAIRED_J66: InteractivePuzzle = {
               sources: ['ex4.j66-cbet-72'],
             },
             {
-              text: '72% is an overall, whole-range figure. It does not say that A♥Q♣ bets 72% of the time, and it does not say that any hand class does — treating it as a per-hand instruction would turn a range statistic into advice the book never gives.',
+              text: '72% is an overall, whole-range figure. It does not say that A♥Q♣ bets 72% of the time, and it does not say that any hand class does — treating it as a per-hand instruction would turn a range statistic into advice the source never gives.',
               sources: ['ex4.j66-cbet-72'],
             },
             {
@@ -251,7 +251,7 @@ export const MIN_BET_PAIRED_J66: InteractivePuzzle = {
             {
               question: 'How does the 72% break down by hand class for the button here?',
               answer:
-                'Not on the pages this puzzle uses. p.690 prints the 72% as a single whole-range number and stops. The book does give a breakdown for this board on the pages immediately following (Table 116, pp.691-692), which this puzzle leaves out of scope so it teaches exactly one idea — no figure from it is quoted, rounded or gestured at anywhere in this puzzle. If you want the per-class picture, read it there rather than inferring it from the 72%: an overall frequency cannot be redistributed across hand classes by guessing.',
+                'Not on the pages this puzzle uses. The source prints the 72% as a single whole-range number and stops. The source does give a breakdown for this board on the pages immediately following, which this puzzle leaves out of scope so it teaches exactly one idea — no figure from it is quoted, rounded or gestured at anywhere in this puzzle. If you want the per-class picture, read it there rather than inferring it from the 72%: an overall frequency cannot be redistributed across hand classes by guessing.',
               nearestSources: ['ex4.j66-cbet-72'],
             },
           ],
@@ -262,14 +262,14 @@ export const MIN_BET_PAIRED_J66: InteractivePuzzle = {
           id: 'the-passage',
           title: 'The passage this puzzle is built on',
           body:
-            'Modern Poker Theory (Acevedo, 2019), p.690 — Flop Strategy Example 4, “Mid c-bet % and small bet-size: BB vs BN on J♠6♥6♦ (40bbs)”: “On this flop, the BB’s range is very polar and has a healthy number of strong hands at 14%, not too far away from the BN’s 23%. More specifically, the BB’s range has 8.9% trip sixes, while the BN only has 5%. For this reason, the BN cannot use a large sizing, but the BB still has 52% trash hands that will struggle to continue against even a min-bet. This allows the BN to have a high overall c-bet frequency of 72%.” And the texture rule it instantiates, p.663: “Clearly, paired boards should be frequently min-bet.” Those two passages are the entire evidence base for this puzzle. Every claim above traces to one of them, and where they run out, the amber panels say so.',
+            'The source (2019) — Flop Strategy Example 4, “Mid c-bet % and small bet-size: BB vs BN on J♠6♥6♦ (40bbs)”: “On this flop, the BB’s range is very polar and has a healthy number of strong hands at 14%, not too far away from the BN’s 23%. More specifically, the BB’s range has 8.9% trip sixes, while the BN only has 5%. For this reason, the BN cannot use a large sizing, but the BB still has 52% trash hands that will struggle to continue against even a min-bet. This allows the BN to have a high overall c-bet frequency of 72%.” And the texture rule it instantiates: “Clearly, paired boards should be frequently min-bet.” Those two passages are the entire evidence base for this puzzle. Every claim above traces to one of them, and where they run out, the amber panels say so.',
           bullets: [
             {
-              text: 'p.690 — the node: range composition for both players, the ceiling on the bet-size, and the 72% overall c-bet frequency.',
+              text: 'The node: range composition for both players, the ceiling on the bet-size, and the 72% overall c-bet frequency.',
               sources: ['ex4.j66-headline', 'ex4.j66-range-comparison', 'ex4.j66-cbet-72'],
             },
             {
-              text: 'p.663 — the rule and its mechanism: paired boards should be frequently min-bet, because pairing gives the big blind strong hands, polarizes their range, and leaves trash that folds regardless of your bet-size.',
+              text: 'The rule and its mechanism: paired boards should be frequently min-bet, because pairing gives the big blind strong hands, polarizes their range, and leaves trash that folds regardless of your bet-size.',
               sources: ['ex4.paired-boards-min-bet', 'ex4.why-paired-boards-small'],
             },
           ],
@@ -319,7 +319,7 @@ export const MIN_BET_PAIRED_J66: InteractivePuzzle = {
         {
           question: 'Can you show which hands make up the 72%?',
           answer:
-            'Not from the pages this puzzle teaches from. p.690 gives 72% as a single whole-range figure with no per-hand or per-class split, and no per-sizing split either. A breakdown for this exact board is printed a page later (Table 116, pp.691-692) and is out of scope here by design, so this puzzle claims the aggregate the source states and stops there rather than distributing 72% across hand classes by inference.',
+            'Not from the pages this puzzle teaches. The source gives 72% as a single whole-range figure with no per-hand or per-class split, and no per-sizing split either. A breakdown for this exact board is printed a page later and is out of scope here by design, so this puzzle claims the aggregate the source states and stops there rather than distributing 72% across hand classes by inference.',
           nearestSources: ['ex4.j66-cbet-72', 'ex4.j66-check-28'],
         },
       ],
@@ -333,7 +333,7 @@ export const MIN_BET_PAIRED_J66: InteractivePuzzle = {
   headlineSources: ['ex4.paired-boards-min-bet', 'ex4.j66-cbet-72'],
   takeaways: [
     {
-      text: 'On a paired flop, min-bet. The book states it as a rule for the texture as a whole — “Clearly, paired boards should be frequently min-bet” — and labels this exact spot “Mid c-bet % and small bet-size”.',
+      text: 'On a paired flop, min-bet. The source states it as a rule for the texture as a whole — “Clearly, paired boards should be frequently min-bet” — and labels this exact spot “Mid c-bet % and small bet-size”.',
       sources: ['ex4.paired-boards-min-bet', 'ex4.j66-headline'],
     },
     {
@@ -357,5 +357,5 @@ export const MIN_BET_PAIRED_J66: InteractivePuzzle = {
   xp: 50,
 
   endsEarlyBecause:
-    'This is a flop sizing question and the source answers it on the flop. p.690 describes the button’s c-betting decision on J♠6♥6♦ and stops; it gives no turn or river strategy for this hand, and this puzzle teaches one idea rather than following the hand into streets the cited passages do not cover.',
+    'This is a flop sizing question and the source answers it on the flop. The source describes the button’s c-betting decision on J♠6♥6♦ and stops; it gives no turn or river strategy for this hand, and this puzzle teaches one idea rather than following the hand into streets the cited passages do not cover.',
 }

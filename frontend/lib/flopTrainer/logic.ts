@@ -22,7 +22,6 @@ export interface FlopSpot {
   action: string;
   ip_range_pct: number | null;
   oop_range_pct: number | null;
-  source_pages: number[];
 }
 
 export interface NutAdv {

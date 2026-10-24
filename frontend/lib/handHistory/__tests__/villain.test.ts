@@ -39,7 +39,7 @@ describe("villain", () => {
     const p = rangePresets("HJ");
     expect(p.some((x) => x.group === "Open")).toBe(true);
     expect(p.some((x) => x.group === "Push/fold")).toBe(true);
-    expect(p.some((x) => x.label.startsWith("HJ") && x.id.startsWith("def-"))).toBe(true);
+    expect(p.some((x) => x.label.startsWith("HJ") && x.id.startsWith("def_"))).toBe(true);
     expect(p.every((x) => Object.values(x.range).every((w) => w > 0 && w <= 1))).toBe(true);
   });
 });
@@ -111,7 +111,6 @@ describe.skipIf(!existsSync(FIXTURE))("top hand of the real export", () => {
     const vr = villainRange(hand, "922e16a4")!;
     expect(vr.label).toBe("HJ shove vs LJ-open · 15 BB");
     expect(vr.approximation).toBe("Approximation: opener UTG+2 as LJ.");
-    expect(vr.source?.page).toBeGreaterThan(0);
     expect(vr.range.JJ).toBeGreaterThan(0);
   });
 

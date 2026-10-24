@@ -8,8 +8,6 @@
  * trainer grades against. Server-only: the chart files stay out of the
  * homepage's JavaScript; only the resolved numbers reach the browser.
  * Import it from server components only (app/page.tsx).
- *
- * Chart source: Modern Poker Theory (M. Acevedo), cash defense ranges.
  */
 
 import { DEFENSE_CHARTS } from "@/lib/ranges/data";
@@ -37,7 +35,7 @@ export function resolveSpot(c: DemoSpotConfig): DemoSpot {
   );
   if (!chart) throw new Error(`No cash defense chart for ${c.hero} vs ${c.opener}`);
   const row = chart.grid[c.hand];
-  if (!row) throw new Error(`${c.hand} never reaches ${chart.title}`);
+  if (!row) throw new Error(`${c.hand} never reaches ${chart.id}`);
   const freqs: Record<DemoAnswer, number> = { fold: 0, call: 0, raise: 0 };
   chart.actions.forEach((a, i) => {
     if (a.key === "fold" || a.key === "call" || a.key === "raise") freqs[a.key] += row[i];

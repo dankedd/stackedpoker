@@ -124,12 +124,12 @@ export const CBET_CONNECTED_BOARDS: InteractivePuzzle = {
       ],
       bestOptionId: 'bet-33',
       explanation:
-        'Bet 33% pot. WHY: the big blind’s edge on connected boards comes from holding offsuit connectors, and this board hands those hands nothing — no straight is possible and no open-ender either — so the advantage that would normally slow you down is simply absent. RANGE THEORY: the source is ranking the board by what it does to THEIR range, not yours: “Since the BB has more offsuit connectors than IP, flops with more possible flopped straights will, as expected, favor the BB.” Zero straights means none of that applies, which is why “flops with zero flopped straights are the highest c-bet ones.” SIZING AND FREQUENCY: the frequency is the highest on this scale; on size the book speaks only from the far end, giving the larger bet-sizes to the flops thick with straight draws — so the small size here is read off that comparison, not transcribed from a printed figure. PASSAGE: Modern Poker Theory, p.661, the prose accompanying Diagram 42, with the board classification itself defined on p.627.',
+        'Bet 33% pot. WHY: the big blind’s edge on connected boards comes from holding offsuit connectors, and this board hands those hands nothing — no straight is possible and no open-ender either — so the advantage that would normally slow you down is simply absent. RANGE THEORY: the source is ranking the board by what it does to THEIR range, not yours: “Since the BB has more offsuit connectors than IP, flops with more possible flopped straights will, as expected, favor the BB.” Zero straights means none of that applies, which is why “flops with zero flopped straights are the highest c-bet ones.” SIZING AND FREQUENCY: the frequency is the highest on this scale; on size the source speaks only from the far end, giving the larger bet-sizes to the flops thick with straight draws — so the small size here is read off that comparison, not transcribed from a printed figure.',
       unsourced: [
         {
           question: 'How much more often, and how much smaller?',
           answer:
-            'Unanswerable from this passage, which is why this puzzle is graded DERIVED rather than Direct. The source gives the direction of this effect in a diagram; it does not print a frequency per straight-count bucket. Both quoted sentences are exact transcription, but the ranking of these three buttons is our derivation from a comparison the book states in words. One caveat worth stating rather than hiding: the book does print figures per straight-count bucket in one other place, p.673 — but as how often the flop gets CHECKED, inside the unpaired-flops-by-texture section, not as c-bet frequencies for this comparison. They are not imported here.',
+            'Unanswerable from this passage, which is why this puzzle is graded DERIVED rather than Direct. The source gives the direction of this effect in a diagram; it does not print a frequency per straight-count bucket. Both quoted sentences are exact transcription, but the ranking of these three buttons is our derivation from a comparison the source states in words. One caveat worth stating rather than hiding: the source does print figures per straight-count bucket in one other place — but as how often the flop gets CHECKED, inside the unpaired-flops-by-texture section, not as c-bet frequencies for this comparison. They are not imported here.',
           nearestSources: [
             'cbet.straights-favor-bb',
             'cbet.three-oesd-lowest',
@@ -139,7 +139,7 @@ export const CBET_CONNECTED_BOARDS: InteractivePuzzle = {
         {
           question: 'Where does the 5.5bb pot come from?',
           answer:
-            'From an implementation decision, not the source. The book prints no open size for this section, so the 2.5bb button raise is ours; the pot, and therefore both bet amounts on the buttons, follow from it. Nothing in the grading depends on those numbers — the answer is a size as a fraction of the pot, which is how the source expresses sizes throughout.',
+            'From an implementation decision, not the source. The source prints no open size for this section, so the 2.5bb button raise is ours; the pot, and therefore both bet amounts on the buttons, follow from it. Nothing in the grading depends on those numbers — the answer is a size as a fraction of the pot, which is how the source expresses sizes throughout.',
           nearestSources: ['cbet.analysis-after-bb-checks'],
         },
       ],
@@ -159,7 +159,7 @@ export const CBET_CONNECTED_BOARDS: InteractivePuzzle = {
               sources: ['cbet.straights-favor-bb'],
             },
             {
-              text: 'The straight count is the book’s own board classification, with its own worked examples — AQ7 has zero flopped straights, KT9 has one, 875 has two, JT9 has three. K-8-3 is an AQ7: no three of its cards fit inside a five-rank window, so no two hole cards can complete a straight.',
+              text: 'The straight count is the source’s own board classification, with its own worked examples — AQ7 has zero flopped straights, KT9 has one, 875 has two, JT9 has three. K-8-3 is an AQ7: no three of its cards fit inside a five-rank window, so no two hole cards can complete a straight.',
               sources: ['flops.straight-count'],
             },
             {
@@ -226,12 +226,12 @@ export const CBET_CONNECTED_BOARDS: InteractivePuzzle = {
       ],
       bestOptionId: 'bet-67',
       explanation:
-        'Bet 67% pot. WHY: one card turned three of the big blind’s hand classes into eight-out draws, and the source’s adjustment to that has two halves — bet less often, and bet bigger when you do. RANGE THEORY: the draws that appeared are J-T, T-7 and 7-6, which is precisely the shape the passage names as the big blind’s structural edge — they hold more offsuit connectors than you do, so a board that fits connectors fits their range and not yours. SIZING AND FREQUENCY: “the flops with three OESDs are the ones with the lowest c-bet frequency and with the larger bet-sizes, as the BB will have more possible straight draws and IP’s strong hands need more protection.” Lowest of the scale, not a printed percentage — no figure is attached to the bucket, so none is claimed here. PASSAGE: Modern Poker Theory, p.661, the prose accompanying Diagrams 42 and 43.',
+        'Bet 67% pot. WHY: one card turned three of the big blind’s hand classes into eight-out draws, and the source’s adjustment to that has two halves — bet less often, and bet bigger when you do. RANGE THEORY: the draws that appeared are J-T, T-7 and 7-6, which is precisely the shape the passage names as the big blind’s structural edge — they hold more offsuit connectors than you do, so a board that fits connectors fits their range and not yours. SIZING AND FREQUENCY: “the flops with three OESDs are the ones with the lowest c-bet frequency and with the larger bet-sizes, as the BB will have more possible straight draws and IP’s strong hands need more protection.” Lowest of the scale, not a printed percentage — no figure is attached to the bucket, so none is claimed here.',
       unsourced: [
         {
           question: 'How much less often, and how much bigger?',
           answer:
-            'Unanswerable from this passage, which is why this puzzle is graded DERIVED rather than Direct. The source gives the direction of this effect in a diagram; it does not print a frequency per straight-count bucket. Both quoted sentences are exact transcription, but the ranking of these three buttons is our derivation from a comparison the book states in words. One caveat worth stating rather than hiding: the book does print figures per straight-count bucket in one other place, p.673 — but as how often the flop gets CHECKED, inside the unpaired-flops-by-texture section, not as c-bet frequencies for this comparison. They are not imported here.',
+            'Unanswerable from this passage, which is why this puzzle is graded DERIVED rather than Direct. The source gives the direction of this effect in a diagram; it does not print a frequency per straight-count bucket. Both quoted sentences are exact transcription, but the ranking of these three buttons is our derivation from a comparison the source states in words. One caveat worth stating rather than hiding: the source does print figures per straight-count bucket in one other place — but as how often the flop gets CHECKED, inside the unpaired-flops-by-texture section, not as c-bet frequencies for this comparison. They are not imported here.',
           nearestSources: [
             'cbet.straights-favor-bb',
             'cbet.three-oesd-lowest',
@@ -239,9 +239,9 @@ export const CBET_CONNECTED_BOARDS: InteractivePuzzle = {
           ],
         },
         {
-          question: 'Where does “three OESDs” come from — did the book count this board?',
+          question: 'Where does “three OESDs” come from — did the source count this board?',
           answer:
-            'No. The book defines the straight count with four worked examples and then says outright that it will not develop the open-ender subcategory: “for the scope of this book we will only focus on the number of straights.” So no printed table classifies 9♠8♥3♦. The three draws are enumerated here card by card — J-T, T-7 and 7-6, the only three four-card runs containing both the nine and the eight — so you can check the count yourself instead of taking a bucket label on trust.',
+            'No. The source defines the straight count with four worked examples and then says outright that it will not develop the open-ender subcategory: “for the scope of this book we will only focus on the number of straights.” So no printed table classifies 9♠8♥3♦. The three draws are enumerated here card by card — J-T, T-7 and 7-6, the only three four-card runs containing both the nine and the eight — so you can check the count yourself instead of taking a bucket label on trust.',
           nearestSources: ['flops.oesd-subcategory-limits', 'flops.straight-count'],
         },
       ],
@@ -250,7 +250,7 @@ export const CBET_CONNECTED_BOARDS: InteractivePuzzle = {
           id: 'three-oesds-both-halves',
           title: 'Three open-enders, and both halves of the adjustment',
           body:
-            'Notice where this board sits in the book’s scheme: it still has zero flopped straights, exactly like the last one. The open-ender count is a subcategory drawn INSIDE the zero-straight family, not a separate axis — so this is a comparison between two boards that a coarse straight count would call identical, and the finer cut is the one that matters. What changed is not what the big blind can already have made. It is what they can be drawing to.',
+            'Notice where this board sits in the source’s scheme: it still has zero flopped straights, exactly like the last one. The open-ender count is a subcategory drawn INSIDE the zero-straight family, not a separate axis — so this is a comparison between two boards that a coarse straight count would call identical, and the finer cut is the one that matters. What changed is not what the big blind can already have made. It is what they can be drawing to.',
           bullets: [
             {
               text: 'The nesting, stated by the source: “Within the flops with zero possible straights, we can create a subcategory for the number of possible open-ended straight draws.” Both of this puzzle’s flops have zero flopped straights; they sit at opposite ends of that subcategory.',
@@ -265,7 +265,7 @@ export const CBET_CONNECTED_BOARDS: InteractivePuzzle = {
               sources: ['cbet.three-oesd-lowest'],
             },
             {
-              text: 'The same connectivity read from the other seat: the flops the book finds get donk bet more than half the time are ranks 7-x-x and 6-x-x “with one to three possible flopped straights”. Push further along this scale and the big blind stops waiting for you and takes the lead.',
+              text: 'The same connectivity read from the other seat: the flops the source finds get donk bet more than half the time are ranks 7-x-x and 6-x-x “with one to three possible flopped straights”. Push further along this scale and the big blind stops waiting for you and takes the lead.',
               sources: ['family.high-donk-flops'],
             },
           ],
@@ -296,7 +296,7 @@ export const CBET_CONNECTED_BOARDS: InteractivePuzzle = {
       sources: ['cbet.straights-favor-bb', 'flops.straight-count'],
     },
     {
-      text: 'Inside that zero-straight family the book cuts again by open-enders, and the flops with three of them draw both the lowest c-bet frequency and the larger bet-sizes — fewer bets, bigger ones, because the big blind has more draws and your good hands need protection.',
+      text: 'Inside that zero-straight family the source cuts again by open-enders, and the flops with three of them draw both the lowest c-bet frequency and the larger bet-sizes — fewer bets, bigger ones, because the big blind has more draws and your good hands need protection.',
       sources: ['cbet.three-oesd-lowest', 'cbet.oesd-subcategory'],
     },
     {

@@ -44,7 +44,7 @@ import { DEFEND_DEEP, type RangeEntry } from './defendBaselines'
 
 // ── CO's real, book-transcribed 40bb opening range ────────────────────────────
 
-export const CO_RFI_40BB_SOURCE = { book: 'Modern Poker Theory' as const, chapterNo: 7, handRangeNo: 118, page: 334 }
+// Source: Modern Poker Theory, chapter 7, Hand Range 118, p.334.
 
 /** Every hand with any non-zero raise frequency in the real transcribed chart — a
  *  membership list, matching how this chart is consumed elsewhere in the app. */
@@ -133,15 +133,12 @@ export const BB_CALL_RANGE_40BB_FREQUENCY: Record<string, number> = Object.fromE
 
 // ── Lesson 1 — the book's central range-vs-range walkthrough ──────────────────
 
+/** Setup notes shown with a scenario. The work is named in a comment, never as a value. */
 export interface SourceRef {
-  book: 'Modern Poker Theory'
   note: string
 }
 
-export const LESSON1_SOURCE: SourceRef = {
-  book: 'Modern Poker Theory',
-  note: '9-max MTT, 40bb effective, 12.5% ante, CO opens 2.25bb, BB defends (Ch.7 range-vs-range walkthrough).',
-}
+export const LESSON1_SOURCE: SourceRef = /* book: 'Modern Poker Theory' */ { note: '9-max MTT, 40bb effective, 12.5% ante, CO opens 2.25bb, BB defends.' }
 
 export const LESSON1_SCENARIO = {
   board: ['8h', '7s', '5s'],
@@ -164,10 +161,7 @@ export const LESSON1_SCENARIO = {
 // captioned as illustrative pattern-recognition ranges — never claimed to be the
 // exact ranges the book computed these figures from.
 
-export const A76R_SOURCE: SourceRef = {
-  book: 'Modern Poker Theory',
-  note: 'Exact — Modern Poker Theory, Ch. 11 ("The Value of Donk Betting"), p.633: "Clearly IP has the equity advantage with 62% equity vs the BB\'s 38% on A76r." Aggregated GTO solver data, BB vs BN/UTG single-raised pots, 20/30/40bb effective.',
-}
+export const A76R_SOURCE: SourceRef = /* book: 'Modern Poker Theory' */ { note: 'Exact — the source ("The Value of Donk Betting"): "Clearly IP has the equity advantage with 62% equity vs the BB\'s 38% on A76r." Aggregated GTO solver data, BB vs BN/UTG single-raised pots, 20/30/40bb effective.' }
 
 export const A76R_SCENARIO = {
   id: 'a76r',
@@ -182,10 +176,7 @@ export const A76R_SCENARIO = {
   source: A76R_SOURCE,
 }
 
-export const CS_654R_SOURCE: SourceRef = {
-  book: 'Modern Poker Theory',
-  note: 'Exact — Modern Poker Theory, Ch. 11 ("The Value of Donk Betting"), p.633: "...on 654r, the BB has the equity advantage with 51% equity vs IP\'s 49%." Same aggregated GTO solver dataset as A76r.',
-}
+export const CS_654R_SOURCE: SourceRef = /* book: 'Modern Poker Theory' */ { note: 'Exact — the source ("The Value of Donk Betting"): "...on 654r, the BB has the equity advantage with 51% equity vs IP\'s 49%." Same aggregated GTO solver dataset as A76r.' }
 
 export const CS_654R_SCENARIO = {
   id: '654r',
@@ -229,11 +220,11 @@ export const ILLUSTRATIVE_CALLER_FREQUENCY = BB_CALL_RANGE_40BB_FREQUENCY
 // ── Audit trail (mirrors the user's spec verification checklist) ──────────────
 
 export const MODULE8_AUDIT_NOTES = {
-  co_open_range: 'Real, book-transcribed (Modern Poker Theory Hand Range 118, p.334) — not invented.',
+  co_open_range: 'Real, source-transcribed — not invented.',
   co_open_pct_book_vs_actual: `Book cites ≈31.2% for its own worked example; CO_RFI_40BB's actual computed weight is ≈${CO_OPEN_RANGE_40BB_PCT}% — kept as two distinct, separately-labeled numbers rather than forced to match.`,
-  bb_call_range: `Illustrative — widened from the real 100bb-cash BB-vs-CO calling range up to the book's cited ≈56.8% (lands at ≈${BB_CALL_RANGE_40BB_PCT}% at hand-class granularity). Never presented as the book's own chart.`,
-  equity_buckets_source: 'Strong ≥75 / Good 50–75 / Weak 33–50 / Trash <33 — exact thresholds from the book, reused via flopClassifier.ts\'s equityBucket(), never redefined.',
-  a76r_654r_strong_bucket: 'Only the Strong bucket has an exact book-cited number for these two boards; Good/Weak/Trash are directional-only text, never invented percentages.',
-  a76r_654r_equity_source_verified: 'Verified against docs/mpt_fulltext.txt p.633 ("PAGE_633" marker): "Clearly IP has the equity advantage with 62% equity vs the BB\'s 38% on A76r... on 654r, the BB has the equity advantage with 51% equity vs IP\'s 49%." Both A76R_SCENARIO.equity and CS_654R_SCENARIO.equity are exact transcriptions, not estimates — see A76R_SOURCE/CS_654R_SOURCE.',
+  bb_call_range: `Illustrative — widened from the real 100bb-cash BB-vs-CO calling range up to the source's cited ≈56.8% (lands at ≈${BB_CALL_RANGE_40BB_PCT}% at hand-class granularity). Never presented as the source's own chart.`,
+  equity_buckets_source: 'Strong ≥75 / Good 50–75 / Weak 33–50 / Trash <33 — exact thresholds from the source, reused via flopClassifier.ts\'s equityBucket, never redefined.',
+  a76r_654r_strong_bucket: 'Only the Strong bucket has an exact source-cited number for these two boards; Good/Weak/Trash are directional-only text, never invented percentages.',
+  a76r_654r_equity_source_verified: 'Verified against docs/mpt_fulltext.txt ("PAGE_633" marker): "Clearly IP has the equity advantage with 62% equity vs the BB\'s 38% on A76r... on 654r, the BB has the equity advantage with 51% equity vs IP\'s 49%." Both A76R_SCENARIO.equity and CS_654R_SCENARIO.equity are exact transcriptions, not estimates — see A76R_SOURCE/CS_654R_SOURCE.',
   mixed_frequency_shading: 'CO_OPEN_FREQUENCY_40BB and BB_CALL_RANGE_40BB_FREQUENCY carry the real per-hand mix frequency (0-1) for every sourced hand (e.g. CO K8o raises 25%, BB AA calls 20%) so the grid can shade "sometimes" hands differently from "always" hands — hands added only by the illustrative widening step have no sourced frequency and default to 1 (pure), never a fabricated fraction.',
 }

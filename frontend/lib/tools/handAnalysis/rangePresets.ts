@@ -146,10 +146,8 @@ function bbDefensePreset(heroPosition: Position, action: VillainPreflopAction): 
  */
 function btnVsCoPreset(action: VillainPreflopAction): RangePreset {
   const chart = CASH_100BB_OPEN_RESPONSE_CHARTS.BN_vs_CO_100bb;
+  // The chart's source lives in chart.sourceRef; it is never copied into this object.
   const provenance: ChartProvenance = {
-    source: "Modern Poker Theory (Acevedo, 2019)",
-    page: chart.sourceRef.page,
-    figure: `Hand Range ${chart.sourceRef.handRangeNo}: BN vs CO Open`,
     gameAssumptions: "6-max cash, 100bb effective, CO opens 2.5bb, no ante",
     derivation: "reconstructed",
     bookAggregate: {

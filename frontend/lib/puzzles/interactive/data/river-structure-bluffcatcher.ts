@@ -140,18 +140,18 @@ export const RIVER_STRUCTURE_BLUFFCATCHER: InteractivePuzzle = {
           tableAction: { label: 'Raises to', betBb: 30 },
           verdict: 'mistake',
           shortWhy:
-            'A bluff-catcher never raises a polarized range. Every hand that calls you has you drawing dead, and every hand that folds was one you already beat — the book’s model has the bluff-catching player never betting at all.',
+            'A bluff-catcher never raises a polarized range. Every hand that calls you has you drawing dead, and every hand that folds was one you already beat — the source’s model has the bluff-catching player never betting at all.',
           sources: ['ch14.bluffcatcher-never-bets', 'ch14.bluffcatcher-calls-1-alpha'],
         },
       ],
       bestOptionId: 'call',
       explanation:
-        'Call. (1) THE ACTION: call the 10bb. (2) WHY: on the river hand values are fixed — “each hand having either 100% or 0% equity vs another hand” (p.779) — and on this board that binary is literal. Your set of kings beats every holding without a spade and loses to every holding with one, so you are a pure bluff-catcher: ahead of all of the Villain’s bluffs, behind all of their value. (3) THE RANGE THEORY: that is the polar-versus-bluff-catcher structure, and the book’s instruction for it is explicit — the polar player goes all-in with their nut hands and Alpha% of their bluffs, “and the bluff-catching player has to call with 1-Alpha of their range” (p.782). (4) THE ARITHMETIC: Alpha = bet / (bet + pot) = 10 / (10 + 20) = 33%, so 1-Alpha = 67%. A half-pot bet made with a polarized range should be 75% value and 25% bluffs (3-to-1), and it lays you 25% odds — which is exactly the fraction of that betting range you beat, so a generic bluff-catcher is indifferent and the tie is broken by hand quality and blockers. Yours is the best bluff-catcher available and it blocks nothing the Villain is bluffing with, so it belongs in the calling 67% rather than the folding 33%. (5) THE PASSAGE: “if you can recognize the river situation as being polar vs bluff-catcher, you will know that the GTO strategy for the polar player is to always go all-in with their nut hands and the Alpha % of their bluffs. and the bluff-catching player has to call with 1-Alpha of their range.” — Modern Poker Theory, p.782.',
+        'Call. (1) THE ACTION: call the 10bb. (2) WHY: on the river hand values are fixed — “each hand having either 100% or 0% equity vs another hand” — and on this board that binary is literal. Your set of kings beats every holding without a spade and loses to every holding with one, so you are a pure bluff-catcher: ahead of all of the Villain’s bluffs, behind all of their value. (3) THE RANGE THEORY: that is the polar-versus-bluff-catcher structure, and the source’s instruction for it is explicit — the polar player goes all-in with their nut hands and Alpha% of their bluffs, “and the bluff-catching player has to call with 1-Alpha of their range”. (4) THE ARITHMETIC: Alpha = bet / (bet + pot) = 10 / (10 + 20) = 33%, so 1-Alpha = 67%. A half-pot bet made with a polarized range should be 75% value and 25% bluffs (3-to-1), and it lays you 25% odds — which is exactly the fraction of that betting range you beat, so a generic bluff-catcher is indifferent and the tie is broken by hand quality and blockers. Yours is the best bluff-catcher available and it blocks nothing the Villain is bluffing with, so it belongs in the calling 67% rather than the folding 33%. (5) THE PASSAGE: “if you can recognize the river situation as being polar vs bluff-catcher, you will know that the GTO strategy for the polar player is to always go all-in with their nut hands and the Alpha % of their bluffs. and the bluff-catching player has to call with 1-Alpha of their range.” — the source.',
       unsourced: [
         {
           question: 'What does the solver say about 9♠6♠2♥K♠4♠?',
           answer:
-            'Nothing. The source gives a river model, not a solved frequency for this board. The reasoning here is that model applied to a matching structure. Chapter 14 computes its river work on the abstract board 2♠2♣2♥2♦3♣ (p.783) and describes its own output as heuristics generated from abstract models (p.782) — it solves no real river board anywhere in the chapter. What makes the transfer legitimate is the chapter’s own equivalence claim on p.781: as long as two situations arrive at the same structure, the GTO strategy pair is equivalent. So the claim being made is “this spot has the model’s structure”, never “the solver output for this board is X”.',
+            'Nothing. The source gives a river model, not a solved frequency for this board. The reasoning here is that model applied to a matching structure. The source computes its river work on the abstract board 2♠2♣2♥2♦3♣ and describes its own output as heuristics generated from abstract models — it solves no real river board anywhere in the chapter. What makes the transfer legitimate is the chapter’s own equivalence claim: as long as two situations arrive at the same structure, the GTO strategy pair is equivalent. So the claim being made is “this spot has the model’s structure”, never “the solver output for this board is X”.',
           nearestSources: [
             'ch14.abstract-models-are-heuristics',
             'ch14.structure-not-history',
@@ -161,13 +161,13 @@ export const RIVER_STRUCTURE_BLUFFCATCHER: InteractivePuzzle = {
         {
           question: 'How many bluffs does this button actually have?',
           answer:
-            'ASSUMPTION — not from the source. The book never states a bluff count for any real opponent. What it does state is the shape of a half-pot river bet made with a polarized range at equilibrium: 75% value, 25% bluffs, 3-to-1 (p.136). This puzzle assumes the button is at that equilibrium for this size, and every number downstream of it — the 25% hand-vs-range equity, the indifference — inherits that assumption. p.809 gives the condition that voids the answer entirely: “Never call with bluff-catchers if the Villain doesn’t have enough bluffs.” Against an opponent who never bluffs a river, this is a fold regardless of Alpha.',
+            'ASSUMPTION — not from the source. The source never states a bluff count for any real opponent. What it does state is the shape of a half-pot river bet made with a polarized range at equilibrium: 75% value, 25% bluffs, 3-to-1. This puzzle assumes the button is at that equilibrium for this size, and every number downstream of it — the 25% hand-vs-range equity, the indifference — inherits that assumption. The source gives the condition that voids the answer entirely: “Never call with bluff-catchers if the Villain doesn’t have enough bluffs.” Against an opponent who never bluffs a river, this is a fold regardless of Alpha.',
           nearestSources: ['alpha.half-pot-river-example', 'ch14.value-range-starting-point'],
         },
         {
-          question: 'Does the book say the strongest bluff-catcher is the one that calls?',
+          question: 'Does the source say the strongest bluff-catcher is the one that calls?',
           answer:
-            'Not in one sentence — that step is this puzzle’s reasoning. What the book supplies is three separate pieces: bluff-catchers are all equal except in their blockers (p.808), river hands have a linear ordering of strength (p.779), and you should defend close to 1-Alpha (p.809). Putting them together — a range that must defend 67% defends with its best 67%, and among equals the blockers decide — is a derivation, not a quotation. In the abstract model the question does not even arise, because there the bluff-catching range is a single undifferentiated hand class.',
+            'Not in one sentence — that step is this puzzle’s reasoning. What the source supplies is three separate pieces: bluff-catchers are all equal except in their blockers, river hands have a linear ordering of strength, and you should defend close to 1-Alpha. Putting them together — a range that must defend 67% defends with its best 67%, and among equals the blockers decide — is a derivation, not a quotation. In the abstract model the question does not even arise, because there the bluff-catching range is a single undifferentiated hand class.',
           nearestSources: ['river.blockers', 'ch14.linear-ordering', 'river.defend-1-alpha'],
         },
       ],
@@ -183,7 +183,7 @@ export const RIVER_STRUCTURE_BLUFFCATCHER: InteractivePuzzle = {
               sources: ['ch14.hand-values-fixed'],
             },
             {
-              text: 'The identity of the nuts is not an input. The book is blunt about it: “It doesn’t really matter if the nuts are a full house, flush, straight or any combination of those hands. The only important thing would be the overall ranges composition.” Here the nuts happen to be a flush. That fact does no work.',
+              text: 'The identity of the nuts is not an input. The source is blunt about it: “It doesn’t really matter if the nuts are a full house, flush, straight or any combination of those hands. The only important thing would be the overall ranges composition.” Here the nuts happen to be a flush. That fact does no work.',
               sources: ['ch14.nuts-identity-irrelevant'],
             },
             {
@@ -202,11 +202,11 @@ export const RIVER_STRUCTURE_BLUFFCATCHER: InteractivePuzzle = {
           id: 'the-arithmetic',
           title: 'Alpha, computed from these numbers',
           body:
-            'Alpha is the fraction of the time a bluff has to work to break even, and it is the one quantity in a river spot that may be calculated rather than looked up: Alpha = b / (b + p), where b is the bet and p is the pot before it. The button bet 10bb into 20bb, so Alpha = 10 / (10 + 20) = 33%, and the defence the model asks of your whole range is 1-Alpha = 67%. The book works this exact size out in full — a half-pot river bet from a polarized range lays 25% odds, should be built 75% value to 25% bluffs, needs to work 33% of the time, and asks the defender for 67%.',
+            'Alpha is the fraction of the time a bluff has to work to break even, and it is the one quantity in a river spot that may be calculated rather than looked up: Alpha = b / (b + p), where b is the bet and p is the pot before it. The button bet 10bb into 20bb, so Alpha = 10 / (10 + 20) = 33%, and the defence the model asks of your whole range is 1-Alpha = 67%. The source works this exact size out in full — a half-pot river bet from a polarized range lays 25% odds, should be built 75% value to 25% bluffs, needs to work 33% of the time, and asks the defender for 67%.',
           exhibit: {
             caption: 'Half-pot on the river: every number in this spot',
             scope:
-              'Alpha and 1-Alpha are computed from this puzzle’s own pot and bet by the p.109 formula. The 3-to-1 ratio and the 25% price are the book’s worked half-pot river example (p.136), which describes a bet-size and a polarized range — not a solution for this or any other board. The 25% hand-vs-range equity follows from the p.779 equity definition applied to that ratio, and inherits the assumption that the button is at equilibrium for this size.',
+              'Alpha and 1-Alpha are computed from this puzzle’s own pot and bet by the formula. The 3-to-1 ratio and the 25% price are the source’s worked half-pot river example, which describes a bet-size and a polarized range — not a solution for this or any other board. The 25% hand-vs-range equity follows from the equity definition applied to that ratio, and inherits the assumption that the button is at equilibrium for this size.',
             rows: [
               { label: 'Pot before the bet', value: '20 bb' },
               { label: 'Bet faced', value: '10 bb', note: 'half pot' },
@@ -225,7 +225,7 @@ export const RIVER_STRUCTURE_BLUFFCATCHER: InteractivePuzzle = {
           },
           bullets: [
             {
-              text: 'The formula is the book’s: “Notice that this result, b/(b + p), is the same as P1’s bluff-to-value ratio. This number is also known as Alpha. It represents how often a bluff has to work for it to break even.”',
+              text: 'The formula is the source’s: “Notice that this result, b/(b + p), is the same as P1’s bluff-to-value ratio. This number is also known as Alpha. It represents how often a bluff has to work for it to break even.”',
               sources: ['alpha.formula'],
             },
             {
@@ -245,7 +245,7 @@ export const RIVER_STRUCTURE_BLUFFCATCHER: InteractivePuzzle = {
             {
               question: 'Why is the button betting half-pot rather than shoving?',
               answer:
-                'That is a choice this puzzle made, not one the book recommends. In the abstract model the polarized player’s EV increases with bet-size, so the model’s own preference is the largest bet available (p.784). Half-pot is used here because p.136 works that exact size out in full, which lets Alpha, 1-Alpha, the value-to-bluff ratio and the price all be either quoted or computed rather than guessed. The structural answer — bluff-catcher defends 1-Alpha — is the same at any size; only the number changes.',
+                'That is a choice this puzzle made, not one the source recommends. In the abstract model the polarized player’s EV increases with bet-size, so the model’s own preference is the largest bet available. Half-pot is used here because the source works that exact size out in full, which lets Alpha, 1-Alpha, the value-to-bluff ratio and the price all be either quoted or computed rather than guessed. The structural answer — bluff-catcher defends 1-Alpha — is the same at any size; only the number changes.',
               nearestSources: ['ch14.bluffcatcher-calls-1-alpha', 'alpha.half-pot-river-example'],
             },
           ],
@@ -256,14 +256,14 @@ export const RIVER_STRUCTURE_BLUFFCATCHER: InteractivePuzzle = {
           id: 'which-bluffcatcher',
           title: 'Why this bluff-catcher and not another',
           body:
-            'A 67% defence is a statement about a range, and a range is made of specific hands — so something has to decide which of your bluff-catchers call and which make up the folding third. The book gives one rule, and it is about blockers rather than about hand strength: bluff-catchers are interchangeable except in what they remove from the Villain’s range. Run it on your actual cards. K♥K♦ contains no spade, so it removes not one combination from a value range made entirely of flushes. It does remove two kings — but a button holding the last king without a spade has a pair of kings, a middling hand that a polarized bettor checks rather than jams. So you block no value and, more importantly, no bluffs.',
+            'A 67% defence is a statement about a range, and a range is made of specific hands — so something has to decide which of your bluff-catchers call and which make up the folding third. The source gives one rule, and it is about blockers rather than about hand strength: bluff-catchers are interchangeable except in what they remove from the Villain’s range. Run it on your actual cards. K♥K♦ contains no spade, so it removes not one combination from a value range made entirely of flushes. It does remove two kings — but a button holding the last king without a spade has a pair of kings, a middling hand that a polarized bettor checks rather than jams. So you block no value, more importantly, no bluffs.',
           bullets: [
             {
               text: 'The rule, in full: “On the river, all bluff-catchers are equal except in how they block value hands and don’t block bluffs. When you block the opponent’s value range, call more often. When you block the opponent’s bluffing range, fold more often.”',
               sources: ['river.blockers'],
             },
             {
-              text: 'Your case is the fourth one the book lists — the neutral hand: “When you have no blockers, it is irrelevant, or slightly negative.” Nothing about your specific cards argues you out of the structural answer, which is what leaves the structural answer standing.',
+              text: 'Your case is the fourth one the source lists — the neutral hand: “When you have no blockers, it is irrelevant, or slightly negative.” Nothing about your specific cards argues you out of the structural answer, which is what leaves the structural answer standing.',
               sources: ['ch14.no-blockers-irrelevant'],
             },
             {
@@ -304,10 +304,10 @@ export const RIVER_STRUCTURE_BLUFFCATCHER: InteractivePuzzle = {
           id: 'when-this-breaks',
           title: 'The one thing that would change the answer',
           body:
-            'A 1-Alpha defence is a response to a betting range that actually contains bluffs. It is not a duty owed to anyone who bets. Everything above assumes the button is betting the equilibrium shape for this size — three value hands for every bluff — and that assumption is the puzzle’s, not the book’s. Against an opponent whose river bets are value only, the structure is not polar versus bluff-catcher at all, and the arithmetic that follows from it does not apply.',
+            'A 1-Alpha defence is a response to a betting range that actually contains bluffs. It is not a duty owed to anyone who bets. Everything above assumes the button is betting the equilibrium shape for this size — three value hands for every bluff — and that assumption is the puzzle’s, not the source’s. Against an opponent whose river bets are value only, the structure is not polar versus bluff-catcher at all, and the arithmetic that follows from it does not apply.',
           bullets: [
             {
-              text: 'The book states the condition plainly: “Use their value range as a starting point… Never call with bluff-catchers if the Villain doesn’t have enough bluffs. If there is a lot of air in the Villain’s range, they will be more likely to be bluffing.”',
+              text: 'The source states the condition plainly: “Use their value range as a starting point… Never call with bluff-catchers if the Villain doesn’t have enough bluffs. If there is a lot of air in the Villain’s range, they will be more likely to be bluffing.”',
               sources: ['ch14.value-range-starting-point'],
             },
             {
@@ -323,7 +323,7 @@ export const RIVER_STRUCTURE_BLUFFCATCHER: InteractivePuzzle = {
             {
               question: 'Is this button’s range really polar?',
               answer:
-                'The puzzle asserts it as a construction, and it is the assumption the whole answer rests on. What can be said from the source is narrower: the structure being modelled is one where a betting range is nuts-or-air against a range of bluff-catchers (p.782), and where a bettor’s range is polarized the book’s advice from the in-position seat is to bet as big as possible and add enough bluffs to make the defender indifferent (p.808). Whether this particular opponent is doing that is a read, and reads are outside what the book can supply.',
+                'The puzzle asserts it as a construction, and it is the assumption the whole answer rests. What can be said from the source is narrower: the structure being modelled is one where a betting range is nuts-or-air against a range of bluff-catchers, and where a bettor’s range is polarized the source’s advice from the in-position seat is to bet as big as possible and add enough bluffs to make the defender indifferent. Whether this particular opponent is doing that is a read, and reads are outside what the source can supply.',
               nearestSources: ['river.polar-jams-nuts', 'river.blockers', 'ch14.value-range-starting-point'],
             },
           ],
@@ -351,7 +351,7 @@ export const RIVER_STRUCTURE_BLUFFCATCHER: InteractivePuzzle = {
         {
           question: 'Where does 75 / 25 come from?',
           answer:
-            'From the bet-size, not from the board. The book’s worked example states that a half-pot river bet made with a polarized range “should have 75% value-bets and 25% bluffs (3-to-1)” (p.136). Applying it here assumes this button is betting that equilibrium shape at this size. No solver output exists for 9♠6♠2♥K♠4♠ in the source — Chapter 14 solves abstract models, not boards — so the composition above is the model’s ratio, wearing this board’s clothes.',
+            'From the bet-size, not from the board. The source’s worked example states that a half-pot river bet made with a polarized range “should have 75% value-bets and 25% bluffs (3-to-1)”. Applying it here assumes this button is betting that equilibrium shape at this size. No solver output exists for 9♠6♠2♥K♠4♠ in the source — the source solves abstract models, not boards — so the composition above is the model’s ratio, wearing this board’s clothes.',
           nearestSources: ['alpha.half-pot-river-example', 'ch14.abstract-models-are-heuristics'],
         },
       ],
@@ -369,7 +369,7 @@ export const RIVER_STRUCTURE_BLUFFCATCHER: InteractivePuzzle = {
         {
           question: 'Which 67% of your range, hand by hand?',
           answer:
-            'Not specified in the source, and not specifiable from it. The abstract model treats the bluff-catching range as one undifferentiated class of hands, all equally indifferent, so it never has to rank them. The only sorting rule the book gives for real hands is the blocker rule (p.808), plus the observation that river hands are linearly ordered by strength (p.779). A set of kings on this board is the top of that ordering among hands without a spade, which is why this puzzle puts it in the calling 67% — a derivation, not a printed frequency.',
+            'Not specified in the source, and not specifiable from it. The abstract model treats the bluff-catching range as one undifferentiated class of hands, all equally indifferent, so it never has to rank them. The only sorting rule the source gives for real hands is the blocker rule, plus the observation that river hands are linearly ordered by strength. A set of kings on this board is the top of that ordering among hands without a spade, which is why this puzzle puts it in the calling 67% — a derivation, not a printed frequency.',
           nearestSources: ['ch14.bluffcatcher-calls-1-alpha', 'river.blockers', 'ch14.linear-ordering'],
         },
       ],
@@ -392,7 +392,7 @@ export const RIVER_STRUCTURE_BLUFFCATCHER: InteractivePuzzle = {
       sources: ['river.polar-jams-nuts', 'river.defend-1-alpha'],
     },
     {
-      text: 'Alpha is arithmetic you can do at the table: bet / (bet + pot). A 10bb bet into 20bb gives 33%, so the defence is 67% — and the book works this exact size through: 3-to-1 value-to-bluff, a 25% price.',
+      text: 'Alpha is arithmetic you can do at the table: bet / (bet + pot). A 10bb bet into 20bb gives 33%, so the defence is 67% — and the source works this exact size through: 3-to-1 value-to-bluff, a 25% price.',
       sources: ['alpha.formula', 'alpha.half-pot-river-example'],
     },
     {

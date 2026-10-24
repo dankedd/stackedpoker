@@ -49,13 +49,6 @@ export interface Cash100bbOpenResponseAggregate {
   fold: number
 }
 
-export interface Cash100bbOpenResponseSourceRef {
-  book: 'Modern Poker Theory'
-  chapterNo: 5
-  handRangeNo: number
-  page: number
-}
-
 export interface Cash100bbOpenResponseChart {
   key: string
   /** The position choosing an action here (facing `openerPosition`'s open). */
@@ -63,7 +56,7 @@ export interface Cash100bbOpenResponseChart {
   openerPosition: string
   aggregate: Cash100bbOpenResponseAggregate
   cells: Cash100bbOpenResponseCell[]
-  sourceRef: Cash100bbOpenResponseSourceRef
+  // The chart's source (chapter, hand-range number, page) is a comment on each entry.
 }
 
 // ── Hand Range 66: BN vs CO Open (p.228) ─────────────────────────────────────
@@ -133,6 +126,6 @@ export const CASH_100BB_OPEN_RESPONSE_CHARTS: Record<string, Cash100bbOpenRespon
     openerPosition: 'CO',
     aggregate: { '3bet': 11.7, call: 5.4, fold: 82.3 },
     cells: BN_VS_CO_CELLS,
-    sourceRef: { book: 'Modern Poker Theory', chapterNo: 5, handRangeNo: 66, page: 228 },
+    // sourceRef: { book: 'Modern Poker Theory', chapterNo: 5, handRangeNo: 66, page: 228 }
   },
 }

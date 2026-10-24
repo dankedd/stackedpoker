@@ -47,11 +47,11 @@ describe('range_equity_predict (ra-s2, A76r) — always reveals the actual solve
     expect(result.feedback).not.toMatch(/book's figure/i)
   })
 
-  it('the reveal cites the book source (page 633) — never fabricated', () => {
+  it('the reveal states where the figure comes from without naming the work or page — never fabricated', () => {
     const result = evaluateStepLocally(step, actual, 0)
     expect(result.answer_reveal?.source).toBeDefined()
-    expect(result.answer_reveal!.source).toContain('p.633')
-    expect(result.answer_reveal!.source).toContain('Modern Poker Theory')
+    expect(result.answer_reveal!.source).toContain('62% equity')
+    expect(result.answer_reveal!.source).not.toMatch(/p\.\s?\d|Modern Poker Theory|Acevedo/)
   })
 
   it('an off-target answer shows a signed delta from the solver figure', () => {

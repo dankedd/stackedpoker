@@ -111,7 +111,7 @@ describe("dealing", () => {
     for (const sc of withNulls) {
       for (let i = 0; i < 30; i++) {
         const { hand, cards } = dealHand(sc, rng);
-        expect((sc.chart.grid as Record<string, unknown>)[hand], `${sc.chart.page} ${hand}`).not.toBeNull();
+        expect((sc.chart.grid as Record<string, unknown>)[hand], `${sc.chart.id} ${hand}`).not.toBeNull();
         expect(cards[0][0]).toBe(hand[0]);
         expect(cards[1][0]).toBe(hand[1]);
         if (hand.endsWith("s")) expect(cards[0][1]).toBe(cards[1][1]);

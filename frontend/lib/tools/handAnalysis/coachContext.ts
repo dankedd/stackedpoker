@@ -40,8 +40,8 @@ export interface CoachHandAnalysis {
    * Present exactly when the conclusion was reached against a chosen range.
    *
    * The coach has to know this or it will discuss the number as if villain's
-   * holding were established. Carrying the citation too means the coach can
-   * name the chart if asked, instead of vaguely gesturing at "a range".
+   * holding were established. The range's label names the spot; the source
+   * is never passed on.
    */
   conditional?: HandAnalysis["conditional"];
   calculations: { label: string; value: string }[];

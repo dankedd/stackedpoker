@@ -15,7 +15,7 @@ import { positionById, type PositionId } from "../positions";
 import { missingInformation, unknownsFor } from "./completeness";
 import { calculateRangeEquity, isRangeEquityError } from "./rangeEquity";
 import { applicablePresets, matchPreset, presetById } from "./rangePresets";
-import { citation, derivationNote } from "./rangeSource";
+import { derivationNote } from "./rangeSource";
 import { blockingIssues, classifyInput, streetForBoard, validateHand } from "./validate";
 import type {
   AnalysisOutcome,
@@ -497,7 +497,6 @@ export function analyzeHand(input: HandInput): HandAnalysis {
         conditional = {
           presetId: preset.id,
           presetLabel: preset.label,
-          citation: citation(preset.provenance),
           derivationNote: derivationNote(preset.provenance),
           assumptions: preset.assumptions,
           combosConsidered: result.combosConsidered,

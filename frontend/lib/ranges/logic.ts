@@ -40,6 +40,14 @@ export function displayPos(pos: string): string {
   return pos === "BN" ? "BTN" : pos;
 }
 
+const SPOT_WORD: Record<DefenseSpot, string> = { open: "open", push: "shove", limp: "limp", "4bet": "4-bet", lr: "limp/raise" };
+
+/** Display name of a defense chart: "BB vs BTN open · 25 BB", "BB vs SB 3.3x open · 25 BB". */
+export function chartName(c: DefenseChart): string {
+  const size = c.size && c.spot === "open" ? `${c.size} ` : "";
+  return `${displayPos(c.hero)} vs ${displayPos(c.vil)} ${size}${SPOT_WORD[c.spot]} · ${c.stack} BB`;
+}
+
 // ── Push / fold ─────────────────────────────────────────────────────────────
 
 /**

@@ -166,18 +166,18 @@ export const BOUNDARY_MOVES_BY_OPENER: InteractivePuzzle = {
       ],
       bestOptionId: 'three-bet',
       explanation:
-        '3-bet. WHY: the only sentence in the book that names hands for this exact spot puts AJ inside the value 3-betting range — “the value range shrinks from 99+, ATs+, and AJ+ vs the BN to TT+ and AK vs UTG” (p.395) — and A♠J♦ sits on the bottom edge of the class named on the button side. RANGE THEORY: the button opens the widest range the big blind ever faces, so it is the range with the fewest strong hands per hundred combos; that dilution is what lets the big blind carry both the widest value 3-betting range and bluffs alongside it, and it shows up as the tightest folding frequency in the table. FREQUENCY: against a button the big blind 3-bets 14.1% non-all-in, jams 3%, calls 58.6% and folds only 24.2% (Hand Range 167, p.396) — 17.1% of the range raises, counting both branches. SIZING: none is available. Hand Range 167 prints no bet-size at all, so the 3-bet goes onto the felt without an amount rather than with an invented one. PASSAGES: Hand Range 167, p.396; the value-range sentence and the folding-frequency comparison, both p.395.',
+        '3-bet. WHY: the only sentence in the source that names hands for this exact spot puts AJ inside the value 3-betting range — “the value range shrinks from 99+, ATs+, and AJ+ vs the BN to TT+ and AK vs UTG” — and A♠J♦ sits on the bottom edge of the class named on the button side. RANGE THEORY: the button opens the widest range the big blind ever faces, so it is the range with the fewest strong hands per hundred combos; that dilution is what lets the big blind carry both the widest value 3-betting range and bluffs alongside it, and it shows up as the tightest folding frequency in the table. FREQUENCY: against a button the big blind 3-bets 14.1% non-all-in, jams 3%, calls 58.6% and folds only 24.2% — 17.1% of the range raises, counting both branches. SIZING: none is available. The chart prints no bet-size at all, so the 3-bet goes onto the felt without an amount rather than with an invented one.',
       unsourced: [
         {
           question: 'How often exactly does A♠J♦ 3-bet here?',
           answer:
-            'Exact combo frequency is not specified in the source. Hand Range 167 is printed as a colour-coded chart image; the only figures printed in text are the whole-range branches — all-in 3%, 3-bet 14.1%, call 58.6%, fold 24.2%. Those describe the entire range at once and are not the frequency of any individual hand. What the source states in words is the CLASS: the value 3-betting range against the button is “99+, ATs+, and AJ+”. This puzzle asserts that A♠J♦ sits on the bottom edge of a class the book names, and stops there.',
+            'Exact combo frequency is not specified in the source. The chart is printed as a colour-coded chart image; the only figures printed in text are the whole-range branches — all-in 3%, 3-bet 14.1%, call 58.6%, fold 24.2%. Those describe the entire range at once and are not the frequency of any individual hand. What the source states in words is the CLASS: the value 3-betting range against the button is “99+, ATs+, and AJ+”. This puzzle asserts that A♠J♦ sits on the bottom edge of a class the source names, and stops there.',
           nearestSources: ['preflop.bb-vs-bn-40bb-chart', 'preflop.bb-3bet-value-40bb'],
         },
         {
           question: 'Where do the 2.2bb open, the missing 3-bet size and the money on the felt come from?',
           answer:
-            'The 2.2bb open is this puzzle’s assumption, not a figure lifted from these charts. Hand Ranges 167 and 173 print only their branches — and that silence is the book’s rather than a gap in extraction, because the book prints sizes when it has them (Hand Range 149 is titled “Raise 3.3x”, Hand Range 154 “4-bet 2.2x”). The assumption is a defensible one: p.294 puts the RFI sweet spot at “somewhere between 2bb and 2.5bb from BN to UTG” — one band covering both of this puzzle’s openers — and recommends min-raising only inside the rejam region below 25bb, which 40bb is not. Holding it identical across both scenarios is deliberate: it is what leaves the opener’s seat as the only thing that changes. The countervailing note is that the book also says “The earlier your position, the smaller your bet-sizing should be” (p.175), so a real UTG open might sit at the lower end of that band. No 3-bet size is printed anywhere here, so the re-raise appears on the felt with no amount attached. The 4.825bb pot is 2.2 from the opener, your posted 1, the folded small blind’s 0.5, and 1.125 of antes — nine seats at 12.5% each, because p.293 states these MTT strategies were solved for “9-max tables with a 12.5% ante”. Your call is 1.2 because you are already in for 1.',
+            'The 2.2bb open is this puzzle’s assumption, not a figure lifted from these charts. The charts print only their branches — and that silence is the source’s rather than a gap in extraction, because the source prints sizes when it has them. The assumption is a defensible one: the source puts the RFI sweet spot at “somewhere between 2bb and 2.5bb from BN to UTG” — one band covering both of this puzzle’s openers — and recommends min-raising only inside the rejam region below 25bb, which 40bb is not. Holding it identical across both scenarios is deliberate: it is what leaves the opener’s seat as the only thing that changes. The countervailing note is that the source also says “The earlier your position, the smaller your bet-sizing should be”, so a real UTG open might sit at the lower end of that band. No 3-bet size is printed anywhere here, so the re-raise appears on the felt with no amount attached. The 4.825bb pot is 2.2 from the opener, your posted 1, the folded small blind’s 0.5, and 1.125 of antes — nine seats at 12.5% each, because the source states these MTT strategies were solved for “9-max tables with a 12.5% ante”. Your call is 1.2 because you are already in for 1.',
           nearestSources: [
             'preflop.rfi-sweet-spot',
             'preflop.sizing-guidelines',
@@ -190,16 +190,16 @@ export const BOUNDARY_MOVES_BY_OPENER: InteractivePuzzle = {
       theory: [
         {
           id: 'the-named-class',
-          title: 'The class the book names, and where this hand sits in it',
+          title: 'The class the source names, and where this hand sits in it',
           body:
-            'Almost everything printed about these two spots is a whole-range percentage, which can never answer “what do I do with these two cards”. One sentence is different: on p.395 the book names actual hands, and it names them for both openers in the same breath. That sentence is the reason this puzzle can be built at all, and the reason the hero hand is an ace-jack rather than something the source never mentions.',
+            'Almost everything printed about these two spots is a whole-range percentage, which can never answer “what do I do with these two cards”. One sentence is different: the source names actual hands, and it names them for both openers in the same breath. That sentence is the reason this puzzle can be built at all, and the reason the hero hand is an ace-jack rather than something the source never mentions.',
           bullets: [
             {
               text: 'The sentence in full: “if we compare the BB 3-betting ranges, it is very clear how the value range shrinks from 99+, ATs+, and AJ+ vs the BN to TT+ and AK vs UTG.” Against the button, AJ is named. Against UTG, it is not.',
               sources: ['preflop.bb-3bet-value-40bb'],
             },
             {
-              text: 'That makes A♠J♦ a boundary hand in the strict sense: it is the lowest offsuit ace inside the class the source names on the button side, and it belongs to the class that vanishes on the UTG side. The edge is the book’s, not an estimate.',
+              text: 'That makes A♠J♦ a boundary hand in the strict sense: it is the lowest offsuit ace inside the class the source names on the button side, and it belongs to the class that vanishes on the UTG side. The edge is the source’s, not an estimate.',
               sources: ['preflop.bb-3bet-value-40bb'],
             },
             {
@@ -211,7 +211,7 @@ export const BOUNDARY_MOVES_BY_OPENER: InteractivePuzzle = {
             {
               question: 'Does “AJ+” mean AJo, AJs, or both?',
               answer:
-                'The book does not spell the notation out. It writes the value range as “99+, ATs+, and AJ+”, and because “ATs+” separately covers the suited aces, “AJ+” reads most naturally as the offsuit branch — AJo, AQo, AKo. Either reading contains AJ, which is why this puzzle can use it without the ambiguity mattering. What no reading gives you is a frequency: exact combo frequency is not specified in the source under either interpretation.',
+                'The source does not spell the notation out. It writes the value range as “99+, ATs+, and AJ+”, and because “ATs+” separately covers the suited aces, “AJ+” reads most naturally as the offsuit branch — AJo, AQo, AKo. Either reading contains AJ, which is why this puzzle can use it without the ambiguity mattering. What no reading gives you is a frequency: exact combo frequency is not specified in the source under either interpretation.',
               nearestSources: ['preflop.bb-3bet-value-40bb', 'preflop.bb-vs-bn-40bb-chart'],
             },
           ],
@@ -226,7 +226,7 @@ export const BOUNDARY_MOVES_BY_OPENER: InteractivePuzzle = {
           exhibit: {
             caption: 'BB vs BN (40bb)',
             scope:
-              'Whole-range percentages printed with Hand Range 167 for the BB defending a button open at 40bb, MTT ranges. They describe the entire range at once — none of them is the frequency of an individual hand.',
+              'Whole-range percentages printed with the chart for the BB defending a button open at 40bb, MTT ranges. They describe the entire range at once — none of them is the frequency of an individual hand.',
             rows: [
               { label: 'Call', value: '58.6%', pct: 58.6, note: 'the biggest single branch' },
               { label: 'Fold', value: '24.2%', pct: 24.2, note: 'the lowest folding frequency in the 40bb table' },
@@ -237,7 +237,7 @@ export const BOUNDARY_MOVES_BY_OPENER: InteractivePuzzle = {
           },
           bullets: [
             {
-              text: 'Folding 24.2% is the number to hold on to — it is the near end of the comparison the book draws two sentences later, and the whole point of the second decision in this puzzle.',
+              text: 'Folding 24.2% is the number to hold on to — it is the near end of the comparison the source draws two sentences later, and the whole point of the second decision in this puzzle.',
               sources: ['bb40.fold-jumps-by-seat'],
             },
             {
@@ -320,12 +320,12 @@ export const BOUNDARY_MOVES_BY_OPENER: InteractivePuzzle = {
       ],
       bestOptionId: 'call',
       explanation:
-        'Call. WHY: the identical sentence that made this a 3-bet one decision ago now removes it — “the value range shrinks from 99+, ATs+, and AJ+ vs the BN to TT+ and AK vs UTG” (p.395). AJ is no longer named, and it does not reappear on the bluffing side, because “when the value range shrinks, the bluffing range must also shrink” and the instruction against early position is to “defend tighter and… use better hands as bluffs, while keeping your 3-betting frequency low” (p.395). Nothing, however, pushes the hand into the folding class: that branch grows because weak hands stop being able to realize equity out of position against a strong range, which is not what a hand at the top of the button value range is. RANGE THEORY: UTG’s range is narrow and strong, so the big blind loses on both fronts at once — it has less to 3-bet for value, and less fold equity to bluff with. FREQUENCY: against UTG the big blind 3-bets 5.8%, calls 49.1% and folds 45% (Hand Range 173, p.402); no all-in branch is printed at all, because at 40bb “the earlier the opener’s position, the less often the BB can rejam all-in due to the lack of pre-flop fold equity vs narrow ranges” (p.395). SIZING: none is available — Hand Range 173 prints no bet-size, exactly as Hand Range 167 does not. PASSAGES: Hand Range 173, p.402; Hand Range 167, p.396; the value-range, bluff-shrink, defend-tighter and rejam sentences, all p.395.',
+        'Call. WHY: the identical sentence that made this a 3-bet one decision ago now removes it — “the value range shrinks from 99+, ATs+, and AJ+ vs the BN to TT+ and AK vs UTG”. AJ is no longer named, and it does not reappear on the bluffing side, because “when the value range shrinks, the bluffing range must also shrink” and the instruction against early position is to “defend tighter and… use better hands as bluffs, while keeping your 3-betting frequency low”. Nothing, however, pushes the hand into the folding class: that branch grows because weak hands stop being able to realize equity out of position against a strong range, which is not what a hand at the top of the button value range is. RANGE THEORY: UTG’s range is narrow and strong, so the big blind loses on both fronts at once — it has less to 3-bet for value, and less fold equity to bluff with. FREQUENCY: against UTG the big blind 3-bets 5.8%, calls 49.1% and folds 45%; no all-in branch is printed at all, because at 40bb “the earlier the opener’s position, the less often the BB can rejam all-in due to the lack of pre-flop fold equity vs narrow ranges”. SIZING: none is available — the chart prints no bet-size, exactly as the chart does not.',
       unsourced: [
         {
-          question: 'Does the book say A♠J♦ calls here rather than folds?',
+          question: 'Does the source say A♠J♦ calls here rather than folds?',
           answer:
-            'Not for the combo. Exact combo frequency is not specified in the source — Hand Range 173 is a chart image, and the figures printed in text are the whole-range branches 3-bet 5.8% / call 49.1% / fold 45%. What the source does state is the direction and the classes: the value 3-betting range against UTG is named as TT+ and AK, so AJ is outside it; the bluffing range shrinks along with the value range; and the folding branch grows because weak hands cannot realize equity out of position against a narrow range. This puzzle reads the answer off those three statements — the hand leaves the class the book names for raising, and nothing the book says moves it into the class it describes as folding — and it does not claim a percentage for A♠J♦ in either scenario.',
+            'Not for the combo. Exact combo frequency is not specified in the source — the chart is a chart image, and the figures printed in text are the whole-range branches 3-bet 5.8% / call 49.1% / fold 45%. What the source does state is the direction and the classes: the value 3-betting range against UTG is named as TT+ and AK, so AJ is outside it; the bluffing range shrinks along with the value range; and the folding branch grows because weak hands cannot realize equity out of position against a narrow range. This puzzle reads the answer off those three statements — the hand leaves the class the source names for raising, and nothing the source says moves it into the class it describes as folding — and it does not claim a percentage for A♠J♦ in either scenario.',
           nearestSources: [
             'ex3.preflop-bb-vs-utg-40bb',
             'preflop.bb-3bet-value-40bb',
@@ -336,7 +336,7 @@ export const BOUNDARY_MOVES_BY_OPENER: InteractivePuzzle = {
         {
           question: 'What replaces AJ as a bluff against UTG?',
           answer:
-            'The book says the bluffs change but does not print the replacements for this depth. Its words are that “bluffs vs BN are made with completely different hands than vs EP”, and that you “should use better hands as bluffs” against an early-position opener — a direction, with the hand-by-hand answer left to the chart images of Hand Ranges 167-174. The nearest thing the book prints in words is the composition of the 25bb non-all-in 3-betting range, which is a different stack depth and is not transplanted here.',
+            'The source says the bluffs change but does not print the replacements for this depth. Its words are that “bluffs vs BN are made with completely different hands than vs EP”, and that you “should use better hands as bluffs” against an early-position opener — a direction, with the hand-by-hand answer left to the chart images of the charts. The nearest thing the source prints in words is the composition of the 25bb non-all-in 3-betting range, which is a different stack depth and is not transplanted here.',
           nearestSources: [
             'bb40.bluffs-shrink-with-value',
             'bb40.defend-tighter-vs-ep',
@@ -353,9 +353,9 @@ export const BOUNDARY_MOVES_BY_OPENER: InteractivePuzzle = {
           exhibit: {
             caption: 'The same big blind, two different openers, 40bb',
             scope:
-              'Whole-range percentages printed with Hand Range 167 (BB vs BN, p.396) and Hand Range 173 (BB vs UTG, p.402), both at 40bb with MTT ranges. The “total defence” row is the printed branches added together — 3 + 14.1 + 58.6 and 5.8 + 49.1 — and no other row involves arithmetic. None of these figures is the frequency of an individual hand.',
+              'Whole-range percentages printed with the chart (BB vs BN) and the chart (BB vs UTG), both at 40bb with MTT ranges. The “total defence” row is the printed branches added together — 3 + 14.1 + 58.6 and 5.8 + 49.1 — and no other row involves arithmetic. None of these figures is the frequency of an individual hand.',
             rows: [
-              { label: 'Fold', value: '24.2% → 45%', note: 'the book calls this increase drastic' },
+              { label: 'Fold', value: '24.2% → 45%', note: 'the source calls this increase drastic' },
               { label: 'Call', value: '58.6% → 49.1%' },
               { label: '3-bet (non-all-in)', value: '14.1% → 5.8%' },
               { label: 'All-in', value: '3% → no branch printed' },
@@ -365,7 +365,7 @@ export const BOUNDARY_MOVES_BY_OPENER: InteractivePuzzle = {
           },
           bullets: [
             {
-              text: 'The book states the headline movement itself: “The folding frequency also increases drastically as Villain’s range gets stronger, from 24.2% vs the BN to 45% vs UTG.” That is 20.8 points of range that defends against one seat and gives up against another.',
+              text: 'The source states the headline movement itself: “The folding frequency also increases drastically as Villain’s range gets stronger, from 24.2% vs the BN to 45% vs UTG.” That is 20.8 points of range that defends against one seat and gives up against another.',
               sources: ['bb40.fold-jumps-by-seat'],
             },
             {
@@ -414,7 +414,7 @@ export const BOUNDARY_MOVES_BY_OPENER: InteractivePuzzle = {
       kind: 'composition',
       seat: 'hero',
       description:
-        'The whole-range strategy printed with Hand Range 167. Against the widest opener it faces, the big blind folds least and raises most — and this is the side of the comparison where the source names AJ inside the value 3-betting range.',
+        'The whole-range strategy printed with the chart. Against the widest opener it faces, the big blind folds least and raises most — and this is the side of the comparison where the source names AJ inside the value 3-betting range.',
       bars: [
         { label: 'Call', pct: 58.6 },
         { label: 'Fold', pct: 24.2, note: 'the lowest folding frequency in the 40bb table' },
@@ -425,7 +425,7 @@ export const BOUNDARY_MOVES_BY_OPENER: InteractivePuzzle = {
         {
           question: 'Can you show the per-hand grid for this chart?',
           answer:
-            'Not from what the book prints in text. Hand Range 167 is a colour-coded chart image, and the only figures printed with it are these four aggregates. No reviewed extraction of the 40bb charts exists in this repo either — the chart data it does hold is 100bb and says in its own file comment that it must not be reused at another stack depth. So this puzzle teaches from the aggregates and the hand classes the book names in words, and claims no per-combo frequency.',
+            'Not from what the source prints in text. The chart is a colour-coded chart image, and the only figures printed with it are these four aggregates. No reviewed extraction of the 40bb charts exists in this repo either — the chart data it does hold is 100bb and says in its own file comment that it must not be reused at another stack depth. So this puzzle teaches from the aggregates and the hand classes the source names in words, and claims no per-combo frequency.',
           nearestSources: ['preflop.bb-vs-bn-40bb-chart', 'preflop.bb-3bet-value-40bb'],
         },
       ],
@@ -437,7 +437,7 @@ export const BOUNDARY_MOVES_BY_OPENER: InteractivePuzzle = {
       kind: 'composition',
       seat: 'hero',
       description:
-        'The same strategy against the narrowest opener it faces, printed with Hand Range 173. Every branch has moved: folding nearly doubles, the 3-bet is more than halved, and the all-in branch is gone from the chart entirely.',
+        'The same strategy against the narrowest opener it faces, printed with the chart. Every branch has moved: folding nearly doubles, the 3-bet is more than halved, and the all-in branch is gone from the chart entirely.',
       bars: [
         { label: 'Call', pct: 49.1, note: 'still the biggest branch' },
         { label: 'Fold', pct: 45, note: 'up from 24.2% against the button' },
@@ -447,7 +447,7 @@ export const BOUNDARY_MOVES_BY_OPENER: InteractivePuzzle = {
         {
           question: 'Why is there no all-in row here?',
           answer:
-            'Because Hand Range 173 does not print one, and the book explains the absence rather than leaving it to inference: at 40bb the big blind is already too deep to 3-bet all-in against most positions, and “the earlier the opener’s position, the less often the BB can rejam all-in due to the lack of pre-flop fold equity vs narrow ranges”. The row is left out rather than shown as 0%, because a printed zero would be a figure the source does not state.',
+            'Because the chart does not print one, and the source explains the absence rather than leaving it to inference: at 40bb the big blind is already too deep to 3-bet all-in against most positions, and “the earlier the opener’s position, the less often the BB can rejam all-in due to the lack of pre-flop fold equity vs narrow ranges”. The row is left out rather than shown as 0%, because a printed zero would be a figure the source does not state.',
           nearestSources: ['bb40.no-rejam-vs-ep', 'ex3.preflop-bb-vs-utg-40bb'],
         },
       ],
@@ -503,5 +503,5 @@ export const BOUNDARY_MOVES_BY_OPENER: InteractivePuzzle = {
     'The two decisions are the same preflop moment played twice, not a hand advancing. Hero’s cards, seat, stack, the open size and the price to call are all held identical on purpose; the only thing that changes is which seat opened — the button in the first, UTG in the second. That is the entire experiment, and it is why the second decision shows the same empty board and the same 4.825bb pot as the first.',
 
   endsEarlyBecause:
-    'This is a preflop question asked twice, and the source answers it preflop both times. Hand Ranges 167 and 173 and the prose around Table 61 state what the big blind does against a button and against UTG at 40bb; they say nothing about how A♠J♦ plays on a flop in either scenario. Continuing past the decision would mean leaving the evidence behind, and the comparison is complete without it.',
+    'This is a preflop question asked twice, and the source answers it preflop both times. The charts and the prose around the table state what the big blind does against a button and against UTG at 40bb; they say nothing about how A♠J♦ plays on a flop in either scenario. Continuing past the decision would mean leaving the evidence behind, and the comparison is complete without it.',
 }

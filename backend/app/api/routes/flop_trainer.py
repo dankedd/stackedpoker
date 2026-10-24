@@ -156,7 +156,9 @@ async def record_answer(body: AnswerRequest, current_user: dict = Depends(get_cu
         advice = cbet_advice(body.spot_id, body.flop, row["buckets_ip"], row["buckets_oop"], row["texture"])
         band_ok, size_ok, cbet_points = grade_cbet(body.cbet_band, body.cbet_size, advice)
         points += cbet_points
-        cbet = {"band_ok": band_ok, "size_ok": size_ok, "points": cbet_points, "advice": advice}
+        # Page numbers stay server-side: the browser never sees where a profile is printed.
+        shown = {k: v for k, v in advice.items() if k != "pages"}
+        cbet = {"band_ok": band_ok, "size_ok": size_ok, "points": cbet_points, "advice": shown}
 
     # Same daily limit as the Preflop Trainer: checked after the lookup (an
     # invalid flop costs nothing) and before recording.
