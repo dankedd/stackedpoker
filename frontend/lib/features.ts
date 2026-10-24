@@ -34,7 +34,10 @@ export const FEATURE_ROUTES: Record<Feature, string[]> = {
   // (/learn/<lesson>) stay open — see gatedFeatureForPath.
   learn: ["/learn", "/progress"],
   puzzles: ["/puzzles"],
-  social: ["/admin/moderation", "/u", "/h", "/embed", "/friends", "/messages", "/groups", "/forum", "/notifications", "/invite"],
+  // Shared hands (/h/[slug], /embed/h/[slug], their OG images and the guess
+  // vote) are public on purpose: they are the share links users send out.
+  // Creating a share stays behind this flag (the Share button).
+  social: ["/admin/moderation", "/u", "/friends", "/messages", "/groups", "/forum", "/notifications", "/invite"],
 };
 
 export function isFeaturePublic(feature: Feature): boolean {

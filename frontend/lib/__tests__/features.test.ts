@@ -28,10 +28,14 @@ describe("feature availability", () => {
   });
 
   it("gates the social routes without catching look-alikes", () => {
-    for (const p of ["/u/bobby", "/h/abc1234", "/embed/h/abc1234", "/admin/moderation", "/forum", "/messages/x"]) {
+    for (const p of ["/u/bobby", "/admin/moderation", "/forum", "/messages/x"]) {
       expect(gatedFeatureForPath(p), p).toBe("social");
     }
     for (const p of ["/hands", "/hands/1", "/help", "/upgrade", "/admin/debug-strategy"]) expect(gatedFeatureForPath(p), p).toBeNull();
+  });
+
+  it("keeps shared hands public: the links users send out", () => {
+    for (const p of ["/h/Ab3dE9z", "/h/Ab3dE9z/opengraph-image", "/embed/h/Ab3dE9z"]) expect(gatedFeatureForPath(p), p).toBeNull();
   });
 
   it("matches the backend's copy (backend/app/services/features.py)", () => {
